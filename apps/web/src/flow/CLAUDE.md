@@ -1,11 +1,13 @@
 # apps/web/src/flow — the Flow/Session ↔ FlowSessionView adapter (fe-codec-flow-session S2)
 
 ## What this is
+
 The `apps/web` plane of the CODEC Flow/Session shell (#11). Binds `@vida/ui`'s presentational `FlowSessionView` to the
 `@vida/core` sessions service — the Tamagui-only boundary forbids a `@vida/core` import in `@vida/ui` (BR-2). The
 collection/dashboard/entity adapter precedent.
 
 ## Pattern in use
+
 - **`toFlowProps(src)`** — the typed assembler: a `FlowSource` → `FlowSessionViewProps`. Near pass-through (the shell owns
   progress derivation + degrade), so the real logic lives in the two pieces below.
 - **`mapEffectLog(rows)`** — the ADR-004 `applied_effects` ledger (F1) → the shell's read-only effect-rail entries, with
@@ -25,18 +27,21 @@ collection/dashboard/entity adapter precedent.
   throws, S1-D2/F3): default honest-empty; `?sample` (DEV) seeds a single-stage `FlowSource`; a no-op-safe
   `SessionsPort`; `state: TerminalState` (app canon, structurally assignable to the shell's `ViewState`). The **live
   swap is zero-signature** (documented in the hook header): `useQuery → sessions.getSession + resolveTargets +
-  applied_effects → toFlowSource`, `deriveTerminalState`, the real service bound to `SessionsPort`.
+applied_effects → toFlowSource`, `deriveTerminalState`, the real service bound to `SessionsPort`.
   Remaining first-consumers reuse it: fe-session-hud #16 / fe-onboarding #26 / fe-check-ins #31.
 
 ## Out (homed elsewhere)
+
 The "stages" backend realization is a **design-intent extension** the CONSUMER resolves from its backend (deliverable_note
 pages / a stages ext) — OUT of this unit (O7). The effect WRITES + lifecycle engine live in `@vida/core` (#32). The timer
 HUD (#16) / runtime page (#23) / countdown (pomodoro V5) are separate units.
 
 ## Imports
+
 - `FlowSessionViewProps` / `FlowStage` / `FlowEffect` / `AttachKind` from `@vida/ui` (the shell's Seam A).
 - NO `@vida/core` import yet — the sessions-service binding is deferred to the live hook (the entity adapter imported
   `schema` for its registry gate NOW; the flow adapter's `@vida/core` need is the service, which the hook binds).
 
 ## Spec
+
 `docs/specs/components/ui-2-platform-views/flow-session-view.md` · delivery `docs/specs/foundation/fe-codec-flow-session/`.

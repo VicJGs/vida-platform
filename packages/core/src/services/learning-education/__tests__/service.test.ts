@@ -71,7 +71,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -211,12 +214,12 @@ describe('mod-learning-education S1 — hierarchy spine + routing', () => {
   })
 
   it('rejects a program whose parent does not resolve (ED-2 fail-loud)', async () => {
-    await expect(
-      h.svc.createProgram({ type: 'institution', id: 'ghost' }, { name: 'orphan' }),
-    ).rejects.toThrow(InstitutionNotFoundError)
-    await expect(
-      h.svc.createProgram({ type: 'self_taught', id: 'ghost' }, { name: 'orphan' }),
-    ).rejects.toThrow(SelfTaughtPathNotFoundError)
+    await expect(h.svc.createProgram({ type: 'institution', id: 'ghost' }, { name: 'orphan' })).rejects.toThrow(
+      InstitutionNotFoundError,
+    )
+    await expect(h.svc.createProgram({ type: 'self_taught', id: 'ghost' }, { name: 'orphan' })).rejects.toThrow(
+      SelfTaughtPathNotFoundError,
+    )
   })
 
   // --- curricula (ED-11) — program must resolve; fork is S3 -----------------
@@ -251,9 +254,9 @@ describe('mod-learning-education S1 — hierarchy spine + routing', () => {
     const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'p' })
     const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
     await expect(h.svc.createTerm('ghost', { level: 'year', name: 'y' })).rejects.toThrow(CurriculumNotFoundError)
-    await expect(
-      h.svc.createTerm(cur.id, { level: 'semester', name: 's', parent_term_id: 'ghost' }),
-    ).rejects.toThrow(TermNotFoundError)
+    await expect(h.svc.createTerm(cur.id, { level: 'semester', name: 's', parent_term_id: 'ghost' })).rejects.toThrow(
+      TermNotFoundError,
+    )
   })
 
   // --- resolveParentChain (ED-3) — the routing primitive S2 enforces --------
@@ -341,18 +344,16 @@ describe('mod-learning-education S2 — subjects + routing enforcement', () => {
   })
 
   it('rejects a subject whose routing does not resolve (UnroutedSubjectError)', async () => {
-    await expect(h.svc.createSubject({ title: 'orphan', curriculum_id: 'ghost' })).rejects.toThrow(
-      UnroutedSubjectError,
-    )
+    await expect(h.svc.createSubject({ title: 'orphan', curriculum_id: 'ghost' })).rejects.toThrow(UnroutedSubjectError)
     await expect(h.svc.createSubject({ title: 'orphan', term_id: 'ghost' })).rejects.toThrow(UnroutedSubjectError)
   })
 
   it('rejects a subject with a term/curriculum mismatch', async () => {
     const { prog, term } = await fixture()
     const otherCur = await h.svc.createCurriculum(prog.id, { name: 'other' })
-    await expect(
-      h.svc.createSubject({ title: 'x', term_id: term.id, curriculum_id: otherCur.id }),
-    ).rejects.toThrow(UnroutedSubjectError)
+    await expect(h.svc.createSubject({ title: 'x', term_id: term.id, curriculum_id: otherCur.id })).rejects.toThrow(
+      UnroutedSubjectError,
+    )
   })
 
   it('never lets progress be set (R2/M3 — derived, created null)', async () => {
@@ -654,9 +655,7 @@ describe('mod-learning-education S4 — schedule + class sessions', () => {
 
   it('createClassSession on an unknown subject throws SubjectNotFoundError', async () => {
     await h.svc.registerLearningEducation()
-    const err = await h.svc
-      .createClassSession('missing', { started_at: Date.now() })
-      .catch((e: unknown) => e as Error)
+    const err = await h.svc.createClassSession('missing', { started_at: Date.now() }).catch((e: unknown) => e as Error)
     expect(err).toBeInstanceOf(SubjectNotFoundError)
   })
 
@@ -909,7 +908,12 @@ describe('mod-learning-education S6 — grading systems + components (ED-7 · H3
 
   it('scale_config round-trips through JSON serialize/parse (custom scale)', async () => {
     const scope = await aSubjectScope()
-    const cfg = { bands: [{ min: 90, grade: 'A' }, { min: 80, grade: 'B' }] }
+    const cfg = {
+      bands: [
+        { min: 90, grade: 'A' },
+        { min: 80, grade: 'B' },
+      ],
+    }
     const view = await h.svc.createGradingSystem(scope, {
       name: 'Custom',
       scale_type: 'custom',
@@ -1073,9 +1077,9 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
 
   it('createAssessment with an unresolvable grading_component_id → GradingComponentNotFoundError', async () => {
     const { subjectId } = await subjectWithSystem()
-    await expect(
-      h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: 'ghost' }),
-    ).rejects.toThrow(GradingComponentNotFoundError)
+    await expect(h.svc.createAssessment(subjectId, { type: 'exam', grading_component_id: 'ghost' })).rejects.toThrow(
+      GradingComponentNotFoundError,
+    )
   })
 
   it('createAssessment accepts a null grading_component_id (unmapped is allowed)', async () => {
@@ -1107,7 +1111,10 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
 
     expect(await h.svc.listAssessments({ subject_id: subjectId })).toHaveLength(2)
     expect(await h.svc.listAssessments({ subject_id: subjectId, type: 'quiz' })).toHaveLength(1)
-    const inRange = await h.svc.listAssessments({ subject_id: subjectId, range: { start: '2026-01-01', end: '2026-04-01' } })
+    const inRange = await h.svc.listAssessments({
+      subject_id: subjectId,
+      range: { start: '2026-01-01', end: '2026-04-01' },
+    })
     expect(inRange).toHaveLength(1)
     expect(inRange[0].type).toBe('exam')
 
@@ -1208,8 +1215,16 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
   it('computeGrade flags ambiguous-system when >1 live system at the chosen scope (picks one, does not throw)', async () => {
     const subj = await h.svc.createSubject({ title: 'Dup' })
     const scope = { type: 'subject' as const, id: subj.id }
-    const s1 = await h.svc.createGradingSystem(scope, { name: 'S1', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
-    const s2 = await h.svc.createGradingSystem(scope, { name: 'S2', scale_type: 'letter', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+    const s1 = await h.svc.createGradingSystem(scope, {
+      name: 'S1',
+      scale_type: 'numeric',
+      components: [{ component_type: 'exam', weight: 10000, max_points: 100 }],
+    })
+    const s2 = await h.svc.createGradingSystem(scope, {
+      name: 'S2',
+      scale_type: 'letter',
+      components: [{ component_type: 'exam', weight: 10000, max_points: 100 }],
+    })
     const g = await h.svc.computeGrade(subj.id)
     expect(g.flags).toContain('ambiguous-system')
     expect([s1.system.id, s2.system.id]).toContain(g.systemId)
@@ -1239,7 +1254,11 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
     const sys = await h.svc.createGradingSystem(
       { type: 'program', id: prog.id },
-      { name: 'ProgSys', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+      {
+        name: 'ProgSys',
+        scale_type: 'numeric',
+        components: [{ component_type: 'exam', weight: 10000, max_points: 100 }],
+      },
     )
     await recorded(subj.id, sys.components[0].id, 70)
     const g = await h.svc.computeGrade(subj.id)
@@ -1255,7 +1274,11 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
     await h.svc.createGradingSystem(
       { type: 'institution', id: inst.id },
-      { name: 'InstSys', scale_type: 'letter', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+      {
+        name: 'InstSys',
+        scale_type: 'letter',
+        components: [{ component_type: 'exam', weight: 10000, max_points: 100 }],
+      },
     )
     const g = await h.svc.computeGrade(subj.id)
     expect(g.systemScope).toBe('institution')
@@ -1266,8 +1289,14 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const prog = await h.svc.createProgram({ type: 'institution', id: inst.id }, { name: 'BSc' })
     const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
     const subj = await h.svc.createSubject({ title: 'Algo', curriculum_id: cur.id })
-    await h.svc.createGradingSystem({ type: 'institution', id: inst.id }, { name: 'I', scale_type: 'letter', components: [] })
-    await h.svc.createGradingSystem({ type: 'subject', id: subj.id }, { name: 'Sub', scale_type: 'numeric', components: [] })
+    await h.svc.createGradingSystem(
+      { type: 'institution', id: inst.id },
+      { name: 'I', scale_type: 'letter', components: [] },
+    )
+    await h.svc.createGradingSystem(
+      { type: 'subject', id: subj.id },
+      { name: 'Sub', scale_type: 'numeric', components: [] },
+    )
     const g = await h.svc.computeGrade(subj.id)
     expect(g.systemScope).toBe('subject')
   })
@@ -1289,7 +1318,14 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
     const mkGraded = async (title: string, score: number) => {
       const s = await h.svc.createSubject({ title, term_id: term.id, curriculum_id: cur.id })
-      const sys = await h.svc.createGradingSystem({ type: 'subject', id: s.id }, { name: title, scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+      const sys = await h.svc.createGradingSystem(
+        { type: 'subject', id: s.id },
+        {
+          name: title,
+          scale_type: 'numeric',
+          components: [{ component_type: 'exam', weight: 10000, max_points: 100 }],
+        },
+      )
       await recorded(s.id, sys.components[0].id, score)
       return s
     }
@@ -1308,7 +1344,10 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
     const graded = async (opts: { curriculum_id?: string; term_id?: string }, score: number) => {
       const s = await h.svc.createSubject({ title: 'X', ...opts })
-      const sys = await h.svc.createGradingSystem({ type: 'subject', id: s.id }, { name: 'X', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+      const sys = await h.svc.createGradingSystem(
+        { type: 'subject', id: s.id },
+        { name: 'X', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+      )
       await recorded(s.id, sys.components[0].id, score)
     }
     await graded({ curriculum_id: cur.id }, 60) // direct curriculum child
@@ -1324,7 +1363,10 @@ describe('mod-learning-education S7 — assessments + grade/GPA compute (ED-8 ·
     const cur = await h.svc.createCurriculum(prog.id, { name: 'c' })
     const term = await h.svc.createTerm(cur.id, { level: 'semester', name: 'Fall' })
     const graded = await h.svc.createSubject({ title: 'Graded', term_id: term.id, curriculum_id: cur.id })
-    const sys = await h.svc.createGradingSystem({ type: 'subject', id: graded.id }, { name: 'G', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] })
+    const sys = await h.svc.createGradingSystem(
+      { type: 'subject', id: graded.id },
+      { name: 'G', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
+    )
     await recorded(graded.id, sys.components[0].id, 90)
     await h.svc.createSubject({ title: 'NoSystem', term_id: term.id, curriculum_id: cur.id }) // no system → partial
     const gpa = await h.svc.computeGPA({ type: 'term', id: term.id })
@@ -1423,9 +1465,18 @@ describe('mod-learning-education S8 — education measurement (ED-10 · M1/M2/M3
         ],
       },
     )
-    await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'quiz', grading_component_id: view.components[0].id })).id, { score: 80 })
-    await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[1].id })).id, { score: 90 })
-    await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    await h.svc.recordResult(
+      (await h.svc.createAssessment(subj.id, { type: 'quiz', grading_component_id: view.components[0].id })).id,
+      { score: 80 },
+    )
+    await h.svc.recordResult(
+      (await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[1].id })).id,
+      { score: 90 },
+    )
+    await h.svc.setMeasurement(
+      { type: 'subject', id: subj.id },
+      { measurement_kind: 'quantitative', binding_mode: 'derived-pull' },
+    )
     expect(await h.svc.getProgress({ type: 'subject', id: subj.id })).toBe(87)
   })
 
@@ -1437,21 +1488,33 @@ describe('mod-learning-education S8 — education measurement (ED-10 · M1/M2/M3
 
   it('getProgress subject manual / event-trigger → null (no auto-derivation at M1)', async () => {
     const sid = await gradedSubject(90)
-    await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'manual' })
+    await h.svc.setMeasurement(
+      { type: 'subject', id: sid },
+      { measurement_kind: 'quantitative', binding_mode: 'manual' },
+    )
     expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBeNull()
-    await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'event-trigger' })
+    await h.svc.setMeasurement(
+      { type: 'subject', id: sid },
+      { measurement_kind: 'quantitative', binding_mode: 'event-trigger' },
+    )
     expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBeNull()
   })
 
   it('getProgress subject derived-pull but UNGRADED → null (never 0)', async () => {
     const subj = await h.svc.createSubject({ title: 'NoGrade' })
-    await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    await h.svc.setMeasurement(
+      { type: 'subject', id: subj.id },
+      { measurement_kind: 'quantitative', binding_mode: 'derived-pull' },
+    )
     expect(await h.svc.getProgress({ type: 'subject', id: subj.id })).toBeNull()
   })
 
   it('a stored progress override (0–100) wins over derivation', async () => {
     const sid = await gradedSubject(90)
-    const m = await h.svc.setMeasurement({ type: 'subject', id: sid }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+    const m = await h.svc.setMeasurement(
+      { type: 'subject', id: sid },
+      { measurement_kind: 'quantitative', binding_mode: 'derived-pull' },
+    )
     // no M1 setter for the override → set it directly in the live store
     h.bsql.prepare('UPDATE education_measurements SET progress = ? WHERE id = ?').run(42, m.id)
     expect(await h.svc.getProgress({ type: 'subject', id: sid })).toBe(42) // override, not the derived 90
@@ -1468,8 +1531,14 @@ describe('mod-learning-education S8 — education measurement (ED-10 · M1/M2/M3
         { type: 'subject', id: subj.id },
         { name: 'S', scale_type: 'numeric', components: [{ component_type: 'exam', weight: 10000, max_points: 100 }] },
       )
-      await h.svc.recordResult((await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[0].id })).id, { score })
-      await h.svc.setMeasurement({ type: 'subject', id: subj.id }, { measurement_kind: 'quantitative', binding_mode: 'derived-pull' })
+      await h.svc.recordResult(
+        (await h.svc.createAssessment(subj.id, { type: 'exam', grading_component_id: view.components[0].id })).id,
+        { score },
+      )
+      await h.svc.setMeasurement(
+        { type: 'subject', id: subj.id },
+        { measurement_kind: 'quantitative', binding_mode: 'derived-pull' },
+      )
     }
     await mkMeasured(80)
     await mkMeasured(100)
@@ -1505,7 +1574,10 @@ describe('mod-learning-education S9 — subject vault + tags/links', () => {
     h = await setup()
   })
 
-  const aFile = (byte = 7): EducationFileBlob => ({ bytes: new Uint8Array([byte, byte, byte]), mimeType: 'application/pdf' })
+  const aFile = (byte = 7): EducationFileBlob => ({
+    bytes: new Uint8Array([byte, byte, byte]),
+    mimeType: 'application/pdf',
+  })
   async function aSubject(title = 'Calculus'): Promise<string> {
     return (await h.svc.createSubject({ title })).id
   }
@@ -1533,9 +1605,9 @@ describe('mod-learning-education S9 — subject vault + tags/links', () => {
 
   it('addDocument with file AND storage_ref → mutually-exclusive error', async () => {
     const sid = await aSubject()
-    await expect(
-      h.svc.addDocument(sid, { title: 'x', file: aFile(), storage_ref: 'r2://pre' }),
-    ).rejects.toThrow(ConflictingFileSourceError)
+    await expect(h.svc.addDocument(sid, { title: 'x', file: aFile(), storage_ref: 'r2://pre' })).rejects.toThrow(
+      ConflictingFileSourceError,
+    )
   })
 
   it('addDocument with storage_ref (pre-uploaded) → storage_ref set, no port consulted', async () => {
@@ -1610,9 +1682,7 @@ describe('mod-learning-education S9 — subject vault + tags/links', () => {
 
   it('tagEntity with an unresolved tagId → TagNotFound (the blind-insert guard)', async () => {
     const sid = await aSubject()
-    await expect(h.svc.tagEntity({ entityType: 'subject', entityId: sid }, 'ghost-tag')).rejects.toThrow(
-      TagNotFound,
-    )
+    await expect(h.svc.tagEntity({ entityType: 'subject', entityId: sid }, 'ghost-tag')).rejects.toThrow(TagNotFound)
   })
 
   it('tagEntity with an off-Education entityType → UnknownEntityType (from spaces)', async () => {

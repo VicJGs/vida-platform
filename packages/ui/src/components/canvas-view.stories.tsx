@@ -27,10 +27,22 @@ const RealizedMeter = ({ done, total }: { done: number; total: number }) => {
   return (
     <View gap="$8" maxWidth={340} marginTop="$4">
       <View flexDirection="row" justifyContent="space-between" alignItems="baseline">
-        <Text fontFamily="$body" fontSize="$caption" fontWeight="700" letterSpacing={1} color="$colorTextMuted" style={{ textTransform: 'uppercase' }}>
+        <Text
+          fontFamily="$body"
+          fontSize="$caption"
+          fontWeight="700"
+          letterSpacing={1}
+          color="$colorTextMuted"
+          style={{ textTransform: 'uppercase' }}
+        >
           Realized
         </Text>
-        <Text fontFamily="$body" fontSize="$small" color="$colorTextPrimary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+        <Text
+          fontFamily="$body"
+          fontSize="$small"
+          color="$colorTextPrimary"
+          style={{ fontVariantNumeric: 'tabular-nums' }}
+        >
           {done} / {total}
         </Text>
       </View>
@@ -89,8 +101,19 @@ const monthNav = (
 // ── EC-1/EC-3: vision-board composition (masthead + progress + hosted GalleryView) ───────────────────────
 export const VisionBoard: Story = {
   render: () => (
-    <CanvasView eyebrow="Vision board" title="Before I die" progress={<RealizedMeter done={3} total={7} />} aria-label="Dreams vision board">
-      <GalleryView<Dream> items={DREAMS} getKey={(d) => d.id} renderItem={dreamTile} minTileWidth={220} aria-label="Dreams" />
+    <CanvasView
+      eyebrow="Vision board"
+      title="Before I die"
+      progress={<RealizedMeter done={3} total={7} />}
+      aria-label="Dreams vision board"
+    >
+      <GalleryView<Dream>
+        items={DREAMS}
+        getKey={(d) => d.id}
+        renderItem={dreamTile}
+        minTileWidth={220}
+        aria-label="Dreams"
+      />
     </CanvasView>
   ),
 }
@@ -98,8 +121,22 @@ export const VisionBoard: Story = {
 // ── EC-5/EC-6: calendar-grid composition (user-named title + read-only month nav + hosted CalendarView) ──
 export const CalendarGrid: Story = {
   render: () => (
-    <CanvasView eyebrow="Calendar" title="My calendar" meta="Today · Mon 10 Aug" actions={monthNav} aria-label="Month calendar">
-      <CalendarView<Evt> items={EVENTS} getDate={(e) => e.on} getKey={(e) => e.id} renderItem={evtChip} month={MONTH} today={TODAY} aria-label="Month" />
+    <CanvasView
+      eyebrow="Calendar"
+      title="My calendar"
+      meta="Today · Mon 10 Aug"
+      actions={monthNav}
+      aria-label="Month calendar"
+    >
+      <CalendarView<Evt>
+        items={EVENTS}
+        getDate={(e) => e.on}
+        getKey={(e) => e.id}
+        renderItem={evtChip}
+        month={MONTH}
+        today={TODAY}
+        aria-label="Month"
+      />
     </CanvasView>
   ),
 }
@@ -112,7 +149,14 @@ export const EmptyTeaching: Story = {
       title="Before I die"
       state="empty"
       empty={
-        <EmptyState title="Your vision board is a blank page" action={<Button intent="primary" size="sm" onPress={() => {}}>Add a dream</Button>}>
+        <EmptyState
+          title="Your vision board is a blank page"
+          action={
+            <Button intent="primary" size="sm" onPress={() => {}}>
+              Add a dream
+            </Button>
+          }
+        >
           Pin the things you want to do, see, or become.
         </EmptyState>
       }
@@ -126,8 +170,24 @@ export const EmptyTeaching: Story = {
 // ── EC-4: empty DELEGATE (no override → the hosted renderer's own empty shows; calendar keeps its grid) ───
 export const EmptyDelegate: Story = {
   render: () => (
-    <CanvasView eyebrow="Calendar" title="My calendar" meta="Nothing scheduled" actions={monthNav} state="empty" aria-label="Month calendar">
-      <CalendarView<Evt> items={[]} getDate={(e) => e.on} getKey={(e) => e.id} renderItem={evtChip} month={MONTH} today={TODAY} state="empty" aria-label="Month" />
+    <CanvasView
+      eyebrow="Calendar"
+      title="My calendar"
+      meta="Nothing scheduled"
+      actions={monthNav}
+      state="empty"
+      aria-label="Month calendar"
+    >
+      <CalendarView<Evt>
+        items={[]}
+        getDate={(e) => e.on}
+        getKey={(e) => e.id}
+        renderItem={evtChip}
+        month={MONTH}
+        today={TODAY}
+        state="empty"
+        aria-label="Month"
+      />
     </CanvasView>
   ),
 }

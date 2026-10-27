@@ -18,4 +18,5 @@ Mirrors `services/journals/service.ts:43-119` exactly (factory-object, hoisted c
 - [ ] **B10 — gates.** `pnpm --filter @vida/core typecheck` 0; `pnpm --filter @vida/core test` green (≥965 + new); ESLint 0. Then Verification Gate → code-review → /critique → §XXIX currency (birth `docs/modules/notes/current-{spec,business-rules}.md`, D6) → commit.
 
 ## On divergence
+
 Any step wrong/missing/out-of-order → STOP → §XXVIII deviation protocol (critique → preflight → Approval → re-impl); update this plan + the task `## Build Steps` + Route History. No silent drift.

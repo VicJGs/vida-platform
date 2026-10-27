@@ -306,7 +306,9 @@ describe.each(['America/Sao_Paulo', 'Asia/Tokyo'])('calendar-derive in %s', (tz)
         timeFormat: '24h',
       })
       const todayCol = days.find((d) => d.kind === 'today')
-      const titles = (todayCol?.entries ?? []).map((e) => (e.kind === 'item' ? `${e.item.title}${e.item.slipping ? '!' : ''}` : 'open'))
+      const titles = (todayCol?.entries ?? []).map((e) =>
+        e.kind === 'item' ? `${e.item.title}${e.item.slipping ? '!' : ''}` : 'open',
+      )
       expect(titles).toEqual(['Call Ana']) // carried, plain; the purposes review is NOT carried; the future nudge stays future
       expect(days.find((d) => d.date === '2026-10-10')?.plan?.map((p) => p.title)).toEqual(['Lunch Bia'])
       // the past column stays a record — the carried nudge is not drawn there

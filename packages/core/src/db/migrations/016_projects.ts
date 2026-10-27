@@ -74,9 +74,7 @@ export const migration016Projects: Migration = {
       )
     `)
     // partial index (SQL-migration-only — not in the Drizzle mirror)
-    await driver.run(
-      `CREATE INDEX idx_projects_status ON projects(status) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_projects_status ON projects(status) WHERE deleted_at IS NULL`)
 
     // --- milestones: milestone (nestable via parent_milestone_id) ---
     await driver.run(`

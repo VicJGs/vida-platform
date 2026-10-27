@@ -17,6 +17,7 @@ markRead(id: string): Promise<NotificationView>
 markAllRead(): Promise<number>
 archive(id: string): Promise<NotificationView>
 ```
+
 `NotificationView = @vida/types Notification` — `{ id, type(6-enum), title, message, action_url, action_label,
 entity_type, entity_id, is_read, read_at, is_archived, archived_at, expires_at, delivered_*, metadata,
 effect_event_id, created_at }`. `[FACT: service.ts:169-191; types.ts:69]`
@@ -47,6 +48,7 @@ toAttentionModel(rows: NotificationView[], now: number): {
 ```
 
 ## Boundary rules
+
 - **Tamagui-only** render primitives in `@vida/ui`; the `@vida/core`↔`@vida/ui` crossing (service types →
   Tamagui props) lives in `apps/web` (the collection-adapter precedent, BR-2). `[FACT: apps/web/src/collection/CLAUDE.md]`
 - **No new `@vida/ui` primitive unless reusable** — the notification row/spine composes shipped primitives;

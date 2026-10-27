@@ -6,12 +6,7 @@
 // the lifecycle-transition ENGINE and effect FIRING are deferred (AR-7 / later).
 // ============================================================================
 
-import type {
-  EffectType,
-  SessionStatus,
-  SessionSubType,
-  SessionPurpose,
-} from '@vida/types'
+import type { EffectType, SessionStatus, SessionSubType, SessionPurpose } from '@vida/types'
 
 /** A legal lifecycle move for a sub-type (dim3). Stored as a declaration; the
  *  engine that enforces it is deferred. */

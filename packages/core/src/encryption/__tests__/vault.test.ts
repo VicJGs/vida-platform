@@ -326,8 +326,8 @@ describe('hashContent', () => {
 describe('zeroKey', () => {
   it('zeroes all bytes in the buffer', () => {
     const key = generateAccountKey()
-    expect(key.some(b => b !== 0)).toBe(true) // not all zeros before
+    expect(key.some((b) => b !== 0)).toBe(true) // not all zeros before
     zeroKey(key)
-    expect(key.every(b => b === 0)).toBe(true) // all zeros after
+    expect(key.every((b) => b === 0)).toBe(true) // all zeros after
   })
 })

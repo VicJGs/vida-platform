@@ -10,12 +10,7 @@
 // are M2 — these ports swap for Preferences-backed impls with no signature change.
 // ============================================================================
 
-import type {
-  FxRatePort,
-  RecurringModePort,
-  PersistedAggregatesPort,
-  ManagedCategoryPort,
-} from './types'
+import type { FxRatePort, RecurringModePort, PersistedAggregatesPort, ManagedCategoryPort } from './types'
 
 /** M1 default FX port — in-memory, device-side (ZK-1: never server-fetched). Settable in-process/tests;
  *  a rate that was never set reads null → the caller raises FxRateMissingError (no silent 1:1). */

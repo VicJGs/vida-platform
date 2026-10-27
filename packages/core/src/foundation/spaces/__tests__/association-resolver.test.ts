@@ -17,11 +17,7 @@ import { migrate } from '../../../db/migrations/runner'
 import { initVault } from '../../../encryption/vault'
 import { createTaggableTypeRegistry } from '../registry'
 import { createSpacesService, type SpacesService } from '../service'
-import {
-  createAssociationResolver,
-  type AssociationResolver,
-  type AssociationResult,
-} from '../association-resolver'
+import { createAssociationResolver, type AssociationResolver, type AssociationResult } from '../association-resolver'
 import { UnknownEntityType } from '../types'
 
 function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
@@ -43,7 +39,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -84,20 +83,18 @@ describe('AssociationResolver — shape (unified vs separate)', () => {
     await svc.tagEntity(tag.id, 'page', 'p1') // p1 carries #work
     await svc.createLink('p1', 'note', 'n1', 'see also') // p1 → note n1
 
-    const sep = (await resolver.resolveAssociations(
-      { entityType: 'page', entityId: 'p1' },
-      'separate',
-    )) as Extract<AssociationResult, { mode: 'separate' }>
+    const sep = (await resolver.resolveAssociations({ entityType: 'page', entityId: 'p1' }, 'separate')) as Extract<
+      AssociationResult,
+      { mode: 'separate' }
+    >
     expect(sep.mode).toBe('separate')
     expect(sep.tags).toEqual([{ kind: 'tag', tagId: tag.id }])
-    expect(sep.links).toEqual([
-      { kind: 'link', target: { entityType: 'note', entityId: 'n1' }, context: 'see also' },
-    ])
+    expect(sep.links).toEqual([{ kind: 'link', target: { entityType: 'note', entityId: 'n1' }, context: 'see also' }])
 
-    const uni = (await resolver.resolveAssociations(
-      { entityType: 'page', entityId: 'p1' },
-      'unified',
-    )) as Extract<AssociationResult, { mode: 'unified' }>
+    const uni = (await resolver.resolveAssociations({ entityType: 'page', entityId: 'p1' }, 'unified')) as Extract<
+      AssociationResult,
+      { mode: 'unified' }
+    >
     expect(uni.mode).toBe('unified')
     expect(uni.associations).toHaveLength(2)
     expect(uni.associations.map((a) => a.kind).sort()).toEqual(['link', 'tag'])
@@ -113,10 +110,10 @@ describe('AssociationResolver — behavioral (INV-2 / BR-4: no blur, no dedup)',
     await svc.tagEntity(tag.id, 'page', 'p1') // p1 carries the tag
     await svc.createLink('p1', 'tag', tag.id, null) // p1 also LINKS TO the tag entity (same id)
 
-    const uni = (await resolver.resolveAssociations(
-      { entityType: 'page', entityId: 'p1' },
-      'unified',
-    )) as Extract<AssociationResult, { mode: 'unified' }>
+    const uni = (await resolver.resolveAssociations({ entityType: 'page', entityId: 'p1' }, 'unified')) as Extract<
+      AssociationResult,
+      { mode: 'unified' }
+    >
 
     // No dedup: both edges present, semantically distinct despite the shared id.
     expect(uni.associations).toHaveLength(2)
@@ -168,10 +165,10 @@ describe('AssociationResolver — partiality (INV-7: outgoing half only)', () =>
     const tag = await svc.createTag({ name: 'ref' })
     await svc.tagEntity(tag.id, 'note', 'n1') // tag a NOTE (never a page_id source)
 
-    const sep = (await resolver.resolveAssociations(
-      { entityType: 'note', entityId: 'n1' },
-      'separate',
-    )) as Extract<AssociationResult, { mode: 'separate' }>
+    const sep = (await resolver.resolveAssociations({ entityType: 'note', entityId: 'n1' }, 'separate')) as Extract<
+      AssociationResult,
+      { mode: 'separate' }
+    >
     expect(sep.tags).toEqual([{ kind: 'tag', tagId: tag.id }])
     expect(sep.links).toEqual([]) // entity_links is page-anchored; n1 authors none
 
@@ -205,14 +202,12 @@ describe('AssociationResolver — guards', () => {
     await svc.createLink('p1', 'note', 'nB', null)
     await svc.removeLink('p1', 'note', 'nB') // soft-delete
 
-    const sep = (await resolver.resolveAssociations(
-      { entityType: 'page', entityId: 'p1' },
-      'separate',
-    )) as Extract<AssociationResult, { mode: 'separate' }>
+    const sep = (await resolver.resolveAssociations({ entityType: 'page', entityId: 'p1' }, 'separate')) as Extract<
+      AssociationResult,
+      { mode: 'separate' }
+    >
     expect(sep.tags).toEqual([{ kind: 'tag', tagId: t1.id }]) // t2 excluded
-    expect(sep.links).toEqual([
-      { kind: 'link', target: { entityType: 'note', entityId: 'nA' }, context: null },
-    ]) // nB excluded
+    expect(sep.links).toEqual([{ kind: 'link', target: { entityType: 'note', entityId: 'nA' }, context: null }]) // nB excluded
 
     await driver.close()
   })

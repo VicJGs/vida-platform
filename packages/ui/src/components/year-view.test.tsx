@@ -31,7 +31,10 @@ const year = (props: Partial<React.ComponentProps<typeof YearView>> = {}) => (
 )
 // atomic class for a given style prefix — jsdom resolves no CSS vars, so compare to a reference element (lineHeight recipe)
 const cls = (el: Element | null, prefix: string) =>
-  (el?.getAttribute('class')?.split(/\s+/) ?? []).filter((c) => c.startsWith(prefix)).sort().join(' ')
+  (el?.getAttribute('class')?.split(/\s+/) ?? [])
+    .filter((c) => c.startsWith(prefix))
+    .sort()
+    .join(' ')
 
 describe('YearView', () => {
   it('a named group of 12 month tables, Jan→Dec, each named "<Month> <year>"', () => {
@@ -101,9 +104,15 @@ describe('YearView', () => {
     const { container } = renderUI(
       <>
         {year()}
-        <Text data-ref="sub" fontFamily="$display" fontSize="$subheading" lineHeight="$subheading">ref</Text>
-        <Text data-ref="accent" color="$colorBrandEmphasis">ref</Text>
-        <Text data-ref="primary" color="$colorTextPrimary">ref</Text>
+        <Text data-ref="sub" fontFamily="$display" fontSize="$subheading" lineHeight="$subheading">
+          ref
+        </Text>
+        <Text data-ref="accent" color="$colorBrandEmphasis">
+          ref
+        </Text>
+        <Text data-ref="primary" color="$colorTextPrimary">
+          ref
+        </Text>
       </>,
     )
     const accentCol = cls(container.querySelector('[data-ref="accent"]'), '_col-')
@@ -181,7 +190,9 @@ describe('YearView', () => {
   })
 
   it('empty: the designed year grid (no dots) + sr status; buttons stay', () => {
-    const { getByRole, getAllByRole, container } = renderUI(year({ density: [], state: 'empty', onPickMonth: () => {} }))
+    const { getByRole, getAllByRole, container } = renderUI(
+      year({ density: [], state: 'empty', onPickMonth: () => {} }),
+    )
     expect(getAllByRole('table')).toHaveLength(12)
     expect(getByRole('status').textContent).toBe('No activity this year.')
     expect(container.querySelectorAll('.vida-year-dot')).toHaveLength(0)

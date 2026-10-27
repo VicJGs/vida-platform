@@ -198,9 +198,7 @@ function ActiveHud({ source, port, compact }: { source: HudSource; port: HudSess
           intent="ghost"
           size="sm"
           aria-label={clock.frozen ? 'Resume session' : 'Pause session'}
-          leading={
-            clock.frozen ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />
-          }
+          leading={clock.frozen ? <Play size={14} aria-hidden="true" /> : <Pause size={14} aria-hidden="true" />}
           onPress={() => {
             void (clock.frozen ? port.resumeFocus(source.sessionId) : port.pauseFocus(source.sessionId))
           }}

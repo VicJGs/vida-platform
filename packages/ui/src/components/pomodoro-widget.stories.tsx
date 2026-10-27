@@ -15,7 +15,13 @@ import { PomodoroWidget, type PomodoroPhase } from './pomodoro-widget'
 
 const PHASES: PomodoroPhase[] = ['focus', 'short-break', 'long-break']
 
-type PlaygroundArgs = { phase: PomodoroPhase; durationSec: number; autoStart: boolean; label: string; progress: 'bar' | 'ring' }
+type PlaygroundArgs = {
+  phase: PomodoroPhase
+  durationSec: number
+  autoStart: boolean
+  label: string
+  progress: 'bar' | 'ring'
+}
 const meta: Meta<PlaygroundArgs> = {
   title: 'Platform Views/Pomodoro',
   argTypes: {
@@ -53,10 +59,24 @@ export const ProgressForms: Story = {
   render: () => (
     <View flexDirection="row" gap={32} flexWrap="wrap">
       <View width={260}>
-        <PomodoroWidget durationMs={60_000} phase="focus" label="Linear bar" autoStart progress="bar" aria-label="Pomodoro bar" />
+        <PomodoroWidget
+          durationMs={60_000}
+          phase="focus"
+          label="Linear bar"
+          autoStart
+          progress="bar"
+          aria-label="Pomodoro bar"
+        />
       </View>
       <View width={260}>
-        <PomodoroWidget durationMs={60_000} phase="focus" label="Progress ring" autoStart progress="ring" aria-label="Pomodoro ring" />
+        <PomodoroWidget
+          durationMs={60_000}
+          phase="focus"
+          label="Progress ring"
+          autoStart
+          progress="ring"
+          aria-label="Pomodoro ring"
+        />
       </View>
     </View>
   ),
@@ -68,7 +88,11 @@ export const Phases: Story = {
     <View flexDirection="row" gap={24} flexWrap="wrap">
       {PHASES.map((p) => (
         <View key={p} width={260}>
-          <PomodoroWidget durationMs={(p === 'focus' ? 25 : p === 'short-break' ? 5 : 15) * 60 * 1000} phase={p} aria-label="Pomodoro" />
+          <PomodoroWidget
+            durationMs={(p === 'focus' ? 25 : p === 'short-break' ? 5 : 15) * 60 * 1000}
+            phase={p}
+            aria-label="Pomodoro"
+          />
         </View>
       ))}
     </View>

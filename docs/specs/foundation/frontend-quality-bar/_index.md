@@ -17,7 +17,7 @@
 ## 0. How this bar is used
 
 Every surface harvested in G2 is audited against this document with the **3-lens** test, then passed through the
-**Visual Gate** as the final input (docs don't hold all intent — the flow *notices* gaps):
+**Visual Gate** as the final input (docs don't hold all intent — the flow _notices_ gaps):
 
 - **WRONG** — contradicts a standard or a decision in this bar (an off-grid layout, a state outside the 8-state
   machine, copy that overclaims ZK, a non-themeable hard-coded palette, a capability reachable only one way).
@@ -33,7 +33,7 @@ Every surface harvested in G2 is audited against this document with the **3-lens
 
 The global `STANDARDS.md` domains govern unchanged: **design** (I–V, X–XII) · **components** (VI–VIII) ·
 **motion** (IX) · **engineering** (XIII–XVIII) · **process** (XIX–XXX). Pin: **WCAG 2.1 → 2.2 AA** (POUR). The
-additions below are *only* what this re-plan adds on top.
+additions below are _only_ what this re-plan adds on top.
 
 ---
 
@@ -41,10 +41,10 @@ additions below are *only* what this re-plan adds on top.
 
 1. **Voice & microcopy** — Vida's voice: **plain · calm · honest · warm · yours · sentence-case** (P6/F1).
 2. **Copy honesty** — overclaims → staged-honest · blames → teaches the fix · dead-end → anti-lost. **Never claim
-   zero-knowledge *sync* before M3** (M1.0 = local-first, on-device, encrypted at rest). (P6/F2, onboarding copy-honesty contract.)
+   zero-knowledge _sync_ before M3** (M1.0 = local-first, on-device, encrypted at rest). (P6/F2, onboarding copy-honesty contract.)
 3. **Localization** — ship **English + pt-BR in M1**; i18n-ready architecture (externalized strings; locale-aware
    dates/numbers/currency via `locale`/`number_format`/`time_format`; logical-property layout so RTL is possible later). (P6/F5)
-4. **IA / surfacing** — **≥2 reachable paths per capability**: a **hard floor** (1-path feature *fails* the G4
+4. **IA / surfacing** — **≥2 reachable paths per capability**: a **hard floor** (1-path feature _fails_ the G4
    coverage gate) + a **soft signal** above it. Reach via dock · ⌘K · contextual/`[[link]]` · (M1.1) Spaces. (P5/E1)
 5. **Gestalt & cross-module coherence** — delivered structurally by the **archetype catalog** (§4): surfaces compose
    from a small set of shells + renderers, so consistency can't drift. (P6/F3-F4)
@@ -63,14 +63,14 @@ additions below are *only* what this re-plan adds on top.
 The Surface-plane vision captured with Victor. Every surface must honour these.
 
 **P1 — Identity & Feel.** Metaphor = **a book / living journal**. Voice = **editorial**. Identity is **themeable** —
-three user-chosen presets: *The Reader* · *The Editorial* · *The Quiet Desk*. **Density is user-controlled**.
-**Light is primary.** **Default = The Editorial + calm density** (cold-start). *(Implication: the token arch must
-support N swappable theme families incl. font-family — ds-2/ds-4.)*
+three user-chosen presets: _The Reader_ · _The Editorial_ · _The Quiet Desk_. **Density is user-controlled**.
+**Light is primary.** **Default = The Editorial + calm density** (cold-start). _(Implication: the token arch must
+support N swappable theme families incl. font-family — ds-2/ds-4.)_
 
 **P2 — Space & Motion.** Transition is **user-selectable** (page-turn · cross-fade · slide · none/instant). Motion
 **voice = soft & organic** (one OS signature). **Settle, not spinner**; `None` = truly invisible; slow ops show
-honest progress. *(Build watch: organic is upper-budget + overshoot → scale down / interrupt on rapid nav;
-reduced-motion strips the spring.)*
+honest progress. _(Build watch: organic is upper-budget + overshoot → scale down / interrupt on rapid nav;
+reduced-motion strips the spring.)_
 
 **P3 — The Day / Home.** Home arrangement is a **user choice** (Journal-first / Dashboard-first). Four regions:
 **① schedule (timed) · ② stats glance+gateway · ③ day-actions (must/can) · ④ quick-actions**. Momentum
@@ -81,7 +81,7 @@ renders **both** precise-timed and dayparted items.
 **P4 — Trust & Reversibility.** The sync indicator is the entry to a **Sync & Activity Log** (this device's change
 log + multi-device compare when synced), with **user-controlled presentation** (chip · `/sync` page · on-change ·
 hidden). **Undo by default** (soft-delete → undo toast + Trash restore); **hard confirm only for the irreversible**.
-Copy is **stage-honest** (M1 local-first vs M3 ZK). *(M1: local-only honest; multi-device compare = M3+.)*
+Copy is **stage-honest** (M1 local-first vs M3 ZK). _(M1: local-only honest; multi-device compare = M3+.)_
 
 **P5 — Discover & Own.** **≥2 reachable paths** (hard floor + soft signal). Cold-start = **teaching-invitation empty
 states** (default) + **optional guided setup**. Personalization at **three grains** — ① configure · ② compose ·
@@ -89,8 +89,8 @@ states** (default) + **optional guided setup**. Personalization at **three grain
 **data-driven help**, all **ZK-local**. **Preference fields** (reconcile vs `user_preferences`, ADR-002 §5.17): **net-new** = theme-preset · motion ·
 Home arrangement · sync-indicator visibility · Feature-Atlas toggle · module rename; **extend existing (⚠ INTENDED)**
 = density (`compact_mode`/`font_size` :3524-3525) · default-landing (`default_dashboard_view` :3534); **already ships,
-no change** = notification quiet-hours (`quiet_hours_*` :3549-3551). *(Core captured set = 5: theme · density · motion ·
-Home arrangement · sync visibility; Atlas-toggle + module-rename come from the F3 capture.)*
+no change** = notification quiet-hours (`quiet_hours_*` :3549-3551). _(Core captured set = 5: theme · density · motion ·
+Home arrangement · sync visibility; Atlas-toggle + module-rename come from the F3 capture.)_
 
 **P6 — Voice & Coherence.** The voice principles (above) + honest copy + the **archetype catalog** as the coherence
 lever + **en/pt-BR**.
@@ -107,10 +107,10 @@ together on any side; size to contents in 2–3 columns / 1–4 rows; viewport-e
 system/account — the **6 documented global-bar surfaces** (Home · Calendar · ⌘K search · Notifications · Settings ·
 Graph `[shell-layout.md:34; information-architecture.md:102-107]`) **redistribute across Bar 1 / Bar 2 / ⌘K, none
 dropped** (the `/sync` surface is net-new vs those six) **+ a `Spaces:` scope selector** (all Spaces +
-*None*) that **globally scopes the OS** to a Space; a dedicated **Spaces page** exists. **Bar 2** = content (modules by
+_None_) that **globally scopes the OS** to a Space; a dedicated **Spaces page** exists. **Bar 2** = content (modules by
 default, or the user's choice). **⌘K is the spine** ("jump anywhere · do anything · search, from any screen"); the
-shell reflows (dock drawer→rail→sidebar; Spaces→⌘K on mobile). *(Refines the documented "Spaces bar" strip → scope
-selector + page: owed as an ADR-006/shell-layout amendment.)*
+shell reflows (dock drawer→rail→sidebar; Spaces→⌘K on mobile). _(Refines the documented "Spaces bar" strip → scope
+selector + page: owed as an ADR-006/shell-layout amendment.)_
 
 **4.2 Composition.** A page is an **`EditorDocument` of blocks** — **11 standard + 11 integration** blocks. An
 **entity surface = a Layout facet** (Title · bio · summary · dashboard · views/content) **+ an optional Editor facet**
@@ -122,7 +122,7 @@ the layout mode is **free-reorder or tabbed sections**. Built from **blocks + wi
 **4.3 Portability.** Two primitives, deliberately separate: a **classic View** (filter × layout × group; one pattern;
 read-only lens; ADR-007; `space_id` null = global & cloneable; provider-read) **vs** a **Capability block** (the
 **mixture** — combined patterns, interactive; ADR-008; declares `render_targets {inline, standalone}`, placed per
-instance). *The mix lives in the capability — classic views stay simple (resolves the combinable-layouts seam).*
+instance). _The mix lives in the capability — classic views stay simple (resolves the combinable-layouts seam)._
 **Spaces** = `{ root tag · Views · enabled Blocks · name }`; `enabled_blocks` (palette/menu) ≠ `block_instances`
 (placements); **user-authored capabilities** are in the vision (sandboxed + permission-enveloped); **Templates** are
 portable seed bundles that **fork on instantiate**. The composition engine **generalizes to every surface** (Home,
@@ -136,7 +136,7 @@ Calendar) · **Flow / Session** · **System** (Settings · inbox · ⌘K).
 **4.5 Flow / Session.** A **deliverable-per-stage page**: entity title + summary · the current **stage** · the
 **deliverable + a description of what it should be** · **attach** (document / photo / audio / file) · **mark-done or
 require proof**. Session **types are open/extensible** (study · class · focus · reading · practice · workout · work ·
-review · + user-made like *assessment*). A **persistent timer HUD** follows the user across the OS. Sessions **log to
+review · + user-made like _assessment_). A **persistent timer HUD** follows the user across the OS. Sessions **log to
 the entity via the effect rail** (`log_time` → `task_time_logs`, measurement signals, xp). Grounded on `deliverable_note`
 pages + `note_attachments` + the ADR-004 effect rail; the **staged-deliverable structure is a design-intent extension**
 assembling existing primitives (no new plumbing).

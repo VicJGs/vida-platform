@@ -5,6 +5,7 @@
 > `docs/specs/components/ds-1-token-pipeline/_index.md`. **No-Guessing:** `[FACT: src]` / `[INTENT]` (owed).
 
 ## Invariants the pipeline upholds
+
 1. **[FACT] B1 — Single source.** Every emitted value (CSS var, Tamagui token, theme key) traces to exactly one
    seed entry; no value authored twice; no duplicate path across layers. `[design.md §II; build-tokens.mjs checkLayers]`
 2. **[FACT] B2 — Three-layer indirection, never skipped.** primitive = literal; semantic references primitive only;
@@ -25,7 +26,7 @@
 8. **[FACT] B8 — 4pt grid, `space.*` only (DS-2).** every primitive `space.*` is an integer multiple of 4; build
    fails loud otherwise. Radius (`full:9999`), size, zIndex, line-heights, aux are exempt. `[design.md §IV; checkLayers; vitest B8]`
 9. **[FACT] B9 — Aux-namespace routing (DS-2; shadow typed export UI-1).** `fontFamily/fontSize/fontWeight/lineHeight/
-   letterSpacing/shadow` are NOT createTokens categories → routed to CSS + a typed export, **skipped** in
+letterSpacing/shadow` are NOT createTokens categories → routed to CSS + a typed export, **skipped** in
    `tokens.ts`/`themes.ts` (incl. aux-referencing semantics); never trip B3. Per-namespace destinations: typography →
    CSS + `fonts.ts`; **shadow → CSS + `shadow.ts`** (the typed `shadow` const of box-shadow literals — added by UI-1
    Card, the first shadow consumer, DEF-U5-e; an aux namespace earns a typed export the moment a TS consumer needs it,
@@ -43,39 +44,43 @@
     `[motion.md §IX; build-tokens.mjs MOTION/AUX; vitest B11 + fonts-isolation + css-vars presence]`
 12. **[FACT] B12 — Motion contract, documented + component-gate-enforced (DS-3).** Two rules travel with the motion
     foundation but are **not** build-enforced at the token layer (no component code here): (a) **reduced-motion** —
-    every animation ships a `prefers-reduced-motion: reduce` alternative that is an *instant state change* (not the
+    every animation ships a `prefers-reduced-motion: reduce` alternative that is an _instant state change_ (not the
     absence of motion; if it communicates state, the reduced path communicates it another way); (b) **safe
     properties only** — animate `transform`/`opacity`/`clip-path` only, never `color`/`background`/`box-shadow`/
-    `border`/`width`/`height`/`top-left-right-bottom`/`margin`/`padding`. Enforced at the component gate (DS-5/UI-*);
+    `border`/`width`/`height`/`top-left-right-bottom`/`margin`/`padding`. Enforced at the component gate (DS-5/UI-\*);
     the themes layer-doc is B12's enforcement artifact. `[motion.md §IX]`
     **Two triggers (preferences-rescope R4, 2026-10-26):** motion reduces on the OS query **or** the in-app preference
     (`<html data-vida-motion="reduce">`, written by `UIProvider`). Every CSS gate is emitted by
     `packages/ui/src/internal/reduced-motion-css.ts` `reducedMotionCss()` (the `@media` rule + the attribute twin, one
     declaration body); JS gates read `useReducedMotion()` (context OR OS). `[reduced-motion-css.ts; use-reduced-motion.ts;
-    reduced-motion-css.test.ts guard]`
+reduced-motion-css.test.ts guard]`
 
 ## Rules established by DS-1 (IMPLEMENTED 2026-07-26)
+
 - **[NEW]** design.md §II three-layer architecture is now **enforced mechanically** by the build (B2), not by review
-  convention — a layer-skip cannot ship. This is the design-gate "three-layer" item passing *by construction*.
+  convention — a layer-skip cannot ship. This is the design-gate "three-layer" item passing _by construction_.
 - **[NEW]** design.md §XII CSS-var naming is **enforced** by the CSS formatter (`--<path-with-dashes>`).
 - **[NEW]** DS-1 ⊥ DS-4: the Tamagui token/theme modules typecheck **standalone** (no `tamagui.config.ts`), so the
   pipeline is not circularly dependent on the app config DS-4 builds. `[FACT: typecheck green]`
 
 ## Rules established by DS-2 (IMPLEMENTED 2026-08-03)
+
 - **[DONE]** Token **values** authored code-first (B6) + **parallel dark** (B7) + **4pt grid enforced** (B8) +
   **aux routing** (B9). ⚠ values are a provisional placeholder palette, not brand ([[ds-2-palette-is-provisional-placeholder]]).
 - **[DONE]** Approved via the **Frontend Visual Gate** (`docs/specs/foundation/frontend-visual-gate.md`) — its first run.
 
 ## Rules established by DS-3 (IMPLEMENTED 2026-08-03)
+
 - **[DONE]** Motion primitives (B11) — `duration` (instant 0/fast 150/moderate 250/slow 400, unitless ms) +
   `easing` (out/in/inOut cubic-beziers + linear) added as a **third aux consumer**: `AUX` factored into
   `TYPOGRAPHY`→`fonts.ts` · `shadow`→CSS · `MOTION`→`motion.ts` (leak-proof by set membership, closed the
   fonts↔motion collision by construction). @vida/ui 26/26 (20 DS-2 + 6 DS-3), root typecheck 10/10.
 - **[DONE]** Motion contract (B12) recorded — reduced-motion + safe-property obligations documented for the
-  component gate (DS-5/UI-*); the render preview demos animate transform+opacity only + honor reduced-motion.
+  component gate (DS-5/UI-\*); the render preview demos animate transform+opacity only + honor reduced-motion.
 - **[DONE]** Approved via the **Frontend Visual Gate** — its second run (motion demos: 4 durations × 4 easings).
 
 ## Rules established by DS-4 (IMPLEMENTED 2026-08-03)
+
 - **[DONE]** `packages/ui/src/tamagui.config.ts` — `createTamagui` composes the generated outputs (B13, no
   hand-authored values): `createTokens` + two `createFont` (body/display, role-keyed + `$true` default) + light/dark
   themes + `createAnimations`. `declare module '@tamagui/core'` augmentation lives in an ambient `tamagui.d.ts`
@@ -92,6 +97,7 @@
   dependency on `variables.css`; the unitless-unit concern dissolves.
 
 ## Rules established by fe-codec-theme S1 (IMPLEMENTED 2026-10-02)
+
 - **[NEW] B-codec-1 — N preset families via per-preset overlays (generalizes B7).** The pipeline emits **4 preset
   families** (editorial · reader · quietDesk · **game** — the motivating manhwa-"System" register, fe-gamification G0
   LIF-181: cool-violet accent + slate neutral + geometric sans voice; AA-verified both modes) **× light/dark = 8
@@ -113,11 +119,12 @@
   P1 specimen ([[ds-2-palette-is-provisional-placeholder]] still applies — a brand pass refines VALUES, re-runs the B10 matrix).
 
 ## Rules established by fe-codec-theme S2 (IMPLEMENTED 2026-10-02)
+
 - **[NEW] B-codec-2 — per-preset font-family rides a CSS-var seam (fonts are global in Tamagui, like density).**
   `@tamagui/core@2.6.2` bakes a STATIC `font_<key>` class whose `font-family` comes from `createFont` at config time —
   there is **no per-theme/scope font hook** (`@tamagui/web getSplitStyles.cjs:288/687`, the DEF-U8-h class for fonts).
   So `createFont` registers **2 var-driven keys** (`body`/`display`) with `family: var(--vida-font-<role>, <editorial
-  fallback>)`; the **3 preset families are 3 CSS-var VALUE SETS**, not 3 configs — editorial = the var fallback (renders
+fallback>)`; the **3 preset families are 3 CSS-var VALUE SETS**, not 3 configs — editorial = the var fallback (renders
   with no provider), the provider (S3) sets `--vida-font-body/display` per preset on the theme root (same CSS layer as
   density). `[tamagui.config.ts bodyFont/displayFont; tamagui.config.test.ts fe-codec S2]`
 - **[DONE]** `createTamagui({ themes: {...themes} })` — all 66 generated themes registered via namespace-spread (no
@@ -156,12 +163,12 @@ harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all
 - **[NEW] B-codec-6 — components read preset color via DIRECT semantic tokens, not baked component-sub-theme keys
   (STRUCTURAL §XXVIII fix, 2026-10-03).** Component sub-themes bake every key to the SCHEME base at Tamagui config-build
   time (`light_Button.backgroundPrimary → light.colorBrandEmphasis`, editorial) and never follow the active preset — and
-  Tamagui bakes theme values at config time, so an emitter-inherit (`var(--…)` theme value) is unviable. BUT a *component*
+  Tamagui bakes theme values at config time, so an emitter-inherit (`var(--…)` theme value) is unviable. BUT a _component_
   sub-theme emits only its OWN keys, so the semantic theme vars (`--colorBrandEmphasis`, `--colorSurface*`, …) still inherit
   the active preset at component scope (via the B-codec-3 `<body>` preset class). **Resolution:** the 21 preset-sensitive
   component-sub-theme-key usages (accent AND neutral) across the 10 primitives now consume the DIRECT semantic token they
   mapped to (`$colorBrandEmphasis`/`$colorBrandPrimary`/`$colorFocusRing`/`$colorSurface*`/`$colorText*`/`$colorBorderDefault`),
-  which inherit the preset. The component→semantic mapping moves from the baked *theme* layer to the *styled component*
+  which inherit the preset. The component→semantic mapping moves from the baked _theme_ layer to the _styled component_
   layer (a documented DS-5 relaxation). Preset-invariant **signal** keys (`$accentSuccess`/`$accentDanger`/`$borderError`)
   stay on the base `light_/dark_<Comp>` sub-themes (correct — signals don't change per preset). The emitter emits component
   sub-themes for the editorial base schemes ONLY (20 = 10 × light/dark); the per-preset `<mode>_<preset>_<Comp>` set (40)
@@ -170,6 +177,7 @@ harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all
   `[components/*.tsx direct-semantic; build-tokens.mjs component-subtheme loop = ['light','dark']; bug-unit docs/specs/fixes/preset-accent-component-subthemes]`
 
 ## Boundaries (what the pipeline does NOT own — owed downstream)
+
 - **[INTENT: DS-5]** component-token expansion + the white-on-brand.500 contrast caveat (buttons → brand.600) +
   semantic transition presets (enter/exit ease refinements via `enterStyle`/`exitStyle`) + `createFont`
   weight/letterSpacing key ergonomics as components firm up.

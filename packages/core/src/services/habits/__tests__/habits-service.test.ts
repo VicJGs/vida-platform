@@ -47,7 +47,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -516,7 +519,10 @@ describe('mod-habits S5 — effect fan-out + cross-module seams', () => {
     return { db: createDrizzleProxy(driver), bsql }
   }
   // A service wired to a REAL rail whose handlers record fires (idempotency is the rail's, tested for real).
-  async function withRail(register: readonly (typeof EFFECT_TYPES)[number][], onFire: (t: string, transition: string) => void) {
+  async function withRail(
+    register: readonly (typeof EFFECT_TYPES)[number][],
+    onFire: (t: string, transition: string) => void,
+  ) {
     const { db } = await freshDb()
     const registry = createEffectRegistry()
     for (const t of register) registry.register(t, async (event) => onFire(t, event.transition))
@@ -600,9 +606,18 @@ describe('mod-habits S5 — effect fan-out + cross-module seams', () => {
 
     const { db: db2 } = await freshDb()
     const associations = {
-      resolveAssociations: async () => ({ mode: 'separate' as const, tags: [{ kind: 'tag' as const, tagId: 't1' }], links: [] }),
+      resolveAssociations: async () => ({
+        mode: 'separate' as const,
+        tags: [{ kind: 'tag' as const, tagId: 't1' }],
+        links: [],
+      }),
     }
-    const svc2 = createHabitsService({ db: db2, deviceId: 'test-device', clock: () => ASOF, associations: associations as never })
+    const svc2 = createHabitsService({
+      db: db2,
+      deviceId: 'test-device',
+      clock: () => ASOF,
+      associations: associations as never,
+    })
     const hab2 = await svc2.createHabit({ name: 'B' })
     expect(await svc2.getEntityTags('habit', hab2.id)).toEqual([{ kind: 'tag', tagId: 't1' }])
   })
@@ -671,7 +686,11 @@ describe.each(['America/Sao_Paulo', 'Asia/Tokyo'])('fe-calendar S6 — getComple
   })
 
   it('a custom habit is scheduled only on its weekdays (the BR-S2-4 predicate)', async () => {
-    await h.svc.createHabit({ name: 'Run', frequency: 'custom', days_of_week: [dow('2026-10-12'), dow('2026-10-14'), dow('2026-10-16')] })
+    await h.svc.createHabit({
+      name: 'Run',
+      frequency: 'custom',
+      days_of_week: [dow('2026-10-12'), dow('2026-10-14'), dow('2026-10-16')],
+    })
     const [row] = await h.svc.getCompletionGrid(WEEK)
     expect(row.days.filter((d) => d.scheduled).map((d) => d.date)).toEqual(['2026-10-12', '2026-10-14', '2026-10-16'])
   })
@@ -680,7 +699,12 @@ describe.each(['America/Sao_Paulo', 'Asia/Tokyo'])('fe-calendar S6 — getComple
     const pushups = await h.svc.createHabit({ name: 'Pushups', frequency: 'daily', target_count: 2 })
     await h.svc.logCompletion(pushups.id, { date: '2026-10-12', count: 1 })
     await h.svc.logCompletion(pushups.id, { date: '2026-10-13', count: 2 })
-    const mondays = await h.svc.createHabit({ name: 'Plan', frequency: 'custom', days_of_week: [dow('2026-10-12')], sort_order: 1 })
+    const mondays = await h.svc.createHabit({
+      name: 'Plan',
+      frequency: 'custom',
+      days_of_week: [dow('2026-10-12')],
+      sort_order: 1,
+    })
     await h.svc.logCompletion(mondays.id, { date: '2026-10-13' }) // Tuesday — off-schedule
     const grid = await h.svc.getCompletionGrid(WEEK)
     const p = grid.find((r) => r.habit.id === pushups.id)!

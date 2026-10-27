@@ -1,6 +1,6 @@
 <!-- CURRENT-BUSINESS-RULES · module: notifications · living invariants (§XXIX) · never lags the code -->
 
-# Notifications — CURRENT BUSINESS RULES  (`@vida/core` `services/notifications`)
+# Notifications — CURRENT BUSINESS RULES (`@vida/core` `services/notifications`)
 
 > The invariants the code enforces, promoted per slice from the slice PLANs. Inherits the CORE constitution
 > (ZK-1/2/3, LF-1/2/3, INT-1). Born at S1 (LIF-132, #53). Source rules: `docs/features/notifications/business-rules.md`
@@ -30,7 +30,7 @@
   `title`/`message`/`action_label`/`metadata` are `[E]`; the `[E]` set activates at M3/DB-5, zero signature
   change. `[code: service.ts repo config; [[m10-repos-use-empty-encryptedfields-seam]]]`
 - **BR-NT-S1-10 (DB-11 reconcile)** — the `@vida/types Notification` interface carries `delivered_in_app/push/
-  email` (boolean), `metadata` (string|null), `effect_event_id` (string|null), matching the DB-4 row.
+email` (boolean), `metadata` (string|null), `effect_event_id` (string|null), matching the DB-4 row.
   `[code: packages/types/src/common.ts]`
 
 ## Shipped invariants (as of S2)

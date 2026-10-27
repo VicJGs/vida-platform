@@ -9,8 +9,10 @@ Slice contract: docs/features/notes-and-pages/delivery/{slice-map,seam-contract,
 Builds ON S1–S3. Wires the hub's two hard delegation boundaries (AR-6 writes / AR-8 reads).
 
 ## 1. Identity
+
 S4 completes `NotesService`: the entity-link **facade** (delegating to AR-6/AR-8), entity-tag **reads**, and the
 merged `getBacklinks`. Notes composes, never re-implements the substrate.
+
 - **What it is:** `createEntityLink`/`removeEntityLink` (→ AR-6 `SpacesService`), `getEntityLinksFrom`/`getBacklinks`
   (→ AR-8 `BacklinkResolver`), `getTagsForEntity`/`getEntitiesByTag` (read-only `entity_tags` repo).
 - **What it is NOT:** tag WRITES (NOT-28 — ② calls `spaces.tagEntity` directly; not a notes facade); the page+entity
@@ -18,6 +20,7 @@ merged `getBacklinks`. Notes composes, never re-implements the substrate.
 - **Rows:** NOT-20(entity-link half) · 22 · 23 · 24(service half) · 25 · 26 · 27 · 28(delegated-out).
 
 ## 2. Business Rules
+
 - **BR-S4-1 (createEntityLink validates with the NOTES error, then delegates):** `createEntityLink` calls the S1
   `assertRegistered(entityType)` FIRST → notes' `UnregisteredEntityTypeError` on an unregistered type (NOT-20/21), THEN
   delegates the WRITE to `deps.spaces.createLink(pageId, entityType, entityId, context ?? null)`. A pure passthrough is
@@ -43,6 +46,7 @@ UNCERTAIN hardcoded page-type set for zero correctness gain. Simpler + correct. 
 (NOT-53 page/note/journal) is uncertain] — supersedes F2's conditional; flagged for Approval 1.
 
 ## 3. Contract (appended to `NotesService`)
+
 ```ts
 createEntityLink(pageId: string, entityType: string, entityId: string, context?: string): Promise<EntityLinkRow> // NOT-22
 removeEntityLink(pageId: string, entityType: string, entityId: string): Promise<void>                            // NOT-23
@@ -51,9 +55,11 @@ getBacklinks(entityType: string, entityId: string): Promise<{ pageLinks: PageLin
 getTagsForEntity(entityType: string, entityId: string): Promise<EntityTagRow[]>                                   // NOT-26
 getEntitiesByTag(tagId: string): Promise<EntityTagRow[]>                                                          // NOT-27
 ```
+
 Types `EntityLinkRow`/`EntityTagRow` from `../../db/schema/foundation/spaces`. No net-new error (reuses `UnregisteredEntityTypeError`). No net-new validator.
 
 ## 4. Acceptance
+
 - [ ] `NotesService` gains the 6 S4 methods; `EntityLinkRow`/`EntityTagRow`/`entityTags` imported; barrel updated (export `EntityLinkRow`/`EntityTagRow` if consumers need them — else internal).
 - [ ] `createEntityLink`: unregistered `entity_type` → notes' `UnregisteredEntityTypeError` (BR-S4-1); registered → delegates to `spaces.createLink`, returns the AR-6 `EntityLinkRow`; idempotent behavior is AR-6's (not re-implemented).
 - [ ] `removeEntityLink` → `spaces.removeLink`; `getEntityLinksFrom` → `backlinks.getLinksFrom`.
@@ -63,6 +69,7 @@ Types `EntityLinkRow`/`EntityTagRow` from `../../db/schema/foundation/spaces`. N
 - [ ] **Verification Gate (live store):** createEntityLink registered→row + unregistered→UnregisteredEntityTypeError; the link appears in `getEntityLinksFrom` + `getBacklinks.entityLinks`; getBacklinks merges page-links (page target) + entity-links; tag via `spaces.tagEntity` then `getTagsForEntity`/`getEntitiesByTag` read it; removeEntityLink drops it.
 
 ## 5. Implementation Prompt
+
 1. `types.ts` — append the 6 method sigs to `NotesService`; import `EntityLinkRow`, `EntityTagRow` from `../../db/schema/foundation/spaces`.
 2. `service.ts` — import `entityTags` + `EntityLinkRow`/`EntityTagRow`; add `entityTagRepo = createRepository(db, entityTags, {deviceId, encryptedFields:[], softDelete:true})` (D-S4-1). Destructure `spaces, backlinks` from deps (now used).
 3. `createEntityLink`: `assertRegistered(entityType)` (BR-S4-1) then `return spaces.createLink(pageId, entityType, entityId, context ?? null)`. `removeEntityLink`: `return spaces.removeLink(pageId, entityType, entityId)`.
@@ -71,9 +78,11 @@ Types `EntityLinkRow`/`EntityTagRow` from `../../db/schema/foundation/spaces`. N
 6. Barrel + tests + gates (§4).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - D-S4-1 (entity_tags read repo) + D-S4-2 (getBacklinks unconditional page-link, refines F2): leans stated; confirm at Approval 1. None blocking.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change                              |
+| ---------- | ------------------------ | ----------------------------------- |
 | 2026-09-19 | mod-notes-and-pages (S4) | initial draft — gate-1, final slice |

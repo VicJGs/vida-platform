@@ -48,7 +48,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -63,10 +66,7 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
 }
 
 async function tableExists(driver: SqliteDriver, name: string): Promise<boolean> {
-  const rows = await driver.values(
-    `SELECT name FROM sqlite_master WHERE type='table' AND name=?`,
-    [name],
-  )
+  const rows = await driver.values(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`, [name])
   return rows.length > 0
 }
 

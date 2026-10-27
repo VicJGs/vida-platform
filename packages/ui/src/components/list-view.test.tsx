@@ -79,9 +79,7 @@ describe('ListView', () => {
 
   it('success with empty items self-heals to the empty render (role="status")', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getByRole, queryByRole } = renderUI(
-      <ListView items={[]} getKey={key} renderItem={item} state="success" />,
-    )
+    const { getByRole, queryByRole } = renderUI(<ListView items={[]} getKey={key} renderItem={item} state="success" />)
     expect(getByRole('status')).not.toBeNull()
     expect(queryByRole('list')).toBeNull()
     warn.mockRestore()

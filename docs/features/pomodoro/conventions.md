@@ -1,16 +1,17 @@
 <!-- Conventions — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences L3497-3500 · note.ts L58-64 · ADR-004 §3.2 · Sessions conventions/SS-11 · Tasks TK-5 · CLAUDE.md Conventions · docs/intake/pomodoro.md -->
 
-# Conventions — Pomodoro  (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
+# Conventions — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 
 > This capability is **INTENDED** (v2 = schema + config only, 0 logic). These conventions govern how it gets
 > built and flag the FACT-base landmines so the build doesn't recreate a standalone-timer or Notes-owned model.
 
 ## How to build here
+
 - **Build it as a thin runtime OVER Sessions, not a service beside it.** A timer is a `focus` Session's
   runtime — call Sessions `createSession`/the `focus` `SessionTypeDef`; do not stand up a parallel Pomodoro
   service that owns entities or writes to other modules. `[INTENT PD-1; FACT ADR-004]`
 - **Attach to `session_id`, never to a task/note directly.** The task/habit/workout link lives on the
-  *session*; the timer only knows its `session_id`. Never re-introduce the polymorphic `entity_type`. `[INTENT PD-1]`
+  _session_; the timer only knows its `session_id`. Never re-introduce the polymorphic `entity_type`. `[INTENT PD-1]`
 - **The `/pomodoro` block is a lens.** It lists focus-enabled sessions and links a page's analytics to one —
   read/launch only. It must not create or own a timer entity. `[INTENT PD-2]`
 - **Read config from Preferences; never hard-code 25/5/15/×4 or duplicate it.** `pomodoro_*` +
@@ -27,6 +28,7 @@
   per-platform detail is a dedicated design-pass — don't fabricate view behaviour here. `[INTENT G3, ⚠ design-pass]`
 
 ## Naming & layout
+
 - The runtime concept is `pomodoro`; the Session sub-type it runs is `focus` (keep them distinct —
   `pomodoro` is NOT a `sub_type`, per SS-1). `[FACT: Sessions SS-1]`
 - Interval `type ∈ {focus, short_break, long_break}`; `status ∈ {running, paused, completed, cancelled}` —
@@ -36,6 +38,7 @@
   timer state is structural). `[FACT: CLAUDE.md Conventions; ADR-002 L1151 zero-E]`
 
 ## Landmines / local "never do"
+
 - **The v2 surface is a stub — never cite it as behaviour.** `pomodoro-service.ts`, `pomodoro-block.ts`,
   `pomodoro-widget.tsx` are **0 lines**. There is no timer engine yet; docs describe INTENDED. `[FACT: wc -l = 0]`
 - **Don't treat Pomodoro as a Notes-owned entity (post-reframe).** SS-11 + Notes docs still say the timer is a
@@ -45,12 +48,13 @@
   own docs for findability, not its own module boundary. `[INTENT G0]`
 - **Don't write `actual_minutes` from Pomodoro.** Time is one ledger (`task_time_logs`, TK-5) written via the
   Session `log_time` effect. A second counter is the exact double-source bug the rule kills. `[FACT: TK-5]`
-- **Don't skip pause accounting.** v2's status-only `paused` loses the paused *duration*; real focus =
+- **Don't skip pause accounting.** v2's status-only `paused` loses the paused _duration_; real focus =
   elapsed − paused (PD-5). Restore `total_pause_seconds`. `[FACT: v1 had it, v2 dropped it]`
 - **Don't couple Focus Mode to one module.** It renders per `sub_type`; hard-wiring it to Tasks (or Health)
   breaks the "one runtime, N faces" model. `[INTENT G3]`
 
 ## Completion checklist
+
 - [x] patterns in use (INTENDED, marked) · [x] naming & layout · [x] landmines (standalone-timer / Notes-owned
-  / double-ledger traps) · [x] [FACT]/[INTENT] on each claim
-</content>
+      / double-ledger traps) · [x] [FACT]/[INTENT] on each claim
+      </content>

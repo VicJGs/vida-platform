@@ -5,7 +5,7 @@
 > Kept current with `packages/core/src/foundation/capability/`.
 
 - **BR-1 (definition registry).** The registry holds capability **definitions** (`id · kind · render_targets ·
-  bindings · effects · config_schema · terminal_states`); shipped defs are **code-registered** (in-memory), user defs
+bindings · effects · config_schema · terminal_states`); shipped defs are **code-registered** (in-memory), user defs
   **persisted** + synced. The semantic `id` is the `def_id` UNIQUE business key (the row PK is a generated UUIDv7 —
   `repository.create()` always generates it; mirrors `session_type_registry.sub_type`). [ADR-008 §3.4]
 - **BR-2 (render targets — CB2).** `render_targets` ⊆ `{inline, standalone}` (`RENDER_TARGET`, FIXED); else `InvalidRenderTarget`.
@@ -24,9 +24,11 @@
   **execution sandbox + authoring DSL/UI** remain deferred (→ `#116 CAP-authoring`). [ADR-010 §3.2]
 
 ## Enforcement invariants (XS-capability #31 · ADR-010 — the enforce tier)
+
 Promoted from `docs/specs/foundation/xs-capability/service/invariants.md`. The decision tier over the AR-7
 `capability_grants` structure — DECIDES, does not execute.
-- **BR-9 (fail-closed default).** Every unknown/missing input resolves to *deny* (`no_grant`, `not_in_envelope`,
+
+- **BR-9 (fail-closed default).** Every unknown/missing input resolves to _deny_ (`no_grant`, `not_in_envelope`,
   `envelope_changed`, …); "allow" is only an explicit positive match, and an unrecognized action denies (never crashes).
   [ADR-010 §3.2/§3.6]
 - **BR-10 (shipped bypass).** Only `is_user_type=true` defs are enforced; shipped/trusted defs are always allowed and
@@ -51,10 +53,11 @@ Promoted from `docs/specs/foundation/xs-capability/service/invariants.md`. The d
   the `sensitive` action as part of its guarded-write path — this is what makes BR-13's union hold. [ADR-010 §3.3.2]
 
 **NOT enforced here (delegated):** no-double-count/idempotency (ADR-004 §3.2.5) · sandbox isolation + resource limits +
-untrusted-mark (#116) · egress mediation/audit + media encryption (#43 / EN-1/EN-2). Effect *firing* is #32; the
+untrusted-mark (#116) · egress mediation/audit + media encryption (#43 / EN-1/EN-2). Effect _firing_ is #32; the
 enforcer only decides `effect ∈ envelope`.
 
 ## Deferred (not in this increment — all homed, DF-12)
+
 User-code **execution sandbox + resource limits + authoring DSL/UI** → `#116 CAP-authoring` (the envelope-enforcement
 decision + grant lifecycle are BUILT at XS-capability `#31` — BR-9..17). Registry runtime (block placement · inline
 instances · TipTap re-home · BlockType union · per-Block visual) → MOD-notes / UI-3 `#29`. External per-source **layer**

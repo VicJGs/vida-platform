@@ -63,10 +63,7 @@ export function createJournalsService(deps: JournalsServiceDeps): JournalsServic
   }
 
   /** Past → the latest snapshot for the date; today / never-captured → live (BR-S3-4). */
-  async function getJournal(
-    date: string,
-    opts?: { withLiveComparative?: boolean },
-  ): Promise<JournalView> {
+  async function getJournal(date: string, opts?: { withLiveComparative?: boolean }): Promise<JournalView> {
     const rows = await repo.findWhere(eq(journalSnapshots.snapshot_date, date))
     const latest = latestByCapturedAt(rows)
     const frozen = latest ? parseSummary(latest.sections_data) : null
@@ -95,10 +92,7 @@ export function createJournalsService(deps: JournalsServiceDeps): JournalsServic
   async function buildReview(period: ReviewPeriod): Promise<ReviewData> {
     const rows = await repo.findWhere(
       // `!`: and() is typed SQL|undefined but is defined here (both operands present) — sessions/service.ts precedent.
-      and(
-        gte(journalSnapshots.snapshot_date, period.from),
-        lte(journalSnapshots.snapshot_date, period.to),
-      )!,
+      and(gte(journalSnapshots.snapshot_date, period.from), lte(journalSnapshots.snapshot_date, period.to))!,
     )
     // latest captured_at per date (IR-f), parse (skip malformed, BR-S4-6), order by date.
     const byDate = new Map<string, (typeof rows)[number]>()

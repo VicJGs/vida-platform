@@ -76,7 +76,10 @@ describe('toView', () => {
   })
 
   it('keeps falsy-valid values (BR-PREF-9): week 0, compact false', () => {
-    const merged = applyUserPatch({ ...U, compact_mode: true, week_starts_on: 1 }, { compact_mode: false, week_starts_on: 0 })
+    const merged = applyUserPatch(
+      { ...U, compact_mode: true, week_starts_on: 1 },
+      { compact_mode: false, week_starts_on: 0 },
+    )
     expect(merged.compact_mode).toBe(false)
     expect(merged.week_starts_on).toBe(0)
     expect(toView(merged, N).weekStartsOn).toBe(0)

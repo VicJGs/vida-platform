@@ -61,11 +61,7 @@ import {
 import type { PomodoroType } from '@vida/types'
 import { resolveTargets, type ResolvedTarget } from '../../foundation/sessions/attachments'
 import type { SessionRegistry } from '../../foundation/sessions/registry'
-import {
-  transition,
-  InvalidTransition,
-  type TransitionResult,
-} from '../../foundation/sessions/lifecycle'
+import { transition, InvalidTransition, type TransitionResult } from '../../foundation/sessions/lifecycle'
 import type { EffectRail } from '../../foundation/effects'
 import { type TaggableTypeRegistry, UnknownEntityType } from '../../foundation/spaces'
 import {
@@ -137,11 +133,7 @@ export interface SessionsService {
   /** Reverse attachment lookup: the in_progress session of `subType` attached to `(entityType, entityId)`, or null.
    *  Read-only; the running-timer guard a consuming module (e.g. Tasks `startTimer`) needs (it cannot read
    *  `session_attachments` directly, §6). Returns the first match (the one-open-per-entity invariant is the caller's). */
-  findOpenSessionForEntity(
-    subType: string,
-    entityType: string,
-    entityId: string,
-  ): Promise<SessionRow | null>
+  findOpenSessionForEntity(subType: string, entityType: string, entityId: string): Promise<SessionRow | null>
   /** Complete a session — routes through the #32 transition engine (fires declared effects). */
   completeSession(id: string): Promise<TransitionResult>
   /** Apply any declared lifecycle event via the #32 transition engine. */
@@ -214,10 +206,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
 
   // Read the mapped extension row for a session (findWhere is soft-delete-blind,
   // but the extensions carry no deleted_at anyway). Returns null when spine-only.
-  async function readExtension(
-    subType: string,
-    sessionId: string,
-  ): Promise<FocusSessionRow | StudySessionRow | null> {
+  async function readExtension(subType: string, sessionId: string): Promise<FocusSessionRow | StudySessionRow | null> {
     const kind = extKindFor(subType)
     if (kind === 'focus') {
       const rows = await focusRepo.findWhere(eq(focusSessions.session_id, sessionId))
@@ -405,12 +394,8 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       // S2 — entity_type must be a registered polymorphic target (BR-6); mirrors spaces assertRegistered.
       if (!entityRegistry.isRegistered(entityType)) throw new UnknownEntityType(entityType)
       if (level !== 'type' && level !== 'instance') throw new InvalidSessionInput('level')
-      const existing = await attachmentRepo.findWhere(
-        eq(sessionAttachments.session_id, sessionId),
-      )
-      const match = existing.find(
-        (r) => r.entity_type === entityType && r.entity_id === entityId && r.level === level,
-      )
+      const existing = await attachmentRepo.findWhere(eq(sessionAttachments.session_id, sessionId))
+      const match = existing.find((r) => r.entity_type === entityType && r.entity_id === entityId && r.level === level)
       if (match) return match // idempotent no-op (no deleted_at → no revive path, IR-7)
       return attachmentRepo.create({
         session_id: sessionId,
@@ -432,10 +417,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     async findOpenSessionForEntity(subType, entityType, entityId) {
       // attachments carry no deleted_at; the spine does (findById applies isNull(deleted_at)).
       const atts = await attachmentRepo.findWhere(
-        and(
-          eq(sessionAttachments.entity_type, entityType),
-          eq(sessionAttachments.entity_id, entityId),
-        )!,
+        and(eq(sessionAttachments.entity_type, entityType), eq(sessionAttachments.entity_id, entityId))!,
       )
       for (const a of atts) {
         const s = await sessionRepo.findById(a.session_id) // null if soft-deleted / missing
@@ -474,12 +456,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
         extension: { kind: 'focus', type: 'focus', status: 'running' },
       })
       if (input.attach) {
-        await service.attach(
-          created.session.id,
-          input.attach.entityType,
-          input.attach.entityId,
-          input.attach.level,
-        )
+        await service.attach(created.session.id, input.attach.entityType, input.attach.entityId, input.attach.level)
       }
       const row = await loadFocusRow(created.session.id)
       if (!row) throw new SessionMissing(created.session.id)
@@ -526,10 +503,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       const spine = await sessionRepo.findById(row.session_id)
       const now = Date.now()
       // Fold an open pause, then real focus = run wall-time − total pauses (PD-5; per-interval cut is S7).
-      const openPause =
-        row.status === 'paused' && row.paused_at != null
-          ? Math.floor((now - row.paused_at) / 1000)
-          : 0
+      const openPause = row.status === 'paused' && row.paused_at != null ? Math.floor((now - row.paused_at) / 1000) : 0
       const totalPause = row.total_pause_seconds + openPause
       const startedAt = spine?.started_at ?? row.created_at
       const duration = Math.max(0, Math.floor((now - startedAt) / 1000) - totalPause)
@@ -728,7 +702,8 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       if (!parsed.success) throw new InvalidSessionInput(parsed.error.issues[0]?.path.join('.') || 'input')
       const v = parsed.data
       if (v.sub_type != null) await registry.get(v.sub_type) // SessionTypeNotFound before any write (the createSession gate)
-      if (v.target_type != null && !entityRegistry.isRegistered(v.target_type)) throw new UnknownEntityType(v.target_type)
+      if (v.target_type != null && !entityRegistry.isRegistered(v.target_type))
+        throw new UnknownEntityType(v.target_type)
       return plannedBlocksRepo.create({
         scheduled_start: v.scheduled_start,
         scheduled_end: v.scheduled_end ?? null,
@@ -774,10 +749,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
       const items: DueItem[] = []
       // Own planned_blocks in range (findWhere is soft-delete-blind → filter deleted_at explicitly).
       const blocks = await plannedBlocksRepo.findWhere(
-        and(
-          gte(plannedBlocks.scheduled_start, range.start),
-          lte(plannedBlocks.scheduled_start, range.end),
-        )!,
+        and(gte(plannedBlocks.scheduled_start, range.start), lte(plannedBlocks.scheduled_start, range.end))!,
       )
       for (const b of blocks) {
         if (b.deleted_at != null) continue
@@ -809,11 +781,7 @@ export function createSessionsService(deps: SessionsServiceDeps): SessionsServic
     async getSessionAnalytics(range) {
       // Session log in range, soft-deleted excluded (findWhere is soft-delete-blind).
       const inRange = await sessionRepo.findWhere(
-        and(
-          gte(sessions.started_at, range.start),
-          lte(sessions.started_at, range.end),
-          isNull(sessions.deleted_at),
-        )!,
+        and(gte(sessions.started_at, range.start), lte(sessions.started_at, range.end), isNull(sessions.deleted_at))!,
       )
       const total = inRange.length
       const completed = inRange.filter((s) => s.status === 'completed').length

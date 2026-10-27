@@ -4,6 +4,7 @@
 completion), EC-8/EC-9 frame (responsive + AA). **Plane:** frontend. **No `@vida/ui` edit (BR-1).**
 
 ## Deliverables (`apps/web/src/onboarding/`)
+
 1. **`guided-setup-steps.ts`** (data-only) — the ordered flow model:
    - `GuidedSetupStepId = 'modules' | 'theme' | 'done'`; `GuidedSetupStepKind = 'pick' | 'complete'`.
    - `GUIDED_SETUP_STEPS: readonly {id, kind, railLabel, title, body}[]` — `modules`/`theme` = `pick`; `done` = `complete`.
@@ -33,15 +34,18 @@ completion), EC-8/EC-9 frame (responsive + AA). **Plane:** frontend. **No `@vida
    - Reduced-motion via `useReducedMotion`; motion = opacity/transform only, instant when reduced.
 
 ## a11y / rules
+
 - Not an overlay → no Escape-dismiss (OVERLAY_DISMISS out of category, the onboarding.tsx precedent). Skip is the escape.
 - Focus: each step transition → the step `<h1>` (FOCUS_CONTRACT.pageNav), keyed remount like onboarding.tsx.
 - `StepRail` is a decorative-but-labelled progress map; the accessible position is the heading + `aria-current`.
 
 ## States (EC-8/EC-9 — Visual Gate matrix)
+
 default · each step current · complete step · complete-submitting · complete-error · skip affordances present ·
 light/dark × reader/editorial/quietDesk × 375/768/1440. AA incl. warm-dark.
 
 ## Tests (vitest + Testing Library)
+
 - step model: ids/kinds/order; every copy string lintCopy-clean (0 issues).
 - `useGuidedSetup`: next/back/skipStep advance correctly; `complete` calls onComplete once (re-entrancy); reject →
   error set + not-complete; `skipAll` calls onComplete.
@@ -49,5 +53,6 @@ light/dark × reader/editorial/quietDesk × 375/768/1440. AA incl. warm-dark.
 - `GuidedSetup`: renders rail + current body + footer; Skip setup present on every step; complete step shows Enter Vida.
 
 ## Visual Gate (throwaway harness)
+
 A throwaway standalone entry mounts `GuidedSetup` with placeholder bodies; Brave via playwright-core; screenshot the
 matrix; DELETE the harness after (real mount = S4). gate-1 self-critique + g2 code-review before SHIP.

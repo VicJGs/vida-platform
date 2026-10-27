@@ -7,6 +7,7 @@ This document describes the zero-knowledge security architecture of the Vida Pla
 **Governs:** All encryption and authentication code.
 
 **Code it documents (already implemented and tested):**
+
 - `packages/core/src/encryption/vault.ts` — Key derivation, encryption/decryption, key chain creation
 - `packages/core/src/encryption/key-management.ts` — Vault key lifecycle, auto-lock, key rotation prep
 - `packages/core/src/encryption/srp.ts` — SRP client protocol
@@ -21,6 +22,7 @@ This document describes the zero-knowledge security architecture of the Vida Pla
 The Vida Platform is **zero-knowledge**: the server never receives, stores, processes, or has access to plaintext user content. The server is a blind relay that routes opaque encrypted blobs between a user's devices.
 
 **What the server stores:**
+
 - SRP salt and verifier (NOT the password)
 - Encrypted sync blobs (opaque ciphertext — the server cannot read them)
 - Encrypted Yjs snapshots (opaque ciphertext)
@@ -28,6 +30,7 @@ The Vida Platform is **zero-knowledge**: the server never receives, stores, proc
 - Metadata: table names, row IDs (UUIDv7), sync versions, timestamps, device IDs, operation types
 
 **What the server never sees:**
+
 - User passwords (SRP ensures this)
 - Master keys, account keys, or vault keys
 - Any decrypted field value (title, description, amount, name, content, etc.)
@@ -111,33 +114,33 @@ The client device is the **trust boundary**. When the vault is unlocked, the dev
 
 ### Adversary Matrix
 
-| Adversary | What They Can Do | What They Cannot Do |
-|-----------|-----------------|-------------------|
-| **Malicious server operator** | Read metadata (table names, row IDs, timestamps, blob sizes). Count entities. Observe activity patterns. | Read any user content. Decrypt blobs. Know what entities contain. See FK relationships. |
-| **Network attacker (MITM)** | Capture encrypted sync blobs (if TLS is bypassed). | Decrypt blobs without vault key. Replay old blobs (version + timestamp rejection). |
-| **Thief (device locked)** | Possess the physical device and the encrypted SQLite file. | Read the SQLite file (SQLCipher L1). Derive the vault key without password + account key. |
-| **Thief (device unlocked)** | Access all decrypted data in the running app. Copy the SQLite file (can decrypt if vault key is still in memory). | Access data on other devices (revoking the device + changing password invalidates the old vault key). |
-| **Attacker with password only** | Nothing useful — vault key requires password + account key. | Derive vault key. Authenticate (SRP requires both). Decrypt any data. |
-| **Attacker with server DB dump** | Read SRP salts and verifiers. | Derive passwords from verifiers. Authenticate as the user. Decrypt sync blobs. |
+| Adversary                        | What They Can Do                                                                                                  | What They Cannot Do                                                                                   |
+| -------------------------------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **Malicious server operator**    | Read metadata (table names, row IDs, timestamps, blob sizes). Count entities. Observe activity patterns.          | Read any user content. Decrypt blobs. Know what entities contain. See FK relationships.               |
+| **Network attacker (MITM)**      | Capture encrypted sync blobs (if TLS is bypassed).                                                                | Decrypt blobs without vault key. Replay old blobs (version + timestamp rejection).                    |
+| **Thief (device locked)**        | Possess the physical device and the encrypted SQLite file.                                                        | Read the SQLite file (SQLCipher L1). Derive the vault key without password + account key.             |
+| **Thief (device unlocked)**      | Access all decrypted data in the running app. Copy the SQLite file (can decrypt if vault key is still in memory). | Access data on other devices (revoking the device + changing password invalidates the old vault key). |
+| **Attacker with password only**  | Nothing useful — vault key requires password + account key.                                                       | Derive vault key. Authenticate (SRP requires both). Decrypt any data.                                 |
+| **Attacker with server DB dump** | Read SRP salts and verifiers.                                                                                     | Derive passwords from verifiers. Authenticate as the user. Decrypt sync blobs.                        |
 
 ### What We Explicitly Do NOT Defend Against
 
-| Scenario | Why |
-|----------|-----|
-| **Keylogger on the device** | If malware captures the master password as the user types it, the attacker can derive the vault key (if they also have the account key). Device security is the user's responsibility. |
-| **User shares their account key** | The account key is the second factor of vault key derivation. If the user gives it away along with their password, all data is accessible. |
-| **Physical access to an unlocked device** | When the app is open and the vault is unlocked, the vault key is in memory. An attacker with physical access can read all data through the app's UI. Auto-lock mitigates this. |
-| **Metadata analysis** | The server knows table names, row counts, activity timestamps, and device IDs. An adversary can infer how active a user is, what types of entities they create, and when they work. This is inherent to any sync system and is documented for transparency. |
+| Scenario                                  | Why                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Keylogger on the device**               | If malware captures the master password as the user types it, the attacker can derive the vault key (if they also have the account key). Device security is the user's responsibility.                                                                      |
+| **User shares their account key**         | The account key is the second factor of vault key derivation. If the user gives it away along with their password, all data is accessible.                                                                                                                  |
+| **Physical access to an unlocked device** | When the app is open and the vault is unlocked, the vault key is in memory. An attacker with physical access can read all data through the app's UI. Auto-lock mitigates this.                                                                              |
+| **Metadata analysis**                     | The server knows table names, row counts, activity timestamps, and device IDs. An adversary can infer how active a user is, what types of entities they create, and when they work. This is inherent to any sync system and is documented for transparency. |
 
 ---
 
 ## 4. Three-Layer Encryption Model
 
-| Layer | What It Protects | When Active | Implementation |
-|-------|-----------------|-------------|---------------|
-| **L1 — SQLCipher** | Entire `.db` file on disk | At rest (device locked, app closed) | SQLCipher transparent encryption. Key derived from vault key. 256K KDF iterations, HMAC_SHA512, 4KB page size, fully encrypted (no plaintext header). |
+| Layer                | What It Protects                 | When Active                                                                                    | Implementation                                                                                                                                         |
+| -------------------- | -------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **L1 — SQLCipher**   | Entire `.db` file on disk        | At rest (device locked, app closed)                                                            | SQLCipher transparent encryption. Key derived from vault key. 256K KDF iterations, HMAC_SHA512, 4KB page size, fully encrypted (no plaintext header).  |
 | **L2 — Field-level** | Individual columns inside SQLite | At rest AND in memory (fields stay encrypted in SQLite until explicitly decrypted for display) | libsodium `crypto_secretbox` (XChaCha20-Poly1305). Random 24-byte nonce per encryption. Ciphertext stored as base64 TEXT in format `nonce:ciphertext`. |
-| **L3 — Sync blob** | Rows in transit and on server | In transit + server at rest | Full row → LZ4 compress → libsodium `crypto_secretbox` → base64 blob. Server stores only opaque blobs. |
+| **L3 — Sync blob**   | Rows in transit and on server    | In transit + server at rest                                                                    | Full row → LZ4 compress → libsodium `crypto_secretbox` → base64 blob. Server stores only opaque blobs.                                                 |
 
 ### How the Layers Interact
 
@@ -187,13 +190,13 @@ Vault Key (32 bytes)  <────────┘
 
 ### Key Properties
 
-| Key | Size | Persistence | Derivation |
-|-----|------|-------------|------------|
-| **Master Password** | Variable | User's memory only | User-chosen |
-| **Salt** | 16 bytes | Stored on server alongside SRP verifier | `generateSalt()` — random |
-| **Account Key** | 32 bytes | Shown once at registration as recovery key. User stores it offline. | `generateAccountKey()` — random |
-| **Master Key** | 32 bytes | **Never persisted.** Derived in memory, used to compute vault key, then immediately wiped. | `deriveMasterKey(password, salt)` — Argon2id |
-| **Vault Key** | 32 bytes | Cached in memory while vault is unlocked. Wiped on lock. | `deriveVaultKey(masterKey, accountKey)` — BLAKE2b-256 |
+| Key                 | Size     | Persistence                                                                                | Derivation                                            |
+| ------------------- | -------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
+| **Master Password** | Variable | User's memory only                                                                         | User-chosen                                           |
+| **Salt**            | 16 bytes | Stored on server alongside SRP verifier                                                    | `generateSalt()` — random                             |
+| **Account Key**     | 32 bytes | Shown once at registration as recovery key. User stores it offline.                        | `generateAccountKey()` — random                       |
+| **Master Key**      | 32 bytes | **Never persisted.** Derived in memory, used to compute vault key, then immediately wiped. | `deriveMasterKey(password, salt)` — Argon2id          |
+| **Vault Key**       | 32 bytes | Cached in memory while vault is unlocked. Wiped on lock.                                   | `deriveVaultKey(masterKey, accountKey)` — BLAKE2b-256 |
 
 ### Code References
 
@@ -262,13 +265,13 @@ Vault Key (32 bytes)  <────────┘
 
 Managed by `packages/core/src/encryption/key-management.ts`:
 
-| State | Vault Key | DB Access | FTS Search |
-|-------|-----------|-----------|------------|
-| `locked` | null (wiped) | Blocked | Blocked |
-| `unlocking` | Deriving... | Blocked | Blocked |
-| `unlocked` (db not ready) | In memory | Opening... | Blocked |
-| `unlocked` (fts not ready) | In memory | Available | Rebuilding... |
-| `unlocked` (fully ready) | In memory | Available | Available |
+| State                      | Vault Key    | DB Access  | FTS Search    |
+| -------------------------- | ------------ | ---------- | ------------- |
+| `locked`                   | null (wiped) | Blocked    | Blocked       |
+| `unlocking`                | Deriving...  | Blocked    | Blocked       |
+| `unlocked` (db not ready)  | In memory    | Opening... | Blocked       |
+| `unlocked` (fts not ready) | In memory    | Available  | Rebuilding... |
+| `unlocked` (fully ready)   | In memory    | Available  | Available     |
 
 ### Auto-Lock Timer
 
@@ -357,6 +360,7 @@ Client                                          Server
 ```
 
 **Code references:**
+
 - `generateLoginEphemeral()` — Client key pair generation
 - `createChallengeRequest(email, ephemeral)` — Package for server
 - `deriveClientSession(email, salt, password, ephemeral, serverPublic)` — Compute shared key + proof
@@ -364,17 +368,18 @@ Client                                          Server
 - `verifyServerProof(session, serverProof)` — Mutual authentication
 
 **Convenience wrappers:**
+
 - `startLogin(email)` — Generates ephemeral, returns it
 - `completeLogin(email, password, ephemeral, serverSalt, serverPublic)` — Derives session, returns key + proof
 
 ### What SRP Guarantees
 
-| Property | Explanation |
-|----------|-------------|
-| **Zero-knowledge** | The server never receives the password in any form. It verifies knowledge of the password via the SRP proof. |
-| **Mutual authentication** | The server proves to the client that it has the correct verifier (M2). A fake server cannot complete the handshake. |
+| Property                          | Explanation                                                                                                            |
+| --------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| **Zero-knowledge**                | The server never receives the password in any form. It verifies knowledge of the password via the SRP proof.           |
+| **Mutual authentication**         | The server proves to the client that it has the correct verifier (M2). A fake server cannot complete the handshake.    |
 | **No password equivalent stored** | The SRP verifier cannot be used to impersonate the client. Even with a full server DB dump, an attacker cannot log in. |
-| **Forward secrecy per session** | Each login generates fresh ephemeral keys. Compromising one session doesn't reveal others. |
+| **Forward secrecy per session**   | Each login generates fresh ephemeral keys. Compromising one session doesn't reveal others.                             |
 
 ---
 
@@ -383,21 +388,21 @@ Client                                          Server
 Every column in every table is classified as **P (Plaintext)** or **E (Encrypted)**.
 
 > **Scope of this section (2026-07-25).** The **classification rules** and the **substrate field-classes** below are
-> current and authoritative at the *class* level. The **per-table breakdown** (§8 "Per-Table Breakdown") is a snapshot
+> current and authoritative at the _class_ level. The **per-table breakdown** (§8 "Per-Table Breakdown") is a snapshot
 > of the **pre-rebuild (v1) schema** and is retained for orientation only — the authoritative per-column P/E
 > classification is regenerated table-by-table by the storage rebuild (**DB-11 / ADR-016**), so retired tables still
 > listed there (`page_tags`, `pomodoro_sessions`, the `purpose_*` junctions, `xp_history`, `flashcard_*`) are v1
 > As-is, not the go-forward model. This section does **not** re-tabulate the rebuilt schema (that is schema-level work
 > owned by DB-11). **Encryption itself is a deferred hardening pass** (ADR-017): Phase-1.0 is features-first; the P/E
-> classification is the *target*, enforced when field-level encryption lands. §1–7 (the crypto architecture) are
+> classification is the _target_, enforced when field-level encryption lands. §1–7 (the crypto architecture) are
 > current and unaffected.
 
 ### Classification Rules
 
-| Classification | Marker | Properties | Rule |
-|---------------|--------|-----------|------|
-| **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3). | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata. |
-| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run only in the app after decrypt: aggregation via **decrypt-in-memory** (e.g. all Finance money charts); equality lookup via an **equality-only blind index** (keyed-BLAKE2b PRF in a P side column, domain-separated key per ADR-001 §Key Model); full-text via a **plaintext-fed standalone FTS5** (FTS-2, rebuilt on unlock). Never SQL over ciphertext. See ADR-002 §P/E + §5.19 (F7/D7). | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity. |
+| Classification    | Marker     | Properties                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | Rule                                                                                                                                                |
+| ----------------- | ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3).                                                                                                                                                                                                                                                                                                                                                                                                                         | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata. |
+| **E — Encrypted** | `-- [E]`   | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run only in the app after decrypt: aggregation via **decrypt-in-memory** (e.g. all Finance money charts); equality lookup via an **equality-only blind index** (keyed-BLAKE2b PRF in a P side column, domain-separated key per ADR-001 §Key Model); full-text via a **plaintext-fed standalone FTS5** (FTS-2, rebuilt on unlock). Never SQL over ciphertext. See ADR-002 §P/E + §5.19 (F7/D7). | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity.                   |
 
 ### Always Plaintext (P)
 
@@ -431,15 +436,15 @@ Every column in every table is classified as **P (Plaintext)** or **E (Encrypted
 The foundation substrates (ADRs 004–015) introduce field-classes not present in the v1 per-table breakdown below. Their
 P/E tier is stated here **at the class level** (the exhaustive per-column table is owned by DB-11):
 
-| Substrate class | Tier | Rationale |
-|-----------------|------|-----------|
-| `entity_tags` — `tag_value` / label | **E** | User-generated labels reveal interests (ADR-006). Structural columns (`entity_type`, `entity_id`, FKs) are P. |
-| `spaces` — `name` | **E** | User-named workspace. Structural columns P. |
-| `sessions` — user notes / free text on a session | **E** | Free text. Structural columns (`sub_type`, `status`, timers, counts, FKs, `effect_event_id`) are P. |
-| `contributions` — weight / structural | **P** | Weights and FKs are numeric/structural aggregates for the rollup (ADR-011); no free text. |
-| `consequence_ledger` — currency / amount / rule ref | **P** | Currency amounts here are gamification points, not financial money — numeric structural values needed to derive balances (ADR-012). Any free-text label is E. |
-| review engine — `review_events` / `method_bindings` metadata | **P** (event/metadata); **E** (item content) | Timing, ease, interval, curve params are structural; the reviewed item's content is E (see review-item row above). |
-| `views` — `name`, filter/layout config | **E** (name); **P** (structural config) | The view name is user text; the filter/layout/grouping structure is queryable config (ADR-007). |
+| Substrate class                                              | Tier                                         | Rationale                                                                                                                                                     |
+| ------------------------------------------------------------ | -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `entity_tags` — `tag_value` / label                          | **E**                                        | User-generated labels reveal interests (ADR-006). Structural columns (`entity_type`, `entity_id`, FKs) are P.                                                 |
+| `spaces` — `name`                                            | **E**                                        | User-named workspace. Structural columns P.                                                                                                                   |
+| `sessions` — user notes / free text on a session             | **E**                                        | Free text. Structural columns (`sub_type`, `status`, timers, counts, FKs, `effect_event_id`) are P.                                                           |
+| `contributions` — weight / structural                        | **P**                                        | Weights and FKs are numeric/structural aggregates for the rollup (ADR-011); no free text.                                                                     |
+| `consequence_ledger` — currency / amount / rule ref          | **P**                                        | Currency amounts here are gamification points, not financial money — numeric structural values needed to derive balances (ADR-012). Any free-text label is E. |
+| review engine — `review_events` / `method_bindings` metadata | **P** (event/metadata); **E** (item content) | Timing, ease, interval, curve params are structural; the reviewed item's content is E (see review-item row above).                                            |
+| `views` — `name`, filter/layout config                       | **E** (name); **P** (structural config)      | The view name is user text; the filter/layout/grouping structure is queryable config (ADR-007).                                                               |
 
 ### Per-Table Breakdown
 
@@ -452,21 +457,21 @@ P/E tier is stated here **at the class level** (the exhaustive per-column table 
 
 **`pages`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `parent_id` | P | PK / FK |
-| `type` | P | Filter: journal, note, task_note, etc. |
-| `title` | **E** | User-generated |
-| `content` | **E** | TipTap JSON document — core user content |
-| `entity_type`, `entity_id` | P | Polymorphic FK for queries |
-| `journal_date` | P | Calendar queries |
-| `is_favorite`, `is_archived`, `has_pomodoro` | P | Booleans for filtering |
-| `icon` | P | UI hint |
-| `cover_image` | **E** | User-chosen image URL |
-| `summary_config` | **E** | JSON config reveals which modules are active |
-| `word_count` | P | Numeric aggregate |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                        | P/E   | Rationale                                    |
+| -------------------------------------------- | ----- | -------------------------------------------- |
+| `id`, `parent_id`                            | P     | PK / FK                                      |
+| `type`                                       | P     | Filter: journal, note, task_note, etc.       |
+| `title`                                      | **E** | User-generated                               |
+| `content`                                    | **E** | TipTap JSON document — core user content     |
+| `entity_type`, `entity_id`                   | P     | Polymorphic FK for queries                   |
+| `journal_date`                               | P     | Calendar queries                             |
+| `is_favorite`, `is_archived`, `has_pomodoro` | P     | Booleans for filtering                       |
+| `icon`                                       | P     | UI hint                                      |
+| `cover_image`                                | **E** | User-chosen image URL                        |
+| `summary_config`                             | **E** | JSON config reveals which modules are active |
+| `word_count`                                 | P     | Numeric aggregate                            |
+| `created_at`, `updated_at`, `deleted_at`     | P     | Timestamps                                   |
+| `_sync_*`                                    | P     | Sync protocol                                |
 
 **`page_links`** — `context` is **E** (text snippet from user content). All FKs and timestamps are P.
 
@@ -484,18 +489,18 @@ P/E tier is stated here **at the class level** (the exhaustive per-column table 
 
 **`tasks`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `project_id`, `milestone_id`, `parent_task_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `status`, `priority`, `difficulty` | P | Enum filters |
-| `due_date` | P | Scheduling queries |
-| `estimated_minutes`, `actual_minutes` | P | Numeric aggregates |
-| `tags` | **E** | User-generated labels |
-| `sort_order` | P | Ordering |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                | P/E   | Rationale             |
+| ---------------------------------------------------- | ----- | --------------------- |
+| `id`, `project_id`, `milestone_id`, `parent_task_id` | P     | PK / FKs              |
+| `title`                                              | **E** | User-generated        |
+| `description`                                        | **E** | Free text             |
+| `status`, `priority`, `difficulty`                   | P     | Enum filters          |
+| `due_date`                                           | P     | Scheduling queries    |
+| `estimated_minutes`, `actual_minutes`                | P     | Numeric aggregates    |
+| `tags`                                               | **E** | User-generated labels |
+| `sort_order`                                         | P     | Ordering              |
+| `created_at`, `updated_at`, `deleted_at`             | P     | Timestamps            |
+| `_sync_*`                                            | P     | Sync protocol         |
 
 **`task_time_logs`** — All P (FKs, timestamps, duration — structural).
 
@@ -669,9 +674,9 @@ On first login on a new device:
 ### Device Limits
 
 | Plan | Max Devices |
-|------|-------------|
-| Free | 3 |
-| Pro | 10 |
+| ---- | ----------- |
+| Free | 3           |
+| Pro  | 10          |
 
 Exceeding the limit returns `429 Too Many Devices`.
 
@@ -687,6 +692,7 @@ When a user revokes a device (e.g., lost phone):
 6. Future auth attempts from the revoked device are rejected
 
 **What revocation does NOT do:**
+
 - Does NOT re-encrypt data (impractical for zero-knowledge — server can't re-encrypt)
 - Does NOT delete data from the revoked device (can't — it's local)
 - The revoked device still has its local SQLite with all data up to the point of revocation

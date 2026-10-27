@@ -14,22 +14,23 @@ Purposes → Targets.
 
 ## A. Dependencies (what the service COMPOSES — all built, verified on `main`)
 
-| Dep | What it provides | Signature anchor | M1 posture |
-|-----|------------------|------------------|------------|
-| `foundation/measurement` engine | the ADR-011 contract, **pure, no tables** | `normalize(NormalizeInput)→number\|null` `engine.ts:14`; `rollup(children[])→number\|null` `engine.ts:38`; `resolveProgress(stored, derive)→number\|null` `engine.ts:56`; `assertAcyclic(Binding[])→void` throws `MeasurementCycle` `engine.ts:65` | **REQUIRED** — compose, never rebuild (`measurement/CLAUDE.md`: "contributions → MOD-purposes") |
-| `MeasurementSourceRegistry` | the §3.6 derived-pull READ seam | `advertise(key, resolver)` · `query(key)→number\|null` · `has(key)` `source-registry.ts:13-19`; unadvertised key ⇒ `null` (never fabricated) `source-registry.ts:28` | **deny-safe optional** — ships EMPTY, first-consumer-pull; absent ⇒ `derived-pull` resolves `null` (the Projects precedent `projects/types.ts:33`) |
-| DB-4 schema `019_purposes` | `purposes·targets·purpose_metrics·purpose_metric_values·target_reviews·dreams` | `schema/purposes.ts:52-188`, row types `:190-203` | REQUIRED (the owned tables) |
-| DB-3 schema `007_purpose` | `values·contributions·purpose_reviews·plan_steps` | `schema/foundation/purpose.ts:22-94`, row types `:96-103` | REQUIRED (the Purpose-domain substrate, already built) |
-| `Repository` (encrypting CRUD) | table-agnostic create/update/find/softDelete | `db/repository.ts`; `createRepository(db, table, {deviceId, softDelete, encryptedFields:[]})` `projects/service.ts:85` | REQUIRED; M1.0 `encryptedFields:[]` seam ([[m10-repos-use-empty-encryptedfields-seam]]) |
-| `SpacesService` (entity_tags + entity_links WRITE) | scoped tags + reference links on purposes/targets/dreams | precedent `projects/service.ts` S6; `[[spaces-junctions-split-read-write-tagentity-blind-inserts]]` | REQUIRED from the tags/links slice (PG-18) |
-| `NotesService` (`pages` surface) | standalone notes per Value/Purpose/Target/Dream | precedent `projects/service.ts` S6 (vision/mission pages, no new PAGE_TYPE) | REQUIRED from the pages slice (PG-18) |
-| Journal registry | `summary(date)` provider + the `DueProvider.fetch` lane (`dueIn`, canonical `DueItem` `sessions/types.ts:225,235`) | `registerXJournal` precedent (gamification/knowledge/projects S9) | REQUIRED from the provider slice (PG-14) |
-| Sessions seam `{registry, service}` | register the `review` sub-type (`registry.register`) + write the session row (`service.createSession`) | `SessionRegistry` `registry.ts:44` (register/get/list) + `SessionsService.createSession` `service.ts:119` — two handles (g1 #1); `[[adr-004-3.2-defines-all-session-subtype-dimensions]]` | **REQUIRED** — reviews fire as `review` SESSIONS (PG-13 FACT); mod-sessions built ⇒ wired at M1 (g1 #2) |
-| AR-7 effect rail | `event-trigger` bindings + emit-only fan-out | `{rail, registry}` deny-safe; `projects/service.ts:68` post-commit failure-isolated pattern | **deny-safe optional** — emit-only producer, dormant at M1 |
+| Dep                                                | What it provides                                                                                                   | Signature anchor                                                                                                                                                                                                                                   | M1 posture                                                                                                                                         |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `foundation/measurement` engine                    | the ADR-011 contract, **pure, no tables**                                                                          | `normalize(NormalizeInput)→number\|null` `engine.ts:14`; `rollup(children[])→number\|null` `engine.ts:38`; `resolveProgress(stored, derive)→number\|null` `engine.ts:56`; `assertAcyclic(Binding[])→void` throws `MeasurementCycle` `engine.ts:65` | **REQUIRED** — compose, never rebuild (`measurement/CLAUDE.md`: "contributions → MOD-purposes")                                                    |
+| `MeasurementSourceRegistry`                        | the §3.6 derived-pull READ seam                                                                                    | `advertise(key, resolver)` · `query(key)→number\|null` · `has(key)` `source-registry.ts:13-19`; unadvertised key ⇒ `null` (never fabricated) `source-registry.ts:28`                                                                               | **deny-safe optional** — ships EMPTY, first-consumer-pull; absent ⇒ `derived-pull` resolves `null` (the Projects precedent `projects/types.ts:33`) |
+| DB-4 schema `019_purposes`                         | `purposes·targets·purpose_metrics·purpose_metric_values·target_reviews·dreams`                                     | `schema/purposes.ts:52-188`, row types `:190-203`                                                                                                                                                                                                  | REQUIRED (the owned tables)                                                                                                                        |
+| DB-3 schema `007_purpose`                          | `values·contributions·purpose_reviews·plan_steps`                                                                  | `schema/foundation/purpose.ts:22-94`, row types `:96-103`                                                                                                                                                                                          | REQUIRED (the Purpose-domain substrate, already built)                                                                                             |
+| `Repository` (encrypting CRUD)                     | table-agnostic create/update/find/softDelete                                                                       | `db/repository.ts`; `createRepository(db, table, {deviceId, softDelete, encryptedFields:[]})` `projects/service.ts:85`                                                                                                                             | REQUIRED; M1.0 `encryptedFields:[]` seam ([[m10-repos-use-empty-encryptedfields-seam]])                                                            |
+| `SpacesService` (entity_tags + entity_links WRITE) | scoped tags + reference links on purposes/targets/dreams                                                           | precedent `projects/service.ts` S6; `[[spaces-junctions-split-read-write-tagentity-blind-inserts]]`                                                                                                                                                | REQUIRED from the tags/links slice (PG-18)                                                                                                         |
+| `NotesService` (`pages` surface)                   | standalone notes per Value/Purpose/Target/Dream                                                                    | precedent `projects/service.ts` S6 (vision/mission pages, no new PAGE_TYPE)                                                                                                                                                                        | REQUIRED from the pages slice (PG-18)                                                                                                              |
+| Journal registry                                   | `summary(date)` provider + the `DueProvider.fetch` lane (`dueIn`, canonical `DueItem` `sessions/types.ts:225,235`) | `registerXJournal` precedent (gamification/knowledge/projects S9)                                                                                                                                                                                  | REQUIRED from the provider slice (PG-14)                                                                                                           |
+| Sessions seam `{registry, service}`                | register the `review` sub-type (`registry.register`) + write the session row (`service.createSession`)             | `SessionRegistry` `registry.ts:44` (register/get/list) + `SessionsService.createSession` `service.ts:119` — two handles (g1 #1); `[[adr-004-3.2-defines-all-session-subtype-dimensions]]`                                                          | **REQUIRED** — reviews fire as `review` SESSIONS (PG-13 FACT); mod-sessions built ⇒ wired at M1 (g1 #2)                                            |
+| AR-7 effect rail                                   | `event-trigger` bindings + emit-only fan-out                                                                       | `{rail, registry}` deny-safe; `projects/service.ts:68` post-commit failure-isolated pattern                                                                                                                                                        | **deny-safe optional** — emit-only producer, dormant at M1                                                                                         |
 
 ## B. Needs (the service surface the contract requires)
 
 From `contract.md:10-28` the `PurposeService` must expose:
+
 1. **Spine CRUD** — `createValue/Purpose/Target` + `update` + `archive(soft-delete)`; a target declares
    `measurement_kind` (+ optional `binding_mode`); all spine refs UP nullable (PG-9) `contract.md:12-14`.
 2. **`computeProgress(purpose|target): 0..1`** — derived rollup `Σ(contributor.progress × weight)/Σ weight`,
@@ -62,7 +63,7 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 - **Derive-on-read everywhere** — `resolveProgress(stored, derive)` is the single rollup entry; the override slots
   are `purposes.progress` (`schema/purposes.ts:65`), `targets.current_value` (`:86`), `dreams.progress_percentage`
   (`:179`) — all nullable (`NULL ⇒ derive`, `business-rules.md:30-33`). Return a `ProgressView {value, derived,
-  partial, unmeasured?}` struct (Projects precedent `projects/service.ts:281`).
+partial, unmeasured?}` struct (Projects precedent `projects/service.ts:281`).
 - **Deny-safe optional ports** — `measurementSources?`, `sessions?`, `effects?` guarded `if (!port) …` (M1 default);
   REQUIRED ports (`spaces`, `notes`, journal registry) wired once the slice needs them.
 - **@vida/types reconcile (DB-11)** — the enums already exist (`MEASUREMENT_KIND`/`BINDING_MODE`
@@ -72,7 +73,7 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 ## D. Implicit rules (doc-sourced, non-obvious)
 
 1. **`qualitative` with no scale = `null` (unmeasured), NEVER `0`.** The engine already enforces this
-   (`engine.ts:30` returns `null`; `rollup` *excludes* null children `engine.ts:44`) — so an un-rated goal cannot
+   (`engine.ts:30` returns `null`; `rollup` _excludes_ null children `engine.ts:44`) — so an un-rated goal cannot
    drag a parent down (ADR-011 §3.1 L44; PG-3). Surfacing it is `UnmeasuredQualitative` `contract.md:52`.
 2. **Ladder weight IS `contributions.contribution_percentage`** (0–100 int, `foundation/purpose.ts:41`) — no
    separate weight column; `NULL`/`0` ⇒ equal-weight (ADR-011 §3.3 L54).
@@ -94,6 +95,7 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 ## E. M1 / M2 boundary
 
 **Ships at M1 (this build):**
+
 - Full CRUD for all 10 tables + the derived rollup (`computeProgress`/`progress`/`ProgressView`).
 - `contributions` edge (link/unlink/reweight) + `InvalidContributor` guard against the
   `CONTRIBUTION_CONTRIBUTOR_TYPE` vocabulary `purpose.ts:5-7`.
@@ -106,6 +108,7 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 - `encryptedFields:[]` M1.0 seam (real `[E]` encryption = M3, `schema/purposes.ts:33`).
 
 **Deferred to M2 (deny-safe seams, zero-signature swap):**
+
 - Real measurement sources (net_worth ← Finance, streak ← Habits, body_weight ← Health) — advertised by those
   modules; the pull path is built, the sources are absent (ADR-011 §3.6; `measurement/CLAUDE.md`).
 - `event-trigger` **write** fan-out onto a LIVE rail — emit-only/dormant at M1 (`if (!effects) return`).
@@ -122,17 +125,17 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
   `target_value`+`current_value` but **no `baseline_value`/`is_higher_better`** (`schema/purposes.ts:74-103`); those
   live only on `purpose_metrics` (`:119-120`). This is the schema's deliberate split: a **target** leaf is a simple
   ratio when both values are set — `normalize({kind:'quantitative', current: current_value, baseline: 0, target:
-  target_value, isHigherBetter: true})` = `clamp(current/target)`; a NULL `current_value`/`target_value` ⇒ `null`
+target_value, isHigherBetter: true})` = `clamp(current/target)`; a NULL `current_value`/`target_value` ⇒ `null`
   (unmeasured, **never `?? 0`** — PG-3, g2 #4); **rich direction-aware/baselined** quantitative measurement is
   modeled via a linked `purpose_metric` (S3). `[RESOLVED: FACT schema split]`
 - **F-2 — Do reviews create `review` SESSIONS at M1? — RESOLVED: YES, honouring the corpus FACT.** PG-13 is a
   corpus `[FACT: ADR-004 SS-1]` — "reviews fire as `review` SESSIONS, not a bespoke reminder" (`business-rules.md:77-80`,
-  `contract.md:24`). My first draft demoted this to a deny-safe *optional* port (an `[INTERP]` overriding a `[FACT]`
+  `contract.md:24`). My first draft demoted this to a deny-safe _optional_ port (an `[INTERP]` overriding a `[FACT]`
   — the g1 #2 catch). **Correction:** `mod-sessions` is built + Done, so the FACT-honouring posture is a **REQUIRED
   `sessions:{registry,service}` port** wired at M1 — S7 registers the `review` sub-type (`registry.register`; SS-5
   owning-module registration — `SHIPPED_SESSION_TYPES=['focus']` only `registry.ts:26-42`; a `review` def with
   `effects:[]` passes BR-4 ⊆-envelope) then writes the session row (`service.createSession` `service.ts:119`). The
-  ledgers + the session row both persist at M1; **only the live Scheduler *firing*** (notification/surfacing) is
+  ledgers + the session row both persist at M1; **only the live Scheduler _firing_** (notification/surfacing) is
   M2. No downgrade of the FACT. `[RESOLVED: FACT PG-13/SS-1 honoured; mechanism FACT registry.ts:26-42 + SS-5]`
 - **F-3 — Does `computeProgress` need the measurement-source seam for contributor progress? — RESOLVED.**
   PG-7/conventions forbid reaching into other modules' tables. A cross-module contributor's progress comes through
@@ -152,6 +155,7 @@ Typed errors (record-not-throw where the contract says so): `CyclicBinding`, `In
 ---
 
 ### Envision Gate (EDF §3.75) — N/A
+
 Pure-backend service tier; no user-facing rendered surface (the faces are ② `fe-purposes`, separate P6). The
 §3.75 one-question test (does this introduce a novel user-facing interaction pattern?) = **NO** → Envision does
 not fire. Applied as a doc test, not a decision ([[envision-gate-firing-is-a-doc-test-not-a-human-decision]]).

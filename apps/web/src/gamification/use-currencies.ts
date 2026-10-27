@@ -71,9 +71,15 @@ function bal(earned: number, locked: number, spent: number, distributed = 0): Cu
 const SAMPLE_LINES: readonly CurrencyLine[] = [
   { def: { code: 'XP', name: 'Experience', backing_kind: 'self-granted', unit: 'xp' }, balance: bal(4120, 0, 0) },
   { def: { code: 'COIN', name: 'Allowance', backing_kind: 'self-granted', unit: 'coin' }, balance: bal(240, 50, 90) },
-  { def: { code: 'FOCUS', name: 'Focus Hours', backing_kind: 'measured-time', unit: 'min' }, balance: bal(1860, 120, 600) },
+  {
+    def: { code: 'FOCUS', name: 'Focus Hours', backing_kind: 'measured-time', unit: 'min' },
+    balance: bal(1860, 120, 600),
+  },
   { def: { code: 'DEEP', name: 'Deep Work', backing_kind: 'measured-time', unit: 'min' }, balance: bal(900, 0, 300) },
-  { def: { code: 'BRL', name: 'Reward Fund', backing_kind: 'real-money', unit: 'cents' }, balance: bal(50000, 10000, 15000) },
+  {
+    def: { code: 'BRL', name: 'Reward Fund', backing_kind: 'real-money', unit: 'cents' },
+    balance: bal(50000, 10000, 15000),
+  },
 ]
 
 // a >50 set so the Visual Gate can exercise the multi-page pager (120 currencies across the 3 kinds).
@@ -83,7 +89,11 @@ const BIG_SAMPLE: readonly CurrencyLine[] = Array.from({ length: 120 }, (_, i) =
 }))
 
 function devFlag(name: string): boolean {
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has(name)
+  )
 }
 function forcedState(): InteractionState | null {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null
@@ -93,9 +103,11 @@ function forcedState(): InteractionState | null {
 
 /** Group a page's lines into the non-empty backing-kind sections, in the canonical order. */
 function groupByKind(lines: readonly CurrencyLine[]): CurrencyGroup[] {
-  return KIND_ORDER.map((kind) => ({ kind, label: KIND_LABEL[kind], lines: lines.filter((l) => l.def.backing_kind === kind) })).filter(
-    (g) => g.lines.length > 0,
-  )
+  return KIND_ORDER.map((kind) => ({
+    kind,
+    label: KIND_LABEL[kind],
+    lines: lines.filter((l) => l.def.backing_kind === kind),
+  })).filter((g) => g.lines.length > 0)
 }
 
 export function useCurrencies(): CurrenciesData {
@@ -113,7 +125,10 @@ export function useCurrencies(): CurrenciesData {
   const pageLines = all.slice(pageIndex * PAGE_SIZE, pageIndex * PAGE_SIZE + PAGE_SIZE)
   const groups = useMemo(() => groupByKind(pageLines), [pageLines])
 
-  const state: InteractionState = forced === 'loading' || forced === 'error' ? forced : deriveInteractionState({ isPending: false, isError: false, data: all }, (d) => d.length === 0)
+  const state: InteractionState =
+    forced === 'loading' || forced === 'error'
+      ? forced
+      : deriveInteractionState({ isPending: false, isError: false, data: all }, (d) => d.length === 0)
 
   return {
     groups,
@@ -122,7 +137,12 @@ export function useCurrencies(): CurrenciesData {
     page: { index: pageIndex, size: PAGE_SIZE, count },
     setPage: setIndex,
     create: ({ name, backing_kind }) => {
-      const code = name.trim().toUpperCase().replace(/[^A-Z0-9]+/g, '_').slice(0, 12) || `CUR_${total}`
+      const code =
+        name
+          .trim()
+          .toUpperCase()
+          .replace(/[^A-Z0-9]+/g, '_')
+          .slice(0, 12) || `CUR_${total}`
       setAdded((prev) => [...prev, { def: { code, name: name.trim(), backing_kind }, balance: zeroBalance() }])
     },
   }

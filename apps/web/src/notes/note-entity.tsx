@@ -50,7 +50,6 @@ function devFlagActive(flag: string): boolean {
 // The in-memory reference store — the DEV `?sample` page and tests (the live page passes the app_state store, R2).
 const referenceModeStore = createInMemoryEntityModeStore('tabbed')
 
-
 /** A centered page-level state host (the surface owns loading/empty/error before the frame mounts). */
 function Centered({ children, role, busy }: { children: React.ReactNode; role?: 'status'; busy?: boolean }) {
   return (
@@ -178,7 +177,9 @@ export function NoteEntityView({
         <View position="absolute" top={88} right={24} zIndex={1000} gap="$12">
           <WikiLinkPicker sourcePageId={page.id} />
           {/* A sample PreviewCard demonstrates EC-11 (BSE-12 available-data); its real hover mount is ui-3. */}
-          <PreviewCard target={{ id: 's-milestone-a', type: 'milestone_note', title: 'Launch milestone', icon: null }} />
+          <PreviewCard
+            target={{ id: 's-milestone-a', type: 'milestone_note', title: 'Launch milestone', icon: null }}
+          />
         </View>
       )}
       {showTemplates && (

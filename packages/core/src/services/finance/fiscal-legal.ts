@@ -32,11 +32,7 @@ import {
   DeriveObligationsRangeSchema,
 } from '../../validators/finance'
 import type { CapabilityEnforcer, CapabilityAction } from '../../foundation/capability'
-import {
-  createPublicReferenceEngine,
-  PublicRefDenied,
-  type PublicReferenceEngine,
-} from '../../foundation/ingestion'
+import { createPublicReferenceEngine, PublicRefDenied, type PublicReferenceEngine } from '../../foundation/ingestion'
 import {
   AI_MODES,
   buildAiDisclosure,
@@ -371,9 +367,15 @@ export function createFiscalLegalService(deps: FiscalLegalServiceDeps): FiscalLe
       // the soft-delete filter, so isNull(deleted_at) is explicit — the findwhere-skips-softdelete seam).
       const [residencies, entities, obligations, accounts, assets, investments, incomeStreams, transactions] =
         await Promise.all([
-          residencyRepo.findWhere(and(eq(fiscalResidencies.jurisdiction_code, jurisdiction), isNull(fiscalResidencies.deleted_at))!),
-          legalEntityRepo.findWhere(and(eq(legalEntities.jurisdiction_code, jurisdiction), isNull(legalEntities.deleted_at))!),
-          obligationRepo.findWhere(and(eq(fiscalObligations.jurisdiction_code, jurisdiction), isNull(fiscalObligations.deleted_at))!),
+          residencyRepo.findWhere(
+            and(eq(fiscalResidencies.jurisdiction_code, jurisdiction), isNull(fiscalResidencies.deleted_at))!,
+          ),
+          legalEntityRepo.findWhere(
+            and(eq(legalEntities.jurisdiction_code, jurisdiction), isNull(legalEntities.deleted_at))!,
+          ),
+          obligationRepo.findWhere(
+            and(eq(fiscalObligations.jurisdiction_code, jurisdiction), isNull(fiscalObligations.deleted_at))!,
+          ),
           deps.finance.listAccounts(),
           deps.finance.listAssets(),
           deps.finance.listInvestments(),
@@ -382,11 +384,21 @@ export function createFiscalLegalService(deps: FiscalLegalServiceDeps): FiscalLe
         ])
       const here = (jc: string | null): boolean => jc === jurisdiction
       const moneyTouch = [
-        ...accounts.filter((a) => here(a.jurisdiction_code)).map((a) => ({ type: 'account', id: a.id, jurisdiction_code: jurisdiction })),
-        ...transactions.filter((t) => here(t.jurisdiction_code)).map((t) => ({ type: 'transaction', id: t.id, jurisdiction_code: jurisdiction })),
-        ...assets.filter((a) => here(a.jurisdiction_code)).map((a) => ({ type: 'asset', id: a.id, jurisdiction_code: jurisdiction })),
-        ...investments.filter((i) => here(i.jurisdiction_code)).map((i) => ({ type: 'investment', id: i.id, jurisdiction_code: jurisdiction })),
-        ...incomeStreams.filter((s) => here(s.jurisdiction_code)).map((s) => ({ type: 'income_stream', id: s.id, jurisdiction_code: jurisdiction })),
+        ...accounts
+          .filter((a) => here(a.jurisdiction_code))
+          .map((a) => ({ type: 'account', id: a.id, jurisdiction_code: jurisdiction })),
+        ...transactions
+          .filter((t) => here(t.jurisdiction_code))
+          .map((t) => ({ type: 'transaction', id: t.id, jurisdiction_code: jurisdiction })),
+        ...assets
+          .filter((a) => here(a.jurisdiction_code))
+          .map((a) => ({ type: 'asset', id: a.id, jurisdiction_code: jurisdiction })),
+        ...investments
+          .filter((i) => here(i.jurisdiction_code))
+          .map((i) => ({ type: 'investment', id: i.id, jurisdiction_code: jurisdiction })),
+        ...incomeStreams
+          .filter((s) => here(s.jurisdiction_code))
+          .map((s) => ({ type: 'income_stream', id: s.id, jurisdiction_code: jurisdiction })),
       ]
       return { jurisdiction_code: jurisdiction, residencies, legalEntities: entities, moneyTouch, obligations }
     },

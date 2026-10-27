@@ -43,12 +43,7 @@ import {
   type CompoundSetRow,
   type KnowledgeLabEntryRow,
 } from '../../db/schema/knowledge'
-import {
-  tags,
-  entityTags,
-  type EntityTagRow,
-  type EntityLinkRow,
-} from '../../db/schema/foundation/spaces'
+import { tags, entityTags, type EntityTagRow, type EntityLinkRow } from '../../db/schema/foundation/spaces'
 import { reviewEvents } from '../../db/schema/foundation/knowledge-review'
 import type { PageRow } from '../../db/schema/notes'
 import type { RecordReviewInput } from '../../foundation/review'
@@ -309,7 +304,8 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     if (v.parent_object_id !== undefined) dbPatch.parent_object_id = v.parent_object_id
     if (v.title !== undefined) dbPatch.title = v.title
     if (v.description !== undefined) dbPatch.description = v.description
-    if (v.key_concepts !== undefined) dbPatch.key_concepts = v.key_concepts != null ? JSON.stringify(v.key_concepts) : null
+    if (v.key_concepts !== undefined)
+      dbPatch.key_concepts = v.key_concepts != null ? JSON.stringify(v.key_concepts) : null
     if (v.status !== undefined) dbPatch.status = v.status
     if (v.difficulty !== undefined) dbPatch.difficulty = v.difficulty
     if (v.is_exam_topic !== undefined) dbPatch.is_exam_topic = v.is_exam_topic
@@ -389,9 +385,7 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
   }
 
   async function listReferences(objectId: string): Promise<Reference[]> {
-    const rows = await referencesRepo.findWhere(
-      and(eq(references.object_id, objectId), isNull(references.deleted_at))!,
-    )
+    const rows = await referencesRepo.findWhere(and(eq(references.object_id, objectId), isNull(references.deleted_at))!)
     return rows.map(toReference)
   }
 
@@ -437,20 +431,14 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
     return spaces.tagEntity(scopedTag, memberRef.entityType, memberRef.entityId)
   }
 
-  async function untagMembership(
-    containerId: string,
-    memberRef: KnowledgeEntityRef,
-    scopedTag: string,
-  ): Promise<void> {
+  async function untagMembership(containerId: string, memberRef: KnowledgeEntityRef, scopedTag: string): Promise<void> {
     await assertContainerExists(containerId) // guard the container (F4); scopedTag NOT guarded — remove stays cleanable
     await spaces.untagEntity(scopedTag, memberRef.entityType, memberRef.entityId)
   }
 
   async function listMemberships(scopedTag: string): Promise<EntityTagRow[]> {
     // List-by-tag (getEntitiesByTag precedent); findWhere skips the soft-delete filter → add it.
-    return entityTagRepo.findWhere(
-      and(eq(entityTags.tag_id, scopedTag), isNull(entityTags.deleted_at))!,
-    )
+    return entityTagRepo.findWhere(and(eq(entityTags.tag_id, scopedTag), isNull(entityTags.deleted_at))!)
   }
 
   // --- S3: review engine ① (KNO-15..20) — delegate to the composed `review` engine (D1) ---

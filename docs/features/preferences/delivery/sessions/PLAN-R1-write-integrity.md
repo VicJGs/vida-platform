@@ -10,6 +10,7 @@
 > the source (cited below). No `docs/modules/*` context changes in R1.
 
 ## 1. Problem (ledger B5, STRUCTURAL; F18 lock half)
+
 - Every Repository write runs in `db.transaction` `[FACT: packages/core/src/db/repository.ts:351,405,469]`, and so do
   most service-level writes (sessions :306, books :916, effects :44, economy/tasks handlers, notifications :379, all
   via `tx`/`createInTx`). **Exception:** `packages/core/src/services/gamification/service.ts:384` (`seedAchievements`) runs a
@@ -28,7 +29,7 @@
   (R2 queues × nav × ⌘K history × notes autosave).
 - **Raw `driver.run` writes outside any transaction:** `composition-root.ts:53` (`deviceId`, inside `build()` before
   any service exists, so it cannot overlap) and **`onboarding/first-run-repo.ts:23`** (the first-run marker, which
-  *can* land inside an open transaction and roll back with it; onboarding would then re-show on reload).
+  _can_ land inside an open transaction and roll back with it; onboarding would then re-show on reload).
 - **F18, lock half:** `boot.ts:26` calls `client.terminate()` on `beforeunload` `[FACT: apps/web/src/db/boot.ts:22-27]`.
   `beforeunload` is cancelable, so a navigation cancelled at a "leave site?" prompt would leave a live page with a
   dead worker. The app registers no prompt today; one could come from an extension or future code
@@ -37,6 +38,7 @@
   the worker dies. Only R2's `visibilitychange: hidden` flush, which runs while the page is alive, protects pending writes.
 
 ## 2. Business rules (what must be true after R1)
+
 - **R1-BR-1 · One writer at a time.** At most one `db.transaction` callback runs at any moment app-wide. Concurrent callers
   queue FIFO and run to completion in order.
 - **R1-BR-2 · Always released.** The lock is released in `finally`, whether the transaction commits, rolls back, or its
@@ -72,6 +74,7 @@
   This replaces the slice-map's "teardown waits for lock idle" (an unload handler cannot await) with the same intent (§6).
 
 ## 3. Design
+
 - **`apps/web/src/db/write-lock.ts` (new, module singleton):**
   `createWriteLock({ waitTimeoutMs, holdWarnMs? })` → `{ runExclusive<T>(fn: () => Promise<T>): Promise<T>; isIdle(): boolean }`.
   It is a promise-chain FIFO mutex with a **forwarding rule**:
@@ -83,9 +86,10 @@
 
   `isIdle()` = `pending === 0`. Exported singleton `writeLock` (the app has one connection). `isIdle()` serves R2's flush
   logic and tests.
+
 - **`withTransactionLock(db, lock): DrizzleDb` (same file):** mutates the instance **in place** (a spread or copy would lose
   the prototype methods): `const orig = db.transaction.bind(db); db.transaction = ((cb, cfg) => lock.runExclusive(() =>
-  orig(cb, cfg))) as typeof db.transaction; return db`. The `as typeof` cast keeps the generic `<T>` signature. Every other
+orig(cb, cfg))) as typeof db.transaction; return db`. The `as typeof` cast keeps the generic `<T>` signature. Every other
   method is untouched. It is applied once in
   `composition-root.ts` `build()`: `const db = withTransactionLock(createDrizzleProxy(driver), writeLock)`.
 - **`LOCK_WAIT_TIMEOUT_MS = 30_000`**: a practical bound, **not** a proof. Normal writes are ms-scale; a pathological
@@ -98,6 +102,7 @@
   recorded as an M4 portability note in `apps/web/src/db/CLAUDE.md` + `docs/infrastructure/web-client-runtime/current-spec.md`, not built now (YAGNI).
 
 ## 4. Acceptance (Verification Gate)
+
 1. **Unit (Vitest, `apps/web/src/db/write-lock.test.ts`):** FIFO order under 5 concurrent `runExclusive` · release after a
    throwing body · a waiter past the timeout rejects with `TransactionLockTimeoutError` (fake timers) · **forwarding: A holds,
    B times out, C (queued after B) runs as soon as A releases** · `isIdle()` true only with nothing held or queued · the dev
@@ -126,8 +131,10 @@
 
      Each boots with no `NoModificationAllowedError` / "in use". The second tab expects the existing exclusive-handle
      error screen (platform behavior, pass-8), not a hang.
+
    - **CI:** `apps/web/e2e/write-lock.spec.ts` drives the **app page** (`/`, not `harness.html`, which doesn't load the
      app) and runs (b) through the same dynamic import.
+
 7. **Docs (§XXIX, same commit):**
    - web-client-runtime `current-business-rules.md` + `current-spec.md`: BR-RT-LOCK (R1-BR-1…8) + the BR-RT-D5 note +
      the M4 portability note.
@@ -138,12 +145,14 @@
    - R1-BR-6 cross-referenced into R2's plan inputs: R2 must inherit invalidate-on-empty-queue.
 
 ## 5. Risks
+
 - **Perf:** writes are serialized app-wide. Each is ms-scale on OPFS; M1 is single-user, so negligible. Reads are unaffected.
 - **A long transaction blocks others:** bounded by the RPC timeout; R1-BR-2 guarantees release.
 - **Hidden nested callers:** the B5 sweep found none; R1-BR-3 makes any future one fail loudly in 30 s instead of hanging.
 
 ## 6. Deviation from the approved slice-map (for Approval 1)
-*(rev 2: the design is the `pagehide`/`pageshow` pair, see R1-BR-8.)*
+
+_(rev 2: the design is the `pagehide`/`pageshow` pair, see R1-BR-8.)_
 The slice-map's R1 done-when says "teardown waits for the lock to go idle · `pageshow` (persisted) respawns the worker".
 An unload handler cannot await anything, so "teardown waits for the lock to go idle" is not implementable. The intent
 (teardown never strands the OPFS handles or kills a live page's worker) is met by R1-BR-8: terminate only on a persisted
@@ -153,6 +162,7 @@ writes. R2's `visibilitychange`/`pagehide` flush is unaffected. On
 approval, the slice-map row and ledger F18 are amended to match (§XXVIII: recorded, not silent).
 
 ## 7. Gate record
+
 - **rev 1 → independent critique: REVISE** (3 blocking, 5 nits). Folded:
   - B1: the mutex forwarding rule, plus the A/B/C unit test.
   - B2: R1-BR-8 redesigned as `pagehide`/`pageshow` (bfcache handle release), with the reload evidence (`harness.ts:53`)
@@ -163,6 +173,7 @@ approval, the slice-map row and ledger F18 are amended to match (§XXVIII: recor
     the app page · the Currency list completed · the R1-BR-6 → R2 cross-reference.
 
 ## 8. Verification Gate record — R1 (2026-10-21) · **PASS**
+
 - **Unit (Vitest):** `write-lock.test.ts` 11 · `composition-root.test.ts` 1 (real `notes.createPage` ×2 over a fake driver) ·
   `boot.test.ts` 5 (jsdom) · `first-run-repo.test.ts` 6. All green.
   - **Regression proof:** without the wrapper, drizzle transactions interleave (test asserts it).

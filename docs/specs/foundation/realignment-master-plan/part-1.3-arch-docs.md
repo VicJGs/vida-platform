@@ -18,7 +18,7 @@ what justified 17 separate units (and delivered 11 consecutive critique-clean).
 
 Part 1.3 is the **8 `docs/core/architecture/*` docs**. They are **not independent**: they cross-reference each other
 (`README` → `system-overview` → `module-dependency-graph` → `cross-module-integration`) and each describes the
-*whole system*, not one feature. Re-running them as 8 isolated units would risk them drifting from one another. So
+_whole system_, not one feature. Re-running them as 8 isolated units would risk them drifting from one another. So
 Part 1.3 is structured as **one plan with a shared substrate-delta brief (§1) established once**, then **3 weight-tiers**
 (§4–§6), each carrying its own gate. This matches the master plan's single-LITE-phase framing for 1.3.
 
@@ -41,24 +41,25 @@ mechanism** the arch docs encode → the **substrate** that replaces it, its **o
 > the stale docs. The arch docs give each a documented **conceptual** home (which ADR/framework owns it) — never a
 > code/directory home.
 
-| # | Retired mechanism (in the arch docs today) | → Substrate (go-forward) | ADR | Capability IDs |
-|---|---|---|---|---|
-| 1 | Standalone `pomodoro_sessions` / `study_sessions` / `reading_sessions` as flat independent tables; "Pomodoro" as a peer module | **`sessions` table-per-type supertype** under a 4-D Integration Contract; pomodoro/study/reading are **sub-types**; effects catalogue + lifecycle enum + idempotency rail | ADR-004 | S1 S4 S5 · R1 |
-| 2 | `flashcard_decks` / `flashcards` / `flashcard_reviews` / SM-2 as bespoke tables | **Generic review engine** (`review_events` / `method_bindings` / `review_curves`), mastery-derived; study methods are pluggable services | ADR-005 | SM1–SM4 |
-| 3 | `page_tags`, inline `*.tags` columns, `parent_tag_id`, closed tag CHECK | **`spaces` foundation tier + `entity_tags`** universal tagging above every module; open taggable-type registry | ADR-006 | SP1 SP2 SP3 SP4 |
-| 4 | Bespoke per-module view tables (`task_views`, etc.) | **One `views` primitive** (filter × layout × grouping), Space-owned or global, over documented read APIs | ADR-007 | V1 V2 V4 V5 |
-| 5 | Closed `BlockType` union / fixed slash-block set (`/summary` `/tasks` … as an enum) | **Open capability-block registry**; a capability declares render targets, placement is the user's choice | ADR-008 | CB1–CB* |
-| 6 | (implicit: templates as live-linked copies) | **Templates = portable seed bundles, fork-on-instantiate** (deep copy, no live link) | ADR-009 | T1 T2 T3 |
-| 7 | (implicit: ambient trust for any in-app capability) | **Capability authoring security** — declare→grant→enforce in a no-ambient-authority sandbox | ADR-010 | A2 A5 |
-| 8 | Bespoke `measurement_type`/`type` enums; `progress NOT NULL DEFAULT 0`; `purpose_habits` / `purpose_routines` / `purpose_projects` junctions | **Universal measurability**: `measurement_kind` × `binding_mode`, nullable progress (`NULL ⇒ derive`), **`contributions`** weighted polymorphic rollup (**keep `project_habits`**) | ADR-011 | M1 M2 M3 M4 M5 M7 |
-| 9 | `xp_history`, direct `awardXP(...)`, `user_profile.total_xp` as the authoritative store; "distributed XP" model | **Multi-currency points economy** on a rule→consequence engine riding the binding+effect+capability rails; `grant_currency` effect; **`consequence_ledger`** derived-balance | ADR-012 | E2 E3 E4 |
-| 10 | Pref-gated server-side notification dispatch (assumes the server sees content) | **ZK three-tier delivery** — local-scheduled OS alert · content-free cross-device **wake-signal** · in-app always; server never sees notification content | ADR-013 | N1 N2 N7 |
-| 11 | (absent) External data just "imported" | **Device-mediated ingestion guard**, 3 layers (native · public-reference · user-managed), server unconditionally blind, third-party leaks disclosed; `external_in_ok` / `external_out_ok` grants | ADR-014 | X1–X11 |
-| 12 | (absent) AI/LLM unmodeled | **Two AI modes** — on-device/agentic (ZK-safe) · cloud via user's own key (consented plaintext dent); dedicated layer, server blind; `source=ai` provenance | ADR-015 | AI1–AI6 |
-| 13 | Closed `entity_links` CHECK (34 fixed types) | **Open taggable/linkable registry** (same SP2 pattern) — the "34 types" is a build-phase concern, not a closed doc-level enum | ADR-006 §SP2 | SP2 |
-| 14 | The effect side of any completion written directly (no exactly-once guard) | **Effect rail**: `effect_event_id` + `UNIQUE` + `applied_effects` ledger — bindings → effects, applied exactly once | framework §2 R1 | R1 R2 |
+| #   | Retired mechanism (in the arch docs today)                                                                                                   | → Substrate (go-forward)                                                                                                                                                                         | ADR             | Capability IDs    |
+| --- | -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------- | ----------------- |
+| 1   | Standalone `pomodoro_sessions` / `study_sessions` / `reading_sessions` as flat independent tables; "Pomodoro" as a peer module               | **`sessions` table-per-type supertype** under a 4-D Integration Contract; pomodoro/study/reading are **sub-types**; effects catalogue + lifecycle enum + idempotency rail                        | ADR-004         | S1 S4 S5 · R1     |
+| 2   | `flashcard_decks` / `flashcards` / `flashcard_reviews` / SM-2 as bespoke tables                                                              | **Generic review engine** (`review_events` / `method_bindings` / `review_curves`), mastery-derived; study methods are pluggable services                                                         | ADR-005         | SM1–SM4           |
+| 3   | `page_tags`, inline `*.tags` columns, `parent_tag_id`, closed tag CHECK                                                                      | **`spaces` foundation tier + `entity_tags`** universal tagging above every module; open taggable-type registry                                                                                   | ADR-006         | SP1 SP2 SP3 SP4   |
+| 4   | Bespoke per-module view tables (`task_views`, etc.)                                                                                          | **One `views` primitive** (filter × layout × grouping), Space-owned or global, over documented read APIs                                                                                         | ADR-007         | V1 V2 V4 V5       |
+| 5   | Closed `BlockType` union / fixed slash-block set (`/summary` `/tasks` … as an enum)                                                          | **Open capability-block registry**; a capability declares render targets, placement is the user's choice                                                                                         | ADR-008         | CB1–CB\*          |
+| 6   | (implicit: templates as live-linked copies)                                                                                                  | **Templates = portable seed bundles, fork-on-instantiate** (deep copy, no live link)                                                                                                             | ADR-009         | T1 T2 T3          |
+| 7   | (implicit: ambient trust for any in-app capability)                                                                                          | **Capability authoring security** — declare→grant→enforce in a no-ambient-authority sandbox                                                                                                      | ADR-010         | A2 A5             |
+| 8   | Bespoke `measurement_type`/`type` enums; `progress NOT NULL DEFAULT 0`; `purpose_habits` / `purpose_routines` / `purpose_projects` junctions | **Universal measurability**: `measurement_kind` × `binding_mode`, nullable progress (`NULL ⇒ derive`), **`contributions`** weighted polymorphic rollup (**keep `project_habits`**)               | ADR-011         | M1 M2 M3 M4 M5 M7 |
+| 9   | `xp_history`, direct `awardXP(...)`, `user_profile.total_xp` as the authoritative store; "distributed XP" model                              | **Multi-currency points economy** on a rule→consequence engine riding the binding+effect+capability rails; `grant_currency` effect; **`consequence_ledger`** derived-balance                     | ADR-012         | E2 E3 E4          |
+| 10  | Pref-gated server-side notification dispatch (assumes the server sees content)                                                               | **ZK three-tier delivery** — local-scheduled OS alert · content-free cross-device **wake-signal** · in-app always; server never sees notification content                                        | ADR-013         | N1 N2 N7          |
+| 11  | (absent) External data just "imported"                                                                                                       | **Device-mediated ingestion guard**, 3 layers (native · public-reference · user-managed), server unconditionally blind, third-party leaks disclosed; `external_in_ok` / `external_out_ok` grants | ADR-014         | X1–X11            |
+| 12  | (absent) AI/LLM unmodeled                                                                                                                    | **Two AI modes** — on-device/agentic (ZK-safe) · cloud via user's own key (consented plaintext dent); dedicated layer, server blind; `source=ai` provenance                                      | ADR-015         | AI1–AI6           |
+| 13  | Closed `entity_links` CHECK (34 fixed types)                                                                                                 | **Open taggable/linkable registry** (same SP2 pattern) — the "34 types" is a build-phase concern, not a closed doc-level enum                                                                    | ADR-006 §SP2    | SP2               |
+| 14  | The effect side of any completion written directly (no exactly-once guard)                                                                   | **Effect rail**: `effect_event_id` + `UNIQUE` + `applied_effects` ledger — bindings → effects, applied exactly once                                                                              | framework §2 R1 | R1 R2             |
 
 **Two cross-cutting framings the arch docs must also carry (ADR-016/017):**
+
 - **Storage rebuilt from zero** (ADR-016): a fresh `schema/` authored per-table from the docs; **DDL is hand-written SQL
   migrations, Drizzle is the query-only type mirror** (not the schema source). Anywhere an arch doc says "schema (Drizzle)"
   as the source of truth, that framing is stale.
@@ -75,10 +76,10 @@ mechanism** the arch docs encode → the **substrate** that replaces it, its **o
    docs are full of "Code governance" code-path references to **v1** services (`journal-service.ts`, `backlink-service.ts`,
    `xpHistory`/`achievements` tables). Rule for these: (a) a code path that points at a **v1 primitive being retired**
    (e.g. `xp_history`) is corrected to the substrate + ADR, no new path invented; (b) an existing code path that merely
-   *locates current governance* may stay **as a FACT**, but any that would assert a **new** substrate's code home is
+   _locates current governance_ may stay **as a FACT**, but any that would assert a **new** substrate's code home is
    marked `[home: Part 2]`. Never crystallize a directory decision here.
 2. **Arch docs are forward/target descriptions — NOT the per-context two-tier As-is/[INTENT] split.** Unlike the 17
-   feature re-runs (which carried a live As-is FACT floor), the arch docs *describe the target mental model*. They are
+   feature re-runs (which carried a live As-is FACT floor), the arch docs _describe the target mental model_. They are
    rewritten to describe the **substrate world directly**, plus **one explicit "Implementation status" note** per rewritten
    doc pointing at `current-state-baseline/baseline.md` + ADR-016 (rebuild) + ADR-017 (features-first) so no reader mistakes
    the target architecture for shipped code (~99% of code predates the foundation, per the baseline).
@@ -87,7 +88,7 @@ mechanism** the arch docs encode → the **substrate** that replaces it, its **o
    registry, substrate tables) and defer counts/columns to DB-11. `security-model.md` §8 (a field-classification table)
    is the sharpest trap — see §5.
 4. **ADRs are the foundation; a stale doc is never a source of truth.** Where an arch doc contradicts an ADR, the **doc**
-   is wrong. Never patch an ADR to match a doc. If a rewrite surfaces a genuinely *undecided* architectural question,
+   is wrong. Never patch an ADR to match a doc. If a rewrite surfaces a genuinely _undecided_ architectural question,
    it files an **`/adr-new`** (R2) — it is never buried in prose.
 5. **Cross-doc consistency is the point of grouping.** A substrate is named **identically** in all 8 docs (the §1 token
    set is the single vocabulary). Tier A establishes it; Tiers B/C conform to it, never re-coin it.
@@ -99,16 +100,16 @@ mechanism** the arch docs encode → the **substrate** that replaces it, its **o
 Three tiers, **ordered by dependency then weight**. Each tier runs the LITE loop:
 **detailed reframe → independent adversarial critique (fresh subagent) → fold → Victor approval → implement → grep-verify → commit.**
 
-| Tier | Docs | Shape | Why grouped |
-|------|------|-------|-------------|
+| Tier  | Docs                                                                                  | Shape        | Why grouped                                                                                                                                                                                                                                                                          |
+| ----- | ------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **A** | `module-dependency-graph` · `system-overview` · `cross-module-integration` · `README` | Full rewrite | The 4 stale docs share ONE substrate worldview + cross-reference each other; one coherent reframe keeps them mutually consistent. Ordered **dep-graph → system-overview → cross-module → README** (graph is the structural spine the others narrate; README is the last-mile index). |
-| **B** | `data-flow` · `security-model` | Surgical | Both have a **current, load-bearing core** (pipeline / crypto §1–7) + **one stale annex** (data-flow step-10 effect layer; security-model §8 field table). Touch only the annex. |
-| **C** | `platform-strategy` · `performance-strategy` | Low-touch | Substrate-neutral cores survive; only an editor-extensions framing (ADR-008) and incidental legacy table names change. |
+| **B** | `data-flow` · `security-model`                                                        | Surgical     | Both have a **current, load-bearing core** (pipeline / crypto §1–7) + **one stale annex** (data-flow step-10 effect layer; security-model §8 field table). Touch only the annex.                                                                                                     |
+| **C** | `platform-strategy` · `performance-strategy`                                          | Low-touch    | Substrate-neutral cores survive; only an editor-extensions framing (ADR-008) and incidental legacy table names change.                                                                                                                                                               |
 
 **Gate cadence:** 3 gates (one per tier). The **shared substrate-delta brief (§1)** is ratified as part of **Tier A's**
 critique (Tier A is where it first applies and carries the most risk); Tiers B/C cite it, not re-derive it. Part 1.3 as a
 whole then feeds the **Part-1 exit gate** (master-plan Step 6: `victor:quality-gate-foundation` + independent critic +
-approval) — that is a *separate* later gate, not one of these three.
+approval) — that is a _separate_ later gate, not one of these three.
 
 ---
 
@@ -117,6 +118,7 @@ approval) — that is a *separate* later gate, not one of these three.
 ### A1. `module-dependency-graph.md` (stale — drawn at retired 17-module + junction granularity)
 
 The structural spine; rewrite first so the others narrate a corrected graph.
+
 - **§2 "The 17 Modules"** → reframe to **foundation substrates + feature modules**. The high-in-degree hubs are no longer
   just "Notes & Pages / Preferences" — they now include the substrates: **Spaces/`entity_tags`** (ADR-006), the **`sessions`
   supertype** (ADR-004), the **measurability/`contributions`** rail (ADR-011), the **economy/`consequence_ledger`** engine
@@ -127,7 +129,7 @@ The structural spine; rewrite first so the others narrate a corrected graph.
   **review engine** (ADR-005); Gamification "Awards XP" edges → **emits `grant_currency` / effects on the rail** (ADR-012);
   Pomodoro polymorphic edges → **`sessions` sub-type** references.
 - **§5 in/out-degree + §6 risk points:** recompute the "most depended on" framing so the **substrates** appear as the real
-  blast-radius centers (measurability, economy, sessions, spaces), not only `pages`. Keep the *analysis* (hard/soft, blast
+  blast-radius centers (measurability, economy, sessions, spaces), not only `pages`. Keep the _analysis_ (hard/soft, blast
   radius) — only the **granularity** changes.
 - **§7 + References:** `entity_links` "34 types" closed CHECK → **open registry**; `schema.ts` monolith reference →
   ADR-016 per-table `schema/` framing (no path decision — cite the ADR).
@@ -164,7 +166,7 @@ The structural spine; rewrite first so the others narrate a corrected graph.
   reframed as consequence rules, not per-module ad-hoc `awardXP`.
 - **§8 Notification Integrations:** the pref-gated server-dispatch pipeline → **ADR-013 three tiers** (local-scheduled ·
   content-free wake-signal · in-app); the server **never sees notification content**. Keep per-category user control as a
-  *local* filter, not a server-side gate.
+  _local_ filter, not a server-side gate.
 - **§10 Polymorphic Reference Registry:** `pomodoro_sessions` → **`sessions` sub-type**; `xp_history` → **`consequence_ledger`**;
   `flashcard_decks` → **review engine**; `entity_links` "34 types" → **open registry**.
 - **New (gap-add):** a short subsection naming the **external-ingestion** (ADR-014 X*) and **AI** (ADR-015 AI*) cross-cutting
@@ -183,6 +185,7 @@ table:** same 7 files; refresh one-line descriptions to match the rewritten docs
 ## §5. TIER B — surgical passes (touch only the stale annex)
 
 ### B1. `data-flow.md` (partial — only the step-10 effect layer)
+
 - **Keep:** the write / read / encryption pass-through / sync-pipeline / service-layer / state-management core (sweep:
   "still substrate-accurate").
 - **Rewrite step-10 only:** the retired **direct-`awardXP`** effect step → the **effect rail** — a completion writes a
@@ -193,12 +196,13 @@ table:** same 7 files; refresh one-line descriptions to match the rewritten docs
   No R1 rail exists in the current step-10; that is the whole gap.
 
 ### B2. `security-model.md` (partial — §8 field-classification annex only)
+
 - **Keep §1–7** (crypto architecture, key hierarchy, SRP) — current and load-bearing; **do not touch.**
 - **§8 field-classification table** is a full snapshot of the **retired** schema, missing every substrate table. **Boundary
   trap (§2.3):** a full re-tabulation of every substrate column is **schema-level → DB-11's job**, out of scope. So §8 is
   reframed **conceptually**: name the **new field-classes the substrates introduce** (e.g. `entity_tags`, `sessions` +
   effect ledgers, `contributions`, `consequence_ledger`, review-engine events) and their **encryption tier** at the
-  *class* level, and **explicitly defer** the exhaustive per-column classification to DB-11 with a pointer. Also fold the
+  _class_ level, and **explicitly defer** the exhaustive per-column classification to DB-11 with a pointer. Also fold the
   **ADR-017** note that field-level encryption/sync is a **deferred hardening pass** (the classification is the target, not
   yet enforced). This keeps §8 honest without crossing into schema reconciliation.
 
@@ -207,11 +211,13 @@ table:** same 7 files; refresh one-line descriptions to match the rewritten docs
 ## §6. TIER C — low-touch passes
 
 ### C1. `platform-strategy.md` (partial-low)
+
 - **Keep:** adapter / build / code-sharing strategy (substrate-neutral).
 - **One pass:** the editor **"custom extensions"** framing → **ADR-008 open capability-block registry** (capabilities
   declare render targets; placement is the user's choice) — not a hard-coded extension set.
 
 ### C2. `performance-strategy.md` (partial-low)
+
 - **Keep:** all substrate-neutral perf guidance (targets, decimation, virtualization, memory).
 - **One pass:** replace **incidental legacy table names** in cache/query examples with substrate names (e.g. `xp_history`
   → `consequence_ledger`, junction tables → `contributions`) so no example teaches a retired token. No strategy change.
@@ -221,6 +227,7 @@ table:** same 7 files; refresh one-line descriptions to match the rewritten docs
 ## §7. Acceptance predicates (grep-checkable — verified per tier before commit)
 
 Run against the rewritten/touched docs (Tier A: 4 docs; B: 2; C: 2):
+
 - **P1** Zero forward `xp_history` / `awardXP` / `award_xp`-as-authoritative-store / `user_profile.total_xp`-as-store →
   `consequence_ledger` + `grant_currency` (rows 9, 14).
 - **P2** Zero `purpose_habits` / `purpose_routines` / `purpose_projects` → `contributions`; **`project_habits` retained**
@@ -245,10 +252,10 @@ Run against the rewritten/touched docs (Tier A: 4 docs; B: 2; C: 2):
 - **R1 — Tier A is a large, interlocking rewrite.** Mitigate: dep-order (graph first), the §1 brief as the single
   vocabulary, one critique over the coherent set.
 - **R2 — `security-model` §8 leaks into schema reconciliation** (DB-11's job). Mitigate: the §2.3/B2 rule — classify at the
-  *class* level, defer the per-column table to DB-11 with an explicit pointer. The critic checks this specifically.
+  _class_ level, defer the per-column table to DB-11 with an explicit pointer. The critic checks this specifically.
 - **R3 — Code-path references crystallize a Part-2 structural call** (R5 leak). Mitigate: boundary rule §2.1; P9 grep.
 - **R4 — A rewrite surfaces a genuinely undecided architectural question** (e.g. whether the capability registry supersedes
-  the fixed slash set at the *editor* layer). Mitigate: `/adr-new` (R2 of the master plan), never bury it in prose.
+  the fixed slash set at the _editor_ layer). Mitigate: `/adr-new` (R2 of the master plan), never bury it in prose.
 - **R5 — Over-rewriting a partial** (touching `security-model` §1–7 or `data-flow`'s good core). Mitigate: the surgical
   scope in §5; P10.
 
@@ -260,10 +267,11 @@ Run against the rewritten/touched docs (Tier A: 4 docs; B: 2; C: 2):
 - The Part-1 exit gate itself (master-plan Step 6 — a separate later gate).
 
 ## Change Log
-| Date | Change |
-|------|--------|
-| 2026-07-25 | Initial draft — presented for the Part-1.3 gate (independent critique → approval). |
-| 2026-07-25 | Independent adversarial critique → **REVISE (2 blocking)**, both invented capability-IDs in §1: **B1** Row 7 `CA*`→`A2 A5` (ADR-010 family is `A1–A9`); **B2** Row 6 `T4 (+ TP*)`→`T1 T2 T3` (T4 is the *preset* primitive, not the fork mechanism). Folded **N1** (§5 B1 now states the `award_xp`[S4] vs `grant_currency`[E2] layering explicitly) + **N2** (dropped Row-9 `(E6 E9)` over-reach). Economy-layering trap verified avoided; `security-model` §8 boundary verified holding; go-forward vocabulary verified fully ADR-grounded; grep re-run clean. → **Victor APPROVED** the plan (gate). |
-| 2026-07-25 | **TIER A COMPLETE** — 4 stale docs rewritten (`module-dependency-graph`, `system-overview`, `cross-module-integration`, `README`) applying the §1 brief in dep-order. **Post-implementation** independent adversarial critique (a *second* fresh critic, on the rewritten prose not the plan) → **REVISE (2 blocking)**, both in `cross-module-integration.md`: **B1** §8 "Pomodoro alerts \| Pomodoro" (live source module) → "Focus/session alerts \| Sessions"; **B2** §9 "aggregated progress … via junction tables" → "via `contributions` (ADR-011)" — both *conceptual* stale mechanisms the token-grep missed (bare words, not the retired identifiers). Folded + 2 sharpening notes (N1 "XP award event"→effect; N2 "Gamification XP"→effect rail). Critic verified: economy-layering trap avoided everywhere, all boundary rules hold in the prose (no code home, no new table count, implementation-status note in all 4), `contributions`/ZK-notifications/capability-registry/sessions all correctly stated, `project_habits` kept. Final grep clean (residual stale tokens are only in Tier-B/C docs, not yet touched). → Tier A committed **6bd84a8**. |
+
+| Date       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-07-25 | Initial draft — presented for the Part-1.3 gate (independent critique → approval).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-07-25 | Independent adversarial critique → **REVISE (2 blocking)**, both invented capability-IDs in §1: **B1** Row 7 `CA*`→`A2 A5` (ADR-010 family is `A1–A9`); **B2** Row 6 `T4 (+ TP*)`→`T1 T2 T3` (T4 is the _preset_ primitive, not the fork mechanism). Folded **N1** (§5 B1 now states the `award_xp`[S4] vs `grant_currency`[E2] layering explicitly) + **N2** (dropped Row-9 `(E6 E9)` over-reach). Economy-layering trap verified avoided; `security-model` §8 boundary verified holding; go-forward vocabulary verified fully ADR-grounded; grep re-run clean. → **Victor APPROVED** the plan (gate).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-07-25 | **TIER A COMPLETE** — 4 stale docs rewritten (`module-dependency-graph`, `system-overview`, `cross-module-integration`, `README`) applying the §1 brief in dep-order. **Post-implementation** independent adversarial critique (a _second_ fresh critic, on the rewritten prose not the plan) → **REVISE (2 blocking)**, both in `cross-module-integration.md`: **B1** §8 "Pomodoro alerts \| Pomodoro" (live source module) → "Focus/session alerts \| Sessions"; **B2** §9 "aggregated progress … via junction tables" → "via `contributions` (ADR-011)" — both _conceptual_ stale mechanisms the token-grep missed (bare words, not the retired identifiers). Folded + 2 sharpening notes (N1 "XP award event"→effect; N2 "Gamification XP"→effect rail). Critic verified: economy-layering trap avoided everywhere, all boundary rules hold in the prose (no code home, no new table count, implementation-status note in all 4), `contributions`/ZK-notifications/capability-registry/sessions all correctly stated, `project_habits` kept. Final grep clean (residual stale tokens are only in Tier-B/C docs, not yet touched). → Tier A committed **6bd84a8**.                                                                                                                                                                                                                                                                                                                                              |
 | 2026-07-25 | **TIER B COMPLETE** — the two surgical passes. **`data-flow.md`:** rewrote the effect-layer touchpoints only (§1 step 10, "Why Post-Commit", §5 service example + Pattern Rule 5, §8 diagram) — direct-`awardXP` → binding-driven effect on the shared rail, applied exactly-once via `effect_event_id`/`applied_effects`/`UNIQUE` (R1), balances derived from `consequence_ledger`; kept the award_xp[S4]/grant_currency[E2] discipline; also fixed the `schema.ts`-monolith classification-source ref → ADR-016 per-table; write/read/encrypt/sync core untouched. **`security-model.md` §8 only:** added a scope note + a **class-level** "Substrate Field-Classes" table (entity_tags=E, spaces.name=E, sessions free-text=E/structural=P, contributions=P, consequence_ledger=P [gamification points ≠ money], review metadata=P/item=E, views.name=E/config=P) + two Always-E rubric touches (tags→entity_tags, flashcard→review-item); bannered the per-table breakdown as **v1 As-is** (retired tables kept for orientation, superseded, regenerated by DB-11); reframed the Encryption Statistics to distribution-shape (no re-asserted count); **§1–7 crypto byte-for-byte untouched.** Post-implementation independent critique → **SHIP / 0 blocking** (git-diff-verified both cores untouched; §8 boundary holds — no new counts, class-level only; all 7 P/E tiers ADR-correct; economy layering intact). Folded 1 note (declare `effectEventId` in the pseudocode). → Tier B committed **77d07cd**. |
-| 2026-07-25 | **TIER C COMPLETE → PART 1.3 DONE (all 3 tiers).** The two low-touch passes. **`platform-strategy.md`:** §3.3 editor "custom extensions (fixed set)" → **capability-block registry** (ADR-008, verbatim: capability declares render targets, user chooses placement); + implementation-status note (ADR-008 blocks + ADR-017 delivery order A→D). **`performance-strategy.md`:** the sweep's "incidental legacy table names" did **NOT reproduce** — grep confirmed every table in its examples (`tasks`/`pages`/`entity_links`/`habit_completions`/`transactions`) is current/surviving (the campaign's "grep is the arbiter, not the label" lesson); so C2 = implementation-status note only (flags ADR-017 deferred encryption for the decryption-dependent latency targets) + a stated "no retired tokens here" finding. Grep-verified both clean; ADR-008 claim = ADR-008 title verbatim. **Gate note:** given Tier C is 3 minimal edits (1 semantic reframe + 2 status notes) and the ADR-008 claim is verifiable verbatim, the independent adversarial critique for Tier C is folded into the **imminent Part-1 EXIT gate** (scenario Step 6 — `victor:quality-gate-foundation` + independent critic over the WHOLE realigned corpus, all 8 arch docs + 24 contexts), rather than a disproportionate dedicated subagent for 3 lines. Tiers A + B each had their own full pre/post critique. → Part 1.3 ready to commit; NEXT = Part-1 EXIT gate. |
+| 2026-07-25 | **TIER C COMPLETE → PART 1.3 DONE (all 3 tiers).** The two low-touch passes. **`platform-strategy.md`:** §3.3 editor "custom extensions (fixed set)" → **capability-block registry** (ADR-008, verbatim: capability declares render targets, user chooses placement); + implementation-status note (ADR-008 blocks + ADR-017 delivery order A→D). **`performance-strategy.md`:** the sweep's "incidental legacy table names" did **NOT reproduce** — grep confirmed every table in its examples (`tasks`/`pages`/`entity_links`/`habit_completions`/`transactions`) is current/surviving (the campaign's "grep is the arbiter, not the label" lesson); so C2 = implementation-status note only (flags ADR-017 deferred encryption for the decryption-dependent latency targets) + a stated "no retired tokens here" finding. Grep-verified both clean; ADR-008 claim = ADR-008 title verbatim. **Gate note:** given Tier C is 3 minimal edits (1 semantic reframe + 2 status notes) and the ADR-008 claim is verifiable verbatim, the independent adversarial critique for Tier C is folded into the **imminent Part-1 EXIT gate** (scenario Step 6 — `victor:quality-gate-foundation` + independent critic over the WHOLE realigned corpus, all 8 arch docs + 24 contexts), rather than a disproportionate dedicated subagent for 3 lines. Tiers A + B each had their own full pre/post critique. → Part 1.3 ready to commit; NEXT = Part-1 EXIT gate.                                                            |

@@ -1,9 +1,11 @@
 # Spaces — CURRENT SPEC (durable, living)
+
 <!-- §XXIX Currency Rule: this reflects the CODE AS-IS. Refresh on every change to the Spaces substrate.
      Born 2026-07-29 by AR-6 (LIF-77). Promoted from docs/specs/foundation/ar-6-spaces/_index.md §3. -->
+
 Level: CORE / foundation (a tier beneath Notes & Pages). Owning ADRs: ADR-006 (tags/links/spaces) · ADR-007 (views).
 Status: **AR-6 built (2026-07-29)** — structure + thin services. M1.0 grain; deferrals below.
-**XCU-SP-27 association-resolution SERVICE added 2026-09-18** (`xs-spaces-tags-links`, LIF-175) — the unify⇄separate read layer over `entity_tags` + `entity_links`; the resolution *surface* (UI + persisted switch) remains P6.
+**XCU-SP-27 association-resolution SERVICE added 2026-09-18** (`xs-spaces-tags-links`, LIF-175) — the unify⇄separate read layer over `entity_tags` + `entity_links`; the resolution _surface_ (UI + persisted switch) remains P6.
 **Templates store + types added 2026-09-19** (`xs-templates` #36, LIF-176) — the `templates` store CRUD (`TemplatesService`) + the bundle/terminal-state vocabulary; capture/instantiate/shipped-asset/preset are first-consumer-pull SEAMS (no M1.1 consumer — see Deferred).
 
 ## What exists in code
@@ -25,6 +27,7 @@ only `views.layout` is a FIXED SQL CHECK. `[E]` fields are the M3 target — M1.
 **Enum** (`@vida/types/src/view.ts`): `VIEW_LAYOUT` (list·table·board·gallery·calendar·graph·timeline) → `z.enum` in `core/validators/view.ts`; parity-tested against the SQL CHECK.
 
 **Services** (`packages/core/src/foundation/{spaces,views}/`):
+
 - `TaggableTypeRegistry` (SP2) — seeded from `_registry.ts` ENTITY_TYPES; runtime `register()`; governs both `entity_tags` + `entity_links`.
 - `SpacesService` — tag/space CRUD; `tagEntity`/`createLink`/`addEnabledBlock` (idempotent, BR-14); `untagEntity`/`removeLink`/`removeEnabledBlock` (resolve-then-soft-delete, BR-15); entity_type validated (BR-2); tag/space nesting cycle guards (BR-3/BR-5). All mutations → DB-6 Repository → co-transactional `sync_queue`.
 - `ViewsService` — view CRUD + **clone** (filter/grouping/sort stringified on write; `cloneView(sourceId, targetSpaceId)` copies them **raw** from the source row — XCU-05, independent copy) + **`listViews()`** (first-consumer-pull, mod-tasks S8 — live rows only, `created_at` then `id` order; callers scope by `filter`/`space_id` themselves — a task view = `entity_types` exactly `['task']`, ADR-007 §3.5). `CreateViewInput.grouping` accepts `null` (clears on update — matches the runtime `== null ⇒ NULL` write).
@@ -34,6 +37,7 @@ only `views.layout` is a FIXED SQL CHECK. `[E]` fields are the M3 target — M1.
 - `TemplatesService` (XS-templates #36, `foundation/templates/service.ts`) — the `templates` **store CRUD** (ADR-009 §3.3 light store): `createTemplate({name, bundle})` (bundle → JSON TEXT on write) · `listTemplates` (findAll, soft-deleted excluded) · `getTemplate` (→ `TemplateNotFound`) · `deleteTemplate` (soft). **No `updateTemplate`** — fork model has no edit-in-place (XCU-01). Empty `[E]` set (M1.0 pass-through, XCU-09); via DB-6 Repository → co-transactional `sync_queue`. **Types** (`@vida/types/template.ts` + `foundation/templates/types.ts`): `TemplateBundle` 5-member envelope (members opaque — serialization is build-time, ADR-009:112-115) · `INSTANTIATION_STATUS` (`in-progress`|`success`|`partial-failure`, T5) · `InstantiationResult`/`FlaggedMember` (the instantiate contract, ADR-009:110) · `TemplateNotFound`/`TemplateCaptureError`. Validators: `BundleSchema` (envelope-only) + `InstantiationStatusSchema`.
 
 ## Deferred (owned elsewhere — NOT built here)
+
 - Capability registry / `block_instances` → **AR-7** (ADR-008). `space_enabled_blocks.capability_def_id` is the forward seam (plain ref, no FK).
 - Effect-firing rail (R1/R2) → **AR-7**. Backlink **resolver** service + neural-graph data-prep → **AR-8** (reads the `entity_links` AR-6 owns).
 - Predicate-DSL grammar, per-layout visual specs → build-time (ADR-007 §"does NOT"). The unify⇄separate resolution **service** is now BUILT (XCU-SP-27, above); only its **surface** (UI + the persisted user switch) remains → P6/Preferences+Spaces (ADR-006 §3.3).
@@ -43,9 +47,10 @@ only `views.layout` is a FIXED SQL CHECK. `[E]` fields are the M3 target — M1.
   `templates` store (CRUD) + types are built (above); `captureFromSpace` (XCU-02/03/04/07-serializer),
   `instantiate`-fork execution (XCU-05/11), `listShipped` asset-source (XCU-08), and the preset primitive
   (XCU-12/13, tab = P6) have **no M1.1 consumer** (decomposition.md:49 read-seams "—"; template-capable surfaces
-  = modules, capability-framework.md:239) → each is pulled by the first *module* that saves-as-template /
+  = modules, capability-framework.md:239) → each is pulled by the first _module_ that saves-as-template /
   instantiates (ADR-009 invariants LOCKED, ADR-019 §3.5). No sibling-service reads added at #36.
 
 ## Tests
+
 `packages/core/src/foundation/spaces/__tests__/spaces.test.ts` (23 — incl. 2 `listViews`: live-only + `created_at`/`id` order, mod-tasks S8) + `association-resolver.test.ts` (7 — shape · behavioral no-dedup · partiality · guards · stable order, live better-sqlite3 store) + `VIEW_LAYOUT` in `validators/enum-parity.test.ts`. The first module-side consumer of `ViewsService` + a registered `ReadProvider` is `services/tasks` (S8 tests drive the REAL engine end-to-end).
 `packages/core/src/foundation/templates/__tests__/types.test.ts` (8 — envelope/status-parity/errors) + `service.test.ts` (6 — live-store CRUD/soft-delete/sync_queue/round-trip). XS-templates #36.

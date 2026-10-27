@@ -13,6 +13,7 @@
 ## 1. Objective (S9 only)
 
 Give a Subject its **vault** (documents) and its **spaces** (tags + entity links), reading documents and notes together:
+
 1. **`addDocument(subjectId, {title, docType?, description?, file?, storageRef?}) → SubjectDocument`** — add a document to
    the per-subject vault (the PJ-8 / `project_documents` pattern); inline small `file` (`encrypted_blob`) or R2
    `storage_ref`; the deny-safe `attachment?` port governs the file→R2 path [FACT: contract.md:30-31
@@ -33,12 +34,12 @@ Give a Subject its **vault** (documents) and its **spaces** (tags + entity links
 (`subject_documents` has NO `deleted_at`, PJ-8 → `softDelete:false`) [FACT: learning.ts:321-322 "NO deleted_at"];
 implement R2 (M2 — the port is deny-safe/absent at M1); build UI (② P6).
 
-## 2. Business Rules (BR-LE-S9-*)
+## 2. Business Rules (BR-LE-S9-\*)
 
 - **BR-LE-S9-1 — The vault write is subject-scoped, fail-loud on the subject (no soft-delete).** `addDocument(subjectId,
-  input)` guards `subjects.findById(subjectId)` live (`SubjectNotFoundError`, the no-FK app-layer integrity precedent,
+input)` guards `subjects.findById(subjectId)` live (`SubjectNotFoundError`, the no-FK app-layer integrity precedent,
   BR-LE-S2), then creates one `subject_documents` row. The table has **NO `deleted_at`** → `createRepository(...,
-  {softDelete:false, encryptedFields:[]})` (the `ics_*` / `class_sessions` precedent, BR-LE-S4/S5) [FACT: learning.ts:321;
+{softDelete:false, encryptedFields:[]})` (the `ics_*` / `class_sessions` precedent, BR-LE-S4/S5) [FACT: learning.ts:321;
   [[session-extensions-carry-no-deleted-at]] class]. `title` required; `description`/`doc_type` nullable; `doc_type` is
   an **OPEN vocab** (no CHECK, no Zod enum — a free string) [FACT: learning.ts:315 "OPEN vocab … no CHECK"].
 - **BR-LE-S9-2 — File routing: `storageRef` → `storage_ref`; `file` + port → R2; `file` + no port → inline;
@@ -56,12 +57,12 @@ implement R2 (M2 — the port is deny-safe/absent at M1); build UI (② P6).
   - `file` given + `attachment` **absent** ⇒ **deny-safe inline**: `encrypted_blob = file.bytes`, `storage_ref = null`.
     The document is created; no throw (local-first ED-16/LEA-67; [[absent-deny-safe-port-write-is-noop-not-new-error]]).
   - neither ⇒ a metadata-only reference row (both null) — valid (a syllabus URL/title with no file). `[FACT: ED-13 "docs …
-    live in one client-encrypted vault (inline small / R2 large)"; business-rules.md:58-59,89]`
+live in one client-encrypted vault (inline small / R2 large)"; business-rules.md:58-59,89]`
   - `file` and `storageRef` are mutually exclusive (Zod refine) [FACT: contract.md:30-31 single-file; seam-contract.md:64].
   - **mimeType is NOT persisted** (inline OR R2) — `subject_documents` has no `file_type`/mime column (unlike PJ-8's
     `project_documents.file_type`, projects.ts); `FileBlob.mimeType` is optional; `doc_type` (OPEN vocab) is the only
     kind signal. Both storage paths are symmetric w.r.t. the row. `[FACT: learning.ts:310-322 no mime column; FileBlob
-    books/types.ts:112-116 mimeType optional]`
+books/types.ts:112-116 mimeType optional]`
 - **BR-LE-S9-3 — `getVault` composes documents (vault table) + notes (`pages`), together.** `documents` = all
   `subject_documents` for the subject, mapped `→ SubjectDocument` (the service's own entity, the toSubject precedent), no
   soft-delete filter (the table has none), **sorted by `created_at` in JS** (`findWhere` has no `orderBy` — the books
@@ -79,23 +80,23 @@ implement R2 (M2 — the port is deny-safe/absent at M1); build UI (② P6).
   cleanable without a guard — knowledge:445 precedent).
 - **BR-LE-S9-5 — `linkEntities` reuses the `page_id` slot as a generic source anchor.** `linkEntities(from, to)` where
   both are `{entityType, entityId}`: delegate to `spaces.createLink(from.entityId, to.entityType, to.entityId,
-  context?)` — `entity_links` is page→entity, so the source entity id rides the `page_id` TEXT slot as a generic anchor
+context?)` — `entity_links` is page→entity, so the source entity id rides the `page_id` TEXT slot as a generic anchor
   (plain TEXT, no FK), the `linkObjects` precedent [FACT: knowledge/service.ts:411-413; spaces/service.ts:158
   `createLink(pageId, entityType, entityId, context)`]. `spaces.createLink` `assertRegistered`s the TARGET `entityType`
   [FACT: spaces/service.ts:159]. `[INTERPRETATION — `from.entityId` in the anchor slot; the knowledge precedent]`
 - **BR-LE-S9-6 — `@vida/types` gains `SubjectDocument` (net-new).** `extends SyncableEntity`, mirrors
   `SubjectDocumentRow` exactly (`subject_id: string`, `title: string`, `description: string | null`, `doc_type: string |
-  null`, `encrypted_blob: Uint8Array | null`, `storage_ref: string | null`) — **no `deleted_at`** (PJ-8), so
+null`, `encrypted_blob: Uint8Array | null`, `storage_ref: string | null`) — **no `deleted_at`** (PJ-8), so
   `softDelete:false` [FACT: SubjectDocumentRow learning.ts:368; `ProjectDocument` project.ts:105 PJ-8 precedent; grep
   clean — no `SubjectDocument` today]. `blob('encrypted_blob')` (no `mode`) infers `Buffer | null` on the Row; the
   `@vida/types` interface uses `Uint8Array | null` (Buffer ⊂ Uint8Array, so the Row maps cleanly; `@vida/types` must not
   depend on node `Buffer`) [FACT: learning.ts:319; project_documents uses `{mode:'buffer'}` projects.ts; confirm the
   exact `$inferSelect` type at /preflight].
 - **BR-LE-S9-7 — Deps grow by `spaces` (required), `notes` (required), `attachment?` (deny-safe).** `spaces:
-  SpacesService` + `notes: NotesService` are REQUIRED (tagging/linking/vault-read is core to S9, not optional — the
+SpacesService` + `notes: NotesService` are REQUIRED (tagging/linking/vault-read is core to S9, not optional — the
   knowledge S2 "spaces/notes required" precedent); `attachment?: AttachmentPort` is deny-safe (R2 = M2) [FACT:
   seam-contract.md:14-23; knowledge/types.ts:66,75]. The factory also builds a READ-only `tagsRepo` (`createRepository(db,
-  tags, {softDelete:true, encryptedFields:[]})`) for the BR-LE-S9-4 resolve guard (the knowledge:185 precedent).
+tags, {softDelete:true, encryptedFields:[]})`) for the BR-LE-S9-4 resolve guard (the knowledge:185 precedent).
 
 ## 3. Architecture / grounding
 
@@ -109,12 +110,18 @@ composition root surface (the live gate catches a missing wire) [FACT: knowledge
 
 **`AttachmentPort` (Education-local, subject-keyed).** The books `AttachmentPort` is `bookId`-keyed (books/types.ts:121)
 — cite-not-reuse (a different key), so S9 defines its own narrow port:
+
 ```ts
-export interface FileBlob { bytes: Uint8Array; mimeType?: string; filename?: string }  // mirror books FileBlob books/types.ts:112-116
+export interface FileBlob {
+  bytes: Uint8Array
+  mimeType?: string
+  filename?: string
+} // mirror books FileBlob books/types.ts:112-116
 export interface AttachmentPort {
   upload(input: { file: FileBlob; subjectId: string }): Promise<{ fileRef: string }>
 }
 ```
+
 Only `upload` is needed in S9 (the Reader `download` is a Books concern; Education has no reader slice) [FACT:
 seam-contract.md:23 "deny-safe ⇒ 'attachment-unavailable' (M2)"]. `FileBlob` is NOT in `@vida/types` today (it lives in
 books/types.ts) — S9 defines its own Education-local copy (the cite-not-reuse convention across service ports) [FACT:
@@ -141,6 +148,7 @@ returned object [FACT: [[factory-service-no-this-for-intra-calls]]].
 ## 4. Acceptance (§4 — the per-slice Verification Gate, blocking)
 
 Done = **all** of:
+
 - `addDocument(subject, {title})` → a metadata-only row (both blob/ref null); unknown subject → `SubjectNotFoundError`;
   missing `title` → Zod error; `file` + `storageRef` together → Zod refine error.
 - `addDocument` with `storageRef` → `storage_ref` set, `encrypted_blob` null (no port consulted).
@@ -163,29 +171,29 @@ Done = **all** of:
 ## 5. Implementation Prompt (§5 — strict order)
 
 1. **`@vida/types/learning.ts`** — add `export interface SubjectDocument extends SyncableEntity { subject_id: string;
-   title: string; description: string | null; doc_type: string | null; encrypted_blob: Uint8Array | null; storage_ref:
-   string | null }` (NO `deleted_at`). Barrel re-exports learning.
+title: string; description: string | null; doc_type: string | null; encrypted_blob: Uint8Array | null; storage_ref:
+string | null }` (NO `deleted_at`). Barrel re-exports learning.
 2. **`validators/learning.ts`** — `AddDocumentSchema`: `title: z.string().min(1)`, `doc_type: z.string().nullish()`,
    `description: z.string().nullish()`, `storage_ref: z.string().nullish()`, with the raw `file` split off the validated
    metadata (bytes are not a validated value — the books `AddAssetSchema` `{file, ...meta}` split, service.ts:542) + a
    `.refine` that `file` and `storageRef` are not both present.
 3. **`service/types.ts`** — add `FileBlob`, `AttachmentPort`, `DocumentFileError`; `EducationEntityRef = {entityType:
-   string; entityId: string}`; `VaultView = {documents: SubjectDocument[]; notes: PageRow[]}`; `AddDocumentInput`
+string; entityId: string}`; `VaultView = {documents: SubjectDocument[]; notes: PageRow[]}`; `AddDocumentInput`
    (`z.input<typeof AddDocumentSchema>` + `file?: FileBlob`); the 4 method sigs on `LearningEducationService`; grow
    `LearningEducationServiceDeps` with `spaces`/`notes`/`attachment?`; import `SubjectDocument` (`@vida/types`) + `PageRow`
    (`../../db/schema/notes`).
 4. **`service/service.ts`** — destructure `spaces, notes, attachment` from deps; add `subjectDocumentsRepo`
    (softDelete:false) + `tagsRepo` (READ-only); `toSubjectDocument` mapper (no `toPage` — notes pass through raw);
    implement `addDocument` (guard subject → file routing BR-LE-S9-2, upload-first → create), `getVault` (documents sorted
-   + `getPagesForEntity` raw), `tagEntity` (guard tag → `spaces.tagEntity`), `linkEntities` (`spaces.createLink` anchor);
-   add all 4 to the returned object.
+   - `getPagesForEntity` raw), `tagEntity` (guard tag → `spaces.tagEntity`), `linkEntities` (`spaces.createLink` anchor);
+     add all 4 to the returned object.
 5. **Fix the composition call sites** — any `createLearningEducationService({...})` (tests, index/barrel, a composition
    root) now must pass `spaces`/`notes` (compile break → wire them) [UNKNOWN → /preflight: enumerate the call sites].
 6. **`__tests__`** — a live-store suite: addDocument metadata-only / storageRef / blob+port / blob+reject /
    blob+no-port-inline / unknown-subject / blob+storageRef-refine; getVault documents+notes (incl. soft-deleted note
    excluded); tagEntity real/unresolved/off-type/idempotent; linkEntities create/idempotent.
 7. **tsc 0 · eslint 0 · enum-parity green · full suite green** → Verification Gate → code-review → /critique → §XXIX
-   currency (promote BR-LE-S9-* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
+   currency (promote BR-LE-S9-\* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
 
 ## 6. Risks / doc-resolved calls (grounded — surfaced for Victor's eye, not open forks)
 
@@ -198,7 +206,7 @@ Per the "ground everything" directive, the one fork the g1 critique raised is no
   local-first **inline** (the `encrypted_blob` column is that path), and **only a PRESENT port that rejects** throws
   (`DocumentFileError` = that "decrypt/R2 error" state). The seam-contract's "absent ⇒ `AttachmentUnavailable`" is
   design-time drift, overridden by the intent authority [[aspect-docs-outrank-rebuild-decomposition-artifacts]]. This is
-  disanalogous to S5's `IcsUnavailableError` *by the docs*, not by my preference: ICS has no local path to a remote
+  disanalogous to S5's `IcsUnavailableError` _by the docs_, not by my preference: ICS has no local path to a remote
   calendar; the vault does (inline). **No `AttachmentUnavailable` type is created.**
 - **mimeType not persisted — schema FACT, not a gap (BR-LE-S9-2).** `subject_documents` has no mime/`file_type` column
   (unlike PJ-8 `project_documents.file_type`); `FileBlob.mimeType` is optional; inline and R2 rows are symmetric. The g1

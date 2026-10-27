@@ -5,6 +5,7 @@
 > Kept current with `packages/core/src/foundation/ai/`. Spec: `docs/specs/foundation/xs-ai/`.
 
 ## What it is
+
 The cross-cutting AI-application service — the one model by which every AI-touching module runs a model with
 **our server blind in both modes** (ZK-1). Two per-use modes: **on-device/agentic** (ZK-safe — no vault content
 leaves) and **cloud BYO-key** (a disclosed plaintext dent, device→provider direct). A cloud call **is an egress**
@@ -15,6 +16,7 @@ authors **no schema** — the durable stores (`ai_connections`, `ai_conversation
 mediator/on-device runtime are M2 (behind the ports). Legs XCU-17…27 (11; ADR-015).
 
 ## Surface (`packages/core/src/foundation/ai/`)
+
 - **S1 `modes.ts` (pure):** `resolveMode(mode) → AiMode` (XCU-18, fail-loud `UnknownAiMode`) ·
   `buildAiDisclosure(mode) → AiModeDisclosure` (XCU-20/XCU-26, the ADR-015 §3.2 honest bound per mode — cloud
   content-dent + on-device residual, verbatim) · `stampAiProvenance(row) → row & {source:'ai'}` (XCU-24, pure
@@ -42,9 +44,10 @@ mediator/on-device runtime are M2 (behind the ports). Legs XCU-17…27 (11; ADR-
   is never in agent/sandbox reach by construction. In-memory (durable `ai_connections` [E] = M2). Deterministic list.
 - **Typed errors** (each carries context, parity with `EgressDenied`/`IngestionDenied`/`CapabilityDenied`):
   `UnknownAiMode(mode)` · `AiDenied(defId, reason)` (reason ∈ `AiDenyReason` `{on_device_unavailable ·
-  model_unavailable}` ∪ egress `EgressDenyReason` propagated verbatim) · `AiConnectionDenied(integrationId, reason)`.
+model_unavailable}` ∪ egress `EgressDenyReason` propagated verbatim) · `AiConnectionDenied(integrationId, reason)`.
 
 ## Delegated (not owned here)
+
 `external_out` boolean + in/out union + per-action envelope checks (tool gate) → CapabilityEnforcer #31 · the
 egress gate itself (per-target consent + union + audit + never-auto-transmit) → EgressGuard #43 (XCU-06;
 `assertEgressPermitted`/`checkEgress`, `EgressTarget{kind:'model'}`) · credential custody pattern → ingestion
@@ -54,6 +57,7 @@ contents → ADR-010 / #116 CAP-authoring (M4) · all AI UIs (mode picker · egr
 runtime + model acquisition → M2 · local-model choice / provider order / redaction UX → build-phase (U-1).
 
 ## Tests
+
 `foundation/ai/__tests__/` (32): `modes` (10, pure — two-mode resolve/fail-loud · per-mode disclosure exact ·
 provenance idempotent/non-mutating) · `service` (9, **live-store** on real `capability_grants` + the built egress
 guard #43: on-device no-egress · cloud permit → AI-egress audit + scope-min slice · 4 egress deny reasons verbatim ·

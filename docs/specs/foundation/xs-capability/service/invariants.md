@@ -1,9 +1,10 @@
 # Invariants — XS-capability enforcement services
 
 > The rules this service ENFORCES. References `docs/core/capability/current-business-rules.md` (BR-1..8, AR-7)
-> + ADR-010; does not restate the registry rules. These are the NEW enforcement invariants (this issue).
+>
+> - ADR-010; does not restate the registry rules. These are the NEW enforcement invariants (this issue).
 
-- **INV-1 — Fail-closed default.** Every unknown/missing input resolves to *deny* (`no_grant`, `not_in_envelope`,
+- **INV-1 — Fail-closed default.** Every unknown/missing input resolves to _deny_ (`no_grant`, `not_in_envelope`,
   `envelope_changed`, …); "allow" is only an explicit positive match. `[FACT: ADR-010 §3.2:72-73, §3.6:126-127]`
   (IR-4).
 - **INV-2 — Shipped bypass.** Only `is_user_type=true` defs are enforced; shipped/trusted defs are always allowed and
@@ -17,7 +18,7 @@
   `SENSITIVE_MODULE_CLASSES`) **AND any external grant** (`external_in_ok` OR `external_out_ok`) is a consented
   exfiltration channel → requires the **union**: both the sensitive consent AND the external consent present, else
   `compositional_exfiltration`. `[FACT: ADR-010 §3.5:117-121]` + `[FACT: xcut-ingestion-ai.md:20]` (XCU-08) (IR-1).
-  The per-target egress mediation/audit that follows an *allowed* external-out is XS-egress-guard `#43`.
+  The per-target egress mediation/audit that follows an _allowed_ external-out is XS-egress-guard `#43`.
 - **INV-6 — Declaration drift is hash-detected and fails closed.** A grant whose stored `granted_envelope_hash` ≠
   `canonicalEnvelopeHash(currentDef)` is not-current → every action denies `envelope_changed` until re-granted. The
   hash covers the def's **declaration `{bindings, effects}`** (ADR-008 anatomy parts 3+5) — **not** `render_targets`
@@ -36,9 +37,10 @@
   module that reads sensitive data via a bare `binding` action alone bypasses the consent gate.
 
 ## NOT enforced here (delegated — asserting the boundary)
+
 - **No-double-count / idempotency** — ADR-004 §3.2.5 write path (`effect_event_id` + dedup). `[FACT: ADR-010
-  §3.3.3:87-89]`.
+§3.3.3:87-89]`.
 - **Sandbox isolation + resource limits + identity(untrusted-mark)** — `#116 CAP-authoring`. `[FACT: ADR-010
-  §3.4:98-104]`.
-- **Egress mediation/audit + media encryption** — `#43` / EN-1/EN-2. This service *decides*; it does not transmit or
+§3.4:98-104]`.
+- **Egress mediation/audit + media encryption** — `#43` / EN-1/EN-2. This service _decides_; it does not transmit or
   encrypt. `[FACT: ADR-010 §3.5:107-114]`.

@@ -1,16 +1,21 @@
 # foundation/ai — substrate (ADR-015)
+
 # Auto-read by Claude when editing this layer. Structural home stood up in Part 2 (ADR-018).
 
 ## What this substrate is
+
 Two AI modes (on-device/agentic ZK-safe / cloud via user key); dedicated layer, server blind; source=ai provenance
 
 ## Owning ADR
+
 ADR-015
 
 ## Capabilities (framework §3)
+
 AI1-AI6
 
 ## Status
+
 Service tier built by **XS-ai #45** (2026-09-21): the AI-application decision/mode/agent-gate/config tier over
 the built enforcer #31 + egress guard #43 — `modes.ts` (XCU-18/20/24 · `resolveMode`/`buildAiDisclosure`/
 `stampAiProvenance`) · `service.ts` (`createAiService` — `checkModelCall`/`askModel`; cloud call = egress via #43,

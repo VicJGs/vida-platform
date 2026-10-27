@@ -3,7 +3,16 @@
 // (BR-4); active-mark state comes from `useToolbarState` (BR-E3-2). Mounted INSIDE VidaEditorImpl (the raw Editor
 // never leaks — BR-E3-1); rendered only when `editor != null` (the null-editor gate).
 // Spec: docs/specs/features/ui-3-vida-editor/e3-toolbar.md · BR-E3-1..8.
-import { forwardRef, Fragment, useEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react'
+import {
+  forwardRef,
+  Fragment,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react'
 import { styled, View } from '@tamagui/core'
 import { Button, Menu, type MenuItem } from '@vida/ui'
 import type { Editor } from '@tiptap/react'
@@ -105,7 +114,10 @@ interface Control {
   render: (opts: { tabIndex: number; ref: (el: HTMLButtonElement | null) => void }) => ReactNode
 }
 
-export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }: EditorToolbarProps): React.ReactElement {
+export function EditorToolbar({
+  editor,
+  'aria-label': ariaLabel = 'Formatting',
+}: EditorToolbarProps): React.ReactElement {
   const state = useToolbarState(editor)
   const refs = useRef<Record<string, HTMLButtonElement | null>>({})
   const [rovingId, setRovingId] = useState('bold')
@@ -114,7 +126,13 @@ export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }
     fn(editor.chain().focus()).run()
   }
 
-  const mark = (id: string, label: string, active: boolean, enabled: boolean, cmd: (c: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>): Control => ({
+  const mark = (
+    id: string,
+    label: string,
+    active: boolean,
+    enabled: boolean,
+    cmd: (c: ReturnType<Editor['chain']>) => ReturnType<Editor['chain']>,
+  ): Control => ({
     id,
     enabled,
     render: ({ tabIndex, ref }) => (
@@ -145,11 +163,20 @@ export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }
   ]
 
   const insertItems: MenuItem[] = [
-    { id: 'table', label: 'Table', onSelect: () => run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true })) },
+    {
+      id: 'table',
+      label: 'Table',
+      onSelect: () => run((c) => c.insertTable({ rows: 3, cols: 3, withHeaderRow: true })),
+    },
     // Callout insert via insertContent (DEV: the setCallout node-command augmentation didn't propagate to the
     // toolbar's ChainedCommands type in this pnpm monorepo — see callout.ts); this is the exact payload it would run.
     // Disabled inside a callout (callout is isolating/block+, so it WOULD nest — unwanted).
-    { id: 'callout', label: 'Callout', disabled: state.activeBlock === 'callout', onSelect: () => run((c) => c.insertContent(calloutInsertContent())) },
+    {
+      id: 'callout',
+      label: 'Callout',
+      disabled: state.activeBlock === 'callout',
+      onSelect: () => run((c) => c.insertContent(calloutInsertContent())),
+    },
     { id: 'divider', label: 'Divider', onSelect: () => run((c) => c.setHorizontalRule()) },
   ]
 
@@ -166,7 +193,13 @@ export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }
         <Menu
           aria-label="Turn into"
           trigger={
-            <Button ref={ref} tabIndex={tabIndex} intent="ghost" size="sm" aria-label={`Block type: ${BLOCK_LABEL[state.activeBlock]}`}>
+            <Button
+              ref={ref}
+              tabIndex={tabIndex}
+              intent="ghost"
+              size="sm"
+              aria-label={`Block type: ${BLOCK_LABEL[state.activeBlock]}`}
+            >
               {`${BLOCK_LABEL[state.activeBlock]} ▾`}
             </Button>
           }
@@ -193,7 +226,13 @@ export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }
       id: 'undo',
       enabled: state.can.undo,
       render: ({ tabIndex, ref }) => (
-        <ToolbarButton ref={ref} tabIndex={tabIndex} disabled={!state.can.undo} onPress={() => run((c) => c.undo())} aria-label="Undo">
+        <ToolbarButton
+          ref={ref}
+          tabIndex={tabIndex}
+          disabled={!state.can.undo}
+          onPress={() => run((c) => c.undo())}
+          aria-label="Undo"
+        >
           ↶
         </ToolbarButton>
       ),
@@ -202,7 +241,13 @@ export function EditorToolbar({ editor, 'aria-label': ariaLabel = 'Formatting' }
       id: 'redo',
       enabled: state.can.redo,
       render: ({ tabIndex, ref }) => (
-        <ToolbarButton ref={ref} tabIndex={tabIndex} disabled={!state.can.redo} onPress={() => run((c) => c.redo())} aria-label="Redo">
+        <ToolbarButton
+          ref={ref}
+          tabIndex={tabIndex}
+          disabled={!state.can.redo}
+          onPress={() => run((c) => c.redo())}
+          aria-label="Redo"
+        >
           ↷
         </ToolbarButton>
       ),

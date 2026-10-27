@@ -9,11 +9,12 @@ Unit: fe-calendar #19 (LIF-203) · slice S1 (`a1148f9`). Sibling (STRUCTURAL, se
 `docs/specs/fixes/ds-type-lineheight-unpaired/` — the period-title overlap.
 
 ## Findings
+
 1. **375 page overflow (EC-1 unmet).** At 375px `document.scrollWidth` = **520** (vw 375) on BOTH the Agenda and the
    Month range. The outermost offender is the `CanvasView` actions row carrying S1's range switcher (`role="toolbar"`,
-   6 `Button`s) + the `‹ Today ›` nav — **496px** wide, unwrapped. EC-1 is a locked structural MUST: *"Range switcher — 6
+   6 `Button`s) + the `‹ Today ›` nav — **496px** wide, unwrapped. EC-1 is a locked structural MUST: _"Range switcher — 6
    ranges … as a `role="toolbar"` with `aria-pressed` on the active; **reflows to a dropdown < 768 (Collection
-   precedent)**"* [FACT: envision.md:23; slice-map.md:34 S1 "condense to a `Menu` < 768"]. S1 never built the condense
+   precedent)**"_ [FACT: envision.md:23; slice-map.md:34 S1 "condense to a `Menu` < 768"]. S1 never built the condense
    [FACT: `a1148f9` apps/web/src/app/calendar/index.tsx:76-99 — a `flexWrap` toolbar, no Menu, no breakpoint read], yet
    the S1 ledger recorded "375/768/1440 no-overflow ✓" [FACT: slice-map.md S1 row] — a false PASS.
 2. **"This week ·" on every week.** `periodLabel()` prefixes `This week · ` for `agenda`/`living` whatever week is
@@ -21,6 +22,7 @@ Unit: fe-calendar #19 (LIF-203) · slice S1 (`a1148f9`). Sibling (STRUCTURAL, se
    reads "This week · Nov 2 – Nov 8, 2026". Latent in S1 (agenda/living were placeholders); visible since S2.
 
 ## Facets
+
 - **Symptom vs cause:** the symptom is a horizontal page scroll; the cause is a missing responsive behaviour the spec
   required, not a layout bug in the frame. `CanvasView`'s `Actions` is deliberately `flexShrink:0`
   [FACT: packages/ui/src/components/canvas-view.tsx:80] and its masthead contract is "title-group · actions reflow
@@ -33,12 +35,14 @@ Unit: fe-calendar #19 (LIF-203) · slice S1 (`a1148f9`). Sibling (STRUCTURAL, se
 - **Blast radius:** this surface only (every range shares the actions row). No other consumer.
 
 ## Files
+
 - `apps/web/src/app/calendar/index.tsx` — switcher + `periodLabel` (both defects).
 - Precedents (read, not changed): `apps/web/src/shell/regions.ts:66-69` (the `useMedia()` contract) ·
   `shell/global-bar-1.tsx:21-30` (`__bp` override) · `collection-view.tsx:200-215` (the Menu condense shape) ·
   `docs/core/architecture/shell-layout.md §3` (the ≥44 rule) · `button.tsx:67-69` (sm 32 / md 40 / lg 48).
 
 ## Root cause
+
 > The 375 overflow is caused by **S1 never building EC-1's <768 switcher condense** (a 6-button toolbar + nav in a
 > non-shrinking `actions` slot), not by the CanvasView frame; the stale label is caused by **`periodLabel` hard-coding
 > "This week ·"** instead of comparing the focused week to the current one.
@@ -58,7 +62,7 @@ TRIGGER's label text (announced on focus) + the visual ✓ — the shipped Colle
 `menuitemradio` upgrade would be a Menu-primitive change, out of scope).
 
 **D1 · the breakpoint read — the apps/web convention: Tamagui `useMedia()` + a `__bp` test override.** The documented
-apps/web contract is *"the current breakpoint is read reactively via Tamagui `useMedia()`, NOT stored"* [FACT:
+apps/web contract is _"the current breakpoint is read reactively via Tamagui `useMedia()`, NOT stored"_ [FACT:
 apps/web/src/shell/regions.ts:66-69], and every apps/web consumer follows it with a `__bp?: Breakpoint` test/story
 override that bypasses `useMedia` for jsdom [FACT: shell/global-bar-1.tsx:21-30 `const isTabletUp = __bp ? __bp !==
 'mobile' : media.tablet`; session-hud/session-hud.tsx:26-32; AppShell.__bp]. `CalendarSurface` adopts exactly that
@@ -66,8 +70,8 @@ override that bypasses `useMedia` for jsdom [FACT: shell/global-bar-1.tsx:21-30 
 promoting CollectionView's module-private `matchMedia` `useTabletUp` — that bespoke hook exists only because it lives
 INSIDE `@vida/ui` [FACT: collection-view.tsx:32-35]; the apps/web plane has its own documented convention.)
 
-**D2 · touch targets — the rebuilt controls meet ≥44×44.** *"Every interactive region honors ≥44×44px touch targets
-with ≥8px gaps at all widths"* [FACT: docs/core/architecture/shell-layout.md §3 :71-72; design.md §X]. S1's switcher +
+**D2 · touch targets — the rebuilt controls meet ≥44×44.** _"Every interactive region honors ≥44×44px touch targets
+with ≥8px gaps at all widths"_ [FACT: docs/core/architecture/shell-layout.md §3 :71-72; design.md §X]. S1's switcher +
 nav are `Button size="sm"` = **32px** tall [FACT: packages/ui/src/components/button.tsx:67] — below the rule. This fix
 rebuilds exactly these controls, so they comply: **`size="lg"` (48px)** for the condensed trigger, the toolbar buttons
 and the `‹ Today ›` nav (`md` = 40 also fails) [FACT: button.tsx:67-69], with ≥`$8` gaps. ⚠ Risk to measure at the
@@ -76,41 +80,43 @@ gate: the 6-button `lg` toolbar at exactly 768 must still fit beside/below the t
 
 **F2 · honest period label.** `periodLabel` prefixes `This week · ` only when `mondayOf(focused)` equals
 `mondayOf(today)` (date-key string compare, TZ-safe — the file's existing `toKey`); otherwise the bare span for
-agenda/living (as week already does). Grounding: the approved mockup's title is *"This week · Oct 5–11"* — a
+agenda/living (as week already does). Grounding: the approved mockup's title is _"This week · Oct 5–11"_ — a
 CURRENT-week depiction [FACT: mockups/calendar-ranges-and-agenda.html:127]; no doc specifies other weeks.
 [INTERP: on a non-current week "This week" is a false claim → the bare span, the Week range's existing behaviour.]
 
-**D2 is doc-decided, not a judgment call:** *"Icon-button touch target | `size="lg"` (48px, ≈56×48 ≥ 44×44), not `sm`
-(32px) | §X / WCAG 2.5.5"* [FACT: .claude/docs/decisions.md:82; canvas-reader PLAN-S4-selection.md:60 BR-S4-6a "NOT
+**D2 is doc-decided, not a judgment call:** _"Icon-button touch target | `size="lg"` (48px, ≈56×48 ≥ 44×44), not `sm`
+(32px) | §X / WCAG 2.5.5"_ [FACT: .claude/docs/decisions.md:82; canvas-reader PLAN-S4-selection.md:60 BR-S4-6a "NOT
 `size="sm"` (32px, below the §X / WCAG 2.5.5 floor)"; reused as "the S4 BR-S4-6a floor" in PLAN-S5-listen.md:55 +
 fe-settings s1-switch.md:38]. The heavier 48px chrome is the accepted cost in every precedent.
 
 **F3 · the period-title overlap — root fix IN this flow (doc-decided homing).** The documented precedent for a shared
-defect surfaced by a unit's own gate is a ROOT fix in the surfacing unit: #7 EC-7 *"a real dark-mode bug EVERY editor
-mount shared … the token bind fixes all"*; #15 *"root fix tints via currentColor, benefits scope-selector/dock/
-global-bar"* [FACT: .claude/docs/decisions.md:1117,1119,1120]. The root is diagnosed in
+defect surfaced by a unit's own gate is a ROOT fix in the surfacing unit: #7 EC-7 _"a real dark-mode bug EVERY editor
+mount shared … the token bind fixes all"_; #15 _"root fix tints via currentColor, benefits scope-selector/dock/
+global-bar"_ [FACT: .claude/docs/decisions.md:1117,1119,1120]. The root is diagnosed in
 `docs/specs/fixes/ds-type-lineheight-unpaired/`: DS-4 never specified line-height pairing, and `@tamagui/core` 2.6.2's
 `Text` has NO size→line-height pairing (variants = `numberOfLines`/`ellipsis` only) [FACT:
 @tamagui/web@2.6.2 dist/esm/views/Text.mjs:16-29]; `SizableText` isn't installed (core-only, ADR-001). So the root
-binding is the **convention** design.md §III requires: *every large-type `<Text>` pairs `lineHeight="$<role>"` with
-`fontSize="$<role>"`* (the role-keyed `lineScale` already holds the values — tamagui.config.ts:26-28). This flow:
+binding is the **convention** design.md §III requires: _every large-type `<Text>` pairs `lineHeight="$<role>"` with
+`fontSize="$<role>"`_ (the role-keyed `lineScale` already holds the values — tamagui.config.ts:26-28). This flow:
 (a) records the convention as a `packages/ui/src/CLAUDE.md` Rule; (b) applies it at the surfaced root — the
 **`CanvasView` title** (`canvas-view.tsx:123`, every CanvasView consumer benefits); (c) [build-verify] that
 `lineHeight="$display"` resolves to 41px at runtime (the DS-4 §4 render-assertion lesson — assert, don't assume) with a
 jsdom-independent browser measurement at the gate + a unit test asserting the prop.
 
 **Sibling fixes — recorded, NOT folded (doc-decided homing).** The precedent for latent sibling defects found by
-inspection is *"→ sibling fix"* [FACT: decisions.md:109 — the `$h3` case]. Recorded in the sibling docs:
+inspection is _"→ sibling fix"_ [FACT: decisions.md:109 — the `$h3` case]. Recorded in the sibling docs:
+
 - the other 24 large-type sites without a paired line-height (incl. `lens-dispatches.tsx:33,75`'s raw-px workaround,
-  which also breaks *"semantic type scale only, no px"* [decisions.md:57]) → `ds-type-lineheight-unpaired/`;
+  which also breaks _"semantic type scale only, no px"_ [decisions.md:57]) → `ds-type-lineheight-unpaired/`;
 - the shipped `sm` (32px) controls failing their OWN documented ≥44 MUSTs — shell nav chrome (`s2-nav-chrome.md:112,
-  142,181`; `global-surfaces-strip.tsx:58,70`, `scope-selector.tsx:53-120`) and the Collection condense (EC-4 "375
+142,181`; `global-surfaces-strip.tsx:58,70`, `scope-selector.tsx:53-120`) and the Collection condense (EC-4 "375
   condense + ≥44×44", fe-codec-collection slice-map:113; `collection-view.tsx:205`) → `ds-type-lineheight-unpaired/`
   §Sibling records (one place for this flow's sibling findings).
 
-
 ## Preflight (2026-10-18) — PASSED; assumptions pinned to code
+
 Layers touched: frontend only (`apps/web` surface + one `@vida/ui` frame line + docs). No backend/DB/integration.
+
 - **`__bp` typing:** `import type { Breakpoint } from '../../shell/breakpoints'` [FACT: shell/global-bar-1.tsx:10];
   `CalendarSurface({ __bp }: { __bp?: Breakpoint })` — the lazy route renders it with no props (prod → `useMedia()`).
   `isTabletUp = __bp ? __bp !== 'mobile' : media.tablet` verbatim [FACT: global-bar-1.tsx:30].
@@ -128,8 +134,8 @@ Layers touched: frontend only (`apps/web` surface + one `@vida/ui` frame line + 
 
 ## Deviation record (§XXVIII) — D-FIX-DEV-1 · awaiting approval
 
-**STOP trigger (planned):** D2 named it — *"if the 6-button lg toolbar at 768 does not fit, that is a §XXVIII
-deviation."* The gate measured it [Brave, 2026-10-18, real surface]: with F1+D2+F3 built, **768 overflows in every
+**STOP trigger (planned):** D2 named it — _"if the 6-button lg toolbar at 768 does not fit, that is a §XXVIII
+deviation."_ The gate measured it [Brave, 2026-10-18, real surface]: with F1+D2+F3 built, **768 overflows in every
 preset** (sw 769 editorial · 768–784) and **375 overflows in quietDesk** (sw 377 Month / 384 Agenda — its IBM Plex
 chrome is wider); editorial + reader 375 fit. All other checks PASS (condense form · menu select · 48px controls · 8px
 gaps · title line-height 41 · no wrap overlap · CanvasEditor/CanvasView mastheads · AA · axe 0).
@@ -138,9 +144,10 @@ gaps · title line-height 41 · no wrap overlap · CanvasEditor/CanvasView masth
 [FACT: canvas-view.tsx:80], so a consumer's actions content can never reflow inside the row — 48px controls simply made
 the content wide enough to hit it at 768.
 
-**Revised direction — the frame meets its OWN documented contract:** BR-CB-S1-12 *"the masthead … must reflow so
-`actions` wrap below the title-group (never collide) … no overflow/collision at 375/768/1440"* [FACT:
+**Revised direction — the frame meets its OWN documented contract:** BR-CB-S1-12 _"the masthead … must reflow so
+`actions` wrap below the title-group (never collide) … no overflow/collision at 375/768/1440"_ [FACT:
 docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md:34-35,60]. So:
+
 - **`canvas-view.tsx` `Actions`:** add `maxWidth:'100%'` + `flexWrap:'wrap'` (row-gap `$8`) — the slot never exceeds
   the masthead width and its children wrap. Keeps `flexShrink:0` (actions don't squeeze the title; they reflow below
   it, the documented model). Every CanvasView consumer benefits (CanvasEditor's single SyncStatus chip is unaffected —
@@ -152,6 +159,7 @@ docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md:34-35,60]. So:
   (decisions.md:82 floor); hiding the nav (removes primary navigation).
 
 **Folded with it (g2 review — in-scope, same controls/tests):**
+
 - **F4 · `shift()` month/year rollover** [review #4, code-confirmed index.tsx:46-53]: `setMonth` on Jan 31 → "Mar 3"
   skips February on the rebuilt ‹/› nav. Clamp the day to the target month's last day.
 - **Test hardening** [review #6, #7]: the canvas-view assertion compares the title's `_lh-` class to the class a
@@ -159,6 +167,7 @@ docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md:34-35,60]. So:
   `vi.setSystemTime` near BRT midnight (Sun 23:30 −03:00 = Mon UTC) so a UTC slip in the week maths turns red.
 
 **Review findings NOT folded (with reasons):**
+
 - #3 currency not in diff — by plan order (currency follows the gate). Not a defect.
 - #5 "today" read at render goes stale across midnight — the surface-wide S1 pattern (also `CalendarView today=`);
   `useCalendar` (S7) owns "today" → recorded for S7, not this fix.
@@ -175,7 +184,9 @@ cause rather than the 768 symptom. **Preflight:** complete — Acceptance unchan
 hardened tests. **Approval:** required before any further code.
 
 ## Resolution (2026-10-18)
+
 Shipped exactly the approved plan + D-FIX-DEV-1:
+
 - `apps/web/src/app/calendar/index.tsx` — `__bp?: Breakpoint` prop + `useMedia()` (`isTabletUp`); <768 → `Menu`
   "Calendar range" with a `Range: <active>` lg trigger + ✓ on the active item; ≥768 → the `role="toolbar"` (`aria-pressed`);
   every range control `size="lg"` (48px), gaps `$8`; `{switcher}{nav}` passed as the actions slot's DIRECT children;
@@ -194,6 +205,7 @@ Shipped exactly the approved plan + D-FIX-DEV-1:
   change log) · `web-client-runtime/current-spec.md` · `slice-map.md` S1 row CORRECTED (the false PASS recorded).
 
 ## Acceptance
+
 - [ ] 375: `scrollWidth === clientWidth` on every range (page-level, not just region) — all 3 presets × L/D.
 - [ ] <768: a `Menu` named "Calendar range" whose trigger shows the active range; selecting an item switches range;
       ✓ on the active item; keyboard (Menu's roving focus + Esc) per the shipped Menu. ≥768: the toolbar unchanged
@@ -222,11 +234,12 @@ Shipped exactly the approved plan + D-FIX-DEV-1:
       no-overflow ✓" + this fix — the record, not just the code) · this doc → Status: resolved + Resolution section.
 
 ## Change log
-| Date | Change |
-|------|--------|
-| 2026-10-18 | Diagnosed (victor:triage, code-confirmed at index.tsx:43,76-99 + canvas-view.tsx:80; reproduced on Month @ a1148f9). PLAN gate 1 authored. |
-| 2026-10-18 | **D-FIX-DEV-1 approved (Victor) → built → Visual Gate PASS (Victor-reviewed: "found everything on the documentation") → RESOLVED.** Mutation-check slip (a `git checkout --` wiped uncommitted canvas-view edits; restored from the pre-mutation copy, re-verified) → memory. |
-| 2026-10-18 | **Approval 1 (Victor).** Preflight **PASSED** — assumptions pinned (Breakpoint import path, plain-jsdom harness, Menu API, F3 jsdom observability via the `_lh-` atomic class — probed + probe deleted; px measured at the gate). Gate-2 /critique **REVISE→fixed** (M1: F3 re-verifies the other live CanvasView consumer `CanvasEditor` + the CanvasView stories at the gate — the shared-root-fix precedent; N1: `_lh-` assertion coupling accepted, Brave px authoritative) → **SHIP**. Awaiting Approval 2. |
+
+| Date       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-10-18 | Diagnosed (victor:triage, code-confirmed at index.tsx:43,76-99 + canvas-view.tsx:80; reproduced on Month @ a1148f9). PLAN gate 1 authored.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 2026-10-18 | **D-FIX-DEV-1 approved (Victor) → built → Visual Gate PASS (Victor-reviewed: "found everything on the documentation") → RESOLVED.** Mutation-check slip (a `git checkout --` wiped uncommitted canvas-view edits; restored from the pre-mutation copy, re-verified) → memory.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-10-18 | **Approval 1 (Victor).** Preflight **PASSED** — assumptions pinned (Breakpoint import path, plain-jsdom harness, Menu API, F3 jsdom observability via the `_lh-` atomic class — probed + probe deleted; px measured at the gate). Gate-2 /critique **REVISE→fixed** (M1: F3 re-verifies the other live CanvasView consumer `CanvasEditor` + the CanvasView stories at the gate — the shared-root-fix precedent; N1: `_lh-` assertion coupling accepted, Brave px authoritative) → **SHIP**. Awaiting Approval 2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2026-10-18 | **Grounding pass 2 (Victor: "check the documentation, the decisions are in there")** — the 3 questions I'd raised were doc-decided: **(1)** `lg`/48px = the recorded touch-target decision (decisions.md:82, BR-S4-6a) — not a judgment call; **(2)** the line-height defect = a surfaced shared defect → ROOT fix in this flow (decisions.md:1117,1119,1120 precedents) → **F3 added** (CanvasView title pairs `lineHeight="$display"` + the DS convention Rule), mechanism grounded in the installed API (@tamagui/core 2.6.2 Text has no size→lineHeight pairing; no SizableText — ADR-001 core-only), my "separate DS unit + new typography primitive" proposal WITHDRAWN; **(3)** the other 24 sites + the shell/Collection `sm` controls = latent siblings → recorded "sibling fix" (decisions.md:109 precedent), not folded. Re-critique **SHIP** (one contradiction fixed: "no `@vida/ui` change" scoped to the breakpoint; F3 currency targets added). Awaiting Approval 1. |
-| 2026-10-18 | **Grounding pass (Victor: "ground everything in the documentation")** — 3 corrections: **(1)** D1 overturned — the apps/web breakpoint contract is Tamagui `useMedia()` + a `__bp` override (regions.ts:66-69, global-bar-1, session-hud), NOT promoting CollectionView's @vida/ui-internal `matchMedia` hook → no `@vida/ui` change; **(2)** D2 added — the binding ≥44×44 touch-target rule (shell-layout §3 / design.md §X) fails on S1's `sm` (32px) controls → the rebuilt controls use `lg` (48); the same gap in the shell + Collection reported as a systemic finding, not fixed here; **(3)** F2 labelled INTERP (the mockup shows only the current week). Re-critique required (material change). |
-| 2026-10-18 | gate-1 /critique **REVISE→fixed**: M1 currency step added (incl. correcting the S1 ledger's false PASS) · N1 trigger label `Range: <active>` (Collection convention, no caret glyph) · N2 condensed active-state a11y stated (trigger label + ✓, the Collection precedent). Re-critique SHIP. Awaiting Approval 1. |
+| 2026-10-18 | **Grounding pass (Victor: "ground everything in the documentation")** — 3 corrections: **(1)** D1 overturned — the apps/web breakpoint contract is Tamagui `useMedia()` + a `__bp` override (regions.ts:66-69, global-bar-1, session-hud), NOT promoting CollectionView's @vida/ui-internal `matchMedia` hook → no `@vida/ui` change; **(2)** D2 added — the binding ≥44×44 touch-target rule (shell-layout §3 / design.md §X) fails on S1's `sm` (32px) controls → the rebuilt controls use `lg` (48); the same gap in the shell + Collection reported as a systemic finding, not fixed here; **(3)** F2 labelled INTERP (the mockup shows only the current week). Re-critique required (material change).                                                                                                                                                                                                                                                                          |
+| 2026-10-18 | gate-1 /critique **REVISE→fixed**: M1 currency step added (incl. correcting the S1 ledger's false PASS) · N1 trigger label `Range: <active>` (Collection convention, no caret glyph) · N2 condensed active-state a11y stated (trigger label + ✓, the Collection precedent). Re-critique SHIP. Awaiting Approval 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |

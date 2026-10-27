@@ -1,8 +1,9 @@
 <!-- Conventions — features/projects · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · v1 projects · intake -->
 
-# Conventions — Projects  (level: Feature)
+# Conventions — Projects (level: Feature)
 
 ## How to build here
+
 - **Progress is derived, never stored truth.** Roll up bottom-up (Tasks → Deliverable → Milestone → Project);
   recompute on any descendant change; count-weighted to start (PJ-3). Never hand-set a `progress` column. `[INTENT G4]`
 - **A deliverable's progress comes from its `measurement_kind` × `binding_mode` (ADR-011).** pick the measure shape
@@ -28,6 +29,7 @@
   `[INTENT governing principle]`
 
 ## Naming & layout
+
 - Enum values (canonical, string-literal unions in `@vida/types`, SQL CHECK + Zod in `@vida/core`, never TS
   `enum`): `scope`(personal/professional/academic/community), `complexity`(simple/moderate/complex/enterprise),
   shared `status`(5)/`priority`(5). `[FACT: project.ts L13-15; ADR-002 §5.4]`
@@ -38,6 +40,7 @@
   **minutes**, soft delete, `_sync_*`. `[FACT: CLAUDE.md Conventions; docs/core/conventions.md]`
 
 ## Local landmines / "never do"
+
 - **Never** hand-edit a `progress` column, and **never** leave it `NOT NULL DEFAULT 0` — it is a **nullable override
   slot** (`NULL ⇒ derive`), derived via `progress()` on-read (PJ-3, M3). `[INTENT M3]`
 - **Never** read the tasks table directly — use the dedicated API (PJ-5). `[FACT: TK-9]`
@@ -48,4 +51,5 @@
 - **Never** reintroduce an inline per-project tag list — shared scoped tags via **`entity_tags`** (SP1/PJ-12). `[INTENT G11]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

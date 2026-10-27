@@ -3,18 +3,18 @@
      states the REBUILT schema (033_notes, 3 owned tables, no FKs); the pre-teardown 6-table floor is history
      (git show eaf64f8^:docs/features/notes-and-pages/structure-data.md). -->
 
-# Structure & Data — Notes & Pages  (level: Feature)
+# Structure & Data — Notes & Pages (level: Feature)
 
 > **Subject to:** ADR-006 (universal tags + open taggable-type registry) · ADR-004 (sessions) · ADR-007 (views) ·
 > ADR-009 (templates) · ADR-002/003 (data model + sync) · ADR-016 (DDL in SQL migrations).
 
 ## As-is (FACT floor) — 3 owned tables `[FACT: packages/core/src/db/schema/notes.ts; migrations/033_notes.ts]`
 
-| Table | Purpose | `[E]` fields | Key constraints |
-|---|---|---|---|
-| `pages` | the polymorphic page (6 `type` values) | `title`, `content`, `cover_image`, `summary_config` | `type` CHECK (6, fixed); partial UNIQUE `journal_date` where `type='journal' AND deleted_at IS NULL`; `entity_type` OPEN (registry, no CHECK); `parent_id` plain TEXT, no FK |
-| `page_links` | page↔page wiki link | `context` | `UNIQUE(source_page_id, target_page_id)` (full — revive on re-link) |
-| `note_attachments` | file blobs + thumbnail | `filename`, `encrypted_blob`, `thumbnail_blob` | addressed by `page_id`, no FK |
+| Table              | Purpose                                | `[E]` fields                                        | Key constraints                                                                                                                                                              |
+| ------------------ | -------------------------------------- | --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `pages`            | the polymorphic page (6 `type` values) | `title`, `content`, `cover_image`, `summary_config` | `type` CHECK (6, fixed); partial UNIQUE `journal_date` where `type='journal' AND deleted_at IS NULL`; `entity_type` OPEN (registry, no CHECK); `parent_id` plain TEXT, no FK |
+| `page_links`       | page↔page wiki link                    | `context`                                           | `UNIQUE(source_page_id, target_page_id)` (full — revive on re-link)                                                                                                          |
+| `note_attachments` | file blobs + thumbnail                 | `filename`, `encrypted_blob`, `thumbnail_blob`      | addressed by `page_id`, no FK                                                                                                                                                |
 
 - **No SQL foreign keys** reference `pages` (cascade is app-layer, NP-9). `[FACT: migrations/033_notes.ts:14]`
 - **Consumed, not owned:** `entity_links`, `entity_tags`, `tags` = the AR-6 Spaces substrate (ADR-006 §3.1 — N&P is a
@@ -27,6 +27,7 @@
   mirror (`content_text` was retired). `[FACT: intake:27 (eaf64f8^); NOT-45/50]`
 
 ## Derived data (no column)
+
 - **Excerpt** — no column exists `[FACT: ADR-002 L1297-1329]`; derived client-side from the decrypted `content`
   `[INTERP: performance-strategy.md:203 sketches an `extractPlainText` for FTS; no such function exists in code]`. Exact rule
   (length / first block): `[UNKNOWN — homed: the collection-card slice PLAN (notes-rescope)]`.
@@ -34,6 +35,7 @@
   `[FACT: PLAN-s1:36-37; NP-2 local-day rule]`
 
 ## Collection views (ADR-007)
+
 - One Notes collection (`/notes`) — List · Gallery · Neural (EC-1 re-pinned 2026-10-26: journals left `/notes`; `surface-map.md:48`'s
   Calendar is stale). `[FACT: intake G3 :55; fe-notes envision §Re-pins]`
 - **Availability by type** `[INTENT G3]`: **Note** → List · Gallery · Neural (no Calendar); **Journal** → Calendar · List · Gallery,
@@ -48,10 +50,11 @@
   (XCU-06). `[FACT: decisions.md:895]`
 
 ## State management map
+
 - **React Query (v5)** owns DB-derived state: page lists `['notes','pages']`, a page `['pages',id]`, journal
   `['journal',date]`, backlinks, summary, search — invalidate + re-read on local writes, no optimistic patch.
   `[FACT: apps/web/src/notes/use-notes-rows.ts:52-64; use-note-entity.ts:129-140; home/use-journal-entry.ts:67;
-  state-conventions.md:121-127]`
+state-conventions.md:121-127]`
 - **Ephemeral UI state** (`useState`/Zustand): picker open, editor focus, active layout.
 - **Editor document** is held by TipTap/ProseMirror (Yjs at M4), not Zustand.
 - **Mode memory** (merged/tabbed, EC-5): per-type default, remembered per instance, persisted (anything that must
@@ -62,18 +65,22 @@
   RIDE owners. Storage needs no new schema (sync OFF in M1). ADR-006 per-instance-memory append owed (Step 5).
 
 ## Page / route map
+
 - `/notes` collection · `/notes/$id` any page · Home `/` = today's journal (same editor body). `[FACT: apps/web/src/routes.tsx:76-87;
-  information-architecture.md:102]`
+information-architecture.md:102]`
 
 ## Dependencies / graph
+
 - In-degree 14; structural out-degree 0 beyond the Spaces foundation beneath it. `[FACT: module-dependency-graph.md:252;
-  docs/README.md:36]`
+docs/README.md:36]`
 
 ## Single source of truth
+
 - `PAGE_TYPE` (6) + `JournalSummaryConfig` declared once in `@vida/types/note.ts`; SQL CHECK mirrors `PAGE_TYPE`;
   Zod validators in `@vida/core/validators/note.ts`. `entity_type` = the open registry (`_registry.ts`), not a fixed
   enum here. `[FACT: note.ts:23-31,79; _registry.ts]`
 
 ## Completion checklist
+
 - [x] FACT floor = the rebuilt schema · [x] consumed vs owned · [x] derived data · [x] per-type views + degraded ·
-  [x] state map · [x] UNKNOWNs homed
+      [x] state map · [x] UNKNOWNs homed

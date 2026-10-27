@@ -114,7 +114,13 @@ function Check() {
   return (
     <View color="$colorTextPrimary" pointerEvents="none">
       <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+        <path
+          d="M5 12.5 10 17.5 19 7"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
       </svg>
     </View>
   )
@@ -125,7 +131,20 @@ function Check() {
 type PanelPos = { left: number; minWidth: number; maxWidth: number; maxHeight: number; top: number }
 
 const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
-  { value, defaultValue, onValueChange, options, placeholder, disabled, invalid, required, size = 'md', name, id, ...rest },
+  {
+    value,
+    defaultValue,
+    onValueChange,
+    options,
+    placeholder,
+    disabled,
+    invalid,
+    required,
+    size = 'md',
+    name,
+    id,
+    ...rest
+  },
   ref,
 ) {
   ensureSelectStyles()
@@ -219,7 +238,14 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
     if (!open) {
       if (key === 'ArrowDown' || key === 'Enter' || key === ' ' || key === 'Spacebar') {
         e.preventDefault()
-        openPanel(current != null ? Math.max(0, options.findIndex((o) => o.value === current)) : firstEnabled())
+        openPanel(
+          current != null
+            ? Math.max(
+                0,
+                options.findIndex((o) => o.value === current),
+              )
+            : firstEnabled(),
+        )
       } else if (key === 'ArrowUp') {
         e.preventDefault()
         openPanel(lastEnabled())
@@ -327,7 +353,15 @@ const SelectInner = forwardRef<HTMLButtonElement, SelectProps>(function Select(
   const toggle = () => {
     if (disabled === true) return
     if (open) setOpen(false)
-    else openPanel(current != null ? Math.max(0, options.findIndex((o) => o.value === current)) : firstEnabled())
+    else
+      openPanel(
+        current != null
+          ? Math.max(
+              0,
+              options.findIndex((o) => o.value === current),
+            )
+          : firstEnabled(),
+      )
   }
 
   return (

@@ -25,7 +25,12 @@ function FakeLayout() {
           ['Priority', 'High'],
         ].map(([label, value]) => (
           <View key={label}>
-            <Text fontFamily="$display" fontSize="$subheading" color="$colorTextPrimary" style={{ fontVariantNumeric: 'tabular-nums' }}>
+            <Text
+              fontFamily="$display"
+              fontSize="$subheading"
+              color="$colorTextPrimary"
+              style={{ fontVariantNumeric: 'tabular-nums' }}
+            >
               {value}
             </Text>
             <Text fontSize="$caption" color="$colorTextMuted">
@@ -49,8 +54,8 @@ function FakeEditor() {
         Working notes
       </Text>
       <Text fontSize="$body" color="$colorTextPrimary">
-        The Editor facet renders the entity’s linked page — the TipTap block canvas (Canvas: Editor #7), composed into this
-        slot. The shell owns the generic page states; the page owns its content.
+        The Editor facet renders the entity’s linked page — the TipTap block canvas (Canvas: Editor #7), composed into
+        this slot. The shell owns the generic page states; the page owns its content.
       </Text>
       <Text fontSize="$body" color="$colorTextPrimary">
         A second paragraph, to show the page reads as a document, not a form.
@@ -106,6 +111,10 @@ export const TabbedDeepLinkEditor: Story = { render: () => <Controlled initialMo
 // The registry gate OFF — a page-less entity: no Editor facet, no Content tab, no toggle.
 export const PageLessEntity: Story = { render: () => <Controlled pageAble={false} /> }
 // DISTINCT from page-less (EC-3): the Content tab IS shown, rendering a teaching empty body.
-export const EmptyEditor: Story = { render: () => <Controlled initialMode="tabbed" initialFacet="editor" editorState="empty" /> }
-export const EditorLoading: Story = { render: () => <Controlled initialMode="tabbed" initialFacet="editor" editorState="loading" /> }
+export const EmptyEditor: Story = {
+  render: () => <Controlled initialMode="tabbed" initialFacet="editor" editorState="empty" />,
+}
+export const EditorLoading: Story = {
+  render: () => <Controlled initialMode="tabbed" initialFacet="editor" editorState="loading" />,
+}
 export const EditorError: Story = { render: () => <Controlled initialMode="merged" editorState="error" /> }

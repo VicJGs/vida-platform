@@ -42,7 +42,15 @@ export function resolveActiveBlock(editor: Editor): BlockTypeKey {
 /** Reflected state the toolbar renders from. Flat + primitive so `useEditorState`'s default deepEqual is cheap. */
 export interface ToolbarState {
   marks: { bold: boolean; italic: boolean; underline: boolean; strike: boolean; code: boolean }
-  can: { bold: boolean; italic: boolean; underline: boolean; strike: boolean; code: boolean; undo: boolean; redo: boolean }
+  can: {
+    bold: boolean
+    italic: boolean
+    underline: boolean
+    strike: boolean
+    code: boolean
+    undo: boolean
+    redo: boolean
+  }
   activeBlock: BlockTypeKey
 }
 

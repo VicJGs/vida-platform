@@ -1,8 +1,10 @@
 # PLAN — check-ins ① · S2 Entry CRUD
+
 Status: draft (gate-1 = this spec) · Session: 2026-09-19-mod-check-ins · Slice: S2 (legs CHE-01, CHE-02, CHE-03, CHE-04, CHE-20, CHE-21, CHE-31)
 No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded in the notes-service precedent + check-ins docs.
 
 ## 1. Identity
+
 Stand up the `@vida/core` check-ins **service scaffold** (`services/checkins/{types,service,index}.ts`) and its
 **entry CRUD** surface over `daily_check_ins`. Factory-object, hoisted closures, no `this.` (the ② destructure
 shape). `[FACT: services/notes/service.ts:72; memory factory-service-no-this-for-intra-calls]`
@@ -11,6 +13,7 @@ gate, mirroring notes S1's read-only `entityTagRepo`, `notes/service.ts:85`); no
 re-feed (CHE-16 → S5; `updateCheckIn` persists only, the link hook is added in S5); not derivations (S4).
 
 ## 2. Business Rules
+
 - **CHE-01 — one per (date, type).** `createCheckIn` pre-queries the (`check_in_date`,`check_in_type`) slot via
   `getCheckIn`; on clash throws `DuplicateCheckInError`. Mirrors the `JournalExistsError` pre-query pattern
   (`notes/service.ts:108-113`). The DB `uq_daily_check_ins_slot` is the backstop (`check-ins.ts:63`). `[FACT: notes/service.ts:108-113; check-ins.ts:63; contract.md:46]`
@@ -38,7 +41,9 @@ re-feed (CHE-16 → S5; `updateCheckIn` persists only, the link hook is added in
   `create()` returns the input-derived row → backfill notNull-default columns. `[FACT: repository.ts:176-216; notes/service.ts:115-125]`
 
 ## 3. Contract
+
 `services/checkins/types.ts`:
+
 ```ts
 interface CheckInsServiceDeps { db: DrizzleDb; deviceId: string }   // S5 adds effectRail/links
 interface CheckInsService {
@@ -52,6 +57,7 @@ class DuplicateCheckInError extends Error            // CHE-01 (mirror JournalEx
 class RequiredQuestionUnansweredError extends Error  // CHE-20
 class StandardFieldInCustomDataError extends Error   // CHE-21 (fail-loud reject)
 ```
+
 **Return type = `DailyCheckIn` (the parsed domain interface), NOT the raw Row** — this is a CONSTRUCTED/parsed
 return (the JSON array/object fields are `text()` columns; `$inferSelect` types them `string | null`, the
 interface types them `string[]`/`Record`). This is the "constructed returns use a view/domain type" case, NOT
@@ -59,6 +65,7 @@ the "raw list reader returns Row" case (memory [[drizzle-row-not-assignable-to-v
 matches the **approved seam-contract** (`Promise<DailyCheckIn>`) + the preferences `toMerged` precedent
 (`service.ts:113`). `[DEVIATION 2026-09-19: S2 §3 originally said `DailyCheckInRow`, contradicting the
 seam-contract; corrected to `DailyCheckIn` — Route History.]`
+
 - **Serialization boundary (preferences precedent):** WRITE → `serialize()` `JSON.stringify`s the JSON fields
   (`top_intentions`/`wins`/`gratitude`/`challenges`/`tomorrow_focus`/`custom_data`) before `repo.create/update`
   (`service.ts:155-168`). READ → `toDailyCheckIn(row)` maps the Row to `DailyCheckIn`, `parseJson`ing those
@@ -66,6 +73,7 @@ seam-contract; corrected to `DailyCheckIn` — Route History.]`
   The `_sync_status` Row(`string`)→union gap is cast once at the mapper boundary (the DB-11 reconcile).
 
 ## 4. Acceptance
+
 - [ ] Service scaffold created + wired into `services/index.ts` barrel · `createCheckInsService(deps)` returns the object.
 - [ ] `createCheckIn` persists a valid entry; a second create on the same (date,type) throws `DuplicateCheckInError`.
 - [ ] Backfilled notNull-defaults present on the returned row (no `undefined` required field).
@@ -73,19 +81,22 @@ seam-contract; corrected to `DailyCheckIn` — Route History.]`
 - [ ] CHE-20: create with an unanswered required question throws `RequiredQuestionUnansweredError`; passes when answered.
 - [ ] CHE-21: a standard field duplicated in `custom_data` is rejected/stripped (guard).
 - [ ] `tsc --noEmit` 0 · ESLint clean.
-- [ ] **Verification Gate:** Vitest logic + ≥2 failure paths (dup slot, unanswered required) + **live-store smoke** (real DB create→read; slot-collision path) — mirror `preferences-service.test.ts`/`notes` __tests__ live-store setup.
+- [ ] **Verification Gate:** Vitest logic + ≥2 failure paths (dup slot, unanswered required) + **live-store smoke** (real DB create→read; slot-collision path) — mirror `preferences-service.test.ts`/`notes` **tests** live-store setup.
 
 ## 5. Implementation Prompt
+
 1. `services/checkins/types.ts` — `CheckInsServiceDeps`, `CheckInsService` (S2 methods), input types via `z.infer` of the S1 schemas, `DuplicateCheckInError`/`RequiredQuestionUnansweredError` (mirror `notes/types.ts:103-116`).
 2. `services/checkins/service.ts` — `createCheckInsService(deps)`; `dailyRepo` (softDelete:false), read-only `questionRepo` (for CHE-20). Implement the 4 methods + the CHE-20/CHE-21 guards per §2. Backfill defaults on create (§2). Reads use plain `eq()` clauses (no isNull).
 3. `services/checkins/index.ts` — re-export; add `export * from './checkins'`-equivalent to `services/index.ts`.
-4. `services/checkins/__tests__/checkins-service.test.ts` — unit + live-store smoke (§4), mirroring the sibling __tests__ harness.
+4. `services/checkins/__tests__/checkins-service.test.ts` — unit + live-store smoke (§4), mirroring the sibling **tests** harness.
 5. `pnpm --filter @vida/core test` + `tsc --noEmit` → §4 done-check.
 
 ## 6. Open UNKNOWNs
+
 - [none blocking] — error class identifiers are [INTERP] (only `DuplicateCheckInError` is doc-named, contract.md:46). CHE-20 reads the questions table directly (grounded in the notes read-only-repo precedent).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change        |
+| ---------- | ------------------------ | ------------- |
 | 2026-09-19 | 2026-09-19-mod-check-ins | S2 PLAN draft |

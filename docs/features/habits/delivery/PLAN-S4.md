@@ -1,8 +1,11 @@
 # PLAN — S4 · Derived reads: today-list + analytics + M5 seam
+
 # Spec: feature:mod-habits · slice S4 (§XXVI g1) · Status: draft
+
 # No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded per Victor's standing directive.
 
 ## 1. Identity
+
 S4 adds the read-only derived surface: `getTodayHabits` (HAB-05) + `getStreak`/`getCompletionRate`/`getMoodTrend`/
 `getCalendar` (HAB-15), all derived-from-ledger/cache. These ARE the ADR-011 **M5 measure read seam** (R7) —
 `streak(habit)`/completion-rate advertised as queryable measures Journal/Purpose read THROUGH. `[FACT: parts/habits.md:15,25; contract.md:20-24]`
@@ -10,6 +13,7 @@ NOT in S4: any WRITE (S1–S3 own writes); the today-list 3 display modes / char
 pursuable `rate` MEASURE VALUE + goal-vs-habit target model (the design-pass, rerun §5:146); effects (S5).
 
 ## 2. Business Rules (S4 slice)
+
 - **BR-S4-1 · `getTodayHabits` is a computed schedule read (HB-6).** Returns the active (`is_active`, not deleted)
   habits scheduled for `asOf` (reuses the S2 `isScheduledOn`). Each carries its `time_of_day`; the **grouping into
   Calendar/List/Checkbox modes is ② fe-habits** — the service returns the flat due-today `Habit[]`, never stored.
@@ -21,7 +25,7 @@ pursuable `rate` MEASURE VALUE + goal-vs-habit target model (the design-pass, re
   `rate = done/scheduled` (null when `scheduled==0` — the legitimate "nothing scheduled" empty state, never a
   silent 0). `[INTERP grounded HB-5 + isScheduledOn; contract.md:22]`
 - **BR-S4-4 · `getMoodTrend` = the per-completion mood points in range.** Returns `{date, mood_before, mood_after,
-  ease_rating, satisfaction}[]` (nulls preserved) for completions in `[from,to]`, ascending — the charts are ②.
+ease_rating, satisfaction}[]` (nulls preserved) for completions in `[from,to]`, ascending — the charts are ②.
   `[FACT: contract.md:22; business-rules.md:28-30]`
 - **BR-S4-5 · `getCalendar` = the month's completions.** Returns `{date, count, done}[]` for completions in a
   `YYYY-MM` month (for the calendar view render, ②). `[FACT: contract.md:24; identity.md:20]`
@@ -32,6 +36,7 @@ pursuable `rate` MEASURE VALUE + goal-vs-habit target model (the design-pass, re
   shape or throw consistently (see §3). `[FACT: business-rules.md:74 (analytics terminal states)]`
 
 ## 3. Contract (S4 — appended; DTOs service-local, @vida/types untouched, the finance-S3 precedent)
+
 ```
 getTodayHabits(): Promise<Habit[]>                                  // active + scheduled for asOf
 getStreak(habitId: string): Promise<{ current: number; longest: number; total: number }>
@@ -39,10 +44,12 @@ getCompletionRate(habitId: string, range: { from: string; to: string }): Promise
 getMoodTrend(habitId: string, range: { from: string; to: string }): Promise<MoodPoint[]>          // MoodPoint = {date, mood_before, mood_after, ease_rating, satisfaction}
 getCalendar(habitId: string, month: string): Promise<CalendarDay[]>                                // CalendarDay = {date, count, done}
 ```
+
 `getStreak`/rate/mood/calendar on a missing (or soft-deleted) habit → `Habit not found` (loadHabitOrThrow, S2
 precedent). `getTodayHabits` over an empty set → `[]`. `[FACT: services/finance/types.ts:103-183 (service-local DTO precedent)]`
 
 ## 4. Acceptance (✓live)
+
 - [ ] `getTodayHabits` returns only active habits scheduled today; excludes off-schedule + soft-deleted ✓live
 - [ ] `getTodayHabits` excludes a non-scheduled-today habit + a `weekly` habit with null `days_of_week` (no schedule; the `custom`-empty case is unreachable — createHabit rejects it, BR-S1-2) ✓live
 - [ ] `getStreak` reflects the cache after S2 mutations ✓live
@@ -53,6 +60,7 @@ precedent). `getTodayHabits` over an empty set → `[]`. `[FACT: services/financ
 - [ ] `tsc` 0 · eslint 0 · full `@vida/core` suite green
 
 ## 5. Implementation Prompt (ordered; cites §2)
+
 1. **`services/habits/types.ts`** — add DTOs `StreakSummary`, `CompletionRate`, `MoodPoint`, `CalendarDay`, and the
    5 method sigs on `HabitsService`. (Service-local DTOs; `@vida/types` untouched — the finance-S3 precedent.)
 2. **`services/habits/service.ts`** — add the 5 read methods. `getTodayHabits`: read ROWS directly —
@@ -67,11 +75,13 @@ precedent). `getTodayHabits` over an empty set → `[]`. `[FACT: services/financ
 4. Run typecheck + `test -- habits` (Node 24) + eslint. Done = §4 green → S4 Verification Gate.
 
 ## 6. Open UNKNOWNs
+
 - [UNKNOWN → design-pass, NOT S4] the pursuable `rate` MEASURE value + goal-vs-habit target model (rerun §5:146).
   S4 ships `getCompletionRate` (analytics ratio) + advertises the M5 seam; it does NOT compute the measurement-engine
   `rate` measure. Flagged, not built.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session               | Change                                                                                                   |
+| ---------- | --------------------- | -------------------------------------------------------------------------------------------------------- |
 | 2026-09-23 | 2026-09-23-mod-habits | S4 PLAN — read-only derived surface + M5 seam; grouping/charts = ②; pursuable rate measure = design-pass |

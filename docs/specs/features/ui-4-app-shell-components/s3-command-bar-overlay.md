@@ -1,15 +1,17 @@
 # Spec: feature:ui-4-app-shell-components / S3 — Command-bar overlay
-Status: draft            <!-- draft → approved → implemented -->
+
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: apps/web/src/shell (chrome), apps/web/src/command-bar + apps/web/src/stores (model, read-only)
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X]. Inherits the umbrella §2 BR-1..7.
 Sessions: 2026-08-16-ui-4-app-shell-components-4
 
 > Unit S3 of UI-4 (umbrella `_index.md` §5). The **⌘K command-bar overlay**: the rendered launcher the UX-2 model
-> (`command-bar/*` + `stores/command-bar-ui-store.ts`) was designed against. S2 already wired the *trigger*
+> (`command-bar/*` + `stores/command-bar-ui-store.ts`) was designed against. S2 already wired the _trigger_
 > (`commandBar.open()`); S3 renders what `isOpen` shows, owns the global ⌘K keydown, and injects the router into the
 > command run-context. Composes UI-1 `Dialog` + `Input` (BR-1 — no new `@vida/ui` component). Off clean `main`, own PR.
 
 ## 1. Identity
+
 The **command-bar overlay** — a single always-available modal launcher, opened with **⌘K (mac) / Ctrl+K (win/linux)**
 or the global-bar Search trigger (S2), that lets the user **jump anywhere** (navigation commands) and **do anything**
 (action commands), and — once DB-8 lands — **search** their data. Keyboard-first, from any screen.
@@ -20,6 +22,7 @@ or the global-bar Search trigger (S2), that lets the user **jump anywhere** (nav
   M1.0". S3 is that render host; UX-2 owns the model, MOD-prefs the history store (M1.1), DB-8 the search index (M1.4).
 
 **What it renders/wires** (existing artifacts, referenced not redefined):
+
 - [FACT: stores/command-bar-ui-store.ts:18-25] `useCommandBarUIStore` — `isOpen`/`query`/`mode` + `open()`/`close()`/
   `setQuery()`. The overlay reads `isOpen` to mount, `query`/`mode` to switch surfaces; `close()` on execute/dismiss.
 - [FACT: command-bar/registry.ts:15-43] `createCommandRegistry()` + `navProvider` + `shellActionsProvider` — S3
@@ -36,11 +39,12 @@ or the global-bar Search trigger (S2), that lets the user **jump anywhere** (nav
 **What it is NOT** — [INTERP] not the FTS5 search backend (DB-8; search is a guarded stub → `search-unavailable`,
 not a blank) · not the `command_bar_history` recency store (MOD-prefs, M1.1 — history is an EMPTY seam in M1.0, the
 frecency rank degrades to provider order) · not per-module action commands (each module contributes at M1.1+; M1.0
-seeds nav + "Toggle sidebar" only) · not the Search *trigger* (S2 shipped it — S3 owns only the global ⌘K keydown +
+seeds nav + "Toggle sidebar" only) · not the Search _trigger_ (S2 shipped it — S3 owns only the global ⌘K keydown +
 the overlay) · not onboarding (S4) · not a new `@vida/ui` primitive (rule-of-three unmet — composes UI-1) · not
 client-state conventions (UX-4).
 
 ## 2. Business Rules (S3 refinements of the umbrella BR-1..7)
+
 - **S3-BR-a · Compose UI-1 Dialog + Input; build the combobox inside (BR-1).** [FACT: dialog.tsx:35-49 `DialogProps`,
   :159/:283-316 self-portal, :207-226 background `inert`+`aria-hidden`, :182-203 focus **returns to whatever was
   focused before open** (captured `document.activeElement`, not a trigger ref) + export-dialog precedent
@@ -53,7 +57,7 @@ client-state conventions (UX-4).
   `role="combobox"`, `aria-expanded="true"`, `aria-controls={listboxId}`, `aria-activedescendant` (see the empty-list
   rule below), `aria-autocomplete="list"`, and its own `aria-label`. The command list is a `role="listbox"` of
   `role="option"` **divs with NO `tabindex`** (click-only — `onClick` executes, `onMouseMove` sets active); `↑/↓`
-  move a *virtual* active option (wrapping), `Enter` executes it. **These ARIA + `onKeyDown` props reach the inner
+  move a _virtual_ active option (wrapping), `Enter` executes it. **These ARIA + `onKeyDown` props reach the inner
   `<input>` via UI-1 Input's consumer-extras pass-through** ([FACT: input.tsx:192-194] `{...rest}` is spread onto
   `NativeInputEl` before the computed props; JSX spread forwards keys outside the narrowed `NativeInputExtra` Pick,
   and `render:'input'` forwards native attrs at runtime) — so NO Input type-widening / `packages/ui` edit is needed (BR-1).
@@ -115,14 +119,14 @@ client-state conventions (UX-4).
     fingerprint shields farble `navigator.platform`/`userAgent`) → the listener expected Ctrl+K. Fix: the listener
     accepts `(e.metaKey || e.ctrlKey) && key==='k'` — reachability must not hinge on fragile `navigator` detection, and
     neither combo collides with an action we preserve (we `preventDefault`). `resolveKeybind` stays the CANONICAL
-    binding (the ⌘K/Ctrl+K hint the UI renders); only the listener's *match* is lenient. jsdom missed this because a
+    binding (the ⌘K/Ctrl+K hint the UI renders); only the listener's _match_ is lenient. jsdom missed this because a
     test controls `navigator` — it can only prove "given platform X, mod Y opens," never the detection mismatch itself.
 - **S3-BR-g · Frecency + flag filter, with an EMPTY history seam (M1.0).** [FACT: registry.ts:21-25 + frecency.ts:6-22
-  + feature-flags.ts] S3 `collect(history, now)`s the registry; `command_bar_history` is unbuilt (MOD-prefs, M1.1) so
-  **history = `[]`** → `rankByFrecency` degrades to provider order (nav commands, then "Toggle sidebar"). `now` =
-  `Date.now()` (irrelevant with empty history; correct when history arrives — apps may call `Date.now()`, the pure lib
-  may not). Then **filter by `visibleWhen`**: a command with `visibleWhen` shows only when `isFeatureEnabled(flag)` —
-  M1.0 fail-closed, so `gamification`'s nav command is absent (S2-BR-b parity; no default-open surface, BR-6).
+  - feature-flags.ts] S3 `collect(history, now)`s the registry; `command_bar_history` is unbuilt (MOD-prefs, M1.1) so
+    **history = `[]`** → `rankByFrecency` degrades to provider order (nav commands, then "Toggle sidebar"). `now` =
+    `Date.now()` (irrelevant with empty history; correct when history arrives — apps may call `Date.now()`, the pure lib
+    may not). Then **filter by `visibleWhen`**: a command with `visibleWhen` shows only when `isFeatureEnabled(flag)` —
+    M1.0 fail-closed, so `gamification`'s nav command is absent (S2-BR-b parity; no default-open surface, BR-6).
 - **S3-BR-h · Dialog accessible name + M1.0 positioning — disclosed, not a fork.** [FACT: dialog.tsx:38-39,84-104]
   `Dialog` REQUIRES a `title` (its `aria-labelledby`) and renders it as a visible `<h2>`, and centers the panel
   (no sheet/top-anchor variant). S3 passes a concise `title` ("Command menu") as the accessible name; a
@@ -143,6 +147,7 @@ client-state conventions (UX-4).
   reduced-motion→instant — B12). No hex, no invented spacing/z.
 
 ## 3. Contract
+
 Existing UI-1 primitives + the `command-bar/*` model + the stores + `useShellNavigate` are REFERENCED, not redefined.
 New chrome lives in `apps/web/src/shell/` (+ one `apps/web/src/lib/` util); the `apps/web/src/command-bar/` model layer
 is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount point.
@@ -178,7 +183,7 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
       `onClick`=execute + `onMouseMove`=set active) — non-focusable so Dialog's `getFocusable` stays `[input]` (B1).
       Empty-list guard → a disabled "No commands" option (shouldn't occur — nav commands always exist).
       - **Option DOM id (FOLD-1).** The `id` is a **sanitized, stable, unique** derivation of `command.id` — the raw
-        ids contain `:`/`/` (`nav:/people`, `action:toggle-sidebar`), legal as an id *value* (so `aria-activedescendant`
+        ids contain `:`/`/` (`nav:/people`, `action:toggle-sidebar`), legal as an id _value_ (so `aria-activedescendant`
         resolves) but `querySelector`-unsafe. Derive `` `cmdbar-opt-${slug(command.id)}` `` (slug = non-`[A-Za-z0-9_-]`
         → `-`); uniqueness holds because `command.id` is already unique (registry dedupes by route). `aria-activedescendant`
         references this id (never the raw `command.id`).
@@ -193,7 +198,7 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
   `useCommandBarUIStore.getState().open()`. Cleanup removes it. Deps stable (`[]` — reads the store imperatively via
   `getState`, the registry-action precedent). (§XVI: a hook for an external-system sync — the one legitimate effect.)
 - **`useCommandSearch`** (`apps/web/src/shell/use-command-search.ts`) — `(query: string, provider: SearchProvider):
-  SearchOutcome`. Empty `query` → `emptyQueryOutcome()` (`idle`, no call). Non-empty → a race-guarded `useEffect`:
+SearchOutcome`. Empty `query` → `emptyQueryOutcome()` (`idle`, no call). Non-empty → a race-guarded `useEffect`:
   set `loading`, `await provider.search(query)`, and apply the result ONLY if the query is still current (an
   incrementing request-id or a captured-query compare — discard stale). Returns the current `SearchOutcome`. (§XVI:
   external async sync; the one effect.)
@@ -211,6 +216,7 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
   Every actionable element has an accessible name.
 
 ## 4. Acceptance (S3 DoD — includes the component Visual Gate)
+
 - [ ] ⌘K (mac) / Ctrl+K (other) opens the overlay from any screen; `preventDefault` fires; the trigger click (S2)
       also opens it; both resolve via the store `open()` (S3-BR-f) — asserted in jsdom (dispatched keydown)
 - [ ] On open, focus lands IN the combobox input; Esc closes + restores focus to the pre-open element; backdrop click
@@ -244,6 +250,7 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
       (`apps/web/src/shell/CLAUDE.md`) updated with the new files; `DEF-S3-a` (sr-only title / sheet placement) filed
 
 ## 5. Implementation Prompt (ordered; each step cites §2/§3)
+
 1. **Platform util.** `apps/web/src/lib/platform.ts` — `detectPlatform(): Platform` (`'mac'|'other'` from
    `navigator`, SSR-guarded). +test (mac UA → 'mac'; other → 'other'; undefined navigator → 'other') (S3-BR-f).
 2. **⌘K keybind hook.** `apps/web/src/shell/use-command-keybind.ts` — `useCommandKeybind()`: a `useEffect([])` adding
@@ -274,11 +281,12 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
    S1 process-shim/viewport lessons already landed; the Dialog motion is UI-1's, already gated).
 7. **Currency + docs.** Re-verify `command-bar-and-search.md` current for the rendered overlay; update
    `apps/web/src/shell/CLAUDE.md` with the new files (command-bar.tsx, use-command-keybind.ts, use-command-search.ts)
-   + note `apps/web/src/lib/platform.ts`; file `DEF-S3-a` (Dialog sr-only-title + sheet/top-anchor placement — DS
-   enhancement). Done-check → §4; run `@vida/web` typecheck/test/lint + build, confirm the one-way boundary; Visual
-   Gate (step 6).
+   - note `apps/web/src/lib/platform.ts`; file `DEF-S3-a` (Dialog sr-only-title + sheet/top-anchor placement — DS
+     enhancement). Done-check → §4; run `@vida/web` typecheck/test/lint + build, confirm the one-way boundary; Visual
+     Gate (step 6).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - **None (no fork).** Every gap is closed by the documentation + the shipped model; two composition details are
   **disclosed** (not decisions):
   - **Two-mode surface** → the store contract (`command-bar-ui-store.ts:24`) + command-bar-and-search.md:20-27 fix it
@@ -292,9 +300,10 @@ is read-only (its CLAUDE.md forbids chrome). `app-shell.tsx` gains one mount poi
     fence for S3 (S3-BR-h).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-4 | S3 detailed spec authored (⌘K command-bar overlay: Dialog+Input compose, combobox/listbox, ⌘K keydown, router injection, search-unavailable states; BR-a..j; §5 7-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (current) + the shipped UX-2 model |
-| 2026-08-17 | 2026-08-16-ui-4-app-shell-components-4 | **Approval 2 ✅ → IMPLEMENTED. Visual-Gate finding (§XXVIII deviation): ⌘K dead on a real Mac** — the button opened the overlay but the shortcut didn't, because `detectPlatform()` resolved `'other'` (Brave farbles `navigator`) → the single-mod listener expected Ctrl+K. Fix: lenient match `(metaKey OR ctrlKey) && key==='k'` (S3-BR-f); `resolveKeybind` stays the canonical/display binding. +2 regression tests (⌘K opens under a farbled 'other' platform; Ctrl+K opens under 'mac'). jsdom couldn't catch it (a test controls `navigator`). |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-4 | **Approval 1 ✅. Rev 3 — /preflight PASSED (3 folds).** FOLD-1 option DOM id = `cmdbar-opt-${slug(command.id)}` (raw ids hold `:`/`/` → querySelector-unsafe; `aria-activedescendant` refs the slug). FOLD-2 M1.0-built (idle · loading · `role=status` message for search-unavailable/empty/error) vs DB-8-seam (`results` grouped listbox = TODO, unbuilt). FOLD-3 post-nav focus: Dialog's guarded restore (dialog.tsx:200-201, body fallback) handles the unmounted pre-open element; page-nav focus is the router's, not S3's. No new material. |
+
+| Date       | Session                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-4 | S3 detailed spec authored (⌘K command-bar overlay: Dialog+Input compose, combobox/listbox, ⌘K keydown, router injection, search-unavailable states; BR-a..j; §5 7-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (current) + the shipped UX-2 model                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-08-17 | 2026-08-16-ui-4-app-shell-components-4 | **Approval 2 ✅ → IMPLEMENTED. Visual-Gate finding (§XXVIII deviation): ⌘K dead on a real Mac** — the button opened the overlay but the shortcut didn't, because `detectPlatform()` resolved `'other'` (Brave farbles `navigator`) → the single-mod listener expected Ctrl+K. Fix: lenient match `(metaKey OR ctrlKey) && key==='k'` (S3-BR-f); `resolveKeybind` stays the canonical/display binding. +2 regression tests (⌘K opens under a farbled 'other' platform; Ctrl+K opens under 'mac'). jsdom couldn't catch it (a test controls `navigator`).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-4 | **Approval 1 ✅. Rev 3 — /preflight PASSED (3 folds).** FOLD-1 option DOM id = `cmdbar-opt-${slug(command.id)}` (raw ids hold `:`/`/` → querySelector-unsafe; `aria-activedescendant` refs the slug). FOLD-2 M1.0-built (idle · loading · `role=status` message for search-unavailable/empty/error) vs DB-8-seam (`results` grouped listbox = TODO, unbuilt). FOLD-3 post-nav focus: Dialog's guarded restore (dialog.tsx:200-201, body fallback) handles the unmounted pre-open element; page-nav focus is the router's, not S3's. No new material.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 2026-08-16 | 2026-08-16-ui-4-app-shell-components-4 | **Rev 2 — gate-1 critique (independent) REVISE folded** (2 blockers + 4 material + minors; the load-bearing S3-BR-b Input-passthrough claim was VERIFIED by the critic compiling it — no `packages/ui` edit, BR-1 holds). **B1** options are non-focusable `role=option` divs so Dialog's `getFocusable`==`[input]` (single-stop trap; focus-into lands on the input) — asserted+tested. **B2** the M1.0-shipping empty-search state: `aria-activedescendant` OMITTED when zero options (no dangling IDREF), ↑/↓ no-op, `search-unavailable` is `role=status` not a listbox. **M1** ⌘K is open-only, not a "toggle" (Esc/backdrop close). **M2** cite command-bar-and-search.md:32 — "type-ahead filters" is search-mode narrowing, not a command-mode filter (the store's mode-flip makes command-filtering structurally impossible). **M3** `ctx` rebuilt per render (live navigate). **M4** acceptance parity: ≥44×44 rows + token-only listbox + visible-title lines. Minors: precise cites (dialog focus-return :182-203; barrel Input:25/Dialog:31; overlayHost marker :172-182). |

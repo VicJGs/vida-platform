@@ -1,7 +1,7 @@
 <!-- Identity — features/skills · /documentation Phase 2 · sources: docs/intake/skills.md (v2 2-table floor + Notion
      "Abilities" design as CONTEXT + Victor's AUTHORITATIVE current-intent 2026-07-14). Module keeps name "Skills". -->
 
-# Identity — Skills  (level: Feature / higher-order module; Wave R — recovered/reframe)
+# Identity — Skills (level: Feature / higher-order module; Wave R — recovered/reframe)
 
 **What it is.** A **game-like growth engine that produces real-life outcomes** — the platform's system for
 **deliberately forging capabilities** across the six domains (Professional · Technical · Creative · Social · Mental
@@ -14,13 +14,14 @@ other skills in a **dependency Skill Graph** the user plays their "character" th
 mastery** — not a hobby checklist. "Mastery" has **real dependencies** (many skills share the same foundational
 patterns; some require others first), so the module models those dependencies, helps chart the path, and makes the
 daily work count by routing it into real Projects/Study/Practice. Fiction-like on the surface (levels, a tech-tree
-of *yourself*), real underneath. `[INTENT Victor]`
+of _yourself_), real underneath. `[INTENT Victor]`
 
 **What it owns.** `[INTENT]`
+
 - **Skills** — cross-domain, goal-driven capabilities (configurable ladder · derived level/progress · why-important
   · target-mastery · the **Skill Composer** config).
-- **The Skill Composer** — the user-facing **definition/integration layer**: per skill, configure *what it is · which
-  OS components it interacts with (the integration recipe) · what's tracked · how progress/mastery is measured* (the
+- **The Skill Composer** — the user-facing **definition/integration layer**: per skill, configure _what it is · which
+  OS components it interacts with (the integration recipe) · what's tracked · how progress/mastery is measured_ (the
   measurement choice draws the ADR-011 **`measurement_kind`** taxonomy — esp. **`qualitative`** for abilities that
   can't be faked into a number; mastery is a **`derived-pull`** measure) — in **Quick** (template+defaults) or
   **Advanced** (full custom) mode. `[INTENT; ADR-011 M1/M2]`
@@ -36,6 +37,7 @@ of *yourself*), real underneath. `[INTENT Victor]`
   submission. `[INTENT; ADR-014 X1/X2; ADR-015 AI1]`
 
 **What it composes (borrows).** `[FACT reshape]`
+
 - **Sessions** (Actions = `practice` sub-type + scheduler) · **Knowledge** (an ability's theory/mastery = a compound
   set; Study/Assessment activities; insights = objects) · **Projects** (Project-type activities) · **Purposes**
   (Target-Mastery laddering, capstone stub) · **Spaces** (tags/views/**Life Skill Tree** Block via the neural graph)
@@ -43,12 +45,14 @@ of *yourself*), real underneath. `[INTENT Victor]`
   engine; N-of-1 experiments on your own learning).
 
 **What it is NOT.**
+
 - **Not a session engine / not the metric owner** — practice = Sessions; mastery = derived (Core-style metrics). `[FACT]`
 - **Not a fixed universal scale** — each skill defines its own ladder (belts/ranks/milestones/CEFR). `[INTENT CI-1]`
-- **Not an island** — the *work* lives in Projects/Knowledge/Sessions via the dispatch model; Skills orchestrates. `[INTENT CI-2]`
+- **Not an island** — the _work_ lives in Projects/Knowledge/Sessions via the dispatch model; Skills orchestrates. `[INTENT CI-2]`
 - **Not a warden, not an external service** — AI-draft · external Skill-DB import · **user-sovereign template export**
   (X4 egress — the only community bridge per SK-3; never an in-OS submission pipeline) are **opt-in extension-model**;
   decay is advisory; the user is sovereign. `[FACT ZK-1/SU-1; ADR-014 X4; extension-model]`
 
 ## Completion checklist
+
 - [x] what/desire/owns/composes/NOT · [x] [FACT/INTENT] labels · [x] no `{{…}}`

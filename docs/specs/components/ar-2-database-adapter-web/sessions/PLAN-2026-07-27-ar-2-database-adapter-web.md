@@ -1,8 +1,9 @@
-# PLAN — AR-2 DatabaseAdapter + web-adapter   (session: 2026-07-27-ar-2-database-adapter-web · language: TypeScript)
+# PLAN — AR-2 DatabaseAdapter + web-adapter (session: 2026-07-27-ar-2-database-adapter-web · language: TypeScript)
+
 > Executive summary — read to approve the DIRECTION (Approval 1). Technical build detail is in the
 > IMPLEMENTATION-PLAN (gate 2). No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN].
 >
-> **Rev 3 (DIRECTION CORRECTED — sync → async).** Rev 2's approved direction (a *synchronous* driver keeping
+> **Rev 3 (DIRECTION CORRECTED — sync → async).** Rev 2's approved direction (a _synchronous_ driver keeping
 > `DrizzleDb` `'sync'` so `repository.ts` stays untouched) rested on a FACT that the INSTALLED library falsifies:
 > wa-sqlite@1.0.0's public Factory API implements `step`/`prepare_v2`/`reset`/`finalize`/`open_v2` as
 > unconditionally `async function` — a synchronous `SqliteDriver` is **impossible** over wa-sqlite regardless of
@@ -12,6 +13,7 @@
 > was the deviation. This Rev re-enters the §XXVI gate (§XXVIII step 6: re-PLAN from the broken assumption).
 
 ## 1. Context & demand
+
 For the app to boot, it must open its local SQLite database on the user's device and hand the data layer a
 working, typed connection. Today it can't: the existing adapter (`packages/core/src/db/adapter.ts`) is
 **encryption-first** — `open()` requires a SQLCipher passphrase and verifies an encryption key before the DB is
@@ -24,6 +26,7 @@ So nothing downstream can run: 6 issues (db-6, db-7, ar-5, ar-6, ar-8, ar-9) are
 the **root of the M1.0 spine**. `[FACT: delivery plan §5 depends-on graph]`
 
 ## 2. What changes and why
+
 **Why:** until the DB can open (unencrypted, in the browser) and hand back a typed Drizzle instance, no module,
 substrate, or service can be built or tested. First buildable brick.
 
@@ -38,15 +41,16 @@ non-Asyncify build). `[FACT: wa-sqlite/src/examples/AccessHandlePoolVFS.js:30-36
 WebAssembly build, i.e. the one without Asyncify"]`
 
 **Consequence — the "repository.ts untouched" fence dissolves (it was never a doc requirement).** An `'async'`
-`DrizzleDb` means `repository.ts` (which consumes it *synchronously* at ~8 sites) needs a bounded, mechanical
+`DrizzleDb` means `repository.ts` (which consumes it _synchronously_ at ~8 sites) needs a bounded, mechanical
 `await`-propagation so `@vida/core` keeps compiling. `[FACT: repository.ts:284,297,307-308,315,329-330,341-344,369,373-376,392]`
-This is consistent with the delivery plan's own dependency arrow — repository work is **DB-6**, which *depends on*
+This is consistent with the delivery plan's own dependency arrow — repository work is **DB-6**, which _depends on_
 AR-2. `[FACT: delivery plan §5 DB-6 "depends-on AR-2"]` AR-2 ships the minimal await-propagation to keep the build
 green; DB-6 still owns the real encrypt/decrypt seam work. No app code consumes the repository yet, so blast
 radius = **3 core files** (`adapter.ts` + `repository.ts` + `migrations/runner.ts` — the last is the async
 `getSchemaVersion` consumer the critique caught), zero app cascade. `[FACT: grep — no createRepository() caller in src; runner.ts:42,52]`
 
 **IN:**
+
 1. **`core/src/db/adapter.ts` — async pass.** `DrizzleDb` → `SqliteRemoteDatabase<typeof schema>` (`'async'`);
    `SqliteDriver` methods (`exec/run/query/batch/close`) → return Promises; the shared migration runner
    (`runMigrations`/`getSchemaVersion`/`setSchemaVersion`) + `initializeConnection` + cipher/connection helpers →
@@ -62,14 +66,16 @@ radius = **3 core files** (`adapter.ts` + `repository.ts` + `migrations/runner.t
    (Playwright) OR an explicit verification-deferred note.
 
 **OUT (explicit):**
+
 - Authoring migrations → **DB-7**; FTS5 → **DB-8**; SQLCipher activation → **M3**.
 - The full **main-thread ↔ worker application data binding** (how UI code calls the worker DB) → **AR-4/UI-4**.
-  AR-2 proves the driver works *inside* the worker; the async proxy callback is co-located in the worker (no
+  AR-2 proves the driver works _inside_ the worker; the async proxy callback is co-located in the worker (no
   premature postMessage RPC). `[FACT: delivery plan §5 AR-4 "state + routing"]`
 - The encrypt/decrypt **seam** semantics of the repository → **DB-6** (AR-2 only keeps it compiling under async).
 - Native mobile/desktop adapters → later.
 
 ## 3. Relevant business rules (functional)
+
 - **BR1 [NEW]** — the DB **opens without encryption** in M1.0: no passphrase required to reach a usable DB. `[ADR-017]`
 - **BR2 [FACT, preserved]** — the **encryption seam survives**: when a `sqlCipher` config is provided, `open()`
   configures + verifies the cipher; M3 activation is a config change, not a code change. `[ADR-002 §4]`
@@ -83,6 +89,7 @@ radius = **3 core files** (`adapter.ts` + `repository.ts` + `migrations/runner.t
   `repository.ts` becomes async at its call sites. `[Rev 3; wa-sqlite Factory API async :742-750; sqlite-proxy driver.d.ts]`
 
 ## 4. Acceptance (functional — gate-1, direction-observable)
+
 - [ ] The adapter opens a DB **with no passphrase** (plain path), and still routes through configure+verify **when a
       `sqlCipher` config is supplied** (seam present).
 - [ ] `DrizzleDb` is `'async'` (`SqliteRemoteDatabase`); `@vida/core` `tsc --noEmit` stays green with `repository.ts`
@@ -90,10 +97,11 @@ radius = **3 core files** (`adapter.ts` + `repository.ts` + `migrations/runner.t
 - [ ] The web driver is an **async `SqliteDriver`** backed by the sync wa-sqlite build + `AccessHandlePoolVFS` in a
       Web Worker; the Drizzle instance is built with `sqlite-proxy`.
 - [ ] The core barrel's adapter/repository exports are unchanged in **shape** (only sync→async on results).
-> Build-level DoD (persistence round-trip, failing-migration rollback, full test matrix) lives in the durable
-> `_index.md §2` and is proven at gate-2 / implementation.
+  > Build-level DoD (persistence round-trip, failing-migration rollback, full test matrix) lives in the durable
+  > `_index.md §2` and is proven at gate-2 / implementation.
 
 ## 5. Open questions / pending decisions
+
 - [DECIDED, Victor 2026-07-27] Execution model = **async driver + `sqlite-proxy` + Web Worker** (sync WASM build +
   `AccessHandlePoolVFS`). Corrects Rev 1/2's sync choice; aligns to delivery-plan AR-2.
 - [DECIDED, Victor 2026-07-27] `repository.ts` async-propagation **rides into AR-2** (keeps core compiling); DB-6
@@ -106,5 +114,6 @@ radius = **3 core files** (`adapter.ts` + `repository.ts` + `migrations/runner.t
   drizzle's `ProxyMigrator` (drizzle-kit folder format). `[FACT: sqlite-proxy/migrator.d.ts]`
 
 ## 6. Approval 1 (direction)
+
 [APPROVED — Victor, 2026-07-27] Rev-3 async direction confirmed (reverses Rev-1/2 sync; adopts the delivery-plan's
 async Drizzle proxy; repository.ts async-propagation rides into AR-2). IMPLEMENTATION-PLAN Rev 3 (gate 2) follows.

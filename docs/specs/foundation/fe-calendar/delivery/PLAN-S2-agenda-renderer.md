@@ -22,7 +22,7 @@
   of reusing PIECES not `resolveDataViewState` where the role model differs). Editorial chrome = the timeline P3
   gutter + calendar-view P5 recipes (serif display figures · uppercase tracked eyebrows · tabular numerics).
 
-## 2. Business rules (BR-CAL-S2-*)
+## 2. Business rules (BR-CAL-S2-\*)
 
 1. **BR-CAL-S2-1 · Grouping is presentational partition, not derivation.** Items arrive with `daypart` already
    assigned (the D1 mapping = S7 `useCalendar`'s job [FACT: slice-map.md:17]); AgendaView only ARRANGES. It never
@@ -93,30 +93,33 @@
 ```ts
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
 
-export type Daypart = 'morning' | 'afternoon' | 'evening'            // D1 type fixed here; numeric bands = S7
+export type Daypart = 'morning' | 'afternoon' | 'evening' // D1 type fixed here; numeric bands = S7
 
 export interface AgendaItem {
   id: string
   title: ReactNode
-  color?: string                   // user-data hex (purpose colour)
-  time?: string                    // 'HH:mm' display label; absent = all-day
+  color?: string // user-data hex (purpose colour)
+  time?: string // 'HH:mm' display label; absent = all-day
   daypart: Daypart
   weight?: 'must' | 'can'
-  done?: boolean                   // undefined = not completable (no checkbox ever)
+  done?: boolean // undefined = not completable (no checkbox ever)
 }
-export interface AgendaDay { date: string; items: readonly AgendaItem[] }   // date = 'YYYY-MM-DD'
+export interface AgendaDay {
+  date: string
+  items: readonly AgendaItem[]
+} // date = 'YYYY-MM-DD'
 export interface AgendaViewProps {
   days: readonly AgendaDay[]
-  today?: string                   // 'YYYY-MM-DD'; marks the day + gates the daypart grouping (BR-2)
-  state?: ViewState                // default 'success'
-  onToggleItem?: (id: string) => void   // INTENT (EC-12)
-  empty?: ReactNode                // slot overrides (the graph/board precedent)
+  today?: string // 'YYYY-MM-DD'; marks the day + gates the daypart grouping (BR-2)
+  state?: ViewState // default 'success'
+  onToggleItem?: (id: string) => void // INTENT (EC-12)
+  empty?: ReactNode // slot overrides (the graph/board precedent)
   error?: ReactNode
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
   'aria-labelledby'?: string
 }
-export function AgendaView(props: AgendaViewProps): ReactElement     // NON-generic (concrete AgendaItem) → ref-as-prop
+export function AgendaView(props: AgendaViewProps): ReactElement // NON-generic (concrete AgendaItem) → ref-as-prop
 ```
 
 Refinement vs the proposed seam: + `empty?`/`error?` slots (the shipped slot convention; seam-contract called
@@ -127,25 +130,28 @@ notational). Barrel exports: `AgendaView`, `AgendaViewProps`, `AgendaItem`, `Age
 canonical type IN `@vida/types` [FACT: slice-map.md:14-17 "Define a canonical `Daypart` in `@vida/types` …
 Homed in S2"; seam-contract.md:13 "also minted in @vida/types for apps/web"]. So S2 adds to
 `packages/types/src/common.ts` (the shared-enum home + house pattern [FACT: common.ts:28-38; habit.ts:26-27]):
+
 ```ts
 /** Canonical cross-module daypart (ADR — slice-map D1). Supersedes nothing: habits/routines keep their own
  *  `time_of_day`; modules MAP to this at the calendar seam (useCalendar, S7). */
 export const DAYPART = ['morning', 'afternoon', 'evening'] as const
 export type Daypart = (typeof DAYPART)[number]
 ```
+
 The `@vida/ui` renderer keeps its LOCAL structural `Daypart` union — `@vida/ui` cannot import `@vida/types`
 [FACT: interpretation.md NEEDS-2]; the two are structurally identical (the `ViewState` precedent). ⚠ Build
 note: editing `@vida/types` requires its dist rebuild before dependent typechecks [memory:
 editing-vida-types-needs-dist-rebuild-before-core-typecheck].
 
 **D1 open values — SETTLED here (the seam-contract owes them to S2's contract step [FACT: seam-contract.md:97]):**
+
 - **Clock-bands** (for S7's timed-item mapping; the renderer itself never maps — items arrive dayparted, BR-1):
   `morning` = before 12:00 · `afternoon` = 12:00–17:59 · `evening` = 18:00 onward. Grounded in the approved
   greybox: 09:30 → Morning, 17:00 → Afternoon [FACT: mockups/greybox/agenda.png].
 - **All-day-task default band** = `'morning'` (the day's actionable start — the greybox places the all-day
   check-in first under Morning), configurable at the `useCalendar` seam (S7) per slice-map D1 "a configurable
   default band" [FACT: slice-map.md:17].
-These are recorded S7 mapping constants; S2 ships no mapping code.
+  These are recorded S7 mapping constants; S2 ships no mapping code.
 
 ## 4. Acceptance
 
@@ -195,7 +201,7 @@ These are recorded S7 mapping constants; S2 ships no mapping code.
    add `agendaFixture(focused)` (an inline fixture fn, the S1 `monthFixture` pattern [FACT: index.tsx:55-69] —
    the Mon–Sun week of `focused`, mirroring the greybox: Thu=today dayparted mix of timed/all-day/must/can/done,
    sparser flat days, one skipped day) + swap the dispatch: `range === 'agenda'` → `<AgendaView days=… today=…
-   onToggleItem={deny-safe no-op}/>` — the doc-fixed M1 wiring: "deny-safe no-op until the owning capability
+onToggleItem={deny-safe no-op}/>` — the doc-fixed M1 wiring: "deny-safe no-op until the owning capability
    ships; the intent surface is fixed here so the renderer never changes when it lands" [FACT:
    seam-contract.md:100-101] (the EmptyState placeholder remains for week/day/year/living); apps/web tsc +
    targeted tests. NOTE: no `?sample` param — the surface is fixture-driven by construction until S7.
@@ -208,9 +214,10 @@ These are recorded S7 mapping constants; S2 ships no mapping code.
 ## 5a. Deviation record (§XXVIII)
 
 **D-S2-DEV-1 · checkbox focus/hover mechanism: injected stylesheet → Tamagui `focusVisibleStyle`/`hoverStyle`.**
+
 - **What diverged:** BR-6/§5.1 named `internal/agenda-view-styles.ts` (injected CSS) for the checkbox `:focus-visible`
-  ring + hover, citing `checkbox-styles.ts`. Grounding at build time: the house rule is *"Injected CSS is only for
-  pseudo-class/`:has` state the styled component can't see"* [FACT: packages/ui/src/CLAUDE.md §internal Rule], and
+  ring + hover, citing `checkbox-styles.ts`. Grounding at build time: the house rule is _"Injected CSS is only for
+  pseudo-class/`:has` state the styled component can't see"_ [FACT: packages/ui/src/CLAUDE.md §internal Rule], and
   Tamagui expresses both on a styled host — the native-`<button>` `Tab` uses `focusVisibleStyle` with
   `$colorFocusRing` [FACT: tabs.tsx:85-92]; `hoverStyle` is the Select precedent [FACT: ui CLAUDE.md, select.tsx:82].
   `checkbox-styles.ts` injects ONLY because its focus is on a hidden `<input>` while the ring paints on a SIBLING
@@ -225,6 +232,7 @@ These are recorded S7 mapping constants; S2 ships no mapping code.
   stop** with the rest of the slice; trivially reversible.
 
 **D-S2-DEV-2 · 375 strategy: rail-compression → rail-reflow (`flexWrap` + items `minWidth`).**
+
 - **What diverged:** N2 pre-authorized compressing the rail 96→~72 if 375 crushed the title. Build-time arithmetic
   shows compression cannot fix it: ~327px content − 96 rail − 16 gap = ~215px items column; the row's fixed parts
   (64 time + 8 dot + ~40 tag + 20 box + 4×12 gaps ≈ 180) leave the title **~35px** (72-rail → ~59px). Still crushed.
@@ -236,6 +244,7 @@ These are recorded S7 mapping constants; S2 ships no mapping code.
   MUST still binds; the reflow is what makes it pass). **Approval:** presented at the S2 Visual Gate stop.
 
 **D-S2-DEV-3 · surface wiring: deny-safe no-op handler → handler OMITTED.**
+
 - **What diverged:** §5.6 wired `onToggleItem={deny-safe no-op}` on the surface. The independent g2 review showed the
   consequence: the renderer's render-when-handler gate then shows FOCUSABLE checkboxes that do nothing (SR announces
   "checkbox, not checked"; Space changes nothing) — a dead affordance on the live surface.
@@ -252,10 +261,10 @@ These are recorded S7 mapping constants; S2 ships no mapping code.
 
 ## 6. Change log
 
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-10-18 | fe-calendar S2 | PLAN authored (gate 1); D-S2-1 today-dayparted asymmetry surfaced as the one INTERPRETATION; seam §A ratified + slots refinement. |
-| 2026-10-18 | fe-calendar S2 | gate-1 /critique **REVISE→fixed**: **B1** checkbox a11y completed (native `<button role="checkbox">`, Space/Enter free, `aria-labelledby`→title id [title is ReactNode], `:focus-visible` ring via `--color-focus-ring` in `internal/agenda-view-styles.ts`, hover border-strengthen) · **M1** currency home fixed now = `v10-agenda-view.md` (v8/v9 convention) · **M2** `role="listitem"` explicit + tested · **N1** `items: readonly` · **N2** rail 96→~72 pre-authorized if the 375 gate shows crush. Re-critique SHIP. |
+| Date       | Session        | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | -------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-18 | fe-calendar S2 | PLAN authored (gate 1); D-S2-1 today-dayparted asymmetry surfaced as the one INTERPRETATION; seam §A ratified + slots refinement.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 2026-10-18 | fe-calendar S2 | gate-1 /critique **REVISE→fixed**: **B1** checkbox a11y completed (native `<button role="checkbox">`, Space/Enter free, `aria-labelledby`→title id [title is ReactNode], `:focus-visible` ring via `--color-focus-ring` in `internal/agenda-view-styles.ts`, hover border-strengthen) · **M1** currency home fixed now = `v10-agenda-view.md` (v8/v9 convention) · **M2** `role="listitem"` explicit + tested · **N1** `items: readonly` · **N2** rail 96→~72 pre-authorized if the 375 gate shows crush. Re-critique SHIP.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-10-18 | fe-calendar S2 | **Approval 2 (Victor) → BUILT.** g2 code-review (10 findings): 8 folded (`type="button"` · `${date}-${i}` keys · stale-loading warn · native-button+no-form-submit tests · dead className · fixture comment · `<span>` HitArea · dead no-op affordance → D-S2-DEV-3), 1 rejected (DAYPART≡ROUTINE_TIME_OF_DAY — slice-map D1 mandates a separate canonical type "superseding nothing"; no column → no Zod), 1 routed to the S1 defect unit ("This week ·" on every week = S1 `periodLabel`). Visual Gate caught + fixed: unchecked border 1.2–1.7:1 → `$colorTextMuted` (3:1) · hit 42→46. **Visual Gate PASS — Victor-reviewed 2026-10-18; D-S2-DEV-1..3 approved.** Surfaced 2 PRE-EXISTING S1 chrome defects (EC-1 switcher no <768 condense → 375 overflow; wrapping period title overlaps) → own gated fix unit before S3. tsc 0 · @vida/ui 559/559 (ExportDialog first-test load flake green alone) · apps/web tsc 0 · eslint 0. Currency → `v10-agenda-view.md` + ui CLAUDE.md + web-client-runtime current-spec + seam-contract amendments. |
-| 2026-10-18 | fe-calendar S2 | **Approval 1 (Victor)** → preflight **BLOCKED→fixed** (the acceptance cited a nonexistent `?sample` route — corrected to the S1 inline-fixture pattern + the dispatch swap + the seam-contract:100 deny-safe no-op intent; verified: enum-parity needs no DAYPART row [explicit table-scoped fixture], no Zod validator [not a CHECK column]) → re-preflight **PASSED** → gate-2 critique **REVISE→fixed** (M1: §5.7 now amends seam-contract §Open-at-build with the settled band values — the living seam doc must not keep a resolved item open) → **SHIP**. Awaiting Approval 2. |
-| 2026-10-18 | fe-calendar S2 | **Grounding pass (Victor: "ground everything in the documentation")** — 3 corrections: **(1)** D-S2-1 today-dayparted asymmetry reframed INTERPRETATION → **DOC-RESOLVED FACT** (both approved visual records encode it: mockup `.part` only under `.is-today` + greybox v3); **(2)** the D1 `@vida/types` `Daypart` mint pulled INTO S2 (slice-map:14-17 homes D1 here + seam-contract:13 — my S7 deferral was a manufactured deferral) with the `common.ts` shared-enum pattern + local structural mirror (NEEDS-2) + types-dist rebuild note; **(3)** the seam-contract:97 open values SETTLED (clock-bands <12 / 12–17:59 / 18+ grounded in the greybox; all-day-task default band = morning, configurable at S7). + citations: IR-6 (never assume time), NEEDS-3 (intents), NEEDS-4 (TZ), slice-map:35 (constrained measure). |
+| 2026-10-18 | fe-calendar S2 | **Approval 1 (Victor)** → preflight **BLOCKED→fixed** (the acceptance cited a nonexistent `?sample` route — corrected to the S1 inline-fixture pattern + the dispatch swap + the seam-contract:100 deny-safe no-op intent; verified: enum-parity needs no DAYPART row [explicit table-scoped fixture], no Zod validator [not a CHECK column]) → re-preflight **PASSED** → gate-2 critique **REVISE→fixed** (M1: §5.7 now amends seam-contract §Open-at-build with the settled band values — the living seam doc must not keep a resolved item open) → **SHIP**. Awaiting Approval 2.                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-10-18 | fe-calendar S2 | **Grounding pass (Victor: "ground everything in the documentation")** — 3 corrections: **(1)** D-S2-1 today-dayparted asymmetry reframed INTERPRETATION → **DOC-RESOLVED FACT** (both approved visual records encode it: mockup `.part` only under `.is-today` + greybox v3); **(2)** the D1 `@vida/types` `Daypart` mint pulled INTO S2 (slice-map:14-17 homes D1 here + seam-contract:13 — my S7 deferral was a manufactured deferral) with the `common.ts` shared-enum pattern + local structural mirror (NEEDS-2) + types-dist rebuild note; **(3)** the seam-contract:97 open values SETTLED (clock-bands <12 / 12–17:59 / 18+ grounded in the greybox; all-day-task default band = morning, configurable at S7). + citations: IR-6 (never assume time), NEEDS-3 (intents), NEEDS-4 (TZ), slice-map:35 (constrained measure).                                                                                                                                                                                                                  |

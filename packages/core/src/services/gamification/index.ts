@@ -32,12 +32,6 @@ export {
   type AchievementSeedInput,
   type AchievementCondition,
 } from './types'
-export {
-  deriveLevel,
-  clampToFloor,
-  requiredXpForLevel,
-  type LevelInfo,
-  type ClampResult,
-} from './level'
+export { deriveLevel, clampToFloor, requiredXpForLevel, type LevelInfo, type ClampResult } from './level'
 // NB: CurrencyDef/CurrencyBalance are the ② surface types but are re-exported by the core
 // barrel via `foundation/economy` already — NOT re-exported here (avoids the double-export collision).

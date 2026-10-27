@@ -18,15 +18,15 @@ This document specifies performance targets, strategies, and budgets for the Vid
 
 Every user-facing operation has a strict latency target measured from user action to rendered result. These are enforced via performance testing.
 
-| Operation | Target | Notes |
-|-----------|--------|-------|
-| **List view render** | < 100ms | From navigation to visible list items. Includes SQLite query + decryption + React render. |
-| **Detail view render** | < 150ms | From navigation to fully rendered detail page. Includes cross-module joins for inline previews. |
-| **Full-text search** | < 200ms | From keystroke to results. FTS5 query against local index. |
-| **Dashboard aggregation** | < 500ms | Aggregation queries across multiple modules (journal summary, purpose progress). |
-| **Editor load (TipTap)** | < 300ms | From page navigation to interactive editor with content rendered. Includes Yjs document load. |
-| **Vault unlock (Argon2id)** | < 2s | Key derivation time. Argon2id parameters tuned to balance security vs unlock speed. |
-| **Sync push/pull cycle** | < 3s | Full cycle: serialize, encrypt, push pending changes, pull remote changes, decrypt, merge. |
+| Operation                   | Target  | Notes                                                                                           |
+| --------------------------- | ------- | ----------------------------------------------------------------------------------------------- |
+| **List view render**        | < 100ms | From navigation to visible list items. Includes SQLite query + decryption + React render.       |
+| **Detail view render**      | < 150ms | From navigation to fully rendered detail page. Includes cross-module joins for inline previews. |
+| **Full-text search**        | < 200ms | From keystroke to results. FTS5 query against local index.                                      |
+| **Dashboard aggregation**   | < 500ms | Aggregation queries across multiple modules (journal summary, purpose progress).                |
+| **Editor load (TipTap)**    | < 300ms | From page navigation to interactive editor with content rendered. Includes Yjs document load.   |
+| **Vault unlock (Argon2id)** | < 2s    | Key derivation time. Argon2id parameters tuned to balance security vs unlock speed.             |
+| **Sync push/pull cycle**    | < 3s    | Full cycle: serialize, encrypt, push pending changes, pull remote changes, decrypt, merge.      |
 
 ### How to Measure
 
@@ -39,6 +39,7 @@ Every user-facing operation has a strict latency target measured from user actio
 ### What Happens When Targets Are Missed
 
 If a target is consistently missed (>P95):
+
 1. Profile the hot path (React DevTools, SQLite EXPLAIN QUERY PLAN)
 2. Check for missing indexes, unnecessary decryption, or unvirtualized lists
 3. If the query itself is slow, consider adding a materialized aggregate or denormalized column
@@ -52,25 +53,27 @@ If a target is consistently missed (>P95):
 
 All frequently filtered, sorted, or joined columns are indexed in `packages/core/src/db/migrations/001_initial.ts`. The key index categories:
 
-| Index Type | Pattern | Examples |
-|-----------|---------|---------|
-| **Primary key** | Every table has `id TEXT PRIMARY KEY` | Automatic B-tree lookup |
-| **Foreign key** | Every FK column is indexed | `tasks.project_id`, `habit_completions.habit_id` |
-| **Date/calendar** | Date columns used in WHERE clauses | `pages.journal_date`, `transactions.date`, `habit_completions.completed_date` |
-| **Status/enum** | Status columns used for filtering | `tasks.status`, `projects.status`, `habits.is_active` |
-| **Soft delete** | `deleted_at` column for exclusion | `pages.deleted_at` (partial index WHERE deleted_at IS NULL) |
-| **Sync** | Sync status for queue processing | `sync_queue.status`, `_sync_status` on all syncable tables |
-| **Unique constraints** | Natural keys | `pages.journal_date` (unique per date for journals), `habit_completions(habit_id, completed_date)` |
-| **Composite** | Multi-column filters | `entity_links(entity_type, entity_id)`, `pages(entity_type, entity_id)` |
+| Index Type             | Pattern                               | Examples                                                                                           |
+| ---------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Primary key**        | Every table has `id TEXT PRIMARY KEY` | Automatic B-tree lookup                                                                            |
+| **Foreign key**        | Every FK column is indexed            | `tasks.project_id`, `habit_completions.habit_id`                                                   |
+| **Date/calendar**      | Date columns used in WHERE clauses    | `pages.journal_date`, `transactions.date`, `habit_completions.completed_date`                      |
+| **Status/enum**        | Status columns used for filtering     | `tasks.status`, `projects.status`, `habits.is_active`                                              |
+| **Soft delete**        | `deleted_at` column for exclusion     | `pages.deleted_at` (partial index WHERE deleted_at IS NULL)                                        |
+| **Sync**               | Sync status for queue processing      | `sync_queue.status`, `_sync_status` on all syncable tables                                         |
+| **Unique constraints** | Natural keys                          | `pages.journal_date` (unique per date for journals), `habit_completions(habit_id, completed_date)` |
+| **Composite**          | Multi-column filters                  | `entity_links(entity_type, entity_id)`, `pages(entity_type, entity_id)`                            |
 
 ### Query Patterns to Follow
 
 **Always filter soft-deleted rows:**
+
 ```sql
 WHERE deleted_at IS NULL
 ```
 
 **Always use indexed columns in WHERE and ORDER BY:**
+
 ```sql
 -- Good: uses index on due_date
 SELECT * FROM tasks WHERE due_date = '2026-03-29' AND deleted_at IS NULL
@@ -81,6 +84,7 @@ SELECT * FROM tasks WHERE description LIKE '%meeting%'
 ```
 
 **Limit result sets for list views:**
+
 ```sql
 -- Paginated with cursor-based pagination
 SELECT * FROM tasks
@@ -93,13 +97,13 @@ LIMIT 50
 
 Configured in `packages/core/src/db/adapter.ts`:
 
-| PRAGMA | Value | Purpose |
-|--------|-------|---------|
-| `journal_mode` | WAL | Write-ahead logging — concurrent reads during writes |
-| `synchronous` | NORMAL | Balance between safety and write speed |
-| `temp_store` | MEMORY | Temp tables in memory (faster sorts and joins) |
-| `cache_size` | -2000 | 2MB page cache (negative = KB) |
-| `foreign_keys` | ON | Enforce referential integrity |
+| PRAGMA         | Value  | Purpose                                              |
+| -------------- | ------ | ---------------------------------------------------- |
+| `journal_mode` | WAL    | Write-ahead logging — concurrent reads during writes |
+| `synchronous`  | NORMAL | Balance between safety and write speed               |
+| `temp_store`   | MEMORY | Temp tables in memory (faster sorts and joins)       |
+| `cache_size`   | -2000  | 2MB page cache (negative = KB)                       |
+| `foreign_keys` | ON     | Enforce referential integrity                        |
 
 ---
 
@@ -109,12 +113,13 @@ Configured in `packages/core/src/db/adapter.ts`:
 
 Lists use **TanStack Virtual** when the item count exceeds **100 items**. Below that threshold, items render normally.
 
-| List Size | Strategy | Rationale |
-|-----------|----------|-----------|
-| <= 100 items | Full render | Virtualization overhead not justified. Most user-facing lists (project tasks, daily habits, contact list) are under 100 items. |
-| > 100 items | TanStack Virtual | Aggregated views (all tasks, all transactions, all notes) can grow to thousands. Virtual rendering keeps scroll performance at 60fps. |
+| List Size    | Strategy         | Rationale                                                                                                                             |
+| ------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| <= 100 items | Full render      | Virtualization overhead not justified. Most user-facing lists (project tasks, daily habits, contact list) are under 100 items.        |
+| > 100 items  | TanStack Virtual | Aggregated views (all tasks, all transactions, all notes) can grow to thousands. Virtual rendering keeps scroll performance at 60fps. |
 
 **Implementation pattern:**
+
 ```typescript
 const items = useTaskList(filters)
 
@@ -127,13 +132,13 @@ if (items.length > 100) {
 
 ### Lazy Loading
 
-| Resource | Strategy |
-|----------|----------|
-| **Attachments** | Never pre-loaded. Thumbnails lazy-loaded on scroll. Full image loaded on click. |
-| **Cross-module data** | On-demand — fetched when the user navigates to the view (see `cross-module-integration.md` section 9) |
-| **Study sessions on entities** | Collapsible section, query runs only on expand |
-| **Entity link preview cards** | Fetched on hover, not pre-loaded |
-| **Editor extensions** | TipTap loads only the extensions used on the current page |
+| Resource                       | Strategy                                                                                              |
+| ------------------------------ | ----------------------------------------------------------------------------------------------------- |
+| **Attachments**                | Never pre-loaded. Thumbnails lazy-loaded on scroll. Full image loaded on click.                       |
+| **Cross-module data**          | On-demand — fetched when the user navigates to the view (see `cross-module-integration.md` section 9) |
+| **Study sessions on entities** | Collapsible section, query runs only on expand                                                        |
+| **Entity link preview cards**  | Fetched on hover, not pre-loaded                                                                      |
+| **Editor extensions**          | TipTap loads only the extensions used on the current page                                             |
 
 ### Progressive Rendering
 
@@ -157,6 +162,7 @@ FTS5 tables are defined in `packages/core/src/db/migrations/001_initial.ts` and 
 ### Index Rebuild After Vault Unlock
 
 FTS5 indexes are populated with **decrypted** plaintext. They must be rebuilt every time the vault is unlocked because:
+
 - The FTS5 tables are empty on a fresh database open (SQLCipher encrypts everything)
 - Encrypted fields are decrypted only after the vault key is available
 
@@ -184,14 +190,14 @@ Full search available
 ```
 
 **Batch processing:**
+
 ```typescript
 async function rebuildFtsIndex(db: DrizzleDb, vaultKey: Uint8Array) {
   const BATCH_SIZE = 500
   let offset = 0
 
   while (true) {
-    const rows = await db.select().from(pages)
-      .limit(BATCH_SIZE).offset(offset)
+    const rows = await db.select().from(pages).limit(BATCH_SIZE).offset(offset)
 
     if (rows.length === 0) break
 
@@ -235,12 +241,12 @@ Cache times are configured per data volatility category to balance freshness aga
 
 ### Cache Time Categories
 
-| Category | staleTime | gcTime | Examples |
-|----------|-----------|--------|----------|
-| **High volatility** | 30s | 5 min | Tasks, habit completions, routine completions, transactions, interactions |
-| **Medium volatility** | 60s | 10 min | Projects, contacts, study sessions, milestones, courses, books |
-| **Low volatility** | 5 min | 30 min | Preferences, achievements, user profile, check-in templates, session templates |
-| **Reactive views** | 0s (always fresh) | 5 min | Journal daily summary, dashboard widgets |
+| Category              | staleTime         | gcTime | Examples                                                                       |
+| --------------------- | ----------------- | ------ | ------------------------------------------------------------------------------ |
+| **High volatility**   | 30s               | 5 min  | Tasks, habit completions, routine completions, transactions, interactions      |
+| **Medium volatility** | 60s               | 10 min | Projects, contacts, study sessions, milestones, courses, books                 |
+| **Low volatility**    | 5 min             | 30 min | Preferences, achievements, user profile, check-in templates, session templates |
+| **Reactive views**    | 0s (always fresh) | 5 min  | Journal daily summary, dashboard widgets                                       |
 
 ### What These Values Mean
 
@@ -255,8 +261,8 @@ export function useTasks(filters: TaskFilters) {
   return useQuery({
     queryKey: ['tasks', filters],
     queryFn: () => taskService.findAll(filters),
-    staleTime: 30_000,   // 30s — high volatility
-    gcTime: 5 * 60_000,  // 5 min
+    staleTime: 30_000, // 30s — high volatility
+    gcTime: 5 * 60_000, // 5 min
   })
 }
 
@@ -265,8 +271,8 @@ export function usePreferences() {
   return useQuery({
     queryKey: ['preferences'],
     queryFn: () => preferenceService.get(),
-    staleTime: 5 * 60_000,  // 5 min — low volatility
-    gcTime: 30 * 60_000,    // 30 min
+    staleTime: 5 * 60_000, // 5 min — low volatility
+    gcTime: 30 * 60_000, // 30 min
   })
 }
 
@@ -275,7 +281,7 @@ export function useJournalSummary(date: string) {
   return useQuery({
     queryKey: ['journal-summary', date],
     queryFn: () => journalService.getSummary(date),
-    staleTime: 0,            // always re-fetch — reactive
+    staleTime: 0, // always re-fetch — reactive
     gcTime: 5 * 60_000,
   })
 }
@@ -289,9 +295,9 @@ Set in the React Query client configuration:
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 30_000,    // default: high volatility
+      staleTime: 30_000, // default: high volatility
       gcTime: 5 * 60_000,
-      retry: 1,             // retry once on failure (local DB, failures are rare)
+      retry: 1, // retry once on failure (local DB, failures are rare)
       refetchOnWindowFocus: false, // local-first — no server to re-fetch from
     },
   },
@@ -306,14 +312,14 @@ const queryClient = new QueryClient({
 
 ### Target Budgets (Gzipped)
 
-| Bundle | Budget | Loading |
-|--------|--------|---------|
-| **Initial (shell + router + core React)** | < 80KB | Blocking — must load before first paint |
-| **Framework (React + Tamagui base)** | < 120KB | Blocking — loaded with initial bundle |
-| **Editor (TipTap + extensions)** | < 150KB | Lazy — loaded when user opens a page/note |
-| **Charts (Chart.js + react-chartjs-2)** | < 60KB | Lazy — loaded when user opens a chart view |
-| **Graph (Sigma.js + @sigma/react)** | < 50KB | Lazy — loaded when user opens neural graph view |
-| **WASM (wa-sqlite + SQLCipher)** | ~800KB | Parallel — loaded alongside initial bundle |
+| Bundle                                    | Budget  | Loading                                         |
+| ----------------------------------------- | ------- | ----------------------------------------------- |
+| **Initial (shell + router + core React)** | < 80KB  | Blocking — must load before first paint         |
+| **Framework (React + Tamagui base)**      | < 120KB | Blocking — loaded with initial bundle           |
+| **Editor (TipTap + extensions)**          | < 150KB | Lazy — loaded when user opens a page/note       |
+| **Charts (Chart.js + react-chartjs-2)**   | < 60KB  | Lazy — loaded when user opens a chart view      |
+| **Graph (Sigma.js + @sigma/react)**       | < 50KB  | Lazy — loaded when user opens neural graph view |
+| **WASM (wa-sqlite + SQLCipher)**          | ~800KB  | Parallel — loaded alongside initial bundle      |
 
 ### Code Splitting Strategy
 
@@ -328,13 +334,13 @@ const NotesPage = lazy(() => import('./app/notes'))
 
 **Heavy library splitting:** Libraries over 50KB are dynamically imported only when needed.
 
-| Library | Trigger | Dynamic Import |
-|---------|---------|---------------|
-| TipTap + extensions | User opens a page with an editor | `import('@vida/editor')` |
-| Chart.js | User opens a view with charts | `import('react-chartjs-2')` |
-| Sigma.js | User opens neural graph view | `import('@sigma/react')` |
-| PDF export | User clicks "Export to PDF" | `import('@react-pdf/renderer')` |
-| DOCX export | User clicks "Export to DOCX" | `import('docx')` |
+| Library             | Trigger                          | Dynamic Import                  |
+| ------------------- | -------------------------------- | ------------------------------- |
+| TipTap + extensions | User opens a page with an editor | `import('@vida/editor')`        |
+| Chart.js            | User opens a view with charts    | `import('react-chartjs-2')`     |
+| Sigma.js            | User opens neural graph view     | `import('@sigma/react')`        |
+| PDF export          | User clicks "Export to PDF"      | `import('@react-pdf/renderer')` |
+| DOCX export         | User clicks "Export to DOCX"     | `import('docx')`                |
 
 **WASM loading:** The wa-sqlite WASM binary (~800KB) loads in parallel with the initial JavaScript bundle via a separate `<script>` or `fetch()`. The app shows a loading screen until both JS and WASM are ready.
 
@@ -352,11 +358,11 @@ Strategies for keeping memory usage stable during long-running sessions (user ke
 
 Inactive query data is evicted after `gcTime` expires. This prevents unbounded cache growth as the user navigates between views.
 
-| Category | gcTime | Effect |
-|----------|--------|--------|
-| High volatility | 5 min | Task/habit data evicted 5 min after leaving the view |
-| Medium volatility | 10 min | Project/contact data evicted after 10 min |
-| Low volatility | 30 min | Preferences cached for 30 min after last read |
+| Category          | gcTime | Effect                                               |
+| ----------------- | ------ | ---------------------------------------------------- |
+| High volatility   | 5 min  | Task/habit data evicted 5 min after leaving the view |
+| Medium volatility | 10 min | Project/contact data evicted after 10 min            |
+| Low volatility    | 30 min | Preferences cached for 30 min after last read        |
 
 **Key behavior:** When a user navigates away from a tasks list, the query data stays in memory for 5 minutes. If they return within 5 minutes, instant render from cache. After 5 minutes, the data is garbage collected and re-fetched on next visit.
 
@@ -365,6 +371,7 @@ Inactive query data is evicted after `gcTime` expires. This prevents unbounded c
 Each open page loads a Yjs document into memory for CRDT support. For long documents with extensive edit history, the Yjs state vector can grow large.
 
 **Strategies:**
+
 - **One document at a time** — Only the currently viewed page's Yjs document is in memory. Navigating away disposes the previous document.
 - **Yjs snapshot compaction** — Periodically compact the Yjs document by encoding the full state as a fresh snapshot (`Y.encodeStateAsUpdate(ydoc)`), discarding the incremental update history. This happens on page save or navigate-away.
 - **Maximum document size** — If a Yjs document exceeds 5MB, warn the user and suggest splitting the page.
@@ -374,6 +381,7 @@ Each open page loads a Yjs document into memory for CRDT support. For long docum
 Thumbnails for note attachments are cached in memory after first load.
 
 **Strategies:**
+
 - **LRU cache** — Keep the most recently viewed 100 thumbnails in memory. Evict oldest when the limit is reached.
 - **Size limit** — Maximum 50MB total thumbnail cache. Individual thumbnails are < 100KB each.
 - **Eviction on navigate** — When leaving a page with attachments, thumbnails are eligible for eviction (not immediately purged — kept in LRU for quick return).
@@ -383,6 +391,7 @@ Thumbnails for note attachments are cached in memory after first load.
 The vault key (`Uint8Array`, 32 bytes) is cached in memory by `key-management.ts` for the duration of the session.
 
 **Strategies (already implemented):**
+
 - **Auto-lock timer** — Vault key is wiped from memory after a configurable idle period (default: 15 minutes). Resets on user activity.
 - **Secure wipe** — `zeroKey()` in `vault.ts` overwrites the key bytes with zeros before releasing the reference.
 - **Master key is never cached** — Only the vault key is kept in memory. The master key is derived, used to compute the vault key, and immediately wiped.
@@ -396,6 +405,7 @@ Strategies for maintaining performance as the user accumulates years of data.
 ### SQLite WAL Mode
 
 WAL (Write-Ahead Logging) is enabled on all platforms. It provides:
+
 - Concurrent reads during writes (no read blocking)
 - Better write performance for frequent small writes (habit completions, task updates)
 - Automatic WAL checkpointing keeps the WAL file bounded

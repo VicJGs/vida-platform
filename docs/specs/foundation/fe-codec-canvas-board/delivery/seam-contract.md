@@ -36,9 +36,11 @@ interface CanvasViewProps {
 ```
 
 ## 2. State ownership (the load-bearing seam rule)
+
 The hosted renderer (`GalleryView`/`CalendarView`) **already owns** loading/empty/error/success via its own `state`
 prop. To avoid a double state machine, **`CanvasView` does NOT re-implement them** — it only **selects an optional
 override slot by `state`, else delegates to `children`** (R2/R5). The masthead renders in every state. Body:
+
 - `state==='empty' && empty` → render `empty` (the vision-board teaching invitation).
 - `state==='error' && error` → render `error` (a calm `role="status"` muted message).
 - **else (loading · success · un-overridden empty/error)** → render `children`, so the renderer shows its OWN tuned
@@ -51,18 +53,20 @@ enriches only the archetype-level cases (a teaching empty for an empty board; a 
 dashboard shell, which OWNED generic states because its blocks are success-only; here the hosted renderers carry state.)
 
 ## 3. S2 composition conventions (`apps/web`) — type + convention, live hook deferred (R7)
+
 - **`VisionBoardCanvas`**: `<CanvasView eyebrow="Vision board" title={savedView.name} progress={<RealizedMeter/>}>
-  <GalleryView items={dreams} renderItem={dreamTile} getWeight={…}/></CanvasView>`. `dreamTile` is a **reference**
+<GalleryView items={dreams} renderItem={dreamTile} getWeight={…}/></CanvasView>`. `dreamTile` is a **reference**
   renderItem (imagery cover + tag + serif title + measure-driven progress bar+label). The **production** dream tile is
   `fe-purposes`' renderItem (EC-9/R9: measure→style+label via ADR-011 `progress()`); #10 ships the convention + proves
   the frame hosts any style.
 - **`CalendarGridCanvas`**: `<CanvasView eyebrow="Calendar" title={savedView.name} meta={todayLine} actions={monthNav}>
-  <CalendarView month={…} today={…} getDate renderItem/></CanvasView>`. Renderer keeps month header + nav; `+N more`
+<CalendarView month={…} today={…} getDate renderItem/></CanvasView>`. Renderer keeps month header + nav; `+N more`
   as-is (overflow → #19).
 - **Deferred:** `useVisionBoard` / `useCalendar` data hooks (first consumer: `fe-purposes` / `fe-calendar #19`);
   cross-module `dueIn` fan-out (#19); production measure-driven tile (fe-purposes).
 
 ## 4. Boundaries
+
 - Read-only lens — all writes (drag, reorder, check, move, create) are owning-module Capabilities (R1, ADR-008).
 - No `@vida/types`/`@vida/core` in `@vida/ui` (R6). No new renderers (R2). No overflow reveal (→ #19).
 - `#19` consumes this: it drops its multi-range renderer into `CanvasView` as `children` (R3) — so `children` must

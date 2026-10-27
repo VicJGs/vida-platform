@@ -16,10 +16,7 @@ import { appliedEffects } from '../../../db/schema/foundation/effects'
 import { focusSessions } from '../../../db/schema/foundation/session-extensions'
 import { plannedBlocks } from '../../../db/schema/foundation/scheduling'
 import { initVault } from '../../../encryption/vault'
-import {
-  createSessionRegistry,
-  type SessionRegistry,
-} from '../../../foundation/sessions/registry'
+import { createSessionRegistry, type SessionRegistry } from '../../../foundation/sessions/registry'
 import { SessionTypeNotFound, type SessionTypeDef } from '../../../foundation/sessions/types'
 import {
   createEffectRegistry,
@@ -31,12 +28,7 @@ import { createTaggableTypeRegistry, UnknownEntityType } from '../../../foundati
 import { createRepository } from '../../../db/repository'
 import { userPreferences } from '../../../db/schema/preferences'
 import { createSessionsService, type SessionsService } from '../service'
-import {
-  InvalidSessionInput,
-  InvalidFocusTransition,
-  SessionMissing,
-  InvalidBatchTransition,
-} from '../types'
+import { InvalidSessionInput, InvalidFocusTransition, SessionMissing, InvalidBatchTransition } from '../types'
 import type { PomodoroType } from '@vida/types'
 
 // A user-registered, no-extension session type (SS-5) — the spine-only path S1 tested via 'class'
@@ -83,7 +75,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -226,7 +221,13 @@ describe('S1 — typed errors, no write (AC5)', () => {
   it('ended_at < started_at → InvalidSessionInput("ended_at")', async () => {
     const { svc, db, driver } = await setup()
     await expect(
-      svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'completed', started_at: 500, ended_at: 100 }),
+      svc.createSession({
+        sub_type: 'focus',
+        scheduling_mode: 'ad_hoc',
+        status: 'completed',
+        started_at: 500,
+        ended_at: 100,
+      }),
     ).rejects.toBeInstanceOf(InvalidSessionInput)
     expect(await db.select().from(sessions).all()).toHaveLength(0)
     await driver.close()
@@ -432,7 +433,7 @@ describe('S4 — Availability (SS-9)', () => {
     const { svc, db, driver } = await setup()
     const w = await svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '11:00', preference_score: 4 })
     expect(w.day_of_week).toBe(1)
-    expect((await svc.listAvailability())).toHaveLength(1)
+    expect(await svc.listAvailability()).toHaveLength(1)
 
     const upd = await svc.updateAvailability(w.id, { preference_score: 2 })
     expect(upd.preference_score).toBe(2)
@@ -446,20 +447,34 @@ describe('S4 — Availability (SS-9)', () => {
 
   it('AC3 — typed validation, no write', async () => {
     const { svc, driver } = await setup()
-    await expect(svc.setAvailability({ day_of_week: 7, start_time: '09:00', end_time: '11:00' })).rejects.toMatchObject({ field: 'day_of_week' })
-    await expect(svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '11:00', preference_score: 6 })).rejects.toMatchObject({ field: 'preference_score' })
-    await expect(svc.setAvailability({ day_of_week: 1, start_time: '25:00', end_time: '11:00' })).rejects.toMatchObject({ field: 'start_time' })
-    await expect(svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '08:00' })).rejects.toMatchObject({ field: 'end_time' })
+    await expect(svc.setAvailability({ day_of_week: 7, start_time: '09:00', end_time: '11:00' })).rejects.toMatchObject(
+      { field: 'day_of_week' },
+    )
+    await expect(
+      svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '11:00', preference_score: 6 }),
+    ).rejects.toMatchObject({ field: 'preference_score' })
+    await expect(svc.setAvailability({ day_of_week: 1, start_time: '25:00', end_time: '11:00' })).rejects.toMatchObject(
+      { field: 'start_time' },
+    )
+    await expect(svc.setAvailability({ day_of_week: 1, start_time: '09:00', end_time: '08:00' })).rejects.toMatchObject(
+      { field: 'end_time' },
+    )
     expect(await svc.listAvailability()).toHaveLength(0)
     await driver.close()
   })
 
   it('AC4/AC5 — exceptions: add/list/remove + date validation', async () => {
     const { svc, driver } = await setup()
-    const e = await svc.addAvailabilityException({ exception_date: '2026-10-01', is_available: false, reason: 'holiday' })
+    const e = await svc.addAvailabilityException({
+      exception_date: '2026-10-01',
+      is_available: false,
+      reason: 'holiday',
+    })
     expect(e.exception_date).toBe('2026-10-01')
     expect(await svc.listAvailabilityExceptions()).toHaveLength(1)
-    await expect(svc.addAvailabilityException({ exception_date: '10/01/2026', is_available: false })).rejects.toMatchObject({ field: 'exception_date' })
+    await expect(
+      svc.addAvailabilityException({ exception_date: '10/01/2026', is_available: false }),
+    ).rejects.toMatchObject({ field: 'exception_date' })
     await svc.removeAvailabilityException(e.id)
     expect(await svc.listAvailabilityExceptions()).toHaveLength(0)
     await driver.close()
@@ -598,7 +613,11 @@ describe('S7 — dueIn aggregator + analytics (finale)', () => {
 
   it('AC2 — own planned_blocks: in-range mapped to DueItem; out-of-range + soft-deleted excluded', async () => {
     const { svc, db, driver } = await setup()
-    const blockRepo = createRepository(db, plannedBlocks, { deviceId: 'test-device', encryptedFields: [], softDelete: true })
+    const blockRepo = createRepository(db, plannedBlocks, {
+      deviceId: 'test-device',
+      encryptedFields: [],
+      softDelete: true,
+    })
     await blockRepo.create({ scheduled_start: 5000, scheduled_end: 8000, sub_type: 'focus', status: 'planned' })
     await blockRepo.create({ scheduled_start: 99_000, status: 'planned' }) // out of range
     const deleted = await blockRepo.create({ scheduled_start: 6000, status: 'planned' })
@@ -633,8 +652,20 @@ describe('S7 — dueIn aggregator + analytics (finale)', () => {
 
   it('AC4 — analytics derived-on-read (deleted excluded), no stored aggregate', async () => {
     const { svc, driver } = await setup()
-    await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'completed', started_at: 1000, focus_rating: 4 })
-    await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'completed', started_at: 2000, focus_rating: 2 })
+    await svc.createSession({
+      sub_type: 'focus',
+      scheduling_mode: 'ad_hoc',
+      status: 'completed',
+      started_at: 1000,
+      focus_rating: 4,
+    })
+    await svc.createSession({
+      sub_type: 'focus',
+      scheduling_mode: 'ad_hoc',
+      status: 'completed',
+      started_at: 2000,
+      focus_rating: 2,
+    })
     await svc.createSession({ sub_type: 'focus', scheduling_mode: 'ad_hoc', status: 'in_progress', started_at: 3000 })
     const a = await svc.getSessionAnalytics({ start: 0, end: 10_000 })
     expect(a.total).toBe(3)
@@ -687,7 +718,13 @@ describe('planned blocks (routines S6, R1) — planBlock · update · soft-delet
       target_id: 's1',
       source: 'routines:2026-10-21',
     })
-    expect(b).toMatchObject({ scheduled_start: 5000, scheduled_end: 8000, sub_type: 'focus', status: 'planned', source: 'routines:2026-10-21' })
+    expect(b).toMatchObject({
+      scheduled_start: 5000,
+      scheduled_end: 8000,
+      sub_type: 'focus',
+      status: 'planned',
+      source: 'routines:2026-10-21',
+    })
     const other = await svc.planBlock({ scheduled_start: 6000, target_type: 'routine_step', target_id: 's2' })
     const gone = await svc.planBlock({ scheduled_start: 7000, target_type: 'routine_step', target_id: 's1' })
     await svc.softDeletePlannedBlock(gone.id)
@@ -698,7 +735,12 @@ describe('planned blocks (routines S6, R1) — planBlock · update · soft-delet
 
   it('updatePlannedBlock patches only passed keys (slot move, status)', async () => {
     const { svc, driver } = await setup()
-    const b = await svc.planBlock({ scheduled_start: 5000, scheduled_end: 8000, target_type: 'routine_step', target_id: 's1' })
+    const b = await svc.planBlock({
+      scheduled_start: 5000,
+      scheduled_end: 8000,
+      target_type: 'routine_step',
+      target_id: 's1',
+    })
     const moved = await svc.updatePlannedBlock(b.id, { scheduled_start: 9000, scheduled_end: 12_000 })
     expect(moved).toMatchObject({ scheduled_start: 9000, scheduled_end: 12_000, status: 'planned' })
     expect((await svc.updatePlannedBlock(b.id, { status: 'fulfilled' })).status).toBe('fulfilled')
@@ -707,11 +749,15 @@ describe('planned blocks (routines S6, R1) — planBlock · update · soft-delet
 
   it('rejects an unregistered sub_type, an unregistered target_type, end ≤ start, a bad status — no write', async () => {
     const { svc, db, driver } = await setup()
-    await expect(svc.planBlock({ scheduled_start: 1, sub_type: 'no_such_type' })).rejects.toBeInstanceOf(SessionTypeNotFound)
-    await expect(svc.planBlock({ scheduled_start: 1, target_type: 'no_such_entity', target_id: 'x' })).rejects.toBeInstanceOf(
-      UnknownEntityType,
+    await expect(svc.planBlock({ scheduled_start: 1, sub_type: 'no_such_type' })).rejects.toBeInstanceOf(
+      SessionTypeNotFound,
     )
-    await expect(svc.planBlock({ scheduled_start: 5000, scheduled_end: 5000 })).rejects.toBeInstanceOf(InvalidSessionInput)
+    await expect(
+      svc.planBlock({ scheduled_start: 1, target_type: 'no_such_entity', target_id: 'x' }),
+    ).rejects.toBeInstanceOf(UnknownEntityType)
+    await expect(svc.planBlock({ scheduled_start: 5000, scheduled_end: 5000 })).rejects.toBeInstanceOf(
+      InvalidSessionInput,
+    )
     expect(await db.select().from(plannedBlocks).all()).toHaveLength(0)
     const b = await svc.planBlock({ scheduled_start: 5000 })
     await expect(svc.updatePlannedBlock(b.id, { status: 'nope' as never })).rejects.toBeInstanceOf(InvalidSessionInput)

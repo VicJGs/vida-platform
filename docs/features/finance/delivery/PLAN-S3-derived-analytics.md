@@ -46,8 +46,8 @@
   degrades **only** that chart, FIN-22). `[FACT: business-rules.md:118; parts/finance.md:32 (FIN-22),50 (FIN-40)]`
 - **BR-S3-5 (FN-19 empty state / consistency).** A missing value is treated the SAME way across derivations:
   it is surfaced, never silently zeroed. On a single investment, `getInvestmentValue` names it `priceSet:false`
-  + value `null` (an empty state, not an error/partial); in the overview roll-up the equivalent signal is the
-  `unvalued*` count + `partial` (BR-S3-4). Two surfaces, one policy. `[FACT: parts/finance.md:29 (FIN-19)]`
+  - value `null` (an empty state, not an error/partial); in the overview roll-up the equivalent signal is the
+    `unvalued*` count + `partial` (BR-S3-4). Two surfaces, one policy. `[FACT: parts/finance.md:29 (FIN-19)]`
 - **BR-S3-6 (FN-8 boundary).** S3 sums **raw cents, currency-agnostic** — no FX conversion. Multi-currency
   base-currency conversion + `FxRateMissingError` is **S5/FIN-21** (needs the deferred Preferences base-currency
   port). Documented slice boundary, not a defect. `[FACT: slice-map.md:18,38; business-rules.md:33 (FN-8)]`
@@ -55,49 +55,70 @@
 ## §3 Design (net-new types + operations)
 
 ### 3.1 Types (append to `services/finance/types.ts`)
+
 ```ts
 export interface FinanceOverview {
-  totalBalance: Money       // Σ getBalance over non-deleted accounts (BR-S3-1)
-  totalAssets: Money        // Σ asset.current_value (null → 0)
-  totalLiabilities: Money   // Σ liability.current_balance (null → 0)
-  netWorth: Money           // totalBalance + totalAssets − totalLiabilities (FN-7 simple sum)
-  monthlyIncome: Money      // Σ income txns in the month window (transfers excluded, BR-S3-3)
-  monthlyExpenses: Money    // Σ expense txns in the month window (transfers excluded)
-  month: string             // 'YYYY-MM' the monthly figures cover (echoed for the caller)
-  unvaluedAssets: number    // BR-S3-4 — count of non-deleted assets with null current_value (understatement is visible)
+  totalBalance: Money // Σ getBalance over non-deleted accounts (BR-S3-1)
+  totalAssets: Money // Σ asset.current_value (null → 0)
+  totalLiabilities: Money // Σ liability.current_balance (null → 0)
+  netWorth: Money // totalBalance + totalAssets − totalLiabilities (FN-7 simple sum)
+  monthlyIncome: Money // Σ income txns in the month window (transfers excluded, BR-S3-3)
+  monthlyExpenses: Money // Σ expense txns in the month window (transfers excluded)
+  month: string // 'YYYY-MM' the monthly figures cover (echoed for the caller)
+  unvaluedAssets: number // BR-S3-4 — count of non-deleted assets with null current_value (understatement is visible)
   unvaluedLiabilities: number // BR-S3-4 — count of non-deleted liabilities with null current_balance
-  partial: boolean          // BR-S3-4 — true if a balance compute threw OR unvalued{Assets,Liabilities} > 0
+  partial: boolean // BR-S3-4 — true if a balance compute threw OR unvalued{Assets,Liabilities} > 0
 }
 
-export interface OverviewOptions { month?: string } // 'YYYY-MM'; default = current calendar month
+export interface OverviewOptions {
+  month?: string
+} // 'YYYY-MM'; default = current calendar month
 
 export interface InvestmentValue {
   investmentId: string
   quantity: number | null
   currentPrice: Money | null
   purchasePrice: Money | null
-  currentValue: Money | null   // round(quantity × currentPrice); null if either missing → "no price set"
-  costBasis: Money | null      // round(quantity × purchasePrice)
-  gainLoss: Money | null       // currentValue − costBasis (null if either missing)
-  gainLossPct: number | null   // gainLoss / costBasis (null if costBasis missing or 0); ratio, not %
-  priceSet: boolean            // currentPrice != null (BR-S3-5)
+  currentValue: Money | null // round(quantity × currentPrice); null if either missing → "no price set"
+  costBasis: Money | null // round(quantity × purchasePrice)
+  gainLoss: Money | null // currentValue − costBasis (null if either missing)
+  gainLossPct: number | null // gainLoss / costBasis (null if costBasis missing or 0); ratio, not %
+  priceSet: boolean // currentPrice != null (BR-S3-5)
 }
 
-export interface SpendingByCategory { category: string | null; total: Money }
-export interface IncomeExpensePoint  { period: string; income: Money; expenses: Money; net: Money } // period 'YYYY-MM'
-export interface BreakdownSlice      { type: string; total: Money }
-export interface AssetLiabilityBreakdown { assets: BreakdownSlice[]; liabilities: BreakdownSlice[] }
+export interface SpendingByCategory {
+  category: string | null
+  total: Money
+}
+export interface IncomeExpensePoint {
+  period: string
+  income: Money
+  expenses: Money
+  net: Money
+} // period 'YYYY-MM'
+export interface BreakdownSlice {
+  type: string
+  total: Money
+}
+export interface AssetLiabilityBreakdown {
+  assets: BreakdownSlice[]
+  liabilities: BreakdownSlice[]
+}
 
-export interface ChartRange { from: string; to: string } // 'YYYY-MM-DD' inclusive
+export interface ChartRange {
+  from: string
+  to: string
+} // 'YYYY-MM-DD' inclusive
 export interface ChartDatasets {
   spendingByCategory: SpendingByCategory[] | null
   incomeVsExpense: IncomeExpensePoint[] | null
   assetLiabilityBreakdown: AssetLiabilityBreakdown | null
-  degraded: string[]           // BR-S3-4 — names of charts that failed to compute
+  degraded: string[] // BR-S3-4 — names of charts that failed to compute
 }
 ```
 
 ### 3.2 Operations (append to the `FinanceService` interface + `service` object)
+
 ```ts
 getOverview(opts?: OverviewOptions): Promise<FinanceOverview>          // FIN-17
 getInvestmentValue(id: string): Promise<InvestmentValue>              // FIN-19
@@ -108,27 +129,28 @@ getChartDatasets(range: ChartRange): Promise<ChartDatasets>             // FIN-2
 ```
 
 ### 3.3 Operation flow
+
 - **getOverview** — resolve `month` (default current calendar month; caller may pin). `totalBalance` =
   Σ `getBalance(acct.id)` over ALL non-deleted `listAccounts()` (incl. inactive, N2), each in a try/catch →
   on throw contribute 0 + `partial=true` (BR-S3-4). `totalAssets` = Σ `current_value ?? 0` while counting
   null values into `unvaluedAssets`; `totalLiabilities` = Σ `current_balance ?? 0` counting `unvaluedLiabilities`
   (BR-S3-4 — null is UNKNOWN, surfaced not silently zeroed). `partial = balanceThrew || unvaluedAssets > 0 ||
-  unvaluedLiabilities > 0`. `netWorth` = the FN-7 sum (accounts + assets − liabilities; investments excluded,
+unvaluedLiabilities > 0`. `netWorth` = the FN-7 sum (accounts + assets − liabilities; investments excluded,
   N1). Monthly: window `[month-01 … month-lastDay]` via `getTransactionsInRange`; `monthlyIncome` = Σ `income`
   amounts, `monthlyExpenses` = Σ `expense` amounts, **`transfer` rows excluded** (BR-S3-3).
 - **getInvestmentValue** — `findById`; not-found → `throw new Error('investment not found: '+id)` (the
   `getBalance` precedent, `service.ts:201`). `currentValue = currentPrice!=null && quantity!=null ?
-  Math.round(quantity*currentPrice) : null`; `costBasis` likewise from `purchasePrice`; `gainLoss =
-  currentValue!=null && costBasis!=null ? currentValue-costBasis : null`; `gainLossPct = costBasis ?
-  gainLoss/costBasis : null`. `priceSet = currentPrice!=null`. A null price is empty-state, not partial (BR-S3-5).
+Math.round(quantity*currentPrice) : null`; `costBasis` likewise from `purchasePrice`; `gainLoss =
+currentValue!=null && costBasis!=null ? currentValue-costBasis : null`; `gainLossPct = costBasis ?
+gainLoss/costBasis : null`. `priceSet = currentPrice!=null`. A null price is empty-state, not partial (BR-S3-5).
 - **getSpendingByCategory** — `getTransactionsInRange`, keep `transaction_type === 'expense'` only (income and
   `transfer` rows both dropped — BR-S3-3/N5), group by `category` (null bucket allowed), sum, sort by total desc.
 - **getIncomeVsExpense** — same range read; bucket by `'YYYY-MM'` (from `date`); per bucket sum income /
   expense (transfers excluded); `net = income − expenses`; ascending by period.
 - **getAssetLiabilityBreakdown** — group `listAssets()` by `asset_type` (Σ `current_value ?? 0`), group
   `listLiabilities()` by `liability_type` (Σ `current_balance ?? 0`); sort by total desc. **Null values sum as
-  0 here WITHOUT an unvalued signal** — this is a *chart approximation*; the authoritative unvalued surface is
-  `getOverview`'s `unvalued*` counts (BR-S3-4). The breakdown's contract is per-chart degrade on *error*
+  0 here WITHOUT an unvalued signal** — this is a _chart approximation_; the authoritative unvalued surface is
+  `getOverview`'s `unvalued*` counts (BR-S3-4). The breakdown's contract is per-chart degrade on _error_
   (FIN-22), not on unknown-value (an empty type bucket is legitimate). Documented divergence, consistent with
   BR-S3-5's "one policy, surfaced not silent" — the surfacing lives on the overview, not duplicated per chart.
 - **Empty-dataset path** — no accounts/assets/liabilities → overview all-zero, `unvalued*:0`, `partial:false`;
@@ -140,12 +162,14 @@ getChartDatasets(range: ChartRange): Promise<ChartDatasets>             // FIN-2
   optimization, not S3's concern.
 
 ### 3.4 Deferred inside S3 (recorded, homed)
+
 - **net-worth-over-time chart** — DEFERRED. Assets/liabilities carry no historical values (no snapshot store),
   so an honest time series can't be computed in S3. Homes with the `journal_snapshots`/FIN-25 persisted-aggregates
   design-pass. The three shipped charts ARE the S3 default template. `[FACT: FIN-25 slice-map.md:18; no finance snapshot table]`
 - **FX conversion** — S5/FIN-21 (BR-S3-6). **Store-tree net worth** (FIN-18) — deferred (slice-map.md:26).
 
 ### 3.5 Helpers
+
 - **No `date-fns`** — it is NOT a `@vida/core` dependency `[FACT: package.json — 0 hits]`. Follow the checkins
   precedent: compute the "now" boundary inline + allow injection (`checkins/service.ts:441`
   `asOf ?? new Date().toISOString().slice(0,10)`).
@@ -157,6 +181,7 @@ getChartDatasets(range: ChartRange): Promise<ChartDatasets>             // FIN-2
   Range is inclusive (matches `getTransactionsInRange`'s `gte/lte`).
 
 ## §4 Acceptance
+
 1. `getOverview` returns the figures; `netWorth` = FN-7 simple sum over a live multi-account/asset/liability
    set (tests **pin `{month}`** for determinism, N3). Investments do not move `netWorth` (N1).
 2. Monthly income/expense **exclude transfers** (a transfer in-window does not move either figure).
@@ -170,6 +195,7 @@ getChartDatasets(range: ChartRange): Promise<ChartDatasets>             // FIN-2
 8. `@vida/types` untouched (all shapes service-local); no column writes on any read path (BR-S3-2).
 
 ## §5 Implementation Prompt
+
 Append to `services/finance/types.ts` (the §3.1 types) then `service.ts` (the §3.3 closures + interface
 methods), reusing S2's `getBalance`/`getTransactionsInRange`/`list*`. Type-first → logic → wire into the
 returned `service` object. Then tsc → Vitest (logic + failure/empty/partial paths) → live-store smoke →
@@ -185,6 +211,7 @@ exist** (S1/S2 shipped before the module's durable docs were born). S3 closes by
 FN-3/FN-4/FN-7/FN-12/FN-40 + BR-S3-1…6. Committed WITH the code.
 
 ## Gate-1 critique resolution (§XXVI step 2)
+
 - **B1 (blocking) — RESOLVED.** Null asset/liability values were silently zeroed in the overview while
   investment null-price was an explicit empty state (FN-40 violation + internal inconsistency). Fixed via
   option (a): `FinanceOverview` now carries `unvaluedAssets`/`unvaluedLiabilities` counts and `partial` trips
@@ -193,6 +220,7 @@ FN-3/FN-4/FN-7/FN-12/FN-40 + BR-S3-1…6. Committed WITH the code.
   redundant-read note · spending-by-category transfer exclusion explicit).
 
 ## Open decisions for Approval 1
+
 - **D1** — `getOverview` monthly window defaults to the **current calendar month**; caller may pin `{month}`.
   (Alt: require an explicit month. Chosen: default-with-override for ergonomics + determinism in tests.)
 - **D2** — net-worth-over-time chart **deferred** to a snapshot design-pass (§3.4). Ship 3 charts as the S3 template.

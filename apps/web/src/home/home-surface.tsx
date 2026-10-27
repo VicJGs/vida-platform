@@ -54,7 +54,13 @@ function Greeting() {
   )
 }
 
-const Surface = styled(View, { flexDirection: 'column', gap: '$24', maxWidth: 1200, width: '100%', marginHorizontal: 'auto' })
+const Surface = styled(View, {
+  flexDirection: 'column',
+  gap: '$24',
+  maxWidth: 1200,
+  width: '100%',
+  marginHorizontal: 'auto',
+})
 // Journal-first 2-col: the page is the hero; the dashboard compacts to a glance rail. Both drop flex-grow + go full
 // width when the row wraps to a column at 375 (the RNW flex-in-column collapse guard, [[flex1-child-collapses...]]).
 const JFRow = styled(View, { flexDirection: 'row', flexWrap: 'wrap', gap: '$24' })
@@ -86,7 +92,12 @@ export function HomeSurface({ arrangement }: HomeSurfaceProps) {
             <JournalPageRegion />
           </JFMain>
           <JFSide>
-            <HomeDashboard widgets={railWidgets(widgets)} renderWidget={renderHomeWidget} title="At a glance" density="compact" />
+            <HomeDashboard
+              widgets={railWidgets(widgets)}
+              renderWidget={renderHomeWidget}
+              title="At a glance"
+              density="compact"
+            />
           </JFSide>
         </JFRow>
       ) : (

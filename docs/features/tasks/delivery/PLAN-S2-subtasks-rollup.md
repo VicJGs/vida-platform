@@ -5,11 +5,13 @@
 > Slice-map S2. TAS-08,09,10,11. Composes `foundation/measurement` (normalize + rollup). Closes with the live-store Verification Gate.
 
 ## Operations (added to the S1 surface)
+
 - `addSubtask(parentId, input): TaskRow`
 - `getSubtasks(parentId): TaskRow[]`
 - `getRollup(parentId): { done: number; total: number; progress: number | null }`
 
 ## Operation flow + invariants
+
 - **addSubtask(parentId, input)** — `findById(parentId)` → `TaskNotFoundError`; **single-level guard (TK-3):** the
   parent must itself be top-level (`parent.parent_task_id == null`) else `SubtaskNestingError` (a child may not have
   children). Then delegate to the S1 create path with `parent_task_id = parentId` (so the ≤1-parent-module guard +
@@ -27,14 +29,17 @@
     derivation; it writes nothing.
 
 ## Composition (no re-implementation)
+
 `import { normalize, rollup } from '../../foundation/measurement'`. Do NOT hand-roll the weighted average.
 
 ## Types / validators
+
 - `types.ts`: `AddSubtaskInput = Omit<CreateTaskInput, 'parent_task_id'>`; `TaskRollup = { done; total; progress }`;
   `SubtaskNestingError`. Extend `TasksService` with the 3 methods.
 - `validators`: reuse `CreateTaskSchema` for the subtask body (parse then force `parent_task_id`).
 
 ## Verification Gate (blocking — live store, Node 24)
+
 1. addSubtask under a top-level parent → child row with `parent_task_id=parentId`; getSubtasks returns it.
 2. addSubtask under a parent that is itself a sub-task → `SubtaskNestingError`; under a missing parent → `TaskNotFoundError`.
 3. addSubtask may still carry one module FK (a different axis); two module FKs → `MultipleParentError` (S1 guard still applies).
@@ -44,4 +49,5 @@
 7. soft-deleted children excluded from getSubtasks + getRollup.
 
 ## Out of scope
+
 completeTask/effects (S3) · per-kind task measure beyond milestone (S6) · timer (S4).

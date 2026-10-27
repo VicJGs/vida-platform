@@ -48,9 +48,7 @@ function renderStatus(outcome: SearchOutcome): ReactNode {
       return null // resting box — nothing requested yet
     case 'typing':
     case 'loading':
-      return (
-        <Muted busy>Searching…</Muted>
-      )
+      return <Muted busy>Searching…</Muted>
     case 'search-unavailable':
       // VOICE copy — NOT the stub's "(DB-8)" dev string (B2); calm muted, never danger-coloured.
       return <Muted role="status">Search turns on once your notes are indexed.</Muted>

@@ -2,7 +2,7 @@
 <!-- PLAN (gate 1 = the SPEC). Cadence: g1 /critique → build → tsc → live-store Verification Gate → code-review →
      /critique SHIP → §XXIX currency. No per-slice Victor approval (Approval 1 covered the plan). -->
 
-# PLAN — S4: Annotations + notes/links  (BOO-15/16/17/18/19/20)
+# PLAN — S4: Annotations + notes/links (BOO-15/16/17/18/19/20)
 
 ## §1 Context (ground truth)
 
@@ -20,17 +20,17 @@ enforcement: any attempt to link/note a highlight fails loud via `spaces`/`notes
 **Fold carry-forward (from S3):** the annotation-survival test for `removeAsset` (BR-BK-S3-4, structural no-FK)
 lands here, now that annotations exist.
 
-## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S4-*)
+## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S4-\*)
 
 - **BR-BK-S4-1 (three annotation natures / BK-6)** — highlights, bookmarks, quotes are **distinct tables**.
   Highlights are deliberately light (NO notes, NO inter-links); bookmarks + quotes take notes (via `pages`) and
   inter-link. Enforced structurally: `book_highlight` is NOT a registered `entity_type` (`_registry.ts:85-96`),
   so `spaces`/`notes` reject it fail-loud.
 - **BR-BK-S4-2 (highlight — digital span, work-anchored / BOO-15)** — `addHighlight(assetId, {capturedText,
-  position})` creates a `book_highlights` row; `book_id` is **derived from the asset** (guards the asset exists →
+position})` creates a `book_highlights` row; `book_id` is **derived from the asset** (guards the asset exists →
   `BookAssetNotFoundError`); `asset_id` records the digital-content source. `captured_text` is `[E]`. No notes/links.
 - **BR-BK-S4-3 (bookmark — work-anchored position marker / BK-5/BOO-16)** — `addBookmark(bookId, position,
-  label?)` creates a `book_bookmarks` row anchored to the **work** (`book_id`, no asset FK). `label` is `[E]`.
+label?)` creates a `book_bookmarks` row anchored to the **work** (`book_id`, no asset FK). `label` is `[E]`.
   Guards the book exists (`BookNotFoundError`).
 - **BR-BK-S4-4 (quote — first-class, per book / BK-7/BOO-17)** — `addQuote(bookId, text, position?)` creates a
   `book_quotes` row; `text` is `[E]` (required). Guards the book exists. (Embeddability = S5; tags = S9.)
@@ -43,7 +43,7 @@ lands here, now that annotations exist.
   precedent). Guards the annotation exists. A highlight ref fails loud via the registry (no `book_highlight`).
 - **BR-BK-S4-7 (annotations anchor to the WORK / BK-5/BOO-19)** — `listAnnotations(bookId)` returns all three
   natures for the work (soft-delete filtered), each as an `AnnotationView` (`kind` + the row + its native
-  `position`). Cross-format normalization to a *viewing* asset is the P6 Reader composing the S3
+  `position`). Cross-format normalization to a _viewing_ asset is the P6 Reader composing the S3
   `getMappedPosition` (BOO-19 is SPLIT; the service half is the work-anchored list — the mapping algorithm is
   unbuilt at M1, S3 BR-BK-S3-5).
 - **BR-BK-S4-8 (All Quotes library / BOO-20)** — `listQuotes(scope: { bookId? })` returns quotes for a book or
@@ -71,7 +71,7 @@ lands here, now that annotations exist.
 7. `listQuotes({bookId})` vs `listQuotes({})` — per-book vs all; soft-delete filtered.
 8. **S3 fold (the HARD case)** — add a **highlight** whose `asset_id` = an asset, then `removeAsset` that asset:
    the highlight **survives** (no cascade — no-FK). `[FACT: business-rules.md:99-100 "annotations made in a
-   deleted asset's native format remain… flagged native"; schema/books.ts:123 asset_id]`. (A work-anchored
+deleted asset's native format remain… flagged native"; schema/books.ts:123 asset_id]`. (A work-anchored
    bookmark survives trivially — the highlight is the real proof.)
 
 tsc 0 · eslint 0 · full `@vida/core` suite green (modulo the documented vault flake).
@@ -88,15 +88,15 @@ tsc 0 · eslint 0 · full `@vida/core` suite green (modulo the documented vault 
    (`schema/books.ts:125`) + the @vida/types interface convention; the frozen seam-contract's `capturedText`
    (camelCase) is a one-off sketch slip, recorded in currency. `[FACT: validators/books.ts; schema/books.ts:125]`
 3. **`services/books/types.ts`** — `BookAnnotationKind = 'bookmark'|'highlight'|'quote'`; `AnnotationRef =
-   {kind; id}`; `AnnotationView = {kind; annotation: BookBookmark|BookHighlight|BookQuote; position: string|null}`;
+{kind; id}`; `AnnotationView = {kind; annotation: BookBookmark|BookHighlight|BookQuote; position: string|null}`;
    `QuoteScope = {bookId?: string}`. Extend `BooksServiceDeps` with `spaces: SpacesService` + `notes: NotesService`
    (required). New error `AnnotationNotFoundError`. Append the 7 methods to `BooksService`. Import `EntityLinkRow`
-   + `PageRow` for return types (the knowledge precedent).
+   - `PageRow` for return types (the knowledge precedent).
 4. **`services/books/service.ts`** — three repos (`bookmarksRepo`/`highlightsRepo`/`quotesRepo`,
    `softDelete:true`, `encryptedFields:[]`); `toBookmark`/`toHighlight`/`toQuote` mappers. Implement the 7 methods;
    `linkAnnotations`→`spaces.createLink`, `openAnnotationNote`→`notes.ensureEntityNote`, both mapping
    `kind→'book_'+kind`. **`openAnnotationNote` seed** (B3) = `{ title: label ?? '' }` for a bookmark, `{ title:
-   text }` for a quote — the knowledge `openObjectNote({ title: obj.title })` precedent (`service.ts:518`);
+text }` for a quote — the knowledge `openObjectNote({ title: obj.title })` precedent (`service.ts:518`);
    `ensureEntityNote` folds the seed into content idempotently (keys on the entity, not the seed). `listAnnotations`
    unions the three soft-delete-filtered reads, **ordered by `created_at`** (B-NIT). Guard-exists helpers per table.
 5. **Tests** — append an S4 `describe` with mock `spaces` + `notes` (or compose the real built services over the
@@ -114,12 +114,12 @@ tsc 0 · eslint 0 · full `@vida/core` suite green (modulo the documented vault 
   constraint the docs don't state.
 - **P2 — `addHighlight` format gate** — RESOLVED: no corpus rule mandates a service-level rejection of a
   non-digital asset, and the frozen error set has no such error; `identity.md:25` / BOO-15 "digital-content"
-  describe the highlight's *nature* + a P6 affordance (the Reader offers highlighting only on digital assets).
+  describe the highlight's _nature_ + a P6 affordance (the Reader offers highlighting only on digital assets).
   → guard the asset exists + derive `book_id`; do NOT gate format.
 - **P3 — highlight link/note rejection** — RESOLVED, then **CORRECTED at build** (§XXVIII, Verification-Gate-caught):
   the registry (`_registry.ts:85-96` excluding `book_highlight`) backstops a highlight as a link **TARGET** /
   note-entity — but `spaces.createLink` validates ONLY the target `entity_type`, **never the SOURCE anchor**
-  (`foundation/spaces/service.ts:158` `assertRegistered(entityType)`). So a highlight as a link *source* would pass
+  (`foundation/spaces/service.ts:158` `assertRegistered(entityType)`). So a highlight as a link _source_ would pass
   the registry into a persisted `entity_links` row — a real BK-6 violation (the knowledge `linkObject` precedent
   never hit this: its source is always a registered type). Books is the first consumer with an unregistered type as
   a potential source. **Correction:** Books enforces the full rule at its own boundary via `assertLinkable(ref)` →

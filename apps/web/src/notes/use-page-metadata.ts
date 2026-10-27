@@ -28,7 +28,13 @@ export interface PageMetadata {
   isPending: boolean
 }
 
-type Patch = { is_favorite?: boolean; is_archived?: boolean; icon?: string | null; cover_image?: string | null; title?: string | null }
+type Patch = {
+  is_favorite?: boolean
+  is_archived?: boolean
+  icon?: string | null
+  cover_image?: string | null
+  title?: string | null
+}
 interface Write {
   patch: Patch
   /** The verb phrase for the failure toast ("Couldn’t …"). */

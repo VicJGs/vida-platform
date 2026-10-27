@@ -21,6 +21,7 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 ## Slices (build order; each runs its per-slice gate before the next)
 
 ### G0 · Game GLOBAL preset — `@vida/ui` design-system — **EC-1, EC-2**
+
 - **Owns:** a new `game` token family — primitive ramps (`gameNeutral.*`/`gameAccent.*` in the SD seed) +
   `semantic.game.json` + `semantic.game.dark.json` overlays + `game` fonts (display/body/chrome). Regenerate
   `themes.ts`/`tokens.ts`; extend `ThemePreset` → `'game'`, `THEME_PRESETS`, `ThemeName`, `resolveTheme`.
@@ -29,6 +30,7 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 - **NOT this slice:** the Settings/Onboarding picker wiring (Preferences-owned; persona→suggest = Onboarding).
 
 ### S1 · Multi-mode shell + Overview + wiring — `apps/web` — **EC-3, EC-4, EC-10**
+
 - **Owns:** `apps/web/src/gamification/` — the `/gamification` lazy route (dock `feature_gamification` gate =
   thin, fe-shell-owned seam) + the **multi-mode top-view switcher** (Overview·Currencies·Achievements·Rules·
   Activity; `role="tablist"`/mode state) + the **Overview mode** over `DashboardView` (level+XP hero,
@@ -38,17 +40,20 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 - **Gate:** Visual Gate — switcher + Overview, both presets, 8-state, no-overflow.
 
 ### S2 · Currencies mode — `apps/web` — **EC-5**
+
 - **Owns:** the Currencies mode over `CollectionView` (paginated 50/page) — ALL user-defined currencies
   **grouped by the 3 backing kinds**, each current + 🔒 locked + ledger snippet; `+ New currency` entry point.
 - **Generic:** renders 0..N arbitrary currencies; backing-kind grouping is the stable taxonomy.
 - **Gate:** Visual Gate — grouped list + pager + empty/loading/error, both presets.
 
 ### S3 · Achievements mode — `apps/web` — **EC-6**
+
 - **Owns:** the Achievements mode over `CollectionView` (paginated) — ALL achievements by **category × tier** +
   progress toward locked; **calm = list · game = trophy wall** (lucide `Medal`, tier-ringed).
 - **Gate:** Visual Gate — list + trophy wall, tier color ≥3:1, both presets.
 
 ### S4 · Rules mode + Rule-authoring Flow — `apps/web` — **EC-7, EC-9**
+
 - **Owns:** the Rules mode over `CollectionView` (paginated) — ALL rules + enable/disable/delete + `+ New rule`
   → the **Rule-authoring Flow** over `FlowSessionView` (condition → reward → review/enable). Condition reads
   the **advertised measurement registry** (ADR-011 §3.6 — open; honest empty-seam state); reward spans
@@ -57,6 +62,7 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 - **Gate:** Visual Gate — rules list + the flow (both presets), empty-seam condition state honest.
 
 ### S5 · Activity mode — `apps/web` — **EC-8** — ✅ BUILT
+
 - **Owns:** the Activity mode over `CollectionView` (paginated) — the consequence-ledger history (earn/lock/
   spend/distribute across modules, timestamped).
 - **Gate:** Visual Gate — paginated ledger, both presets.
@@ -70,11 +76,13 @@ states its stub; no faked DB. `[FACT: TASKS.md fe-notes S1 D2]`
 ---
 
 ## Ownership discipline (EC-11 — enforced across all slices)
+
 - **Compose/read, never rebuild:** Dreams = Purposes (reward target in S4 only); storage boxes = Finance;
   streaks = module reads. **quests/challenges = Spaces, INTENDED-later → OUT of every slice** (GM-17).
 - **Icons:** lucide/SVG, never emoji.
 - **The System renders ITS data** (currencies·levels·achievements·rules·ledger) + reads others via seams.
 
 ## Dependencies between slices
+
 G0 (preset) lands first so every surface Visual Gate can assert both presets. S1 (shell) frames the modes →
 S2·S3·S4·S5 each add a mode (independent, any order after S1). S4's flow opens from its rules list.

@@ -23,13 +23,28 @@ const build = (d: EditorDocument, opts: DocxSerializeOptions = OPTS): DocxBlock[
 // ── TipTap-JSON node factories ───────────────────────────────────────────────────────────────────────────────────────
 const doc = (...content: EditorNode[]): EditorDocument => ({ type: 'doc', content })
 const text = (t: string, marks?: EditorNode['marks']): EditorNode => ({ type: 'text', text: t, marks })
-const mark = (type: string, attrs?: Record<string, unknown>): NonNullable<EditorNode['marks']>[number] => ({ type, attrs })
+const mark = (type: string, attrs?: Record<string, unknown>): NonNullable<EditorNode['marks']>[number] => ({
+  type,
+  attrs,
+})
 const para = (...content: EditorNode[]): EditorNode => ({ type: 'paragraph', content })
-const heading = (level: number, ...content: EditorNode[]): EditorNode => ({ type: 'heading', attrs: { level }, content })
+const heading = (level: number, ...content: EditorNode[]): EditorNode => ({
+  type: 'heading',
+  attrs: { level },
+  content,
+})
 const li = (...content: EditorNode[]): EditorNode => ({ type: 'listItem', content })
 const bulletList = (...items: EditorNode[]): EditorNode => ({ type: 'bulletList', content: items })
-const orderedList = (attrs: Record<string, unknown>, ...items: EditorNode[]): EditorNode => ({ type: 'orderedList', attrs, content: items })
-const taskItem = (checked: boolean, ...content: EditorNode[]): EditorNode => ({ type: 'taskItem', attrs: { checked }, content })
+const orderedList = (attrs: Record<string, unknown>, ...items: EditorNode[]): EditorNode => ({
+  type: 'orderedList',
+  attrs,
+  content: items,
+})
+const taskItem = (checked: boolean, ...content: EditorNode[]): EditorNode => ({
+  type: 'taskItem',
+  attrs: { checked },
+  content,
+})
 const taskList = (...items: EditorNode[]): EditorNode => ({ type: 'taskList', content: items })
 const blockquote = (...content: EditorNode[]): EditorNode => ({ type: 'blockquote', content })
 const codeBlock = (code: string): EditorNode => ({ type: 'codeBlock', content: [text(code)] })
@@ -38,7 +53,11 @@ const image = (alt?: string): EditorNode => ({ type: 'image', attrs: alt === und
 const cell = (...content: EditorNode[]): EditorNode => ({ type: 'tableCell', content })
 const trow = (...cells: EditorNode[]): EditorNode => ({ type: 'tableRow', content: cells })
 const table = (...rows: EditorNode[]): EditorNode => ({ type: 'table', content: rows })
-const callout = (variant: string, ...content: EditorNode[]): EditorNode => ({ type: 'callout', attrs: { variant }, content })
+const callout = (variant: string, ...content: EditorNode[]): EditorNode => ({
+  type: 'callout',
+  attrs: { variant },
+  content,
+})
 
 const firstRun = (blocks: DocxBlock[]): DocxRun => {
   const b = blocks[0]
@@ -85,7 +104,11 @@ describe('marks + hardBreak', () => {
   })
 
   it('strike + underline combine on one run', () => {
-    expect(firstRun(build(doc(para(text('x', [mark('strike'), mark('underline')])))))).toEqual({ text: 'x', strike: true, underline: true })
+    expect(firstRun(build(doc(para(text('x', [mark('strike'), mark('underline')])))))).toEqual({
+      text: 'x',
+      strike: true,
+      underline: true,
+    })
   })
 
   it('link → the href on the run', () => {
@@ -108,28 +131,42 @@ describe('heading level clamp 1–6', () => {
   it('clamps out-of-range + non-numeric', () => {
     expect((build(doc(heading(9, text('x'))))[0] as { level: number }).level).toBe(6)
     expect((build(doc(heading(0, text('x'))))[0] as { level: number }).level).toBe(1)
-    expect((build(doc({ type: 'heading', attrs: { level: 'nope' }, content: [text('x')] }))[0] as { level: number }).level).toBe(1)
+    expect(
+      (build(doc({ type: 'heading', attrs: { level: 'nope' }, content: [text('x')] }))[0] as { level: number }).level,
+    ).toBe(1)
   })
 })
 
 // ── lists ────────────────────────────────────────────────────────────────────────────────────────────────────────────
 describe('lists', () => {
   it('bulletList → level-0 unordered items; nested → level 1', () => {
-    const blocks = build(doc(bulletList(li(para(text('a')), bulletList(li(para(text('b')))))))) as Extract<DocxBlock, { kind: 'listItem' }>[]
+    const blocks = build(doc(bulletList(li(para(text('a')), bulletList(li(para(text('b')))))))) as Extract<
+      DocxBlock,
+      { kind: 'listItem' }
+    >[]
     expect(blocks[0]).toMatchObject({ kind: 'listItem', ordered: false, level: 0 })
     expect(blocks[1]).toMatchObject({ kind: 'listItem', ordered: false, level: 1 })
   })
 
   it('two separate ordered lists get UNIQUE refs (no shared counter — MINOR-1)', () => {
-    const blocks = build(doc(orderedList({}, li(para(text('a')))), orderedList({}, li(para(text('b')))))) as Extract<DocxBlock, { kind: 'listItem' }>[]
+    const blocks = build(doc(orderedList({}, li(para(text('a')))), orderedList({}, li(para(text('b')))))) as Extract<
+      DocxBlock,
+      { kind: 'listItem' }
+    >[]
     const refs = blocks.map((b) => b.ref)
     expect(refs[0]).not.toBe(refs[1])
     expect(new Set(refs).size).toBe(2)
   })
 
   it('orderedList.start honored; non-numeric → undefined', () => {
-    const good = build(doc(orderedList({ start: 5 }, li(para(text('a'))))))[0] as Extract<DocxBlock, { kind: 'listItem' }>
-    const bad = build(doc(orderedList({ start: 'x' }, li(para(text('a'))))))[0] as Extract<DocxBlock, { kind: 'listItem' }>
+    const good = build(doc(orderedList({ start: 5 }, li(para(text('a'))))))[0] as Extract<
+      DocxBlock,
+      { kind: 'listItem' }
+    >
+    const bad = build(doc(orderedList({ start: 'x' }, li(para(text('a'))))))[0] as Extract<
+      DocxBlock,
+      { kind: 'listItem' }
+    >
     expect(good.start).toBe(5)
     expect(bad.start).toBeUndefined()
   })
@@ -144,7 +181,10 @@ describe('lists', () => {
 // ── nested-block-in-container (the E7 M1 regression — BR-E8-nested) ──────────────────────────────────────────────────
 describe('nested-block-in-container keeps its text (BR-E8-nested)', () => {
   it('a list inside a blockquote keeps its items', () => {
-    const bq = build(doc(blockquote(bulletList(li(para(text('inner')))))))[0] as Extract<DocxBlock, { kind: 'blockquote' }>
+    const bq = build(doc(blockquote(bulletList(li(para(text('inner')))))))[0] as Extract<
+      DocxBlock,
+      { kind: 'blockquote' }
+    >
     expect(bq.children.some((c) => c.kind === 'listItem' && c.runs[0]?.text === 'inner')).toBe(true)
   })
 
@@ -154,7 +194,10 @@ describe('nested-block-in-container keeps its text (BR-E8-nested)', () => {
   })
 
   it('a list inside a table cell keeps its items (never a bare run into a cell)', () => {
-    const t = build(doc(table(trow(cell(bulletList(li(para(text('cellitem')))))))))[0] as Extract<DocxBlock, { kind: 'table' }>
+    const t = build(doc(table(trow(cell(bulletList(li(para(text('cellitem')))))))))[0] as Extract<
+      DocxBlock,
+      { kind: 'table' }
+    >
     const cellBlocks = t.rows[0]![0]!
     expect(cellBlocks.some((c) => c.kind === 'listItem' && c.runs[0]?.text === 'cellitem')).toBe(true)
   })
@@ -163,7 +206,10 @@ describe('nested-block-in-container keeps its text (BR-E8-nested)', () => {
 // ── table header bold ────────────────────────────────────────────────────────────────────────────────────────────────
 describe('table', () => {
   it('bolds row-0 cells, not later rows', () => {
-    const t = build(doc(table(trow(cell(para(text('H')))), trow(cell(para(text('D')))))))[0] as Extract<DocxBlock, { kind: 'table' }>
+    const t = build(doc(table(trow(cell(para(text('H')))), trow(cell(para(text('D')))))))[0] as Extract<
+      DocxBlock,
+      { kind: 'table' }
+    >
     const header = t.rows[0]![0]![0] as { runs: DocxRun[] }
     const body = t.rows[1]![0]![0] as { runs: DocxRun[] }
     expect(header.runs[0]!.bold).toBe(true)
@@ -205,11 +251,17 @@ describe('integration blocks per handling', () => {
 // ── frontmatter ──────────────────────────────────────────────────────────────────────────────────────────────────────
 describe('frontmatter → a leading header (non-empty gate)', () => {
   it('present → a bold title + key:value meta paragraphs; empty/absent → none', () => {
-    const withFm = build(doc(para(text('body'))), { integration_block_handling: 'skip', frontmatter: { title: 'My Note', date: '2026-08-16', tags: ['a', 'b'] } })
+    const withFm = build(doc(para(text('body'))), {
+      integration_block_handling: 'skip',
+      frontmatter: { title: 'My Note', date: '2026-08-16', tags: ['a', 'b'] },
+    })
     expect(withFm[0]).toEqual({ kind: 'paragraph', runs: [{ text: 'My Note', bold: true }] })
     expect(withFm.some((b) => b.kind === 'paragraph' && b.runs[0]?.text === 'date: 2026-08-16')).toBe(true)
     expect(withFm.some((b) => b.kind === 'paragraph' && b.runs[0]?.text === 'tags: a, b')).toBe(true)
-    expect(build(doc(para(text('x'))), { integration_block_handling: 'skip', frontmatter: {} })[0]).toEqual({ kind: 'paragraph', runs: [{ text: 'x' }] })
+    expect(build(doc(para(text('x'))), { integration_block_handling: 'skip', frontmatter: {} })[0]).toEqual({
+      kind: 'paragraph',
+      runs: [{ text: 'x' }],
+    })
     expect(build(doc(para(text('x'))), OPTS)[0]).toEqual({ kind: 'paragraph', runs: [{ text: 'x' }] })
   })
 })
@@ -234,7 +286,12 @@ describe('purity/determinism (BR-E8-7)', () => {
 // ── pack smoke: the descriptor→docx adapter path over the schema-parity kitchen-sink ─────────────────────────────────
 describe('pack smoke — PK zip magic (adapter-path coverage)', () => {
   const kitchenSink = doc(
-    para(text('plain '), text('bold', [mark('bold')]), text(' '), text('link', [mark('link', { href: 'https://v.io' })])),
+    para(
+      text('plain '),
+      text('bold', [mark('bold')]),
+      text(' '),
+      text('link', [mark('link', { href: 'https://v.io' })]),
+    ),
     heading(1, text('Title')),
     bulletList(li(para(text('bullet')))),
     orderedList({ start: 3 }, li(para(text('one')))),
@@ -243,7 +300,10 @@ describe('pack smoke — PK zip magic (adapter-path coverage)', () => {
     codeBlock('const x = 1\nconst y = 2'),
     hr(),
     image('cat'),
-    table(trow(cell(para(text('H'))), cell(bulletList(li(para(text('cell list')))))), trow(cell(para(text('D'))), cell(para(text('E'))))),
+    table(
+      trow(cell(para(text('H'))), cell(bulletList(li(para(text('cell list')))))),
+      trow(cell(para(text('D'))), cell(para(text('E')))),
+    ),
     callout('danger', para(text('note')), heading(4, text('sub'))),
     { type: 'dailySummary', attrs: {} },
   )

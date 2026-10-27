@@ -162,9 +162,7 @@ export const migration027HealthCore: Migration = {
         ${BASE}
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_health_goals_status ON health_goals (status) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_health_goals_status ON health_goals (status) WHERE deleted_at IS NULL`)
 
     // --- physical_roles: the trainable-capability unit ---
     await driver.run(`

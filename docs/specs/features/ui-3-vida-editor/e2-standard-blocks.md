@@ -1,11 +1,13 @@
 # Spec: feature:ui-3-vida-editor · E2 — standard blocks
-Status: implemented            <!-- draft → approved → implemented -->
-Parent: docs/specs/features/ui-3-vida-editor/_index.md (umbrella; BR-1..BR-7)
+
+Status: implemented <!-- draft → approved → implemented -->
+Parent: docs/specs/features/ui-3-vida-editor/\_index.md (umbrella; BR-1..BR-7)
 Depends-on: e1-editor-core.md (implemented — the `<VidaEditor>` spine + extensions array this unit extends)
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-11-ui-3-vida-editor (E2 sub-spec authored at PLAN; /read-docs-first done against Tiptap v3 — installed StarterKit@3.30.0 deps + tiptap-docs table/image/list).
 
 ## 1. Identity
+
 **E2 — standard blocks.** Complete the `STANDARD_BLOCK_TYPE` set in `@vida/editor` by adding the block nodes E1's
 StarterKit does NOT provide, wired into `<VidaEditor>`'s extensions array and styled via the E1 injected-CSS
 mechanism. The public `<VidaEditor>` API (BR-E1-1 uncontrolled + imperative handle) is UNCHANGED — E2 extends the
@@ -15,15 +17,15 @@ internal schema only. `[FACT: umbrella §5 E2; editor.tsx:108 extensions array]`
 `[FACT: packages/types/src/editor.ts:12-24]` has **11** members. E1's `[StarterKit, Placeholder]` already provides
 **7** of them; E2 adds the **4** that are missing:
 
-| `STANDARD_BLOCK_TYPE` value | Provided by | E2 action |
-|---|---|---|
-| `paragraph` · `heading` · `bulletList` · `orderedList` · `blockquote` | StarterKit (E1) | none |
-| `codeBlock` | StarterKit `CodeBlock` (E1) | none (style only — §4 BR-E2-8) |
-| `horizontalRule` (= "divider") | StarterKit `HorizontalRule` (E1) | none (style only) |
-| **`taskList`** | — (not in StarterKit) | **ADD** `TaskList`+`TaskItem` from `@tiptap/extension-list` |
-| **`image`** | — | **ADD** `@tiptap/extension-image` |
-| **`table`** | — | **ADD** `@tiptap/extension-table` (+ row/cell/header) |
-| **`callout`** | — (no official extension) | **BUILD** a bespoke custom `Node` |
+| `STANDARD_BLOCK_TYPE` value                                           | Provided by                      | E2 action                                                   |
+| --------------------------------------------------------------------- | -------------------------------- | ----------------------------------------------------------- |
+| `paragraph` · `heading` · `bulletList` · `orderedList` · `blockquote` | StarterKit (E1)                  | none                                                        |
+| `codeBlock`                                                           | StarterKit `CodeBlock` (E1)      | none (style only — §4 BR-E2-8)                              |
+| `horizontalRule` (= "divider")                                        | StarterKit `HorizontalRule` (E1) | none (style only)                                           |
+| **`taskList`**                                                        | — (not in StarterKit)            | **ADD** `TaskList`+`TaskItem` from `@tiptap/extension-list` |
+| **`image`**                                                           | —                                | **ADD** `@tiptap/extension-image`                           |
+| **`table`**                                                           | —                                | **ADD** `@tiptap/extension-table` (+ row/cell/header)       |
+| **`callout`**                                                         | — (no official extension)        | **BUILD** a bespoke custom `Node`                           |
 
 **In E2:** the 4 missing block nodes + their token-driven CSS + a schema-parity guard proving every
 `STANDARD_BLOCK_TYPE` value is a registered node.
@@ -38,6 +40,7 @@ resolution — deferred, BR-E2-5) · any `yjs`/`y-prosemirror` (BR-2).
 > callout}**. Umbrella §5 row E2 to be corrected. `[FACT: STANDARD_BLOCK_TYPE vs starter-kit@3.30.0 package.json deps]`
 
 ## 2. Verified library facts (`/read-docs-first`, Tiptap v3 — 2026-08-11)
+
 Verified against the **installed** `@tiptap/starter-kit@3.30.0` package manifest + `@tiptap/extension-list@3.30.0`
 exports + the tiptap-docs table/image pages (context7).
 
@@ -56,13 +59,14 @@ exports + the tiptap-docs table/image pages (context7).
   `import { TableKit } from '@tiptap/extension-table'` — that registers `Table`+`TableRow`+`TableCell`+`TableHeader`
   at once (the StarterKit-style bundle), configurable via `TableKit.configure({ table: { resizable: false } })`.
   NOT installed → **one** new dep. `[FACT: tiptap-docs editor/extensions/functionality/table-kit + nodes/table-header
-  — resolved at preflight 2026-08-11 via context7]`. (The 4-separate-package path is the confirmed fallback if a
+— resolved at preflight 2026-08-11 via context7]`. (The 4-separate-package path is the confirmed fallback if a
   bundle-config edge appears, but TableKit is the chosen path.)
 - **`callout` has no official Tiptap extension** → a bespoke `Node.create` (§4 BR-E2-6). `[FACT: no @tiptap/extension-callout]`
 - **No duplicate node names.** ProseMirror throws if two extensions register the same node `name`. E2 must NOT re-add
   `codeBlock`/`horizontalRule` (StarterKit owns them) — it only styles them. `[FACT: ProseMirror schema duplicate-node error]`
 
 ## 3. Contract — extensions, not props
+
 E2 changes **no** `<VidaEditor>` prop or handle — the E1 contract (`VidaEditorProps`/`VidaEditorHandle`, BR-E1-1) is
 frozen. The unit's contract is the **schema composition** + the one bespoke node's shape:
 
@@ -71,10 +75,11 @@ frozen. The unit's contract is the **schema composition** + the one bespoke node
 export const STANDARD_BLOCK_EXTENSIONS: readonly Extension[] // [TaskList, TaskItem, Image, TableKit, Callout] (TableKit bundles Table+Row+Cell+Header)
 
 // extensions/callout.ts — the bespoke block node
-export const CALLOUT_VARIANT = ['info', 'success', 'danger'] as const   // EXACTLY the ToastIntent set → binds to $accentInfo/$accentSuccess/$accentDanger
+export const CALLOUT_VARIANT = ['info', 'success', 'danger'] as const // EXACTLY the ToastIntent set → binds to $accentInfo/$accentSuccess/$accentDanger
 export type CalloutVariant = (typeof CALLOUT_VARIANT)[number]
-export const Callout: Node   // name:'callout', group:'block', content:'block+', attrs:{ variant: CalloutVariant='info' }
+export const Callout: Node // name:'callout', group:'block', content:'block+', attrs:{ variant: CalloutVariant='info' }
 ```
+
 - `Callout` renders `renderHTML → <div data-type="callout" class="vida-callout" data-variant>` with a `0` content
   hole; parses the same. Styled by injected CSS (BR-E2-7), **not** a React node-view — the E1 `editor-styles.ts`
   precedent (leaner; no `ReactNodeViewRenderer` overhead). `[INTERP: editor-styles.ts]`
@@ -83,9 +88,10 @@ export const Callout: Node   // name:'callout', group:'block', content:'block+',
   an E3 toolbar interaction, out of E2. `[INTERP]`
 - Types: `CalloutVariant` is a local implementation type (the callout node is a Vida-specific block, not a
   cross-package contract) — it does NOT belong in `@vida/types` (BR-7 governs the shared `STANDARD_BLOCK_TYPE`
-  vocabulary, which already contains `'callout'`; the *variant* enum is E2-internal). `[INTERP: BR-7 scope]`
+  vocabulary, which already contains `'callout'`; the _variant_ enum is E2-internal). `[INTERP: BR-7 scope]`
 
 ## 4. Business Rules (E2-specific)
+
 - **BR-E2-1 · Implement the enum, not the prose.** E2's block set is derived from `STANDARD_BLOCK_TYPE`
   `[FACT: editor.ts:12-24]` minus what E1's StarterKit already registers → **{taskList, image, table, callout}**. A
   schema-parity test (BR-E2-9) is the gate. `[FACT: §1 table]`
@@ -100,7 +106,7 @@ export const Callout: Node   // name:'callout', group:'block', content:'block+',
   JSON via the existing `onChange`; E2 touches NO SQLite/`@vida/core`. Boundary grep stays clean. `[FACT: umbrella BR-1]`
 - **BR-E2-5 · image is a presentational node; the attachment pipeline is a DEFERRED SEAM.** In Vida's ZK model,
   images are `note_attachments` (encrypted blobs, `MAX_ATTACHMENT_BYTES`) `[FACT: CLAUDE.md Notes domain; @vida/types
-  common.ts]`. E2 ships the `image` NODE (an `<img src alt>`); the encrypted-blob → decrypted object-URL resolution +
+common.ts]`. E2 ships the `image` NODE (an `<img src alt>`); the encrypted-blob → decrypted object-URL resolution +
   upload UI is the **app's** concern, deferred to a later phase — exactly like the Yjs seam (BR-2). At M1.0 `src`
   carries an external URL or a base64 data-URI (`allowBase64:true`); the attachment-backed resolver replaces that
   later. E2 builds **no** upload/encryption path. `[INTERP: BR-1 + ADR-002 note_attachments]`
@@ -111,7 +117,7 @@ export const Callout: Node   // name:'callout', group:'block', content:'block+',
     encrypted blob + object-URL resolver) MUST retire it before image is exposed in the app UI. E2 ships the node, not
     a user-facing insert button (that is E3/E4). `[INTERP: ADR-003 per-page sync blob]`
 - **BR-E2-6 · callout is a bespoke custom Node with a `variant` attribute.** `Node.create({ name:'callout',
-  group:'block', content:'block+', defining:true })` + `variant ∈ {info,success,danger}` (default `info`) —
+group:'block', content:'block+', defining:true })` + `variant ∈ {info,success,danger}` (default `info`) —
   **EXACTLY** the `ToastIntent` set `[FACT: packages/ui/src/internal/toast-store.ts:10 = 'info'|'success'|'danger']`,
   so each variant binds to an existing accent token (`$accentInfo`/`$accentSuccess`/`$accentDanger`
   `[FACT: packages/ui/src/components/toast.tsx:56-58]`). **No 4th `warn` variant** — there is no `signal.warning`
@@ -135,16 +141,19 @@ export const Callout: Node   // name:'callout', group:'block', content:'block+',
   dropped block on any future edit). `[INTERP: mirrors commands.test.ts parity]`
 
 ## 5. States (§VIII — applicable subset, per block)
+
 The blocks are content, not form controls, but each has reviewable states for the Visual Gate (both themes):
+
 - **taskList** — unchecked / checked item (checkbox + strikethrough-optional label); keyboard-toggle via ProseMirror.
 - **table** — header row vs body cell; selected cell; empty cell (min-height). Editable cells (ProseMirror default).
 - **callout** — one rendered variant each: `info`/`success`/`danger` (distinct tint + accent, contrast ≥3:1).
 - **image** — with `src` (renders), selected (ring), and **missing/broken `src`** → `alt` text visible (empty state).
 - **codeBlock/divider** — themed resting render (styled, unchanged behavior).
-No loading/error states (the app's terminal-state wrapper owns those, UX-4 — the editor is presentational).
-`[FACT: standards/components.md §VIII; state-conventions UX-4]`
+  No loading/error states (the app's terminal-state wrapper owns those, UX-4 — the editor is presentational).
+  `[FACT: standards/components.md §VIII; state-conventions UX-4]`
 
 ## 6. Acceptance
+
 - [ ] Deps added, family-pinned `^3.30.0`: `@tiptap/extension-image` + `@tiptap/extension-table` (the `TableKit`
       bundle) — **two** new packages; `@tiptap/extension-list` promoted to a direct dep. **No `yjs`/`y-prosemirror`.**
       Version `0.1.0 → 0.2.0`.
@@ -171,6 +180,7 @@ No loading/error states (the app's terminal-state wrapper owns those, UX-4 — t
       note-for-E6); update `packages/editor/src/CLAUDE.md`.
 
 ## 7. Implementation sequence
+
 1. **Deps + version.** Add `@tiptap/extension-image` + `@tiptap/extension-table` (the TableKit bundle — 2 packages,
    resolved at preflight) + promote `@tiptap/extension-list` to a direct dep; `pnpm install` (updates the lock);
    `package.json` `0.1.0 → 0.2.0`.
@@ -197,6 +207,7 @@ block that way — no toolbar/slash-menu insertion in E2). No blockers; every §
 backend surface (presentational, BR-E2-4); all §8 UNKNOWNs resolved or owner-deferred (E6 serialization).
 
 ## 8. Open UNKNOWNs / Decisions
+
 - [RESOLVED at preflight 2026-08-11] `@tiptap/extension-table@3.30` **does** export a `TableKit` umbrella
   (`import { TableKit } from '@tiptap/extension-table'`) bundling Table+Row+Cell+Header → E2 uses it (2 new deps, not
   5). `[FACT: tiptap-docs table-kit + table-header pages via context7]`
@@ -204,11 +215,11 @@ backend surface (presentational, BR-E2-4); all §8 UNKNOWNs resolved or owner-de
   way to place a table/callout/taskList/image is a **`defaultValue` `EditorDocument` JSON literal**. The Visual-Gate
   "Standard blocks" story and the round-trip test fixtures seed each block via `defaultValue`; the per-node JSON shape
   (e.g. `taskList → {type:'taskList',content:[{type:'taskItem',attrs:{checked},content:[…]}]}`, `table → tableRow ▷
-  tableCell/tableHeader`, `callout → {type:'callout',attrs:{variant},content:[{type:'paragraph',…}]}`) is derived from
+tableCell/tableHeader`, `callout → {type:'callout',attrs:{variant},content:[{type:'paragraph',…}]}`) is derived from
   Tiptap's node schema (or a `insert-then-getJSON` test helper). No command/UI insertion is in E2 scope. `[INTERP]`
 - [DECIDED] codeBlock stays StarterKit-basic (no lowlight) — BR-E2-8. callout renders via injected CSS, not a React
   node-view — §3. image `allowBase64` interim, attachment pipeline deferred — BR-E2-5. table `resizable:false` at E2.
-- [DECIDED] `CalloutVariant` is E2-internal, NOT added to `@vida/types` — §3 (BR-7 owns the block *vocabulary*
+- [DECIDED] `CalloutVariant` is E2-internal, NOT added to `@vida/types` — §3 (BR-7 owns the block _vocabulary_
   `STANDARD_BLOCK_TYPE`, which already has `'callout'`; the variant set is an implementation detail).
 - [NOTE for E6] each new node needs a MD/PDF/DOCX serialization rule; `extension-catalog.md` records the intended
   Markdown mapping per block (taskList→`- [ ]`, table→GFM table, image→`![alt](src)`, callout→? [E6 decides: fenced
@@ -218,12 +229,13 @@ backend surface (presentational, BR-E2-4); all §8 UNKNOWNs resolved or owner-de
   real `tasks` rows (E5). E2 does not touch `task-checklist.ts`. `[FACT: INTEGRATION_BLOCK_TYPE 'taskChecklist' vs STANDARD_BLOCK_TYPE 'taskList']`
 
 ## 9. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-11 | ui-3-vida-editor | E2 sub-spec authored at PLAN. /read-docs-first (installed StarterKit@3.30.0 manifest + @tiptap/extension-list exports + tiptap-docs table/image). Resolved the scope collision against `STANDARD_BLOCK_TYPE`: E2 = {taskList, image, table, callout}; divider+code-block already in StarterKit (E1), umbrella §5 E2 row flagged for correction (dropped taskList, listed 2 StarterKit-provided). Decided: taskList from already-present @tiptap/extension-list; image presentational w/ attachment pipeline deferred (BR-E2-5); callout bespoke Node via injected CSS; no double-registration; schema-parity test as the enum gate. |
-| 2026-08-11 | ui-3-vida-editor | **Gate-2 /critique (independent) → REVISE → resolved → SHIP.** Confirmed every gate-1 + preflight fold landed consistently (TableKit 2-dep path, B1 3-variant contract, M1–M4, defaultValue seed) + re-verified all ground-truth cites (ToastIntent=3, TableKit exported from `@tiptap/extension-table`, enum=11). Caught **2 edit-orphaned "4 callout variants" refs** the B1 4→3 edit missed (§6 Visual-Gate line, §7 step 5) → fixed to 3. Verified the schema-parity test direction is safe (`enum ⊆ schema.nodes` — TableKit's tableRow/cell/header sub-nodes can't false-fail it). No architecture change, no re-preflight. Spec internally consistent + implementation-ready → **Approval 2 pending**. |
-| 2026-08-11 | ui-3-vida-editor | **Visual Gate PASS (Victor, real browser — both themes).** The "Standard blocks" story confirmed: callout ×3 accents/tints distinct + theme-correct (the B1 fix verified rendering — the exact thing jsdom couldn't), taskList checkboxes, table header-fill/borders, image, code/divider, a11y clean. **E2 DONE — all gates cleared.** Remaining: commit (E1+E2) + PR strategy (Victor). |
+
+| Date       | Session          | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------- | ---------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-11 | ui-3-vida-editor | E2 sub-spec authored at PLAN. /read-docs-first (installed StarterKit@3.30.0 manifest + @tiptap/extension-list exports + tiptap-docs table/image). Resolved the scope collision against `STANDARD_BLOCK_TYPE`: E2 = {taskList, image, table, callout}; divider+code-block already in StarterKit (E1), umbrella §5 E2 row flagged for correction (dropped taskList, listed 2 StarterKit-provided). Decided: taskList from already-present @tiptap/extension-list; image presentational w/ attachment pipeline deferred (BR-E2-5); callout bespoke Node via injected CSS; no double-registration; schema-parity test as the enum gate.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-08-11 | ui-3-vida-editor | **Gate-2 /critique (independent) → REVISE → resolved → SHIP.** Confirmed every gate-1 + preflight fold landed consistently (TableKit 2-dep path, B1 3-variant contract, M1–M4, defaultValue seed) + re-verified all ground-truth cites (ToastIntent=3, TableKit exported from `@tiptap/extension-table`, enum=11). Caught **2 edit-orphaned "4 callout variants" refs** the B1 4→3 edit missed (§6 Visual-Gate line, §7 step 5) → fixed to 3. Verified the schema-parity test direction is safe (`enum ⊆ schema.nodes` — TableKit's tableRow/cell/header sub-nodes can't false-fail it). No architecture change, no re-preflight. Spec internally consistent + implementation-ready → **Approval 2 pending**.                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-08-11 | ui-3-vida-editor | **Visual Gate PASS (Victor, real browser — both themes).** The "Standard blocks" story confirmed: callout ×3 accents/tints distinct + theme-correct (the B1 fix verified rendering — the exact thing jsdom couldn't), taskList checkboxes, table header-fill/borders, image, code/divider, a11y clean. **E2 DONE — all gates cleared.** Remaining: commit (E1+E2) + PR strategy (Victor).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-08-11 | ui-3-vida-editor | **Post-impl /critique (independent) → REVISE → resolved → SHIP.** Critic verified 5/6 hunt areas clean (decomposition, callout node correctness, wiring/E1-frozen, test quality incl. correct parity direction + real parseHTML exercise, boundary/deps) and caught **1 BLOCKER (B1, auto-triage ISOLATED):** the callout/table/image accents referenced `--accentInfo/--accentSuccess/--accentDanger`, which Tamagui emits ONLY inside the `.t_*_Toast` sub-theme scope → they resolve to nothing on the editor's UNNAMED base-scope frame (jsdom can't catch it; the E1 `--placeholder` trap recurring — "cite tokens from emitted output"). Verified against `themes.ts:36-37` (accent* live only in `light_/dark_Toast`, aliasing base `colorBrandPrimary`/`colorSignalSuccess`/`colorSignalDanger`). **Fixed:** swapped all 6 refs → the base vars they alias (values-only, no `tamagui.config` edit); comment + catalog record the lesson. Re-verified GREEN: typecheck ✓ · test 30/30 · no `var(--accent*)` in code · no raw hex. **PENDING: real-browser Visual Gate (Victor) — the only gate that confirms the accents actually render both themes.** |
-| 2026-08-11 | ui-3-vida-editor | **IMPLEMENTED (§7).** `@vida/editor` v0.1.0→**0.2.0**: `extensions/callout.ts` (bespoke node, 3 variants) + `extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS` = TaskList/TaskItem·Image·TableKit·Callout) spread into `editor.tsx`; `image-block.ts` skeleton removed; `editor-styles.ts` extended (token-var CSS, `color-mix` tints, no hex); `standard-blocks.test.tsx` (12 tests: parity + round-trip + callout fallback + e2e render) + "Standard blocks" story. **Automated acceptance GREEN:** editor typecheck ✓ · build ✓ · build-storybook ✓ · test **30/30** · root typecheck **11/11** · boundary clean (only @vida/types+@vida/ui) · no raw hex in CSS. **DEV-1 (§XXVIII mechanical):** `STANDARD_BLOCK_EXTENSIONS` typed `Extensions` (Tiptap's `(Extension\|Node\|Mark)[]`), not §3's loose `readonly Extension[]` — Image/TableKit/Callout are Nodes; a type-name refinement, no intent change (the E1 DEV-2 precedent). §XXIX currency done (extension-catalog.md filled · current-* refreshed · CLAUDE.md · umbrella §5-E2 row corrected). **PENDING: post-impl /critique + real-browser Visual Gate.** |
-| 2026-08-11 | ui-3-vida-editor | **/preflight PASS + 2 folds.** (1) Resolved the table UNKNOWN — `TableKit` is exported from `@tiptap/extension-table@3.30` (context7), so E2 uses the bundle → **2 new deps (image + table), not 5**; updated §2/§3/§6/§7. (2) Added the pre-chrome block-exhibition path — with no toolbar/slash-menu yet, blocks are seeded via `defaultValue` JSON in the Visual-Gate story + fixtures (§8). Confirmed: every §4 BR maps to a §6 gate; no backend surface; all UNKNOWNs resolved or E6-owned. |
+| 2026-08-11 | ui-3-vida-editor | **IMPLEMENTED (§7).** `@vida/editor` v0.1.0→**0.2.0**: `extensions/callout.ts` (bespoke node, 3 variants) + `extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS` = TaskList/TaskItem·Image·TableKit·Callout) spread into `editor.tsx`; `image-block.ts` skeleton removed; `editor-styles.ts` extended (token-var CSS, `color-mix` tints, no hex); `standard-blocks.test.tsx` (12 tests: parity + round-trip + callout fallback + e2e render) + "Standard blocks" story. **Automated acceptance GREEN:** editor typecheck ✓ · build ✓ · build-storybook ✓ · test **30/30** · root typecheck **11/11** · boundary clean (only @vida/types+@vida/ui) · no raw hex in CSS. **DEV-1 (§XXVIII mechanical):** `STANDARD_BLOCK_EXTENSIONS` typed `Extensions` (Tiptap's `(Extension\|Node\|Mark)[]`), not §3's loose `readonly Extension[]` — Image/TableKit/Callout are Nodes; a type-name refinement, no intent change (the E1 DEV-2 precedent). §XXIX currency done (extension-catalog.md filled · current-\* refreshed · CLAUDE.md · umbrella §5-E2 row corrected). **PENDING: post-impl /critique + real-browser Visual Gate.**                           |
+| 2026-08-11 | ui-3-vida-editor | **/preflight PASS + 2 folds.** (1) Resolved the table UNKNOWN — `TableKit` is exported from `@tiptap/extension-table@3.30` (context7), so E2 uses the bundle → **2 new deps (image + table), not 5**; updated §2/§3/§6/§7. (2) Added the pre-chrome block-exhibition path — with no toolbar/slash-menu yet, blocks are seeded via `defaultValue` JSON in the Visual-Gate story + fixtures (§8). Confirmed: every §4 BR maps to a §6 gate; no backend surface; all UNKNOWNs resolved or E6-owned.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
 | 2026-08-11 | ui-3-vida-editor | **/critique REVISE → resolved (independent subagent critic; core decomposition verified SOUND).** **B1 (blocker):** callout `warn` variant was mis-cited as "the Toast intent set" — verified `ToastIntent`=`info\|success\|danger` (3, no warn; `toast-store.ts:10`) and NO `signal.warning` token exists at any layer → `warn` unbuildable under BR-E2-7's token-only rule. Fixed: dropped `warn` → 3 variants matching `ToastIntent`, each binding an existing accent token. **M1:** §7 clarifies `standard-blocks.ts`+`callout.ts` are net-new (not skeletons) + `image-block.ts` skeleton removed. **M2:** BR-E2-3 notes taskList inherits StarterKit's bundled `listKeymap` (don't disable). **M3:** §6 — callout round-trip fixture seeds a child paragraph (`content:'block+'` auto-fill); table-companion co-registration is the mount-smoke gate. **M4:** BR-E2-5 flags base64 as a known-bad interim (25 MiB image ≈ 33 MB inline in the per-page sync blob), must be retired by the attachment pipeline. Critic confirmed the umbrella §5-E2-row defect flag is correct + the schema-parity test won't false-fail (no sub-node names in the enum). |

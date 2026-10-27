@@ -23,9 +23,7 @@ const DATA_POINTS: readonly DataPoint[] = [
 
 /** BR-LE-S10-4 — the Education Journal contribution (summary recap: class sessions + due assessments for the day). No
  *  `dueIn` agenda — the seam lists only the `/summary` digest (No-Guessing; the books summary-only precedent). */
-export function createLearningEducationJournalContribution(
-  svc: LearningEducationService,
-): JournalContribution {
+export function createLearningEducationJournalContribution(svc: LearningEducationService): JournalContribution {
   return {
     module: 'learning-education',
     sectionKey: 'summary',
@@ -34,8 +32,7 @@ export function createLearningEducationJournalContribution(
     async summary(date: string): Promise<SectionData> {
       const digest = await svc.getDayEducationDigest(date)
       // Any activity (a class session OR a due assessment) ⇒ success; a genuinely idle day ⇒ empty.
-      const state: TerminalState =
-        digest.classSessions + digest.dueAssessments > 0 ? 'success' : 'empty'
+      const state: TerminalState = digest.classSessions + digest.dueAssessments > 0 ? 'success' : 'empty'
       return {
         sectionKey: 'summary',
         module: 'learning-education',
@@ -48,9 +45,6 @@ export function createLearningEducationJournalContribution(
 }
 
 /** Register the Education contribution into the Journals registry (the register-helper pattern, the books precedent). */
-export function registerLearningEducationJournal(
-  registry: JournalRegistry,
-  svc: LearningEducationService,
-): void {
+export function registerLearningEducationJournal(registry: JournalRegistry, svc: LearningEducationService): void {
   registry.register(createLearningEducationJournalContribution(svc))
 }

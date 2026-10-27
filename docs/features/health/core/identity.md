@@ -1,25 +1,26 @@
 <!-- Identity — features/health/core · /documentation Phase 2 · sources: docs/intake/health.md (⭐⭐ 18-DB Notion
      design + Core resolved Forks 1-4) · Victor Vision 2026-07-13. Health has NO v2 schema (recovered domain). -->
 
-# Identity — Health: Core  (level: Feature / Health shared spine)
+# Identity — Health: Core (level: Feature / Health shared spine)
 
 **What it is.** The **shared spine** both Health pillars (Training, Nutrition) act on — **the body, its direction,
-and its adaptation**. Six things live here: **Health Metrics + Monitoring** (what the body *is*, measured over time
+and its adaptation**. Six things live here: **Health Metrics + Monitoring** (what the body _is_, measured over time
 and organized into health domains → factors + user-scheduled medical **exams**), **Health Goals** (where it's
-*going*), the **Adaptation engine** (how the user *learns* what works on his own body), **Physical Roles** (the
+_going_), the **Adaptation engine** (how the user _learns_ what works on his own body), **Physical Roles** (the
 **trainable capabilities** he trains toward), and **Safety & Medical**. Plus the **energy bridge** (calories burned ↔
 consumed) that couples the two pillars into a loop. `[INTENT: Core resolved Forks 1-4 + CI-1..CI-6, 2026-07-14]`
 
-**The desire behind it.** The user wants to set concrete targets on his body — *"increase biceps/quads/resistance
-to specific numbers; become a calisthenics athlete, a muay-thai/jiu-jitsu fighter, a triathlete"* — then have the
+**The desire behind it.** The user wants to set concrete targets on his body — _"increase biceps/quads/resistance
+to specific numbers; become a calisthenics athlete, a muay-thai/jiu-jitsu fighter, a triathlete"_ — then have the
 whole system pull toward them, tracking what actually changes and **learning how his individual body responds** (to
 training, to food, to timing, to a doctor's prescription, to a claim he wants to test) so the plan gets smarter over
 time. He also wants the OS to **organize his medical life** alongside his routines — scheduling and reminding exams,
 folding results back into the metrics — and, eventually, to **connect (at his own risk) to wearables, Google Health,
 and medical services** for a two-way flow of information. The Core is the part that makes Training and Nutrition
-*one coherent pursuit* rather than two apps. `[INTENT: Victor Vision + CI-1/CI-6]`
+_one coherent pursuit_ rather than two apps. `[INTENT: Victor Vision + CI-1/CI-6]`
 
 **The six Core capabilities.**
+
 - **Health Metrics + Monitoring (unified).** Every tracked attribute — body-measure (weight·body-fat·biceps/quads/…
   circumference, **bilateral** where paired), performance-capacity (**per-lift 1RM/max-reps**·VO2max), test-result,
   **biomarker** (a shipped, editable **clinical panel** — blood work, hormones, metabolic) — is one `metric` with a
@@ -49,12 +50,13 @@ and medical services** for a two-way flow of information. The Core is the part t
 
 **What couples the pillars.** The **energy bridge**: Training emits calories-burned (formula·wearable·manual, user
 chooses); Nutrition's intake target **recomputes dynamically** against that burn (training day → eat more). Goals
-and Metrics are read by *both* pillars; the Adaptation engine profiles *both* training and food responses. `[INTENT HL13]`
+and Metrics are read by _both_ pillars; the Adaptation engine profiles _both_ training and food responses. `[INTENT HL13]`
 
 **What it is NOT.**
-- **Not a pillar.** It owns no exercises and no recipes — those are Training/Nutrition. It owns the *shared*
+
+- **Not a pillar.** It owns no exercises and no recipes — those are Training/Nutrition. It owns the _shared_
   body/goal/adaptation spine. `[INTENT]`
-- **Not the metric/goal *primitive* owner.** It **specializes** the Purposes target/metric primitive (capstone #9);
+- **Not the metric/goal _primitive_ owner.** It **specializes** the Purposes target/metric primitive (capstone #9);
   body-metrics are a **provider** Purposes auto-sources (PG6), not a parallel system. `[INTENT]`
 - **Not a session engine.** Workouts are Sessions (ADR-004) — the Core does not re-implement timing/scheduling. `[FACT]`
 - **Not an AI/wearable/exchange service (yet).** Plan-by-LLM · food-photo analysis · wearable/prescription import ·
@@ -70,4 +72,5 @@ and Metrics are read by *both* pillars; the Adaptation engine profiles *both* tr
   blocks.** Autonomy-with-clarity: the user's body, the user's call; flags are dismissible. `[INTENT Victor 2026-07-14]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

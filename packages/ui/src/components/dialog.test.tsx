@@ -21,13 +21,7 @@ function Basic(props: Partial<DialogProps>) {
 }
 
 // A trigger + dialog whose open state is real, for open→focus→close-return flows.
-function Harness({
-  withFocusable = true,
-  dismissible,
-}: {
-  withFocusable?: boolean
-  dismissible?: boolean
-}) {
+function Harness({ withFocusable = true, dismissible }: { withFocusable?: boolean; dismissible?: boolean }) {
   const [open, setOpen] = useState(false)
   return (
     <>

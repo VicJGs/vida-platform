@@ -16,7 +16,7 @@
 
 An entity is built across two tracks and **closes once, as one unit**: "ENTITY CLOSE — both tracks green, every
 slice's gate PASS" `[FACT: ~/dev-toolkit/…/entity-delivery-flow.md:49]`. The flow exists to prevent an entity
-"split into a backend track and a frontend track *at the top* … per-slice verification gets batched or 'owed'"
+"split into a backend track and a frontend track _at the top_ … per-slice verification gets batched or 'owed'"
 `[:19-21]`. M1 must ship "coherent and usable" `[FACT: docs/core/decisions/ADR-019…:35]`.
 
 **It is group work** (Victor): **① the backend is done → ② the frontend is developed on its seam contract → the
@@ -30,16 +30,16 @@ entity close, and neither is a ② surface alone.
 
 An entity is **Done for M1** only when every item holds:
 
-| # | Criterion | Source |
-|---|---|---|
-| ELC-1 | **① service merged**, its per-slice Verification Gate passed (incl. "live smoke on the REAL data store") | `[FACT: entity-delivery-flow.md:157-177]` |
-| ELC-2 | **② surfaces built on the seam contract**, "the service API the UI will consume" | `[FACT: entity-delivery-flow.md:37,52-53]` |
-| ELC-3 | **Service registered** in the composition root, constructed once after the DB-ready gate ("adding a module appends its construction"), in dep-order per the service's `types.ts` | `[FACT: docs/infrastructure/web-client-runtime/current-business-rules.md:60-66]` · `[FACT: module-go-lives.md:18-19]` |
-| ELC-4 | **Hooks live**: `useQuery`/`useMutation` over `getServices()`, structured keys, invalidate + re-read, no optimistic; `?sample` kept DEV-only for the Visual Gate | BR-RT-2 `[:13]` · BR-RT-4 `[:18]` · `[FACT: module-go-lives.md:20-21]` |
-| ELC-5 | **Interactions wired**: the open/create/edit the surface needs, so no listed operation is a no-op | `[FACT: module-go-lives.md:22]` · `[INTERP — grounded: the entity's screen-flow lens enumerates them, entity-delivery-flow.md:185]` |
-| ELC-6 | **Honest local-first states**: no fake spinners ("writes are instantly real locally"), honest sync status, the full 8-state machine | `[FACT: docs/specs/foundation/frontend-quality-bar/_index.md:50-52]` |
-| ELC-7 | **Live leg of the Visual Gate**: the entity's closing slice is verified **in the running app on real OPFS** (Brave/Playwright, not jsdom): write → reload → persists → reopen with no spurious write; console clean | `[FACT: module-go-lives.md:23]` · `[FACT: home-journal-go-live/delivery/PLAN-S1.md:68-69]` · `[FACT: fe-calendar worktree …/fe-calendar/delivery/slice-map.md:40]` |
-| ELC-8 | **Currency**: §XXIX `current-*` refreshed for every context touched, committed with the code | `[FACT: ~/dev-toolkit/standards/process.md §XXIX]` |
+| #     | Criterion                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Source                                                                                                                                                                                                                                                                                       |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| ELC-1 | **① service merged**, its per-slice Verification Gate passed (incl. "live smoke on the REAL data store")                                                                                                                                                                                                                                                                                                                                                                                                                                                                      | `[FACT: entity-delivery-flow.md:157-177]`                                                                                                                                                                                                                                                    |
+| ELC-2 | **② surfaces built on the seam contract**, "the service API the UI will consume"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `[FACT: entity-delivery-flow.md:37,52-53]`                                                                                                                                                                                                                                                   |
+| ELC-3 | **Service registered** in the composition root, constructed once after the DB-ready gate ("adding a module appends its construction"), in dep-order per the service's `types.ts`                                                                                                                                                                                                                                                                                                                                                                                              | `[FACT: docs/infrastructure/web-client-runtime/current-business-rules.md:60-66]` · `[FACT: module-go-lives.md:18-19]`                                                                                                                                                                        |
+| ELC-4 | **Hooks live**: `useQuery`/`useMutation` over `getServices()`, structured keys, invalidate + re-read, no optimistic; `?sample` kept DEV-only for the Visual Gate                                                                                                                                                                                                                                                                                                                                                                                                              | BR-RT-2 `[:13]` · BR-RT-4 `[:18]` · `[FACT: module-go-lives.md:20-21]`                                                                                                                                                                                                                       |
+| ELC-5 | **Interactions wired**: the open/create/edit the surface needs, so no listed operation is a no-op                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `[FACT: module-go-lives.md:22]` · `[INTERP — grounded: the entity's screen-flow lens enumerates them, entity-delivery-flow.md:185]`                                                                                                                                                          |
+| ELC-6 | **Honest local-first states**: no fake spinners ("writes are instantly real locally"), honest sync status, the full 8-state machine                                                                                                                                                                                                                                                                                                                                                                                                                                           | `[FACT: docs/specs/foundation/frontend-quality-bar/_index.md:50-52]`                                                                                                                                                                                                                         |
+| ELC-7 | **Live leg of the Visual Gate**: the entity's closing slice is verified **in the running app on real OPFS** (Brave/Playwright, not jsdom): write → reload → persists → reopen with no spurious write; console clean                                                                                                                                                                                                                                                                                                                                                           | `[FACT: module-go-lives.md:23]` · `[FACT: home-journal-go-live/delivery/PLAN-S1.md:68-69]` · `[FACT: fe-calendar worktree …/fe-calendar/delivery/slice-map.md:40]`                                                                                                                           |
+| ELC-8 | **Currency**: §XXIX `current-*` refreshed for every context touched, committed with the code                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `[FACT: ~/dev-toolkit/standards/process.md §XXIX]`                                                                                                                                                                                                                                           |
 | ELC-9 | **Envision conformance at close**: **every** anchored checkpoint the entity carries (its own `envision.md`, plus the CODEC-unit ECs its surfaces actually exercise — `[INTERP — grounded: a surface composed from a CODEC unit inherits that unit's vision; scoped to exercised ECs to keep the close bounded]`) is re-verified **in the live app**. `structural` ECs: still met (no divergence since their slice passed). `feel` ECs: verified here, because their only home is "the LIVE per-slice Visual-Gate row". A diverging EC is ❌ wrong, and the entity is not Done | `[FACT: entity-delivery-flow.md:94-97]` (ECs = "a leading contract" the downstream gates are judged against) · `[:120]` (feel → LIVE row) · `[:127]` (Visual Gate FAILS on an unmet MUST) · `[:138-140]` (recovery sweep buckets against the pinned ECs) · **Victor's directive 2026-10-21** |
 
 **Covered elsewhere (not dropped):** unit tests + tsc/eslint `[module-go-lives.md:23]` are the per-slice gates:
@@ -56,6 +56,7 @@ G4 ledger item (§7 R7), not a claim made here.
 
 Victor's route for each entity is pinned at its Envision Gate as anchored checkpoints (EC-n). The record shows it
 was not carried to the end:
+
 - **16 of the 17** `fe-*` `envision.md` files pin ECs (≈185: 177 table rows + fe-codec-collection's 8 bullet ECs;
   fe-notes alone has 30, 4 with a `feel` component)
   `[FACT: docs/specs/foundation/fe-*/delivery/envision.md]` (only fe-codec-seams pins none).
@@ -67,8 +68,9 @@ was not carried to the end:
   `[FACT: entity-delivery-flow.md:120]`.
 
 **Rules (closing these two holes):**
+
 1. **SKIP skips the greybox, never the checkpoints.** The one-question trigger test `[:104-107]` decides whether a
-   *new* greybox is needed. A completion, re-scope or closing-slice unit with Envision SKIP **still inherits the
+   _new_ greybox is needed. A completion, re-scope or closing-slice unit with Envision SKIP **still inherits the
    entity's existing ECs** and carries every EC its slice touches as a named Visual-Gate MUST (`:124-127`). The PLAN
    lists them explicitly; "SKIP" with no EC list fails the PLAN gate.
 2. **ENTITY CLOSE re-verifies the whole EC set live** (ELC-9). This is the end-of-route check: per-slice passes can
@@ -80,7 +82,7 @@ was not carried to the end:
 ## 3. Stubs: legitimate while planning, never at close
 
 - **While building:** the frontend may plan against the API "real or stubbed", so the tracks don't run in sequence
-  `[FACT: entity-delivery-flow.md:52-53]`. This is a *planning* convenience.
+  `[FACT: entity-delivery-flow.md:52-53]`. This is a _planning_ convenience.
 - **At close:** an unwired leg is allowed **only** with a proven issue home: a named issue with real edges (DF-12
   `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:47]`). A stub homed to a closed or phantom
   unit (the "UI-3 / M1.1+" case `[FACT: docs/specs/fixes/notes-dataplane-orphan-deferral/_index.md:15]`) means
@@ -113,6 +115,7 @@ The flow already has the route: the **recovery variant, "Entity Re-scope Flow"**
 built, possibly wrong, possibly ungated". It sweeps both planes into ✅ · ❌ · 📄 · 🕳 · **⛔ ungated-owed**, then a
 Re-scope Gate produces a corrected, tagged slice-map `[FACT: entity-delivery-flow.md:201-227, ⛔ at :218]`. It is
 wired as the `entity-rescope` scenario in both build profiles `[FACT: ~/dev-toolkit/claude-profiles/add-{frontend,backend}-component/scenarios/entity-rescope.md]`.
+
 - **Unmet ELC items are the ⛔ ungated-owed bucket.** Each debt unit = one entity run through entity-rescope,
   closing with its ELC.
 - **"Go-live" is retired as a unit type.** The queue's items become entity-rescope units homed at G2–G4.
@@ -121,22 +124,23 @@ wired as the `entity-rescope` scenario in both build profiles `[FACT: ~/dev-tool
 
 **Toolkit** (global → `/toolkit-task`, Victor-approved; target files are clean in the toolkit tree; wording is
 project-neutral: "the real data store", never "OPFS/Brave"):
+
 - **T1** `claude-profiles/project-foundation/knowledge/reference-docs/entity-delivery-flow.md`:
   - `:49` (inside the ASCII box; exactly 75 chars, same as `:28`/`:39`): `╚═ ENTITY CLOSE — both tracks green, every gate PASS, entity LIVE ═════════`
   - after `:53` add the prose: "**A stub is a planning convenience, never a close state.** ENTITY CLOSE requires the
-    entity *live*: its service wired into the app, every surface reading/writing it for real, verified on the real
+    entity _live_: its service wired into the app, every surface reading/writing it for real, verified on the real
     data store. An unwired leg at close needs a proven issue home (a named issue with real edges). A backend track
     closing is not an entity close."
   - §5, after `:195` (end of the Visual Gate paragraph, before the Reconciliation paragraph at `:197`) add: "**Live leg (the entity's closing slice):** the Visual
     Gate runs in the running app on the **real data store** (not fixtures/sample data): write → reload → persists
-    → reopen with no spurious write. This is the UI twin of the backend's live smoke (§4)." *(Raises the Vida
+    → reopen with no spurious write. This is the UI twin of the backend's live smoke (§4)." _(Raises the Vida
     precedent, module-go-lives.md:23 / #150 / #151, into the global method; today the doc names a "live Visual
-    Gate" only for feel ECs, `:120,:152`.)*
+    Gate" only for feel ECs, `:120,:152`.)_
   - §6, after `:218` (inside the diagram code block) add the diagram line: `│    unmet live-close items (ENTITY CLOSE) → ⛔ ungated-owed`
-  - §3.75 Propagation, after item 3 (`:127`) add two numbered lines *(second precedent-raise: Victor's 2026-10-21
-    directive into the global method; the doc's own EC checks are per-slice only, `:124-127`)*:
+  - §3.75 Propagation, after item 3 (`:127`) add two numbered lines _(second precedent-raise: Victor's 2026-10-21
+    directive into the global method; the doc's own EC checks are per-slice only, `:124-127`)_:
     `4. **SKIP skips the greybox, never the checkpoints.** A later unit of the same entity (completion, re-scope, closing slice) that skips Envision still inherits the entity's pinned ECs and lists every EC its slices touch as named Visual-Gate MUSTs.`
-    `5. **ENTITY CLOSE re-verifies the entity's EC set in the live app** — structural ECs still met, ` + "`feel`" + ` ECs verified here. A diverging EC is corrected or explicitly re-pinned by the human (dated in ` + "`envision.md`" + ` §Approval), never silently waived.`
+    `5. **ENTITY CLOSE re-verifies the entity's EC set in the live app** — structural ECs still met, ` + "`feel`" + `ECs verified here. A diverging EC is corrected or explicitly re-pinned by the human (dated in` + "`envision.md`" + ` §Approval), never silently waived.`
   - "fired" → "fired **or inherited**" at every EC-consuming conditional: `:193` ("Where the Envision Gate fired" →
     "Where the entity has pinned ECs (Envision fired now or inherited)"), `:138` (recovery: "envision the TARGET" gains
     "or, if ECs already exist, sweep against the inherited set"), `:255` ("Envision coverage (when the Envision Gate
@@ -166,6 +170,7 @@ project-neutral: "the real data store", never "OPFS/Brave"):
   must contain only the T2–T4 scenario changes.
 
 **Repo** (lands on `main` as the G0 PR):
+
 - **R1** `frontend-quality-bar/_index.md`: §0 MISSING lens (`:24-25`) gains "a data leg stubbed with no proven issue
   home"; §2.6 (`:50-52`) gains "enforced at entity close: `golive-replan/process.md` ELC-6/7".
 - **R2** `frontend-visual-gate.md:45`: the Screens/layout row of the render table gains "+ the live leg on the entity's closing
@@ -187,6 +192,7 @@ project-neutral: "the real data store", never "OPFS/Brave"):
 - **G4 ledger item (not a G0 edit):** re-point `hard-4-polish.md`'s blocked-by list to the 42-unit surface set, with ELC as the close bar.
 
 ## 8. Acceptance (G0)
+
 1. Every ELC item and every rule in §3–§6 cites a governing doc or a recorded decision; the one precedent-raise (T1
    live leg) is labeled; zero open decisions.
 2. The checklist covers `module-go-lives.md:15-25` in full: each line is an ELC item, the entry condition, or a
@@ -198,6 +204,7 @@ project-neutral: "the real data store", never "OPFS/Brave"):
 6. Independent critique SHIP + `/preflight` PASSED → Victor's Approval 2 → apply → G0 PR to `main`.
 
 ## 9. Gate record
+
 - **rev 1 → independent critique: REVISE** (5 blocking · 4 nits). Folded:
   - B1 #13 is no longer given its own engine-wiring ELC; it follows its recorded "Option A, defer live to first
     consumer" decision (`decisions.md:1106-1108`). The EST `_index.md` G0(c) carries the same correction

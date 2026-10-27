@@ -91,7 +91,12 @@ export function IconPickerDialog({ open, onOpenChange, current, onChoose }: Icon
               hoverStyle={{ backgroundColor: '$colorSurfaceSecondary' }}
               focusStyle={{ outlineColor: '$colorFocusRing', outlineStyle: 'solid', outlineWidth: 2 }}
             >
-              <Ico size={20} strokeWidth={2} color={checked ? 'var(--colorBrandEmphasis)' : 'var(--colorTextPrimary)'} aria-hidden />
+              <Ico
+                size={20}
+                strokeWidth={2}
+                color={checked ? 'var(--colorBrandEmphasis)' : 'var(--colorTextPrimary)'}
+                aria-hidden
+              />
             </View>
           )
         })}

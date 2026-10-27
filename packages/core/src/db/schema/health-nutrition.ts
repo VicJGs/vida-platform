@@ -108,9 +108,7 @@ export const dailyMealPlans = sqliteTable(
     plan_id: text('plan_id').notNull(), // no-FK; within-module required parent
     plan_date: calendarDate('plan_date'),
     plan_type: text('plan_type'), // OPEN no-CHECK
-    generation_method: enumText('generation_method', MEAL_GENERATION_METHOD)
-      .notNull()
-      .default('manual'), // FIXED → CHECK
+    generation_method: enumText('generation_method', MEAL_GENERATION_METHOD).notNull().default('manual'), // FIXED → CHECK
     calorie_target: integer('calorie_target'), // kcal; nullable
     included_meal_types: json<string[]>('included_meal_types'), // JSON
     completion_rate: real('completion_rate'), // nullable
@@ -141,10 +139,7 @@ export const meals = sqliteTable(
     notes: text('notes'),
     // NO inline tags (→ entity_tags, SP1). NO deleted_at (floor L29)
   },
-  (t) => [
-    index('idx_meals_daily_plan').on(t.daily_plan_id),
-    index('idx_meals_scheduled').on(t.scheduled_at),
-  ],
+  (t) => [index('idx_meals_daily_plan').on(t.daily_plan_id), index('idx_meals_scheduled').on(t.scheduled_at)],
 )
 
 // --- shopping_items: procurement --------------------------------------------

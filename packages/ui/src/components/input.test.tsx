@@ -122,10 +122,13 @@ describe('Input size="display" (notes-rescope R3 R-4 — the in-place title edit
     const { container } = render(
       <UIProvider>
         <Input size="display" aria-label="Page title" defaultValue="A title" />
-        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">
+          ref
+        </Text>
       </UIProvider>,
     )
-    const cls = (el: Element | null, prefix: string) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
+    const cls = (el: Element | null, prefix: string) =>
+      (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
     const input = container.querySelector('input')
     const ref = container.querySelector('[data-ref="display"]')
     for (const prefix of ['_lh-', '_fs-', '_ff-', 'font_']) {
@@ -138,13 +141,15 @@ describe('Input size="display" (notes-rescope R3 R-4 — the in-place title edit
     const { container } = render(
       <UIProvider>
         <Input size="md" aria-label="m" />
-        <Text data-ref="small" fontFamily="$body" fontSize="$small">ref</Text>
+        <Text data-ref="small" fontFamily="$body" fontSize="$small">
+          ref
+        </Text>
       </UIProvider>,
     )
-    const cls = (el: Element | null, prefix: string) => (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
+    const cls = (el: Element | null, prefix: string) =>
+      (el?.className.split(/\s+/) ?? []).find((c) => c.startsWith(prefix))
     const input = container.querySelector('input')
     expect(cls(input, 'font_')).toBe('font_body')
     expect(cls(input, '_fs-')).toBe(cls(container.querySelector('[data-ref="small"]'), '_fs-'))
   })
 })
-

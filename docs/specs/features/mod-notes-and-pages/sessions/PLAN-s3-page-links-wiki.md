@@ -9,7 +9,9 @@ Slice contract: docs/features/notes-and-pages/delivery/{slice-map,seam-contract,
 Builds ON S1 (`ef8c1ed`) + S2 (`231a92f`): reuses `allOf`, the factory shell.
 
 ## 1. Identity
+
 S3 adds the **page↔page wiki-link** surface to `NotesService`, over the `page_links` table.
+
 - **What it is:** `createPageLink` (idempotent + revive), `removePageLink`, `getPageLinksFrom`/`getPageLinksTo`,
   `resolveWikiLink` (title-candidate query for the `[[` picker).
 - **What it is NOT:** create-on-miss is a ② **caller compose** (`createPage('note')` + `createPageLink`), NOT a
@@ -17,9 +19,10 @@ S3 adds the **page↔page wiki-link** surface to `NotesService`, over the `page_
 - **Rows:** NOT-14 · 15(page_links half) · 16 · 17 · 18 · 19(service half = "the two primitives exist").
 
 ## 2. Business Rules
+
 - **BR-S3-1 (NP-5 idempotent + revive):** `createPageLink(source, target, context?)` queries `page_links` by the
   business key `(source_page_id, target_page_id)` **including soft-deleted rows**; since `UNIQUE(source_page_id,
-  target_page_id)` is FULL (not partial — a soft-deleted row still occupies the slot), the paths are: existing & live
+target_page_id)` is FULL (not partial — a soft-deleted row still occupies the slot), the paths are: existing & live
   → return it (no-op); existing & soft-deleted → **revive** (`update {deleted_at:null, context}`); absent → create.
   Mirrors AR-6 `createLink`. [FACT: notes-and-pages.md:28 (NOT-14); migrations/033_notes.ts:91; spaces/service.ts:158-180]
 - **BR-S3-2 (removePageLink resolve-then-soft-delete):** find the live row for the key, `repo.delete(it.id)` (soft, NP-9); absent/already-deleted → no-op. [FACT: NOT-16; spaces/service.ts:182-192]
@@ -40,6 +43,7 @@ M1.0 does NOT escape `%`/`_` in `text` — a short picker query rarely contains 
 refinement, not an M1.0 correctness gap. [INTERP: NOT-18 "title-LIKE candidates"; NOT-50 FTS→DB-8]
 
 ## 3. Contract (appended to `NotesService`)
+
 ```ts
 createPageLink(sourcePageId: string, targetPageId: string, context?: string): Promise<PageLinkRow> // NOT-14
 removePageLink(sourcePageId: string, targetPageId: string): Promise<void>                          // NOT-16
@@ -47,11 +51,13 @@ getPageLinksFrom(pageId: string): Promise<PageLinkRow[]>                        
 getPageLinksTo(pageId: string): Promise<PageLinkRow[]>                                              // NOT-17
 resolveWikiLink(text: string): Promise<PageRow[]>                                                   // NOT-18
 ```
+
 Returns `PageLinkRow` (`typeof pageLinks.$inferSelect` [FACT: schema/notes.ts:112]) / `PageRow`. No net-new error
 class (page-link idempotence is a no-op/revive, never a thrown `DuplicateLinkError` — F3). No net-new validator
 (inputs are ids/text). `pageLinks` import from `../../db/schema/notes`.
 
 ## 4. Acceptance
+
 - [ ] `NotesService` gains the 5 S3 methods; `pageLinks` + `like` imported; barrel unchanged (no net-new exported types).
 - [ ] `createPageLink`: absent → creates; same call again (live) → returns the SAME row (no-op, no duplicate); after `removePageLink` → next `createPageLink` REVIVES the same row id (deleted_at cleared), not a new row (BR-S3-1).
 - [ ] `removePageLink`: soft-deletes the live row; second call → no-op (BR-S3-2).
@@ -61,6 +67,7 @@ class (page-link idempotence is a no-op/revive, never a thrown `DuplicateLinkErr
 - [ ] **Verification Gate (live store):** the full revive cycle (create→remove→create-same-key = one row, id stable, deleted_at toggles); from/to direction; resolveWikiLink substring + soft-delete exclusion.
 
 ## 5. Implementation Prompt
+
 1. `types.ts` — append the 5 method sigs to `NotesService` (import `PageLinkRow` from schema/notes).
 2. `service.ts` — import `pageLinks, type PageLinkRow`; add `like` to the drizzle-orm import; add `linkRepo = createRepository(db, pageLinks, {deviceId, encryptedFields:[], softDelete:true})`.
 3. `createPageLink` (mirror spaces/service.ts:158-180): `const existing = await linkRepo.findWhere(allOf(eq(pageLinks.source_page_id, sourcePageId), eq(pageLinks.target_page_id, targetPageId)))` (NO isNull filter — revive needs soft-deleted); `if (existing.length) { const row = existing[0]; if (row.deleted_at != null) return linkRepo.update(row.id, { deleted_at: null, context: context ?? null }); return row } return linkRepo.create({ source_page_id: sourcePageId, target_page_id: targetPageId, context: context ?? null })`. BR-S3-1.
@@ -70,9 +77,11 @@ class (page-link idempotence is a no-op/revive, never a thrown `DuplicateLinkErr
 7. Tests (`notes-service.test.ts` append) + gates (§4). No barrel change.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - D-S3-1 (LIKE escaping) — deferred to DB-8/FTS per lean; confirm at Approval 1. None blocking.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change                                |
+| ---------- | ------------------------ | ------------------------------------- |
 | 2026-09-19 | mod-notes-and-pages (S3) | initial draft — gate-1, after S2 ship |

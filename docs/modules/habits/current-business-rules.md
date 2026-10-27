@@ -5,7 +5,8 @@
 
 > Status: ① backend in progress — **S1 (definition CRUD + `@vida/types` reconcile) landed**. S2–S5 append.
 > Authority for intent: `docs/features/habits/{identity,business-rules,contract,structure-data,conventions}.md`
-> + `docs/specs/foundation/backend-intent/parts/habits.md` (HAB-01…28). This doc records what the CODE enforces.
+>
+> - `docs/specs/foundation/backend-intent/parts/habits.md` (HAB-01…28). This doc records what the CODE enforces.
 
 ## S1 — Definition CRUD (`createHabitsService`)
 
@@ -53,14 +54,14 @@
 - **BR-HB-15 · Cache is a self-healing projection (BR-S2-7).** The ledger mutation + cache write are sequential
   (not one tx); a stale cache re-derives on the next mutation (HB-2 self-heal). `[FACT: services/habits/service.ts:184-188]`
 - **BR-HB-16 · Ratings 1–5 (HB-7).** `logDetailedCompletion` validates `mood_before/mood_after/ease_rating/
-  satisfaction ∈ 1–5` (Zod, the enforced service guard — SQL CHECK is migration-only). `[FACT: validators/habit.ts:56-67]`
+satisfaction ∈ 1–5` (Zod, the enforced service guard — SQL CHECK is migration-only). `[FACT: validators/habit.ts:56-67]`
 - **BR-HB-17 · Fail-loud on missing parent/row.** log/edit/delete on a missing (or soft-deleted) habit throw
   `Habit not found` (no orphan completion — no FK guards it); edit/delete on a missing completion throw. `[FACT: services/habits/service.ts:177-181,247-249,257-259]`
 
 ## S3 — Backfill + window policy
 
 - **BR-HB-18 · Backfill = a past-dated completion, recomputes streaks (HB-10).** `backfillCompletion(habitId,
-  pastDate, input)` routes through the shared S2 upsert+recompute path. `[FACT: services/habits/service.ts:290]`
+pastDate, input)` routes through the shared S2 upsert+recompute path. `[FACT: services/habits/service.ts:290]`
 - **BR-HB-19 · The date guard is on the shared write path.** `assertDateWritable(date, asOf)` runs at the top of
   `upsertCompletion` — so `logCompletion`/`logDetailedCompletion`/`backfillCompletion` are all guarded and can't be
   bypassed; `editCompletion`/`deleteCompletion` (existing rows) are not. `[FACT: services/habits/service.ts:205-225]`
@@ -113,12 +114,13 @@
 - **BR-HB-35 · `getCompletionGrid` — the cross-habit grid (fe-calendar S6, EC-7; first-consumer pull IR-8).** Every
   ACTIVE, non-deleted habit, ordered `sort_order` then `id` (code-unit; `findWhere` has no orderBy), × every day of the
   inclusive `[from,to]` → `{date, scheduled = isScheduledOn (BR-S2-4, the ONE predicate), count (0 when none), done =
-  count>=target_count}`; off-schedule completions keep `scheduled:false` with their count/done (BR-HB-14). ONE ledger
+count>=target_count}`; off-schedule completions keep `scheduled:false` with their count/done (BR-HB-14). ONE ledger
   query (`completed_date` range, indexed). No range validation (the S4 range-read precedent; BR-HB-28 throws only for a
   missing habit) — an inverted/malformed range walks zero days. Pure read; the thread-state mapping is the consumer's.
   `[FACT: services/habits/service.ts getCompletionGrid; docs/specs/foundation/fe-calendar/delivery/PLAN-S6-first-consumer-reads.md]`
 
 ## ① COMPLETE
+
 S1–S5 landed. Habits reminder schedule (HAB-06) rides the S1/S4 reads; sync (HAB-25) rides the substrate; the
 `rate` measure value + goal-vs-habit target model remain the documented design-pass (rerun §5:146). ② `fe-habits`
 (LIF-182) owns all UI.

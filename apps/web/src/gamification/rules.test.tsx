@@ -37,7 +37,11 @@ describe('useRules (data seam)', () => {
     result.current.remove('r-week')
     rerender()
     expect(result.current.rules.find((r) => r.id === 'r-week')).toBeUndefined()
-    result.current.create({ name: 'Nightly wind-down', condition: { kind: 'event_trigger', eventType: 'day.ended' }, consequences: [{ effectType: 'grant_currency', payload: { currencyId: 'XP', amount: 20 } }] })
+    result.current.create({
+      name: 'Nightly wind-down',
+      condition: { kind: 'event_trigger', eventType: 'day.ended' },
+      consequences: [{ effectType: 'grant_currency', payload: { currencyId: 'XP', amount: 20 } }],
+    })
     rerender()
     expect(result.current.rules.some((r) => r.name === 'Nightly wind-down')).toBe(true)
   })

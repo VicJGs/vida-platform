@@ -10,6 +10,7 @@ UI-1 primitives + React 19. Each shipped through the §XXVI double-gate + a real
 themes); the set cleared the consolidated UF gate (design · components · motion · engineering).
 
 ### Added — platform views
+
 - **ListView** — the data-view SPINE: generic `items<T>` + `renderItem` + `getKey` + the four rendered terminal states
   (loading skeletons · empty · error · success) with a state-dependent container role (`list`/`status`). Pure
   presentational; `state` is a prop (the package→app boundary); local `ViewState` union (no cross-package edge).
@@ -31,15 +32,18 @@ themes); the set cleared the consolidated UF gate (design · components · motio
   visually-hidden focusable node-`<button>` list (the accessible equivalent to the `aria-hidden` canvas).
 
 ### Added — shared
+
 - **`internal/data-view`** — the shared data-view spine (`ViewState`, `Message`, `resolveDataViewState`,
   `warnMissingName`) extracted at V3 (rule of three); consumed by list/gallery/timeline (+ `warnMissingName` by
   calendar/neural-graph).
 
 ### Dependencies
+
 - **date-fns** `^4.4.0` (calendar), **sigma** `3.0.3` + **graphology** `0.26.0` + **graphology-layout-forceatlas2**
   `0.10.1` (neural-graph). ⚠ Consuming apps should **lazy-load the graph route** (WebGL deps are heavy — §XIII budget).
 
 ### Tests
+
 - 317 tests (219 UI-1 + 98 UI-2 across the 7 views + the shared spine). WebGL/timer lifecycles tested by mocking
   `sigma`/`forceatlas2` + `vi.useFakeTimers`; calendar TZ bucketing tested under `TZ=America/Sao_Paulo`.
 
@@ -51,6 +55,7 @@ real-browser component Visual Gate (both themes); the whole set cleared the cons
 components · motion · engineering).
 
 ### Added — primitives
+
 - **Button** — `render:'button'`; 4 intents; hover/press overlay opacity (B12); loading (spinner + `aria-busy`) / disabled.
 - **Input** — frame + inner `render:'input'`; leading/trailing slots; `forwardRef<HTMLInputElement>`; `:focus-visible` via `.frame:has(...)`.
 - **Checkbox** — native `<input>` + CSS pseudo-class state machine; tri-state `aria-checked="mixed"`.
@@ -63,14 +68,17 @@ components · motion · engineering).
 - **Toast** — the only **imperative** primitive: `toast(options)→id` via a module external store + `useSyncExternalStore`; `ToastProvider` with two live regions (status/polite · alert/assertive); store-enforced evict-oldest cap; `zIndex.toast`.
 
 ### Added — foundation
+
 - Registered all 9 new `light_/dark_<Comp>` sub-themes in `tamagui.config.ts` (Button…Toast).
 - `shadow.ts` typed export (elevation box-shadow literals for injected component CSS — DEF-U5-e).
 - Per-primitive injected stylesheets in `internal/` for motion/state a Tamagui `styled()` can't express across a portal.
 
 ### Fixed (DS-wide, surfaced by the per-component Visual Gates)
+
 - **DEF-U4-e** — `createFont` `lineHeight` ratio→px conversion at the Tamagui boundary (a font ratio was rendering a 1.5px line box that clipped every primitive's text).
 - **DEF-U8-h** — dimension props (`borderRadius`/`space`) read the **token scale** (`$md`/`$lg`), not the inert component sub-theme key (was 0px square corners on every primitive).
 
 ### Notes
+
 - The DS-2 palette (indigo/slate/emerald + Space Grotesk/Inter) is a **provisional placeholder** — the architecture is final; a brand pass swaps values only and re-runs the Visual Gate.
 - Deferred contract gaps are tracked in `docs/specs/components/ui-1-vida-ui-primitives/DEF-register.md` (DEF-U3-a … U10-f) for the next DS-5 pass.

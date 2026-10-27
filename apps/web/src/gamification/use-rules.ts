@@ -51,13 +51,40 @@ export interface RulesData {
 
 const NOW_REF = 1_760_000_000_000
 
-function rule(id: string, name: string, condition: RuleCondition, consequences: ConsequenceSpec[], isEnabled: boolean): Rule {
-  return { id, name, condition, consequences, grantId: null, isEnabled, created_at: NOW_REF - 86_400_000, updated_at: NOW_REF - 3_600_000 }
+function rule(
+  id: string,
+  name: string,
+  condition: RuleCondition,
+  consequences: ConsequenceSpec[],
+  isEnabled: boolean,
+): Rule {
+  return {
+    id,
+    name,
+    condition,
+    consequences,
+    grantId: null,
+    isEnabled,
+    created_at: NOW_REF - 86_400_000,
+    updated_at: NOW_REF - 3_600_000,
+  }
 }
 
 const SAMPLE_RULES: readonly Rule[] = [
-  rule('r-focus', 'Daily focus reward', { kind: 'derived_pull', measureKey: 'focus_minutes', operator: 'gte', threshold: 60 }, [{ effectType: 'grant_currency', payload: { currencyId: 'XP', amount: 50 } }], true),
-  rule('r-week', 'Weekly allowance', { kind: 'event_trigger', eventType: 'week.ended' }, [{ effectType: 'grant_currency', payload: { currencyId: 'COIN', amount: 100 } }], false),
+  rule(
+    'r-focus',
+    'Daily focus reward',
+    { kind: 'derived_pull', measureKey: 'focus_minutes', operator: 'gte', threshold: 60 },
+    [{ effectType: 'grant_currency', payload: { currencyId: 'XP', amount: 50 } }],
+    true,
+  ),
+  rule(
+    'r-week',
+    'Weekly allowance',
+    { kind: 'event_trigger', eventType: 'week.ended' },
+    [{ effectType: 'grant_currency', payload: { currencyId: 'COIN', amount: 100 } }],
+    false,
+  ),
 ]
 
 const REWARD_CURRENCIES: readonly RewardCurrency[] = [
@@ -67,7 +94,11 @@ const REWARD_CURRENCIES: readonly RewardCurrency[] = [
 ]
 
 function devFlag(name: string): boolean {
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has(name)
+  )
 }
 function forcedState(): InteractionState | null {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null
@@ -78,7 +109,11 @@ function forcedState(): InteractionState | null {
 export function useRules(): RulesData {
   const forced = forcedState()
   const base = forced === 'empty' ? [] : devFlag('sample') ? SAMPLE_RULES : []
-  const [overlay, setOverlay] = useState<{ added: Rule[]; toggled: Record<string, boolean>; removed: ReadonlySet<string> }>({ added: [], toggled: {}, removed: new Set() })
+  const [overlay, setOverlay] = useState<{
+    added: Rule[]
+    toggled: Record<string, boolean>
+    removed: ReadonlySet<string>
+  }>({ added: [], toggled: {}, removed: new Set() })
 
   const rules = useMemo(
     () =>
@@ -88,7 +123,10 @@ export function useRules(): RulesData {
     [base, overlay],
   )
 
-  const state: InteractionState = forced === 'loading' || forced === 'error' ? forced : deriveInteractionState({ isPending: false, isError: false, data: rules }, (d) => d.length === 0)
+  const state: InteractionState =
+    forced === 'loading' || forced === 'error'
+      ? forced
+      : deriveInteractionState({ isPending: false, isError: false, data: rules }, (d) => d.length === 0)
 
   return {
     rules,
@@ -97,12 +135,28 @@ export function useRules(): RulesData {
     availableMeasures: [], // honest empty-seam (M1): the registry ships empty + exposes no enumeration (EC-9)
     rewardCurrencies: REWARD_CURRENCIES,
     dreams: [], // deny-safe Purposes read — none at M1
-    toggle: (id) => setOverlay((o) => ({ ...o, toggled: { ...o.toggled, [id]: !(rules.find((r) => r.id === id)?.isEnabled ?? false) } })),
+    toggle: (id) =>
+      setOverlay((o) => ({
+        ...o,
+        toggled: { ...o.toggled, [id]: !(rules.find((r) => r.id === id)?.isEnabled ?? false) },
+      })),
     remove: (id) => setOverlay((o) => ({ ...o, removed: new Set(o.removed).add(id) })),
     create: (input) =>
       setOverlay((o) => ({
         ...o,
-        added: [...o.added, { id: `r-${Date.now()}`, name: input.name, condition: input.condition, consequences: input.consequences, grantId: null, isEnabled: true, created_at: Date.now(), updated_at: Date.now() }],
+        added: [
+          ...o.added,
+          {
+            id: `r-${Date.now()}`,
+            name: input.name,
+            condition: input.condition,
+            consequences: input.consequences,
+            grantId: null,
+            isEnabled: true,
+            created_at: Date.now(),
+            updated_at: Date.now(),
+          },
+        ],
       })),
   }
 }

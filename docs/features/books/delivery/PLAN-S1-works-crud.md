@@ -1,6 +1,6 @@
 <!-- Entity Delivery Flow (v1) · S1 PLAN (gate-1 SPEC) · mod-books #51 · Works CRUD + reframe -->
 
-# PLAN — S1 · Works CRUD + reframe  (mod-books ①, LIF-117)
+# PLAN — S1 · Works CRUD + reframe (mod-books ①, LIF-117)
 
 **Slice:** S1 of 10. **Legs:** BOO-01 (Works CRUD), BOO-02 (listBooks query half), BOO-03 (getBook aggregate),
 BOO-48 (capability-gating — plannable half; readable composes S3). **Table:** `books` (reshaped).
@@ -12,6 +12,7 @@ S1 is the module's first slice: it stands up `services/books/{index,types,servic
 and reconciles the stale `@vida/types` `Book` interface. Later slices append to the same surface.
 
 **Methods (S1):**
+
 - `createBook(input): Promise<Book>` — validate; `progress` NOT settable (derived, BR-BK-2); status default
   `want_to_read`; rating 1–5 if present. Faithful create-echo (backfill notNull-default cols).
 - `updateBook(id, patch): Promise<Book>` — guard exists → `BookNotFoundError`; `progress`/`current_page`/`format`/
@@ -25,14 +26,14 @@ and reconciles the stale `@vida/types` `Book` interface. Later slices append to 
   (never advertise an unimplemented filter → no silent-wrong-result; the g1 fix).
 - `getCapabilities(id): Promise<{ plannable: boolean; readable: boolean }>` — BOO-48. `plannable` = S1-owned
   (`total_pages != null` — a TOC-only/no-copy book is plannable, BK-17); `readable` composes S3 (≥1 asset) → S1
-  returns `readable: false` with the asset-count seam documented (fills at S3). *(A no-asset book is correctly
-  not-readable today; S3 makes it true when a copy is added — not a lie, the real M1 state.)*
+  returns `readable: false` with the asset-count seam documented (fills at S3). _(A no-asset book is correctly
+  not-readable today; S3 makes it true when a copy is added — not a lie, the real M1 state.)_
 
 ## §2. Business rules (this slice must encode)
 
 - **BR-BK-2 (reframe)** — `books.progress` nullable, NEVER settable via create/update (derived-on-read);
   `current_page`/`format`/`genre`/`tags` RETIRED (absent from schema + input). `[FACT: schema/books.ts:51-62;
-  db-4-books/_index.md:45-48]`
+db-4-books/_index.md:45-48]`
 - **FACT CHECKs** — `status` ∈ {want_to_read,reading,completed,dropped}; `rating` 1–5. Validated in Zod (the
   DB CHECK is the floor). `[FACT: business-rules.md:92; schema/books.ts:51,56]`
 - **BK-17** — a no-copy/TOC-only book is first-class: `createBook` needs no asset; `plannable` true on
@@ -58,8 +59,8 @@ stay (P-6 — other consumers; not removed now). `[FACT: db-4-books/_index.md:15
 - [ ] ENTITY_TYPE `book` NOT re-registered (pre-seeded by DB-4 — inject the shared registry). `[FACT: db-4-books/_index.md:116]`
 - [ ] tsc 0 (11/11); eslint 0.
 - [ ] **Live-store Verification Gate**: create→get→update→list→soft-delete on real SQLite; reframe probe
-  (progress stays null through create/update); status/rating rejection; soft-deleted excluded from list.
-- [ ] code-review SHIP; §XXIX currency (`docs/modules/books/current-*` born, BR-BK-S1-*).
+      (progress stays null through create/update); status/rating rejection; soft-deleted excluded from list.
+- [ ] code-review SHIP; §XXIX currency (`docs/modules/books/current-*` born, BR-BK-S1-\*).
 
 ## §5. Implementation order (types → logic → errors)
 
@@ -71,7 +72,7 @@ stay (P-6 — other consumers; not removed now). `[FACT: db-4-books/_index.md:15
 3. `services/books/types.ts` — `BooksServiceDeps` (S1 subset: db, deviceId; later deps append), `BooksService`
    (S1 methods), `BookView`, `BookFilter`, `BookNotFoundError`, `BOOK_ENTITY_TYPE='book'`.
 4. `services/books/service.ts` — `createBooksService`; `booksRepo = createRepository(db, books, {deviceId,
-   softDelete:true, encryptedFields:[]})`; `toBook` Row→interface; the 6 closures.
+softDelete:true, encryptedFields:[]})`; `toBook` Row→interface; the 6 closures.
 5. `services/books/index.ts` — barrel.
 6. Wire into the `@vida/core` barrel if modules are exported there (check `services/index.ts`).
 

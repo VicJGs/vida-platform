@@ -14,13 +14,7 @@
 // ============================================================================
 
 import { z } from 'zod'
-import {
-  RELATIONSHIP_TYPE,
-  INTERACTION_TYPE,
-  SENTIMENT,
-  CONTACT_EVENT_TYPE,
-  REMINDER_GROUP_ANCHOR,
-} from '@vida/types'
+import { RELATIONSHIP_TYPE, INTERACTION_TYPE, SENTIMENT, CONTACT_EVENT_TYPE, REMINDER_GROUP_ANCHOR } from '@vida/types'
 import { FrequencySchema, PrioritySchema } from './common'
 
 export const RelationshipTypeSchema = z.enum(RELATIONSHIP_TYPE)

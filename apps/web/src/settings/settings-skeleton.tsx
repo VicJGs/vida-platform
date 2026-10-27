@@ -16,10 +16,23 @@ export function SettingsSkeleton({ ref }: { ref?: Ref<TamaguiElement> }) {
       <View height={28} width={160} borderRadius="$md" backgroundColor="$colorSurfaceSecondary" />
       <View borderRadius="$lg" borderWidth={1} borderStyle="solid" borderColor="$colorBorderDefault" padding="$24">
         {Array.from({ length: ROWS }, (_, i) => (
-          <View key={i} flexDirection="row" justifyContent="space-between" alignItems="center" paddingVertical="$12" gap="$16">
+          <View
+            key={i}
+            flexDirection="row"
+            justifyContent="space-between"
+            alignItems="center"
+            paddingVertical="$12"
+            gap="$16"
+          >
             <View gap="$8" flexShrink={1}>
               <View height={16} width={140} borderRadius="$md" backgroundColor="$colorSurfaceSecondary" />
-              <View height={12} width={200} maxWidth="100%" borderRadius="$md" backgroundColor="$colorSurfaceSecondary" />
+              <View
+                height={12}
+                width={200}
+                maxWidth="100%"
+                borderRadius="$md"
+                backgroundColor="$colorSurfaceSecondary"
+              />
             </View>
             <View height={36} width={160} flexShrink={0} borderRadius="$md" backgroundColor="$colorSurfaceSecondary" />
           </View>

@@ -45,7 +45,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -163,16 +166,10 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
   it('updatePage strict-rejects immutable + unknown keys (BR-S1-4)', async () => {
     const p = await h.svc.createPage({ type: 'note' })
     // deliberately-invalid inputs: `type` is excluded (NP-2 corollary) + an unknown key
-    await expect(
-      h.svc.updatePage(p.id, { type: 'journal' } as unknown as UpdatePageInput),
-    ).rejects.toBeTruthy()
-    await expect(
-      h.svc.updatePage(p.id, { bogus: 1 } as unknown as UpdatePageInput),
-    ).rejects.toBeTruthy()
+    await expect(h.svc.updatePage(p.id, { type: 'journal' } as unknown as UpdatePageInput)).rejects.toBeTruthy()
+    await expect(h.svc.updatePage(p.id, { bogus: 1 } as unknown as UpdatePageInput)).rejects.toBeTruthy()
     // BR-NEU-4 (IR-7): `content` is NOT a metadata patch — it is excluded from updatePage's strict whitelist.
-    await expect(
-      h.svc.updatePage(p.id, { content: '{}' } as unknown as UpdatePageInput),
-    ).rejects.toBeTruthy()
+    await expect(h.svc.updatePage(p.id, { content: '{}' } as unknown as UpdatePageInput)).rejects.toBeTruthy()
   })
 
   it('writePageContent persists the editor body via its own path (BR-NEU-3/4)', async () => {
@@ -347,9 +344,7 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
 
   it('createEntityLink rejects an unregistered entity_type with the NOTES error (BR-S4-1)', async () => {
     const page = await h.svc.createPage({ type: 'note' })
-    await expect(h.svc.createEntityLink(page.id, 'nope_type', 'x')).rejects.toBeInstanceOf(
-      UnregisteredEntityTypeError,
-    )
+    await expect(h.svc.createEntityLink(page.id, 'nope_type', 'x')).rejects.toBeInstanceOf(UnregisteredEntityTypeError)
   })
 
   it('getBacklinks merges page-links for a page target (BR-S4-4)', async () => {
@@ -389,7 +384,12 @@ describe('notes-rescope R0 — data safety (live store)', () => {
   })
   const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hi' }] }] }
   type Doc = Parameters<NotesService['writePageContent']>[1]
-  const bytes = { filename: 'a.bin', mimeType: 'application/octet-stream', encryptedBlob: new Uint8Array([1]), sizeBytes: 1 }
+  const bytes = {
+    filename: 'a.bin',
+    mimeType: 'application/octet-stream',
+    encryptedBlob: new Uint8Array([1]),
+    sizeBytes: 1,
+  }
 
   async function deletedPage() {
     const p = await h.svc.createPage({ type: 'note', title: 'gone' })
@@ -420,9 +420,7 @@ describe('notes-rescope R0 — data safety (live store)', () => {
 
   it('createEntityLink keeps the BR-S4-1 order: an unregistered type fails before the page check', async () => {
     const gone = await deletedPage()
-    await expect(h.svc.createEntityLink(gone.id, 'nope_type', 'x')).rejects.toBeInstanceOf(
-      UnregisteredEntityTypeError,
-    )
+    await expect(h.svc.createEntityLink(gone.id, 'nope_type', 'x')).rejects.toBeInstanceOf(UnregisteredEntityTypeError)
   })
 
   it('typed errors carry a stable .name + the page id (BR-S1-6 convention)', async () => {
@@ -496,8 +494,19 @@ describe('notes-rescope R3 — icon/cover domains on create AND update; getAttac
 
   const VALID_ICONS = ['star', 'book-open', 'heart-pulse', 'a1']
   const BAD_ICONS = ['Star', '⭐', 'book_open', '-star', 'star-', 'a'.repeat(65), 'javascript:alert(1)']
-  const VALID_COVERS = ['https://example.com/a.png', 'http://localhost:5173/__e2e/cover.png', 'attachment:0190a1b2-c3d4']
-  const BAD_COVERS = ['javascript:alert(1)', 'data:image/png;base64,AAA', 'ftp://x/y.png', 'attachment:', `https://x/${'a'.repeat(2040)}`, 'https://a b']
+  const VALID_COVERS = [
+    'https://example.com/a.png',
+    'http://localhost:5173/__e2e/cover.png',
+    'attachment:0190a1b2-c3d4',
+  ]
+  const BAD_COVERS = [
+    'javascript:alert(1)',
+    'data:image/png;base64,AAA',
+    'ftp://x/y.png',
+    'attachment:',
+    `https://x/${'a'.repeat(2040)}`,
+    'https://a b',
+  ]
 
   it.each(VALID_ICONS)('icon %s is accepted on create and update', async (icon) => {
     const p = await h.svc.createPage({ type: 'note', title: 'i', icon })
@@ -544,12 +553,19 @@ describe('notes-rescope R3 — icon/cover domains on create AND update; getAttac
   it('getAttachmentThumbnail → null with no thumbnail, an unknown id, or a removed attachment', async () => {
     const page = await h.svc.createPage({ type: 'note', title: 'img' })
     const noThumb = await h.svc.addAttachment(page.id, {
-      filename: 'a.bin', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), sizeBytes: 1,
+      filename: 'a.bin',
+      mimeType: 'image/png',
+      encryptedBlob: new Uint8Array([1]),
+      sizeBytes: 1,
     })
     expect(await h.svc.getAttachmentThumbnail(noThumb.id)).toBeNull()
     expect(await h.svc.getAttachmentThumbnail('nope')).toBeNull()
     const gone = await h.svc.addAttachment(page.id, {
-      filename: 'b.png', mimeType: 'image/png', encryptedBlob: new Uint8Array([1]), thumbnailBlob: new Uint8Array([2]), sizeBytes: 1,
+      filename: 'b.png',
+      mimeType: 'image/png',
+      encryptedBlob: new Uint8Array([1]),
+      thumbnailBlob: new Uint8Array([2]),
+      sizeBytes: 1,
     })
     await h.svc.removeAttachment(gone.id)
     expect(await h.svc.getAttachmentThumbnail(gone.id)).toBeNull()

@@ -1,6 +1,6 @@
 <!-- CURRENT-BUSINESS-RULES · module: projects · §XXIX Currency Rule · never lags the code -->
 
-# Projects — CURRENT BUSINESS RULES  (`@vida/core` `services/projects`)
+# Projects — CURRENT BUSINESS RULES (`@vida/core` `services/projects`)
 
 > Born at mod-projects ① S1 (LIF-135, #54). Inherits the core constitution (`docs/core/business-rules.md`) +
 > the Projects aspect invariants (`docs/features/projects/business-rules.md`, PJ-1…PJ-12). The `BR-PJ-S*` rules
@@ -64,7 +64,7 @@
 ## S4 — derived progress (PJ-3)
 
 - **BR-PJ-S4-1** — `getDeliverableProgress`/`getMilestoneProgress`/`getProjectProgress` return `ProgressView
-  {value, derived, partial}`. `value` is 0-100 or `null` (unmeasured — never 0, BR-2).
+{value, derived, partial}`. `value` is 0-100 or `null` (unmeasured — never 0, BR-2).
 - **BR-PJ-S4-2** — A non-null stored `progress` is a **manual override** and wins (`derived=false`,
   `partial=false`); a null stored value is **derived** on read (`derived=true`).
 - **BR-PJ-S4-3** — Derivation rolls up bottom-up: a milestone = weighted rollup of its sub-milestones +
@@ -142,6 +142,7 @@
 ## ① backend COMPLETE — all 9 slices shipped (S1–S9).
 
 ## Deferred (homed, not dropped)
+
 PJ-9 cascade completion (S2/S3/S5) · tags via `entity_tags` (S6) · vision/mission/notes pages (S6) · progress
 derivation (S4) · deliverable measurement source seam (S7) · Tasks→Projects seam + project time (S8) · effects
 fan-out + Journal `/summary` (S9) · `@vida/types` interface reconcile (DB-11) · external/AI integrations (M2) ·

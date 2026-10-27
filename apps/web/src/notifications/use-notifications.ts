@@ -40,16 +40,54 @@ export interface NotificationsData {
 const NOW_REF = 1_760_000_000_000 // fixed reference so the gate is deterministic (no Date.now() in a module)
 
 const SAMPLE_ROWS: readonly Notification[] = [
-  mkRow('s1', 'achievement', 'Reading streak reached seven days', 'one week strong', 'habit', NOW_REF - 5 * 3_600_000, false),
-  mkRow('s2', 'error', "A write didn't complete", 'saved locally — nothing was lost', null, NOW_REF - 26 * 3_600_000, false),
-  mkRow('s3', 'warning', 'Two deliverables slipped past due', 'in Thesis', 'deliverable', NOW_REF - 2 * 86_400_000, true),
+  mkRow(
+    's1',
+    'achievement',
+    'Reading streak reached seven days',
+    'one week strong',
+    'habit',
+    NOW_REF - 5 * 3_600_000,
+    false,
+  ),
+  mkRow(
+    's2',
+    'error',
+    "A write didn't complete",
+    'saved locally — nothing was lost',
+    null,
+    NOW_REF - 26 * 3_600_000,
+    false,
+  ),
+  mkRow(
+    's3',
+    'warning',
+    'Two deliverables slipped past due',
+    'in Thesis',
+    'deliverable',
+    NOW_REF - 2 * 86_400_000,
+    true,
+  ),
   mkRow('s4', 'success', 'Milestone reached', 'no longer available', 'milestone', NOW_REF - 3 * 86_400_000, true, true),
   mkRow('s5', 'info', 'Welcome to Vida', 'everything here lives on your device', null, NOW_REF - 7 * 86_400_000, true),
 ]
 
 const SAMPLE_UPCOMING: readonly UpcomingItem[] = [
-  { id: 'u1', type: 'reminder', title: 'Statement closes', voice: "you'll want to look", entity: 'transaction', dueAt: NOW_REF + 6 * 3_600_000 },
-  { id: 'u2', type: 'reminder', title: 'Standup', voice: 'with the design team', entity: 'session', dueAt: NOW_REF + 2 * 3_600_000 },
+  {
+    id: 'u1',
+    type: 'reminder',
+    title: 'Statement closes',
+    voice: "you'll want to look",
+    entity: 'transaction',
+    dueAt: NOW_REF + 6 * 3_600_000,
+  },
+  {
+    id: 'u2',
+    type: 'reminder',
+    title: 'Standup',
+    voice: 'with the design team',
+    entity: 'session',
+    dueAt: NOW_REF + 2 * 3_600_000,
+  },
 ]
 
 function mkRow(
@@ -124,7 +162,13 @@ export function useNotifications(): NotificationsData {
   const forced = forcedState()
   if (forced) return { rows: [], upcoming: [], counts: EMPTY_COUNTS, state: forced, now: NOW_REF }
   if (devSampleActive()) {
-    return { rows: SAMPLE_ROWS, upcoming: SAMPLE_UPCOMING, counts: sampleCounts(SAMPLE_ROWS), state: stateOf(SAMPLE_ROWS), now: NOW_REF }
+    return {
+      rows: SAMPLE_ROWS,
+      upcoming: SAMPLE_UPCOMING,
+      counts: sampleCounts(SAMPLE_ROWS),
+      state: stateOf(SAMPLE_ROWS),
+      now: NOW_REF,
+    }
   }
   return { rows: [], upcoming: [], counts: EMPTY_COUNTS, state: stateOf([]), now: Date.now() }
 }

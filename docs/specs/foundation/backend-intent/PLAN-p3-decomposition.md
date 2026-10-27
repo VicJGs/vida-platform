@@ -44,15 +44,15 @@ the dependency graph. Done when:
 
 Each corpus row routes by its two classifier columns (already authored in `parts/*.md`):
 
-| Row signal | Destination bucket | In a P3 issue? |
-|---|---|---|
-| `boundary = service` **and** `home = "<module> service"` | **MOD issue** for that module | ✅ yes |
-| `boundary = service` **and** `home = "cross-cutting: X (Part B)"` — **pure delegation/consumption** | **XS issue** for service X | ✅ yes |
-| `boundary = service` **and** `home = "cross-cutting: X (Part B)"` — **module-owned derivation riding X** | **MOD issue** + a derived MOD→XS edge | ✅ yes (in MOD) |
-| `boundary = service (…SPLIT)` — the **service leg** | its module/XS issue (as above) | ✅ yes (service leg only) |
-| `boundary = UI` **or** the **UI leg** of a SPLIT (`home = "P6 (…)"`) | **P6 frontend track** | ❌ traced-out (D5) |
-| `home = "DEFERRED — …"` / a `schema-audit-deferred-homes.md` home | its **named build home** | ❌ traced-out (D5) |
-| Part B.1 substrate row (built **or** forward-homed to M3/DB-5) | rides — no P3 issue | ❌ dependency note only |
+| Row signal                                                                                               | Destination bucket                    | In a P3 issue?            |
+| -------------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------- |
+| `boundary = service` **and** `home = "<module> service"`                                                 | **MOD issue** for that module         | ✅ yes                    |
+| `boundary = service` **and** `home = "cross-cutting: X (Part B)"` — **pure delegation/consumption**      | **XS issue** for service X            | ✅ yes                    |
+| `boundary = service` **and** `home = "cross-cutting: X (Part B)"` — **module-owned derivation riding X** | **MOD issue** + a derived MOD→XS edge | ✅ yes (in MOD)           |
+| `boundary = service (…SPLIT)` — the **service leg**                                                      | its module/XS issue (as above)        | ✅ yes (service leg only) |
+| `boundary = UI` **or** the **UI leg** of a SPLIT (`home = "P6 (…)"`)                                     | **P6 frontend track**                 | ❌ traced-out (D5)        |
+| `home = "DEFERRED — …"` / a `schema-audit-deferred-homes.md` home                                        | its **named build home**              | ❌ traced-out (D5)        |
+| Part B.1 substrate row (built **or** forward-homed to M3/DB-5)                                           | rides — no P3 issue                   | ❌ dependency note only   |
 
 **§2-tiebreak (the blocking fix — a terse `cross-cutting: X` home is NOT self-disambiguating).** ~60 module
 rows are homed purely to `"cross-cutting: X (Part B)"` with no `<module> service` prefix, and they are a
@@ -97,7 +97,7 @@ D1's "exactly one issue" means "exactly one issue per service leg"; the UI leg i
   read-seam edges. The execution reader confirms each B.11 row's single owner (e.g. Duties/Obligations
   fabric: **MOD-tasks owns the `duty` type**, MOD-health/MOD-sessions consume via edges).
 - **Module-owned SEAM fold (ratified 2026-09-15, gate-2 round-2).** A cross-cutting seam whose engine
-  is owned by a *module* (not pure infra) is NOT a standalone XS issue — it folds into that owner MOD, and
+  is owned by a _module_ (not pure infra) is NOT a standalone XS issue — it folds into that owner MOD, and
   consumers carry a **build** edge to the owner MOD (the seam must exist before they register/read). This
   is the B.11-fold + economy rule applied consistently. The folds: **summary(date) registry → MOD-journals**
   · **dueIn(range) → MOD-sessions** · **review engine → MOD-knowledge** · **notes `pages` platform →
@@ -141,7 +141,7 @@ read-seam, and cited in the issue's coverage list:
   over the **BUILD edges only**. Because build targets are XS issues or the 5 seam-owner MODs, a cycle can
   only form among those; any such cycle is a blocking defect and is broken by demoting the corpus-wrong
   direction to a runtime edge (e.g. the round-3 fixes: `XS-views→XS-templates` dropped —
-  templates *compose* views; `MOD-sessions→MOD-journals` demoted — `surface_journal` is an effect-rail
+  templates _compose_ views; `MOD-sessions→MOD-journals` demoted — `surface_journal` is an effect-rail
   runtime emit). (Running acyclicity over runtime read-seams would falsely fail on legitimate bidirectional
   seams — what the P3 v1 carve surfaced.)
 - **Fail-loud mis-route guard (the blocking fix):** the assembler (§6 step 2) asserts that **no row
@@ -167,8 +167,8 @@ The carve is a 34-file, ~1194-item mechanical sweep that must be exhaustive → 
    `parts/*.md`, reconciling the 1192/1194/1201 discrepancy (`corpus.md:47-50`) into one set; this list
    is the join key everything downstream (and P4) measures against.
 1. **Per-part readers** (34, one per `parts/*.md`, schema'd output) — emit each row's `{item-id, leg,
-   bucket-key, route-kind (delegation|derivation), cited-xs-services, cited-read-seams, ui-split?,
-   part-d-home?}` per the §2 filter **and the §2-tiebreak** (verb test + Part D / deferred-homes
+bucket-key, route-kind (delegation|derivation), cited-xs-services, cited-read-seams, ui-split?,
+part-d-home?}` per the §2 filter **and the §2-tiebreak** (verb test + Part D / deferred-homes
    override). No re-homing beyond what the gated docs already fix — read the authored columns + Part D.
 2. **Assembler** (in-script, deterministic) — apply the built-substrate-rides rule (§3) to drop
    ride-only XS candidates; group by bucket-key into the XS + MOD issues; build the dep-edge set per §4;
@@ -188,19 +188,19 @@ The carve is a 34-file, ~1194-item mechanical sweep that must be exhaustive → 
   the produced issue set is **well-formed** — D1–D5 checked against `corpus.md`/`parts/*.md` on disk, not
   the plan's prose. Explicitly re-checks: (a) the ~60 tiebreak classifications (a sample vs Part D), (b)
   the mis-route guard fired 0 times / all re-homes are correct, (c) `#(traceability rows) ≈ canonical-ids
-  + SPLIT UI-legs` (not merely = canonical-ids — else a SPLIT UI leg is silently unhomed). Verdict SHIP /
-  REVISE / RETHINK. (P4 is the *separate* flagship coverage gate; P3's gate 2 is well-formedness, P4 is
-  set-cover completeness.)
+  - SPLIT UI-legs` (not merely = canonical-ids — else a SPLIT UI leg is silently unhomed). Verdict SHIP /
+    REVISE / RETHINK. (P4 is the _separate_ flagship coverage gate; P3's gate 2 is well-formedness, P4 is
+    set-cover completeness.)
 
 ## 8. Acceptance (P3 done when)
 
 - [ ] A **canonical item-id set** is emitted + the 1192/1194/1201 delta reconciled (D5 prerequisite).
 - [ ] `decomposition.md` — ~35–38 acyclic issues (XS + MOD; XS only where DEFERRED service work exists),
-  each with covered item-ids, home path, and dep edges; grain per §3.
+      each with covered item-ids, home path, and dep edges; grain per §3.
 - [ ] `traceability.md` — every canonical id (and each SPLIT `{id, leg}`) mapped to exactly one bucket
-  (issue / P6 / DEFERRED-home); 0 UNHOMED; the ~60 tiebreak rows classified delegation|derivation.
+      (issue / P6 / DEFERRED-home); 0 UNHOMED; the ~60 tiebreak rows classified delegation|derivation.
 - [ ] `assertAcyclic` passes; the mis-route guard fired 0 unresolved times; every edge cites a corpus row
-  (D3/D4).
+      (D3/D4).
 - [ ] Decomposition Gate (gate 2) SHIP.
 
 ## 9. Out of scope for P3
@@ -209,7 +209,7 @@ The carve is a 34-file, ~1194-item mechanical sweep that must be exhaustive → 
   disposition) — that is **P5**.
 - **The P4 coverage gate itself** — P3 produces the traceability matrix P4 gates; P4 is its own phase.
 - **The frontend track plan** — the UI-leg items are traced-out here; **P6** scopes them.
-- **Sub-milestone / wave sequencing into the tracker** — P5 re-derives `#` edges + HARD-* deps from this
+- **Sub-milestone / wave sequencing into the tracker** — P5 re-derives `#` edges + HARD-\* deps from this
   issue set.
 
 ## 10. Execution note

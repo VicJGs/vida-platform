@@ -22,11 +22,7 @@ import {
   type EffectRegistry,
   deriveEffectEventId,
 } from '../effects'
-import {
-  GrantCurrencyPayload,
-  LockCurrencyPayload,
-  MalformedConsequencePayload,
-} from './types'
+import { GrantCurrencyPayload, LockCurrencyPayload, MalformedConsequencePayload } from './types'
 
 export interface EconomyHandlers {
   grant_currency: EffectHandler

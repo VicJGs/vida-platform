@@ -1,12 +1,15 @@
 # Spec: component:fe-codec-canvas-graph
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented      <!-- draft → approved → implemented -->  (Approval 2 2026-10-08; implemented + Visual Gate PASS 2026-10-09)
+
+Status: implemented <!-- draft → approved → implemented --> (Approval 2 2026-10-08; implemented + Visual Gate PASS 2026-10-09)
 Source-repo: packages/ui/src/components/neural-graph.tsx · apps/web/src/app/graph
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-10-08-fe-codec-canvas-graph (initial).
 Delivery: docs/specs/foundation/fe-codec-canvas-graph/delivery/{interpretation,slice-map,seam-contract}.md
 
 ## 1. Identity
+
 The CODEC **Canvas: Graph** surface — unit #8 of the G6 frontend CODEC set. The Neural Graph archetype
 rendered in the editorial "ink voice". This unit **EXTENDS the shipped `@vida/ui` `NeuralGraph` (UI-2 · V7)
 in place** to resolve the 3 conformance findings deferred here from the LIF-230 audit: per-preset
@@ -19,9 +22,11 @@ Contributions / Relationships — P6, [FACT: decomposition.md:69,93,97,102]) · 
 (the consumer's layout via the existing `height` prop) · 10K-node webworker perf (documented future ceiling).
 
 ## 2. Business Rules
+
 Invariants (what must stay true) + the 3 findings as rules. "BR" = business rule.
 
 **Preserved invariants (regressions forbidden — [FACT: interpretation.md §4]):**
+
 - BR-1 — the Sigma init effect stays keyed on `graphKey` (content signature), NEVER the `nodes`/`edges`
   array refs ([FACT: neural-graph.tsx:112-116,146]); an equal-content new array must not kill+rebuild the
   WebGL context (the ~16-live-context cap, [FACT: neural-graph.tsx:12-15]).
@@ -34,6 +39,7 @@ Invariants (what must stay true) + the 3 findings as rules. "BR" = business rule
 - BR-6 — token-pure: no new palette; existing semantic tokens only ([FACT: fe-codec-primitives P5 precedent]).
 
 **Finding #1 — ink voice (per-preset theme colors):**
+
 - BR-7 — the node DEFAULT color = `$colorBrandPrimary` resolved via `theme.colorBrandPrimary?.get('web')`
   ([FACT: pomodoro-widget.tsx:85-90 + timeline.tsx:168-169 precedent]); the edge DEFAULT =
   `$colorBorderDefault` via `theme.colorBorderDefault?.get('web')`. Replaces the hard-coded
@@ -52,7 +58,7 @@ Invariants (what must stay true) + the 3 findings as rules. "BR" = business rule
   computed value does not substitute nested var() refs, so `getComputedStyle(host).getPropertyValue('--…')`
   only yields the next link in the chain. The concrete, preset-aware value is obtained by reading a REAL
   property on a throwaway probe `<span>` in the Sigma host subtree: `probe.style.color = token;
-  host.appendChild(probe); getComputedStyle(probe).color` → `rgb(...)` (the browser applies the full cascade
+host.appendChild(probe); getComputedStyle(probe).color` → `rgb(...)` (the browser applies the full cascade
   incl. the preset's `<body>`-class override). Removed immediately (same tick, no paint). jsdom (no CSS var
   engine) → the probe yields a var/empty → the literal fallback. This is NECESSARY because WebGL has no CSS
   context (the SVG `stroke="var(…)"` pomodoro precedent works only because SVG resolves var() via CSS).
@@ -66,12 +72,14 @@ Invariants (what must stay true) + the 3 findings as rules. "BR" = business rule
   live-recolor (`setNodeAttribute`+`refresh`, no relayout) is homed to first-consumer (AR-8). Not silent.
 
 **Finding #2 — consumer terminal-state slots:**
+
 - BR-11 — add optional `loading?` / `error?` / `empty?: ReactNode` props; each renders as
   `{slot ?? <Message role="status">…default…</Message>}` ([FACT: board-view.tsx:152,161 +
   calendar-view.tsx:134 precedent]). Absent slot → current copy verbatim (back-compat): "Loading…",
   "Couldn't load.", "No connections yet." ([FACT: neural-graph.tsx:154-156]). `role="status"` preserved.
 
 **Finding #3 — reduced-motion (BUILD — per the approved decomposition; Victor-confirmed 2026-10-08):**
+
 - BR-12 — **BUILD the iteration-gate** ([FACT: slice-map.md:24-25, seam-contract.md:48-51 — the Approval-1
   decomposition]). Gate the `forceAtlas2.assign` iteration count via the shipped `useReducedMotion()` hook
   ([FACT: packages/ui/src/hooks/use-reduced-motion.ts]): **reduced → 0 iterations** (the graph stays on its
@@ -79,7 +87,7 @@ Invariants (what must stay true) + the 3 findings as rules. "BR" = business rule
   predictable, non-organic arrangement; no force-settling); **normal → `layoutIterations`** (current). Add
   `reduced` to the effect deps so an OS-setting toggle re-lays-out (a deliberate re-init like a topology
   change; `reduced` is stable across unrelated re-renders so BR-1 holds).
-  - [FACT: v7-neural-graph.md:81-86] NG-8 is accurate that the layout is synchronous (no *continuous*
+  - [FACT: v7-neural-graph.md:81-86] NG-8 is accurate that the layout is synchronous (no _continuous_
     motion); the gate's value is on the OTHER axis NG-8 names — the synchronous main-thread settle that
     "janks above a few hundred nodes": reduced users get the 0-iteration calm circular layout, skipping the
     force-settling compute. NG-8's durable wording is updated at §XXIX (A11) to carry this.
@@ -95,15 +103,16 @@ success(no-WebGL → node-list + "needs WebGL"). All rendered; no new state adde
 **Fail-loud:** dangling edges dev-warn (BR-4); contradictory props keep the existing guards. No silent catch.
 
 ## 3. Contract
+
 <!-- /contract output — props / visual states / a11y / motion. -->
 
 **Component:** `NeuralGraph` (extended in place). `NeuralGraphProps` additions (3 optional props):
 
-| Prop | Type | Default | Rule |
-|------|------|---------|------|
-| `loading?` | `ReactNode` | `<Message>Loading…</Message>` | BR-11 |
-| `error?` | `ReactNode` | `<Message>Couldn't load.</Message>` | BR-11 |
-| `empty?` | `ReactNode` | `<Message>No connections yet.</Message>` | BR-11 |
+| Prop       | Type        | Default                                  | Rule  |
+| ---------- | ----------- | ---------------------------------------- | ----- |
+| `loading?` | `ReactNode` | `<Message>Loading…</Message>`            | BR-11 |
+| `error?`   | `ReactNode` | `<Message>Couldn't load.</Message>`      | BR-11 |
+| `empty?`   | `ReactNode` | `<Message>No connections yet.</Message>` | BR-11 |
 
 All existing props unchanged ([FACT: neural-graph.tsx:31-44]): `nodes`, `edges`, `onNodeClick`, `state`,
 `height`, `layoutIterations`, `ref`, `aria-label`. `GraphNode`/`GraphEdge` unchanged (incl. per-item
@@ -113,6 +122,7 @@ All existing props unchanged ([FACT: neural-graph.tsx:31-44]): `nodes`, `edges`,
 `forceAtlas2` iteration count gated by `useReducedMotion()` (BR-12).
 
 **Visual states:**
+
 - default/success (+WebGL): the Sigma canvas, nodes in `$colorBrandPrimary` (per-preset), edges in
   `$colorBorderDefault`; frame `$colorSurfacePrimary` (flips with theme, [FACT: neural-graph.tsx:68]).
 - success (no WebGL): "This graph needs WebGL." + the node-list ([FACT: neural-graph.tsx:162-166]).
@@ -128,6 +138,7 @@ is Sigma's own text rendering, unchanged.
 circular seed — an instant layout change, not an animated transition.
 
 ## 4. Acceptance
+
 - [ ] A1 — no hard-coded `#6366f1`/`#cbd5e1` remain; node/edge defaults resolve from `useTheme().get('web')`
       (BR-7, BR-9). [grep: 0 hits for the hexes in neural-graph.tsx]
 - [ ] A2 — nodes render the per-preset brand color; editorial/reader/quietDesk visibly differ (Visual Gate).
@@ -148,6 +159,7 @@ circular seed — an instant layout change, not an animated transition.
       `packages/ui/src/CLAUDE.md` digest refreshed, committed with the code.
 
 ## 5. Implementation Prompt
+
 Single slice S1 (@vida/ui); R1 is no-code. Cite §2/§3; do not restate.
 
 1. `packages/ui/src/components/neural-graph.tsx` — **imports:** add `useTheme` to the `@tamagui/core` import
@@ -166,18 +178,18 @@ Single slice S1 (@vida/ui); R1 is no-code. Cite §2/§3; do not restate.
    destructure them; change the three message branches ([FACT: neural-graph.tsx:154-156]) to
    `{loading ?? <Message role="status">Loading…</Message>}` etc.
 4. **reduced-motion (BR-12 — BUILD):** import `useReducedMotion` from `../hooks/use-reduced-motion`; `const
-   reduced = useReducedMotion()`. In the effect, compute `const iterations = reduced ? 0 : layoutIterations`
+reduced = useReducedMotion()`. In the effect, compute `const iterations = reduced ? 0 : layoutIterations`
    and pass it to `forceAtlas2.assign(graph, { iterations, settings:{ barnesHutOptimize:true } })` ([FACT:
    neural-graph.tsx:139]). Add `reduced` to the effect deps → `[graphKey, webglAvailable, layoutIterations,
-   reduced]`. Comment: reduced → the deterministic circular seed (0 force iterations), per seam-contract:48-51.
+reduced]`. Comment: reduced → the deterministic circular seed (0 force iterations), per seam-contract:48-51.
 5. `packages/ui/src/components/neural-graph.stories.tsx` — add/extend stories so the Visual Gate matrix is
    coverable: default (themed nodes), a `GraphNode.color` override, each terminal state with a custom slot,
    no-WebGL note. (Stories are the gate surface.)
 6. `packages/ui/src/components/neural-graph.test.tsx` — add jsdom tests: A3 (slot override + default copy),
    A4 (per-item `GraphNode.color` wins — via `h.Sigma.mock.calls[0][0].getNodeAttribute('a','color')`, since
    graphology is unmocked), A7 (reduced-motion: mock `matchMedia('(prefers-reduced-motion: reduce)')→matches:true`
-   + `enableWebGL`, assert `h.assign` called with `iterations: 0`; and the normal path with `layoutIterations`).
-   A5 is ALREADY covered (the existing "B1" test, :110-122). Keep all existing WebGL-mock lifecycle tests.
+   - `enableWebGL`, assert `h.assign` called with `iterations: 0`; and the normal path with `layoutIterations`).
+     A5 is ALREADY covered (the existing "B1" test, :110-122). Keep all existing WebGL-mock lifecycle tests.
 7. **R1:** confirm `apps/web/src/app/graph/index.tsx` needs no change (A10) — do not edit.
 8. **Visual Gate** (Brave, `/tmp/vg/*-gate.mjs` + `http.server 6099` on `storybook-static`): the §4 A9 matrix.
 9. **§XXIX currency (A11):** refresh the `neural-graph` paragraph in `packages/ui/src/CLAUDE.md` + the
@@ -185,9 +197,10 @@ Single slice S1 (@vida/ui); R1 is no-code. Cite §2/§3; do not restate.
    value via `useTheme().get('web')`, not a hard-coded hex / consumer-supplied value) AND NG-8's wording (the
    reduced-motion iteration-gate now EXISTS: reduced → 0-iteration circular seed) + an NG-2 color-deferral
    cross-ref (BR-10); commit with the code.
-Done = §4 all checked.
+   Done = §4 all checked.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - ~~[Step 1.5] Envision Gate~~ → RESOLVED: SKIP (Victor-confirmed 2026-10-08).
 - ~~[Step 2] slice split~~ → RESOLVED: single S1 @vida/ui slice + R1 no-code (Approval 1, 2026-10-08).
 - ~~[contract] ink token mapping~~ → RESOLVED: node=`$colorBrandPrimary`, edge=`$colorBorderDefault` (BR-7),
@@ -201,10 +214,11 @@ Done = §4 all checked.
   `$colorBorderDefault`** (BR-7), Victor-confirmed 2026-10-08; Visual-Gate-validated at A2/A9. No open decisions.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | initial draft (stub) |
-| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | full spec: §2 rules (BR-1..12) · §3 contract · §4 acceptance · §5 impl prompt; UNKNOWNs resolved |
-| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | preflight folds: reconcile NG-7 (BR-7, drift restore) · NG-2 (BR-10, documented deferral) · NG-8 (BR-12); preflight PASSED |
-| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | gate-2 critic REVISE→fixed: BLOCKER — my RATIFY of finding #3 flipped the approved slice-map; reverted to BUILD the useReducedMotion gate (Victor-chosen); ink mapping confirmed brand accent; N2/N6 NITs folded; Status → approved |
+
+| Date       | Session                          | Change                                                                                                                                                                                                                                                                       |
+| ---------- | -------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | initial draft (stub)                                                                                                                                                                                                                                                         |
+| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | full spec: §2 rules (BR-1..12) · §3 contract · §4 acceptance · §5 impl prompt; UNKNOWNs resolved                                                                                                                                                                             |
+| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | preflight folds: reconcile NG-7 (BR-7, drift restore) · NG-2 (BR-10, documented deferral) · NG-8 (BR-12); preflight PASSED                                                                                                                                                   |
+| 2026-10-08 | 2026-10-08-fe-codec-canvas-graph | gate-2 critic REVISE→fixed: BLOCKER — my RATIFY of finding #3 flipped the approved slice-map; reverted to BUILD the useReducedMotion gate (Victor-chosen); ink mapping confirmed brand accent; N2/N6 NITs folded; Status → approved                                          |
 | 2026-10-09 | 2026-10-09-fe-codec-canvas-graph | IMPLEMENTED S1; §XXVIII deviation (BR-9): `.get('web')` returns a CSS-var ref (unusable by WebGL) → added a probe-`<span>` getComputedStyle resolver for concrete preset-aware colour; live test caught it. typecheck 0 · @vida/ui 473/473 (+3) · build clean · eslint 0 err |

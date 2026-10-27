@@ -11,8 +11,8 @@
 ## 0. What this unit is
 
 The **behavioural half of the CODEC** (fe-codec-theme was the visual half). Six reusable cross-cutting primitives +
-one state machine that **every downstream `fe-*` surface inherits**, so the 8 systemic findings are satisfied *once,
-by construction* [FACT: decomposition.md:36-40 §1.3; surface-map.md:157]:
+one state machine that **every downstream `fe-*` surface inherits**, so the 8 systemic findings are satisfied _once,
+by construction_ [FACT: decomposition.md:36-40 §1.3; surface-map.md:157]:
 
 1. **the 8-state machine** — `idle · typing · loading · results · empty · unavailable · error · success`
 2. **`EmptyState`** — teaching-invitation
@@ -37,8 +37,8 @@ by construction* [FACT: decomposition.md:36-40 §1.3; surface-map.md:157]:
   `isPending`-first `deriveTerminalState<T>(result, isEmpty)`; `keyboard.ts` = `FOCUS_CONTRACT` + `OVERLAY_DISMISS`.
   **This unit EXTENDS ux-4**, it does not re-home it [FACT: state-conventions.md:56-64; apps/web/src/state-conventions/terminal-state.ts:18,50-58].
 - **ux-2 `SearchStatus`** — the already-shipped **worked example** of the superset: `idle · typing · loading · results ·
-  empty · search-unavailable · error`, each collapsing to one canonical state. The 8-state machine *generalizes this
-  one surface's pattern into the codec* [FACT: state-conventions.md:44-47; apps/web/src/command-bar/types.ts:62-73].
+empty · search-unavailable · error`, each collapsing to one canonical state. The 8-state machine _generalizes this
+  one surface's pattern into the codec_ [FACT: state-conventions.md:44-47; apps/web/src/command-bar/types.ts:62-73].
 - **ui-1 primitives** (`@vida/ui/components/`) — Card · Button · Input · Toast · … The kit **composes** these; the
   error state = `Card`+`Button`, the skeleton recipe = a `View` sized to the content box [FACT: state-conventions.md:82,85-99].
 - **fe-codec-theme tokens** — all color/space/radius/type come from the preset theme vars via DIRECT semantic tokens
@@ -50,6 +50,7 @@ by construction* [FACT: decomposition.md:36-40 §1.3; surface-map.md:157]:
   `getDayBooksDigest`, the `dueIn(today)` provider) [FACT: decomposition.md:66,84; .claude/tasks/archive/mod-books.md S10].
 
 ### THE boundary that governs every home (load-bearing)
+
 **`@vida/ui` CANNOT import `@vida/core`** — its deps are Tamagui-only; importing the canon would be a wrong-direction
 edge. So `@vida/ui` mirrors terminal state **structurally** (`ViewState` in `internal/data-view.tsx`) and takes it as a
 **PROP** (`state?: ViewState`, default `'success'`); the **app** derives via `deriveTerminalState` (which imports the
@@ -58,13 +59,13 @@ canon) and **passes it in** — BR-2, the package→app boundary [FACT: packages
 ## 2. NEEDS (what the kit must deliver)
 
 1. **The 8-state type + collapse map + extended deriver** — the superset `{idle,typing,loading,results,empty,unavailable,
-   error,success}`, a total map `→ TerminalState` (the fail-loud/degrade contract), and a deriver for input-bearing
+error,success}`, a total map `→ TerminalState` (the fail-loud/degrade contract), and a deriver for input-bearing
    surfaces (extends `deriveTerminalState` with the idle/typing/results dimension). Reuses the `@vida/core` canon as the
    collapse target — authors **no new canon**.
 2. **`EmptyState`** — a presentational component: headline + teaching body + primary action slot + optional guided-setup
    slot; never a blank region, never "No data available".
 3. **`SyncStatus` + `HonestProgress`** — a calm status chiplet (never alarming) + an honest determinate/indeterminate
-   progress for genuinely-slow ops (FTS rebuild, export, vault unlock). The `/sync` *page* is a LATER unit (fe-sync-log).
+   progress for genuinely-slow ops (FTS rebuild, export, vault unlock). The `/sync` _page_ is a LATER unit (fe-sync-log).
 4. **`ReducedMotion`** — **ALREADY DELIVERED (S2 = RATIFY).** The instant-alternative, transform/opacity-only B12
    contract is enforced by `useReducedMotion()` (exported) + the `@media (prefers-reduced-motion: reduce)` convention
    reading `motion.ts` across all animating primitives. S2 names it the codec primitive + documents the pattern for
@@ -90,6 +91,7 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
             <voice>/voice-copy.ts                 VoiceCopy constants + honesty lint
                   → every surface composes the kit  ← codec payoff
 ```
+
 > Home split = the BR-2 boundary: **renders → `@vida/ui` (state as prop)**; **imports-the-canon / derives / app-logic →
 > `apps/web`**. Exact file paths are ratified at Step 2 (slice-map); the package↔app split is doc-fixed, not open.
 
@@ -108,9 +110,9 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   [FACT: state-conventions.md:82].
 - **Reduced-motion is an instant state change, not the absence of motion**; animate transform/opacity/clip-path only
   [FACT: docs/ui/token-pipeline/current-business-rules.md B12:44-50; motion.md §IX].
-- **Copy honesty is a constraint, not a nicety** — no ZK-*sync* claim before M3 (M1 = local-first, encrypted at rest);
+- **Copy honesty is a constraint, not a nicety** — no ZK-_sync_ claim before M3 (M1 = local-first, encrypted at rest);
   overclaim→staged-honest, blame→teach-the-fix, dead-end→anti-lost [FACT: frontend-quality-bar/_index.md:41-43 §2.1-2.2].
-- **≥2 reachable paths is a hard floor** — a one-path capability *fails* G4 [FACT: frontend-quality-bar/_index.md:46 §2.4].
+- **≥2 reachable paths is a hard floor** — a one-path capability _fails_ G4 [FACT: frontend-quality-bar/_index.md:46 §2.4].
 - **No cross-module table reads** — a module reading another's tables is OVERFLOWING; go through a provider [FACT: frontend-quality-bar/_index.md:27].
 - Consume frozen ux-4/ui-1/theme contracts; if one looks wrong, STOP — don't patch the frontend around it [FACT: process.md:113].
 
@@ -119,10 +121,11 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
 ## 5. THE 3-LENS AUDIT
 
 ### WRONG — contradicts a standard or a bar decision
+
 - **W1** The terminal-state vocabulary is **declared 3× un-unified** (`TerminalState` · `ViewState` · `SearchStatus`)
   and there is **no shared machine** for the input-bearing superset — every input surface would re-invent idle/typing/
-  results [state-conventions.md:49-52; command-bar/types.ts:62-73]. *(The kit resolves it as the single codec machine —
-  NOT by consolidating the canon into @vida/types, which is deferred + the canon owner's job; see R1.)*
+  results [state-conventions.md:49-52; command-bar/types.ts:62-73]. _(The kit resolves it as the single codec machine —
+  NOT by consolidating the canon into @vida/types, which is deferred + the canon owner's job; see R1.)_
 - **W2 — CORRECTED (S2 baseline, Victor-confirmed RATIFY).** My initial claim ("B12 has no component-level enforcer")
   was **FALSE** — grep-before-net-new caught it. The enforcer **exists**: `useReducedMotion()` (exported) for JS-driven
   animation (the Tamagui `animation={reduced ? undefined : …}` gate, live in button/app-shell/onboarding) + the
@@ -131,11 +134,12 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   animation**. So there is no W2 finding — `ReducedMotion` is RATIFIED, not built (→ R5) [FACT: packages/ui/src/hooks/use-reduced-motion.ts; packages/ui/src/internal/card-styles.ts:32; CLAUDE.md:220-233].
 
 ### MISSING — the bar requires it, nothing exists
+
 - **M1** **No `EmptyState` primitive** — the teaching-invitation empty state is a P5 hard requirement; today only
   per-view `empty` slots exist, no shared teaching component [frontend-quality-bar/_index.md:84 P5; p5 specimen:154-166].
 - **M2** **No `SyncStatus` / `HonestProgress`** — P4 requires a calm honest sync status + honest progress for slow ops;
   nothing renders it [frontend-quality-bar/_index.md:50-51 §2.6, 79-82 P4].
-- **M3** **No `ReachabilityRegistry`** — the ≥2-path floor is proven at *plan* time (G4 set-cover) but has **no runtime
+- **M3** **No `ReachabilityRegistry`** — the ≥2-path floor is proven at _plan_ time (G4 set-cover) but has **no runtime
   artifact** a surface registers its paths with [frontend-quality-bar/_index.md:46 §2.4; surface-map.md:144].
 - **M4** **No `ProviderRead` convention/type** — the "never direct cross-module tables" rule is stated but not encoded
   as a reusable read shape [decomposition.md:66,84].
@@ -143,14 +147,15 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   [frontend-quality-bar/_index.md:41-43 §2.1-2.2; p6-voice-coherence-specimen.html].
 
 ### OVERFLOWING — past this unit's job
-- **O1** The **`/sync` page** (change log + multi-device compare) → `fe-sync-log` (#21), which *depends on this unit*.
+
+- **O1** The **`/sync` page** (change log + multi-device compare) → `fe-sync-log` (#21), which _depends on this unit_.
   This kit ships only the status **chiplet + HonestProgress**, not the page [decomposition.md:55,68 fe-sync-log].
 - **O2** **Multi-device sync compare / real sync transport** = M3+ — the status is honest-local-only in M1
   [frontend-quality-bar/_index.md:82 P4].
 - **O3** **The @vida/types canon consolidation** — unifying the 3 copies into a shared vocabulary is **deferred and
   belongs to the canon owner (@vida/core)**, NOT this frontend unit [state-conventions.md:49-52].
-- **O4** **Per-surface reach *wiring*** (which dock/⌘K/link entries each module registers) is the modules' M1.2.2+ job;
-  this unit ships the *registry mechanism* + the floor assertion, not every module's entries [surface-map.md:110,144].
+- **O4** **Per-surface reach _wiring_** (which dock/⌘K/link entries each module registers) is the modules' M1.2.2+ job;
+  this unit ships the _registry mechanism_ + the floor assertion, not every module's entries [surface-map.md:110,144].
 
 ---
 
@@ -186,15 +191,17 @@ apps/web    state-conventions/terminal-state.ts  EXTEND: the 8-state type + coll
   encoded lint [FACT: frontend-quality-bar/_index.md:41-43 §2.1-2.2; p6-voice-coherence-specimen.html].
 
 ### One detail to author at the S1 spec (grounded, not a Victor gap)
+
 The **total collapse map** `InteractionState → TerminalState`. This is **net-new logic**, not a map to copy: ux-2's
 `SearchStatus` is a **flat 7-member union with NO collapse function** (`idle·typing·loading·results·empty·search-unavailable·error`
 — no `success`; `search-unavailable` not `unavailable`) [FACT: command-bar/types.ts:62-73]. The codec's **8**-state is the
 `decomposition.md:39` explicit list (adds `success`, generalizes `search-unavailable`→`unavailable`). So S1 **authors** the
-map grounded in the "each sub-state maps back to one of the four" rule + the SearchStatus *semantics* — `typing`→`loading`,
+map grounded in the "each sub-state maps back to one of the four" rule + the SearchStatus _semantics_ — `typing`→`loading`,
 `results`→`success`, `unavailable`→`error`, the four canonical → themselves, and `idle` (pre-query, no data yet) → the
 documented pre-state. No-Guessing: ground each row in state-conventions.md:44-47, do not assume [FACT: state-conventions.md:44-47; command-bar/types.ts:62-73].
 
 ### The canonical state → primitive render mapping (S1 deliverable — so the codec doesn't leak)
+
 The codec's promise is "satisfied once, by construction" — so S1 also **extends the state-conventions.md:78-83 §3
 presentation table** (which covers the 4 canonical) with the 3 added states, giving surfaces ONE mapping instead of
 each re-deciding: `loading`→the skeleton recipe (§3.1) · `empty`→`EmptyState` (S3) · `error`/`unavailable`→inline error
@@ -208,12 +215,13 @@ the shipped `SearchStatus`, not a design decision. → Step 2 Decomposition (sli
 
 ## 8. Envision Gate (Step 1.5) — SATISFIED by the gated P4/P5/P6 record (no re-run)
 
-Trigger test (entity-delivery-flow.md §3.75): the kit's user-visible primitives (`EmptyState`, `SyncStatus`) *are*
+Trigger test (entity-delivery-flow.md §3.75): the kit's user-visible primitives (`EmptyState`, `SyncStatus`) _are_
 affordances — but their **feel was already captured + gated** at the frontend-replan G1, exactly as P1 covered the theme:
+
 - **The greybox equivalents exist** = `p5-discover-own-specimen.html` (teaching-invitation empty + the sync-indicator
   presentations) + `p4-trust-reversibility-specimen.html` (honest sync/undo) + `p6-voice-coherence-specimen.html`
   (voice + honesty) [FACT: frontend-quality-bar/_index.md:10-13 specimens; p5 specimen:154-166,197].
 - **Victor approved them** = P4/P5/P6 RESOLVED + G1 **SHIP** [FACT: frontend-quality-bar/_index.md:161-169 gate record].
 
-→ Re-greyboxing would redo gated work. The per-slice **Visual Gate (Step 10)** still verifies the *rendered* kit (every
+→ Re-greyboxing would redo gated work. The per-slice **Visual Gate (Step 10)** still verifies the _rendered_ kit (every
 state × light/dark × 375/768/1440 + a11y) against those specimens — verification, not a new feel gate.

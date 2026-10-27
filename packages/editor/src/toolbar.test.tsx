@@ -34,7 +34,8 @@ function renderToolbar(editor: Editor) {
     </UIProvider>,
   )
 }
-const btn = (name: string | RegExp, opts: Record<string, unknown> = {}) => screen.getByRole('button', { name, ...opts }) as HTMLButtonElement
+const btn = (name: string | RegExp, opts: Record<string, unknown> = {}) =>
+  screen.getByRole('button', { name, ...opts }) as HTMLButtonElement
 
 describe('EditorToolbar — structure & a11y', () => {
   it('is a role=toolbar with an accessible name and horizontal orientation', () => {
@@ -158,7 +159,16 @@ describe('EditorToolbar — can()-gated disable + tab-stop invariants (BR-E3-5, 
 
   it('the callout insert item is disabled inside an existing callout (no nesting)', async () => {
     const user = userEvent.setup()
-    const editor = headless({ type: 'doc', content: [{ type: 'callout', attrs: { variant: 'info' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }] }] })
+    const editor = headless({
+      type: 'doc',
+      content: [
+        {
+          type: 'callout',
+          attrs: { variant: 'info' },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+        },
+      ],
+    })
     renderToolbar(editor)
     await user.click(btn('Insert block'))
     const callout = await screen.findByRole('menuitem', { name: 'Callout' })

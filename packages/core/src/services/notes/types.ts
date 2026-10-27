@@ -70,12 +70,7 @@ export interface NotesService {
   listPages(filters?: { favorite?: boolean; archived?: boolean }): Promise<PageRow[]>
 
   // ── S2: Entity notes + attachments ──────────────────────────────
-  ensureEntityNote(
-    pageType: PageType,
-    entityType: string,
-    entityId: string,
-    seed: EntityNoteSeed,
-  ): Promise<PageRow>
+  ensureEntityNote(pageType: PageType, entityType: string, entityId: string, seed: EntityNoteSeed): Promise<PageRow>
   addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>
   getAttachments(pageId: string): Promise<NoteAttachmentRow[]>
   removeAttachment(id: string): Promise<void>
@@ -91,12 +86,7 @@ export interface NotesService {
   resolveWikiLink(text: string): Promise<PageRow[]>
 
   // ── S4: Delegation facade + registry ────────────────────────────
-  createEntityLink(
-    pageId: string,
-    entityType: string,
-    entityId: string,
-    context?: string,
-  ): Promise<EntityLinkRow>
+  createEntityLink(pageId: string, entityType: string, entityId: string, context?: string): Promise<EntityLinkRow>
   removeEntityLink(pageId: string, entityType: string, entityId: string): Promise<void>
   getEntityLinksFrom(pageId: string): Promise<EntityLinkRow[]>
   getBacklinks(

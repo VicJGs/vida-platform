@@ -43,7 +43,12 @@ describe('IconPickerDialog', () => {
 
   it('"Remove icon" only when one is set, and it writes null', () => {
     const onChoose = vi.fn()
-    expect(renderUI(<IconPickerDialog open onOpenChange={vi.fn()} current={null} onChoose={onChoose} />).queryByRole('button', { name: 'Remove icon' })).toBeNull()
+    expect(
+      renderUI(<IconPickerDialog open onOpenChange={vi.fn()} current={null} onChoose={onChoose} />).queryByRole(
+        'button',
+        { name: 'Remove icon' },
+      ),
+    ).toBeNull()
     cleanup()
     const r = renderUI(<IconPickerDialog open onOpenChange={vi.fn()} current="star" onChoose={onChoose} />)
     fireEvent.click(r.getByRole('button', { name: 'Remove icon' }))

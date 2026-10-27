@@ -26,7 +26,9 @@ afterEach(() => {
 
 describe('ModuleDock', () => {
   it('renders grouped dock modules from MODULE_MAP (sidebar form)', async () => {
-    const { getByRole, getByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', { prefs: true })
+    const { getByRole, getByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
+      prefs: true,
+    })
     expect(getByRole('link', { name: 'Tasks' })).not.toBeNull()
     expect(getByRole('link', { name: 'Notes' })).not.toBeNull()
     // visible group headings in the full (non-icon-only) form
@@ -35,7 +37,9 @@ describe('ModuleDock', () => {
   })
 
   it('hides fail-closed conditional modules + their now-empty group (S2-BR-b, S2-BR-a2)', async () => {
-    const { queryByRole, queryByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', { prefs: true })
+    const { queryByRole, queryByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
+      prefs: true,
+    })
     // gamification is visibleWhen a flag that is OFF in M1.0 → absent
     expect(queryByRole('link', { name: 'Gamification' })).toBeNull()
     // platform-services (only gamification) is left empty → its heading is not rendered
@@ -62,7 +66,9 @@ describe('ModuleDock', () => {
 
   it('a collapsed desktop sidebar is icon-only but keeps an Expand toggle (FOLD-1)', async () => {
     useAppShellUIStore.setState({ isSidebarOpen: false })
-    const { getByRole, queryByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', { prefs: true })
+    const { getByRole, queryByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
+      prefs: true,
+    })
     expect(queryByText('Productivity')).toBeNull() // collapsed → icon-only, no headings
     expect(getByRole('button', { name: 'Expand sidebar' }).getAttribute('aria-expanded')).toBe('false')
   })
@@ -78,7 +84,9 @@ describe('ModuleDock', () => {
 
   it('omits a hidden module and shows a renamed one under its custom name (sidebar)', async () => {
     seedPrefs({ tasks: false }, { habits: 'Rituals' })
-    const { getByRole, queryByRole } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', { prefs: true })
+    const { getByRole, queryByRole } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
+      prefs: true,
+    })
     await waitFor(() => expect(getByRole('link', { name: 'Rituals' })).not.toBeNull())
     expect(queryByRole('link', { name: 'Tasks' })).toBeNull()
     expect(queryByRole('link', { name: 'Habits' })).toBeNull()
@@ -92,7 +100,9 @@ describe('ModuleDock', () => {
 
   it('hiding every module of a group drops its heading', async () => {
     seedPrefs({ tasks: false, habits: false, projects: false, routines: false })
-    const { queryByText, getByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', { prefs: true })
+    const { queryByText, getByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
+      prefs: true,
+    })
     await waitFor(() => expect(queryByText('Productivity')).toBeNull())
     expect(getByText('Integration')).not.toBeNull()
   })

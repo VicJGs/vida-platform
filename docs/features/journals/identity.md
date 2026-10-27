@@ -1,10 +1,11 @@
 <!-- Identity — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · journal-service.ts (0 lines) · notes-and-pages/* (journal page owner) · sessions-and-scheduling/contract.md (dueIn) · v1 features/today/ · docs/intake/journals.md -->
 
-# Identity — Journals  (level: Feature / the INTEGRATION LAYER — last Wave-2 context)
+# Identity — Journals (level: Feature / the INTEGRATION LAYER — last Wave-2 context)
 
 **What it is.** The **aggregation engine and temporal dashboard** of the platform — the thing that turns
 every module's dated data into the user's daily surface and his sense of progress over time. It is **two
 subsystems**: `[INTENT: reframe Victor 2026-07-12]`
+
 - the **daily dashboard** — today's live **summary** (what happened) + **agenda** (what's due), assembled
   from every module through a provider registry; and
 - the **temporal Review engine** — **snapshots** of each day, composed over user-defined periods into
@@ -16,7 +17,7 @@ the **engine behind the block** (`journal-service.ts`, today **0 lines** — INT
 L1266-1310; notes-and-pages/*; wc -l journal-service.ts = 0]`
 
 **The desire behind it.** Every module produces dated life-data; without one surface that aggregates it and
-one lens that shows *movement over time*, the platform is 17 silos. The journal exists so the user has (a) a
+one lens that shows _movement over time_, the platform is 17 silos. The journal exists so the user has (a) a
 single daily dashboard, and (b) a way to **look back and measure improvement** — how close he is to his
 goals, dreams, and purposes, how his projects are developing, and how much he actually did in the period he
 lived. `[INTENT: Victor 2026-07-12]`
@@ -39,9 +40,10 @@ user **plans when to receive** — a dedicated recap UI showing trajectory vs go
 development, and workload. `[INTENT: J4]`
 
 **What it is NOT.** `[INTENT — anti-scope-creep, constitution §1]`
+
 - **Not the journal page or editor.** The `pages` row, NP-2, the `/summary` block, and the free-form TipTap
   entry + `[[links]]` are **Notes & Pages**. Journals fills the block; it does not own the page. `[[../notes-and-pages/identity]]`
-- **Not `analytics.ts`.** Analytics *computes* metrics; Journals *presents* them — scheduled + personalized.
+- **Not `analytics.ts`.** Analytics _computes_ metrics; Journals _presents_ them — scheduled + personalized.
 - **Not the Global Calendar.** Both read `dueIn()`; the journal agenda is **one day** embedded in the
   dashboard, the Calendar is a **range timeline** (its own surface). `[INTENT: J7]`
 - **Not a god-context.** It couples to the **registry contract**, never to modules by name (J2).

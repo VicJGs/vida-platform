@@ -16,11 +16,7 @@
 // ============================================================================
 
 import * as srpClient from 'secure-remote-password/client'
-import type {
-  SrpRegistrationRequest,
-  SrpChallengeRequest,
-  SrpVerifyRequest,
-} from '@vida/types'
+import type { SrpRegistrationRequest, SrpChallengeRequest, SrpVerifyRequest } from '@vida/types'
 
 // ---------------------------------------------------------------------------
 // Registration
@@ -72,10 +68,7 @@ export function generateLoginEphemeral(): SrpClientEphemeral {
 /**
  * Build the challenge request payload for POST /api/auth/challenge.
  */
-export function createChallengeRequest(
-  email: string,
-  ephemeral: SrpClientEphemeral,
-): SrpChallengeRequest {
+export function createChallengeRequest(email: string, ephemeral: SrpClientEphemeral): SrpChallengeRequest {
   return {
     email,
     client_public: ephemeral.public,
@@ -112,13 +105,7 @@ export function deriveClientSession(
 ): SrpClientSession {
   const privateKey = srpClient.derivePrivateKey(serverSalt, email, password)
 
-  const session = srpClient.deriveSession(
-    clientEphemeral.secret,
-    serverPublic,
-    serverSalt,
-    email,
-    privateKey,
-  )
+  const session = srpClient.deriveSession(clientEphemeral.secret, serverPublic, serverSalt, email, privateKey)
 
   return { key: session.key, proof: session.proof }
 }
@@ -126,10 +113,7 @@ export function deriveClientSession(
 /**
  * Build the verify request payload for POST /api/auth/verify.
  */
-export function createVerifyRequest(
-  email: string,
-  session: SrpClientSession,
-): SrpVerifyRequest {
+export function createVerifyRequest(email: string, session: SrpClientSession): SrpVerifyRequest {
   return {
     email,
     client_proof: session.proof,
@@ -153,11 +137,7 @@ export function verifyServerProof(
   clientSession: SrpClientSession,
   serverProof: string,
 ): void {
-  srpClient.verifySession(
-    clientPublicEphemeral,
-    { key: clientSession.key, proof: clientSession.proof },
-    serverProof,
-  )
+  srpClient.verifySession(clientPublicEphemeral, { key: clientSession.key, proof: clientSession.proof }, serverProof)
   // If this doesn't throw, mutual authentication is confirmed.
 }
 
@@ -207,13 +187,7 @@ export function completeLogin(
   verifyRequest: SrpVerifyRequest
   session: SrpClientSession
 } {
-  const session = deriveClientSession(
-    state.email,
-    password,
-    state.ephemeral,
-    serverSalt,
-    serverPublic,
-  )
+  const session = deriveClientSession(state.email, password, state.ephemeral, serverSalt, serverPublic)
 
   state.session = session
 

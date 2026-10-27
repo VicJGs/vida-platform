@@ -17,8 +17,7 @@ test.describe('data-plane-wiring — Drizzle seam CRUD on the real OPFS worker',
   test('exec writes + values reads positional rows (the Drizzle read path)', async ({ db }) => {
     await db.open('vida')
     const r = await db.exec(
-      "INSERT INTO app_state (key, value) VALUES ('dp:probe', 'v1') " +
-        "ON CONFLICT(key) DO UPDATE SET value = 'v1'",
+      "INSERT INTO app_state (key, value) VALUES ('dp:probe', 'v1') " + "ON CONFLICT(key) DO UPDATE SET value = 'v1'",
     )
     expect(r.changes).toBe(1)
     // values() → positional arrays (exactly what Drizzle's sqlite-proxy consumes).
@@ -34,9 +33,7 @@ test.describe('data-plane-wiring — Drizzle seam CRUD on the real OPFS worker',
     ])
     await page.reload() // full worker teardown + reload; OPFS persists
     await db.open('vida') // reloaded worker's driver is null → reopen
-    const rows = await db.values(
-      "SELECT value FROM app_state WHERE key IN ('dp:a', 'dp:b') ORDER BY key",
-    )
+    const rows = await db.values("SELECT value FROM app_state WHERE key IN ('dp:a', 'dp:b') ORDER BY key")
     expect(rows).toEqual([['A'], ['B']]) // both survived on OPFS via the seam
   })
 })

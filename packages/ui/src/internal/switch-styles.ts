@@ -24,8 +24,7 @@ export function ensureSwitchStyles(): void {
   style.setAttribute('data-vida-switch', '')
   style.textContent = [
     // ON: track fill + border follow the brand token — EXCEPT invalid (danger border wins, the checkbox guard).
-    '.vida-switch:has(.vida-switch-input:checked) .vida-switch-track' +
-      '{background-color:var(--colorBrandPrimary)}',
+    '.vida-switch:has(.vida-switch-input:checked) .vida-switch-track' + '{background-color:var(--colorBrandPrimary)}',
     '.vida-switch:not(.vida-switch-invalid):has(.vida-switch-input:checked) .vida-switch-track' +
       '{border-color:var(--colorBrandPrimary)}',
     // knob: resting left; slides right by the per-instance travel on :checked. transform-only transition (B12).

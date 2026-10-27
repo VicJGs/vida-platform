@@ -89,7 +89,10 @@ describe('StepRail', () => {
 })
 
 describe('GuidedSetup (frame)', () => {
-  const renderFrame = (onComplete = vi.fn().mockResolvedValue(undefined), renderStepBody?: (step: GuidedSetupStep) => ReactNode) =>
+  const renderFrame = (
+    onComplete = vi.fn().mockResolvedValue(undefined),
+    renderStepBody?: (step: GuidedSetupStep) => ReactNode,
+  ) =>
     render(
       <UIProvider>
         <GuidedSetup onComplete={onComplete} renderStepBody={renderStepBody} />

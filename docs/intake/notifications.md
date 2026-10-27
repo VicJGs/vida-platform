@@ -7,6 +7,7 @@
 > ⚠ INTENDED-IMMATURE is flagged per item, never "ship now vs later".
 
 ## Current floor (v2 — FACT)
+
 - **`notifications`** table (ADR-002 §5.16 / `common.ts` L81-99): `type` CHECK ∈ {info, success, warning,
   error, reminder, achievement} · `title[E]` · `message[E]` · `action_url` · `action_label[E]` ·
   polymorphic `entity_type`/`entity_id` · `is_read`/`read_at` · `is_archived`/`archived_at` · `expires_at`
@@ -18,6 +19,7 @@
   not in §5.17 yet — preferences/business-rules L40.)
 
 ## v1 harvest (../life-os/src/types/notifications.ts — the fuller vision)
+
 - `NotificationChannel = in_app | email | push | sms`; row carried **`channels[]`** + **`metadata` JSON** +
   `updated_at`. (v2 moved channels → Preferences; dropped metadata + updated_at.)
 - `UnreadCounts { unread · error · warning · reminder }` — a badge/summary read.
@@ -26,7 +28,9 @@
 - Filters (status/type) + pagination — a full inbox UI.
 
 ## Producer inventory (the in-edges — 22 producers / ~14 modules; sweep 2026-07-19)
+
 Two production paths already exist in the docs:
+
 - **Event-driven (push a row):** the ADR-012 **`surface_notification`** Additive effect (Gamification unlock/
   level-up; the generic write path). `[FACT: ADR-012 §3.1; gamification GM-15]`
 - **Time-driven (pull via seam):** the **`dueIn(range)`** provider seam (Sessions & Scheduling) that **8
@@ -41,6 +45,7 @@ Two production paths already exist in the docs:
   Calendar** (both independently read `dueIn`). `[FACT: relationships G1 forward-dep]`
 
 ## Open design questions (the intake dialogue — Victor's calls)
+
 - **N1 — Materialized vs derived.** Event-driven notifications are real rows (surface_notification, ADR-012).
   But are **upcoming time-based reminders** stored rows, or a **derived agenda** from `dueIn()` that only
   materializes a row when it actually fires? (Storing the future = a phantom-row inbox.)
@@ -51,7 +56,7 @@ Two production paths already exist in the docs:
   the OS notification locally after decrypt (ZK-correct, Signal-style); (B) server sends readable content (breaks ZK);
   (C) generic content only ("activity in Vida"). Email is inherently plaintext-to-server → generic-only or out-of-ZK.
   May surface an ADR / ADR-001 amendment.
-- **N4 — Restore channel-record / metadata?** Does a row record *which channel(s) it was delivered on* (audit/
+- **N4 — Restore channel-record / metadata?** Does a row record _which channel(s) it was delivered on_ (audit/
   dedup) and carry entity-specific `metadata` JSON, or stay lean? (v1 had both.)
 - **N5 — Digest / batching.** `notification_frequency` (realtime/daily/weekly) → group N reminders into one
   digest? In scope or ⚠ INTENDED-later?
@@ -60,6 +65,7 @@ Two production paths already exist in the docs:
 - **N7 — Lifecycle.** `expires_at` exists — auto-archive/auto-purge policy + retention?
 
 ## RESOLUTION (Victor, 2026-07-19)
+
 - **N1 = DERIVED-UNTIL-FIRE.** Upcoming time-based reminders are a **derived agenda** over `dueIn(range)` (no
   stored rows); a real `notifications` row **materializes only when the reminder fires**. Event-driven
   notifications (`surface_notification`, ADR-012) are always rows. Matches the ADR-011/012 derive-not-store
@@ -80,4 +86,5 @@ Two production paths already exist in the docs:
   space. Both build-phase defaults, ⚠ tunable.
 
 ## Completion checklist
+
 - [x] current floor (FACT) · [x] v1 harvest · [x] producer inventory (in-edges) · [x] open questions surfaced · [x] N1-N7 resolved → 5 aspect docs · [x] surfaced ADR-013 (ZK notification delivery)

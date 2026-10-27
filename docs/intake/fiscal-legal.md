@@ -4,7 +4,8 @@
      /critique gate) runs when this context is scheduled. This file preserves the intent verbatim + my
      structural assessment so nothing is lost. Every forward claim is INTERPRETATION unless cited. -->
 
-# Intake — Fiscal & Legal  (working name; a.k.a. "Jurisdiction Compass")
+# Intake — Fiscal & Legal (working name; a.k.a. "Jurisdiction Compass")
+
 # Level: Feature context (EMERGING) — cross-module: Finance ↔ Projects ↔ Purpose & Goals
 
 > ⚠ **INTENDED-IMMATURE / net-new.** This is captured intent, not enforced reality. There is **no v2
@@ -17,6 +18,7 @@
 > holds the seed intent + assessment until that enhancement pass.
 
 ## The intent (Victor, verbatim intent, 2026-07-07)
+
 People who dream big and want to plan and set goals properly hit one of the hardest walls in the
 **economic-legal sphere**: the rules are many, differ per country/state, change constantly, and users are
 usually unaware of how those rules influence them and impact their goals and decisions over the long run.
@@ -27,17 +29,19 @@ help him **plan big** for companies/projects that need advisement in the economi
 refresh** it based on legal changes, new releases, and updates.
 
 ## Decomposition — 4 capabilities, very different risk profiles (INTERPRETATION)
+
 1. **SITUATE** — model where the user + each project/legal-entity is fiscally-legally resident, and where
    money touches (personal + per-entity). User's own structured data. **ZK-safe.**
 2. **INFORM** — per-jurisdiction rule knowledge base (brackets, entity types, filing deadlines,
-   obligations). This is **public law**, not private data — safe to bundle or fetch; only leak is *which*
+   obligations). This is **public law**, not private data — safe to bundle or fetch; only leak is _which_
    jurisdiction the user queries (metadata, mitigable).
 3. **TRACK OBLIGATIONS** — derive deadlines / filings / payments per jurisdiction → feed **Tasks +
    Notifications + Global Calendar** (forward deps). Computed locally over user data + public rules. **ZK-safe.**
-4. **ADVISE & "DO TAXES"** — AI guidance over the user's *actual* financial numbers + tax prep/filing per
+4. **ADVISE & "DO TAXES"** — AI guidance over the user's _actual_ financial numbers + tax prep/filing per
    jurisdiction. **The hard part** (see collisions + scope reframe below).
 
 ## ZK-safe SPINE vs. GUARDED EXTENSION (INTERPRETATION — the buildable split)
+
 - **Spine (ships under pure ZK):** capabilities 1–3 + on-device what-if planning ("incorporate here vs.
   there; if money flows this way, here's what changes / what I'll owe / when"). Computation local over the
   user's own numbers + public rule-packs. No plaintext ever leaves the device.
@@ -48,7 +52,8 @@ refresh** it based on legal changes, new releases, and updates.
   - Actual tax computation/filing engines per jurisdiction → 3rd-party integration or DEFERRED.
 
 ## SCOPE REFRAME I'm urging (my assessment — Victor to confirm)
-"**Do his taxes for any country/state**," taken literally, is *TurboTax-for-the-world*: a regulated
+
+"**Do his taxes for any country/state**," taken literally, is _TurboTax-for-the-world_: a regulated
 professional service, per-jurisdiction filing engines, constant upkeep, and real legal liability — a
 company, not a feature, and the opposite altitude from Vida's strength (private, local-first **planning +
 knowledge**). Reframe: Vida **situates, organizes, surfaces obligations, and models long-run impact**; the
@@ -56,8 +61,9 @@ knowledge**). Reframe: Vida **situates, organizes, surfaces obligations, and mod
 buildable + ZK-compliant + out of the liability trap.
 
 ## Dependencies (this is the LARGEST concrete instance of two already-filed ADRs)
+
 - **ADR: External DATA ingestion under zero-knowledge** — the living-ruleset refresh IS this ADR. Softer
-  than bank data because legal rules are *public*; strongest justification for the ADR yet. `[link: task backlog]`
+  than bank data because legal rules are _public_; strongest justification for the ADR yet. `[link: task backlog]`
 - **ADR: AI/LLM integration under zero-knowledge** (Projects G6) — advisement over private numbers; on-device
   agentic is the ZK-safe path. `[link: task backlog]`
 - **CORE constitution: the "extension-model" principle** — this feature is a textbook case (ZK core
@@ -66,17 +72,19 @@ buildable + ZK-compliant + out of the liability trap.
   (legal-entity model), Purpose & Goals (long-run impact), Finance (money-touch data + multi-currency/FX).
 
 ## Open questions to resolve at its Phase-1 session
+
 - Placement: own context vs. Finance sub-feature (leaning **own context**).
 - Jurisdiction model shape: entity ↔ residency ↔ money-touch — how are "where money is/will/planned-to
   touch" represented as data?
-- Rule-pack format + provenance + trust/versioning (public law, but *sourced from where*, and how verified?).
+- Rule-pack format + provenance + trust/versioning (public law, but _sourced from where_, and how verified?).
 - Liability framing + disclaimers (not professional advice) as a first-class product constraint.
 - How far the on-device planning/what-if engine goes before handing off.
 
 ## RESOLUTION (Phase-1, Victor, 2026-07-19)
+
 - **FL1 Placement = FINANCE SUB-FEATURE** (Victor chose the tighter coupling over own-context). Documented at
   `docs/features/finance/fiscal-legal/` (5 aspect docs), cross-referenced from Finance. ⚠ Flagged tension:
-  legal-entities/residency reach into Projects — so it's a Finance sub-context that *composes* Projects.
+  legal-entities/residency reach into Projects — so it's a Finance sub-context that _composes_ Projects.
 - **FL2 Scope = SITUATE / ORGANIZE / SURFACE-OBLIGATIONS / MODEL-IMPACT; filing HANDS OFF** (reframe confirmed).
   NOT TurboTax-for-the-world; never files, never a regulated service.
 - **FL4 Liability = FIRST-CLASS CONSTRAINT.** Every advisement/what-if output labeled "informational, not
@@ -88,5 +96,5 @@ buildable + ZK-compliant + out of the liability trap.
 - **FL3 data-model shape (proposed — flag for review):** money-touch = a **jurisdiction link/tag on Finance
   entities** + `fiscal_residencies` (owner {user | legal_entity} ↔ jurisdiction ↔ type ↔ dates) + `legal_entities`
   (link to Projects). SITUATE = user's own `[E]` data (ZK-safe, local).
-- **FL5 what-if extent (proposed — flag for review):** on-device engine models *informational* long-run impact
+- **FL5 what-if extent (proposed — flag for review):** on-device engine models _informational_ long-run impact
   over the user's own numbers + public rule-packs (ADR-015 on-device); **stops at modeling — filing hands off.**

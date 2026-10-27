@@ -82,11 +82,25 @@ function NewCurrency({ onCreate }: { onCreate: (input: { name: string; backing_k
   }
 
   return (
-    <View gap="$12" padding="$12" borderWidth={1} borderColor="$colorBorderDefault" borderRadius="$lg" role="group" aria-label="New currency">
+    <View
+      gap="$12"
+      padding="$12"
+      borderWidth={1}
+      borderColor="$colorBorderDefault"
+      borderRadius="$lg"
+      role="group"
+      aria-label="New currency"
+    >
       <Input value={name} onChangeText={setName} placeholder="Currency name" aria-label="Currency name" />
       <View flexDirection="row" gap="$8" role="group" aria-label="Backing kind" flexWrap="wrap">
         {KIND_OPTIONS.map((o) => (
-          <Button key={o.value} intent={kind === o.value ? 'secondary' : 'ghost'} size="small" aria-pressed={kind === o.value} onPress={() => setKind(o.value)}>
+          <Button
+            key={o.value}
+            intent={kind === o.value ? 'secondary' : 'ghost'}
+            size="small"
+            aria-pressed={kind === o.value}
+            onPress={() => setKind(o.value)}
+          >
             {o.label}
           </Button>
         ))}
@@ -104,20 +118,49 @@ function NewCurrency({ onCreate }: { onCreate: (input: { name: string; backing_k
 }
 
 /** The paginated-list pager (EC-5, 50/page) — shown whenever there is data; prev/next disabled at the bounds. */
-function Pager({ index, count, total, onPage }: { index: number; count: number; total: number; onPage: (i: number) => void }) {
+function Pager({
+  index,
+  count,
+  total,
+  onPage,
+}: {
+  index: number
+  count: number
+  total: number
+  onPage: (i: number) => void
+}) {
   const start = index * PAGE_SIZE + 1
   const end = Math.min(total, start + PAGE_SIZE - 1)
   return (
-    <View flexDirection="row" alignItems="center" justifyContent="space-between" gap="$12" role="group" aria-label="Pagination">
+    <View
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      gap="$12"
+      role="group"
+      aria-label="Pagination"
+    >
       <Text fontSize="$caption" color="$colorTextMuted" style={TABULAR}>
         {start}–{end} of {total}
       </Text>
       {count > 1 ? (
         <View flexDirection="row" gap="$8">
-          <Button intent="ghost" size="small" disabled={index === 0} onPress={() => onPage(index - 1)} aria-label="Previous page">
+          <Button
+            intent="ghost"
+            size="small"
+            disabled={index === 0}
+            onPress={() => onPage(index - 1)}
+            aria-label="Previous page"
+          >
             Previous
           </Button>
-          <Button intent="ghost" size="small" disabled={index >= count - 1} onPress={() => onPage(index + 1)} aria-label="Next page">
+          <Button
+            intent="ghost"
+            size="small"
+            disabled={index >= count - 1}
+            onPress={() => onPage(index + 1)}
+            aria-label="Next page"
+          >
             Next
           </Button>
         </View>
@@ -151,7 +194,9 @@ export function CurrenciesMode() {
         renderView={renderView}
         aria-label="Currencies"
       />
-      {data.total > 0 ? <Pager index={data.page.index} count={data.page.count} total={data.total} onPage={data.setPage} /> : null}
+      {data.total > 0 ? (
+        <Pager index={data.page.index} count={data.page.count} total={data.total} onPage={data.setPage} />
+      ) : null}
       <NewCurrency onCreate={data.create} />
     </View>
   )

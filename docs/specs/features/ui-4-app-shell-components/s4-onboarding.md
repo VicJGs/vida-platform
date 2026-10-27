@@ -1,6 +1,6 @@
 # Spec: feature:ui-4-app-shell-components / S4 — Onboarding
 
-Status: draft            <!-- draft → approved → implemented -->
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: apps/web/src/onboarding (chrome + wiring), apps/web/src/App.tsx (the first-run branch)
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X]. Inherits the umbrella §2 BR-1..7.
 Sessions: 2026-08-17-ui-4-app-shell-components-5
@@ -11,19 +11,21 @@ Sessions: 2026-08-17-ui-4-app-shell-components-5
 > `View` on DS tokens (BR-1 — no new `@vida/ui` component, no `packages/ui` edit). Off clean `main`, own PR.
 
 ## 1. Identity
+
 The **first-run onboarding** — a full-viewport, boot-phase takeover shown ONCE per device, before the app chrome
 ever mounts. Four informational screens (welcome · local-first expectation-setting · vault-readiness confirmation ·
 completion) advanced by an explicit primary action; on the last, it writes the device-local completion marker and
 hands off to the app at `/`. Not a route, not an overlay — a boot gate.
 
 - [FACT: _index.md:81] S4 scope = "the 4 first-run screens + `App.tsx` `FIRST_RUN_BRANCH` wiring + completion write".
-- [FACT: onboarding.md:9-11] ownership: UX-5 owns the *model* (data/logic); **UI-4 owns the rendering (the screens)
+- [FACT: onboarding.md:9-11] ownership: UX-5 owns the _model_ (data/logic); **UI-4 owns the rendering (the screens)
   and the wiring (the App.tsx branch + the completion write)**. Vault-unlock/lock UX is UX-5b/M3.
 - [FACT: onboarding.md:102-103] "UI-4 (app shell) renders the four onboarding screens, wires the `App.tsx` first-run
   branch (`FIRST_RUN_BRANCH`), and performs the completion write. It reads `ONBOARDING_STEPS` for order + copy and
   `isFirstRun` for the gate."
 
 **What it renders/wires** (existing artifacts, referenced not redefined):
+
 - [FACT: onboarding/steps.ts:22-51] `ONBOARDING_STEPS` — the ordered 4-step model (`welcome`·`privacy`·`vault`·
   `ready`) + `OnboardingStep`/`OnboardingStepKind` + the per-step `OnboardingCopyContract` (`m1` = the M1.0 claim;
   `m3?` = the encryption-backed claim, GATED to UX-5b/M3). S4 renders `step.copy.m1` for every step (M1.0).
@@ -43,7 +45,7 @@ hands off to the app at `/`. Not a route, not an overlay — a boot gate.
 **confirmation-only** copy in M1.0, no input, no crypto call) · not the unlock/lock-on-every-launch UX (UX-5b/M3) ·
 not a navigable `/onboarding` route (onboarding.md:61 rejects it — no deep-link, no history entry) · not an
 `overlayHost` overlay (onboarding.md:79 — boot-phase full-viewport surface, **no Esc-dismiss**, no `aria-modal`) ·
-not the synced `UserProfile.onboarding_completed` flag (that's a cross-device *user* flag, M1.1+; this marker is
+not the synced `UserProfile.onboarding_completed` flag (that's a cross-device _user_ flag, M1.1+; this marker is
 device-local `app_state`, never synced) · not shell chrome (it renders OUTSIDE `AppShell`, replacing the whole app
 tree until complete — zero regression surface against S1–S3) · not a new `@vida/ui` primitive (rule-of-three unmet).
 
@@ -109,11 +111,12 @@ tree until complete — zero regression surface against S1–S3) · not a new `@
   [FACT: App.tsx:58-65 + routes.tsx:29-35] the branch replaces the ENTIRE app tree (before `<RouterProvider>`), so the
   dock/global-bar/command-bar (S1–S3, mounted inside the router's `RootComponent`) do NOT co-exist with onboarding —
   they render only in the `'ready'` branch. `<Onboarding>` renders INSIDE `UIProvider` (App.tsx:59 — so Tamagui theme
-  + DS tokens resolve) but needs neither `QueryClientProvider` nor `RouterProvider` (completion flips a state; the app
-  then mounts at `/` — no navigate). S4 changes `App.tsx` only; it does NOT touch `boot.ts`/`client.ts`/`routes.tsx`/
-  the shell (blast radius = App.tsx + the new `onboarding/*` files).
+  - DS tokens resolve) but needs neither `QueryClientProvider` nor `RouterProvider` (completion flips a state; the app
+    then mounts at `/` — no navigate). S4 changes `App.tsx` only; it does NOT touch `boot.ts`/`client.ts`/`routes.tsx`/
+    the shell (blast radius = App.tsx + the new `onboarding/*` files).
 
 ## 3. Contract
+
 The UX-5 model (`onboarding/{steps,first-run}.ts`) + the DB client + `FOCUS_CONTRACT` + `CONTENT_MAX_WIDTH` are
 REFERENCED, not redefined. New chrome + wiring live in `apps/web/src/onboarding/` (co-located with the model — the
 `shell/` precedent where the UX-3 model + UI-4 chrome coexist); `App.tsx` gains the branch. No new cross-package edge;
@@ -123,15 +126,15 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
   access, isolated so the hook + tests don't hand-write SQL (the `lib/platform.ts` precedent). Mirrors
   `getSchemaVersion`/`setSchemaVersion` (adapter.ts:210-232) over `getDbClient().driver`:
   - `readFirstRunComplete(): Promise<boolean>` → `driver.query<{value:string}>('SELECT value FROM app_state WHERE
-    key = ?', [FIRST_RUN_COMPLETE_KEY])`; returns `!isFirstRun(rows[0]?.value)` (`true` = completed). **The `?.` is a
+key = ?', [FIRST_RUN_COMPLETE_KEY])`; returns `!isFirstRun(rows[0]?.value)` (`true` = completed). **The `?.` is a
     deliberate defensive read** — `adapter.ts:216`'s `getSchemaVersion` uses a bare `rows[0].value` (which compiles
     only because the repo has no `noUncheckedIndexedAccess` today — the parked `tsconfig-strict-index-access` task); the
     `?.` is correct regardless of that flag and handles the no-row (absent-marker) case. Same SQL, safer access — not a
     literal mirror.
   - `writeFirstRunComplete(): Promise<void>` → `driver.run('INSERT OR REPLACE INTO app_state (key, value) VALUES (?,
-    ?)', [FIRST_RUN_COMPLETE_KEY, FIRST_RUN_COMPLETE_VALUE])` (the adapter.ts:230-232 write idiom, verbatim).
+?)', [FIRST_RUN_COMPLETE_KEY, FIRST_RUN_COMPLETE_VALUE])` (the adapter.ts:230-232 write idiom, verbatim).
 - **`useFirstRun`** (`apps/web/src/onboarding/use-first-run.ts`) — `useFirstRun(dbReady: boolean): { status:
-  FirstRunStatus; markComplete: () => Promise<void> }`, `FirstRunStatus = 'resolving' | 'onboarding' | 'ready'`.
+FirstRunStatus; markComplete: () => Promise<void> }`, `FirstRunStatus = 'resolving' | 'onboarding' | 'ready'`.
   - A `useEffect([dbReady])`: while `!dbReady` no-op (stays `resolving`); once `dbReady`, `readFirstRunComplete()` →
     `setStatus(done ? 'ready' : 'onboarding')`, guarded by an `active` flag (StrictMode). **On read rejection →
     `'onboarding'`** (conservative + idempotent: the mandatory gate re-shows and re-writes; never strands at Loading,
@@ -151,7 +154,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
     `loading`/`disabled` are always `false`.
   - **Advance (re-entrancy-guarded, M1):** `if (submitting) return` first; then `step.kind === 'complete'` →
     `setSubmitting(true); setError(null); onComplete().catch(() => { setError('Could not finish setup. Please try
-    again.'); setSubmitting(false) })` (no `setSubmitting(false)` on success — the component unmounts when `status`
+again.'); setSubmitting(false) })` (no `setSubmitting(false)` on success — the component unmounts when `status`
     flips to `'ready'`); otherwise `setIndex(i => i + 1)` (S4-BR-d,f). The `if (submitting) return` + `disabled`
     together stop a double-click double-write; the write is idempotent (`INSERT OR REPLACE`) so even a race is safe.
   - **Structure:** a full-viewport `styled(View,{render:'main'})` (S4-BR-g) → a centered content column
@@ -163,8 +166,8 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
     [36, fonts.ts:6], `$colorTextPrimary`), the body `<Text>` (`step.copy.m1`, `fontSize="$subheading"` [18],
     `$colorTextMuted`), the decorative dot indicator (`aria-hidden`, active = `$colorBrandPrimary`, rest =
     `$colorBorderDefault`), and the primary `<Button intent="primary" size="lg" onPress={advance} loading={submitting}
-    disabled={submitting}>` with a per-kind label (see below). On completion error, a `role="alert"` `<Text
-    color="$colorSignalDanger">` (B1 — `$colorSignalDanger` is the danger-family token that exists, themes.ts:5,7;
+disabled={submitting}>` with a per-kind label (see below). On completion error, a `role="alert"` `<Text
+color="$colorSignalDanger">` (B1 — `$colorSignalDanger` is the danger-family token that exists, themes.ts:5,7;
     there is NO `$colorTextDanger`). `role` passes through Tamagui `Text` the same way `aria-*`/`role` pass through
     `View` in `nav-link.tsx`/`module-dock.tsx` — asserted in §4 via `getByRole('alert')`.
   - **Primary-action labels** (UI-4 render decisions — the model gives copy, not button labels; onboarding.md:44-49
@@ -176,10 +179,10 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
   - `const firstRun = useFirstRun(dbReady)` — placed among the existing hooks (after the `useState`/`useEffect` block,
     **before** the `if (dbError)`/loading early returns — Rules of Hooks: it must run on every render).
   - Gate: keep `if (dbError) …`; change the loading gate to `if (!dbReady || firstRun.status === 'resolving') return
-    <Loading/>` (the marker read is part of boot — no app flash, S4-BR-c).
+<Loading/>` (the marker read is part of boot — no app flash, S4-BR-c).
   - The `dbReady`-ready return renders, inside `<UIProvider theme="light">`: when `firstRun.status === 'onboarding'` →
     `<Onboarding onComplete={firstRun.markComplete} />`; else → `<QueryClientProvider><RouterProvider …/>
-    </QueryClientProvider>`. `<ToastProvider />` stays a constant sibling inside `UIProvider` (harmless during
+</QueryClientProvider>`. `<ToastProvider />` stays a constant sibling inside `UIProvider` (harmless during
     onboarding). No change to the provider hierarchy, the DB boot effect, or the error/retry arm (S4-BR-h).
 - **a11y** [FACT: §XIV + onboarding.md:75-84] — the surface is a `<main>` landmark with one `<h1>` per step; focus
   moves to the `<h1>` on each transition (announcement); the primary action is a real focusable `Button` with a
@@ -187,6 +190,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
   on `$colorSurfacePrimary` uses `$colorTextPrimary`/`$colorTextMuted` (DS AA pairings — DS-2 provisional palette).
 
 ## 4. Acceptance (S4 DoD — includes the component Visual Gate)
+
 - [ ] First launch (marker absent): after `dbReady`, the boot shows Loading until the marker read resolves, THEN
       renders `<Onboarding>` — the app chrome (dock/bar) never flashes (S4-BR-c) — asserted via a mocked repo
 - [ ] The four steps render in order (welcome→privacy→vault→ready) from `ONBOARDING_STEPS`; each renders its
@@ -220,6 +224,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
       updated with the new chrome/wiring files; any deferred nicety (tighter reading measure, Back/progress copy) filed
 
 ## 5. Implementation Prompt (ordered; each step cites §2/§3)
+
 1. **Marker repo.** `apps/web/src/onboarding/first-run-repo.ts` — `readFirstRunComplete()` + `writeFirstRunComplete()`
    over `getDbClient().driver`, mirroring `get/setSchemaVersion` (adapter.ts:210-232) with `FIRST_RUN_COMPLETE_KEY`/
    `_VALUE` + `isFirstRun` from `./first-run` (S4-BR-b,d). +test (`first-run-repo.test.ts`): a fake driver asserts the
@@ -238,7 +243,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
    `role="alert"` + button re-enabled.
 4. **Wire the boot branch.** `apps/web/src/App.tsx` — `const firstRun = useFirstRun(dbReady)`; loading gate becomes
    `!dbReady || firstRun.status==='resolving'`; the ready return branches `onboarding` → `<Onboarding
-   onComplete={firstRun.markComplete}/>` vs the app (`QueryClientProvider ⊃ RouterProvider`), `ToastProvider` a
+onComplete={firstRun.markComplete}/>` vs the app (`QueryClientProvider ⊃ RouterProvider`), `ToastProvider` a
    constant sibling; error/retry + boot effect unchanged (S4-BR-c,h). +test (`App.test.tsx`, new — mock `./db/boot`
    `ensureDbReady` resolved + mock `./onboarding/first-run-repo`): first-run→onboarding heading renders, app chrome
    absent; returning→the index route renders, onboarding absent; completion→marker write called then the app mounts.
@@ -254,6 +259,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
    typecheck/test/lint + build; confirm the one-way boundary; Visual Gate (step 5).
 
 ### 5b. Preflight folds (test feasibility — 2026-08-17, PASSED)
+
 - **FOLD-1 · Test wrapping.** `onboarding.test.tsx` renders `<Onboarding>` inside `<UIProvider>` (Tamagui `Text`/
   `Button`/tokens require it — the `command-bar.test.tsx:25` precedent). `first-run-repo.test.ts` drives a **fake
   `SqliteDriver`** (asserts SQL + params) in a `node` env — no jsdom, no worker. `use-first-run.test.ts` uses
@@ -269,6 +275,7 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
   callback re-runs on remount). jsdom `document.activeElement` asserts it (the `command-bar.test.tsx` focus-assert idiom).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - **None (no fork).** Every gap is closed by the documentation + the shipped UX-5 model. Three composition details are
   **disclosed** (render-layer decisions, not decisions to escalate):
   - **Home for the screens** → co-locate in `apps/web/src/onboarding/` with the model (the `shell/` precedent: UX-3
@@ -282,11 +289,12 @@ the `apps/web` → `@vida/ui` boundary stays one-way.
     untouched — smallest blast radius, S4-BR-h), vs folding the marker read into `ensureDbReady`. The hook is chosen.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Visual Gate SHIP (real browser, Victor).** All 4 screens full-viewport + centered, both themes; heading focus clean (no stray outline); step motion + reduced-motion instant; vault confirmation (no input); completion → app at `/` + marker persists across reload. §4 DoD met. Committed + PR opened + merged. |
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | S4 detailed spec authored (4 first-run screens + `App.tsx` first-run branch + completion write: `useFirstRun` 3-state boot resolution, marker repo mirroring `get/setSchemaVersion`, copy-honesty/confirmation-vault, focus-to-heading/no-Esc, full-viewport responsive, write-then-flip completion; BR-a..h; §5 6-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (built-vs-model current) + the shipped UX-5 model. |
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Approval 2 ✅ → IMPLEMENTED.** Built `onboarding/{first-run-repo,use-first-run,onboarding}.{ts,tsx}` (+3 tests) + `App.tsx` first-run branch + `App.test.tsx`. Token grounding fixes at build: space tokens are numeric (`$16/$24/$32`, not `$lg`); error color `$colorSignalDanger` (B1). Test-infra fix: `afterEach(cleanup)` per jsdom file (the `command-bar.test.tsx:16` house pattern — no auto-cleanup → renders accumulated). Green: web **typecheck** · **161 tests (+22)** · **lint 0-err** · build. ⚠ The full-`<App/>` integration tests exceed the 5s default ONLY under abnormal machine load (~100-200; Tamagui cold-compile ~3-4s) — proven green with a one-off `--testTimeout=25000` (per-test 1-4s at baseline); NO config change (the S3 load-noise lesson). **Next: Victor Visual Gate (real browser).** |
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Rev 3 — gate-2 critique.** Confirmed all gate-1 (B1/B2/M1-M4) + preflight fixes landed. Caught **1 NEW gap the B2 edit opened:** the `if (!step) return null` guard, worded "immediately" after `const step`, would be a **conditional hook call** (more hooks follow) → moved to just before the JSX return, after every hook. Also made `useFirstRun(dbReady)` placement explicit in `App.tsx` (among the hooks, before the early returns). No other new material. → Approval 2 requested. |
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Approval 1 ✅. /preflight PASSED (+3 folds, §5b).** FOLD-1 test wrapping (`<UIProvider>` for the component test; fake driver for the repo test; `vi.mock` for the hook test). FOLD-2 App.test mocks `./db/boot`+`./onboarding/first-run-repo`; the "no app-flash" criterion uses a deferred read promise (Loading→onboarding, no chrome between). FOLD-3 keyed-remount focus (heading remounts per step → ref reattaches → `useLayoutEffect([index])` focuses, incl. initial mount = intended pageNav). No new material. |
+
+| Date       | Session                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Visual Gate SHIP (real browser, Victor).** All 4 screens full-viewport + centered, both themes; heading focus clean (no stray outline); step motion + reduced-motion instant; vault confirmation (no input); completion → app at `/` + marker persists across reload. §4 DoD met. Committed + PR opened + merged.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | S4 detailed spec authored (4 first-run screens + `App.tsx` first-run branch + completion write: `useFirstRun` 3-state boot resolution, marker repo mirroring `get/setSchemaVersion`, copy-honesty/confirmation-vault, focus-to-heading/no-Esc, full-viewport responsive, write-then-flip completion; BR-a..h; §5 6-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (built-vs-model current) + the shipped UX-5 model.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Approval 2 ✅ → IMPLEMENTED.** Built `onboarding/{first-run-repo,use-first-run,onboarding}.{ts,tsx}` (+3 tests) + `App.tsx` first-run branch + `App.test.tsx`. Token grounding fixes at build: space tokens are numeric (`$16/$24/$32`, not `$lg`); error color `$colorSignalDanger` (B1). Test-infra fix: `afterEach(cleanup)` per jsdom file (the `command-bar.test.tsx:16` house pattern — no auto-cleanup → renders accumulated). Green: web **typecheck** · **161 tests (+22)** · **lint 0-err** · build. ⚠ The full-`<App/>` integration tests exceed the 5s default ONLY under abnormal machine load (~100-200; Tamagui cold-compile ~3-4s) — proven green with a one-off `--testTimeout=25000` (per-test 1-4s at baseline); NO config change (the S3 load-noise lesson). **Next: Victor Visual Gate (real browser).**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Rev 3 — gate-2 critique.** Confirmed all gate-1 (B1/B2/M1-M4) + preflight fixes landed. Caught **1 NEW gap the B2 edit opened:** the `if (!step) return null` guard, worded "immediately" after `const step`, would be a **conditional hook call** (more hooks follow) → moved to just before the JSX return, after every hook. Also made `useFirstRun(dbReady)` placement explicit in `App.tsx` (among the hooks, before the early returns). No other new material. → Approval 2 requested.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Approval 1 ✅. /preflight PASSED (+3 folds, §5b).** FOLD-1 test wrapping (`<UIProvider>` for the component test; fake driver for the repo test; `vi.mock` for the hook test). FOLD-2 App.test mocks `./db/boot`+`./onboarding/first-run-repo`; the "no app-flash" criterion uses a deferred read promise (Loading→onboarding, no chrome between). FOLD-3 keyed-remount focus (heading remounts per step → ref reattaches → `useLayoutEffect([index])` focuses, incl. initial mount = intended pageNav). No new material.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-08-17 | 2026-08-17-ui-4-app-shell-components-5 | **Rev 2 — gate-1 critique (independent) REVISE folded** (2 blockers + 4 material + minors; every structural/wiring cite VERIFIED true against code, incl. the load-bearing `styled(Text,{render:'h1'})` focus mechanism via the `dialog.tsx` `DialogTitle` precedent). **B1** the error-text token `$colorTextDanger` does NOT exist → `$colorSignalDanger` (themes.ts:5,7); the old `$colorTextPrimary` fallback would render an inaccessible `role=alert`. **B2/CITE** the read's `rows[0]?.value` is a deliberate DEFENSIVE deviation, not a literal mirror of `adapter.ts:216`'s bare `rows[0].value` (which compiles only because `noUncheckedIndexedAccess` is off today — parked task); reworded + added a cheap `if (!step) return null` future-proof guard. **M1** re-entrancy guard `if (submitting) return` on the complete-branch advance (double-click double-write; write is idempotent anyway). **M2** `submitting`/`loading`/`disabled` scoped to the `complete` step only. **M3** disclosed the jsdom `matchMedia` stub (`matches:false`) → jsdom asserts the MOBILE form only (no `__bp` on Onboarding); responsive tablet/desktop is Visual-Gate-only. **M4** explicit `getByRole('alert')` + `role`-passthrough precedent. Minors: explicit `$display`/`$subheading` font-size tokens; `enterStyle`+`animation` idiom cite. |

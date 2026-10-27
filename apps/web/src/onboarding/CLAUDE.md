@@ -5,16 +5,19 @@ WIRING · **Authority:** ADR-019 (auth-coupled → deferred split), ADR-017 (fea
 Full model: `docs/core/architecture/onboarding.md`.
 
 ## What lives here
+
 Two concerns coexist (the `shell/` precedent — UX-3 model + UI-4 chrome together). The UX-5 **design model** (the
 ordered step model + the first-run boundary contract, as central DATA/logic) AND the UI-4 **chrome + wiring** (the
-rendered screens, the boot-resolution hook, the marker DB access). UX-5 owns the *model* (data-only); UI-4 owns the
-*rendering* (the screens) and *wiring* (the App.tsx branch + the completion write). Vault-unlock is UX-5b/M3.
+rendered screens, the boot-resolution hook, the marker DB access). UX-5 owns the _model_ (data-only); UI-4 owns the
+_rendering_ (the screens) and _wiring_ (the App.tsx branch + the completion write). Vault-unlock is UX-5b/M3.
 
 **Model (UX-5 — data/logic only, no JSX):**
+
 - `steps.ts` — `ONBOARDING_STEPS` (ordered: welcome · privacy · vault · ready), `OnboardingStep`/`OnboardingStepKind`, and the per-step `OnboardingCopyContract` (the BR-4 copy-honesty contract: `m1` = what M1.0 may claim, `m3?` = the encryption-backed claim gated to AR-3/M3).
 - `first-run.ts` — `isFirstRun`, `FIRST_RUN_COMPLETE_KEY`/`_VALUE` (the reserved device-local `app_state` marker), `FIRST_RUN_BRANCH` (the App.tsx seam described as data).
 
 **Chrome + wiring (UI-4 · S4 — the rendered first-run experience):**
+
 - `onboarding.tsx` — `Onboarding` (`onComplete` prop): the full-viewport 4-screen flow. Renders `ONBOARDING_STEPS`' `m1` copy only (BR-6 copy honesty — the `vault` step is confirmation-only, no input/crypto), a UI-1 `Button` primary action, focus-to-`<h1>` per step (FOCUS_CONTRACT.pageNav), NO Escape (boot gate, not an overlay), DS-tokens + reduced-motion. Renders OUTSIDE `AppShell` (before the router). Composes UI-1 + Tamagui only — no `@vida/ui`/`packages/ui` edit (BR-1).
 - `use-first-run.ts` — `useFirstRun(dbReady)` → `{status: 'resolving'|'onboarding'|'ready', markComplete}`. The 3-state boot resolution (no app-flash before onboarding); `markComplete` writes THEN flips (a reload never re-shows a completed onboarding).
 - `first-run-repo.ts` — `readFirstRunComplete`/`writeFirstRunComplete`: the device-local `app_state` marker I/O over `getDbClient().driver`, mirroring `@vida/core`'s `get/setSchemaVersion` idiom (`SELECT` / `INSERT OR REPLACE`).
@@ -22,6 +25,7 @@ rendered screens, the boot-resolution hook, the marker DB access). UX-5 owns the
 **Guided setup (fe-onboarding · LIF-216 — the NET-NEW optional flow, `ext UX-5`):**
 A second, OPTIONAL surface distinct from the first-run boot gate above — "pick your modules & theme", skippable,
 reachable opt-in (never a second mandatory gate). RATIFIES the first-run render + copy model above (does not re-skin).
+
 - `guided-setup-steps.ts` — the ordered step model (`modules · theme · done`; `pick`|`complete` kinds) + copy. Data-only.
 - `use-guided-setup.ts` — the flow state machine (index nav + skip + the re-entrant `complete`/`skipAll` finalize). No persistence.
 - `step-rail.tsx` — the persistent LEFT-rail vertical stage indicator (EC-3): a decorative `role=list` progress MAP, not nav.
@@ -31,6 +35,7 @@ reachable opt-in (never a second mandatory gate). RATIFIES the first-run render 
 - **S4 — reach + app-mount (EC-1):** `guided-setup-store.ts` (the `none|invited|running` launch phase — ephemeral UI, Zustand, BR-RT-6) · `guided-setup-reach.ts` (registers the capability's TWO distinct reach paths — `link` = the post-first-run invitation, `contextual` = the EmptyState slot — clearing the ≥2-path floor) · `guided-setup-entry.tsx` (`GuidedSetupInvitation` = the post-first-run opt-in [EmptyState-composed, never a wall] + `GuidedSetupSlotButton` = the `EmptyState.guidedSetup` slot content) · `guided-setup-mount.tsx` (`GuidedSetupTakeover` — lifts the module+theme selections to the flow, maps `renderStepBody`, drives live preview via `onPreview`, commits both on finish). **App.tsx** hosts a fixed opaque overlay (over the still-mounted router — no route-state loss) + drives live preview through `theme-store`'s preview LAYER (`setPreview`, preferences-rescope R3) and clears it whenever the phase returns to `none` — **every exit (finish · skip · close) reverts to the persisted theme** (E8; until R7 makes finish commit the pick, a finish reverts too); the onboarding handoff `invite()`s the opt-in once post-completion.
 
 ## Rules (do not violate)
+
 - **Guided setup ≠ first-run gate.** The guided-setup flow is OPTIONAL + skippable + reachable opt-in; it is NOT a second mandatory boot gate. Default module enable-set = every visible-dock module ON (= today's behavior) so the preview never lies. Live module/theme persistence is a deferred M1.1 seam (`commit` stubs no-op now).
 - **The picker mirrors the dock, never forks it.** `modules.ts` re-derives the SAME filter as `shell/module-dock.tsx` `visibleDockGroups()` (each chrome surface composes `MODULE_MAP` + the `isFeatureEnabled` seam itself); group labels are a local mirror by the documented key-vs-label split (`module-map.ts:17-18`). If the dock's visibility logic changes, update both.
 - **Guided setup mounts as an opt-in OVERLAY, not a route.** App.tsx renders the invitation/flow as a `position:fixed` layer over the still-mounted router (no route-state loss); both reach paths drive the one `guided-setup-store` phase. It is launched, never forced (IR2). The live preview is a `previewPreset` LAYER over the persisted selection in the derived `stores/theme-store.ts` (preferences-rescope R3) — a re-hydration never clobbers it, and App clears it on every exit, so Settings and the app never show different themes. The preview never writes; persisting the pick is `useThemeSelection().commit` (still a no-op until R7).
@@ -39,7 +44,7 @@ reachable opt-in (never a second mandatory gate). RATIFIES the first-run render 
 - **Crypto/auth is a deferred seam — never presumed.** No code here reads or creates a vault key. The `vault` step is present in the model (`deferredImpl: 'vault-key'`) but its M1.0 copy is a **confirmation**, never a "create" (BR-4). Real key creation + passphrase → AR-3 / UX-5b / M3.
 - **Copy honesty (BR-4).** No `m1` string may claim encryption or zero-knowledge (encryption is off in M1.0). M1.0 claims **local-first** only; the ZK claim lives in `m3?`, gated to when AR-3 lands.
 - **Two-signal independence.** The onboarding branch keys ONLY on `isFirstRun(app_state['first_run:completed'])`. `WorkerDbClient.exists('vida')` is the DB-lifecycle signal (open-vs-create) and is NOT the onboarding trigger — they disagree on first launch by design. Keying on `exists()` would make onboarding never show.
-- **Distinct from the synced user flag.** `first_run:completed` (device-local `app_state`, never synced) is deliberately distinct from the synced `UserProfile.onboarding_completed` (cross-device *user* flag; table lands M1.1+). Reconciliation is a UX-5b/M1.1 concern.
+- **Distinct from the synced user flag.** `first_run:completed` (device-local `app_state`, never synced) is deliberately distinct from the synced `UserProfile.onboarding_completed` (cross-device _user_ flag; table lands M1.1+). Reconciliation is a UX-5b/M1.1 concern.
 - **Not a nav surface.** Onboarding is a boot-phase surface, not a `MODULE_MAP`/`GLOBAL_SURFACES` entry and not an `overlayHost` overlay — so `OVERLAY_DISMISS` is out of scope by category; no-Escape is stated explicitly so UI-4 does not add it.
 - **No barrel** (`index.ts`) — import specific files (STANDARDS §XX).
 - **Reuse, never redefine.** Focus = UX-4 `FOCUS_CONTRACT` (each step transition = `pageNav` → main-heading); responsive = UX-3 breakpoints/`CONTENT_MAX_WIDTH`.

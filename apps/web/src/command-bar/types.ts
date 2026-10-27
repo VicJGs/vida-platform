@@ -60,14 +60,7 @@ export interface SearchResultGroup {
 }
 
 /** All terminal states — fail loud (standards/components.md §VIII). `search-unavailable` = DB-8 not yet built. */
-export type SearchStatus =
-  | 'idle'
-  | 'typing'
-  | 'loading'
-  | 'results'
-  | 'empty'
-  | 'search-unavailable'
-  | 'error'
+export type SearchStatus = 'idle' | 'typing' | 'loading' | 'results' | 'empty' | 'search-unavailable' | 'error'
 
 export interface SearchOutcome {
   status: SearchStatus

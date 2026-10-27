@@ -4,17 +4,20 @@
 > blocks"). Delivery: `docs/specs/foundation/fe-codec-dashboard/`. Status: **S1 shipped** (Visual Gate PASS).
 
 ## What it is
+
 A presentational `@vida/ui` SHELL that lays out a grid of blocks the consumer supplies via a `renderBlock` render-prop.
 It is **not** a block renderer — the 11 `standalone` integration-block widgets ship elsewhere (ADR-008; types-only
 today). Archetype sibling of `CollectionView`: Collection switches ONE renderer over the same data; Dashboard composes
 MANY blocks at once in a grid.
 
 ## Boundary
+
 `@vida/ui` is Tamagui-only (no `@vida/core`/`@vida/types`). So `CellSize` is a LOCAL union and the block state reuses the
 intra-package `ViewState` canon (the gallery-view precedent). The app-plane adapter (`apps/web`, S2) binds the SHIPPED
 `block_instances`/`capability_definitions`/`CapabilityRegistry`/`RenderTarget` canon → the shell props.
 
 ## API (Seam A)
+
 - `title: string` — names the region (`aria-labelledby`) + renders as the `$heading` serif heading.
 - `blocks: readonly DashboardBlock[]` — `{ id, title, size: 'sm'|'md'|'lg'|'full', state: ViewState, action? }`. Order =
   grid order. `size` + `state` are the app's (BR-2, resolved from the placement + the 8-state machine).
@@ -24,6 +27,7 @@ intra-package `ViewState` canon (the gallery-view precedent). The app-plane adap
 - `density?`, `aria-label?`/`aria-labelledby?`, `ref?` (React-19 ref-as-prop, no forwardRef — non-generic).
 
 ## Invariants (business rules)
+
 - **BR-D-1 Shell, not a renderer** — composes blocks via `renderBlock`; owns the grid + per-cell Card frame + state
   threading, never a block's internals [decomposition.md:30 §1.2].
 - **BR-D-2 State-as-prop** — each block's `state` is derived by the app (8-state machine) + passed; the shell never derives.
@@ -42,11 +46,13 @@ intra-package `ViewState` canon (the gallery-view precedent). The app-plane adap
   block-action slot rides the cell header. No motion in S1 (static layout → reduced-motion n/a).
 
 ## Out of scope (homed by the docs)
+
 Placement edit (add/remove/drag/resize = a `block_instances` write → a Capability, O1) · the 11 block widgets + registry
 (O2) · per-module/per-Space block sets + live data wiring + the live `useDashboard` hook (module ② track / first consumer,
 O3) · the Home arrangement toggle (O4) · the Spaces page (O5) · the other archetype shells (O6).
 
 ## Visual Gate (blocking) — PASS
+
 Brave, 3 presets × light/dark + EC-specific stories: heading serif AA 15.84–17.29 · cell text MIN AA **4.52–5.22** (incl.
 warm-dark) · **axe 0** · 7 cells with `data-size` (EC-1) · 7 ⋯ slots (EC-2) · per-block loading/error independent (EC-3) ·
 **EC-6 lone `lg` capped (760 < 1136 grid)** · EC-5 empty teach · **375 single-column, no overflow** (EC-4/EC-8).
@@ -54,5 +60,6 @@ Gate caught 2 real issues code-gates passed: the `$h3`/`$h4` undefined token (�
 `$colorSignalDanger` error text failing light-mode AA (→ muted, the `Message` precedent).
 
 ## Files
+
 `packages/ui/src/components/dashboard-view.tsx` · `.stories.tsx` (gate surface) · `.test.tsx` (9 jsdom) ·
 exported from `index.ts`. **S2 (the `apps/web` adapter) is the next slice.**

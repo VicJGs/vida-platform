@@ -5,6 +5,7 @@
 > 2026-10-07). A `@vida/ui` presentational shell — Tamagui-only, no `@vida/core`/`@vida/types` import.
 
 ## Intent
+
 A **flow FRAME** for any staged, do-this-then-that surface (a session you run, a routine you step, a wizard, a drill, an
 onboarding, a check-in entry). It frames a **staged progression** (done/current/upcoming) over the shipped `Timeline`, owns
 the **standardized stage affordances** (attach · mark-done · require-proof, EMITTING intents — never a write), and presents a
@@ -12,12 +13,14 @@ read-only **effect-rail log**. It renders **no stage body content** (the consume
 (ADR-004 backend). NOT the timer/HUD (#16), NOT the runtime page (#23), NOT the countdown (pomodoro V5).
 
 ## Contract (Seam A)
+
 See `delivery/seam-contract.md` Seam A for the full `FlowSessionViewProps`. Shape: `title` · `context?` · `progress?`
 (0..1, derived from stages if omitted) · `progressLabel?` · `saveStatus?` · `action?` · `stages: FlowStage[]` ·
 `renderStage?(stage)` · `nowLabel?` · intents `onAttach`/`onMarkDone`/`onRequireProof` · `effects?`/`effectsState?` ·
 `effectRailLabel?` · aria · React-19 `ref`. Non-generic (`FlowStage` is concrete → no `<T>` → ref-as-prop, no `forwardRef`).
 
 ## Business rules
+
 - **BR-FS-1 State-as-prop (BR-2).** `stage.state` + `effectsState` are the app's; the shell never derives. Default `'success'`.
 - **BR-FS-2 Emit, never write.** The affordances call `onAttach`/`onMarkDone`/`onRequireProof`; the shell performs no write
   (the pomodoro-widget intent-emit precedent). Effects are fired by `@vida/core`; the shell only DISPLAYS the fired log.
@@ -42,16 +45,19 @@ See `delivery/seam-contract.md` Seam A for the full `FlowSessionViewProps`. Shap
   transition is added). DIRECT base tokens (no sub-theme); React-19 `ref` prop.
 
 ## EC coverage (envision → Visual-Gate MUSTs)
+
 EC-1 staged progression · EC-2 current: deliverable+attach+mark-done/proof · EC-3 done proof / upcoming faded / dot state ·
 EC-4 effect-rail log (+ empty teach) · EC-5 title-hero + progress bar + 16px rhythm · EC-6 per-stage state degrade · EC-7
 reflow 375→1440 no overflow · EC-8 serif title · DIRECT tokens · dark · preset flips · EC-9 single-stage sane · EC-11 type
 scale no px. (EC-10 stage-advance immediacy = `feel` → live Visual Gate.)
 
 ## Resolved precision
+
 **`require-proof` = a distinct intent** (`onRequireProof`), not a mark-done-gating flag (the per-stage proof-gate is the
 consuming flow's config, not this shell's). Ratified here (seam-contract open precision).
 
 ## Out (homed by the docs)
+
 Stage BODY content (consumer `renderStage`) · effect WRITES + lifecycle engine (`@vida/core`/#32) · the "stages" backend
 realization (design-intent ext → #23) · the timer HUD (#16) · the runtime page (#23) · countdown (pomodoro V5) · attachment
 storage + `deliverable_note` (`@vida/core`).

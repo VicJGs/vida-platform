@@ -14,11 +14,11 @@
 - **S1 `unreadCounts(): UnreadCounts`** — derives `{ unread, error, warning, reminder }` from live rows
   (excludes read+archived). The journal recap reuses it (snapshot). `[FACT: service.ts unreadCounts]`
 - **The Journal contribution shape** (ADR-004 §3.2.5 PULL): `createXJournalContribution(svc) →
-  JournalContribution { module, sectionKey:'summary', dataPoints: readonly DataPoint[], summary(date):
-  SectionData|Promise }` + `registerXJournal(registry, svc) → registry.register(create…(svc))`. `SectionData =
-  { sectionKey, module, dataPoints, state: TerminalState, items }`; `state = 'success'` if any data else
+JournalContribution { module, sectionKey:'summary', dataPoints: readonly DataPoint[], summary(date):
+SectionData|Promise }` + `registerXJournal(registry, svc) → registry.register(create…(svc))`. `SectionData =
+{ sectionKey, module, dataPoints, state: TerminalState, items }`; `state = 'success'` if any data else
   `'empty'` (reuse the `TerminalState` canon BY TYPE, not `deriveTerminalState`). `[FACT: services/journals/types.ts:25,43,58-63;
-  services/gamification/journal.ts:30-68; services/knowledge/journal.ts:22-54]`
+services/gamification/journal.ts:30-68; services/knowledge/journal.ts:22-54]`
 - **`JournalRegistry.register(contribution)`** — the register-helper pattern. `[FACT: gamification/journal.ts:66-68]`
 - **DB-6 `repo.hardDelete(id)`** — permanently removes the row: snapshot → `tx.delete` → `enqueue('delete')`
   in ONE tx (so a purge SYNCS the deletion cross-device). `repo.delete` soft-or-hard-deletes; this repo is
@@ -29,7 +29,7 @@
   `action_url` → "no longer available" is the ② concern; ① guarantees the row survives (no FK, reads never
   join). `[FACT: business-rules.md:46,68-69]`
 
-## §2 — Business Rules (candidate BR-NT-S5-*, promoted at §XXIX on ship)
+## §2 — Business Rules (candidate BR-NT-S5-\*, promoted at §XXIX on ship)
 
 - **BR-NT-S5-1 (one summary contribution / consumer-not-provider)** — notifications registers exactly ONE
   `JournalContribution { module:'notifications', sectionKey:'summary', dataPoints: DATA_POINTS }` with a
@@ -57,8 +57,8 @@
 - **[FACT]** the contribution lives in a new `services/notifications/journal.ts` (the file layout of every
   prior MOD: `gamification/journal.ts`, `knowledge/journal.ts`, `books/journal.ts`).
 - **[FACT]** `DATA_POINTS = [{id:'unread',label:'Unread'}, {id:'error',label:'Alerts'}, {id:'warning',
-  label:'Warnings'}, {id:'reminder',label:'Reminders'}]` — the JR-4 recap selection; `items:[{ unread, error,
-  warning, reminder }]` (the single-object-array item shape of the precedents).
+label:'Warnings'}, {id:'reminder',label:'Reminders'}]` — the JR-4 recap selection; `items:[{ unread, error,
+warning, reminder }]` (the single-object-array item shape of the precedents).
 - **[INTERP]** snapshot vs per-day: `summary` reuses the CURRENT `unreadCounts()` (snapshot), consistent with
   the gamification snapshot precedent; a dated "received on `date`" digest is a refinement (would need a
   `created_at`-on-date query + TZ). The slice-map ratified "unread/by-type recap" = the snapshot.
@@ -74,8 +74,8 @@
 3. **registerNotificationsJournal.** Registering into a real `JournalRegistry` makes the contribution resolvable
    (module `'notifications'`, sectionKey `'summary'`, `dataPoints` = DATA_POINTS).
 4. **purgeExpired reclaims long-archived.** Seed an archived row with `archived_at` old + an archived row recent
-   + an unread (active) row; `purgeExpired(cutoff)` ⇒ removes only the old-archived (returns 1); the recent
-   archived + the active row remain. Assert the row is GONE (hard-deleted) and a `sync_queue` `'delete'` enqueued.
+   - an unread (active) row; `purgeExpired(cutoff)` ⇒ removes only the old-archived (returns 1); the recent
+     archived + the active row remain. Assert the row is GONE (hard-deleted) and a `sync_queue` `'delete'` enqueued.
 5. **purgeExpired never touches active rows.** An un-archived row, however old by `created_at`, is never purged.
 6. **NF-10 dangling-subject.** A notification with `entity_type/entity_id` pointing at a non-existent subject
    still `list()`s (no crash, row survives).
@@ -87,13 +87,13 @@
    `const DATA_POINTS: readonly DataPoint[] = [unread, error, warning, reminder]`;
    `createNotificationsJournalContribution(svc): JournalContribution` with `module:'notifications'`,
    `sectionKey:'summary'`, `dataPoints: DATA_POINTS`, `async summary(date)`: `void date`; `const c = await
-   svc.unreadCounts()`; `state = c.unread > 0 ? 'success' : 'empty'`; return `{ sectionKey:'summary',
-   module:'notifications', dataPoints: DATA_POINTS, state, items:[{ unread:c.unread, error:c.error,
-   warning:c.warning, reminder:c.reminder }] }`; `registerNotificationsJournal(registry, svc)` →
+svc.unreadCounts()`; `state = c.unread > 0 ? 'success' : 'empty'`; return `{ sectionKey:'summary',
+module:'notifications', dataPoints: DATA_POINTS, state, items:[{ unread:c.unread, error:c.error,
+warning:c.warning, reminder:c.reminder }] }`; `registerNotificationsJournal(registry, svc)` →
    `registry.register(createNotificationsJournalContribution(svc))`. Imports: `JournalContribution, SectionData,
-   DataPoint, JournalRegistry` from `../journals`; `TerminalState` from `../../foundation/capability/types`.
+DataPoint, JournalRegistry` from `../journals`; `TerminalState` from `../../foundation/capability/types`.
 2. **`service.ts`** — add `purgeExpired(before: number): Promise<number>`: `const rows = await
-   repo.findWhere(and(eq(notifications.is_archived, true), lte(notifications.archived_at, before)) as SQL)`;
+repo.findWhere(and(eq(notifications.is_archived, true), lte(notifications.archived_at, before)) as SQL)`;
    `for (const r of rows) await repo.hardDelete(r.id)`; `return rows.length`. Add to the returned object.
 3. **`types.ts`** — add `purgeExpired(before: number): Promise<number>` to `NotificationsService` (doc: retention
    sweep, NF-13).
@@ -103,6 +103,7 @@
    `current-business-rules.md`. Commit docs WITH code. Then open the PR `mod-notifications → main`.
 
 ## Out of scope (unchanged homing)
+
 - `action_url` deep-link "no longer available" RESOLUTION UI → **② `fe-notifications` (LIF-192)**.
 - Per-day "received on `date`" digest + TZ → refinement (snapshot at M1). Digest/batching → **M2** (NF-15).
 - `[E]` encryption → **M3** (the `encryptedFields: []` dormant seam).

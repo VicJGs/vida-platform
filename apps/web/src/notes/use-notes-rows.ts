@@ -38,16 +38,60 @@ export interface NotesRow {
 export type NotesDataState = 'loading' | 'empty' | 'error' | 'success'
 
 const DEV_SAMPLE: readonly NotesRow[] = [
-  { id: '1', title: 'Project kickoff', type: 'note', excerpt: 'Scope, owners, and the first three milestones.', updated: '2h ago', date: '2026-10-10', favorite: true },
-  { id: '2', title: 'Daily journal', type: 'journal', excerpt: 'Morning intentions, evening reflection.', updated: 'today', date: '2026-10-10', favorite: false },
-  { id: '3', title: 'Research reading list', type: 'note', excerpt: 'Papers on CRDTs and local-first sync.', updated: 'yesterday', date: '2026-10-09', favorite: false },
-  { id: '4', title: 'Design review notes', type: 'milestone_note', excerpt: 'Feedback from the October design review.', updated: '3d ago', date: '2026-10-07', favorite: true },
-  { id: '5', title: 'Sprint deliverable', type: 'deliverable_note', excerpt: 'Acceptance criteria and proof of done.', updated: '1w ago', date: '2026-10-03', favorite: false },
+  {
+    id: '1',
+    title: 'Project kickoff',
+    type: 'note',
+    excerpt: 'Scope, owners, and the first three milestones.',
+    updated: '2h ago',
+    date: '2026-10-10',
+    favorite: true,
+  },
+  {
+    id: '2',
+    title: 'Daily journal',
+    type: 'journal',
+    excerpt: 'Morning intentions, evening reflection.',
+    updated: 'today',
+    date: '2026-10-10',
+    favorite: false,
+  },
+  {
+    id: '3',
+    title: 'Research reading list',
+    type: 'note',
+    excerpt: 'Papers on CRDTs and local-first sync.',
+    updated: 'yesterday',
+    date: '2026-10-09',
+    favorite: false,
+  },
+  {
+    id: '4',
+    title: 'Design review notes',
+    type: 'milestone_note',
+    excerpt: 'Feedback from the October design review.',
+    updated: '3d ago',
+    date: '2026-10-07',
+    favorite: true,
+  },
+  {
+    id: '5',
+    title: 'Sprint deliverable',
+    type: 'deliverable_note',
+    excerpt: 'Acceptance criteria and proof of done.',
+    updated: '1w ago',
+    date: '2026-10-03',
+    favorite: false,
+  },
 ]
 
 function devSampleActive(): boolean {
   // DEV/gate affordance only (the repo's `process.env.NODE_ENV` convention — typed; vite statically replaces it).
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('sample')
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has('sample')
+  )
 }
 
 export interface NotesRowsResult {

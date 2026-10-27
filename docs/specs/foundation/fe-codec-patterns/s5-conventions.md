@@ -8,6 +8,7 @@
 ## §0. Context (BASELINE)
 
 Three cross-cutting conventions, each with related infra to ALIGN with (not duplicate):
+
 - **Reach:** `nav/module-map.ts` encodes module-level `NavPlacement` (dock/global/secondary/non-nav/spaces-only) — the
   MODULE axis. The ≥2-path floor is a **capability axis** (dock · ⌘K · contextual/`[[link]]` · Spaces) — distinct grain
   [FACT: nav/module-map.ts:33; frontend-quality-bar/_index.md:46-47 §2.4]. ReachabilityRegistry is net-new.
@@ -46,35 +47,41 @@ itself (that ran at plan time — this is its runtime companion); any component/
 ## §3. The design (per convention)
 
 **ReachabilityRegistry** (`reach/reachability-registry.ts`):
+
 ```ts
 export type ReachPath = 'dock' | 'command-bar' | 'contextual' | 'link' | 'spaces'
 export function createReachabilityRegistry(): {
   register(capabilityId: string, path: ReachPath): void
-  getReach(capabilityId: string): readonly ReachPath[]   // deduped
-  assertReachable(capabilityId: string): void            // throws < 2 distinct paths (BR-S5-1)
-  isReachable(capabilityId: string): boolean             // non-throwing probe
+  getReach(capabilityId: string): readonly ReachPath[] // deduped
+  assertReachable(capabilityId: string): void // throws < 2 distinct paths (BR-S5-1)
+  isReachable(capabilityId: string): boolean // non-throwing probe
 }
 ```
+
 A factory (not a module-global singleton — testable, the AR-4/registry precedent). De-dupes paths; `assertReachable`
 throws a typed `UnreachableCapabilityError` naming the capability + its current paths. **Call-site intent:** a dev/test/CI
 **invariant assertion** (the runtime companion to the G4 set-cover) — a 1-path capability is a real bug that fails loud in
 CI; it is NOT a per-render guard.
 
 **ProviderRead** (`providers/provider-read.ts`) — a type + convention, NOT a hook (g1):
+
 ```ts
 /** The cross-module read seam: a backend PROVIDER method (getDayBooksDigest, dueIn, …), never a table handle.
  *  A surface reads it via React Query: `useQuery({ queryKey, queryFn: provider })` where `provider satisfies ProviderRead<T>`. */
 export type ProviderRead<T> = () => Promise<T>
 ```
+
 Names the provider-method shape so cross-module reads are typed + greppable. A `useProviderRead` hook is **deferred to
 first-consumer-pull** (a thin `useQuery` alias with no M1 consumer = ceremony; BR-S5-3). Dependency-free.
 
 **VoiceCopy** (`voice/voice-copy.ts`):
+
 ```ts
-export const VOICE = { tone: ['plain','calm','honest','warm','yours'] as const, case: 'sentence' as const }
+export const VOICE = { tone: ['plain', 'calm', 'honest', 'warm', 'yours'] as const, case: 'sentence' as const }
 export type CopyIssue = { rule: 'zk-sync-claim' | 'dead-end'; match: string; message: string }
-export function lintCopy(text: string): CopyIssue[]   // mechanical checks only (BR-S5-4)
+export function lintCopy(text: string): CopyIssue[] // mechanical checks only (BR-S5-4)
 ```
+
 `lintCopy` flags (high-confidence, mechanical only — a backstop, NOT a replacement for the m1/m3 staged-contract pattern):
 **zk-sync-claim** — `/zero.?knowledge|end.to.end|synced? to (the )?cloud|cloud sync/i` (phrases with no honest M1 use;
 **bare `encrypt` is deliberately NOT flagged** — it false-positives on honest staged copy like "Encryption arrives at M3");

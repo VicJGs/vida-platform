@@ -6,6 +6,7 @@
 > Slice-map S8: ROU-23 / ROU-25 / ROU-26 · interpretation rules 14/19 · D2 · ledger A27. Base: S7 `0a99def` (`current-*` → **current**).
 
 ## Grounding
+
 - **Targets** — D2 (`interpretation.md:180-181`), rule 14 (`:137`): notes, tags and links target **`routine_step`** and **`routine`**.
   `routine_action` is retired. Both entity types are pre-seeded in `ENTITY_TYPES` (§1a), so routines registers nothing.
 - **Tags** — RT-16 / ROU-23: the shared `entity_tags` primitive owned by Spaces (ADR-006 SP1). Routines is a consumer and keeps no tag
@@ -33,15 +34,17 @@
   `:830-835`, notes `createEntityLink` `:265-273`.
 
 ## Scope
-| # | Ledger | Change |
-|---|---|---|
-| 1 | seam | `RoutinesServiceDeps` += `spaces: SpacesService` and `notes: NotesService` (required) |
-| 2 | A27 | **Tags:** `tagRoutine(routineId, tagId)` / `untagRoutine` / `getRoutineTags(routineId)` and `tagStep(stepId, tagId)` / `untagStep` / `getStepTags(stepId)`. A write requires a live routine/step (`RoutineNotFoundError` / `StepNotFoundError`) and a live tag (`TagNotFound`); an untag also requires the routine/step. Reads return the live `entity_tags` rows whose tag is live, never throw, and give `[]` for an unknown id |
-| 3 | A27 | **Notes:** `getRoutineNote(routineId)` → `ensureEntityNote('note', 'routine', id, { title: routine.name })`; `getStepNote(stepId)` → `ensureEntityNote('note', 'routine_step', id, { title: step.title })`. Both are a find-or-create (a write, so T2: a live routine/step is required) and idempotent. The seed is **creation-only**: its title becomes the content's H1, the `pages.title` column stays NULL, and a later rename doesn't retitle the note |
-| 4 | A27 | **Links** (the purposes `linkEntity(pageId, {type,id}, ctx?)` shape): `linkPage(pageId, target: { type: 'routine' \| 'routine_step'; id }, context?)` → `spaces.createLink`; `unlinkPage(pageId, target)` → `spaces.removeLink`. Both require a live target (the right type: a routine id given as a step → `StepNotFoundError`). `pageId` is not validated (see Grounding) |
-| 5 | docs | seam deps (as-built) + the exposed methods · slice-map S8 row · `current-*` (§XXIX) · routines `CLAUDE.md` |
+
+| #   | Ledger | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| --- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | seam   | `RoutinesServiceDeps` += `spaces: SpacesService` and `notes: NotesService` (required)                                                                                                                                                                                                                                                                                                                                                                       |
+| 2   | A27    | **Tags:** `tagRoutine(routineId, tagId)` / `untagRoutine` / `getRoutineTags(routineId)` and `tagStep(stepId, tagId)` / `untagStep` / `getStepTags(stepId)`. A write requires a live routine/step (`RoutineNotFoundError` / `StepNotFoundError`) and a live tag (`TagNotFound`); an untag also requires the routine/step. Reads return the live `entity_tags` rows whose tag is live, never throw, and give `[]` for an unknown id                           |
+| 3   | A27    | **Notes:** `getRoutineNote(routineId)` → `ensureEntityNote('note', 'routine', id, { title: routine.name })`; `getStepNote(stepId)` → `ensureEntityNote('note', 'routine_step', id, { title: step.title })`. Both are a find-or-create (a write, so T2: a live routine/step is required) and idempotent. The seed is **creation-only**: its title becomes the content's H1, the `pages.title` column stays NULL, and a later rename doesn't retitle the note |
+| 4   | A27    | **Links** (the purposes `linkEntity(pageId, {type,id}, ctx?)` shape): `linkPage(pageId, target: { type: 'routine' \| 'routine_step'; id }, context?)` → `spaces.createLink`; `unlinkPage(pageId, target)` → `spaces.removeLink`. Both require a live target (the right type: a routine id given as a step → `StepNotFoundError`). `pageId` is not validated (see Grounding)                                                                                 |
+| 5   | docs   | seam deps (as-built) + the exposed methods · slice-map S8 row · `current-*` (§XXIX) · routines `CLAUDE.md`                                                                                                                                                                                                                                                                                                                                                  |
 
 ## Rules
+
 - **T1 · Consumer only.** Routines never **writes** `entity_tags` / `pages` / `entity_links` directly; writes go through Spaces and Notes
   (constitution §6). The one direct read is `tags` liveness, because no contract exists for it (the codebase-wide exception above).
 - **T2 · Fail loud on a write, never on a read.** Writes on a missing or archived routine or step throw its NotFound error. Tag reads return `[]`.
@@ -51,6 +54,7 @@
   are rejected (T2).
 
 ## Verification Gate (live store, Node 24; the harness wires the real `SpacesService` + `NotesService`)
+
 1. **Tags round-trip:** tag a routine and a step → `get*Tags` lists them; tagging twice → one row (idempotent); untag → gone.
 2. **Live-tag reads:** delete the tag in Spaces → `get*Tags` no longer lists it, though the junction row still exists.
 3. **Guards:** tagging with an unknown/deleted tag → `TagNotFound`, no row. A missing or archived routine, or a removed step →
@@ -75,6 +79,7 @@
 Gates: tsc 0 · eslint 0 · routines suite · full `@vida/core` · g2 · /critique · §XXIX.
 
 **Seam amendment:** the frozen seam lists no S8 methods, so the surface lands as `// ⟲ amended (A27)`:
+
 - `tagRoutine` / `getRoutineNote` follow the tasks precedent (`tagTask` / `getTaskNote`);
 - `linkPage` follows purposes `linkEntity`.
 
@@ -82,11 +87,14 @@ Gates: tsc 0 · eslint 0 · routines suite · full `@vida/core` · g2 · /critiq
 note page attached to the routine could be returned instead. Books and knowledge share this behaviour.
 
 ## Out of scope (homed)
+
 Saved views / user-extensible step-session types / templates (007/SP5, R2) · backlink reads and the neural graph (Notes/Spaces own the
 reads) · routine-group-level notes (RT-15 ⚠ INTENDED extension, no doc defines a group) · providers + Journal (S9).
 
 ## g1 critique (folded): REVISE
+
 **3 blocking:**
+
 - B1: notes assert `content`, not `title`; the seed is creation-only;
 - B2: the tag read path is named (`notes.getTagsForEntity` + the read-only `tags` liveness exception), and T1 reworded;
 - B3: `pageId` is not validated anywhere; routines guards its own side.
@@ -97,6 +105,7 @@ N5 (seam ⟲ amendment; `linkPage` follows the purposes shape) · N6 (residual r
 ## Approval 1 — Victor 2026-10-26 ("Approved")
 
 ## /preflight — PASSED
+
 - **Frontend:** none.
 - **Backend:**
   - New required deps `spaces: SpacesService`, `notes: NotesService`.
@@ -110,13 +119,14 @@ N5 (seam ⟲ amendment; `linkPage` follows the purposes shape) · N6 (residual r
 - **Integration:**
   - routines → `spaces.tagEntity` / `untagEntity` / `createLink` / `removeLink`;
   - routines → `notes.getTagsForEntity` / `ensureEntityNote`.
-- **Ground truth:** routines current-* (S7). No conflict.
+- **Ground truth:** routines current-\* (S7). No conflict.
 - **Assumptions (grounded):**
   1. Tag reads return `EntityTagRow[]` (the tasks `getTaskTags` shape).
   2. `linkPage` validates `context` as an optional string (`z.string().nullish()`).
   3. A target id is validated with `loadRoutineOrThrow` / `loadStepOrThrow` (live only).
 
 ## Implementation plan (§5)
+
 1. **Tests first (red) + harness:**
    - `setup()` builds one `TaggableTypeRegistry` shared by `createSpacesService(db, deviceId, registry)`,
      `createNotesService({ db, deviceId, spaces, backlinks: createBacklinkResolver(db, deviceId), registry })` and routines (the tasks
@@ -135,10 +145,12 @@ N5 (seam ⟲ amendment; `linkPage` follows the purposes shape) · N6 (residual r
    - the links via `createLink` / `removeLink` after a target guard by type.
 
    Gate point: the routines suite green.
-4. **Docs:** seam `// ⟲ amended (A27)` surface + deps as-built · slice-map S8 row · `current-spec` / `current-business-rules` (BR-RT-S8-*) · `routines/CLAUDE.md`.
+
+4. **Docs:** seam `// ⟲ amended (A27)` surface + deps as-built · slice-map S8 row · `current-spec` / `current-business-rules` (BR-RT-S8-\*) · `routines/CLAUDE.md`.
 5. **Gates:** tsc · eslint · routines suite · full core · g2 · /critique · §XXIX.
 
 ## Step-5 critique (folded): SHIP + 6 notes
+
 1. `createBacklinkResolver` is imported from `services/search/backlink-resolver` (the tasks test, `:31`).
 2. Spaces and Notes get the plain shared `registry`, never the `sessionsEntityRegistry` override; `Harness` gains `spaces` / `notes`.
 3. "Green" at step 2 means vitest only; tsc goes green at the step-3 gate point (the interface members land with the implementation).

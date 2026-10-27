@@ -12,6 +12,7 @@ Because there is **no v2 schema**, every token below is already `[INTENT]` — t
 model is stated directly (no two-tier split needed). `[INTENT R6]`
 
 ## Entities (Core-owned)
+
 - **`health_metrics`** — metric definitions. `id` · `kind` P (body-measure/performance-capacity/test-result/
   biomarker) · `name` **E** · `unit` **E** · `direction` P (higher/lower-better) · `category` P · `body_part` P
   (nullable; biceps/quads/…) · **`side` P** (nullable; left/right/bilateral) · **`formula` P** (nullable; declares a
@@ -76,11 +77,13 @@ model is stated directly (no two-tier split needed). `[INTENT R6]`
   `source_ref` P (poly) · `raised_at` P · `status` P (active/**dismissed**/acknowledged) · `_sync_*`. Never blocks. `[INTENT HC-15]`
 
 ## Composed (NOT Core tables — owned elsewhere)
+
 - Workout instances/logs → **Sessions** (`workout` sub-type + Training's `workout_sessions` extension). `[FACT ADR-004]`
 - Catalogs (exercises/ingredients/dishes) → **Training/Nutrition** pillars (+ Knowledge kinds). `[INTENT]`
 - Notes/tags/views → **Notes & Pages / Spaces**. Goal↔Purpose ladder → **Purposes**. Cost → **Finance**. `[INTENT]`
 
 ## ADR-002 additions
+
 New tables above + new Core entity_types that become **taggable/linkable by registering in the open taggable-type
 registry** (**SP2** — ADR-006 §3.2; NOT a closed `entity_type CHECK`), consumed by **`entity_tags`** (**SP1**, the
 universal tag primitive — `tag_id, entity_type, entity_id`) + `entity_links`/`pages`: `health_metric` ·
@@ -92,4 +95,5 @@ never a tag-table owner. New value-`source` enum values (`exam`·`import`·**`ai
 ADR-002 amendment. `[INTENT HL10/CI-1/CI-2/CI-4; ADR-006 SP1/SP2; ADR-011 M1/M2; ADR-015 AI6]`
 
 ## Completion checklist
+
 - [x] entities + P/E flags · [x] composed-vs-owned split · [x] ADR-002 additions noted · [x] no `{{…}}`

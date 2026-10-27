@@ -8,12 +8,13 @@
 additions. Adds two deps to the factory: `rail: EffectRail` + `entityRegistry: TaggableTypeRegistry`.
 
 **Scope is doc-given, NOT a decision (delivery-plan:239).** ① is "AR-5 shipped types only" — S2 validates
-against the registry *as AR-5 shipped it* (`focus`) plus the `register()` seam; it does **NOT** seed the other
+against the registry _as AR-5 shipped it_ (`focus`) plus the `register()` seam; it does **NOT** seed the other
 8 shipped sub-types (owning modules register their own — SS-5 extension model, `contract.md:12`,
 `identity.md:22`). No `foundation/sessions/registry.ts` roster edit. `[FACT: m1.1-delivery-plan.md:239;
 memory sparse-foundation-seed-is-extension-seam-not-a-gap]`
 
 ## §1 Operations (delta over S1)
+
 - `createSession(input)` — **now also** asserts `input.sub_type` is registered (via `registry.get`) before the
   write. Unregistered → typed rejection, no write. (S1's structural validation + atomicity unchanged.)
 - `attach(sessionId, entityType, entityId, level)` — **now also** asserts `entityType` is a registered
@@ -25,12 +26,13 @@ memory sparse-foundation-seed-is-extension-seam-not-a-gap]`
   declared lifecycle event.
 
 ## §2 Operation-flow & invariants
+
 - **createSession sub_type gate (SS-3).** After `CreateSessionSchema` passes, `await registry.get(input.sub_type)`;
   a `SessionTypeNotFound` propagates as the typed rejection (fail-loud, no write). Rationale: every session must
   have a registered 4-dimension def (SS-3); an unregistered sub_type has none. The extension-mapping check
   (B1, S1) still runs. `[FACT: business-rules.md SS-3; registry.ts get() throws SessionTypeNotFound]`
 - **attach entity_type gate (BR-6).** `if (!entityRegistry.isRegistered(entityType)) throw new
-  UnknownEntityType(entityType)` before the idempotent create. Mirrors `foundation/spaces/service.ts`
+UnknownEntityType(entityType)` before the idempotent create. Mirrors `foundation/spaces/service.ts`
   `assertRegistered`. `[FACT: sessions.ts:74 "validated against _registry.ts"; spaces/service.ts:76-78]`
 - **completion wiring — route through the existing engine (IR-1, resolves the delivery-plan:249 ⚠ boundary).**
   `completeSession`/`transitionSession` build `TransitionDeps = { db, registry, rail, deviceId }` and call the
@@ -41,16 +43,17 @@ memory sparse-foundation-seed-is-extension-seam-not-a-gap]`
   (`effects/service.ts:31-40`): a `projection` effect (`surface_journal`/`surface_calendar`) no-ops
   `{applied:true}` needing no handler; a `keyed`/`additive`/`intra_realm` effect with **no registered handler
   throws `NoEffectHandler` BEFORE any write**. The shipped `focus` type declares `attach_pomodoro` (intra_realm)
-  + `log_time` (additive) — **neither has an M1.1 handler (deferred #46)** → `completeSession('focus')` **throws
-  `NoEffectHandler`** until handlers land. So in M1.1 the wiring is real but a *shipped-effect* completion is
-  handler-gated; a type with no non-projection effects completes cleanly (`fired:0`). `[FACT: effects/service.ts:31-40;
-  EFFECT_CLASS_OF types.ts:24,32; SHIPPED_SESSION_TYPES focus effects registry.ts:31]`
+  - `log_time` (additive) — **neither has an M1.1 handler (deferred #46)** → `completeSession('focus')` **throws
+    `NoEffectHandler`** until handlers land. So in M1.1 the wiring is real but a _shipped-effect_ completion is
+    handler-gated; a type with no non-projection effects completes cleanly (`fired:0`). `[FACT: effects/service.ts:31-40;
+EFFECT_CLASS_OF types.ts:24,32; SHIPPED_SESSION_TYPES focus effects registry.ts:31]`
 - **`InvalidTransition`** (from lifecycle.ts) surfaces for an illegal `(status, event)` — no write (BR-8).
 - **`createSession` gate adds one async `registry.get`** before the tx — shipped types resolve in-memory (`focus`
   free), user types cost one `findWhere`.
 - S1 behavior (CRUD, atomicity, spine-only soft-delete, hard-detach) is unchanged.
 
 ## §3 Contract (delta)
+
 Factory becomes `createSessionsService({ db, deviceId, registry, rail, entityRegistry })`. `registry` (injected
 unused in S1) is now consumed. Error taxonomy gains: `SessionTypeNotFound` (createSession), `UnknownEntityType`
 (attach), `InvalidTransition` (completion) — all existing typed errors, re-surfaced, not re-declared.
@@ -58,6 +61,7 @@ unused in S1) is now consumed. Error taxonomy gains: `SessionTypeNotFound` (crea
 number }` — `fired` = count of applied effects; align the seam-contract note, which sketched `FiredEffect[]`).
 
 ## §4 Acceptance criteria (Verification Gate)
+
 1. `createSession({sub_type:'focus', …})` succeeds (registered); `createSession({sub_type:'class', …})` →
    rejects with `SessionTypeNotFound`, **zero** rows written. (`class` is a valid enum member but unregistered
    in the AR-5-shipped roster — proves the extension-model gate.)
@@ -79,6 +83,7 @@ number }` — `fired` = count of applied effects; align the seam-contract note, 
    the new factory deps + the validation gate).
 
 ## §5 Implementation prompt (order)
+
 1. Extend `SessionsServiceDeps` — add `rail: EffectRail`, `entityRegistry: TaggableTypeRegistry`.
 2. `createSession` — insert the `await registry.get(input.sub_type)` gate before the tx (after structural + B1 checks).
 3. `attach` — add the `entityRegistry.isRegistered` gate (import `UnknownEntityType` from `foundation/spaces`).
@@ -90,6 +95,7 @@ number }` — `fired` = count of applied effects; align the seam-contract note, 
    user-registered no-extension type; add AC1/AC3/AC4/AC5 cases.
 
 ## §6 Out of scope (homed) + a flag for S3
+
 Per-module effect **handlers** + fire-time consent → #46 · roster seeding of the other 8 shipped types → their
 owning modules (SS-5) · focus timer mechanics → S3 · availability/plan/templates/dueIn → S4–S7 · richer
 per-type lifecycle (miss/skip/reschedule) → owning modules / later.

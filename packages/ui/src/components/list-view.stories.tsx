@@ -106,7 +106,13 @@ export const Density: Story = {
     <View flexDirection="row" gap={24} flexWrap="wrap">
       {(['compact', 'default', 'spacious'] as const).map((d) => (
         <Section key={d} label={`density: ${d}`}>
-          <ListView<Row> items={ROWS.slice(0, 3)} getKey={(r) => r.id} renderItem={row} density={d} aria-label="Work items" />
+          <ListView<Row>
+            items={ROWS.slice(0, 3)}
+            getKey={(r) => r.id}
+            renderItem={row}
+            density={d}
+            aria-label="Work items"
+          />
         </Section>
       ))}
     </View>

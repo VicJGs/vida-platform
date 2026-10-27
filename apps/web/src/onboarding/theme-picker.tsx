@@ -44,7 +44,12 @@ const SwatchCard = styled(View, {
 })
 
 // The 4 semantic tokens the palette band previews (surface · surface-2 · brand · text).
-const PALETTE_VARS = ['--colorSurfacePrimary', '--colorSurfaceSecondary', '--colorBrandPrimary', '--colorTextPrimary'] as const
+const PALETTE_VARS = [
+  '--colorSurfacePrimary',
+  '--colorSurfaceSecondary',
+  '--colorBrandPrimary',
+  '--colorTextPrimary',
+] as const
 
 // Resolve a preset's CONCRETE colors in the active scheme, independent of which preset is globally active. The preset
 // palette is applied by a `<body class="t_<preset>">` DESCENDANT scope (provider.tsx:127-131) whose `:root.t_<mode>
@@ -82,9 +87,26 @@ function PaletteBand({ preset, mode }: { preset: ThemePreset; mode: ThemeMode })
     setColors(resolvePresetPalette(preset))
   }, [preset, mode])
   if (!colors)
-    return <View aria-hidden height={36} borderRadius="$sm" borderWidth={1} borderColor="$colorBorderDefault" backgroundColor="$colorSurfaceSecondary" />
+    return (
+      <View
+        aria-hidden
+        height={36}
+        borderRadius="$sm"
+        borderWidth={1}
+        borderColor="$colorBorderDefault"
+        backgroundColor="$colorSurfaceSecondary"
+      />
+    )
   return (
-    <View aria-hidden flexDirection="row" height={36} borderRadius="$sm" overflow="hidden" borderWidth={1} borderColor="$colorBorderDefault">
+    <View
+      aria-hidden
+      flexDirection="row"
+      height={36}
+      borderRadius="$sm"
+      overflow="hidden"
+      borderWidth={1}
+      borderColor="$colorBorderDefault"
+    >
       {colors.map((c, i) => (
         <View key={i} flex={1} backgroundColor={c} />
       ))}
@@ -92,7 +114,17 @@ function PaletteBand({ preset, mode }: { preset: ThemePreset; mode: ThemeMode })
   )
 }
 
-function ThemeSwatch({ preset, mode, selected, onSelect }: { preset: ThemePreset; mode: ThemeMode; selected: boolean; onSelect: (preset: ThemePreset) => void }) {
+function ThemeSwatch({
+  preset,
+  mode,
+  selected,
+  onSelect,
+}: {
+  preset: ThemePreset
+  mode: ThemeMode
+  selected: boolean
+  onSelect: (preset: ThemePreset) => void
+}) {
   return (
     <SwatchCard selected={selected} aria-pressed={selected} onPress={() => onSelect(preset)}>
       <PaletteBand preset={preset} mode={mode} />
@@ -123,7 +155,13 @@ export interface ThemePickerViewProps {
 
 /** Pure, state-as-prop — a labelled group of preset swatches. S4 lifts `selected`/`onSelect` to the flow + live lever.
  *  One group (3 swatches), labelled via aria-label — the visible step title ("Make it yours") is the S1 frame's. */
-export function ThemePickerView({ presets = THEME_PRESETS, selected, mode = 'light', onSelect, 'aria-label': ariaLabel = 'Theme' }: ThemePickerViewProps) {
+export function ThemePickerView({
+  presets = THEME_PRESETS,
+  selected,
+  mode = 'light',
+  onSelect,
+  'aria-label': ariaLabel = 'Theme',
+}: ThemePickerViewProps) {
   return (
     <View role="group" aria-label={ariaLabel} flexDirection="row" flexWrap="wrap" gap="$12">
       {presets.map((p) => (
@@ -134,7 +172,11 @@ export function ThemePickerView({ presets = THEME_PRESETS, selected, mode = 'lig
 }
 
 /** The in-flow mount (S1 `renderStepBody`) + Visual-Gate harness. `onPreview` = the app-owned live lever (S4 wires it). */
-export function ThemePicker({ mode, onPreview, initial }: { mode?: ThemeMode; onPreview?: (preset: ThemePreset) => void; initial?: ThemePreset } = {}) {
+export function ThemePicker({
+  mode,
+  onPreview,
+  initial,
+}: { mode?: ThemeMode; onPreview?: (preset: ThemePreset) => void; initial?: ThemePreset } = {}) {
   const { selected, preview } = useThemeSelection({ initial, onPreview })
   return <ThemePickerView selected={selected} mode={mode} onSelect={preview} />
 }

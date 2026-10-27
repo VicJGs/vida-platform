@@ -12,17 +12,18 @@ model. `[FACT: decomposition.md:65; home-journal-dashboard.md:9-13,63]`
 
 ## 1. The whole entity — the confirmed shape
 
-| Region | What it shows | UX-6 lineage | Renders via |
-|--------|---------------|--------------|-------------|
-| ① schedule | today's timed + dayparted events; "open calendar →" gateway | UX-6 `agenda` (one day, BR-5) | an integration block body in a DashboardView cell |
-| ② stats | glance figures (serif tabular) + gateway to detail | UX-6 `summary` (recap) | an integration block body in a DashboardView cell |
-| ③ day-actions | today's **must / can** actions | *new in G6* | an integration block body |
-| ④ quick-actions | quick-capture chips (new task/note/…) | *new in G6* | an integration block body |
-| journal entry | free-form markdown writing canvas | UX-6 `entry` (`editor-seam`) | the EntityView **Editor facet** mounting `@vida/editor` |
+| Region          | What it shows                                               | UX-6 lineage                  | Renders via                                             |
+| --------------- | ----------------------------------------------------------- | ----------------------------- | ------------------------------------------------------- |
+| ① schedule      | today's timed + dayparted events; "open calendar →" gateway | UX-6 `agenda` (one day, BR-5) | an integration block body in a DashboardView cell       |
+| ② stats         | glance figures (serif tabular) + gateway to detail          | UX-6 `summary` (recap)        | an integration block body in a DashboardView cell       |
+| ③ day-actions   | today's **must / can** actions                              | _new in G6_                   | an integration block body                               |
+| ④ quick-actions | quick-capture chips (new task/note/…)                       | _new in G6_                   | an integration block body                               |
+| journal entry   | free-form markdown writing canvas                           | UX-6 `entry` (`editor-seam`)  | the EntityView **Editor facet** mounting `@vida/editor` |
 
 `[FACT: decomposition.md:65; p3-home-the-day-specimen.html:103-130; home-journal-dashboard.md:15-27]`
 
 **The arrangement toggle (D4)** — a user preference choosing where the entry lives relative to the 4 regions:
+
 - **Arrangement A — Journal-first**: the entry is the hero; the 4 regions frame it (side rail).
 - **Arrangement B — Dashboard-first**: the 4 regions sit up top (command-center); the entry sits below.
 
@@ -71,7 +72,7 @@ precedent: fe-codec-seams close-out "#7 … non-blocking"]`
 ## 4. Implicit rules made explicit
 
 - **IR-1 — arrangement ≠ EntityView mode.** EntityView's `mode='merged'|'tabbed'` is the facet-presentation axis
-  (both-on-one-surface vs tabs). The **arrangement** (Journal-first/Dashboard-first) is a *layout-ordering* axis
+  (both-on-one-surface vs tabs). The **arrangement** (Journal-first/Dashboard-first) is a _layout-ordering_ axis
   **within** the merged surface. They are orthogonal; the arrangement is fe-home's own concern, not an EntityView prop.
   `[INTERPRETATION — must be confirmed/pinned at Envision; candidate EC]`
 - **IR-2 — the 4 regions are integration blocks.** `decomposition.md:65` "blocks = integration blocks" → each region
@@ -82,10 +83,10 @@ precedent: fe-codec-seams close-out "#7 … non-blocking"]`
 
 ## 5. The Envision Gate — FIRES
 
-**§3.75 one-question test (verbatim):** *"Is there a user affordance whose UI answer isn't already obvious from an
-existing shipped surface?"* Yes → fire (… a module hub · a novel interaction surface). `[FACT: entity-delivery-flow.md:104-107]`
+**§3.75 one-question test (verbatim):** _"Is there a user affordance whose UI answer isn't already obvious from an
+existing shipped surface?"_ Yes → fire (… a module hub · a novel interaction surface). `[FACT: entity-delivery-flow.md:104-107]`
 
-**Verdict: FIRES.** fe-home is *the* module hub, and the **arrangement toggle (Journal-first/Dashboard-first)** is a
+**Verdict: FIRES.** fe-home is _the_ module hub, and the **arrangement toggle (Journal-first/Dashboard-first)** is a
 novel affordance with no shipped-surface answer — neither DashboardView (a block grid) nor EntityView (a facet
 toggle) explains "how does the user flip the whole Home between writing-led and dashboard-led?" This is design-led;
 the reviewer is the human (blocking). `[FACT: §3.75 trigger; p3 specimen:106 "the one real decision is where the entry lives"]`
@@ -101,7 +102,6 @@ human pins anchored `EC-n` against the real shell composition — de-risking the
 > two-entity architecture (ADR-008 render-targets) — fix: Dashboard = `standalone` widgets, journal page = `inline`
 > blocks; they are different entities. Arrangement = a **Settings personalization** (default Journal-first), the control
 > is Settings' not Home's. See `envision.md` RP1–RP4 + EC-1…EC-9.
-
 
 1. **Arrangement surface.** Confirm IR-1: arrangement is a fe-home layout-ordering axis distinct from EntityView
    `mode`; and confirm the default (specimen defaults to **A — Journal-first**). `[p3:112 defaults arrA]`

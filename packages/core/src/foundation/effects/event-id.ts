@@ -17,10 +17,6 @@ import type { EffectType } from '@vida/types'
  * `YYYY-MM-DD` calendar date (project conventions) — none contains `|`, so the join is
  * unambiguous. Do NOT pass values that may contain `|` without revisiting this.
  */
-export function deriveEffectEventId(
-  subjectNaturalKey: string,
-  transition: string,
-  effectType: EffectType,
-): string {
+export function deriveEffectEventId(subjectNaturalKey: string, transition: string, effectType: EffectType): string {
   return `${subjectNaturalKey}|${transition}|${effectType}`
 }

@@ -1,4 +1,4 @@
-# Go-Live Re-plan — Establishment & Master Plan (the "live" definition + the half-wired fe-* debt)
+# Go-Live Re-plan — Establishment & Master Plan (the "live" definition + the half-wired fe-\* debt)
 
 > **Status:** ESTABLISHMENT (planning), rev 2. Authored 2026-10-21 with Victor after a STRUCTURAL triage.
 > rev 1 went to an independent adversarial critique (REVISE: 6 blocking, 4 nits) and **all 10 were folded in**
@@ -7,7 +7,7 @@
 > model** (master plan → numbered gates, each with a fixed output home; only the final gate writes to Linear).
 > **Isolation:** worktree `.claude/worktrees/golive-replan` (branch `golive-replan`) off `main @ 3b0ecc8`.
 > **Supersedes (at G4):** the ad-hoc `module-go-lives` queue as the way shipped surfaces become usable. Its
-> *direction* is preserved; its *form* (out-of-structure units, one at a time) is retired.
+> _direction_ is preserved; its _form_ (out-of-structure units, one at a time) is retired.
 > **No-Guessing:** every claim is `[FACT: path:line]`, `[INTERP]`, or `[UNKNOWN]`.
 
 ---
@@ -18,28 +18,28 @@
 developing the rest of the OS … we keep going around in circles."
 
 **Root cause (one sentence):** the **entity** stopped being the unit of delivery. Backend ① and frontend ② units
-each closed on their own track: surfaces planned against a stubbed service, which is a legitimate *planning*
+each closed on their own track: surfaces planned against a stubbed service, which is a legitimate _planning_
 convenience. But **ENTITY CLOSE, the step that requires both tracks together, never ran**, so FE units were
 marked Done while **"done" ≠ "usable"**. That is the exact failure the Entity Delivery Flow exists to prevent:
-"an entity gets split into a backend track and a frontend track *at the top* … per-slice verification gets
+"an entity gets split into a backend track and a frontend track _at the top_ … per-slice verification gets
 batched or 'owed'" `[FACT: entity-delivery-flow.md §1, :49,53]`. `[INTERP — grounded]` The frontend-replan
 surface grain (G6) re-homed FE work to surfaces with no ENTITY CLOSE binding them back to their entity
 `[FACT: frontend-replan/_index.md:22-23]`.
 (A contributing gap: the shell-wiring row #69 was split away at frontend-replan G6. Its legs were M1.0 shell
-wiring, not the per-module data legs, which ride their MOD twins.) Every go-live since then is minted *outside* the
+wiring, not the per-module data legs, which ride their MOD twins.) Every go-live since then is minted _outside_ the
 structure to repay that debt.
 
-| # | Finding | Evidence |
-|---|---|---|
-| F1 | The canonical structure has **no go-live layer**: each `FE-*` "rides its M1.1.x backend twin 1:1", with outcomes "over the finished service" | `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:137,140-171]` |
-| F2 | FE plans declared their data leg a stub and homed it to a phantom ("UI-3 / M1.1+"; UI-3 is the closed editor). Proven for notes; settings and notifications follow the same pattern. Whether **every** surface does is a G1 result | `[FACT: docs/specs/fixes/notes-dataplane-orphan-deferral/_index.md:15-21]` · `[FACT: .claude/docs/decisions.md:9,21]` · `[INTERP — G1 confirms]` |
-| F3 | This is the **db-10 / DF-12 failure class** (a deferral with no proven issue home). The fix unit left its milestone `[UNKNOWN]` | `[FACT: same :22,47]` · `[FACT: reconstructed-structure.md:47]` |
-| F4 | **The go-live units sit outside the `#` order.** There were three go-lives: PR #149 `fe-notes-golive`, #150 `notes-entity-usability`, #151 `home-journal-go-live`. Together with `data-plane-wiring` (#148, which does carry a real milestone, M1.1.3) and the `module-go-lives` queue, **none has a `#` row or edges**. `notes-entity-usability`/`home-journal` use undefined milestone labels ("M1.1.3+", "M1 — per-module usability"). In the committed tree the LIF ids are still "pending". LIF-237/238/239 (data-plane · `note-open-behavior-preference` · notes-entity-usability) exist only in uncommitted main-checkout edits; home-journal has none | `[FACT: .claude/tasks/data-plane-wiring.md:3,7]` · `[FACT: notes-entity-usability.md:3,6]` · `[FACT: module-go-lives.md:4]` · `git log origin/main` (#149 `a59eef5`) |
-| F5 | **Stale headers.** `data-plane-wiring` says "planning … nothing built" but shipped as PR #148, edited `client.ts` (which its revised scope said to leave untouched), and never filled its Build Steps. `home-journal-go-live` says "uncommitted … awaiting PR", but #151 is merged. TASKS.md lists fe-gamification and fe-shell as "PR open", but #140 (`8c1070d`) and #118 (`2613a35`) are merged | `[FACT: data-plane-wiring.md:2,16,42,45]` · `[FACT: home-journal-go-live.md:2]` · `[FACT: TASKS.md:12,14]` |
-| F6 | **Two structures, never reconciled, and the wiring row was lost.** The initiative structure still lists the superseded 24 `FE-*` rows (with `#64`/`#65` used twice). The 42-unit order lives separately in `frontend-replan/reconstructed-structure.md`. The old row **#69 `FE-shell-integration-wiring`, "wire built M1.0 UI to services"**, was **split** into chrome units #14–17 at frontend-replan G6, and the wiring obligation disappeared there. Neither structure has a data-plane row | `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:124-125,140-141,145]` · `[FACT: frontend-replan/g6-edge-ledger.md:33]` · grep "data-plane" → 0 in both |
-| F7 | `MVP-PATH.md` (2026-10-12) still says the data plane is a stub and fe-calendar is ✅ done | `[FACT: docs/roadmap/MVP-PATH.md:10-15,122]` |
-| F8 | **The flow lets a stub close.** Entity Delivery Flow: the frontend "plans against a *known* service API (**real or stubbed**)", and ENTITY CLOSE requires only "both tracks green, every slice's gate PASS". Nothing swaps the stub for the real service. The backend gate has "live smoke on the REAL data store", and the Visual Gate has nothing like it. The add-frontend-component scenario carries no live criterion either. The quality bar already *implies* the rule ("writes are instantly real locally") but no gate enforces it | `[FACT: ~/dev-toolkit/…/entity-delivery-flow.md:49,53,176]` · `[FACT: ~/dev-toolkit/claude-profiles/add-frontend-component/scenarios/default.md]` · `[FACT: frontend-quality-bar/_index.md:50]` |
-| F9 | The composition root's `Services` exposes only **2** of **22** `create*Service` factories (notes, journals). Spaces/backlinks/registries are built only as internal dependencies | `[FACT: apps/web/src/db/composition-root.ts:33-36,68-76]` · grep `packages/core/src` → 22 |
+| #   | Finding                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Evidence                                                                                                                                                                                        |
+| --- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F1  | The canonical structure has **no go-live layer**: each `FE-*` "rides its M1.1.x backend twin 1:1", with outcomes "over the finished service"                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:137,140-171]`                                                                                                              |
+| F2  | FE plans declared their data leg a stub and homed it to a phantom ("UI-3 / M1.1+"; UI-3 is the closed editor). Proven for notes; settings and notifications follow the same pattern. Whether **every** surface does is a G1 result                                                                                                                                                                                                                                                                                                                                                                                                                            | `[FACT: docs/specs/fixes/notes-dataplane-orphan-deferral/_index.md:15-21]` · `[FACT: .claude/docs/decisions.md:9,21]` · `[INTERP — G1 confirms]`                                                |
+| F3  | This is the **db-10 / DF-12 failure class** (a deferral with no proven issue home). The fix unit left its milestone `[UNKNOWN]`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `[FACT: same :22,47]` · `[FACT: reconstructed-structure.md:47]`                                                                                                                                 |
+| F4  | **The go-live units sit outside the `#` order.** There were three go-lives: PR #149 `fe-notes-golive`, #150 `notes-entity-usability`, #151 `home-journal-go-live`. Together with `data-plane-wiring` (#148, which does carry a real milestone, M1.1.3) and the `module-go-lives` queue, **none has a `#` row or edges**. `notes-entity-usability`/`home-journal` use undefined milestone labels ("M1.1.3+", "M1 — per-module usability"). In the committed tree the LIF ids are still "pending". LIF-237/238/239 (data-plane · `note-open-behavior-preference` · notes-entity-usability) exist only in uncommitted main-checkout edits; home-journal has none | `[FACT: .claude/tasks/data-plane-wiring.md:3,7]` · `[FACT: notes-entity-usability.md:3,6]` · `[FACT: module-go-lives.md:4]` · `git log origin/main` (#149 `a59eef5`)                            |
+| F5  | **Stale headers.** `data-plane-wiring` says "planning … nothing built" but shipped as PR #148, edited `client.ts` (which its revised scope said to leave untouched), and never filled its Build Steps. `home-journal-go-live` says "uncommitted … awaiting PR", but #151 is merged. TASKS.md lists fe-gamification and fe-shell as "PR open", but #140 (`8c1070d`) and #118 (`2613a35`) are merged                                                                                                                                                                                                                                                            | `[FACT: data-plane-wiring.md:2,16,42,45]` · `[FACT: home-journal-go-live.md:2]` · `[FACT: TASKS.md:12,14]`                                                                                      |
+| F6  | **Two structures, never reconciled, and the wiring row was lost.** The initiative structure still lists the superseded 24 `FE-*` rows (with `#64`/`#65` used twice). The 42-unit order lives separately in `frontend-replan/reconstructed-structure.md`. The old row **#69 `FE-shell-integration-wiring`, "wire built M1.0 UI to services"**, was **split** into chrome units #14–17 at frontend-replan G6, and the wiring obligation disappeared there. Neither structure has a data-plane row                                                                                                                                                               | `[FACT: delivery-structure-reconstruction/reconstructed-structure.md:124-125,140-141,145]` · `[FACT: frontend-replan/g6-edge-ledger.md:33]` · grep "data-plane" → 0 in both                     |
+| F7  | `MVP-PATH.md` (2026-10-12) still says the data plane is a stub and fe-calendar is ✅ done                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | `[FACT: docs/roadmap/MVP-PATH.md:10-15,122]`                                                                                                                                                    |
+| F8  | **The flow lets a stub close.** Entity Delivery Flow: the frontend "plans against a _known_ service API (**real or stubbed**)", and ENTITY CLOSE requires only "both tracks green, every slice's gate PASS". Nothing swaps the stub for the real service. The backend gate has "live smoke on the REAL data store", and the Visual Gate has nothing like it. The add-frontend-component scenario carries no live criterion either. The quality bar already _implies_ the rule ("writes are instantly real locally") but no gate enforces it                                                                                                                   | `[FACT: ~/dev-toolkit/…/entity-delivery-flow.md:49,53,176]` · `[FACT: ~/dev-toolkit/claude-profiles/add-frontend-component/scenarios/default.md]` · `[FACT: frontend-quality-bar/_index.md:50]` |
+| F9  | The composition root's `Services` exposes only **2** of **22** `create*Service` factories (notes, journals). Spaces/backlinks/registries are built only as internal dependencies                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | `[FACT: apps/web/src/db/composition-root.ts:33-36,68-76]` · grep `packages/core/src` → 22                                                                                                       |
 
 **Are the go-lives making the drift bigger?** Yes, in their current form. Each re-opens a Done unit
 out-of-band, creates an issue the tracker can't order, and adds an undefined label. Because the flow (F8) still
@@ -47,6 +47,7 @@ lets a stubbed surface close, every future surface can repeat it. **The debt is 
 exists now (PR #148). Once the flow is fixed, the debt is only the already-shipped surfaces. `[INTERP]`
 
 ## 2. The job
+
 1. **Ratify, from the docs, how a frontend unit behaves from now on, and write it into the governing flow
    immediately** (before any more surfaces close).
 2. **Census the debt**: exactly which legs of which shipped surfaces are live / stub / partial, plus seam defects.
@@ -58,20 +59,21 @@ exists now (PR #148). Once the flow is fixed, the debt is only the already-shipp
 Every gate runs §XXVI: a persisted plan, `/critique` with an **independent adversarial critic** (fresh subagent,
 cross-checks code and ADRs, not this doc), `/preflight`, then **Victor's approval**.
 
-| Gate | Purpose | Output home | Writes outward? |
-|---|---|---|---|
-| **EST** | This master plan | `golive-replan/_index.md` | no |
-| **G0** | **Ratify the Definition of Live (DoL) + propagate it into the governing flow** | `golive-replan/process.md` + the edits below | **semi**: the toolkit edit goes via `/toolkit-task` with Victor's approval |
-| **G1** | **Debt census**: surface × leg → LIVE / STUB / PARTIAL + seam defects + DF-12 deferral sweep | `golive-replan/debt-census.md` | no |
-| **G2** | **Debt decomposition + coverage**: units (homes + edges), set-cover both ways as its acceptance | `golive-replan/debt-plan.md` | no |
-| **G3** | **Order + one structure + the G4 ledger**: interleave the debt; reconcile the two structure docs; refresh MVP-PATH; author the migration ledger | both `reconstructed-structure.md` · `MVP-PATH.md` · `golive-replan/g4-edge-ledger.md` | no (docs) |
-| **G4** | **Linear reshape** from the approved ledger | Linear + task files | **YES — needs Victor's approval** |
-| builds | each debt unit through Entity Delivery Flow ②, closing under the DoL | per-unit `docs/specs/…/<unit>/` | — |
+| Gate    | Purpose                                                                                                                                         | Output home                                                                           | Writes outward?                                                            |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
+| **EST** | This master plan                                                                                                                                | `golive-replan/_index.md`                                                             | no                                                                         |
+| **G0**  | **Ratify the Definition of Live (DoL) + propagate it into the governing flow**                                                                  | `golive-replan/process.md` + the edits below                                          | **semi**: the toolkit edit goes via `/toolkit-task` with Victor's approval |
+| **G1**  | **Debt census**: surface × leg → LIVE / STUB / PARTIAL + seam defects + DF-12 deferral sweep                                                    | `golive-replan/debt-census.md`                                                        | no                                                                         |
+| **G2**  | **Debt decomposition + coverage**: units (homes + edges), set-cover both ways as its acceptance                                                 | `golive-replan/debt-plan.md`                                                          | no                                                                         |
+| **G3**  | **Order + one structure + the G4 ledger**: interleave the debt; reconcile the two structure docs; refresh MVP-PATH; author the migration ledger | both `reconstructed-structure.md` · `MVP-PATH.md` · `golive-replan/g4-edge-ledger.md` | no (docs)                                                                  |
+| **G4**  | **Linear reshape** from the approved ledger                                                                                                     | Linear + task files                                                                   | **YES — needs Victor's approval**                                          |
+| builds  | each debt unit through Entity Delivery Flow ②, closing under the DoL                                                                            | per-unit `docs/specs/…/<unit>/`                                                       | —                                                                          |
 
-*(rev 1 had G0–G6. G3-coverage folded into G2 as its acceptance, and G5-propagation folded into G0 so the rule
-binds immediately; critic findings 5 and 8.)*
+_(rev 1 had G0–G6. G3-coverage folded into G2 as its acceptance, and G5-propagation folded into G0 so the rule
+binds immediately; critic findings 5 and 8.)_
 
 ### G0 — Ratify the DoL + make it bind now
+
 - **Pre-solved inputs (G0 RATIFIES these against the docs, it does not re-gather them):**
   - the per-surface live checklist: register the service in the composition root (dep-order) → flip the stub hooks to
     `useQuery`/`useMutation` (BR-RT-2/4; keep `?sample` for the Visual Gate) → wire the interactions → verify live
@@ -87,7 +89,7 @@ binds immediately; critic findings 5 and 8.)*
   first-consumer-pull homing `[FACT: home-deferred-substrate-pieces/PLAN.md:9-12]`.
 - **Doc-fixed answers (G0 cites them; nothing is asked; Victor 2026-10-21: "already answered in the
   documentation, on the architecture and organization of the OS"):**
-  - (a) **Stubs:** "real or stubbed" is a *planning* convenience so the tracks need not run serially
+  - (a) **Stubs:** "real or stubbed" is a _planning_ convenience so the tracks need not run serially
     `[FACT: entity-delivery-flow.md:53]`. It is never a close state: the entity closes only when "both tracks
     [are] green" `[:49]` and nothing is "owed" `[§1]`, and M1 ships "coherent and usable" `[ADR-019:35]`. Any
     deferral carries a proven home (DF-12).
@@ -100,8 +102,8 @@ binds immediately; critic findings 5 and 8.)*
     and are **shaped toward the M1 live end goal by role**: all 13 are satisfied when their consuming surfaces
     close live. This includes #13 composition seams, whose recorded decision is "Option A — convention + defer
     live" to the first consumer `[FACT: .claude/docs/decisions.md:1106-1108]`, so each engine is wired in its
-    first consuming entity's closing slice. *(Corrected at G0 rev 2, §XXVIII: rev 3 had invented a separate
-    engine-wiring close for #13.)*
+    first consuming entity's closing slice. _(Corrected at G0 rev 2, §XXVIII: rev 3 had invented a separate
+    engine-wiring close for #13.)_
 - **So the DoL is an ENTITY-level close (the "Entity Live Close"):** an entity is Done for M1 when its ① service
   is merged, its ② surfaces are built on the seam contract, the service is registered, the hooks are live, the
   interactions are wired, and the whole thing is verified live on real OPFS, so it is usable and testable from then
@@ -118,6 +120,7 @@ binds immediately; critic findings 5 and 8.)*
 - **"Go-live" retires as a unit type:** debt units are completions of an existing home (§G2); new surfaces close live.
 
 ### G1 — Debt census (a checked table; no new tooling)
+
 - **Population** (shipped = merged to main `[FACT: git log origin/main]`; a merged PR outranks TASKS.md `[FACT: MVP-PATH.md:205]`):
   - **Feature surfaces:** fe-home · fe-notes-and-pages · fe-settings · fe-notifications · fe-onboarding ·
     fe-session-runtime · fe-session-hud · fe-shell (#118 merged) · fe-shell-scope · fe-gamification (#140 merged).
@@ -138,6 +141,7 @@ binds immediately; critic findings 5 and 8.)*
   divergence list**.
 
 ### G2 — Decompose + cover
+
 - **Reuse existing homes first (no duplicates).** Debt that belongs to an existing issue is **re-edged, not
   minted**: home summary/dashboard providers → HARD-1 (`hard-1-summary-registry`, LIF-112); graph/backlinks →
   HARD-3; live search → DB-8 `[FACT: reconstructed-structure.md:176,178,179]`. Only the rest becomes new units.
@@ -147,6 +151,7 @@ binds immediately; critic findings 5 and 8.)*
   ≥1 real leg; every ORPHAN deferral → a home or a documented `⚠ INTENDED-later` tail.
 
 ### G3 — Order + one structure + the ledger
+
 - Make the initiative structure the single canonical: replace the 24 superseded `FE-*` rows with the 42-unit order;
   fix the `#64`/`#65` collision; add the data-plane row (✅ #148, `← AR-2, AR-4`, `→` the FE surfaces); interleave
   the debt units, dependency-correct. Refresh MVP-PATH with the archived-inclusive census
@@ -155,6 +160,7 @@ binds immediately; critic findings 5 and 8.)*
   affected issues + edges, the create / re-home / re-edge / retire map, and a rollback contingency.
 
 ### G4 — Linear reshape (the only tracker write)
+
 - **Victor approves the ledger** → dry-run `tracker_sync --status` must show zero warnings → write.
 - **In scope:**
   - mint the new debt units;
@@ -167,10 +173,11 @@ binds immediately; critic findings 5 and 8.)*
   `[FACT: db-10-seed-and-fixtures.md:7-14]` · the session-log line calling mod-routines "not started".
 
 ## 4. Parallelism, isolation & integrity
+
 - **Paused:** the `module-go-lives` queue. No new go-live until G4 homes the debt.
 - **mod-routines** (backend ①, S3/8 in its worktree; main-tree status line reads `paused`
   `[FACT: .claude/tasks/mod-routines.md:2]`): **resumes as the ① track of the routines entity.** Its ① close is
-  unchanged (S1–S8, backend verification gate). The routines *entity* closes live only when FE-routines ② lands
+  unchanged (S1–S8, backend verification gate). The routines _entity_ closes live only when FE-routines ② lands
   and the service is registered and wired (G0(b): group work).
 - **fe-calendar:** S5/S6 (renderers) continue. Its **unit close (S7, `useCalendar` over `ProviderRead`, the data
   leg)** must meet the ratified DoL `[FACT: fe-calendar worktree docs/specs/foundation/fe-calendar/delivery/slice-map.md:40]`.
@@ -185,11 +192,13 @@ binds immediately; critic findings 5 and 8.)*
   with the ELC as its close bar; only then can HARD-4 not close on half-wired surfaces.
 
 ## 5. Open decisions
+
 - **None.** G0(a)–(c) are doc-fixed (§3 G0). A genuine fork found later is raised at its gate only after the
   governing-docs sweep fails to answer it.
 - **Web-only for M1** (doc-fixed); the DoL is re-audited for mobile/desktop at M4 `[FACT: frontend-replan/_index.md:167-169]`.
 
 ## 6. Acceptance (EST)
+
 1. F1–F9 each cite a real `path:line` (or are labeled), and the critic re-verified them.
 2. Every gate has a purpose, an output home and the §XXVI double-gate; outward writes are flagged (G0-toolkit semi,
    G4 full).
@@ -198,6 +207,7 @@ binds immediately; critic findings 5 and 8.)*
 5. Critique SHIP + `/preflight` PASSED, then Victor's approval → G0 opens.
 
 ## 7. Gate record
+
 - **rev 1 → independent adversarial critique: REVISE** (6 blocking · 4 nits). Folded:
   - B1 G0 now ratifies the pre-solved checklist instead of re-gathering it;
   - B2 #140/#118 moved to the shipped population (merged), stale rows added to hygiene;

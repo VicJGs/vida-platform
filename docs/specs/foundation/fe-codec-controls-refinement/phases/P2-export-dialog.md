@@ -9,9 +9,11 @@
 > Gate script: `/tmp/vg/export-gate.mjs`.
 
 ## 0. Source model
+
 Code-first. Tokens/variants only; no hard-coded palette; no palette-VALUE churn. No new dep.
 
 ## 1. Baseline (ground truth — `packages/ui/src/components/export-dialog.tsx` + v6 spec)
+
 `ExportDialog` is **UI-2 · V6** — a presentational export modal that **composes UI-1 `Dialog`** (title/description/footer
 props) + a hand-rolled APG `role="radiogroup"` of `role="radio"` divs + `Button`s. [FACT: export-dialog.tsx:131-179]
 
@@ -26,7 +28,9 @@ borderColor:$colorBrandPrimary`, `disabled → opacity 0.5`. **⚠ NO `hoverStyl
 visually distinct). [FACT: export-dialog.tsx:43-57]
 
 ## 2. The crux (the refinement boundary — all Layer-1, no API change)
+
 export-dialog has LOW headroom (thin Dialog-composing modal); the honest P2 surface is the Radio rows:
+
 - **R1 · hover state (§VIII conformance fix — the one real gap):** add `hoverStyle` to the base `Radio` — a subtle
   `backgroundColor:'$colorSurfaceSecondary'` (perceivable, not color-sole since it's a fill change; the §VIII "at least
   one of bg/border/shadow" rule). Suppressed when `disabled` (the variant drops it, the checkbox/card precedent).
@@ -48,15 +52,17 @@ export-dialog has LOW headroom (thin Dialog-composing modal); the honest P2 surf
 (ED-2…ED-5, UNTOUCHED — presentation only); `.ext` is not numeric → **no tabular** (the plan bullet was speculative).
 
 ## 3. Contract
+
 **No `ExportDialogProps` change.** P2 is internal styled-host refinement (the `Radio`/`Dot`/`RadioGroup` styled defs +
 hover variant). Zero API surface, non-breaking by construction.
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking):** Brave, 3 presets × light/dark. Assert: **hover** on a radio row is visually distinct
   (bg/border change, measured via computed style on `:hover`) and suppressed on the disabled/busy rows; **selected**
   row reads as the clear accent-as-moment (brand, flips per preset); **hairline rhythm** (4pt padding/gap); the ext is
   muted + aligned; **full-matrix AA** on label (primary) + ext (muted) incl. warm-dark (≥ 4.5); **375** the dialog panel
-  + rows fit (no overflow).
+  - rows fit (no overflow).
 - **a11y (UNCHANGED):** `role="radiogroup"`/`role="radio"`, roving tabindex, `aria-checked`, busy→`tabIndex=-1`+
   `aria-disabled` (ED-4), focus-into on the selected radio (ED-5) — all intact. axe 0. The hover adds no role/aria.
 - **Logic UNCHANGED:** selection self-heal (ED-2b), keyboard (↑↓←→/Home/End/Space), Export/Cancel, busy — all existing
@@ -66,6 +72,7 @@ hover variant). Zero API surface, non-breaking by construction.
 - **§XXIX currency:** `packages/ui/src/CLAUDE.md` (export-dialog paragraph: +hover/accent refinement) + v6 spec change-log.
 
 ## 4b. Preflight RESULT (2026-10-06 — PASSED, grounded in code)
+
 - **V1 (R2 mechanism) RESOLVED → Toast absolute-bar, NOT a border-width change.** Preflight finding: a `borderLeftWidth`
   1→3 on the bordered radio box would shift content 2px on select (layout jump). Use the Toast accent precedent instead
   — `Radio` `position:relative`+`overflow:hidden` + an `aria-hidden` absolute `width:3` left bar shown when selected
@@ -79,6 +86,7 @@ hover variant). Zero API surface, non-breaking by construction.
 ## 4a. Preflight + /verify (resolved above in §4b)
 
 ## 5. Implementation prompt
+
 Types-first: no prop change. In `export-dialog.tsx`: (R1) add `hoverStyle:{ backgroundColor:'$colorSurfaceSecondary' }`
 to the base `Radio` styled; `disabled` variant cancels it via `hoverStyle:{backgroundColor:'transparent'}` (select.tsx:82
 precedent). (R2) accent BAR: `Radio` `position:relative`+`overflow:hidden`; **REMOVE `borderColor:'$colorBrandPrimary'` from the

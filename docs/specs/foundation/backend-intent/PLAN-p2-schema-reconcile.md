@@ -102,17 +102,20 @@ sessions/scheduling/pomodoro/journals span `foundation/{sessions,scheduling,sess
 - **Deleted-symbol sweep:** re-confirm 0 dangling imports (teardown removed them; the rebuild re-adds).
 
 ## 5. Types colocation + CHECK-vocab audit (R3)
+
 - Grep each domain's enum/vocab consumers; verify vocab lives in its owning `@vida/types` file (catch
   mis-files like the pomodoro-in-notes bug). Fix mis-homes (move + re-export + validator reconcile).
 - OPEN (user-extensible/modality) → plain TEXT no CHECK; FIXED (closed taxonomy) → CHECK + parity row.
 
 ## 6. Deliverables
+
 - `docs/specs/foundation/backend-intent/schema-audit.md` — per-domain audit table (ALIGNED/GAP/DIVERGENT/
   DEFERRED, each cited) + the applied-fix list + the deferred-with-home list.
 - Applied schema/types/validator changes + the new notes migration.
 - Green tree (§ R4).
 
 ## 7. Gate (P2's own)
+
 1. **Method gate (now):** `/critique` on THIS plan — is the audit surface filter (§2) correct (nothing
    schema-affecting excluded)? is the fix rule (§3.2) sound (targeted, not creeping into a redo)? is the
    notes-hub blast radius complete? → Approval 1.
@@ -122,10 +125,11 @@ sessions/scheduling/pomodoro/journals span `foundation/{sessions,scheduling,sess
    deleted-symbol sweep + `/critique`. → P2 done.
 
 ## 8. Acceptance (P2 done when) — ✅ ALL MET (2026-09-14)
+
 - [x] `schema-audit.md`: 435 items classified + cited; **0 GAP**; every DIVERGENT resolved, 117 DEFERRED-with-home
-  (0 unhomed). 0 unaddressed.
+      (0 unhomed). 0 unaddressed.
 - [x] Notes hub rebuilt (schema + types + validators + appended migration `033_notes.ts` v33 + barrels + parity
-  row + new introspection test); `_registry` re-validated complete (no-op); consumers re-checked (no-FK, no break).
+      row + new introspection test); `_registry` re-validated complete (no-op); consumers re-checked (no-FK, no break).
 - [x] Types colocation correct (0 mis-filed vocab; O4 `'llm'`→`'ai'` unified); OPEN/FIXED CHECK placement per conventions.
 - [x] typecheck 11/11 · DDL-introspection parity green (notes 12 tests) · 0 dangling imports · `@vida/core` 796/796.
 - [x] Audit-report gate (2 critics SHIP) + post-impl gate (independent critic SHIP) pass.
@@ -136,11 +140,13 @@ O4 UNIFY provenance to `manual|ai|import` (applied) · O5 keep exercise_plans.st
 progress→null batch DEFERRED to DB-11 / module builds (scope refinement).
 
 ## 9. Out of scope for P2
+
 Pure service logic that implies no persisted shape (→ P3) · the decomposition/issue list (P3) · the
 frontend (P6) · a wholesale redo of the 18 non-notes domains (audit + targeted fix only) · resolving GG4
 and other Part-D UNKNOWNs not homed to P2 (they carry their own resolve-by phase).
 
 ## 10. Execution note
+
 The per-domain audit (22 schemas × corpus cross-check) is another fan-out — likely a workflow (per-domain
 auditor → findings → central triage → applied fixes), decided at execution after Approval. The notes-hub
 rebuild is authored directly (single coherent unit), not fanned out.

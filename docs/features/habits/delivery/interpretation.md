@@ -17,14 +17,16 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
 ## 1. DEPENDENCIES — every upstream
 
 ### Owned schema (DB-4, migration 017 — authored, live)
+
 - `habits` — definition + recurrence + build/break + domain + **denormalized streak cache** + measurability axes
-  + restored v1 fields. `[FACT: packages/core/src/db/schema/habits.ts:52-114; packages/core/src/db/migrations/017_habits.ts:41-85]`
+  - restored v1 fields. `[FACT: packages/core/src/db/schema/habits.ts:52-114; packages/core/src/db/migrations/017_habits.ts:41-85]`
 - `habit_completions` — per-date completion ledger (quantity + mood + restored `location`/`completion_time`),
   `UNIQUE(habit_id, completed_date)`, **no `deleted_at`**. `[FACT: db/schema/habits.ts:93-114; migrations/017_habits.ts:91-113]`
 - `project_habits` — navigational junction, **KEPT** (only the `purpose_*` trio retires, C1 guard); synthetic-id
   PK shape. `[FACT: migrations/017_habits.ts:118-133; docs/specs/foundation/realignment-master-plan/part-1.2-reruns/habits.md:64]`
 
 ### Foundation services & primitives (compose, do not re-implement)
+
 - **Repository / Drizzle** — `createRepository(db, table, {deviceId, encryptedFields:[], softDelete})`.
   `[FACT: packages/core/src/db/repository.ts:236-240,176-183]`
 - **EffectRegistry + effect rail** — `effects.rail.applyEffect(event)`, guarded by `registry.resolve(type)`;
@@ -33,10 +35,11 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
   `streak(habit)`/completion-rate advertised as an **M5 measure read seam (R7)**.
   `[FACT: docs/features/habits/business-rules.md:50-54; db/schema/habits.ts:79-80]`
 - **`contributions` primitive** — polymorphic weighted edge (`goal_type/goal_id/contributor_type/contributor_id/
-  contribution_percentage`). `[FACT: packages/core/src/db/schema/foundation/purpose.ts:33-50]`
+contribution_percentage`). `[FACT: packages/core/src/db/schema/foundation/purpose.ts:33-50]`
 - **SyncMetadata / SyncableEntity** — `_sync_*` on every syncable row. `[FACT: packages/types/src/sync.ts:18-36]`
 
 ### Consumed modules (seams — deny-safe when the port is absent)
+
 - **Notes & Pages** — a habit's notes are a `pages` row (`entity_type='habit'`); never inline.
   `[FACT: docs/features/habits/contract.md:30-31; conventions.md:23]`
 - **Preferences** — `push_habits` reminder toggle (HB-6); `habit_backfill_window_days` backfill limit
@@ -47,6 +50,7 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
 - **Purpose & Goals** — metric owner (see DELEGATES).
 
 ### `@vida/types` + validators (extend, per HAB-28)
+
 - Enums live: `HABIT_TYPE`, `HABIT_FREQUENCY`, `HABIT_TIME_OF_DAY`, `HABIT_DIFFICULTY` `[FACT: packages/types/src/habit.ts:13-25]`;
   `LIFE_DOMAIN` `[FACT: packages/types/src/common.ts:54-63]`; `MEASUREMENT_KIND`/`BINDING_MODE` `[FACT: packages/types/src/measurement.ts:5-10]`.
 - Validators live: `HabitTypeSchema`/`HabitFrequencySchema`/`HabitTimeOfDaySchema` `[FACT: packages/core/src/validators/habit.ts:4-6]`;
@@ -80,11 +84,11 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
 
 ## 3. ORGANIZATION — owns vs consumes vs delegates
 
-| Boundary | Item |
-|----------|------|
-| **OWNS** | the `habits` + `habit_completions` tables; definition CRUD; completion-ledger CRUD (upsert per date); streak/completion-rate/mood/calendar **derivations** (live-computed from the ledger, HB-2); today-list eligibility computation (HB-6); done-state derivation (`count>=target_count`, HB-5); **emitting** the S4 completion fan-out — `complete_habit_occurrence` (the habit's own occurrence effect), `contribute_purpose_metric`, `award_xp` — on the rail (the WRITES the latter two trigger are DELEGATED, below). `[FACT: docs/features/habits/contract.md:10-24; docs/specs/foundation/backend-intent/parts/habits.md:26]` |
-| **CONSUMES** | Repository/Drizzle · EffectRegistry+rail · measurement engine (M5 read seam) · `pages` (`entity_type='habit'`) · `entity_tags` (SP1) · Preferences (`push_habits`, `habit_backfill_window_days`). Each cross-module port is deny-safe when absent (`if (!port) return`/`[]`). `[FACT: finance/service.ts:698-702; checkins/service.ts:219-227]` |
-| **DELEGATES** | Purpose metric write → `contributions` primitive via the S4 `contribute_purpose_metric` effect (R2 documented handler; Purpose owns the write, never a direct `purpose_metric_value` write) `[FACT: docs/features/habits/business-rules.md:31-36]` · Economy/XP → `award_xp`→`grant_currency(XP)` effect; balances derive from `consequence_ledger` (Gamification-owned; **Habits never writes the ledger**, R2) `[FACT: docs/features/habits/business-rules.md:37-41]` · encryption → M3/DB-5 (M1.0 pass-through) `[FACT: parts/habits.md:36]` · reminders → Preferences/notifications-delivery. |
+| Boundary      | Item                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OWNS**      | the `habits` + `habit_completions` tables; definition CRUD; completion-ledger CRUD (upsert per date); streak/completion-rate/mood/calendar **derivations** (live-computed from the ledger, HB-2); today-list eligibility computation (HB-6); done-state derivation (`count>=target_count`, HB-5); **emitting** the S4 completion fan-out — `complete_habit_occurrence` (the habit's own occurrence effect), `contribute_purpose_metric`, `award_xp` — on the rail (the WRITES the latter two trigger are DELEGATED, below). `[FACT: docs/features/habits/contract.md:10-24; docs/specs/foundation/backend-intent/parts/habits.md:26]` |
+| **CONSUMES**  | Repository/Drizzle · EffectRegistry+rail · measurement engine (M5 read seam) · `pages` (`entity_type='habit'`) · `entity_tags` (SP1) · Preferences (`push_habits`, `habit_backfill_window_days`). Each cross-module port is deny-safe when absent (`if (!port) return`/`[]`). `[FACT: finance/service.ts:698-702; checkins/service.ts:219-227]`                                                                                                                                                                                                                                                                                       |
+| **DELEGATES** | Purpose metric write → `contributions` primitive via the S4 `contribute_purpose_metric` effect (R2 documented handler; Purpose owns the write, never a direct `purpose_metric_value` write) `[FACT: docs/features/habits/business-rules.md:31-36]` · Economy/XP → `award_xp`→`grant_currency(XP)` effect; balances derive from `consequence_ledger` (Gamification-owned; **Habits never writes the ledger**, R2) `[FACT: docs/features/habits/business-rules.md:37-41]` · encryption → M3/DB-5 (M1.0 pass-through) `[FACT: parts/habits.md:36]` · reminders → Preferences/notifications-delivery.                                     |
 
 ---
 
@@ -105,7 +109,7 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
   `softDelete:false` (hard-delete, HB-11). `[FACT: db/repository.ts:379-382; migrations/017_habits.ts:74,110]`
   [[repository-findwhere-skips-softdelete-filter]]
 - **IR-4 · M1.0 `encryptedFields:[]` even for the 6+1 `[E]` fields.** `name/description/unit/cue/reward/
-  success_criteria/tags` (habits) + `location` (completions) are `[E]` boundaries for M3; the M1.0 repo set stays
+success_criteria/tags` (habits) + `location` (completions) are `[E]` boundaries for M3; the M1.0 repo set stays
   `[]` (pass-through), `getVaultKey` only fetches when the set is non-empty. `[FACT: db/schema/habits.ts:36-37]`
   [[m10-repos-use-empty-encryptedfields-seam]]
 - **IR-5 · Effect emission is POST-COMMIT, guarded, and dormant-safe.** A completion persists first; the effect
@@ -133,6 +137,7 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
 ---
 
 ## 5. Open UNKNOWNs (flagged, not guessed past)
+
 - **[UNKNOWN → resolved at the Decomposition Gate]** the ordered backend slice roster grouping HAB-01…28 (CRUD /
   completion-ledger+streak / analytics-derivations / effect-fan-out+contributions / seams) + the per-slice
   Verification-Gate ledger. Sources: `parts/habits.md` + `decomposition.md` + the aspect corpus above.
@@ -140,7 +145,8 @@ is a ② concern; ① renders no surface. Stated, not silently skipped.
   over window) — CHECK defaults are live; the read-model math is a design-pass. `[FACT: parts/habits.md:30; part-1.2-reruns/habits.md:146]`
 
 ## 6. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-09-23 | 2026-09-23-mod-habits | initial interpretation (dependencies · needs · organization · implicit rules), from the gated aspect corpus + schema + service precedents |
+
+| Date       | Session               | Change                                                                                                                                                                                                                                                                                                                       |
+| ---------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-09-23 | 2026-09-23-mod-habits | initial interpretation (dependencies · needs · organization · implicit rules), from the gated aspect corpus + schema + service precedents                                                                                                                                                                                    |
 | 2026-09-23 | 2026-09-23-mod-habits | Interpretation Gate SHIP — folded B1 (phantom `entity-delivery-flow.md` cite → real `repository.ts:340`/`finance-service.test.ts` source), N1 (`Habit` reconcile is +4 −`tags`), N2 (schema's stale "→ DB-11" comment superseded by HAB-28 homing), N3 (`complete_habit_occurrence` homed as OWNS-emit), N4 (IR-2 line-cite) |

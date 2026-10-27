@@ -13,6 +13,7 @@ provider registration or a deny-safe/injected port (the S5 pattern). Zero re-imp
 ---
 
 ## §1 Context (BASELINE — code as-is)
+
 - **Journals registry is BUILT** — `createJournalRegistry().register(def: JournalContribution)`; a
   `JournalContribution` = `{module, sectionKey, dataPoints, summary(date)→SectionData, dueIn?(range)→SectionData}`
   `[FACT: journals/registry.ts; journals/types.ts:58-65]`. **FIN-37's `dueIn` IS `JournalContribution.dueIn`** — so
@@ -30,6 +31,7 @@ provider registration or a deny-safe/injected port (the S5 pattern). Zero re-imp
 - `TerminalState = 'loading'|'empty'|'error'|'success'`; `DataPoint = {id,label}`; `DateRange = {from,to}`. `[FACT: capability/types.ts:13; journals/types.ts:25,33]`
 
 ## §2 Business Rules (invariants this slice MUST satisfy — cited)
+
 - **BR-S6-1 (FIN-31).** A transaction create EMITS an event that feeds achievement checks; **Finance emits,
   Gamification owns achievements**. Guarded (dormant without a registered handler), emit-only, apply→#48. Mirrors
   checkins CHE-17 (`grant_currency`). `[FACT: parts/finance.md:41; checkins CHE-17]`
@@ -50,22 +52,33 @@ provider registration or a deny-safe/injected port (the S5 pattern). Zero re-imp
 ## §3 Design
 
 ### 3.1 Deps additions (optional; deny-safe/dormant when absent — the S5 pattern)
+
 ```ts
 associations?: AssociationResolver // FIN-35: tag read; absent ⇒ getEntityTags returns [] (deny-safe)
 ```
+
 No `notes?` dep (B1/N1): FIN-34 is a pure boundary — finance owns NO note columns and DECLARES its entity types;
 the actual note read/write is the Notes service's, called by the consumer (P6), not wrapped by finance.
 No `effects?` dep (preflight): FIN-31 emits nothing concrete in M1, so no dep is reserved (YAGNI, no dead field) —
 just a documented emit-point comment in `createTransactionImpl`; the dep + emit are added by Gamification at #48.
 
 ### 3.2 The finance entity-type declaration (FIN-34/35 registration input)
+
 ```ts
 // The finance entities that may carry notes/tags — the app registers these into the shared TaggableTypeRegistry
 // (notes + associations). Finance DECLARES; it authors no registry (Spaces/Notes own it). income_stream included.
-export const FINANCE_ENTITY_TYPES = ['account', 'transaction', 'asset', 'investment', 'liability', 'income_stream'] as const
+export const FINANCE_ENTITY_TYPES = [
+  'account',
+  'transaction',
+  'asset',
+  'investment',
+  'liability',
+  'income_stream',
+] as const
 ```
 
 ### 3.3 Operations (append to FinanceService + a standalone journal-contribution factory)
+
 ```ts
 // FIN-31 — emit is folded INTO createTransactionImpl (post-commit, guarded); no new public method.
 
@@ -86,6 +99,7 @@ getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
 ```
 
 ### 3.4 Operation flow
+
 - **FIN-31 emit (comment-only seam, B1+preflight)** — a documented emit point (a comment) sits in
   `createTransactionImpl`; M1 emits **nothing concrete** and reserves **no dep** (YAGNI). `grant_currency` is a
   currency award (wrong for an achievement FEED, and would misfire per-transaction once economy's handler is
@@ -93,7 +107,7 @@ getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
   via the ADR-011 §3.6 seam (FIN-33), so finance need not push. The emit event type + payload + the `effects` dep are
   **Gamification-owned, deferred to #48**. `[FACT: parts/finance.md:41 owner=gamification; ADR-012 §3.7 pull; economy/handlers.ts]`
 - **createFinanceJournalContribution** — `{ module: 'finance', sectionKey: 'summary', dataPoints: [{id:'net_worth',
-  label:'Net worth'}, {id:'today_spending', label:"Today's spending"}], summary, dueIn }`.
+label:'Net worth'}, {id:'today_spending', label:"Today's spending"}], summary, dueIn }`.
   - `summary(date)` → read `getTransactionsInRange(date, date)` + `getOverview({month: date.slice(0,7)})`;
     build `SectionData{ sectionKey:'summary', module:'finance', dataPoints, state, items:[{netWorth, todaysTransactions}] }`;
     `state` = `'success'` if any data else `'empty'` (reuse the `TerminalState` canon by TYPE, not `deriveTerminalState`).
@@ -103,16 +117,18 @@ getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
   derived-pull source + its flag, ADR-011 §3.6). netWorth is month-independent; recomputing the full overview for
   the value+flag is acceptable at single-user scale (N3).
 - **getEntityTags** — `if (!deps.associations) return []`; else `const r = await resolveAssociations({entity_type,
-  entity_id}, 'separate'); return r.mode === 'separate' ? r.tags : []` (narrow the union, preflight #2). The
+entity_id}, 'separate'); return r.mode === 'separate' ? r.tags : []` (narrow the union, preflight #2). The
   injected resolver's registry must include the finance entity types (else it throws unregistered — tests wire it, #3).
 
 ### 3.5 Deferred inside S6 (recorded, homed)
+
 - **Achievement event SEMANTICS + handler** (which effect, what condition) — Gamification #48 (finance emits, guarded). `[FACT: parts/finance.md:41]`
 - **Commitments derive** (FIN-36, `listCommitments`) — no table, design-pass; `dueIn` uses only the built G9 fields. `[FACT: slice-map.md:39]`
 - **The app-level registry wiring** (registering `FINANCE_ENTITY_TYPES` into the shared taggable/notes registry) — composition-root/P6; finance only DECLARES the set.
 - **Global Calendar consumer of `dueIn`** — other consumers beyond the Journal agenda are their own modules' wiring.
 
 ## §4 Acceptance
+
 1. Creating a transaction succeeds unchanged — **no concrete emit, no reserved dep** in M1 (FIN-31 = a documented emit-point comment; the emit + `effects` dep are added at #48).
 2. `createFinanceJournalContribution` registers under `module:'finance'`; `summary(date)` returns today's txns + net-worth snapshot with a correct `state` (success/empty); `dueIn(range)` returns upcoming G9 installments.
 3. `summary`/`dueIn` return a well-formed `SectionData` (never throw on empty → `state:'empty'`); the dashboard's per-section degrade is Journals' to test.
@@ -122,6 +138,7 @@ getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>
 7. tsc 0, eslint 0. Live-store Verification Gate PASS. S1–S5 + `@vida/types` untouched (S6 additive).
 
 ## §5 Implementation Prompt
+
 Add `FINANCE_ENTITY_TYPES` + the S6 method signatures (`getNetWorth`/`getEntityTags`) to `types.ts`; extend
 `FinanceServiceDeps` with `associations?` only. Add a documented FIN-31 emit-point comment in `createTransactionImpl`
 (no code, no dep). Add `getNetWorth`/`getEntityTags` to the service object. Add
@@ -132,16 +149,18 @@ AssociationResolver + deny-safe [] · FINANCE_ENTITY_TYPES) → live-store smoke
 **Auth/ZK:** all local reads/providers; the emit is guarded + dormant; no egress. Notes/tags delegate to their owning modules.
 
 ## Gate-1 critique resolution (§XXVI step 2)
+
 - **B1 — RESOLVED.** FIN-31 no longer emits `grant_currency` (wrong effect for an achievement FEED + would misfire
   per-transaction once economy's handler registers, needing a `currencyId`/`amount` finance doesn't own). The
   `effects?` seam is reserved + a documented emit point; M1 emits nothing concrete — the achievement event/payload/
   consumption are Gamification-owned, deferred to #48 (doc-grounded: FIN-31 homing "owner=gamification").
 - **N1 — RESOLVED (scope removed).** The real `NotesService.getOrCreateNoteForEntity(pageType, entityType,
-  entityId, seed)` doesn't match a thin finance wrapper; FIN-34 is a pure boundary (no note columns + declare
+entityId, seed)` doesn't match a thin finance wrapper; FIN-34 is a pure boundary (no note columns + declare
   `FINANCE_ENTITY_TYPES`) — the consumer uses Notes directly. Dropped `NotesPort`/`NotesNotWired`/`getEntityNote`.
 - **N2/N3 — folded** (`Transaction.tags` stays `[]`, `getEntityTags` is the async read; `getNetWorth` full-overview recompute noted).
 
 ## Open decisions for Approval 1
+
 - **D1** — FIN-31 concrete emit is **deferred to #48** (Gamification owns the achievement event); M1 reserves the `effects?` seam only.
 - **D2** — FIN-32+FIN-37 are ONE `JournalContribution` (`summary` + `dueIn`), per `journals/types.ts:64`. Not two mechanisms.
 - **D3** — `getEntityTags` deny-safe → `[]` (a missing resolver = no tags, not an error).

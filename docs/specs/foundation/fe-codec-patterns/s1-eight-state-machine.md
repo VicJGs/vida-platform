@@ -56,6 +56,7 @@ consolidation (deferred, canon owner's job — O3); re-homing ux-2 `SearchStatus
 | `idle` | `empty` | nothing requested yet → no content to show; the nearest no-content canonical renderer for the degrade fallback. (A surface with a richer idle affordance — e.g. the command bar's recent-searches — renders its own idle; the collapse is only the degrade fallback, state-conventions.md:44.) [search-provider.ts:12-14] |
 
 **`deriveInteractionState<T>(result, isEmpty, input?)`** — precedence:
+
 1. if `input` present and `input.query === ''` → `idle` (nothing requested yet). **Keyed on the empty query ALONE, not
    focus** — the ground truth keys only on a blank query [FACT: search-provider.ts:12-14 `emptyQueryOutcome`]. (An
    unfocused blank input is still `idle` — gating on focus would misclassify it as `loading`/`empty`.)
@@ -103,7 +104,7 @@ The deriver therefore emits 7 of 8 by design; `unavailable` enters only via the 
    - `export const INTERACTION_RENDER` (or doc-only) — the state→primitive mapping as typed data for surfaces.
 2. `apps/web/src/state-conventions/interaction-state.test.ts` — the §4 assertions (totality, precedence, parity, grep-guard).
 3. Update `docs/core/architecture/state-conventions.md` §1/§3 — note the superset + the 3 added states' render convention
-   (§XXIX currency; promote BR-S1-* into `current-*` if the context carries them).
+   (§XXIX currency; promote BR-S1-_ into `current-_` if the context carries them).
 4. `apps/web/src/state-conventions/CLAUDE.md` — add `interaction-state.ts` to "What lives here".
 
 **On divergence:** §XXVIII. **Done:** §4 all checked → Verification Gate PASS → S1 commit → loop to S2.

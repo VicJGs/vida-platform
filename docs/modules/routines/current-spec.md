@@ -1,4 +1,5 @@
-# Current Spec — routines   (level: module · tier: DEEP)
+# Current Spec — routines (level: module · tier: DEEP)
+
 > Language: English (code + docs agree).
 > Coverage: 9/9 files read — **full** (`services/routines/{service,types,index,journal}.ts` + `CLAUDE.md` + `__tests__/routines-service.test.ts`
 > · `validators/routine.ts` · `@vida/types/routine.ts` · `db/schema/routines.ts`).
@@ -14,7 +15,8 @@
 > interpretation's numbering: **interp §4.n** (the old `IR-n` labels are retired).
 
 ## 1. Identity & responsibility
-The `@vida/core` **① service tier for Routines**: the cross-module *orchestrator*. A routine is a named, ordered,
+
+The `@vida/core` **① service tier for Routines**: the cross-module _orchestrator_. A routine is a named, ordered,
 recurring sequence of polymorphic steps, and each step drives a real entity elsewhere. The intended service
 "composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
 
@@ -23,6 +25,7 @@ Sessions (S3, S5c), policy evaluation (S4), progress + analytics (S5), reschedul
 tags/notes/links (S8), and the providers + Journal contribution (S9) `[FACT: services/routines/types.ts RoutinesService]`.
 
 **What it is NOT (yet / ever):**
+
 - A derivation engine for evaluation (S4) and progress/streak/analytics/misses (S5); `progress` stays a nullable override slot.
 - A provider since S9: `dueIn` / `getDueReminders` / `summary` + `routines/journal.ts` register helpers — shipped, NOT called (N5).
 - NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track
@@ -33,10 +36,12 @@ tags/notes/links (S8), and the providers + Journal contribution (S9) `[FACT: ser
 ## 2. Contract — what it exposes / needs
 
 ### Composition
+
 `createRoutinesService(deps: RoutinesServiceDeps): RoutinesService`: a factory-object with hoisted closures and no `this.`.
 `RoutinesServiceDeps = { db: DrizzleDb; deviceId: string; clock?: () => string; registry: TaggableTypeRegistry; tasks: TasksService;
 sessions: SessionsService; sessionRegistry: SessionRegistry; habits?: HabitsService; prefs?: RoutinesPrefsPort; effects?: { rail: EffectRail; registry: EffectRegistry }; spaces: SpacesService; notes: NotesService }` (S7 `effects?`; S8 `spaces`/`notes` required) (S3 added `tasks`/`sessions` required, `habits` optional; default `clock` = tasks' `utcDay`) (`registry` added in
 S2c: validates a step's `entity_type`; required per the approved seam) `[FACT: types.ts RoutinesServiceDeps]`.
+
 - `clock` defaults to `utcDay(Date.now())` (tasks' public helper, S3), i.e. **today's UTC calendar day** `[FACT: service.ts]`.
 - **Factory vs the governing shape:** `registry` (S2c), `tasks`/`sessions` (required) and `habits?` (S3) have landed, plus `prefs?` (S4) and
   `effects?` (S7) and `spaces`/`notes` (S8, required per the seam).
@@ -50,6 +55,7 @@ Repositories (DB-6 generic Repository, `encryptedFields: []`, the M1.0 dormant `
 | `tagsRepo` (S8, read-only) | `tags` | true (liveness reads only — no Spaces tag-read contract) |
 
 ### Operations (as-built)
+
 **Routine definition** (`service.ts`)
 | Method | Signature | Errors |
 |---|---|---|
@@ -148,6 +154,7 @@ split is checked in reconciliation.
 helpers is the fe-routines entity close (N5).
 
 ### Inputs (Zod, `validators/routine.ts`)
+
 - `CreateRoutineSchema` = all routine fields optional except `name` (`.min(1)`, S2c) · `UpdateRoutineSchema` = all optional ·
   `progress` int 0–100 (S2c) · `recurrence_rule` parse + FREQ validated at write (S2c) · `SetRoutineLifecycleSchema` (S2c).
 - `AddStepSchema` = all step fields optional except `title`; `step_type` is a **plain string** (OPEN vocab).
@@ -159,6 +166,7 @@ helpers is the fe-routines entity close (N5).
   re-exported from `./measurement` (no redefinition).
 
 ## 3. Structure & key data
+
 - `service.ts`: the factory. Row→interface mappers (`toRoutine`/`toRoutineStep`/`toRoutineCompletion`, `_sync_status` union
   cast, interp §4.11) · `parseJsonArray` (defensive JSON, malformed→null) · `loadRoutineOrThrow`/`loadStepOrThrow` (fail-loud
   guards) · `findCompletion` + `upsertCompletion` (the shared complete/skip path) · `serializeRoutine`/`serializeStep` (faithful-echo
@@ -168,6 +176,7 @@ helpers is the fe-routines entity close (N5).
 - `CLAUDE.md`: current (refreshed in S2c).
 
 **Schema served (migration 018, the orchestration reframe)** `[FACT: db/schema/routines.ts:47-108]`:
+
 - `routines`: `name[E]`, `description[E]`, `recurrence_rule` (RRULE), `lifecycle` ∈ {active,paused,off} NN DEFAULT active,
   `measurement_kind` NN DEFAULT `rate`, `binding_mode` nullable (NULL ⇒ derive), `progress` nullable override slot, `sort_order`, `deleted_at`.
 - `routine_step`: `routine_id` (no FK), `step_order`, `step_type` (OPEN, no CHECK), `entity_type`/`entity_id` (nullable),
@@ -177,10 +186,11 @@ helpers is the fe-routines entity close (N5).
 
 **`@vida/types` (DB-11 reconcile, done in as-built S1):** `Routine`, `RoutineStep`, `RoutineCompletion` (re-keyed to
 `routine_step_id`, extends `SyncableEntity`). Retired: `RoutineAction`, `ROUTINE_ACTION_TYPE`, `ROUTINE_RECURRENCE_FREQUENCY`
-`[FACT: packages/types/src/routine.ts]`. ⚠ The governing interpretation §1c still lists this reconcile as *owed*
+`[FACT: packages/types/src/routine.ts]`. ⚠ The governing interpretation §1c still lists this reconcile as _owed_
 (its baseline predates the build) → reconciliation marks it ✅.
 
 ## 4. Dependencies
+
 **Consumes:** `drizzle-orm` (`and`/`eq`/`isNull`) · `db/repository` (`createRepository`) · `db/schema/routines` ·
 `validators/routine` (→ `validators/measurement`) · `@vida/types` · **`ical.js`** (RRULE parse, S2c) · **`foundation/spaces`**
 (`TaggableTypeRegistry` dep + `UnknownEntityType`, S2c) `[FACT: service.ts imports]`. **Services (S3):** `tasks` (`getTask`, `completeTask`, `utcDay`, `TaskNotFoundError`, `RecurrenceRegenError`) · `habits` (`getHabit`, `logCompletion`) ·
@@ -188,6 +198,7 @@ helpers is the fe-routines entity close (N5).
 Effect-rail, Measurement, Journals and Preferences land in S4–S9.
 
 **Consumed by** (bounded reverse-search of `packages/` + `apps/`, not truncated):
+
 - `packages/core/src/index.ts`: the `export * from './services/routines'` barrel line.
 - **No runtime consumer.** `apps/web` composition-root does not register routines, and no other service imports it.
   (A `purposes` hit was a false positive: `PlanStepNotFoundError`.)
@@ -199,6 +210,7 @@ Effect-rail, Measurement, Journals and Preferences land in S4–S9.
 Coupling budget (constitution §6): respected. There are no reads of other modules' tables. No circular dependency.
 
 ## 5. Key states
+
 - **Routine:** live (`deleted_at` NULL) × `lifecycle` ∈ {active, paused, off} | archived (`deleted_at` set; steps cascade-archived).
   `lifecycle` changes via `setLifecycle` (S2c) or `updateRoutine`. **Effect (S5 A3):** paused/off neutralise only undone occurrences that are
   today or still inside the user's acceptance window; a real (beyond-window) miss stays missed (RT-6 + business-rules.md:120). Editing
@@ -210,12 +222,14 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 - **Empty:** `listRoutines` / `listSteps` / `listCompletions` return `[]`.
 
 ## Verification (as-built, re-run at baseline)
+
 `routines-service.test.ts`: live store (better-sqlite3 in-memory, `migrate()` applies 018), **28/28 green on Node 24 after the
 merge**; after **S2c: 41/41** (+13 Gate tests) · **S3: 64/64** · **S4: 82/82** · **S5: 102/102** · tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
 ⚠ Run on **Node 24**. The worktree's better-sqlite3 binary is built for ABI 137, so under `.nvmrc`'s Node 22 all 28 fail to load
 the native module (environment, not code).
 
 ## Completion checklist
+
 - [x] §1 identity + explicit "is NOT" · [x] §2 contract with [FACT] cites
 - [x] §3 structure · §4 deps (consumes / consumed-by, reverse-searched) · §5 states
 - [x] (DEEP) §2 error cases · §4 coupling budget respected · [ ] reference-depth analysis human-validated (Victor, at the Documentation Gate)

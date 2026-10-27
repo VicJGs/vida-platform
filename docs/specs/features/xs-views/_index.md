@@ -25,7 +25,7 @@ otherwise-ratified V1–V5 substrate. `[FACT: reconciliation.md §D]`
   traces to a FACT; no speculative no-arg "duplicate-in-place" (no consumer needs it at #35 — YAGNI §XXIII; a
   future P6 duplicate passes `source.space_id` explicitly, grounded-added then). **No rename-on-clone** — not in
   ADR-007/intake; `name` copied verbatim. `[FACT: ADR-007:50-51 "clones a global into a Space or vice-versa";
-  intake spaces.md:72]`
+intake spaces.md:72]`
 - **BR-clone-3 (verbatim content copy, raw TEXT).** Copy `name`, `layout`, `filter`, `grouping`, `sort` from the
   source row **as-is**; `filter/grouping/sort` are stored TEXT → passed raw to `repo.create` (no parse→stringify
   round-trip that could reject stored-but-unusual JSON). `[FACT: schema spaces.ts:119-124; service.ts:52-55]`
@@ -52,12 +52,13 @@ export interface ViewsService {
   cloneView(sourceId: string, targetSpaceId: string | null): Promise<ViewRow> // NEW — XCU-05 (required target)
 }
 ```
-`current-spec.md:28` line extends to: *"`ViewsService` — view CRUD + clone (filter/grouping/sort stringified on
-write; clone copies them raw)."*
+
+`current-spec.md:28` line extends to: _"`ViewsService` — view CRUD + clone (filter/grouping/sort stringified on
+write; clone copies them raw)."_
 **§XXIX close (F2) — DONE:** promoted BOTH — extended `current-spec.md:28` + added `current-business-rules.md`
-**BR-18** (BR-16/17 taken by XCU-SP-27; verified against the live doc, not assumed): *"cloneView = independent
-copy — fresh id/`_sync_*`, no back-link; `targetSpaceId` redirects global↔Space; name/layout/filter/grouping/sort
-verbatim; no `default_view_id` touch."* `[ADR-007:50-51]`
+**BR-18** (BR-16/17 taken by XCU-SP-27; verified against the live doc, not assumed): _"cloneView = independent
+copy — fresh id/`*sync*_`, no back-link; `targetSpaceId`redirects global↔Space; name/layout/filter/grouping/sort
+verbatim; no`default_view_id`touch."*`[ADR-007:50-51]`
 
 ## 4. Acceptance (Verification Gate — live store, not mocks)
 
@@ -77,8 +78,10 @@ verbatim; no `default_view_id` touch."* `[ADR-007:50-51]`
 ## 5. Implementation Prompt
 
 In `packages/core/src/foundation/views/service.ts`:
+
 1. Add `cloneView` to the `ViewsService` interface (§3).
 2. Implement it in the returned object literal, closing over `repo` (NO `this.` — factory-service rule):
+
 ```ts
 async cloneView(sourceId, targetSpaceId) {
   const source = await repo.findById(sourceId)
@@ -93,13 +96,13 @@ async cloneView(sourceId, targetSpaceId) {
   })                            // repo.create mints fresh id/_sync_*/deleted_at — BR-clone-1/6
 }
 ```
-   (`ViewNotFound` already imported — service.ts:14.)
-3. Tests in `packages/core/src/foundation/spaces/__tests__/spaces.test.ts` (or a new `views.test.ts` beside it) —
-   the 7 acceptance cases §4, the live-store smoke on the real driver (not a mock).
-4. Do NOT add: a `createRow` refactor (repo.create already takes the field object — createView:49), a `name`
-   param, any layout-field logic, any seed logic. Scope = this method only.
+
+(`ViewNotFound` already imported — service.ts:14.) 3. Tests in `packages/core/src/foundation/spaces/__tests__/spaces.test.ts` (or a new `views.test.ts` beside it) —
+the 7 acceptance cases §4, the live-store smoke on the real driver (not a mock). 4. Do NOT add: a `createRow` refactor (repo.create already takes the field object — createView:49), a `name`
+param, any layout-field logic, any seed logic. Scope = this method only.
 
 ## 6b. Preflight notes (verified against code — grounding)
+
 - **PICK, don't spread.** `ViewRow` (`$inferSelect`) carries `id`/`_sync_*`/`created_at`; `repo.create` takes
   `CreateInput<T>` (excludes them). Impl PICKS the 6 fields — never spreads the source row. `[FACT: repository.ts:187,349; schema spaces.ts:116-125,141]`
 - **repo.create is co-transactional.** `create` = `db.transaction(tx => createInTx(tx, data))` → enqueue `'create'`. `[FACT: repository.ts:344,349-351]`
@@ -108,5 +111,6 @@ async cloneView(sourceId, targetSpaceId) {
 - **Test harness reused** — `spaces.test.ts` better-sqlite3 + `migrate` + `createViewsService`; sync_queue-assert pattern at `:127-144`. No new harness. `[FACT: spaces.test.ts:15-68,127-144]`
 
 ## 6. Out of scope (ratified/seams — reconciliation.md §A)
+
 default-view seed (→Templates #36) · predicate exclude-mode (→build-time) · layout field-declaration (→P6) ·
 dueIn/journal-contribution (→consumption seam) · nav pref (→Preferences).

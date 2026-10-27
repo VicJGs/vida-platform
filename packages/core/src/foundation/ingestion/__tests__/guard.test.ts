@@ -48,7 +48,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -84,11 +87,7 @@ const userDef = (over: Partial<CapabilityDefinition> = {}): CapabilityDefinition
   ...over,
 })
 
-async function seedGrant(
-  db: Awaited<ReturnType<typeof harness>>['db'],
-  defId: string,
-  env: Partial<GrantEnvelope>,
-) {
+async function seedGrant(db: Awaited<ReturnType<typeof harness>>['db'], defId: string, env: Partial<GrantEnvelope>) {
   const repo = createRepository(db, capabilityGrants, {
     deviceId: 'device-1',
     encryptedFields: [],
@@ -118,7 +117,11 @@ const act = (over: Partial<IngestionAct> = {}): IngestionAct => ({
   dataScope: { sensitiveModules: [] },
   ...over,
 })
-const yesConsent: EgressConsentPort = { async hasTargetConsent() { return true } }
+const yesConsent: EgressConsentPort = {
+  async hasTargetConsent() {
+    return true
+  },
+}
 
 beforeAll(async () => {
   await initVault()
@@ -178,7 +181,11 @@ describe('createIngestionGuard — S2 (XCU-01/09/12/13) · live store', () => {
   it('IR-2: a sensitive-read fetch WITHOUT user-initiation ⇒ sensitive_egress_unconsented (never-auto-transmit)', async () => {
     const { db, registry, enforcer } = await harness()
     await registry.register(userDef())
-    await seedGrant(db, 'my_connector', { external_in_ok: true, external_out_ok: true, consented_sensitive_modules: ['finance'] })
+    await seedGrant(db, 'my_connector', {
+      external_in_ok: true,
+      external_out_ok: true,
+      consented_sensitive_modules: ['finance'],
+    })
     const guard = createIngestionGuard(enforcer, createEgressGuard(enforcer, { consent: yesConsent }))
 
     const decision = await guard.checkIngestion(act({ dataScope: { sensitiveModules: ['finance'] } }))
@@ -189,7 +196,11 @@ describe('createIngestionGuard — S2 (XCU-01/09/12/13) · live store', () => {
   it('IR-2: a sensitive-read fetch without per-target egress consent ⇒ sensitive_egress_unconsented (deny-safe port)', async () => {
     const { db, registry, enforcer } = await harness()
     await registry.register(userDef())
-    await seedGrant(db, 'my_connector', { external_in_ok: true, external_out_ok: true, consented_sensitive_modules: ['finance'] })
+    await seedGrant(db, 'my_connector', {
+      external_in_ok: true,
+      external_out_ok: true,
+      consented_sensitive_modules: ['finance'],
+    })
     // egress guard with the DEFAULT deny-safe consent port (no consent adapter) ⇒ per-target consent fails.
     const guard = createIngestionGuard(enforcer, createEgressGuard(enforcer))
 

@@ -29,5 +29,6 @@ The HUD ships on the M1 stub (`useActiveSession` → `hidden`). Its live binding
 carries the two-source sketch); `HudRead`/`HudTiming` already carry everything the live binding produces.
 
 ## Queue note (not a finding of this unit)
+
 `fe-codec-system` #12 is absent from Linear incl. archived (named "next FE head if untaken" in notes up to
 2026-10-10; its dependents all shipped) — needs a one-line disposition at the next tracker reconcile.

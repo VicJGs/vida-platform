@@ -44,7 +44,12 @@ const PageFrame = styled(View, {
   padding: '$24',
   gap: '$16',
 })
-const SkeletonRow = styled(View, { height: 14, borderRadius: '$sm', backgroundColor: '$colorSurfaceSecondary', marginBottom: 8 })
+const SkeletonRow = styled(View, {
+  height: 14,
+  borderRadius: '$sm',
+  backgroundColor: '$colorSurfaceSecondary',
+  marginBottom: 8,
+})
 
 export function JournalPageRegion({ editorState, 'aria-label': ariaLabel = 'Journal entry' }: JournalPageRegionProps) {
   const { page, state, retry, retrying } = useJournalEntry()

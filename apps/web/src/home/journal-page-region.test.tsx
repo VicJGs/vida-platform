@@ -9,11 +9,11 @@ import type { JournalEntryResult } from './use-journal-entry'
 // mock NoteEditorBody to a sentinel so a success render asserts "the live editor mounts" without
 // pulling TipTap/ProseMirror into jsdom.
 const mockEntry = vi.fn<() => Pick<JournalEntryResult, 'page' | 'state'>>()
-vi.mock('./use-journal-entry', () => ({ useJournalEntry: () => ({ retry: () => {}, retrying: false, ...mockEntry() }) }))
+vi.mock('./use-journal-entry', () => ({
+  useJournalEntry: () => ({ retry: () => {}, retrying: false, ...mockEntry() }),
+}))
 vi.mock('../notes/note-editor-body', () => ({
-  NoteEditorBody: ({ page }: { page: NoteEntityData }) => (
-    <div data-testid="editor-body">editor:{page.title}</div>
-  ),
+  NoteEditorBody: ({ page }: { page: NoteEntityData }) => <div data-testid="editor-body">editor:{page.title}</div>,
 }))
 
 import { JournalPageRegion } from './journal-page-region'
@@ -25,8 +25,18 @@ afterEach(() => {
 
 const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
 const page: NoteEntityData = {
-  id: 'j1', type: 'journal', title: '2026-10-21', content: null, contentStatus: 'absent', rawContent: null,
-  favorite: false, archived: false, updated: 'now', journalDate: '2026-10-21', icon: null, cover: null,
+  id: 'j1',
+  type: 'journal',
+  title: '2026-10-21',
+  content: null,
+  contentStatus: 'absent',
+  rawContent: null,
+  favorite: false,
+  archived: false,
+  updated: 'now',
+  journalDate: '2026-10-21',
+  icon: null,
+  cover: null,
 }
 
 describe('JournalPageRegion (home-journal-go-live S1)', () => {
@@ -43,7 +53,11 @@ describe('JournalPageRegion (home-journal-go-live S1)', () => {
     expect(getAllByText('Saved on this device')).toHaveLength(1)
     expect(region.textContent).toContain('Saved on this device')
     mockEntry.mockReturnValue({ page: { ...page, id: 'j2', contentStatus: 'malformed' }, state: 'success' })
-    rerender(<UIProvider><JournalPageRegion /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <JournalPageRegion />
+      </UIProvider>,
+    )
     expect(queryByText('Saved on this device')).toBeNull()
   })
 
@@ -53,7 +67,11 @@ describe('JournalPageRegion (home-journal-go-live S1)', () => {
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
 
     mockEntry.mockReturnValue({ page: null, state: 'error' })
-    rerender(<UIProvider><JournalPageRegion /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <JournalPageRegion />
+      </UIProvider>,
+    )
     expect(container.querySelector('[role="status"]')).not.toBeNull()
     expect(container.textContent).toContain('Couldn’t load today’s page.')
   })

@@ -1,6 +1,6 @@
 <!-- Business Rules — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · project.ts · CLAUDE.md §2 · intake -->
 
-# Business Rules — Projects  (level: Feature)
+# Business Rules — Projects (level: Feature)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, **+ the extension-model
 > principle** (ZK core + guarded opt-in integrations, Victor 2026-06-29). Every rule below complies.
@@ -41,7 +41,7 @@
   delete hides. `[FACT: L1578,1579,1608-1609; INTENT G2]`
 - **PJ-10 — Cross-module via junctions/integration points.** `project_habits` (**kept** — not in M7's retirement
   list), `bucket_list.project_id` (existing) + **[INTENT M7]: `purpose_projects` retired → the polymorphic weighted
-  `contributions`** (ADR-011 §Amends; a project *contributes* to a purpose/target) + ⚠ INTENDED `project_contacts(role)`,
+  `contributions`** (ADR-011 §Amends; a project _contributes_ to a purpose/target) + ⚠ INTENDED `project_contacts(role)`,
   project↔account links, project events. Always through documented points, never direct table reads (§6). `[INTENT M7, G8; FACT: project.ts junctions]`
 - **PJ-11 — External & AI integrations are opt-in, user-risk, protected.** Third-party metric ingestion (PJ-4.3) is
   **device-mediated (ADR-014 X1)** under an **`external_in_ok` grant (X5)** — never a server-side fetch. AI (agentic)
@@ -52,6 +52,7 @@
   inline); every write succeeds locally first, LWW on structured columns. `[INTENT G11; FACT: ADR-006 SP1; LF-2/ADR-003]`
 
 ## Validation & edge cases
+
 - Enum CHECKs `[FACT: ADR-002 §5.4]`: `scope`(4), `complexity`(4), `status`(5), `priority`(5); `progress` 0-100.
 - `estimated_hours`/`actual_hours` are **minutes** (misleading name) — treat as minutes. `[FACT: L1552]`
 - A deliverable with no tasks derives progress from its **measurement backend** (e.g. the linked account/metric),
@@ -59,18 +60,20 @@
 - A project's progress recomputes when any descendant changes (PJ-3) — never edited directly. `[INTENT G4]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Projects dashboard/timeline | skeleton | "no projects" + CTA | typed read error, retry | projects in chosen view (timeline/board/Kanban) |
-| Project standalone | skeleton | "no milestones yet" | typed error, retry | milestones + docs + progress + vision/mission |
-| Milestone standalone | skeleton | "no deliverables/tasks" | typed error, retry | timeline widget + tabs + deliverables |
+
+| Capability                        | loading               | empty                       | error                                            | success                                              |
+| --------------------------------- | --------------------- | --------------------------- | ------------------------------------------------ | ---------------------------------------------------- |
+| Projects dashboard/timeline       | skeleton              | "no projects" + CTA         | typed read error, retry                          | projects in chosen view (timeline/board/Kanban)      |
+| Project standalone                | skeleton              | "no milestones yet"         | typed error, retry                               | milestones + docs + progress + vision/mission        |
+| Milestone standalone              | skeleton              | "no deliverables/tasks"     | typed error, retry                               | timeline widget + tabs + deliverables                |
 | Deliverable standalone (measured) | computing measurement | "no measurement source set" | source/integration error → flag, show last-known | progress from the `binding_mode` source (M5/R7 seam) |
-| Progress rollup | computing | "nothing to measure" | partial child read → flag | derived % up the chain |
-| Document vault | loading | "vault empty" | decrypt/R2 error → typed, retry | encrypted files (inline/R2) |
-| Project-task (via Tasks API) | loading | "no tasks" | Tasks API error → flag | project-scoped task list |
-| External metric ingest (⚠) | fetching device-side | not connected | refused if server-plaintext / fetch error → flag | metric pulled, deliverable updated |
+| Progress rollup                   | computing             | "nothing to measure"        | partial child read → flag                        | derived % up the chain                               |
+| Document vault                    | loading               | "vault empty"               | decrypt/R2 error → typed, retry                  | encrypted files (inline/R2)                          |
+| Project-task (via Tasks API)      | loading               | "no tasks"                  | Tasks API error → flag                           | project-scoped task list                             |
+| External metric ingest (⚠)        | fetching device-side  | not connected               | refused if server-plaintext / fetch error → flag | metric pulled, deliverable updated                   |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A failed rollup/measurement shows a flagged partial or last-known value, never a wrong progress as truth.
   `[INTENT G4; FACT §5]`
 - A vault decrypt/R2 failure surfaces typed errors; never silently loses or exposes a file. `[INTENT G6; FACT: ZK-1]`
@@ -78,7 +81,9 @@
   explicitly opted in (extension model); never a silent downgrade. `[INTENT PJ-11; FACT: ZK-1]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 **INTENDED**, not in ADR-002 §5.4 / project.ts today:
+
 - **`deliverables` table + measurement-source design pass (PJ-2/PJ-4)** — the `measurement_kind`×`binding_mode`×source-seam
   DDL. Framework axes named (ADR-011); the taxonomy DDL needs its own design pass.
 - **Vision/Mission pages + mission (PJ-7)**; **dedicated Tasks→Projects API (PJ-5)**.
@@ -86,8 +91,9 @@
 - **External-metric ingestion + AI (PJ-11)** → **ADR-014** (external ingestion) + **ADR-015** (AI agentic-within),
   framed by the **extension-model principle** (→ core constitution).
 - **Shared-tags migration (PJ-12).**
-Live invariants today: PJ-1, PJ-3 (cols), PJ-6, PJ-9 (3 tables), PJ-12 (local-first). Schema additions → ADR-002
-amendment. `[FACT: ADR-002 §5.4; INTENT G1–G11]`
+  Live invariants today: PJ-1, PJ-3 (cols), PJ-6, PJ-9 (3 tables), PJ-12 (local-first). Schema additions → ADR-002
+  amendment. `[FACT: ADR-002 §5.4; INTENT G1–G11]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

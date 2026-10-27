@@ -53,9 +53,7 @@ export const migration008KnowledgeReview: Migration = {
         _sync_hash      TEXT
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_method_bindings_target ON method_bindings (target_type, target_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_method_bindings_target ON method_bindings (target_type, target_id)`)
     await driver.run(`CREATE INDEX idx_method_bindings_method ON method_bindings (method_id)`)
 
     // --- review_events: append-only outcome log (generalizes topic_reviews/flashcard_reviews) ---

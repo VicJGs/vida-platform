@@ -44,7 +44,10 @@ describe('documentToPdfTree — structure', () => {
   })
 
   it('paragraph → a Text; heading → a Text sized by level', () => {
-    const tree = documentToPdfTree(doc(para(text('body')), { type: 'heading', attrs: { level: 2 }, content: [text('H2')] }), OPTS)
+    const tree = documentToPdfTree(
+      doc(para(text('body')), { type: 'heading', attrs: { level: 2 }, content: [text('H2')] }),
+      OPTS,
+    )
     const texts = byType(tree, Text)
     expect(texts.some((t) => stringOf(t) === 'body')).toBe(true)
     const h = texts.find((t) => stringOf(t) === 'H2')!
@@ -58,8 +61,15 @@ describe('documentToPdfTree — schema parity (all 11 STANDARD_BLOCK_TYPE)', () 
     paragraph: para(text('p')),
     heading: { type: 'heading', attrs: { level: 1 }, content: [text('h')] },
     bulletList: { type: 'bulletList', content: [{ type: 'listItem', content: [para(text('b'))] }] },
-    orderedList: { type: 'orderedList', attrs: { start: 1 }, content: [{ type: 'listItem', content: [para(text('o'))] }] },
-    taskList: { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [para(text('t'))] }] },
+    orderedList: {
+      type: 'orderedList',
+      attrs: { start: 1 },
+      content: [{ type: 'listItem', content: [para(text('o'))] }],
+    },
+    taskList: {
+      type: 'taskList',
+      content: [{ type: 'taskItem', attrs: { checked: true }, content: [para(text('t'))] }],
+    },
     blockquote: { type: 'blockquote', content: [para(text('q'))] },
     codeBlock: { type: 'codeBlock', attrs: { language: 'ts' }, content: [text('const x = 1')] },
     horizontalRule: { type: 'horizontalRule' },
@@ -82,7 +92,17 @@ describe('documentToPdfTree — schema parity (all 11 STANDARD_BLOCK_TYPE)', () 
 
   it('taskList marker reflects checked; horizontalRule → a View; image with src → an Image', () => {
     expect(stringOf(documentToPdfTree(doc(sample.taskList), OPTS))).toContain('☑')
-    expect(stringOf(documentToPdfTree(doc({ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [para(text('x'))] }] }), OPTS))).toContain('☐')
+    expect(
+      stringOf(
+        documentToPdfTree(
+          doc({
+            type: 'taskList',
+            content: [{ type: 'taskItem', attrs: { checked: false }, content: [para(text('x'))] }],
+          }),
+          OPTS,
+        ),
+      ),
+    ).toContain('☐')
     expect(byType(documentToPdfTree(doc(sample.horizontalRule), OPTS), View).length).toBeGreaterThan(0)
     expect(byType(documentToPdfTree(doc(sample.image), OPTS), Image)).toHaveLength(1)
   })
@@ -98,7 +118,12 @@ describe('documentToPdfTree — schema parity (all 11 STANDARD_BLOCK_TYPE)', () 
       content: [
         {
           type: 'tableRow',
-          content: [{ type: 'tableCell', content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [para(text('CELLTEXT'))] }] }] }],
+          content: [
+            {
+              type: 'tableCell',
+              content: [{ type: 'bulletList', content: [{ type: 'listItem', content: [para(text('CELLTEXT'))] }] }],
+            },
+          ],
         },
       ],
     }
@@ -106,7 +131,11 @@ describe('documentToPdfTree — schema parity (all 11 STANDARD_BLOCK_TYPE)', () 
   })
 
   it('orderedList with a non-numeric start does NOT emit NaN markers (post-impl M2)', () => {
-    const bad: EditorNode = { type: 'orderedList', attrs: { start: 'x' }, content: [{ type: 'listItem', content: [para(text('item'))] }] }
+    const bad: EditorNode = {
+      type: 'orderedList',
+      attrs: { start: 'x' },
+      content: [{ type: 'listItem', content: [para(text('item'))] }],
+    }
     const s = stringOf(documentToPdfTree(doc(bad), OPTS))
     expect(s).not.toContain('NaN')
     expect(s).toContain('1.') // falls back to 1
@@ -127,7 +156,9 @@ describe('documentToPdfTree — marks (registered schema, not just the block enu
   })
 
   it('strike + underline → a COMBINED textDecoration', () => {
-    expect(leafStyle([{ type: 'underline' }, { type: 'strike' }])).toMatchObject({ textDecoration: 'underline line-through' })
+    expect(leafStyle([{ type: 'underline' }, { type: 'strike' }])).toMatchObject({
+      textDecoration: 'underline line-through',
+    })
     expect(leafStyle([{ type: 'strike' }])).toMatchObject({ textDecoration: 'line-through' })
   })
 
@@ -136,7 +167,10 @@ describe('documentToPdfTree — marks (registered schema, not just the block enu
   })
 
   it('link → the OUTERMOST Link element wrapping the styled Text (href only)', () => {
-    const tree = documentToPdfTree(doc(para(text('site', [{ type: 'link', attrs: { href: 'https://vida.app' } }, { type: 'bold' }]))), OPTS)
+    const tree = documentToPdfTree(
+      doc(para(text('site', [{ type: 'link', attrs: { href: 'https://vida.app' } }, { type: 'bold' }]))),
+      OPTS,
+    )
     const links = byType(tree, Link)
     expect(links).toHaveLength(1)
     expect((links[0]!.props as { src?: string }).src).toBe('https://vida.app')
@@ -169,7 +203,10 @@ describe('documentToPdfTree — integration handling (BR-E7-5)', () => {
 
 describe('documentToPdfTree — frontmatter (BR-E7-6)', () => {
   it('present → a header block with title + metadata; absent → none', () => {
-    const withFm = documentToPdfTree(doc(para(text('body'))), { integration_block_handling: 'placeholder', frontmatter: { title: 'My Note', tags: ['a', 'b'] } })
+    const withFm = documentToPdfTree(doc(para(text('body'))), {
+      integration_block_handling: 'placeholder',
+      frontmatter: { title: 'My Note', tags: ['a', 'b'] },
+    })
     const s = stringOf(withFm)
     expect(s).toContain('My Note')
     expect(s).toContain('tags: a, b')
@@ -178,14 +215,22 @@ describe('documentToPdfTree — frontmatter (BR-E7-6)', () => {
   })
 
   it('an EMPTY frontmatter map emits NO header block (post-impl m1)', () => {
-    const tree = documentToPdfTree(doc(para(text('body'))), { integration_block_handling: 'placeholder', frontmatter: {} })
+    const tree = documentToPdfTree(doc(para(text('body'))), {
+      integration_block_handling: 'placeholder',
+      frontmatter: {},
+    })
     // the header View carries the only borderBottom in the theme; an empty map must not render it
     const views = byType(tree, View)
     expect(views.some((v) => JSON.stringify(v.props.style).includes('borderBottom'))).toBe(false)
   })
 
   it('a title array renders with comma-space parity to meta values (post-impl m2)', () => {
-    const s = stringOf(documentToPdfTree(doc(para(text('b'))), { integration_block_handling: 'placeholder', frontmatter: { title: ['x', 'y'] } }))
+    const s = stringOf(
+      documentToPdfTree(doc(para(text('b'))), {
+        integration_block_handling: 'placeholder',
+        frontmatter: { title: ['x', 'y'] },
+      }),
+    )
     expect(s).toContain('x, y')
   })
 })
@@ -209,33 +254,71 @@ describe('toPdf — render smoke', () => {
   it('resolves to a Blob whose bytes start with %PDF-', async () => {
     const kitchenSink = doc(
       { type: 'heading', attrs: { level: 1 }, content: [text('Title')] },
-      para(text('Body with ', [{ type: 'bold' }]), text('a link', [{ type: 'link', attrs: { href: 'https://x.dev' } }]), { type: 'hardBreak' }, text('after break')),
+      para(
+        text('Body with ', [{ type: 'bold' }]),
+        text('a link', [{ type: 'link', attrs: { href: 'https://x.dev' } }]),
+        { type: 'hardBreak' },
+        text('after break'),
+      ),
       { type: 'bulletList', content: [{ type: 'listItem', content: [para(text('item'))] }] },
       { type: 'orderedList', attrs: { start: 3 }, content: [{ type: 'listItem', content: [para(text('third'))] }] },
       { type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: true }, content: [para(text('done'))] }] },
       { type: 'blockquote', content: [para(text('quoted'))] },
       { type: 'codeBlock', content: [text('const x = 1\nconst y = 2')] },
-      { type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableCell', content: [para(text('h'))] }, { type: 'tableCell', content: [para(text('c'))] }] }] },
+      {
+        type: 'table',
+        content: [
+          {
+            type: 'tableRow',
+            content: [
+              { type: 'tableCell', content: [para(text('h'))] },
+              { type: 'tableCell', content: [para(text('c'))] },
+            ],
+          },
+        ],
+      },
       { type: 'callout', attrs: { variant: 'info' }, content: [para(text('note'))] },
       { type: 'dailySummary', attrs: { date: '2026-08-15' } },
       { type: 'horizontalRule' },
     )
     const blob = await toPdf(kitchenSink, { integration_block_handling: 'placeholder', frontmatter: { title: 'Doc' } })
     expect(blob).toBeInstanceOf(Blob)
-    const head = Buffer.from(await blob.arrayBuffer()).subarray(0, 5).toString('latin1')
+    const head = Buffer.from(await blob.arrayBuffer())
+      .subarray(0, 5)
+      .toString('latin1')
     expect(head).toBe('%PDF-')
   }, 20000) // react-pdf render (font embedding + layout) is genuinely slow headless — generous timeout
 
   it('renders NESTED constructs to bytes without throwing (list-in-list, quote+list, callout+heading, cell+list)', async () => {
-    const li = (t: string, ...extra: EditorNode[]): EditorNode => ({ type: 'listItem', content: [para(text(t)), ...extra] })
+    const li = (t: string, ...extra: EditorNode[]): EditorNode => ({
+      type: 'listItem',
+      content: [para(text(t)), ...extra],
+    })
     const nested = doc(
       { type: 'bulletList', content: [li('outer', { type: 'bulletList', content: [li('inner')] })] },
       { type: 'blockquote', content: [{ type: 'bulletList', content: [li('quoted item')] }] },
-      { type: 'callout', attrs: { variant: 'danger' }, content: [{ type: 'heading', attrs: { level: 3 }, content: [text('Callout head')] }, { type: 'bulletList', content: [li('callout item')] }] },
-      { type: 'table', content: [{ type: 'tableRow', content: [{ type: 'tableCell', content: [{ type: 'bulletList', content: [li('cell list')] }] }] }] },
+      {
+        type: 'callout',
+        attrs: { variant: 'danger' },
+        content: [
+          { type: 'heading', attrs: { level: 3 }, content: [text('Callout head')] },
+          { type: 'bulletList', content: [li('callout item')] },
+        ],
+      },
+      {
+        type: 'table',
+        content: [
+          {
+            type: 'tableRow',
+            content: [{ type: 'tableCell', content: [{ type: 'bulletList', content: [li('cell list')] }] }],
+          },
+        ],
+      },
     )
     const blob = await toPdf(nested, OPTS)
-    const head = Buffer.from(await blob.arrayBuffer()).subarray(0, 5).toString('latin1')
+    const head = Buffer.from(await blob.arrayBuffer())
+      .subarray(0, 5)
+      .toString('latin1')
     expect(head).toBe('%PDF-')
   }, 20000)
 })

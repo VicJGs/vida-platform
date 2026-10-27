@@ -9,12 +9,7 @@ import { readdirSync, readFileSync, existsSync, statSync } from 'node:fs'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-import {
-  SyncNotActivated,
-  createSyncQueueReader,
-  createFieldLWWResolver,
-  createYjsSyncSeam,
-} from '../index'
+import { SyncNotActivated, createSyncQueueReader, createFieldLWWResolver, createYjsSyncSeam } from '../index'
 import type { DrizzleDb } from '../../db/adapter'
 import type { SyncBlob, YjsSyncUnit } from '@vida/types'
 

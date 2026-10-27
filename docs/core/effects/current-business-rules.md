@@ -5,7 +5,7 @@
 > Kept current with `packages/core/src/foundation/effects/`.
 
 - **BR-1 — Exactly-once (R1).** An effect is applied at most once per `(effect_event_id, effect_type,
-  target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-transaction check-and-insert.
+target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-transaction check-and-insert.
   A second identical event returns `{applied:false}` and fires no handler. [ADR-004 §3.2.5-B; F1 §3B; framework §2 R1]
 - **BR-2 — Deterministic identity.** `effect_event_id = derive(subject_natural_key ‖ transition ‖ effect_type)`,
   a **canonical string** (`a|b|c`). Same inputs → same id on any device. The `|` separator is safe because inputs
@@ -25,7 +25,7 @@
   device-local dedup ledger like `sync_queue`. [ADR-002 §5.20:3763]
 - **Handler tx contract.** A handler receives the active transaction and co-writes through it (F1 §3B "same
   transaction") — a handler throw rolls back both its write and the ledger row. Handlers must never open their own
-  `db.transaction` (nested BEGIN fails). *Owed to DB-6:* a `tx`-scoped Repository write path for the first
+  `db.transaction` (nested BEGIN fails). _Owed to DB-6:_ a `tx`-scoped Repository write path for the first
   encrypting handler (no handler exists yet — empty seam).
 
 - **BR-8 — Fire-time sensitive-consent gate (XCU-22, #32).** `assertEffectPermitted(ctx, effectType, moduleClass?)`
@@ -36,6 +36,7 @@
   (the session engine) never call it, and never infer `moduleClass` from a binding (IR-5). [ADR-004 §3.2.5-A3; BR-17]
 
 ## Deferred (not in this increment)
-Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-* tracks, SES-13; "#46" was decomposition.md:46); `effect_event_id`
+
+Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-\* tracks, SES-13; "#46" was decomposition.md:46); `effect_event_id`
 columns on consumer output rows; cross-device convergence merge (AR-9/M4); the `derive()` hash.
 **No longer deferred:** session-lifecycle→fire wiring is BUILT (#32, `foundation/sessions/lifecycle.ts`).

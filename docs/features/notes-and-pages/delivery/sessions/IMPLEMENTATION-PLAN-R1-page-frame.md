@@ -10,8 +10,8 @@
 ## 0. Gate-2 refinements of the PLAN (to be critiqued here; PLAN updated on Approval 2)
 
 - **R-1 · The toast names the action, never the error text (narrows G7).** `notifyError(action, error)` = `console.error`
-  + `toast({ intent:'danger', title })`, with no `description`. Class names like `PageNotFoundError: …` are not user copy,
-  and F-7 asks only that the toast "name the action" `[FACT: reconciliation.md:241]`.
+  - `toast({ intent:'danger', title })`, with no `description`. Class names like `PageNotFoundError: …` are not user copy,
+    and F-7 asks only that the toast "name the action" `[FACT: reconciliation.md:241]`.
 - **R-2 · Retry uses the `Button` `loading` canon (refines G8).** `loading` = "spinner shown, activation suppressed, width
   held, `aria-busy`" `[FACT: packages/ui/src/components/button.tsx:145-146]`. That is exactly the PLAN's retrying contract,
   so the label stays "Retry" and the PLAN's "Retrying…" text is dropped (the spinner + `aria-busy` carry the state).
@@ -28,7 +28,7 @@
   error has no data, so on Retry `isError` goes false and all three hooks would return `'loading'`. The error branch and
   its Retry button would unmount, and focus would drop to `<body>` (WCAG 2.4.3). The PLAN's "all three check `isError`
   first, so the error branch stays up" is therefore false. Fix: each hook computes `retrying = isFetching && data ===
-  undefined && errorUpdateCount > 0` (`errorUpdateCount` is on the v5 observer result, `src/types.ts:655`) and returns
+undefined && errorUpdateCount > 0` (`errorUpdateCount` is on the v5 observer result, `src/types.ts:655`) and returns
   `{ state:'error', retrying }` when `isError || retrying`. A first load (`errorUpdateCount` 0) still shows loading. Stated: a remount within `gcTime` (5 min) after an earlier
   failed read has `errorUpdateCount > 0` and no data, so its mount refetch shows the error branch with a busy Retry instead of
   loading. That is honest (the read did fail), and `ReadErrorMessage` keeps one element instance while `retrying` flips, so
@@ -41,6 +41,7 @@
 ## 1. Build steps
 
 ### Step 1 — the page-surface gate (test A1)
+
 - `apps/web/src/entity/adapter.ts`:
   - `import { PAGE_TYPE } from '@vida/types'`;
     `export function offersPageEditor(pageType: string): boolean { return (PAGE_TYPE as readonly string[]).includes(pageType) }`.
@@ -55,6 +56,7 @@
 - `apps/web/src/entity/CLAUDE.md`: Pattern bullet for `offersPageEditor` + `gate`.
 
 ### Step 2 — labels (tests A2, A3-label, A9)
+
 - `notes/note-chrome.tsx`: `export function pageLabel(p: { type: string; title: string | null }, parentName?: string | null): string`
   - `title?.trim()` → return it;
   - `type.endsWith('_note')` → `parentName?.trim() ? \`${typeLabel(type)} · ${parentName.trim()}\` : \`${typeLabel(type)} note\``;
@@ -70,6 +72,7 @@
   "Task note"; `note-renderers.test.tsx` chrome label "Task" + the full name + the dropped segment.
 
 ### Step 3 — Overview components + the journal stub out (tests A3-merged, A4)
+
 - `notes/overview-registry.ts`: `export type OverviewRenderer = ComponentType<OverviewContext>`; `registerOverview` /
   `overviewFor` keep their names; remove `registerOverview('journal', …)`; header rewritten (IR-R16).
 - `notes/note-overview.tsx`: `export function NoteOverview({ page, mode }: OverviewContext)` (the same JSX); delete
@@ -80,6 +83,7 @@
   renders inside `NoteEntityView`, and toggling merged⇄tabbed keeps the hook-order intact (no React error).
 
 ### Step 4 — gate + label wired into the page (test A3)
+
 - `NoteEntityView`: `const label = pageLabel(page)`; `toEntityProps({ title: label, gate: 'page', action: <PageActions pageId={page.id} locked={page.contentStatus === 'malformed'} items={[]} />, … })`.
 - `NoteEditorBody`: editor `aria-label={\`${pageLabel(page)} editor\`}`.
 - `note-entity.test.tsx`: each of the 4 `*_note` types → `tab` "Note" selected and the editor present; untitled
@@ -87,6 +91,7 @@
   are above the editor region.
 
 ### Step 5 — the save-status store + chip (tests A5, A6) — build Step 6's `notify-error.ts` FIRST (Step 5's toast test needs it)
+
 - `notes/save-status.ts` (new, header in the body-writes style):
   - `export type SaveStatus = LocalSyncState | 'locked'` (`type LocalSyncState` is exported from the `@vida/ui` barrel,
     `packages/ui/src/index.ts:57`).
@@ -98,7 +103,7 @@
 - `notes/use-note-content.ts`:
   - `NoteContentPage` Pick += `title`, `type`.
   - Success settle → `setSaveStatus(id, 'saved')`. Failure → `setSaveStatus(id, 'error')`, then
-    `if (!observed(id)) notifyError(\`save “${pageLabel(page)}”\`, e)` (Step 6). The `console.error` moves into `notifyError`.
+    `if (!observed(id)) notifyError(\`save “${pageLabel(page)}”\`, e)`(Step 6). The`console.error`moves into`notifyError`.
   - `lock()` → `setSaveStatus(id, 'locked')`, called from the `onInvalidContent` callback, so it never writes during render.
     A malformed-at-load seed sets nothing; the host hides on `contentStatus`.
   - Remove `saveState` + `SaveState` from the hook's return (one source of truth = the store); tests read the store.
@@ -106,7 +111,7 @@
 - `notes/page-actions.tsx` (new): `PageSaveStatus({ pageId, locked })` → `null` when `locked || status === 'locked'`, else
   `<SyncStatus state={status} />`. `PageActions({ pageId, locked, items })` = a row (`gap $8`, `alignItems center`,
   `flexShrink 0`) of `<PageSaveStatus>` + (`items.length > 0` → `<Menu aria-label="Page actions" items={items}
-  placement="bottom-end" trigger={<Button intent="ghost" size="sm" aria-label="Page actions"><MoreHorizontal …/></Button>} />`).
+placement="bottom-end" trigger={<Button intent="ghost" size="sm" aria-label="Page actions"><MoreHorizontal …/></Button>} />`).
   The Lucide icon is tinted by token (EC-22).
 - `NoteEditorBody`: delete `SAVE_LABEL`, the 18 px label row and its `role="status"`.
 - `home/journal-page-region.tsx`: on success, `<PageSaveStatus pageId={page.id} locked={page.contentStatus === 'malformed'} alignSelf="flex-end" />`
@@ -122,6 +127,7 @@
   kept as-is, plus a separate chip assertion).
 
 ### Step 6 — the shared error toast (tests A5-toast, A7)
+
 - `apps/web/src/lib/notify-error.ts` (new): `export function notifyError(action: string, error: unknown): void` →
   `console.error(\`[${action} failed]\`, error)`; `toast({ intent: 'danger', title: \`Couldn’t ${action}\` })` (R-1).
 - `notes/use-create-note.ts`: `onError: (e) => notifyError('create the note', e)`; header comment updated.
@@ -129,8 +135,9 @@
   toast "Couldn’t create the note" (mock `toast` from `@vida/ui`).
 
 ### Step 7 — read-error Retry + DEV `?readerror` (test A8)
+
 - `notes/read-error.ts` (new): `readErrorArmed()` = `process.env.NODE_ENV !== 'production' && typeof window !== 'undefined'
-  && new URLSearchParams(window.location.search).has('readerror') && !cleared`; `clearReadError()` sets the module `cleared`.
+&& new URLSearchParams(window.location.search).has('readerror') && !cleared`; `clearReadError()` sets the module `cleared`.
   A query fn's first line: `if (readErrorArmed()) throw new Error('DEV ?readerror')`.
 - Hooks: `useNoteEntity`, `useNotesRows`, `useJournalEntry` add `retry: () => { clearReadError(); void refetch() }` and
   `retrying` (R-6), returning `state:'error'` when `isError || retrying`, (each result type gains both fields; the samples return
@@ -139,7 +146,7 @@
   with the message, then `<Button intent="secondary" size="sm" loading={retrying} onPress={retry}>Retry</Button>`
   outside the live region (R-2).
 - Use it in: `note-entity.tsx` error branch ("Couldn’t load this page."); `notes-surface.tsx`: `error={<ReadErrorMessage
-  message="Couldn’t load your notes." …/>}` passed to `CollectionView` after the `chromeFor` spread;
+message="Couldn’t load your notes." …/>}` passed to `CollectionView` after the `chromeFor` spread;
   `journal-page-region.tsx` error branch ("Couldn’t load today’s page.").
 - Tests (with the app's `queryClient` defaults: a fresh `QueryClient` built from the same options, `retryDelay: 0` only to
   keep the test fast, stated): a mocked service that rejects, then resolves → idle in error: the read count doesn't grow over
@@ -147,6 +154,7 @@
   stays mounted, the button keeps focus and shows `aria-busy` (R-6); a first load never shows the error branch. One file per surface (`note-entity.test.tsx`, `notes-surface.test.tsx`, `journal-page-region.test.tsx`).
 
 ### Step 8 — docs + live leg + gates
+
 - Docs (PLAN §5 step 7): `slice-map.md` R1 E-3 bullet → "type label (`<Type> note`); parent name fed at R7 (A-33)"; R7
   picker bullet + "feeds `pageLabel`'s `parentName`"; `reconciliation.md` E-3 fix text, same split.
 - **Live leg (B10–B12)**, local Brave + playwright-core on real OPFS, and `e2e/notes-page-frame.spec.ts` (R-5):
@@ -196,6 +204,7 @@ Untouched: `@vida/ui`, `@vida/core`, `@vida/types`, `@vida/editor`.
 ## 5. Deviations (§XXVIII)
 
 ### DEV-R1-1 · The title row at narrow widths (Visual Gate finding, 2026-10-27) — APPROVED by Victor ("Fix it now")
+
 - **Found:** live Visual Gate (`.playwright-mcp/r1-live/vg-shots/note-tabbed-*-375.png`, `toast-dark-768.png`). (a) At 375 px the
   save chip (~170 px, `flexShrink:0`) shares `EntityView`'s `TitleRow` (`flexDirection:'row'`, no wrap,
   `entity-view.tsx:72`), squeezing a long title into a ~170 px column (6 lines). R-4 assumed "the title wraps", but it

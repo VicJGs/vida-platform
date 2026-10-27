@@ -15,10 +15,10 @@ breakpoints, the per-region responsive behaviour, and the density that keeps it 
 reserved regions) · the DS token scales (`packages/ui/src/themes/tokens.ts`). Full derivation + gates:
 `docs/specs/foundation/ux-3-shell-layout-responsive/`.
 
-> **Scope (what this is NOT):** not the shell *components* — dock/sidebar/top-bar/command-bar/modal host (UI-4); not
-> the command-bar + search *interaction* (UX-2 — this doc owns only the overlay host's *placement*); not the nav/module
-> data (UX-1's `module-map.ts`); not the Spaces-bar *content* (Spaces module, M1.1 — the region is reserved here); not
-> wiring `@vida/ui`/`UIProvider`/`createMedia` into apps/web (UI-4's first step); not client-state *conventions* (UX-4);
+> **Scope (what this is NOT):** not the shell _components_ — dock/sidebar/top-bar/command-bar/modal host (UI-4); not
+> the command-bar + search _interaction_ (UX-2 — this doc owns only the overlay host's _placement_); not the nav/module
+> data (UX-1's `module-map.ts`); not the Spaces-bar _content_ (Spaces module, M1.1 — the region is reserved here); not
+> wiring `@vida/ui`/`UIProvider`/`createMedia` into apps/web (UI-4's first step); not client-state _conventions_ (UX-4);
 > not the native mobile shell (@vida/mobile). This doc DESIGNS the layout + responsive model and reserves the shape;
 > the surfaces are built by UI-4.
 
@@ -28,13 +28,13 @@ reserved regions) · the DS token scales (`packages/ui/src/themes/tokens.ts`). F
 
 The shell composes five persistent regions around the routed content:
 
-| Region | What it is | Ownership boundary |
-|--------|-----------|--------------------|
-| **Module dock** | primary navigation — rendered as a **left sidebar** on desktop; **the region `isSidebarOpen` governs**. Renders `MODULE_MAP`. | layout here · renders UX-1 data · chrome by UI-4 |
-| **Global bar** | the always-present bar hosting the 6 global surfaces (Home, Calendar, ⌘K search, Notifications, Settings, Graph) | layout here · chrome by UI-4 |
-| **Spaces bar** | the cross-cutting nav axis — a **reserved region** (empty in M1.0; content in M1.1) | region reserved here · content by Spaces (M1.1) |
-| **Content** | the router `<Outlet/>` — where each module's surface renders | layout here · surfaces by each module (M1.1+) |
-| **Overlay host** | the layer the ⌘K command bar + modals/dialogs mount into | **placement** here · interaction by UX-2 · render by UI-4 |
+| Region           | What it is                                                                                                                    | Ownership boundary                                        |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------- |
+| **Module dock**  | primary navigation — rendered as a **left sidebar** on desktop; **the region `isSidebarOpen` governs**. Renders `MODULE_MAP`. | layout here · renders UX-1 data · chrome by UI-4          |
+| **Global bar**   | the always-present bar hosting the 6 global surfaces (Home, Calendar, ⌘K search, Notifications, Settings, Graph)              | layout here · chrome by UI-4                              |
+| **Spaces bar**   | the cross-cutting nav axis — a **reserved region** (empty in M1.0; content in M1.1)                                           | region reserved here · content by Spaces (M1.1)           |
+| **Content**      | the router `<Outlet/>` — where each module's surface renders                                                                  | layout here · surfaces by each module (M1.1+)             |
+| **Overlay host** | the layer the ⌘K command bar + modals/dialogs mount into                                                                      | **placement** here · interaction by UX-2 · render by UI-4 |
 
 The code model: `apps/web/src/shell/regions.ts` (`ShellRegion`, `REGION_VISIBILITY`, `SHELL_REGIONS`).
 
@@ -61,13 +61,13 @@ The values live in `apps/web/src/shell/breakpoints.ts` (`BREAKPOINTS`, `PRIMARY_
 
 Written base → up (each larger breakpoint enhances the one before):
 
-| Region | `mobile` (base) | `tablet` (≥768) | `desktop` (≥1440) | `wide` (≥1920) |
-|--------|-----------------|-----------------|-------------------|----------------|
-| **Module dock** | off-canvas **drawer** (`isMobileNavOpen`) | collapsed **icon rail** | full **sidebar** (icon+label, `isSidebarOpen`) | full sidebar |
-| **Global bar** | **condensed** (⌘K → search icon + overflow) | full | full | full |
-| **Spaces bar** | hidden | reserved (empty) | reserved (empty) | reserved (empty) |
-| **Content** | single column, 16px gutters | 24px gutters | 32px gutters | 32px gutters |
-| **Overlay host** | full-screen **sheet** | centered overlay | centered overlay | centered overlay |
+| Region           | `mobile` (base)                             | `tablet` (≥768)         | `desktop` (≥1440)                              | `wide` (≥1920)   |
+| ---------------- | ------------------------------------------- | ----------------------- | ---------------------------------------------- | ---------------- |
+| **Module dock**  | off-canvas **drawer** (`isMobileNavOpen`)   | collapsed **icon rail** | full **sidebar** (icon+label, `isSidebarOpen`) | full sidebar     |
+| **Global bar**   | **condensed** (⌘K → search icon + overflow) | full                    | full                                           | full             |
+| **Spaces bar**   | hidden                                      | reserved (empty)        | reserved (empty)                               | reserved (empty) |
+| **Content**      | single column, 16px gutters                 | 24px gutters            | 32px gutters                                   | 32px gutters     |
+| **Overlay host** | full-screen **sheet**                       | centered overlay        | centered overlay                               | centered overlay |
 
 **Content max-width is a GLOBAL rule**, not a per-breakpoint toggle: content is always `max-width: 1280px` centered
 `[design.md §X]` — a no-op below 1280, capping once the viewport crosses it (desktop and wide). Every interactive
@@ -124,7 +124,7 @@ never entity data or persisted prefs). UX-3 reserves the shape; **UI-4 extends t
 
 ```ts
 interface ShellUIStateContract {
-  isSidebarOpen: boolean   // full sidebar (desktop) expanded vs collapsed — the existing field
+  isSidebarOpen: boolean // full sidebar (desktop) expanded vs collapsed — the existing field
   isMobileNavOpen: boolean // the mobile off-canvas dock drawer
 }
 ```
@@ -136,8 +136,8 @@ once UI-4 registers the breakpoints into `createMedia` (see §9). Code: `regions
 
 ## 8. The overlay host (placement)
 
-UX-3 owns the overlay/modal host's **placement & geometry only** — its *interaction* is UX-2's (⌘K behavior) and its
-*render* is UI-4's:
+UX-3 owns the overlay/modal host's **placement & geometry only** — its _interaction_ is UX-2's (⌘K behavior) and its
+_render_ is UI-4's:
 
 - **mobile** → a full-screen **sheet**; **tablet+** → a **centered overlay** with a max-width, offset from the top.
 - z-layer `$overlay` (scrim/command bar) / `$modal` (dialogs); radius modal `$lg` / drawer `$xl`; Level-3 elevation.
@@ -158,6 +158,7 @@ Code: `regions.ts` (`OVERLAY_MODE`, `LAYERING`).
 ---
 
 ## References
+
 - `information-architecture.md §5` — the regions this layout composes
 - `standards/design.md §X` (responsive), `§IV` (spacing), `§V` (radius/elevation) — the authority
 - `apps/web/src/shell/{breakpoints.ts, regions.ts}` — the canonical layout model (code)

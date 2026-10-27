@@ -7,6 +7,7 @@ Inherits the CORE constitution (ZK-1, LF-2) + Notes & Pages' journal-page rules 
 Journals owns the ENGINE behind the block; it never re-declares the page rules (JR-1). Source: `docs/features/journals/*`.
 
 ## SHIPPED — Slice 1 (registry + types)
+
 - **BR-S1-1 · The journal names no module (JR-3).** A contribution's `module` is a plain `string`; the registry
   imports no feature module. Prevents the god-context + the JR-2 cycle. `[FACT: business-rules.md:17-19]`
 - **BR-S1-2 · Deterministic iteration (IR-a2).** `list()` returns contributions in a fixed order — `sectionKey`
@@ -24,6 +25,7 @@ Journals owns the ENGINE behind the block; it never re-declares the page rules (
   `business-rules.md:48`); `get(unknown)` → `undefined`.
 
 ## SHIPPED — Slice 2 (dashboard engine + pure selection)
+
 - **BR-S2-1 · Deterministic assembly.** `buildDashboard` iterates `registry.list()` (deterministic) and preserves that
   order within `summary` / `agenda`.
 - **BR-S2-2 · Per-section degrade, never a blank journal (IR-d).** Each provider call isolated in try/catch → a throw
@@ -40,6 +42,7 @@ Journals owns the ENGINE behind the block; it never re-declares the page rules (
   cover the runtime need meanwhile.
 
 ## SHIPPED — Slice 3 (snapshot store + service shell)
+
 - **BR-S3-1/2 · A snapshot freezes the FULL (unfiltered) SUMMARY only** — never the agenda (JR-7 faithful record;
   selection is a read-time filter, IR-e2).
 - **BR-S3-3 · Single-row write; `encryptedFields:[]` (M1.0); `initVault()` required** (sync-hash path runs even with
@@ -55,6 +58,7 @@ Journals owns the ENGINE behind the block; it never re-declares the page rules (
   explicitly. [FACT: probe 2026-09-19]
 
 ## SHIPPED — Slice 4 (buildReview compose-skeleton) — ① BACKEND COMPLETE
+
 - **BR-S4-1 · Reviews compose in-range snapshots** (`snapshot_date ∈ [from,to]`, latest-per-date, ordered).
 - **BR-S4-2 · Insufficient history is EXPLICIT** — `buildReview` throws `InsufficientHistory` when the period has no
   valid snapshot (the backend signal the UI maps to the insufficient-data terminal state).
@@ -66,6 +70,7 @@ Journals owns the ENGINE behind the block; it never re-declares the page rules (
   presents `analytics.ts` output, never recomputes. Wrapped math + scheduling/delivery = design-pass (Wave 3/4).
 
 ## Invariants that hold across all slices (JR-1 boundary)
+
 - NEVER write the journal `pages` row, re-declare NP-2, or own the `/summary` block / free-form entry (Notes & Pages).
 - NEVER import a feature module by name — depend only on `JournalContribution` (registry decouples).
 - NEVER recompute metric math owned by `analytics.ts` — present only.

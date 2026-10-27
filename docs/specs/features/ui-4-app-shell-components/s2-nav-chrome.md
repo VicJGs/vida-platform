@@ -1,5 +1,6 @@
 # Spec: feature:ui-4-app-shell-components / S2 — Nav chrome
-Status: implemented      <!-- draft → approved → implemented -->
+
+Status: implemented <!-- draft → approved → implemented -->
 Source-repo: apps/web/src/shell (chrome), apps/web/src/nav (data, read-only)
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X]. Inherits the umbrella §2 BR-1..7.
 Sessions: 2026-08-16-ui-4-app-shell-components-3
@@ -9,7 +10,9 @@ Sessions: 2026-08-16-ui-4-app-shell-components-3
 > `GLOBAL_SURFACES` into S1's landmark containers; the frame's geometry/reflow stays S1's. Off clean `main`, own PR.
 
 ## 1. Identity
+
 The **navigation chrome** rendered inside the S1 shell frame's three nav regions:
+
 - **Module dock** — `MODULE_MAP` `placement:'dock'` entries, **grouped** by `ModuleGroup`, in three responsive
   forms (off-canvas **drawer** / icon **rail** / full **sidebar**) the S1 frame already positions.
 - **Global bar** — the six `GLOBAL_SURFACES` (Home · Calendar · ⌘K Search · Notifications · Settings · Graph) in
@@ -22,6 +25,7 @@ The **navigation chrome** rendered inside the S1 shell frame's three nav regions
 surfaces + placement classes. [FACT: shell-layout.md:64-70] the per-region reflow S2's content adapts to.
 
 **What it renders/wires** (existing artifacts, referenced not redefined):
+
 - [FACT: nav/module-map.ts:66-121] `MODULE_MAP` — **15 `placement:'dock'` entries of 23 total** (the dock renders the
   15; the rest are global/secondary/non-nav/spaces-only) + `GLOBAL_SURFACES` (6) — the DATA; S2 is its first renderer.
 - [FACT: shell/regions.ts:16-38,79-91] `dockStateAt`/`GLOBAL_BAR_MODE`/`isRegionVisibleAt` — the reflow predicates.
@@ -36,6 +40,7 @@ onboarding (S4) · not route registration (per-module routes land M1.1+; S2 nav 
 unmet — one consumer) · not per-user nav persistence (`nav_preferences` is a consume-shape seam, M1.1 — IA.md:46-47).
 
 ## 2. Business Rules (S2 refinements of the umbrella BR-1..7)
+
 - **S2-BR-a · Render the data, don't restate it.** [FACT: module-map.ts:66-121] the dock renders exactly the
   `placement:'dock'` entries; the global bar renders exactly `GLOBAL_SURFACES`. Grouping/order come from
   `ModuleGroup` in `MODULE_MAP` declaration order (the six groups, declared top-to-bottom = dock order). S2 adds no
@@ -70,7 +75,7 @@ unmet — one consumer) · not per-user nav persistence (`nav_preferences` is a 
     boundary inside `NavLink`. **Concrete form (preflight FOLD-5):** NavLink's own `to` prop is typed `string`; at the
     `<Link>` boundary cast once — `<Link to={to as unknown as LinkProps['to']}>` — with a single inline `//` §XV
     justification. (Casting into the huge `LinkProps['to']` union at ONE call site is acceptable; do not scatter it,
-    and do not weaken to `any`.) **NEVER use `href`** — TanStack treats `<Link href>` as an *external* target → a full
+    and do not weaken to `any`.) **NEVER use `href`** — TanStack treats `<Link href>` as an _external_ target → a full
     page reload, violating this rule's own "SPA, never full-reload". `href` is forbidden.
   - Runtime: on click the router matches `to` at click time; no matching route → the `NotFoundComponent`
     (routes.tsx:24) renders (never a blank/throw). This holds for `to` only.
@@ -113,12 +118,13 @@ unmet — one consumer) · not per-user nav persistence (`nav_preferences` is a 
   all widths (shell-layout.md:87); active/hover/focus are token-driven visual states (§VIII).
 
 ## 3. Contract
+
 Existing UI-1 primitives + `MODULE_MAP`/`GLOBAL_SURFACES`/stores/keyboard contracts are REFERENCED, not redefined.
 New chrome lives in `apps/web/src/shell/`; the pure-data `apps/web/src/nav/` layer is read-only (its CLAUDE.md forbids
 chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S2 injects content.
 
 - **`ModuleDock`** (`apps/web/src/shell/module-dock.tsx`) — `interface ModuleDockProps { dock: DockState; bp:
-  Breakpoint }`. Renders the grouped dock content for the active form: filter `placement:'dock'` by
+Breakpoint }`. Renders the grouped dock content for the active form: filter `placement:'dock'` by
   `isFeatureEnabled`, group by `ModuleGroup` order, **drop empty groups** (S2-BR-a2) → each surviving group is a
   labeled `role=group`/`<h2>` list of `NavLink`s. Rail form → icon-only, label to `aria-label`. Sidebar form →
   icon+label, honoring `isSidebarOpen` (collapsed→rail-like). Consumes `useAppShellUIStore` for `isSidebarOpen`.
@@ -129,7 +135,7 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
     (icon-only render), DISTINCT from tablet `dock==='rail'`** — the toggle is absent only for `rail`/`drawer` (breakpoint
     forms), never for a collapsed desktop sidebar. +test (name + aria-expanded flip; present when collapsed).
 - **`GlobalBar`** (`apps/web/src/shell/global-bar.tsx`) — `interface GlobalBarProps { mode: 'condensed' | 'full';
-  onOpenMobileNav: () => void }`. Full: the six `GLOBAL_SURFACES` — route surfaces as `NavLink`s + a Search `Button`
+onOpenMobileNav: () => void }`. Full: the six `GLOBAL_SURFACES` — route surfaces as `NavLink`s + a Search `Button`
   wired to `commandBar.open()`. Condensed (mobile): a hamburger `Button` (`onOpenMobileNav` → `toggleMobileNav`), a
   search-icon `Button` (`open()`), and an **overflow** UI-1 `Menu` collecting the remaining surfaces (BR-1 compose).
   - **Overflow items are NOT links (fold of M3):** `MenuItem` (menu.tsx:35-46) has `onSelect` only, no link slot — so
@@ -137,7 +143,7 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
     `shellNavigate` helper, the same `ShellRoute` widening — not a second cast site). `command-palette`
     (`routePath:null`) renders as the Search action (`open()`), never a link/menu-nav.
 - **`NavLink`** (`apps/web/src/shell/nav-link.tsx`) — `interface NavLinkProps { to: string; label: string;
-  icon?: LucideIcon; iconOnly?: boolean; children?: ReactNode }`. Wraps TanStack `<Link>` with the single documented
+icon?: LucideIcon; iconOnly?: boolean; children?: ReactNode }`. Wraps TanStack `<Link>` with the single documented
   cast for unregistered targets (S2-BR-e); computes `aria-current="page"` from `useRouterState` location; renders
   the icon (currentColor) + label (or `aria-label` when `iconOnly`); ≥44×44 target; `:focus-visible` ring; hover +
   active visual states (§VIII).
@@ -151,7 +157,7 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
   → a `lucide-react` icon, + a `FALLBACK_ICON`. No JSX (chrome data): components-as-values only.
 - **app-shell.tsx changes** [FACT: app-shell.tsx:59-156] — replace the dock `RegionLabel` placeholder with
   `<ModuleDock dock={dock} bp={bp}/>`; the global-bar placeholder with `<GlobalBar mode={globalBarMode}
-  onOpenMobileNav={…}/>`; the spaces placeholder with the empty labeled reserved seam (S2-BR-i); add the scrim +
+onOpenMobileNav={…}/>`; the spaces placeholder with the empty labeled reserved seam (S2-BR-i); add the scrim +
   drawer focus wiring for the mobile form. The 5-region frame, `useMedia()` bp resolution, `__bp` test override, and
   `LAYERING` z stay unchanged.
 - **a11y** [FACT: §XIV] — dock `<nav aria-label="Modules">` of grouped links; global bar `<header>` actions reachable
@@ -159,6 +165,7 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
   inherits UI-1's menu a11y; every actionable element has an accessible name (label or `aria-label` for icon-only).
 
 ## 4. Acceptance (S2 DoD — includes the component Visual Gate)
+
 - [ ] Dock renders every `placement:'dock'` entry, grouped in `ModuleGroup` order; labels/routes all from `MODULE_MAP`
       (no hard-coded strings) (S2-BR-a)
 - [ ] `gamification` (`visibleWhen`) is **absent** in M1.0 (fail-closed); no default-open surface (S2-BR-b, BR-6)
@@ -187,10 +194,11 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
       shell layer-doc (`apps/web/src/shell/CLAUDE.md`) updated with the new chrome files
 
 ## 5. Implementation Prompt (ordered; each step cites §2/§3)
+
 1. **Dep + icons.** Add `lucide-react` (ADR-001:239; pin the resolved version) to `apps/web/package.json`;
    `pnpm install`. Create `apps/web/src/shell/nav-icons.ts` — `Record<string, LucideIcon>` for the dock modules +
    global surfaces + a `FALLBACK_ICON`. **Import named icons individually** (`import { Home, CheckSquare, … } from
-   'lucide-react'`), NEVER `import * as` — preserves tree-shaking (§XIII bundle budget, preflight FOLD-4) (S2-BR-h).
+'lucide-react'`), NEVER `import * as` — preserves tree-shaking (§XIII bundle budget, preflight FOLD-4) (S2-BR-h).
    +test (every dock/global `key` has a mapping OR resolves to the fallback).
 2. **Feature-flag seam.** `apps/web/src/shell/feature-flags.ts` — `isFeatureEnabled(flag): boolean` returning
    `false` (M1.0 stub; doc-comment the M1.1 Preferences source). +test (S2-BR-b).
@@ -229,6 +237,7 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
    confirm the one-way boundary; then the Visual Gate (step 8).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - **None.** Every gap is closed by the documentation, no forks:
   - Icon library → **ADR-001:113,239-240** fixes `lucide-react` (web); the icon MAP (`key`→component) is rendering
     data S2 authors, not a decision (S2-BR-h).
@@ -238,10 +247,11 @@ chrome). app-shell.tsx keeps each region's landmark container + geometry (S1); S
   - ⌘K seam → command-bar-ui-store `open()` + the S3 boundary (S2-BR-g).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | S2 detailed spec authored (nav chrome: module dock + global bar + Spaces seam; BR-a..j; §5 9-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (current) + Step-2 integration-check (5 risks resolved) |
+
+| Date       | Session                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | -------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | S2 detailed spec authored (nav chrome: module dock + global bar + Spaces seam; BR-a..j; §5 9-step prompt; §6 = none/all doc-resolved) — per Step-0 baseline (current) + Step-2 integration-check (5 risks resolved)                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Rev 2 — gate-1 critique (independent) REVISE folded** (3 blockers + 4 material): B1 router escape-hatch precision (`to`+`ShellRoute` widening, `href` FORBIDDEN, `shellNavigate` for imperative nav); B2 skip empty groups (`platform-services` empty in M1.0 → new S2-BR-a2); B3 S1 ships only the CLOSED drawer — S2 adds the open transform+scrim + `inert`-when-closed (closed-drawer tab leak); M1 miscites fixed (`shell-layout` motion≠focus; "15 dock of 23"); M2 `currentColor` bridge needs a `color`-token row (`button.tsx:110` precedent); M3 overflow Menu uses `onSelect`+`shellNavigate` (MenuItem has no link slot); M4 collapse-toggle a11y (name+`aria-expanded`). |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Corrected a manufactured "decision"** (Victor): icon library is NOT an open choice — **ADR-001:113,239-240** already fixes `lucide-react` (web). §6 → "None, all doc-resolved"; S2-BR-h re-grounded on the ADR (dropped the `@tamagui/lucide-icons` deliberation — that RC would've violated ADR-001's web/RN split anyway). [[read-architecture-before-implementing]] |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Visual-Gate finding (bounded frame + region scroll).** The dock renders all 14 dock modules, but S1's `minHeight:100vh` frame never bounded the viewport → tall dock content fell below the fold with no scroll (read as "missing modules"). Fix: root `height:100vh` + `overflow:hidden`; dock (both forms) + content region get `overflowY:auto` — each region scrolls independently, the global bar stays put, the closed off-canvas drawer is clipped. Refines S1's fill-only frame to fill-AND-bound. |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Rev 3 — Approval 1 ✅ + preflight PASSED (5 folds).** FOLD-1 collapse toggle shows whenever `dock==='sidebar'` (collapsed-desktop ≠ tablet rail) so it can always re-expand; FOLD-2 rail (icon-only) groups use `aria-label` not visible `<h2>`; FOLD-3 `aria-current` is an EXACT pathname match (`/` must not light everything); FOLD-4 import named lucide icons individually (§XIII tree-shaking); FOLD-5 concrete cast form `to as unknown as LinkProps['to']` at one site, no `any`. |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Corrected a manufactured "decision"** (Victor): icon library is NOT an open choice — **ADR-001:113,239-240** already fixes `lucide-react` (web). §6 → "None, all doc-resolved"; S2-BR-h re-grounded on the ADR (dropped the `@tamagui/lucide-icons` deliberation — that RC would've violated ADR-001's web/RN split anyway). [[read-architecture-before-implementing]]                                                                                                                                                                                                                                                                                                                |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Visual-Gate finding (bounded frame + region scroll).** The dock renders all 14 dock modules, but S1's `minHeight:100vh` frame never bounded the viewport → tall dock content fell below the fold with no scroll (read as "missing modules"). Fix: root `height:100vh` + `overflow:hidden`; dock (both forms) + content region get `overflowY:auto` — each region scrolls independently, the global bar stays put, the closed off-canvas drawer is clipped. Refines S1's fill-only frame to fill-AND-bound.                                                                                                                                                                            |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components-3 | **Rev 3 — Approval 1 ✅ + preflight PASSED (5 folds).** FOLD-1 collapse toggle shows whenever `dock==='sidebar'` (collapsed-desktop ≠ tablet rail) so it can always re-expand; FOLD-2 rail (icon-only) groups use `aria-label` not visible `<h2>`; FOLD-3 `aria-current` is an EXACT pathname match (`/` must not light everything); FOLD-4 import named lucide icons individually (§XIII tree-shaking); FOLD-5 concrete cast form `to as unknown as LinkProps['to']` at one site, no `any`.                                                                                                                                                                                            |

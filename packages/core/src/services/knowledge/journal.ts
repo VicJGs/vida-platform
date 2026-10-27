@@ -31,8 +31,7 @@ export function createKnowledgeJournalContribution(svc: KnowledgeService): Journ
     async summary(date: string): Promise<SectionData> {
       const digest = await svc.getDayKnowledgeDigest(date)
       // BR-KN-S8-5 — any activity (an object added OR a review recorded) ⇒ success; a genuinely idle day ⇒ empty.
-      const state: TerminalState =
-        digest.objectsCreated + digest.reviewsRecorded > 0 ? 'success' : 'empty'
+      const state: TerminalState = digest.objectsCreated + digest.reviewsRecorded > 0 ? 'success' : 'empty'
       return {
         sectionKey: 'summary',
         module: 'knowledge',

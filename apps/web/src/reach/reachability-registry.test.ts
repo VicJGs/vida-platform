@@ -1,10 +1,6 @@
 // Pure — env `node`. Locks the ≥2-reachable-paths floor + dedupe + the typed error.
 import { describe, expect, it } from 'vitest'
-import {
-  createReachabilityRegistry,
-  UnreachableCapabilityError,
-  type ReachPath,
-} from './reachability-registry'
+import { createReachabilityRegistry, UnreachableCapabilityError, type ReachPath } from './reachability-registry'
 
 describe('createReachabilityRegistry', () => {
   it('dedupes repeated (capability, path) registrations', () => {

@@ -24,12 +24,7 @@ export const CurrencyCreateSchema = z.object({
 
 /** The 4 gamification-owned consequence effects (ADR-004 §3.2.5 Additive class). move_money/
  *  surface_notification handlers are Finance/Notifications-owned; grant/lock are economy's. */
-export const GAMIFICATION_EFFECTS = [
-  'grant_currency',
-  'lock_currency',
-  'move_money',
-  'surface_notification',
-] as const
+export const GAMIFICATION_EFFECTS = ['grant_currency', 'lock_currency', 'move_money', 'surface_notification'] as const
 
 /** A currency effect payload (grant/lock) — the amount is a positive magnitude (kind implies sign). */
 const CurrencyEffectPayload = z.object({
@@ -42,10 +37,26 @@ const CurrencyEffectPayload = z.object({
 /** One typed consequence in a rule's `consequences` set. grant/lock carry a typed payload (needed for the
  *  below-floor clamp); move_money/surface_notification payloads are validated by their owning handlers. */
 export const ConsequenceSpecSchema = z.discriminatedUnion('effectType', [
-  z.object({ effectType: z.literal('grant_currency'), targetRef: z.string().optional(), payload: CurrencyEffectPayload }),
-  z.object({ effectType: z.literal('lock_currency'), targetRef: z.string().optional(), payload: CurrencyEffectPayload }),
-  z.object({ effectType: z.literal('move_money'), targetRef: z.string().optional(), payload: z.record(z.string(), z.unknown()) }),
-  z.object({ effectType: z.literal('surface_notification'), targetRef: z.string().optional(), payload: z.record(z.string(), z.unknown()).optional() }),
+  z.object({
+    effectType: z.literal('grant_currency'),
+    targetRef: z.string().optional(),
+    payload: CurrencyEffectPayload,
+  }),
+  z.object({
+    effectType: z.literal('lock_currency'),
+    targetRef: z.string().optional(),
+    payload: CurrencyEffectPayload,
+  }),
+  z.object({
+    effectType: z.literal('move_money'),
+    targetRef: z.string().optional(),
+    payload: z.record(z.string(), z.unknown()),
+  }),
+  z.object({
+    effectType: z.literal('surface_notification'),
+    targetRef: z.string().optional(),
+    payload: z.record(z.string(), z.unknown()).optional(),
+  }),
 ])
 
 /** A rule's condition (M1 minimal encoding, config-open). event_trigger fires on a matching event;

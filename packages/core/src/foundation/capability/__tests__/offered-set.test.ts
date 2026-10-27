@@ -38,7 +38,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -79,11 +82,7 @@ const userDef = (over: Partial<CapabilityDefinition> = {}): CapabilityDefinition
   }
 }
 
-async function enablePalette(
-  db: Awaited<ReturnType<typeof harness>>['db'],
-  spaceId: string,
-  defId: string,
-) {
+async function enablePalette(db: Awaited<ReturnType<typeof harness>>['db'], spaceId: string, defId: string) {
   const repo = createRepository(db, spaceEnabledBlocks, {
     deviceId: 'device-1',
     encryptedFields: [],
@@ -106,9 +105,7 @@ describe('OfferedSetResolver (S3 — XCU-SP-29 teeth-split)', () => {
 
   it('standalone = restrict to the Space palette (and standalone-capable)', async () => {
     const { db, registry, resolver } = await harness()
-    await registry.register(
-      userDef({ id: 'standalone_widget', render_targets: ['standalone'] }),
-    )
+    await registry.register(userDef({ id: 'standalone_widget', render_targets: ['standalone'] }))
     await registry.register(userDef({ id: 'inline_only', render_targets: ['inline'] }))
     // Enable both in space-1's palette.
     await enablePalette(db, 'space-1', 'standalone_widget')
@@ -151,12 +148,7 @@ describe('OfferedSetResolver (S3 — XCU-SP-29 teeth-split)', () => {
     const live = await db
       .select()
       .from(spaceEnabledBlocks)
-      .where(
-        and(
-          eq(spaceEnabledBlocks.space_id, 'space-1'),
-          isNull(spaceEnabledBlocks.deleted_at),
-        ),
-      )
+      .where(and(eq(spaceEnabledBlocks.space_id, 'space-1'), isNull(spaceEnabledBlocks.deleted_at)))
       .all()
     expect(live).toHaveLength(0)
   })

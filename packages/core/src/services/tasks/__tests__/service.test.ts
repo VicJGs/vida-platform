@@ -89,7 +89,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -224,17 +227,15 @@ describe('mod-tasks S1 — tasks CRUD + queries', () => {
 
   describe('≤1-parent guard (TK-2 / TAS-34)', () => {
     it('rejects two parent-module FKs', async () => {
-      await expect(
-        h.svc.createTask({ title: 'x', project_id: 'p', course_id: 'c' }),
-      ).rejects.toBeInstanceOf(MultipleParentError)
+      await expect(h.svc.createTask({ title: 'x', project_id: 'p', course_id: 'c' })).rejects.toBeInstanceOf(
+        MultipleParentError,
+      )
     })
     it('allows exactly one parent, a standalone task, and a sub-task that also has a module FK', async () => {
       await expect(h.svc.createTask({ title: 'one', milestone_id: 'm' })).resolves.toBeTruthy()
       await expect(h.svc.createTask({ title: 'standalone' })).resolves.toBeTruthy()
       // parent_task_id is a DIFFERENT axis — a sub-task may still carry a module FK
-      await expect(
-        h.svc.createTask({ title: 'sub', parent_task_id: 'par', project_id: 'p' }),
-      ).resolves.toBeTruthy()
+      await expect(h.svc.createTask({ title: 'sub', parent_task_id: 'par', project_id: 'p' })).resolves.toBeTruthy()
     })
   })
 
@@ -259,9 +260,7 @@ describe('mod-tasks S1 — tasks CRUD + queries', () => {
       // adding a second parent module via patch → reject
       await expect(h.svc.updateTask(t.id, { course_id: 'c' })).rejects.toBeInstanceOf(MultipleParentError)
       // nulling the first then setting another is fine
-      await expect(
-        h.svc.updateTask(t.id, { project_id: null, course_id: 'c' }),
-      ).resolves.toBeTruthy()
+      await expect(h.svc.updateTask(t.id, { project_id: null, course_id: 'c' })).resolves.toBeTruthy()
     })
   })
 
@@ -295,13 +294,9 @@ describe('mod-tasks S1 — tasks CRUD + queries', () => {
       expect((await h.svc.listTasks()).length).toBe(3)
       expect((await h.svc.listTasks({ status: 'completed' })).map((t) => t.id)).toEqual([a.id])
       expect((await h.svc.listTasks({ completed: true })).map((t) => t.id)).toEqual([a.id])
-      expect((await h.svc.listTasks({ completed: false })).map((t) => t.id).sort()).toEqual(
-        [b.id, sub.id].sort(),
-      )
+      expect((await h.svc.listTasks({ completed: false })).map((t) => t.id).sort()).toEqual([b.id, sub.id].sort())
       expect((await h.svc.listTasks({ parent_task_id: a.id })).map((t) => t.id)).toEqual([sub.id])
-      expect((await h.svc.listTasks({ parent_task_id: null })).map((t) => t.id).sort()).toEqual(
-        [a.id, b.id].sort(),
-      )
+      expect((await h.svc.listTasks({ parent_task_id: null })).map((t) => t.id).sort()).toEqual([a.id, b.id].sort())
       expect((await h.svc.listTasks({ due_before: '2026-02-01' })).map((t) => t.id)).toEqual([a.id])
 
       await h.svc.softDeleteTask(b.id)
@@ -326,9 +321,7 @@ describe('mod-tasks S2 — sub-tasks + M4 rollup', () => {
     it('rejects nesting under a sub-task (single-level, TK-3)', async () => {
       const p = await h.svc.createTask({ title: 'Parent' })
       const c = await h.svc.addSubtask(p.id, { title: 'Child' })
-      await expect(h.svc.addSubtask(c.id, { title: 'Grandchild' })).rejects.toBeInstanceOf(
-        SubtaskNestingError,
-      )
+      await expect(h.svc.addSubtask(c.id, { title: 'Grandchild' })).rejects.toBeInstanceOf(SubtaskNestingError)
     })
     it('rejects a missing parent', async () => {
       await expect(h.svc.addSubtask('nope', { title: 'x' })).rejects.toBeInstanceOf(TaskNotFoundError)
@@ -336,9 +329,9 @@ describe('mod-tasks S2 — sub-tasks + M4 rollup', () => {
     it('a sub-task may carry one module FK (different axis); two → MultipleParentError', async () => {
       const p = await h.svc.createTask({ title: 'Parent' })
       await expect(h.svc.addSubtask(p.id, { title: 'ok', project_id: 'pr' })).resolves.toBeTruthy()
-      await expect(
-        h.svc.addSubtask(p.id, { title: 'bad', project_id: 'pr', course_id: 'co' }),
-      ).rejects.toBeInstanceOf(MultipleParentError)
+      await expect(h.svc.addSubtask(p.id, { title: 'bad', project_id: 'pr', course_id: 'co' })).rejects.toBeInstanceOf(
+        MultipleParentError,
+      )
     })
   })
 
@@ -681,14 +674,24 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
   })
 
   it('2 — setRecurrence(null) clears the rule; the obligation then completes without a spawn', async () => {
-    const ob = await h.svc.createTask({ title: 'Taxes', kind: 'obligation', recurrence_rule: 'FREQ=YEARLY', due_date: '2024-04-15' })
+    const ob = await h.svc.createTask({
+      title: 'Taxes',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=YEARLY',
+      due_date: '2024-04-15',
+    })
     await h.svc.setRecurrence(ob.id, null)
     await h.svc.completeTask(ob.id)
     expect(await spawnedOccurrence(ob.id)).toBeNull()
   })
 
   it('3 — (outcome 1) completing a monthly obligation spawns the next occurrence; original stays completed', async () => {
-    const ob = await h.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+    const ob = await h.svc.createTask({
+      title: 'Rent',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=MONTHLY',
+      due_date: '2024-02-15',
+    })
     const done = await h.svc.completeTask(ob.id)
     expect(done.status).toBe('completed')
     const next = await spawnedOccurrence(ob.id)
@@ -698,7 +701,12 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
   })
 
   it('4 — the spawned occurrence is a distinct row; completing IT spawns the next (chain self-sustains)', async () => {
-    const ob = await h.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+    const ob = await h.svc.createTask({
+      title: 'Rent',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=MONTHLY',
+      due_date: '2024-02-15',
+    })
     await h.svc.completeTask(ob.id)
     const occ2 = await spawnedOccurrence(ob.id)
     expect(occ2!.id).not.toBe(ob.id)
@@ -709,14 +717,24 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
   })
 
   it('5 — (outcome 3) an invalid rule → the task completes AND throws RecurrenceRegenError; no new row', async () => {
-    const ob = await h.svc.createTask({ title: 'Weird', kind: 'obligation', recurrence_rule: 'not a valid rrule at all', due_date: '2024-02-15' })
+    const ob = await h.svc.createTask({
+      title: 'Weird',
+      kind: 'obligation',
+      recurrence_rule: 'not a valid rrule at all',
+      due_date: '2024-02-15',
+    })
     await expect(h.svc.completeTask(ob.id)).rejects.toBeInstanceOf(RecurrenceRegenError)
     expect((await h.svc.getTask(ob.id))?.status).toBe('completed') // completion is durable (complete-but-flag)
     expect(await spawnedOccurrence(ob.id)).toBeNull()
   })
 
   it('6 — (outcome 2) a valid but exhausted rule → completes, NO spawn, NO error (legitimate end)', async () => {
-    const ob = await h.svc.createTask({ title: 'Once', kind: 'obligation', recurrence_rule: 'FREQ=DAILY;COUNT=1', due_date: '2024-02-15' })
+    const ob = await h.svc.createTask({
+      title: 'Once',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=DAILY;COUNT=1',
+      due_date: '2024-02-15',
+    })
     const done = await h.svc.completeTask(ob.id) // must NOT throw
     expect(done.status).toBe('completed')
     expect(await spawnedOccurrence(ob.id)).toBeNull()
@@ -731,12 +749,22 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
   })
 
   it('8 — YEARLY + biweekly rules compute the correct next due_date (ical.js)', async () => {
-    const yearly = await h.svc.createTask({ title: 'Taxes', kind: 'obligation', recurrence_rule: 'FREQ=YEARLY', due_date: '2024-04-15' })
+    const yearly = await h.svc.createTask({
+      title: 'Taxes',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=YEARLY',
+      due_date: '2024-04-15',
+    })
     await h.svc.completeTask(yearly.id)
     expect((await spawnedOccurrence(yearly.id))?.due_date).toBe('2025-04-15')
 
     const h2 = await setup()
-    const biweekly = await h2.svc.createTask({ title: 'Report', kind: 'obligation', recurrence_rule: 'FREQ=WEEKLY;INTERVAL=2', due_date: '2024-02-01' })
+    const biweekly = await h2.svc.createTask({
+      title: 'Report',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=WEEKLY;INTERVAL=2',
+      due_date: '2024-02-01',
+    })
     await h2.svc.completeTask(biweekly.id)
     const occ = (await h2.svc.listTasks()).find((t) => t.id !== biweekly.id && t.status === 'not_started')
     expect(occ?.due_date).toBe('2024-02-15') // +14 days
@@ -745,8 +773,14 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
   it('9 — the spawned occurrence carries obligation fields, resets completed_at/actual/scheduled, drops parent_task_id', async () => {
     const parent = await h.svc.createTask({ title: 'P' })
     const ob = await h.svc.createTask({
-      title: 'Sub-obligation', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15',
-      estimated_minutes: 30, scheduled_date: '2024-02-10', parent_task_id: parent.id, priority: 'high',
+      title: 'Sub-obligation',
+      kind: 'obligation',
+      recurrence_rule: 'FREQ=MONTHLY',
+      due_date: '2024-02-15',
+      estimated_minutes: 30,
+      scheduled_date: '2024-02-10',
+      parent_task_id: parent.id,
+      priority: 'high',
     })
     await h.svc.completeTask(ob.id)
     const next = await spawnedOccurrence(ob.id)
@@ -764,9 +798,9 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
       h.svc.createTask({ title: 'bad', kind: 'standard', recurrence_rule: 'FREQ=DAILY' }),
     ).rejects.toBeInstanceOf(RecurrenceNotAllowedError)
     const std = await h.svc.createTask({ title: 'ok' })
-    await expect(
-      h.svc.updateTask(std.id, { recurrence_rule: 'FREQ=DAILY' }),
-    ).rejects.toBeInstanceOf(RecurrenceNotAllowedError)
+    await expect(h.svc.updateTask(std.id, { recurrence_rule: 'FREQ=DAILY' })).rejects.toBeInstanceOf(
+      RecurrenceNotAllowedError,
+    )
   })
 
   it('11 — (g2 B1) next due_date is TIMEZONE-INDEPENDENT under a UTC-positive zone (Asia/Tokyo)', async () => {
@@ -775,14 +809,26 @@ describe('mod-tasks S5 — obligations + recurrence', () => {
     try {
       const h2 = await setup()
       // date drift: MONTHLY must land on the 15th, NOT the 14th
-      const ob = await h2.svc.createTask({ title: 'Rent', kind: 'obligation', recurrence_rule: 'FREQ=MONTHLY', due_date: '2024-02-15' })
+      const ob = await h2.svc.createTask({
+        title: 'Rent',
+        kind: 'obligation',
+        recurrence_rule: 'FREQ=MONTHLY',
+        due_date: '2024-02-15',
+      })
       await h2.svc.completeTask(ob.id)
       const next = (await h2.svc.listTasks()).find((t) => t.id !== ob.id && t.status === 'not_started')
       expect(next?.due_date).toBe('2024-03-15')
       // outcome flip: a COUNT=2 rule must still SPAWN (not drop to outcome-2 "exhausted") under Tokyo
-      const ob2 = await h2.svc.createTask({ title: 'Twice', kind: 'obligation', recurrence_rule: 'FREQ=DAILY;COUNT=2', due_date: '2024-02-15' })
+      const ob2 = await h2.svc.createTask({
+        title: 'Twice',
+        kind: 'obligation',
+        recurrence_rule: 'FREQ=DAILY;COUNT=2',
+        due_date: '2024-02-15',
+      })
       await h2.svc.completeTask(ob2.id) // must not throw
-      const next2 = (await h2.svc.listTasks()).find((t) => t.id !== ob2.id && t.status === 'not_started' && t.due_date === '2024-02-16')
+      const next2 = (await h2.svc.listTasks()).find(
+        (t) => t.id !== ob2.id && t.status === 'not_started' && t.due_date === '2024-02-16',
+      )
       expect(next2).toBeTruthy()
     } finally {
       if (orig === undefined) delete process.env.TZ
@@ -960,7 +1006,11 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
 
   /** All 4 parent types (g2 F4) + 2 standalone: 8 top-level tasks. */
   async function seed(): Promise<{ pA: string; pB: string; cC: string; mM: string; kK: string }> {
-    const pA = 'proj-A', pB = 'proj-B', cC = 'contact-C', mM = 'ms-M', kK = 'course-K'
+    const pA = 'proj-A',
+      pB = 'proj-B',
+      cC = 'contact-C',
+      mM = 'ms-M',
+      kK = 'course-K'
     await h.svc.createTask({ title: 'a1', project_id: pA })
     await h.svc.createTask({ title: 'a2', project_id: pA })
     await h.svc.createTask({ title: 'b1', project_id: pB })
@@ -979,7 +1029,12 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     const r = await h.svc.getAggregatedTasks({ by: 'parent' })
     // codepoint order (not locale): contact < course < milestone < project; standalone LAST
     expect(r.groups.map((g) => g.key)).toEqual([
-      `contact:${cC}`, `course:${kK}`, `milestone:${mM}`, `project:${pA}`, `project:${pB}`, 'standalone',
+      `contact:${cC}`,
+      `course:${kK}`,
+      `milestone:${mM}`,
+      `project:${pA}`,
+      `project:${pB}`,
+      'standalone',
     ])
     for (const k of [`project:${pA}`, `project:${pB}`, `contact:${cC}`, `milestone:${mM}`, `course:${kK}`]) {
       const g = byKey(r, k)
@@ -995,7 +1050,12 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
   it('(2) REAL registry: a project provider resolves (parentRow = the row), the missing contact provider degrades ONLY its group', async () => {
     const { pA, pB, cC } = await seed()
     const reg = createViewProviderRegistry()
-    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }]))
+    reg.register(
+      provider('project', [
+        { id: pA, name: 'Alpha' },
+        { id: pB, name: 'Beta' },
+      ]),
+    )
     const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
     expect(byKey(r, `project:${pA}`)).toMatchObject({ state: 'ok', parentRow: { id: pA, name: 'Alpha' } })
     expect(byKey(r, `project:${pB}`)).toMatchObject({ state: 'ok', parentRow: { id: pB, name: 'Beta' } })
@@ -1007,7 +1067,16 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     const { pA, pB } = await seed()
     const reg = createViewProviderRegistry()
     // returns its FULL list regardless of the predicate (ADR-007:67-68 — an unrecognized predicate is ignored)
-    reg.register(provider('project', [{ id: pB, name: 'Beta' }, { id: pA, name: 'Alpha' }], { honourId: false }))
+    reg.register(
+      provider(
+        'project',
+        [
+          { id: pB, name: 'Beta' },
+          { id: pA, name: 'Alpha' },
+        ],
+        { honourId: false },
+      ),
+    )
     const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
     expect(byKey(r, `project:${pA}`)?.parentRow).toEqual({ id: pA, name: 'Alpha' }) // the CORRECT row, not rows[0]
     expect(byKey(r, `project:${pB}`)?.parentRow).toEqual({ id: pB, name: 'Beta' })
@@ -1020,7 +1089,16 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
   it('(4) a provider that THROWS for one parent degrades that group only; a registry whose get() THROWS degrades all parented groups; never rejects', async () => {
     const { pA, pB, cC } = await seed()
     const reg = createViewProviderRegistry()
-    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }], { throwOn: pB }))
+    reg.register(
+      provider(
+        'project',
+        [
+          { id: pA, name: 'Alpha' },
+          { id: pB, name: 'Beta' },
+        ],
+        { throwOn: pB },
+      ),
+    )
     const r = await withProviders(reg).getAggregatedTasks({ by: 'parent' })
     expect(byKey(r, `project:${pA}`)?.state).toBe('ok')
     expect(byKey(r, `project:${pB}`)).toMatchObject({ state: 'degraded', parentRow: null }) // BR-12, isolated
@@ -1044,7 +1122,16 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     const { pA, pB } = await seed() // pA has 2 tasks, pB has 1
     const calls = { n: 0 }
     const reg = createViewProviderRegistry()
-    reg.register(provider('project', [{ id: pA, name: 'Alpha' }, { id: pB, name: 'Beta' }], { calls }))
+    reg.register(
+      provider(
+        'project',
+        [
+          { id: pA, name: 'Alpha' },
+          { id: pB, name: 'Beta' },
+        ],
+        { calls },
+      ),
+    )
     await withProviders(reg).getAggregatedTasks({ by: 'parent' })
     expect(calls.n).toBe(2) // 2 distinct projects ⇒ 2 calls (3 tasks)
   })
@@ -1058,7 +1145,7 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     expect(titles(g)).toEqual(['loose'])
   })
 
-  it('(6b) GRAIN = top-level (BR-TK-S7-8, g2 F1): a sub-task is NOT routed to the Inbox nor counted in its parent\'s module group; it stays reachable via getSubtasks', async () => {
+  it("(6b) GRAIN = top-level (BR-TK-S7-8, g2 F1): a sub-task is NOT routed to the Inbox nor counted in its parent's module group; it stays reachable via getSubtasks", async () => {
     const a1 = await h.svc.createTask({ title: 'a1', project_id: 'proj-A' })
     const child = await h.svc.addSubtask(a1.id, { title: 'a1.1' }) // no module FK of its own
     const byParent = await h.svc.getAggregatedTasks({ by: 'parent' })
@@ -1082,7 +1169,11 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     const svc = withProviders(neverCalled)
     const byType = await svc.getAggregatedTasks({ by: 'parent_type' })
     expect(byType.groups.map((g) => g.key)).toEqual([
-      'parent_type:contact', 'parent_type:course', 'parent_type:milestone', 'parent_type:project', 'standalone',
+      'parent_type:contact',
+      'parent_type:course',
+      'parent_type:milestone',
+      'parent_type:project',
+      'standalone',
     ])
     expect(titles(byKey(byType, 'parent_type:project'))).toEqual(['a1', 'a2', 'b1'])
     expect(byType.groups.every((g) => g.state === 'ok' && g.parent === null)).toBe(true)
@@ -1112,9 +1203,13 @@ describe('mod-tasks S7 — aggregation (getAggregatedTasks over the shared R7 se
     const r2 = await h.svc.getAggregatedTasks({ by: 'parent' })
     expect(r1.groups.flatMap((g) => g.tasks.map((t) => t.title))).not.toContain('doomed')
     expect(titles(byKey(r1, `project:${pA}`))).toEqual(['a0-first', 'a1', 'a2'])
-    expect(r1.groups.map((g) => [g.key, g.tasks.map((t) => t.id)])).toEqual(r2.groups.map((g) => [g.key, g.tasks.map((t) => t.id)]))
+    expect(r1.groups.map((g) => [g.key, g.tasks.map((t) => t.id)])).toEqual(
+      r2.groups.map((g) => [g.key, g.tasks.map((t) => t.id)]),
+    )
     expect(r1.groups.at(-1)?.key).toBe('standalone')
-    await expect(h.svc.getAggregatedTasks({ by: 'nope' } as unknown as { by: 'parent' })).rejects.toBeInstanceOf(ZodError) // g2 F9
+    await expect(h.svc.getAggregatedTasks({ by: 'nope' } as unknown as { by: 'parent' })).rejects.toBeInstanceOf(
+      ZodError,
+    ) // g2 F9
   })
 
   it('(9) C5/TK-9 structural — the service imports ONLY its own + foundation schema (no db/schema barrel, no other module), parents flow only through `providers`', () => {
@@ -1226,7 +1321,9 @@ describe('mod-tasks S8 — saved views (TAS-28 over the views primitive)', () =>
     expect(v.space_id).toBeNull()
     expect(parseJson(v.filter)).toEqual({ entity_types: ['task'], tags: ['t1'], predicates: { completed: false } })
     await expect(
-      h.svc.saveView({ name: 'x', layout: 'list', entity_types: ['page'] } as unknown as Parameters<typeof h.svc.saveView>[0]),
+      h.svc.saveView({ name: 'x', layout: 'list', entity_types: ['page'] } as unknown as Parameters<
+        typeof h.svc.saveView
+      >[0]),
     ).rejects.toBeInstanceOf(ZodError)
     await expect(h.svc.saveView({ name: 'x', layout: 'kanban' as 'list' })).rejects.toBeInstanceOf(ZodError)
     const unwired = createTasksService({ db: h.db, deviceId: h.deviceId })
@@ -1255,7 +1352,9 @@ describe('mod-tasks S8 — saved views (TAS-28 over the views primitive)', () =>
     expect(rehomed.space_id).toBeNull()
 
     const foreign = await h.views.createView({ name: 'pages', layout: 'list', filter: { entity_types: ['page'] } })
-    await expect(h.svc.saveView({ id: foreign.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+    await expect(h.svc.saveView({ id: foreign.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(
+      TaskViewNotFoundError,
+    )
     const mixed = await h.views.createView({
       name: 'calendar',
       layout: 'calendar',
@@ -1264,9 +1363,13 @@ describe('mod-tasks S8 — saved views (TAS-28 over the views primitive)', () =>
     // Compare DB-read to DB-read: create() echoes the INPUT row (no `deleted_at`), a read carries `deleted_at: null`
     // ([[repository-create-returns-input-row-not-db-defaults]]).
     const before = await h.views.getView(mixed.id)
-    await expect(h.svc.saveView({ id: mixed.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+    await expect(h.svc.saveView({ id: mixed.id, name: 'hijack', layout: 'list' })).rejects.toBeInstanceOf(
+      TaskViewNotFoundError,
+    )
     expect(await h.views.getView(mixed.id)).toEqual(before) // byte-for-byte unchanged (g1 F1)
-    await expect(h.svc.saveView({ id: 'no-such-view', name: 'x', layout: 'list' })).rejects.toBeInstanceOf(TaskViewNotFoundError)
+    await expect(h.svc.saveView({ id: 'no-such-view', name: 'x', layout: 'list' })).rejects.toBeInstanceOf(
+      TaskViewNotFoundError,
+    )
   })
 
   it('(6) listViews: only EXACT task views (foreign/mixed/soft-deleted/malformed excluded); equal-ms rows ordered by id; stable', async () => {
@@ -1305,7 +1408,8 @@ describe('mod-tasks S8 — tasks as a ReadProvider (XCU-07/08) through the REAL 
   beforeEach(async () => {
     h = await setupWithSubstrates()
   })
-  const list = (filter: Parameters<ReadProvider['list']>[0]) => h.providers.get('task')!.list(filter) as Promise<{ id: string }[]>
+  const list = (filter: Parameters<ReadProvider['list']>[0]) =>
+    h.providers.get('task')!.list(filter) as Promise<{ id: string }[]>
   const ids = (rows: { id: string }[]) => rows.map((r) => r.id).sort()
 
   it('(7) a saved task view resolves end-to-end: success, completed top-level only, degraded []; a mixed view degrades the missing type only', async () => {
@@ -1322,7 +1426,11 @@ describe('mod-tasks S8 — tasks as a ReadProvider (XCU-07/08) through the REAL 
     expect(resolved.degraded).toEqual([])
     expect(ids(resolved.rows as { id: string }[])).toEqual([done1.id, done2.id].sort())
 
-    const mixed = await h.views.createView({ name: 'cal', layout: 'calendar', filter: { entity_types: ['task', 'page'] } })
+    const mixed = await h.views.createView({
+      name: 'cal',
+      layout: 'calendar',
+      filter: { entity_types: ['task', 'page'] },
+    })
     const r2 = await h.engine.resolve(mixed)
     expect(r2.state).toBe('success') // a MISSING provider is degraded, not error (BR-11)
     expect(r2.degraded).toHaveLength(1)
@@ -1376,7 +1484,9 @@ describe('mod-tasks S8 — tasks as a ReadProvider (XCU-07/08) through the REAL 
     expect(ids(await list({ tags: [axy.id] }))).toEqual([tAXY.id])
     expect(ids(await list({ tags: [ax.id, b.id] }))).toEqual([tAX.id, tAXY.id, tB.id].sort()) // union
     expect(await list({ tags: ['ghost'] })).toEqual([])
-    expect(ids(await list({ tags: 'abc' as unknown as string[] }))).toEqual([tA.id, tAX.id, tAXY.id, tB.id, none.id].sort()) // ignored
+    expect(ids(await list({ tags: 'abc' as unknown as string[] }))).toEqual(
+      [tA.id, tAX.id, tAXY.id, tB.id, none.id].sort(),
+    ) // ignored
     // soft-deleted tasks excluded
     await h.svc.softDeleteTask(tB.id)
     expect(await list({ tags: [b.id] })).toEqual([])
@@ -1469,8 +1579,16 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
       expect(label.completed_at).toBeNull() // create never writes the timestamp (BR-TK-S1-5)
       const so1 = await h.svc.createTask({ title: 'open due D sort_order 1', due_date: D, sort_order: 1 }) // the sort_order tier
       ids = {
-        dMinus1: dMinus1.id, top: top.id, sub: sub.id, both: both.id, due: due.id, sched: sched.id,
-        dueSched: dueSched.id, duePlus1: duePlus1.id, label: label.id, so1: so1.id,
+        dMinus1: dMinus1.id,
+        top: top.id,
+        sub: sub.id,
+        both: both.id,
+        due: due.id,
+        sched: sched.id,
+        dueSched: dueSched.id,
+        duePlus1: duePlus1.id,
+        label: label.id,
+        so1: so1.id,
       }
     } finally {
       vi.useRealTimers()
@@ -1491,7 +1609,14 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     expect(byId.has(ids.duePlus1)).toBe(false)
     // the §2 fields
     const member = byId.get(ids.due)!
-    expect(member).toEqual({ id: ids.due, title: 'open due D', status: 'not_started', priority: 'medium', completedToday: false, dueToday: true })
+    expect(member).toEqual({
+      id: ids.due,
+      title: 'open due D',
+      status: 'not_started',
+      priority: 'medium',
+      completedToday: false,
+      dueToday: true,
+    })
     // order: sort_order (the so1 seed LAST) → created_at (the D-1 seed FIRST) → id codepoint for the pinned rest
     expect(set[0]!.id).toBe(ids.dMinus1)
     expect(set.at(-1)!.id).toBe(ids.so1)
@@ -1552,7 +1677,10 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     } finally {
       vi.useRealTimers()
     }
-    expect(((await c.summary(D)).items as { id: string; completedToday: boolean }[]).find((i) => i.id === done)?.completedToday).toBe(true)
+    expect(
+      ((await c.summary(D)).items as { id: string; completedToday: boolean }[]).find((i) => i.id === done)
+        ?.completedToday,
+    ).toBe(true)
     // through the REAL engine
     const registry = createJournalRegistry()
     registerTasksJournal(registry, h.svc)
@@ -1561,7 +1689,9 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     const tasksSections = dash.summary.filter((s) => s.module === 'tasks')
     expect(tasksSections).toHaveLength(1)
     expect(tasksSections[0]!.state).toBe('success')
-    expect((tasksSections[0]!.items as { id: string }[]).map((i) => i.id).sort(codepoint)).toEqual([t.id, done].sort(codepoint))
+    expect((tasksSections[0]!.items as { id: string }[]).map((i) => i.id).sort(codepoint)).toEqual(
+      [t.id, done].sort(codepoint),
+    )
     expect(dash.agenda.some((s) => s.module === 'tasks')).toBe(false) // no JournalContribution.dueIn — by design
     // degrade: a rejecting day-read degrades the tasks section only; the dashboard still resolves (BR-S2-2)
     const broken = { getDayTasksSummary: () => Promise.reject(new Error('boom')) } as unknown as TasksService
@@ -1596,8 +1726,17 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
 
     const items = await h.svc.getDueReminders(range)
     const by = new Map(items.map((i) => [i.ref_id, i]))
-    expect([...by.keys()].sort()).toEqual([dueIn.id, schedInDueOut.id, schedOutDueIn.id, schedOnly.id, onHold.id, sub.id, lo.id, hi.id].sort())
-    expect(by.get(dueIn.id)).toEqual({ source_module: 'tasks', ref_id: dueIn.id, label: 'due in', est_minutes: 25, urgency: 0, hard_deadline: ms('2026-10-15') })
+    expect([...by.keys()].sort()).toEqual(
+      [dueIn.id, schedInDueOut.id, schedOutDueIn.id, schedOnly.id, onHold.id, sub.id, lo.id, hi.id].sort(),
+    )
+    expect(by.get(dueIn.id)).toEqual({
+      source_module: 'tasks',
+      ref_id: dueIn.id,
+      label: 'due in',
+      est_minutes: 25,
+      urgency: 0,
+      hard_deadline: ms('2026-10-15'),
+    })
     expect(by.get(schedInDueOut.id)?.hard_deadline).toBe(ms('2026-10-30')) // surfaced by the scheduled day; deadline rides along
     expect(by.get(schedOutDueIn.id)?.hard_deadline).toBe(ms('2026-10-15')) // surfaced by the deadline
     expect(by.get(schedOnly.id)).not.toHaveProperty('hard_deadline') // no deadline ⇒ absent, never NaN
@@ -1650,7 +1789,9 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     const terminal = (await h.svc.listTasks({ open: false })).map((t) => t.id).sort()
     expect(terminal).toEqual([ids.completed!, ids.cancelled!].sort())
     const provider = createTasksReadProvider({ svc: h.svc, db: h.db, deviceId: 'test-device' })
-    const viaProvider = ((await provider.list({ predicates: { open: true } })) as { id: string }[]).map((t) => t.id).sort()
+    const viaProvider = ((await provider.list({ predicates: { open: true } })) as { id: string }[])
+      .map((t) => t.id)
+      .sort()
     expect(viaProvider).toEqual(open)
     expect(TASK_VIEW_PRESETS.find((p) => p.key === 'today')?.view.predicates).toEqual({ open: true })
     expect(TASK_VIEW_PRESETS.find((p) => p.key === 'board')?.view.predicates).toEqual({ open: true })
@@ -1698,7 +1839,13 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
   })
 
   it('(8) TAS-29 RATIFY — TaskViewConfig (type) + TaskViewConfigSchema (strict Zod) are the one config schema', () => {
-    const draft = { name: 'Mine', layout: 'board', tags: ['t1'], predicates: { completed: false }, grouping: { field: 'status' } } satisfies TaskViewConfig
+    const draft = {
+      name: 'Mine',
+      layout: 'board',
+      tags: ['t1'],
+      predicates: { completed: false },
+      grouping: { field: 'status' },
+    } satisfies TaskViewConfig
     expect(TaskViewConfigSchema.safeParse(draft).success).toBe(true)
     expect(TaskViewConfigSchema.safeParse({ ...draft, id: 'v1' }).success).toBe(false)
     expect(TaskViewConfigSchema.safeParse({ ...draft, space_id: null }).success).toBe(false)
@@ -1720,6 +1867,8 @@ describe('mod-tasks S9 — Journal summary + DueProvider (the ① closer)', () =
     expect(sessionsImports.length).toBeGreaterThanOrEqual(1)
     expect(sessionsImports.every((l) => /^\s*import type/.test(l))).toBe(true) // EVERY `../sessions` import is type-only (no runtime edge)
     expect(serviceImports.some((l) => /services\/(projects|relationships|learning|languages)/.test(l))).toBe(false)
-    expect(serviceImports.filter((l) => /db\/schema/.test(l)).every((l) => /db\/schema\/(tasks|foundation\/)/.test(l))).toBe(true)
+    expect(
+      serviceImports.filter((l) => /db\/schema/.test(l)).every((l) => /db\/schema\/(tasks|foundation\/)/.test(l)),
+    ).toBe(true)
   })
 })

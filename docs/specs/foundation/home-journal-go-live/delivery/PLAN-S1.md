@@ -1,13 +1,15 @@
 # PLAN — home-journal-go-live · S1 (live journal entry)
 
 **Gate:** §XXVI g1 (PLAN → Approval 1). **Profile:** Add Frontend Component / Entity Delivery Flow ②.
-**Unit:** make the Home journal *entry* a live, persisting editor. **Precedent:** notes-entity-usability (PR #150).
+**Unit:** make the Home journal _entry_ a live, persisting editor. **Precedent:** notes-entity-usability (PR #150).
 
 ## 0. Baseline (Step 0 — grounded)
-See `.claude/tasks/home-journal-go-live.md` triage. The journal *entry* is a `type:'journal'` `pages` row
+
+See `.claude/tasks/home-journal-go-live.md` triage. The journal _entry_ is a `type:'journal'` `pages` row
 owned by NotesService; the `journals` aggregation service and the Dashboard stay out (no registered providers).
 
 ## 1. Interpretation (ratify — the surface shipped & gated)
+
 - **DEPENDENCIES** — `getServices().notes` (live post data-plane-wiring) `[FACT: db/composition-root.ts:notes]`;
   `@vida/editor` `VidaEditor` (already an apps/web dep via notes) `[FACT: notes/note-editor-body.tsx:14]`;
   libsodium loaded globally in `build()` via `initVault()` `[FACT: composition-root.ts]` (writes need the
@@ -26,24 +28,28 @@ owned by NotesService; the `journals` aggregation service and the Dashboard stay
     `EditorDocument`. `journal_date` required iff `type='journal'` `[FACT: validators/note.ts:42]`.
 
 ## 1.5 Envision Gate — **SKIP**
+
 No net-new affordance: the Home surface + the journal region frame shipped & were Victor-reviewed in fe-home
 (Visual Gate PASS). We swap a static body for the live editor already shipped in notes. State the skip; no greybox.
 
 ## 2. Decomposition — **1 slice**, two layers (front matter collapses; single surface)
+
 A thin `@vida/core` seam (`ensureJournal`, mirroring `writePageContent`'s go-live precedent) + the frontend flip.
 Seam-contract = `NotesService.ensureJournal(date) → PageRow` + the existing `getPage`/`writePageContent`.
 
 ## 3. Create-timing — **RESOLVED by convention (not an open call)**
+
 The doc-check settled this (see §1 CONVENTION): materialization = **idempotent get-or-create-on-access**, placed
 **in-service** as `ensureJournal(date)` mirroring `ensureEntityNote` (NP-8). This is the codebase's own convention —
-lazy-create-on-first-write (the earlier "B") would *diverge* from it. No A/B choice remains; nothing to decide here.
+lazy-create-on-first-write (the earlier "B") would _diverge_ from it. No A/B choice remains; nothing to decide here.
 A blank journal row per opened day is a valid, intended state (identity.md:54 "Empty / first day"), journal-per-date
 being the grain snapshots/review expect.
 
 ## 4. Build steps (S1)
+
 0. **`packages/core/src/services/notes/{service,types}.ts`** — add `ensureJournal(date: string): Promise<PageRow>`
    to `NotesService` + impl, a **faithful mirror of `ensureEntityNote`** (NP-8): `getPageByJournalDate(date) ??
-   createPage({ type:'journal', journal_date: date, title: date })`. Title = the `YYYY-MM-DD` date — non-empty,
+createPage({ type:'journal', journal_date: date, title: date })`. Title = the `YYYY-MM-DD` date — non-empty,
    deterministic, **locale-free** (keeps `@vida/core` Intl-free; also fixes `NoteEditorBody`'s accname leading-space,
    [[tamagui-and-rnw-ui-gotchas]]). No explicit race-catch — mirrors `ensureEntityNote`; `createPage`'s in-service
    NP-2 pre-check is the backstop (single-user-local). Core test mirrors the `ensureEntityNote` test (creates once;
@@ -58,10 +64,11 @@ being the grain snapshots/review expect.
    - On `success` render `<NoteEditorBody page={page} />` (imported from `../notes/note-editor-body`) — the live
      `<VidaEditor chrome="bare">` + honest save-state (`Saving…/Saved/Couldn't save`), reused verbatim.
    - Remove the static `PageBody`/`InlineBlock` prose (the live editor replaces it; integration-block node-views
-     remain the deferred #31 seam *inside* the editor). Keep the `editorState?` prop override for the Visual Gate.
+     remain the deferred #31 seam _inside_ the editor). Keep the `editorState?` prop override for the Visual Gate.
 3. `home-surface.tsx` — **unchanged** (already composes `<JournalPageRegion />` in both arrangements).
 
 ## 5. Verification (Step 8–11)
+
 - tsc 0 (core + web) · eslint 0 (changed files) · unit: core `ensureJournal` test (mirrors `ensureEntityNote`) +
   `use-journal-entry.test.ts` (TZ-forced today, `?sample`) + `journal-page-region.test.tsx` (terminal states,
   mounts editor on success). Rebuild `@vida/core` dist before the web typecheck ([[editing-vida-types-needs-a-dist-rebuild-before-core-typecheck]] class).
@@ -71,9 +78,10 @@ being the grain snapshots/review expect.
 - §XXIX currency: refresh `apps/web/src/home/CLAUDE.md` (journal region now LIVE via NotesService).
 
 ## 6. Risks / watch
+
 - **Mount-echo write** — `useNoteContent` dedupes against loaded content; verify a mere-open bumps nothing.
 - **UTC-day bug** — build `today` from local fields, test under a forced TZ (gate is TZ-blind).
 - **Create race** — `ensureJournal` mirrors `ensureEntityNote` (no catch); `createPage`'s in-service NP-2 pre-check
-  + React Query key-dedup cover it (single-user-local).
+  - React Query key-dedup cover it (single-user-local).
 - **@vida/editor dep** — already present `[FACT: apps/web/package.json:21]`; resolves for notes today.
 - **Core dist rebuild** — editing `@vida/core` requires a dist rebuild before the web typecheck sees `ensureJournal`.

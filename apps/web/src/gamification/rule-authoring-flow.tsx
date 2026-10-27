@@ -34,7 +34,17 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 }
 
 /** A row of Back + the forward action (Next / Create). */
-function FlowControls({ onBack, forward, forwardLabel, forwardDisabled }: { onBack?: () => void; forward: () => void; forwardLabel: string; forwardDisabled?: boolean }) {
+function FlowControls({
+  onBack,
+  forward,
+  forwardLabel,
+  forwardDisabled,
+}: {
+  onBack?: () => void
+  forward: () => void
+  forwardLabel: string
+  forwardDisabled?: boolean
+}) {
   return (
     <View flexDirection="row" gap="$8" paddingTop="$8">
       {onBack ? (
@@ -49,7 +59,15 @@ function FlowControls({ onBack, forward, forwardLabel, forwardDisabled }: { onBa
   )
 }
 
-export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData; onDone: () => void; onCancel: () => void }) {
+export function RuleAuthoringFlow({
+  data,
+  onDone,
+  onCancel,
+}: {
+  data: RulesData
+  onDone: () => void
+  onCancel: () => void
+}) {
   const [step, setStep] = useState(0)
   const [name, setName] = useState('')
   const [eventName, setEventName] = useState('')
@@ -79,8 +97,15 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
   }))
 
   const submit = () => {
-    const consequence: ConsequenceSpec = { effectType: rewardKind === 'grant' ? 'grant_currency' : 'lock_currency', payload: { currencyId, amount: amountNum } }
-    data.create({ name: name.trim(), condition: { kind: 'event_trigger', eventType: eventName.trim() }, consequences: [consequence] })
+    const consequence: ConsequenceSpec = {
+      effectType: rewardKind === 'grant' ? 'grant_currency' : 'lock_currency',
+      payload: { currencyId, amount: amountNum },
+    }
+    data.create({
+      name: name.trim(),
+      condition: { kind: 'event_trigger', eventType: eventName.trim() },
+      consequences: [consequence],
+    })
     onDone()
   }
 
@@ -104,9 +129,19 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
             </Text>
           </View>
           <Field label="For now, trigger on a named event">
-            <Input value={eventName} onChangeText={setEventName} placeholder="e.g. week.ended" aria-label="Trigger event" />
+            <Input
+              value={eventName}
+              onChangeText={setEventName}
+              placeholder="e.g. week.ended"
+              aria-label="Trigger event"
+            />
           </Field>
-          <FlowControls onBack={onCancel} forward={() => setStep(1)} forwardLabel="Next" forwardDisabled={!conditionReady} />
+          <FlowControls
+            onBack={onCancel}
+            forward={() => setStep(1)}
+            forwardLabel="Next"
+            forwardDisabled={!conditionReady}
+          />
         </View>
       )
     }
@@ -117,7 +152,13 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
           <Field label="Reward">
             <View flexDirection="row" gap="$8" role="group" aria-label="Reward kind">
               {(['grant', 'lock'] as const).map((k) => (
-                <Button key={k} intent={rewardKind === k ? 'secondary' : 'ghost'} size="small" aria-pressed={rewardKind === k} onPress={() => setRewardKind(k)}>
+                <Button
+                  key={k}
+                  intent={rewardKind === k ? 'secondary' : 'ghost'}
+                  size="small"
+                  aria-pressed={rewardKind === k}
+                  onPress={() => setRewardKind(k)}
+                >
                   {k === 'grant' ? 'Grant' : 'Lock'}
                 </Button>
               ))}
@@ -126,14 +167,26 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
           <Field label="Currency (money · allowance · time)">
             <View flexDirection="row" gap="$8" flexWrap="wrap" role="group" aria-label="Currency">
               {data.rewardCurrencies.map((c) => (
-                <Button key={c.code} intent={currencyId === c.code ? 'secondary' : 'ghost'} size="small" aria-pressed={currencyId === c.code} onPress={() => setCurrencyId(c.code)}>
+                <Button
+                  key={c.code}
+                  intent={currencyId === c.code ? 'secondary' : 'ghost'}
+                  size="small"
+                  aria-pressed={currencyId === c.code}
+                  onPress={() => setCurrencyId(c.code)}
+                >
                   {c.name}
                 </Button>
               ))}
             </View>
           </Field>
           <Field label="Amount">
-            <Input value={amount} onChangeText={setAmount} placeholder="e.g. 50" inputMode="numeric" aria-label="Amount" />
+            <Input
+              value={amount}
+              onChangeText={setAmount}
+              placeholder="e.g. 50"
+              inputMode="numeric"
+              aria-label="Amount"
+            />
           </Field>
           {/* earmark a Dream (GM-7) — deny-safe Purposes read, empty at M1 */}
           <View gap="$4">
@@ -146,7 +199,12 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
               </Text>
             ) : null}
           </View>
-          <FlowControls onBack={() => setStep(0)} forward={() => setStep(2)} forwardLabel="Next" forwardDisabled={!amountValid} />
+          <FlowControls
+            onBack={() => setStep(0)}
+            forward={() => setStep(2)}
+            forwardLabel="Next"
+            forwardDisabled={!amountValid}
+          />
         </View>
       )
     }
@@ -159,7 +217,8 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
             “{name.trim()}”
           </Text>
           <Text fontSize="$small" color="$colorTextMuted">
-            When <Text color="$colorTextPrimary">{eventName.trim()}</Text> happens, {rewardKind === 'grant' ? 'grant' : 'lock'}{' '}
+            When <Text color="$colorTextPrimary">{eventName.trim()}</Text> happens,{' '}
+            {rewardKind === 'grant' ? 'grant' : 'lock'}{' '}
             <Text color="$colorTextPrimary">
               {amountNum} {currencyId}
             </Text>
@@ -171,7 +230,15 @@ export function RuleAuthoringFlow({ data, onDone, onCancel }: { data: RulesData;
     )
   }
 
-  return <FlowSessionView title="New rule" context="Author a condition and its reward" stages={stages} renderStage={renderStage} aria-label="Rule authoring" />
+  return (
+    <FlowSessionView
+      title="New rule"
+      context="Author a condition and its reward"
+      stages={stages}
+      renderStage={renderStage}
+      aria-label="Rule authoring"
+    />
+  )
 }
 
 export default RuleAuthoringFlow

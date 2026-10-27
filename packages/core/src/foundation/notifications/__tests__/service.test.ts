@@ -12,12 +12,7 @@
 
 import { describe, it, expect, vi } from 'vitest'
 import { createNotificationDeliveryEngine } from '../service'
-import type {
-  DeliveryDecision,
-  NotificationPorts,
-  QuietHours,
-  WakePayload,
-} from '../types'
+import type { DeliveryDecision, NotificationPorts, QuietHours, WakePayload } from '../types'
 
 const wakeDecision = (over: Partial<DeliveryDecision> = {}): DeliveryDecision => ({
   tier: 'wake_signal',

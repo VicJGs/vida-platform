@@ -1,6 +1,6 @@
 <!-- CURRENT-SPEC · module: projects · the living contract (§XXIX Currency Rule) · never lags the code -->
 
-# Projects — CURRENT SPEC  (`@vida/core` `services/projects`)
+# Projects — CURRENT SPEC (`@vida/core` `services/projects`)
 
 > The durable per-context spec `/critique` + `/preflight` + the §XXVII Session Path consult as ground truth.
 > Born at mod-projects ① S1 (LIF-135, #54). Promoted per slice. Inherits `docs/core/*`.
@@ -75,7 +75,7 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 ## S4 — derived progress (PJ-3) (shipped)
 
 - Surface: `getDeliverableProgress` · `getMilestoneProgress` · `getProjectProgress`, each → `ProgressView
-  { value: number|null, derived: boolean, partial: boolean }` (the g1-nit-2 DECIDE, resolved here).
+{ value: number|null, derived: boolean, partial: boolean }` (the g1-nit-2 DECIDE, resolved here).
 - Composes `foundation/measurement`: `rollup` (weighted mean of measured children, NULL/0 weight⇒equal,
   all-null⇒null) + `resolveProgress` (stored override wins). Internal resolvers work in **[0,1]**; the stored
   0-100 column is scaled at the boundary (`/100` in, `Math.round(*100)` out).
@@ -126,7 +126,7 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
   `measurementSources?: MeasurementSourceRegistry` deny-safe (ADR-011 §3.6).
 - **Binding** (`linkDeliverableSource`/`unlinkDeliverableSource`/`getDeliverableSources`): a deliverable→source
   binding is an **`entity_links` row** (`_index §3c`), WRITTEN via `spaces.createLink(deliverableId, sourceType,
-  sourceId)` (page_id=deliverableId as the source anchor — plain-TEXT, no page-existence requirement), READ via the
+sourceId)` (page_id=deliverableId as the source anchor — plain-TEXT, no page-existence requirement), READ via the
   association resolver's outbound links. Source `entityType` must be registered (account/asset/investment/… are).
 - **Resolution** (`deriveDeliverableLeaf`, wiring the S4 leaf): a `derived-pull` deliverable reads its bound
   source(s) and queries `measurementSources` by key `"${entityType}:${entityId}"` (ADR-011 §3.6); first
@@ -165,6 +165,7 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **Deferred M2 seam:** agentic AI over the vault (ADR-015) — no M1 consumer, not a port (YAGNI).
 
 ## ① COMPLETE — all 9 slices shipped. Gates (per slice)
+
 - **S1:** tsc 0 · eslint 0 · live-store **10/10** · g1 Decomposition SHIP · g2 code-review SHIP · /critique SHIP.
 - **S2:** tsc 0 · eslint 0 · live-store **18/18** (cumulative) · g2 code-review SHIP (+ cascade retrofit) · /critique SHIP.
 - **S3:** tsc 0 · eslint 0 · live-store **25/25** (cumulative) · g2 code-review SHIP · /critique SHIP.

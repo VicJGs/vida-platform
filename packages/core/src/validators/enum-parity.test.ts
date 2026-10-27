@@ -185,7 +185,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -493,9 +496,9 @@ async function ddlFor(table: string): Promise<string> {
   await migration031Gamification.up(driver)
   await migration032Notifications.up(driver)
   await migration033Notes.up(driver)
-  const row = db
-    .prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`)
-    .get(table) as { sql: string } | undefined
+  const row = db.prepare(`SELECT sql FROM sqlite_master WHERE type='table' AND name=?`).get(table) as
+    | { sql: string }
+    | undefined
   db.close()
   if (!row?.sql) throw new Error(`no DDL found for table ${table}`)
   return row.sql

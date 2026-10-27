@@ -56,7 +56,8 @@ const THEMES = {
 
 function hex(v: unknown): string {
   const value: unknown = getVariableValue(v)
-  if (typeof value !== 'string') throw new Error(`theme-hint: a theme colour did not resolve to a string (${String(value)})`)
+  if (typeof value !== 'string')
+    throw new Error(`theme-hint: a theme colour did not resolve to a string (${String(value)})`)
   return value
 }
 

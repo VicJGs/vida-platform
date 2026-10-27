@@ -1,7 +1,7 @@
 <!-- Entity Delivery Flow (v1) · Step 1 — Interpretation Layer · books ① backend (#51, LIF-117) -->
 <!-- Make the implicit explicit before decomposing. Every claim [FACT: path:line] | [INTERP] | [UNKNOWN]. -->
 
-# Interpretation — Books ① backend  (mod-books #51, LIF-117)
+# Interpretation — Books ① backend (mod-books #51, LIF-117)
 
 > **Mode: RATIFY** (Entity Delivery Flow §8). The books corpus is doc-fixed and adversarially gated: the
 > Part-1.2 rerun shipped SHIP/0-blocking (8th consecutive clean) and the DB-4 spec carries a **No-Decisions
@@ -27,15 +27,15 @@ wires them, never re-implements them.
 
 ### Required core seams (present, non-optional)
 
-| Seam | Source (verified) | What Books uses it for | Legs |
-|---|---|---|---|
-| **DB-6 Repository** | `db/repository.ts` (`createRepository`) | encrypt-on-write/decrypt-on-read CRUD over the 10 tables; `encryptedFields:[]` M1.0 pass-through ([E]→M3) | all |
-| **Spaces (AR-6)** | `foundation/spaces` `SpacesService` + `TagNotFound` `[FACT: services/knowledge/service.ts:57]` | `entity_tags` WRITES (publisher/genre/category classification) + `entity_links` inter-link WRITES | BOO-04, 18 |
-| **Backlinks (AR-8)** | `services/search/backlink-resolver` `BacklinkResolver` `[FACT: knowledge/types.ts:38]` | `entity_links` READS (annotation inter-links, linkable-target) | BOO-18, 46 |
-| **Notes** | `services/notes` `NotesService` (`ensureEntityNote`) `[FACT: knowledge/types.ts:42,75]` | `pages`-backed notes on bookmarks/quotes/book (never inline) | BOO-16, 17 |
-| **Sessions base (AR-5/ADR-004)** | `services/sessions` `SessionsService` `[FACT: services/sessions/service.ts:110]` | create the base `sessions` `sub_type='reading'` spine (timer/scheduling/lifecycle) | BOO-23, 24, 39 |
-| **Session registry (AR-5)** | `foundation/sessions` `SessionRegistry` `[FACT: foundation/sessions/registry.ts:44; services/flashcards/types.ts:47]` | **register** the `reading` sub-type (required — see implicit rule 1); `createSession` throws `SessionTypeNotFound` for an unregistered sub_type BEFORE any write (`service.ts:276`) | BOO-23 |
-| **Measurement (ADR-011)** | `foundation/measurement` (`rollup`, source-registry `advertise`/`query`) `[FACT: knowledge/service.ts:58]` | unified-progress derivation kind selection; a reading measure source | BOO-13, 14 |
+| Seam                             | Source (verified)                                                                                                     | What Books uses it for                                                                                                                                                              | Legs           |
+| -------------------------------- | --------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| **DB-6 Repository**              | `db/repository.ts` (`createRepository`)                                                                               | encrypt-on-write/decrypt-on-read CRUD over the 10 tables; `encryptedFields:[]` M1.0 pass-through ([E]→M3)                                                                           | all            |
+| **Spaces (AR-6)**                | `foundation/spaces` `SpacesService` + `TagNotFound` `[FACT: services/knowledge/service.ts:57]`                        | `entity_tags` WRITES (publisher/genre/category classification) + `entity_links` inter-link WRITES                                                                                   | BOO-04, 18     |
+| **Backlinks (AR-8)**             | `services/search/backlink-resolver` `BacklinkResolver` `[FACT: knowledge/types.ts:38]`                                | `entity_links` READS (annotation inter-links, linkable-target)                                                                                                                      | BOO-18, 46     |
+| **Notes**                        | `services/notes` `NotesService` (`ensureEntityNote`) `[FACT: knowledge/types.ts:42,75]`                               | `pages`-backed notes on bookmarks/quotes/book (never inline)                                                                                                                        | BOO-16, 17     |
+| **Sessions base (AR-5/ADR-004)** | `services/sessions` `SessionsService` `[FACT: services/sessions/service.ts:110]`                                      | create the base `sessions` `sub_type='reading'` spine (timer/scheduling/lifecycle)                                                                                                  | BOO-23, 24, 39 |
+| **Session registry (AR-5)**      | `foundation/sessions` `SessionRegistry` `[FACT: foundation/sessions/registry.ts:44; services/flashcards/types.ts:47]` | **register** the `reading` sub-type (required — see implicit rule 1); `createSession` throws `SessionTypeNotFound` for an unregistered sub_type BEFORE any write (`service.ts:276`) | BOO-23         |
+| **Measurement (ADR-011)**        | `foundation/measurement` (`rollup`, source-registry `advertise`/`query`) `[FACT: knowledge/service.ts:58]`            | unified-progress derivation kind selection; a reading measure source                                                                                                                | BOO-13, 14     |
 
 ### Optional deny-safe ports (fail-closed; M2 real reach)
 
@@ -49,16 +49,16 @@ So the port can only BE deny-safe in M1 — absent ⇒ a **typed unavailable/ref
 never a guess. The M2 swap changes **zero service signatures**. (Full per-row citations: `slice-map.md`
 Deferred-by-design table.) The mechanism mirrors knowledge's optional ports (`knowledge/types.ts:78-87`).
 
-| Port | M1 behaviour when absent/dormant | M2 real reach | Legs |
-|---|---|---|---|
-| **Ingestion (ADR-014)** | `IngestionGuard?` — `lookupBook` ⇒ `{status:'lookup-unavailable'}`; manual fallback always callable | ISBN device-mediated public-reference (X1/X2/X3/X5/X9, "Books ISBN" verbatim) | BOO-07, 08 |
-| **AI (ADR-015)** | `AiService?` — OCR/TTS/transcription ⇒ `{status:'ai-unavailable'}`; typed refusal + manual fallback | X11→AI1/AI3/AI5/AI6 model pipelines (on_device/cloud, `source=ai`) | BOO-25, 40, 41, 42 |
-| **R2 attachments (ADR-003)** | `AttachmentPort?` — `addAsset(file)`/`attachPhoto` ⇒ `{status:'attachment-unavailable'}`; row persists, file ref deferred | encrypted file/photo upload pipeline | BOO-09, 25, 44 |
-| **Effects rail (ADR-012)** | `effects?` — fan-out dormant without a registered handler (the knowledge/habits precedent) | reading-session completion signals (**C-E2: NO economy grant on Books** — grant rides base-`sessions`) | BOO-26 (guard) |
-| **Journal registry (ADR-004 §3.2.5)** | `registerBooksJournal` PULL contribution (today's quotas digest) — dormant without a registry | daily-Journal `/summary` aggregation | BOO-30 |
-| **Preferences** | `PreferencesPort?` — quote-embed toggles / conflict rule reads; permissive/documented default when absent | user Preferences store keys | BOO-22, 35 |
-| _(NIT-3 note)_ | A built `services/preferences` exists; Books homes a **narrow deny-safe `PreferencesPort?`** (two toggle/rule reads) rather than coupling to the full service — the deny-safe-port precedent (absent ⇒ permissive default), avoiding a hard dep for two reads. Reconcile-or-adopt is a S5/S8 build call. | — | — |
-| **Education contract** | deny-safe `null` signal — Education (`subject_schedules`/assessments) NOT built ⇒ `paceVsSyllabus = null` (the knowledge `MasterySource` precedent, `knowledge/types.ts:161-169`) | Education partition read-across | BOO-38 |
+| Port                                  | M1 behaviour when absent/dormant                                                                                                                                                                                                                                                                         | M2 real reach                                                                                          | Legs               |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ | ------------------ |
+| **Ingestion (ADR-014)**               | `IngestionGuard?` — `lookupBook` ⇒ `{status:'lookup-unavailable'}`; manual fallback always callable                                                                                                                                                                                                      | ISBN device-mediated public-reference (X1/X2/X3/X5/X9, "Books ISBN" verbatim)                          | BOO-07, 08         |
+| **AI (ADR-015)**                      | `AiService?` — OCR/TTS/transcription ⇒ `{status:'ai-unavailable'}`; typed refusal + manual fallback                                                                                                                                                                                                      | X11→AI1/AI3/AI5/AI6 model pipelines (on_device/cloud, `source=ai`)                                     | BOO-25, 40, 41, 42 |
+| **R2 attachments (ADR-003)**          | `AttachmentPort?` — `addAsset(file)`/`attachPhoto` ⇒ `{status:'attachment-unavailable'}`; row persists, file ref deferred                                                                                                                                                                                | encrypted file/photo upload pipeline                                                                   | BOO-09, 25, 44     |
+| **Effects rail (ADR-012)**            | `effects?` — fan-out dormant without a registered handler (the knowledge/habits precedent)                                                                                                                                                                                                               | reading-session completion signals (**C-E2: NO economy grant on Books** — grant rides base-`sessions`) | BOO-26 (guard)     |
+| **Journal registry (ADR-004 §3.2.5)** | `registerBooksJournal` PULL contribution (today's quotas digest) — dormant without a registry                                                                                                                                                                                                            | daily-Journal `/summary` aggregation                                                                   | BOO-30             |
+| **Preferences**                       | `PreferencesPort?` — quote-embed toggles / conflict rule reads; permissive/documented default when absent                                                                                                                                                                                                | user Preferences store keys                                                                            | BOO-22, 35         |
+| _(NIT-3 note)_                        | A built `services/preferences` exists; Books homes a **narrow deny-safe `PreferencesPort?`** (two toggle/rule reads) rather than coupling to the full service — the deny-safe-port precedent (absent ⇒ permissive default), avoiding a hard dep for two reads. Reconcile-or-adopt is a S5/S8 build call. | —                                                                                                      | —                  |
+| **Education contract**                | deny-safe `null` signal — Education (`subject_schedules`/assessments) NOT built ⇒ `paceVsSyllabus = null` (the knowledge `MasterySource` precedent, `knowledge/types.ts:161-169`)                                                                                                                        | Education partition read-across                                                                        | BOO-38             |
 
 ### Cross-format mapping (BK-4) — a deferred DERIVATION, not a port
 
@@ -121,7 +121,7 @@ Each is surfaced here so the Decomposition Gate ratifies it explicitly.
    to **register `reading`** (SS-5 owning-module pattern, `[FACT: sparse-foundation-seed-is-extension-seam-not-a-gap]`).
    The exact precedent is **flashcards**: it injects `sessionRegistry: SessionRegistry` (required) and exposes a
    call-once `registerFlashcards()` that registers its `SessionTypeDef` (`[FACT: services/flashcards/types.ts:47,134;
-   service.ts:108-120]`). Books mirrors this: a required `sessionRegistry` dep + a call-once **`registerBooks()`**
+service.ts:108-120]`). Books mirrors this: a required `sessionRegistry` dep + a call-once **`registerBooks()`**
    method. The reading envelope is **`permissions: { allowed_effects: [] }`** — ∅ ⊆ the shipped ceiling
    `{attach_pomodoro, log_time}`, so the empty envelope is envelope-legal AND satisfies C-E2 (no economy grant)
    (`[FACT: services/flashcards/service.ts:70,83; foundation/sessions/registry.ts:79]`). `createSession` for
@@ -129,7 +129,7 @@ Each is surfaced here so the Decomposition Gate ratifies it explicitly.
    `reading_sessions` row keyed `session_id` separately.
 
 2. **Books composes the base spine, owns only the extension.** `startSession` calls `sessions.createSession(
-   {sub_type:'reading', ...})` for the base row (spine-only from the service's view — no `focus`/`study`
+{sub_type:'reading', ...})` for the base row (spine-only from the service's view — no `focus`/`study`
    extension), then Books writes its own `reading_sessions` row keyed `session_id` = the base id. Base owns
    lifecycle/timer; Books owns the mode-adaptive capture columns. `[FACT: BR-BK-4; conventions.md:24-27]`
 
@@ -163,13 +163,13 @@ Each is surfaced here so the Decomposition Gate ratifies it explicitly.
 
 ## 5. UNKNOWNs (homed forward — never guessed)
 
-| # | Open point | Home | Blocker? |
-|---|---|---|---|
-| UNKNOWN-1 | Zod validators file — append to `validators/learning.ts` (where the DB-4 enums home, `db-4-books/_index.md:147`) OR a new `validators/books.ts`? The enum home is fixed (learning.ts); the schema home is per-module. | Decomposition Gate (grep the DB-4 enum append + the knowledge/habits validator precedent) | No |
-| ~~UNKNOWN-2~~ RESOLVED | The `reading` session capability envelope. **Resolved: `allowed_effects: []`** (empty envelope, the flashcards precedent — envelope-legal + C-E2-clean). Not open. | S6 (register at composition) | No |
-| UNKNOWN-3 | Cross-format mapping algorithm (transcription + TOC-anchor matching). | Books build-phase design pass (M1 ships `NotSyncedState`) | No — deferred by design |
-| UNKNOWN-4 | Reading-plan goal `measurement_kind`/`binding_mode` defaults. | Books build-phase + ADR-011 (M1 names the axes) | No |
-| UNKNOWN-5 | Daily-Journal page-photo aggregation direction (Books push vs Journals pull). | P3 decomposition + Journals owner (both halves homed: BOO-25 service + Journal `/summary` Part B) | No |
+| #                      | Open point                                                                                                                                                                                                            | Home                                                                                              | Blocker?                |
+| ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ----------------------- |
+| UNKNOWN-1              | Zod validators file — append to `validators/learning.ts` (where the DB-4 enums home, `db-4-books/_index.md:147`) OR a new `validators/books.ts`? The enum home is fixed (learning.ts); the schema home is per-module. | Decomposition Gate (grep the DB-4 enum append + the knowledge/habits validator precedent)         | No                      |
+| ~~UNKNOWN-2~~ RESOLVED | The `reading` session capability envelope. **Resolved: `allowed_effects: []`** (empty envelope, the flashcards precedent — envelope-legal + C-E2-clean). Not open.                                                    | S6 (register at composition)                                                                      | No                      |
+| UNKNOWN-3              | Cross-format mapping algorithm (transcription + TOC-anchor matching).                                                                                                                                                 | Books build-phase design pass (M1 ships `NotSyncedState`)                                         | No — deferred by design |
+| UNKNOWN-4              | Reading-plan goal `measurement_kind`/`binding_mode` defaults.                                                                                                                                                         | Books build-phase + ADR-011 (M1 names the axes)                                                   | No                      |
+| UNKNOWN-5              | Daily-Journal page-photo aggregation direction (Books push vs Journals pull).                                                                                                                                         | P3 decomposition + Journals owner (both halves homed: BOO-25 service + Journal `/summary` Part B) | No                      |
 
 None block the Decomposition Gate — all are build-phase/design-pass resolutions the corpus explicitly defers.
 

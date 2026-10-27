@@ -8,14 +8,16 @@
 
 ## Shape: a single @vida/ui renderer-extension slice (+ one RATIFY on apps/web)
 
-| Slice | Plane | What | Deliverable |
-|-------|-------|------|-------------|
+| Slice  | Plane               | What                                                                     | Deliverable                                                                                                                            |
+| ------ | ------------------- | ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
 | **S1** | frontend (@vida/ui) | EXTEND `NeuralGraph` to the editorial ink voice + 3 conformance findings | `packages/ui/src/components/neural-graph.tsx` + `.stories.tsx` + `.test.tsx`; the CLAUDE.md digest + `v7-neural-graph.md` durable spec |
-| **R1** | frontend (apps/web) | **RATIFY — no net code** | `apps/web/src/app/graph/index.tsx` unchanged |
+| **R1** | frontend (apps/web) | **RATIFY — no net code**                                                 | `apps/web/src/app/graph/index.tsx` unchanged                                                                                           |
 
 ### S1 — the whole load-bearing unit (the 3 findings, together)
+
 Per the task directive they ship as ONE slice (they interlock — ink colors, slots, reduced-motion all live
 in one renderer and are gated together by one Visual Gate):
+
 1. **Ink voice** — replace the hard-coded `DEFAULT_NODE_COLOR`/`DEFAULT_EDGE_COLOR`
    ([FACT: neural-graph.tsx:47-48]) with theme-resolved defaults via `useTheme().get('web')`
    ([FACT: CLAUDE.md pomodoro P1 pattern]); per-preset, light/dark; token-pure (no new palette).
@@ -25,6 +27,7 @@ in one renderer and are gated together by one Visual Gate):
    `useReducedMotion` hook: reduced → settle-instant (minimal/zero iterations); normal → current.
 
 ### R1 — apps/web RATIFY (no net code)
+
 [FACT: apps/web/src/app/graph/index.tsx:1-10] the route already renders `<NeuralGraph state="empty"/>` and
 [FACT: same:4] "No graph-data source in M1.0 (AR-8 graph-prep is a seam)". A live graph-data adapter has no
 M1 consumer → deferred to first consumer (the sibling-unit precedent: collection/dashboard/entity/flow all
@@ -32,6 +35,7 @@ deferred their live hooks — [FACT: TASKS.md:26,17,entity/flow logs]). The rout
 and inherits the ink voice automatically once S1 ships. **No slice; stated, not silently omitted.**
 
 ## Non-goals (homed OUT — not this unit)
+
 - AR-8 graph-prep / module-interconnection data — a backend seam, unbuilt in M1 ([FACT: graph route:4]).
 - The Feature Atlas `/features` page, Skill Graph, Contributions graph, Relationships graph — those are the
   per-feature P6 surfaces that COMPOSE this archetype ([FACT: decomposition.md:69,93,97,102]); not here.
@@ -41,10 +45,12 @@ and inherits the ink voice automatically once S1 ships. **No slice; stated, not 
   future ceiling, not this unit.
 
 ## Dependency graph
+
 S1 depends on fe-codec-theme ✅ (the `useTheme().get('web')` seam + presets) + fe-codec-patterns ✅
 (`useReducedMotion`, `EmptyState`). Both Done. R1 depends on S1 only (inherits, no code). No intra-unit
 back-edges. Single slice → no ordering concern.
 
 ## Envision coverage
+
 Envision Gate SKIPPED (§3.75 = no novel affordance; Victor-confirmed) → no structural ECs to map. The
 aesthetic is carried as the per-slice Visual Gate MUST on S1 (full matrix: 3 presets × light/dark).

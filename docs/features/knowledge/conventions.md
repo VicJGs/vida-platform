@@ -1,8 +1,9 @@
 <!-- Conventions — features/knowledge · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · intake -->
 
-# Conventions — Knowledge  (level: Feature / own module)
+# Conventions — Knowledge (level: Feature / own module)
 
 ## How to build here
+
 - **Never impose an ontology.** Ship `topic / concept / definition` as **default kinds**, then let the user
   extend the kind registry + nest objects below Topic (KN-3). Code against `object_kinds`, never a hard-coded 3-kind enum.
 - **Realm drives method, as a default only.** A kind's `learning_realm` picks the default study method
@@ -26,6 +27,7 @@
   tree/container always renders — sparse data renders gracefully (ED-15 family).
 
 ## Naming & types
+
 - Invariants: **KN-n**. Enums as TEXT + CHECK in SQL, canonical Zod in `@vida/core` (`learning_realm`,
   `container_type`, method/curve ids). `[FACT: CLAUDE.md Conventions]`
 - PKs UUIDv7 TEXT; timestamps Unix ms; booleans 0/1; JSON as TEXT; `mastery_level` INTEGER 0-100; soft-delete
@@ -34,10 +36,11 @@
   plaintext.
 
 ## Landmines specific to this module
+
 - The v2 FACT base is a **downgraded** slice — do not treat `study_topics`/`topic_reviews`/`knowledge_notes`
   as the target model. `study_topics` = the `topic`-kind row; SM-2 columns = one preset's state; `mastery_level`
   = derived; `knowledge_notes` + `resource_type` CHECK = retired; `resource_urls` → `references`. `[FACT
-  superseded: ADR-002 L2557-2621, L2715-2738]`
+superseded: ADR-002 L2557-2621, L2715-2738]`
 - `is_exam_topic` (boolean) → a topic↔assessment **link** once Education's `assessments` exists (K8) — don't
   cement the boolean.
 - **OS-level automations** (penalties/rewards/self-testing/real-time analysis) need a cross-module automation
@@ -46,6 +49,7 @@
   now, run the build-time views review + `/critique` before finalizing (per-module views pass, backlog).
 
 ## Related
+
 `[[identity]]` · `[[business-rules]]` · `[[contract]]` · `[[structure-data]]` ·
 `[[../learning/education/contract]]` (measurement source + planning-Topic link) · `[[../books/contract]]` ·
 `[[../notes-and-pages/contract]]` · `[[../../core/business-rules]]`.

@@ -12,7 +12,14 @@ function renderUI(ui: React.ReactElement) {
 
 type Card = { id: string; title: string }
 const GROUPS: BoardGroup<Card>[] = [
-  { id: 'todo', title: 'To Do', items: [{ id: 'a', title: 'Alpha' }, { id: 'b', title: 'Beta' }] },
+  {
+    id: 'todo',
+    title: 'To Do',
+    items: [
+      { id: 'a', title: 'Alpha' },
+      { id: 'b', title: 'Beta' },
+    ],
+  },
   { id: 'doing', title: 'In Progress', items: [{ id: 'c', title: 'Gamma' }] },
   { id: 'done', title: 'Done', items: [] },
 ]
@@ -88,7 +95,14 @@ describe('BoardView', () => {
 
   it('error → role="status" (NOT a group), with the error slot', () => {
     const { getByRole, queryByRole } = renderUI(
-      <BoardView groups={[]} renderCard={renderCard} getKey={key} state="error" error={<span>boom</span>} aria-label="Tasks board" />,
+      <BoardView
+        groups={[]}
+        renderCard={renderCard}
+        getKey={key}
+        state="error"
+        error={<span>boom</span>}
+        aria-label="Tasks board"
+      />,
     )
     expect(queryByRole('group')).toBeNull()
     expect(getByRole('status').textContent).toContain('boom')
@@ -96,7 +110,14 @@ describe('BoardView', () => {
 
   it('board-empty (no groups) → role="status", with the empty slot', () => {
     const { getByRole, queryByRole } = renderUI(
-      <BoardView groups={[]} renderCard={renderCard} getKey={key} state="empty" empty={<span>no columns</span>} aria-label="Tasks board" />,
+      <BoardView
+        groups={[]}
+        renderCard={renderCard}
+        getKey={key}
+        state="empty"
+        empty={<span>no columns</span>}
+        aria-label="Tasks board"
+      />,
     )
     expect(queryByRole('group')).toBeNull()
     expect(getByRole('status').textContent).toContain('no columns')
@@ -104,7 +125,14 @@ describe('BoardView', () => {
 
   it('success with 0 groups self-heals to the board-empty render', () => {
     const { getByRole, getByText } = renderUI(
-      <BoardView groups={[]} renderCard={renderCard} getKey={key} state="success" empty={<span>self-healed</span>} aria-label="Tasks board" />,
+      <BoardView
+        groups={[]}
+        renderCard={renderCard}
+        getKey={key}
+        state="success"
+        empty={<span>self-healed</span>}
+        aria-label="Tasks board"
+      />,
     )
     expect(getByRole('status')).not.toBeNull()
     expect(getByText('self-healed')).not.toBeNull()

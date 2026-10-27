@@ -16,12 +16,7 @@ import { and, eq, isNull, lte, type SQL } from 'drizzle-orm'
 import { NOTIFICATION_TYPE, type MergedPreferences, type NotificationType } from '@vida/types'
 import { createRepository } from '../../db/repository'
 import { notifications, type NotificationRow } from '../../db/schema/notifications'
-import {
-  deriveEffectEventId,
-  type EffectEvent,
-  type EffectRegistry,
-  type EffectTx,
-} from '../../foundation/effects'
+import { deriveEffectEventId, type EffectEvent, type EffectRegistry, type EffectTx } from '../../foundation/effects'
 import {
   channelsFor,
   dedupKey,
@@ -448,10 +443,7 @@ export function createNotificationsService(deps: NotificationsServiceDeps): Noti
         // no-op at M1, a real scheduler at M2 whose failure must NOT recount a materialized row as skipped.
         let alertSuppressed = false
         try {
-          const sr = await engine.scheduleLocal(
-            { occurrenceId, at: hd, minuteOfDay: utcMinuteOfDay(hd) },
-            quietHours,
-          )
+          const sr = await engine.scheduleLocal({ occurrenceId, at: hd, minuteOfDay: utcMinuteOfDay(hd) }, quietHours)
           alertSuppressed = sr.action === 'suppress' // quiet-hours baked to suppress (in-app still recorded)
         } catch {
           // OS scheduler threw (M2 real port) — the in-app row already stands; count it fired, not skipped.

@@ -2,7 +2,7 @@
      Makes the implicit explicit before decomposition. Every claim [FACT: path:line] / [INTERP] / [UNKNOWN].
      Session: 2026-10-02-mod-learning-education · head #52 · LIF-130 -->
 
-# Interpretation — Learning: Education  ① backend service tier
+# Interpretation — Learning: Education ① backend service tier
 
 `createLearningEducationService` over DB-4 `024_learning_education` (15 tables) — the heaviest DB-4 group.
 This is a **pure service tier over a finished schema** (no DDL), the MOD-books / MOD-knowledge shape.
@@ -32,8 +32,8 @@ the only genuine defers are ADR-owned M2 service legs (§5). `[[build-phase-flag
   Source-registry `advertise(key, ()=>number|null)` is **sync + scalar** — Education does NOT advertise
   (per-subject/async grade & progress ≠ a global scalar; C-M5). `[FACT: measurement/source-registry.ts:11-17; part-1.2-reruns:C-M5]` `[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]`
 - **`services/knowledge`** — `getMasterySource(subjectRef: string): Promise<MasterySource>` (param = a bare subject id, NIT3) = `{objectMastery,
-  assessmentResults, paceVsSyllabus}`; in M1.0 only `objectMastery` is live, the other two were deny-safe
-  `null` *because Education's assessments + syllabus-as-calendar weren't built yet*. `[FACT: services/knowledge/types.ts:158-168,347]`
+assessmentResults, paceVsSyllabus}`; in M1.0 only `objectMastery` is live, the other two were deny-safe
+  `null` _because Education's assessments + syllabus-as-calendar weren't built yet_. `[FACT: services/knowledge/types.ts:158-168,347]`
   Education **consumes** this leaf for object mastery and owns the **program/term rollup** (KN-2/KN-10). `[FACT: contract.md:53-56]`
 - **`services/books`** (DONE, PR #70) — `getPlansForConsumer(): Promise<ReadingPlan[]>` (BK-12 read-provider);
   `book_subjects` is **Books-owned** (Books writes the junction, Education never does). `[FACT: services/books/service.ts:310,1230; learning.ts:43 "homework=Tasks-owned", books partition Books-side]`
@@ -50,6 +50,7 @@ the only genuine defers are ADR-owned M2 service legs (§5). `[[build-phase-flag
   every table (even `[E]`-marked). `[FACT: learning.ts:50; db/CLAUDE.md]` `[[m10-repos-use-empty-encryptedfields-seam]]`
 
 ### Deny-safe / forward ports (built empty, swap zero-signature at M2)
+
 - **ICS live fetch** (`ics?`) — device-mediated fetch is **M2** (ADR-014 X1); M1 = a deny-safe port ⇒
   `ics-unavailable`; the schema (configs/events) + add-only dedup logic are M1. `[FACT: identity.md:44; learning.ts:46 "AI document-extraction pipeline = ADR-014/015 service"; part-1.2-reruns:54-59]`
 - **Document extraction** (`ai?` / `ingestion?`) — syllabus→schedule/assessments is a **scoped extract**,
@@ -66,7 +67,7 @@ the only genuine defers are ADR-owned M2 service legs (§5). `[[build-phase-flag
    (`TemplateImmutableError`). `[FACT: business-rules.md:52-55; contract.md:65; learning.ts:201-202]`
 3. **Subjects CRUD** — the reshaped `courses`; `progress` never settable (derived, M3). `[FACT: learning.ts:92; business-rules.md:46-51]`
 4. **Schedule + class_sessions** — one `subject_schedule` per subject (UNIQUE); sessions via `createSession('class')`
-   + own extension; `getWeeklySchedule(range)` derives across subjects. `[FACT: learning.ts:225-247; contract.md:17-19]`
+   - own extension; `getWeeklySchedule(range)` derives across subjects. `[FACT: learning.ts:225-247; contract.md:17-19]`
 5. **ICS** — `addFeed` / `syncFeed` (deny-safe at M1) / `matchEvent` / `ignoreEvent`; add-only dedup
    UNIQUE(feed_id,uid) + is_ignored, revoke via `is_active` (never delete). `[FACT: learning.ts:109-153; business-rules.md:30-33]`
 6. **Grading** — `createGradingSystem(scope,{scale,components})` + `computeGrade(subjectId)` /
@@ -109,7 +110,7 @@ fan-out** (Knowledge/Books/Journals/Tasks seams). Full slicing in `slice-map.md`
 - **R10 — `[E]` fields but `encryptedFields: []` at M1.0** — JSON-as-text (`metadata`, `scale_config`) needs
   service-side serialize/parse if typed; `scale_config` is `[E]` text. `[FACT: learning.ts:50,89,262]` `[[json-t-columns-need-service-serialize-in-m10]]`
 
-## 5. Scope guards — the C-* negatives (do NOT build; rerun-ratified)
+## 5. Scope guards — the C-\* negatives (do NOT build; rerun-ratified)
 
 - **C-HIER** — hierarchy shape is DONE (schema); no re-design, just CRUD. `[FACT: part-1.2-reruns C-HIER]`
 - **C-HW** — homework is Tasks-owned; no local table, read-only via the (deny-safe) Tasks→Education API. `[FACT: learning.ts:43; part-1.2-reruns C-HW]`
@@ -130,6 +131,7 @@ fan-out** (Knowledge/Books/Journals/Tasks seams). Full slicing in `slice-map.md`
   owns topic content. `[FACT: learning.ts:93-94; README.md:21-25]`
 
 ## Completion checklist
+
 - [x] BASELINE reconciliation (stale-INTENDED vs built schema) · [x] dependencies (built + deny-safe)
-- [x] needs (seam preview) · [x] organization (slice order) · [x] implicit rules R1–R10 · [x] C-* scope guards
+- [x] needs (seam preview) · [x] organization (slice order) · [x] implicit rules R1–R10 · [x] C-\* scope guards
 - [x] every claim [FACT/INTERP/UNKNOWN] · [x] open UNKNOWNs homed to the Decomposition Gate

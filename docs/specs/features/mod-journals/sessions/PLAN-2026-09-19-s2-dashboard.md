@@ -1,5 +1,6 @@
 # Spec: feature:mod-journals · Slice 2 — buildDashboard + pure selection resolution
-Status: implemented      <!-- draft → approved → implemented -->  (Verification Gate PASS 2026-09-19: tsc 0 · 18/18 journals · 950/950 · eslint clean)
+
+Status: implemented <!-- draft → approved → implemented --> (Verification Gate PASS 2026-09-19: tsc 0 · 18/18 journals · 950/950 · eslint clean)
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-09-19-mod-journals
@@ -7,6 +8,7 @@ Unit: mod-journals #39 (LIF-127) · M1.1.1 Backend · Slice 2 of 4 · composes S
 Gate: §XXVI double-gate (this file = gate 1). Delivery: docs/features/journals/delivery/{interpretation,slice-map,seam-contract}.md
 
 ## 1. Identity
+
 The **engine core**: assemble a day's dashboard from the S1 registry — the backward **summary** (each module's
 `summary(date)`, filtered by the user's selection) + the forward **agenda** (each module's `dueIn(today)`) — with
 per-section degrade so one failing provider never blanks the journal. Plus the pure **`resolveSelection`** and the
@@ -17,6 +19,7 @@ per-section degrade so one failing provider never blanks the journal. Plus the p
 shell (createJournalsService is assembled at S3 when db is needed). No db, no Preferences wiring.
 
 ## 2. Business Rules
+
 - **BR-S2-1 · Deterministic assembly.** `buildDashboard` iterates `registry.list()` (already deterministic, BR-S1-2)
   and preserves that order within each of `summary` / `agenda` `[FACT: registry.ts list(); business-rules.md:23-24]`.
 - **BR-S2-2 · Per-section degrade, never a blank journal (IR-d / JR-1 fail-loud).** Each provider call is isolated in
@@ -24,7 +27,7 @@ shell (createJournalsService is assembled at S3 when db is needed). No db, no Pr
   continues — one failure degrades ONLY its section `[FACT: business-rules.md:42-43,60; conventions.md:22]`.
   `buildDashboard` NEVER throws for a provider failure; it returns error sections in place.
 - **BR-S2-3 · `resolveSelection` — override wins per module, no module dropped (BR-6).** The per-journal override
-  replaces the global default *for the modules it names*; unmentioned modules keep the global default. Pure.
+  replaces the global default _for the modules it names_; unmentioned modules keep the global default. Pure.
   Lifted verbatim from `apps/web/src/home/selection.ts` (canonical home = `@vida/core`) `[FACT: selection.ts resolveSelection]`.
 - **BR-S2-4 · Selection filters advertised data points.** For a summary section from module M, `buildDashboard` filters
   the returned `SectionData.dataPoints` to those whose `id ∈ selection[M]`. `selection` omitted → no filtering (all
@@ -35,7 +38,7 @@ shell (createJournalsService is assembled at S3 when db is needed). No db, no Pr
   each result's `sectionKey` by the method that produced it (summary→`'summary'`, dueIn→`'agenda'`) so the output is
   provider-independent (and the degraded section gets the right key). **`JournalContribution.sectionKey` is confirmed
   the S1 ordering key ONLY** — its richer per-render role is fe-journals' concern `[FACT: types.ts JournalContribution
-  (summary mandatory, dueIn optional); contract.md:17-18 JR-5; identity.md:30]`. A contribution with **no `dueIn`**
+(summary mandatory, dueIn optional); contract.md:17-18 JR-5; identity.md:30]`. A contribution with **no `dueIn`**
   contributes no agenda section. Agenda sections are NOT selection-filtered — the agenda is the shared `dueIn` surface,
   not the per-module recap `[INTERP: JR-4 scopes selection to the summary recap; JR-5 agenda = shared primitive]`.
 - **BR-S2-6 · Providers may be async.** `summary`/`dueIn` may return a `Promise<SectionData>`; `buildDashboard` awaits
@@ -51,25 +54,32 @@ shell (createJournalsService is assembled at S3 when db is needed). No db, no Pr
 sections all `'error'`, `journalStillRenders` = false, but `buildDashboard` still returns (never throws).
 
 ## 3. Contract
+
 Files: `packages/core/src/services/journals/{types.ts (edit), selection.ts (new), dashboard.ts (new), index.ts (edit)}`
-+ `__tests__/dashboard.test.ts`.
+
+- `__tests__/dashboard.test.ts`.
 
 **`types.ts`** (add):
+
 ```ts
-export type JournalSelection = Record<string, readonly string[]>   // enabled dataPoint ids per module
+export type JournalSelection = Record<string, readonly string[]> // enabled dataPoint ids per module
 export interface DashboardData {
   readonly summary: readonly SectionData[]
   readonly agenda: readonly SectionData[]
 }
 ```
+
 **`selection.ts`** (new — lifted from `apps/web/src/home/selection.ts`, cited):
+
 ```ts
 export function resolveSelection(
   globalDefault: JournalSelection,
   perJournalOverride?: Partial<JournalSelection>,
 ): JournalSelection
 ```
+
 **`dashboard.ts`** (new):
+
 ```ts
 export async function buildDashboard(
   registry: JournalRegistry,
@@ -78,6 +88,7 @@ export async function buildDashboard(
 ): Promise<DashboardData>
 export function journalStillRenders(sections: readonly SectionData[]): boolean
 ```
+
 `buildDashboard`: for each `c` in `registry.list()` → `summary(date)` (try/catch → degraded on throw), normalize
 `sectionKey:'summary'`, filter dataPoints by `selection?.[c.module]` (BR-S2-4) → push to `summary`; if `c.dueIn` →
 `dueIn({from:date,to:date})` (try/catch → degraded), normalize `sectionKey:'agenda'` → push to `agenda`. Order
@@ -85,10 +96,11 @@ preserved (BR-S2-1). Standalone function (the S3 service wraps it as `journalsSe
 closing over its registry — seam-contract).
 
 ## 4. Acceptance
+
 - [ ] `buildDashboard` over 3 contributions (mixed sectionKeys, one summary-only) returns `summary`/`agenda` in
-  `registry.list()` order — BR-S2-1/S2-5
+      `registry.list()` order — BR-S2-1/S2-5
 - [ ] a provider whose `summary(date)` throws → that section is `state:'error'` with its `module`; the other sections
-  render; `buildDashboard` does not throw — BR-S2-2
+      render; `buildDashboard` does not throw — BR-S2-2
 - [ ] an async provider (returns a Promise) is awaited and included — BR-S2-6
 - [ ] `selection` filters a summary section's `dataPoints` to the enabled ids; omitted → all shown; module absent → all shown — BR-S2-4
 - [ ] agenda sections are NOT selection-filtered — BR-S2-5
@@ -99,6 +111,7 @@ closing over its registry — seam-contract).
 - [ ] `tsc --noEmit` 0 errors; `@vida/core` full suite green (no store — pure logic) — §XXVI Step 8 / Verification Gate
 
 ## 5. Implementation Prompt
+
 1. **`types.ts`** — add `JournalSelection` + `DashboardData` (cite N-3 for why selection is a param, not stored).
 2. **`selection.ts`** — port `resolveSelection` verbatim from `apps/web/src/home/selection.ts` (header cites the UX-6
    origin + that `@vida/core` is now canonical; do NOT port the throwing `get/setSelection` seams — those stay deferred). BR-S2-3.
@@ -116,12 +129,14 @@ closing over its registry — seam-contract).
 Done = §4 all checked.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - None blocking. **SEAM (documented, not built — N-3):** persisted `getSelection()`/`setSelection()` need a
   Preferences journal-selection field + the `summary_config` per-module generalization — both **schema changes out of
   this service-only issue's scope** `[FACT: schema/preferences.ts:55-57; note.ts:79-85]`. `buildDashboard`'s
   `selection` param + `resolveSelection` cover the runtime need; the storage is pulled by fe-journals / a later schema pass.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                 | Change                                                                         |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------ |
 | 2026-09-19 | 2026-09-19-mod-journals | S2 spec drafted (gate 1); N-3 selection-storage grounding correction folded in |

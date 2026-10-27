@@ -16,12 +16,12 @@ This document describes how the Vida Platform supports web, mobile, and desktop 
 
 ## 1. Platform Targets
 
-| Platform | Technology | Runtime | Status |
-|----------|-----------|---------|--------|
-| **Web** | React 19 + Vite (SPA) | Browser | Active — shell + database adapter implemented |
-| **Mobile (iOS + Android)** | Expo (React Native) | Native + WebViews | Phase 3 — scaffolded, not implemented |
-| **Desktop (Win/Mac/Linux)** | Tauri v2 + React | Webview (Rust backend) | Phase 6 — scaffolded, not implemented |
-| **Server** | Hono on Cloudflare Workers | Edge runtime | Active — minimal health endpoint implemented |
+| Platform                    | Technology                 | Runtime                | Status                                        |
+| --------------------------- | -------------------------- | ---------------------- | --------------------------------------------- |
+| **Web**                     | React 19 + Vite (SPA)      | Browser                | Active — shell + database adapter implemented |
+| **Mobile (iOS + Android)**  | Expo (React Native)        | Native + WebViews      | Phase 3 — scaffolded, not implemented         |
+| **Desktop (Win/Mac/Linux)** | Tauri v2 + React           | Webview (Rust backend) | Phase 6 — scaffolded, not implemented         |
+| **Server**                  | Hono on Cloudflare Workers | Edge runtime           | Active — minimal health endpoint implemented  |
 
 ---
 
@@ -31,34 +31,34 @@ Every package and app mapped to every platform. Shows whether the code is used d
 
 ### Shared Packages
 
-| Package | Web | Mobile | Desktop | Server | Notes |
-|---------|-----|--------|---------|--------|-------|
-| `packages/types` | Direct | Direct | Direct | Direct | Pure TypeScript types + Zod schemas. Zero platform dependencies. Used everywhere. |
-| `packages/core` | Direct | Direct | Direct | Partial | Business logic, encryption, repository, services. Server uses only type imports and API contract types. |
-| `packages/editor` | Direct | Adapted | Direct | Not used | TipTap editor. Runs natively on web/desktop. Runs inside a WebView on mobile. |
-| `packages/ui` | Direct | Adapted | Direct | Not used | Tamagui universal components. Web/desktop render as HTML. Mobile renders as React Native views. |
+| Package           | Web    | Mobile  | Desktop | Server   | Notes                                                                                                   |
+| ----------------- | ------ | ------- | ------- | -------- | ------------------------------------------------------------------------------------------------------- |
+| `packages/types`  | Direct | Direct  | Direct  | Direct   | Pure TypeScript types + Zod schemas. Zero platform dependencies. Used everywhere.                       |
+| `packages/core`   | Direct | Direct  | Direct  | Partial  | Business logic, encryption, repository, services. Server uses only type imports and API contract types. |
+| `packages/editor` | Direct | Adapted | Direct  | Not used | TipTap editor. Runs natively on web/desktop. Runs inside a WebView on mobile.                           |
+| `packages/ui`     | Direct | Adapted | Direct  | Not used | Tamagui universal components. Web/desktop render as HTML. Mobile renders as React Native views.         |
 
 ### Platform-Specific Apps
 
-| App | Platform | Shares With | Key Differences |
-|-----|----------|-------------|-----------------|
-| `apps/web` | Web | Imports all packages | wa-sqlite + OPFS database adapter, TanStack Router, Vite build |
-| `apps/mobile` | Mobile | Imports all packages | expo-sqlite database adapter, Expo Router (file-based), WebView for editor/charts |
-| `apps/desktop` | Desktop | Imports all packages | Tauri SQLite plugin database adapter, TanStack Router, Tauri APIs (tray, shortcuts, auto-update) |
-| `apps/server` | Server | Imports types only | Hono framework, Cloudflare Workers, R2 blob storage. No UI, no database, no encryption. |
+| App            | Platform | Shares With          | Key Differences                                                                                  |
+| -------------- | -------- | -------------------- | ------------------------------------------------------------------------------------------------ |
+| `apps/web`     | Web      | Imports all packages | wa-sqlite + OPFS database adapter, TanStack Router, Vite build                                   |
+| `apps/mobile`  | Mobile   | Imports all packages | expo-sqlite database adapter, Expo Router (file-based), WebView for editor/charts                |
+| `apps/desktop` | Desktop  | Imports all packages | Tauri SQLite plugin database adapter, TanStack Router, Tauri APIs (tray, shortcuts, auto-update) |
+| `apps/server`  | Server   | Imports types only   | Hono framework, Cloudflare Workers, R2 blob storage. No UI, no database, no encryption.          |
 
 ### What Each App Provides
 
-| Responsibility | Where It Lives |
-|---------------|----------------|
-| Database adapter (SQLite driver) | Per-app: `apps/web/src/db/`, `apps/mobile/db/`, `apps/desktop/src-tauri/` |
-| App shell and routing | Per-app: `apps/*/src/App.tsx` |
-| Page components and layouts | Per-app: `apps/*/src/app/` or `apps/*/src/pages/` |
-| Platform-specific UI (tray, notifications) | Per-app |
-| Business logic, services, models | Shared: `packages/core` |
-| Editor, extensions, serializers | Shared: `packages/editor` |
-| Shared UI components | Shared: `packages/ui` |
-| Type definitions, Zod schemas | Shared: `packages/types` |
+| Responsibility                             | Where It Lives                                                            |
+| ------------------------------------------ | ------------------------------------------------------------------------- |
+| Database adapter (SQLite driver)           | Per-app: `apps/web/src/db/`, `apps/mobile/db/`, `apps/desktop/src-tauri/` |
+| App shell and routing                      | Per-app: `apps/*/src/App.tsx`                                             |
+| Page components and layouts                | Per-app: `apps/*/src/app/` or `apps/*/src/pages/`                         |
+| Platform-specific UI (tray, notifications) | Per-app                                                                   |
+| Business logic, services, models           | Shared: `packages/core`                                                   |
+| Editor, extensions, serializers            | Shared: `packages/editor`                                                 |
+| Shared UI components                       | Shared: `packages/ui`                                                     |
+| Type definitions, Zod schemas              | Shared: `packages/types`                                                  |
 
 ---
 
@@ -119,11 +119,11 @@ The most critical platform abstraction. Each platform wraps its native SQLite li
 
 ### Per-Platform Implementations
 
-| Platform | Library | Adapter Location | Encryption | Status |
-|----------|---------|-----------------|------------|--------|
-| **Web** | wa-sqlite + OPFS | `apps/web/src/db/web-adapter.ts` | Custom WASM build with SQLCipher bundled | Implemented |
-| **Mobile** | expo-sqlite (or react-native-quick-sqlite with SQLCipher) | `apps/mobile/db/` | SQLCipher via native module | Not implemented |
-| **Desktop** | Tauri SQLite plugin + SQLCipher | `apps/desktop/src-tauri/src/db.rs` | SQLCipher via native library | Not implemented |
+| Platform    | Library                                                   | Adapter Location                   | Encryption                               | Status          |
+| ----------- | --------------------------------------------------------- | ---------------------------------- | ---------------------------------------- | --------------- |
+| **Web**     | wa-sqlite + OPFS                                          | `apps/web/src/db/web-adapter.ts`   | Custom WASM build with SQLCipher bundled | Implemented     |
+| **Mobile**  | expo-sqlite (or react-native-quick-sqlite with SQLCipher) | `apps/mobile/db/`                  | SQLCipher via native module              | Not implemented |
+| **Desktop** | Tauri SQLite plugin + SQLCipher                           | `apps/desktop/src-tauri/src/db.rs` | SQLCipher via native library             | Not implemented |
 
 ### Web Adapter (Implemented)
 
@@ -213,12 +213,13 @@ Mobile uses a **hybrid approach**: TipTap runs inside a React Native WebView (th
 
 Chart.js and Sigma.js run directly in the browser/webview DOM.
 
-| Library | Purpose | Rendering | Bundle Size |
-|---------|---------|-----------|-------------|
-| **Chart.js** + react-chartjs-2 | Charts (habits, finance, analytics) | Canvas | ~60KB |
-| **Sigma.js** + @sigma/react | Neural graph (notes, relationships) | WebGL | ~50KB |
+| Library                        | Purpose                             | Rendering | Bundle Size |
+| ------------------------------ | ----------------------------------- | --------- | ----------- |
+| **Chart.js** + react-chartjs-2 | Charts (habits, finance, analytics) | Canvas    | ~60KB       |
+| **Sigma.js** + @sigma/react    | Neural graph (notes, relationships) | WebGL     | ~50KB       |
 
 Both libraries handle large datasets efficiently:
+
 - **Chart.js:** Built-in data decimation for time-series with thousands of points (years of habit data, transaction history)
 - **Sigma.js:** WebGL rendering handles 10K+ nodes for note/relationship graphs accumulated over years of usage
 
@@ -236,44 +237,44 @@ Features that exist only on certain platforms.
 
 ### Desktop Only (Tauri v2)
 
-| Feature | Implementation |
-|---------|---------------|
-| **System tray** | Tauri tray API — quick access to today's journal, active pomodoro, habit check-off |
+| Feature                       | Implementation                                                                               |
+| ----------------------------- | -------------------------------------------------------------------------------------------- |
+| **System tray**               | Tauri tray API — quick access to today's journal, active pomodoro, habit check-off           |
 | **Global keyboard shortcuts** | Tauri global shortcut API — quick capture (note, task, transaction) without focusing the app |
-| **Auto-update** | Tauri updater plugin — checks for updates on launch, downloads in background |
-| **File system access** | Direct file system for attachment storage and export (no browser sandboxing) |
-| **Native notifications** | Tauri notification API — OS-level notifications for reminders, pomodoro, streaks |
+| **Auto-update**               | Tauri updater plugin — checks for updates on launch, downloads in background                 |
+| **File system access**        | Direct file system for attachment storage and export (no browser sandboxing)                 |
+| **Native notifications**      | Tauri notification API — OS-level notifications for reminders, pomodoro, streaks             |
 
 ### Mobile Only (Expo)
 
-| Feature | Implementation |
-|---------|---------------|
+| Feature                | Implementation                                                        |
+| ---------------------- | --------------------------------------------------------------------- |
 | **Push notifications** | Expo Notifications (or alternative — deferred per ADR-001 section 21) |
-| **Haptic feedback** | React Native haptics for habit completions, timer events |
-| **Share sheet** | Expo Sharing — export notes, share journal entries |
-| **Biometric unlock** | Expo LocalAuthentication — Face ID / fingerprint to unlock vault |
-| **Background sync** | Expo Background Fetch — periodic sync when app is backgrounded |
+| **Haptic feedback**    | React Native haptics for habit completions, timer events              |
+| **Share sheet**        | Expo Sharing — export notes, share journal entries                    |
+| **Biometric unlock**   | Expo LocalAuthentication — Face ID / fingerprint to unlock vault      |
+| **Background sync**    | Expo Background Fetch — periodic sync when app is backgrounded        |
 
 ### Web Only
 
-| Feature | Implementation |
-|---------|---------------|
-| **OPFS storage** | Origin Private File System for persistent SQLite database |
-| **Web Workers** | Encryption operations in Web Workers to avoid blocking the main thread |
+| Feature          | Implementation                                                         |
+| ---------------- | ---------------------------------------------------------------------- |
+| **OPFS storage** | Origin Private File System for persistent SQLite database              |
+| **Web Workers**  | Encryption operations in Web Workers to avoid blocking the main thread |
 
 ---
 
 ## 8. Build and Deploy Per Platform
 
-| Platform | Build Tool | Output | Deploy Target |
-|----------|-----------|--------|---------------|
-| **Web** | Vite | Static SPA (`dist/`) | Cloudflare Pages via GitHub Actions |
-| **Mobile iOS** | Expo EAS Build | `.ipa` | Apple App Store |
-| **Mobile Android** | Expo EAS Build | `.apk` / `.aab` | Google Play Store |
-| **Desktop Windows** | Tauri + GitHub Actions | `.msi` / `.exe` | GitHub Releases |
-| **Desktop macOS** | Tauri + GitHub Actions | `.dmg` | GitHub Releases |
-| **Desktop Linux** | Tauri + GitHub Actions | `.AppImage` / `.deb` | GitHub Releases |
-| **Server** | Wrangler | Cloudflare Worker | Cloudflare Workers via GitHub Actions |
+| Platform            | Build Tool             | Output               | Deploy Target                         |
+| ------------------- | ---------------------- | -------------------- | ------------------------------------- |
+| **Web**             | Vite                   | Static SPA (`dist/`) | Cloudflare Pages via GitHub Actions   |
+| **Mobile iOS**      | Expo EAS Build         | `.ipa`               | Apple App Store                       |
+| **Mobile Android**  | Expo EAS Build         | `.apk` / `.aab`      | Google Play Store                     |
+| **Desktop Windows** | Tauri + GitHub Actions | `.msi` / `.exe`      | GitHub Releases                       |
+| **Desktop macOS**   | Tauri + GitHub Actions | `.dmg`               | GitHub Releases                       |
+| **Desktop Linux**   | Tauri + GitHub Actions | `.AppImage` / `.deb` | GitHub Releases                       |
+| **Server**          | Wrangler               | Cloudflare Worker    | Cloudflare Workers via GitHub Actions |
 
 ### CI/CD Pipeline
 

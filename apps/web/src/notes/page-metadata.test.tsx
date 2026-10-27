@@ -45,7 +45,9 @@ describe('MetadataControlsView (S6 — EC-7)', () => {
   it('toggling favorite/archive fires the handler', () => {
     const onToggleFavorite = vi.fn()
     const onToggleArchive = vi.fn()
-    const { getByRole } = renderUI(<MetadataControlsView {...baseProps} onToggleFavorite={onToggleFavorite} onToggleArchive={onToggleArchive} />)
+    const { getByRole } = renderUI(
+      <MetadataControlsView {...baseProps} onToggleFavorite={onToggleFavorite} onToggleArchive={onToggleArchive} />,
+    )
     fireEvent.click(getByRole('button', { name: 'Favorite' }))
     fireEvent.click(getByRole('button', { name: 'Archive' }))
     expect(onToggleFavorite).toHaveBeenCalledOnce()
@@ -85,7 +87,7 @@ describe('R3 G16 — controls match the greybox: icon + visible label, greybox o
     const group = getAllByRole('group', { name: 'Page metadata' })[0]!
     const labels = Array.from(group.querySelectorAll('[role="button"]')).map((b) => b.textContent)
     expect(labels).toEqual(['Change icon', 'Change cover', 'Favorite', 'Archive'])
-    for (const b of Array.from(group.querySelectorAll('[role="button"]'))) expect(b.getAttribute('aria-label')).toBeNull()
+    for (const b of Array.from(group.querySelectorAll('[role="button"]')))
+      expect(b.getAttribute('aria-label')).toBeNull()
   })
 })
-

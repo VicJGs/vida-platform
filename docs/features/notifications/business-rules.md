@@ -1,6 +1,6 @@
 <!-- Business Rules — features/notifications · /documentation Phase 2 · sources: ADR-002 §5.16 L3468-3500 · common.ts L70-99 · §5.17 · ADR-012 §3.1 · ADR-004 §3.2.5 · docs/intake/notifications.md RESOLUTION -->
 
-# Business Rules — Notifications ("the System's out-loud voice")  (level: Feature — the observer leaf)
+# Business Rules — Notifications ("the System's out-loud voice") (level: Feature — the observer leaf)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, SU-1/2, INT-1, INT-2, DATA-3/4.
 > Every rule below complies. **Altitude note:** the v2 surface is 1 table (`notifications`), schema-only, 0 service
@@ -26,16 +26,16 @@
   **stores none** of that config. `[FACT: §5.17 L27-39; preferences/contract L35]`
 - **NF-5 — Gate before deliver (Preferences respected on every fire).** Before delivering, the dispatcher checks: is the
   channel enabled? is the per-module toggle on? are we inside quiet hours? A suppressed notification is **still recorded
-  in-app** (the inbox is the always-on channel) — suppression means *not pushed/emailed*, never *lost*. `[INTENT:
-  RESOLUTION N2/N4; FACT: §5.17]`
+  in-app** (the inbox is the always-on channel) — suppression means _not pushed/emailed_, never _lost_. `[INTENT:
+RESOLUTION N2/N4; FACT: §5.17]`
 - **NF-6 — ZK delivery: the server sees a WAKE SIGNAL, never content.** Push is a **content-free "sync now"** relay; the
   device syncs, decrypts, and composes the OS notification **locally**. The server never receives `title[E]`/`message[E]`
   **or** the plaintext `entity_type`/`entity_id`. **Channel fidelity under ZK:** in-app = full · **push = wake-only** ·
   **email = generic nudge only** ("activity in Vida — open the app") · **SMS = dropped.** `[INTENT: RESOLUTION N3 →
-  ADR-013; FACT: ZK-1; ADR-001 defers push Phase 6.7]`
+ADR-013; FACT: ZK-1; ADR-001 defers push Phase 6.7]`
 - **NF-7 — In-app is the always-available, fully-local channel.** In-app notifications are local encrypted rows decrypted
   on-device; they have **no ZK limitation** and are never gated away entirely (only external channels can be off). `[FACT:
-  ZK-1; LF-1 local-first]`
+ZK-1; LF-1 local-first]`
 - **NF-8 — Idempotent, no double-fire across devices.** An event notification carries the ADR-012 deterministic
   `effect_event_id` (Additive class) → a re-origination/retry/multi-device collision converges to **one** row. A
   time-based fire is keyed by its source `dueIn` occurrence so the same due reminder fires **once**, even if two devices'
@@ -61,6 +61,7 @@
   (`notification_frequency`) is documented target vision; v1 is **realtime per-notification**. `[INTENT: RESOLUTION N5]`
 
 ## Validation & edge cases
+
 - Enum CHECK (v1 floor): `type` ∈ 6 values. `[FACT: ADR-002 §5.16]`
 - A due reminder whose module is toggled off in Preferences → **recorded in-app, not pushed** (NF-5), never dropped.
 - A device offline at a reminder's fire time → the dispatcher fires on next wake (local queue); idempotency key prevents a
@@ -72,28 +73,33 @@
 - `expires_at` in the past on creation → the row is created already-archived (an audit record), never delivered. `[INTERP NF-13]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Inbox (list/unread) | skeleton | "you're all caught up" | read error → cached + flag, retry | grouped read/unread list |
-| Fire event notification | — | — | write fails → flagged, idempotent no-double | row appended + delivered per Preferences |
-| Fire due reminder (dispatcher) | evaluating `dueIn` | nothing due | seam error → skip + flag, retry next tick | row materialized at fire time + delivered |
-| Deliver (push/email) | dispatching | channel off → in-app only | delivery fails → in-app fallback + flag | wake-signal sent; device composes locally |
-| Mark read / archive | — | — | sync conflict → LWW resolves | state updated + synced across devices |
-| Expire / purge | — | nothing to purge | — | stale rows archived; retention purge reclaims |
+
+| Capability                     | loading            | empty                     | error                                       | success                                       |
+| ------------------------------ | ------------------ | ------------------------- | ------------------------------------------- | --------------------------------------------- |
+| Inbox (list/unread)            | skeleton           | "you're all caught up"    | read error → cached + flag, retry           | grouped read/unread list                      |
+| Fire event notification        | —                  | —                         | write fails → flagged, idempotent no-double | row appended + delivered per Preferences      |
+| Fire due reminder (dispatcher) | evaluating `dueIn` | nothing due               | seam error → skip + flag, retry next tick   | row materialized at fire time + delivered     |
+| Deliver (push/email)           | dispatching        | channel off → in-app only | delivery fails → in-app fallback + flag     | wake-signal sent; device composes locally     |
+| Mark read / archive            | —                  | —                         | sync conflict → LWW resolves                | state updated + synced across devices         |
+| Expire / purge                 | —                  | nothing to purge          | —                                           | stale rows archived; retention purge reclaims |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A failed external delivery **falls back to in-app** and flags it — never a silently dropped alert (NF-5/NF-7).
 - A failed row write leaves state unchanged + flags it; the idempotent key blocks double-apply on retry (NF-8).
 - A missing/stale `dueIn` source **suppresses** that reminder with a flag — never fires on fabricated due-data (NF-2/NF-3).
 - A wake-signal that can't be delivered is a benign no-op (no content was staked on it) (NF-6).
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 INTENDED, not in ADR-002 §5.16 today (→ **ADR-013** + §5.20): **NF-2/NF-3** the two-path dispatcher + derived-until-fire
 reminder model (the `reminder-engine.ts` service); **NF-6** the ZK **wake-signal delivery** (server relay + per-channel
 fidelity collapse) → **ADR-013**; **NF-8/NF-4** a small **delivery-audit** (which channels fired, for multi-device dedup)
-+ optional `metadata[E]`; **NF-15** digest/batching (`notification_frequency` → Preferences §5.17). **Live today (FACT
-floor):** the `notifications` table (6 types, entity link, read/archive/expire lifecycle, `_sync_*`) — and **no service
-logic**. `[FACT: ADR-002 §5.16; common.ts L81-99; grep clean packages/core/src/services]`
+
+- optional `metadata[E]`; **NF-15** digest/batching (`notification_frequency` → Preferences §5.17). **Live today (FACT
+  floor):** the `notifications` table (6 types, entity link, read/archive/expire lifecycle, `_sync_*`) — and **no service
+  logic**. `[FACT: ADR-002 §5.16; common.ts L81-99; grep clean packages/core/src/services]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT/INTERP] · [x] terminal states enumerated · [x] failure is loud · [x] inherits constitution (ZK/LF/INT) · [x] spec/code drift flagged · [x] pure-sink + two-path + ZK wake-signal stated

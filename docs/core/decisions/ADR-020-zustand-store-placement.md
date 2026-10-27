@@ -6,7 +6,7 @@
 **Context:** Vida Platform — resolving the deferred decision ADR-001:286 ("Zustand stores placement: `packages/core` vanilla vs per-app React hooks", deferred to Phase 0.5 / Monorepo Init). AR-1 (topology) did not close it, and AR-4 (LIF-75) is the **first consumer** to place a store — so it resolves it here. Basis: `docs/specs/foundation/ar-4-state-routing-forms/sessions/PLAN-2026-07-29-ar-4-state-routing-forms.md` (gate-1 PLAN, D2), grounded in `docs/core/architecture/data-flow.md §7`.
 **Tags:** architecture · state · frontend · foundation
 **Amends:** ADR-001 §21 (resolves the deferred store-placement row — a one-line pointer added at ADR-001:286). Doc + first-implementation decision; no prior code changed.
-**Does NOT amend:** the state-plane boundary itself (ADR-001 §12 / `data-flow.md §7` — React Query owns DB-derived data, Zustand owns ephemeral UI state) is unchanged; this ADR fixes only *where the store code lives*.
+**Does NOT amend:** the state-plane boundary itself (ADR-001 §12 / `data-flow.md §7` — React Query owns DB-derived data, Zustand owns ephemeral UI state) is unchanged; this ADR fixes only _where the store code lives_.
 
 ---
 
@@ -25,7 +25,7 @@ authored as framework-agnostic vanilla stores in `packages/core`.
   (a per-app hook), and `platform-strategy.md:55` homes "app shell and routing" per-app.
 - **Zustand holds only ephemeral UI state** (BR-RT-6/7) — view mode, filters, selections, sidebar/panel state.
   UI state is inherently per-app (it mirrors that app's component tree), so little is lost by not sharing it; genuinely
-  shared *data* lives in SQLite and is read via React Query, not Zustand.
+  shared _data_ lives in SQLite and is read via React Query, not Zustand.
 
 ## 3. Revisit when
 

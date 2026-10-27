@@ -4,12 +4,14 @@
 > Grounded in `seam-contract.md` §A + `envision.md` EC-1/2/3/8/9/10/11 + the `flow-session-view.tsx` pattern.
 
 ## §1 · Context
+
 The shell skeleton for the Canvas: Reader — the 5th archetype shell. S1 ships the FRAME + the reading-column slot +
 the shell-owned terminal states. The Contents panel (S2), rail (S3), selection (S4), listen (S5) compose INTO the
 frame's named zones in later slices; S1 renders their **placeholders/slots** so the layout + states are gate-able now.
 Presentational, state-as-prop, LOCAL types, React-19 ref-prop — the `flow-session-view` shape.
 
 ## §2 · Business rules (S1 scope)
+
 - **BR-S1-1 (title-hero header, EC-2):** serif `$display` title carries alone (no eyebrow, no middle-dot meta) + ONE
   plain-language `context` line + a `HonestProgress` reading-% **bar rendered ONLY when `progress` is provided** (a reader
   has no stages to derive from — the flow-session derivation does NOT apply) + a `saveStatus` slot + `⋯` `action` slot;
@@ -30,6 +32,7 @@ Presentational, state-as-prop, LOCAL types, React-19 ref-prop — the `flow-sess
 - **BR-S1-7 (a11y):** the root is a `role="region"` named via `aria-label`/`aria-labelledby`→titleId (`warnMissingName`).
 
 ## §3 · Contract (S1 subset of `CanvasReaderProps`)
+
 `title` · `context?` · `progress?` · `progressLabel?` · `saveStatus?` · `action?` · `positionNote?` · `state?:ReaderState`
 (`'loading'|'empty'|'error'|'unavailable'|'success'`) · `renderContent?` · `emptyAction?` (the EmptyState way-in) ·
 `aria-label?`/`aria-labelledby?` · `ref`. Local `ReaderState` union (extends `ViewState` with `'unavailable'`).
@@ -37,12 +40,14 @@ Presentational, state-as-prop, LOCAL types, React-19 ref-prop — the `flow-sess
 (`chapters`/`annotations`), added when those slices land. S1 introduces no prop it will later delete.
 
 ## §4 · Acceptance (the blocking Visual Gate MUSTs)
+
 - EC-2 title-hero (serif `$display`, no eyebrow/meta, 16px rhythm) · EC-3 measured serif column on success ·
   EC-8 all 5 states render (loading/empty/error/unavailable/success) with `unavailable` ≠ `empty` ·
   EC-1 3-zone layout · EC-9 375 reflow (zones stack, no overflow) · EC-10 dark × 3 presets, accent flips, AA ≥4.5 ·
   EC-11 semantic scale. · tsc 0 · eslint 0 · `@vida/ui` tests green · axe 0.
 
 ## §5 · Implementation prompt (build order)
+
 1. `packages/ui/src/components/canvas-reader.tsx` — types first (`ReaderState` local union) → the styled hosts
    (`CanvasRoot`/`Header`/`TitleGroup gap:$16`/`MetaGroup`/`Body`/`ReadingColumn maxWidth:660`, all `name:`-less, DIRECT
    tokens) → the header (title-hero, composing `HonestProgress` conditionally + the saveStatus/action slots) → the `Body`
@@ -57,5 +62,6 @@ Presentational, state-as-prop, LOCAL types, React-19 ref-prop — the `flow-sess
 6. §XXIX: refresh `packages/ui/src/CLAUDE.md` (a CanvasReader entry) + the component spec.
 
 ## Deviations / open
+
 None — S1 follows `flow-session-view` directly. Deferred to later slices: the real Contents panel (S2), rail (S3),
 selection (S4), listen bar (S5) — S1 renders their slots so the frame + states gate independently.

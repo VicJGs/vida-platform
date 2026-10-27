@@ -24,7 +24,7 @@ conventions (`FOCUS_CONTRACT`, `OVERLAY_DISMISS`, breakpoints, `overlayHost`) `[
 ## §2. Business rules / invariants (the model's rules)
 
 - **BR-1 — Mandatory, one-time gate.** First-run onboarding is a required boot-phase full-viewport surface,
-  shown iff the completion marker is unset. It is **not** an `overlayHost` overlay (it renders *before* the router,
+  shown iff the completion marker is unset. It is **not** an `overlayHost` overlay (it renders _before_ the router,
   not inside the shell), so `OVERLAY_DISMISS` — which governs overlays: modal/drawer/dropdown/popover — is **out of
   scope by category** `[FACT: apps/web/src/state-conventions/keyboard.ts:42 + comment]`. We additionally state
   **no-Escape** explicitly so UI-4 does not add it by habit: a mandatory first-run gate must not be Escape-skipped;
@@ -34,7 +34,7 @@ conventions (`FOCUS_CONTRACT`, `OVERLAY_DISMISS`, breakpoints, `overlayHost`) `[
   `[FACT: packages/core/src/db/schema/foundation/app-state.ts:18-21]`. The key is a **reserved convention** this
   unit documents; the read/write is wired by UI-4/impl (via `Repository`/`run`). The colon-namespaced key is
   deliberately **distinct** from the synced `UserProfile.onboarding_completed` `[FACT: packages/types/src/entities/user.ts:61]`
-  (a cross-device *user* flag whose table lands M1.1+) — this is a device-local "this device saw first-run" marker,
+  (a cross-device _user_ flag whose table lands M1.1+) — this is a device-local "this device saw first-run" marker,
   never synced; reconciling the two is a UX-5b / M1.1 concern.
 - **BR-3 — Crypto is a deferred seam, never presumed.** No step in the model reads or creates a vault key. The
   vault-creation step is designed as a **seam** whose M1.0 impl is "none/trivial" `[FACT: ADR-017:22]` and whose
@@ -42,7 +42,7 @@ conventions (`FOCUS_CONTRACT`, `OVERLAY_DISMISS`, breakpoints, `overlayHost`) `[
 - **BR-4 — Copy honesty (matches shipped reality).** The expectation-setting copy must be true at ship time.
   M1.0 (encryption off) claims **local-first** ("your data lives on this device") — which is true — and marks the
   full crypto-backed zero-knowledge promise as **revealed when AR-3 lands (M3)**. The design defines the content
-  *contract* (what each state may claim), not final marketing prose.
+  _contract_ (what each state may claim), not final marketing prose.
 - **BR-5 — Reuse, never redefine.** Focus behavior = UX-4 `FOCUS_CONTRACT` (each step transition = `pageNav` →
   main-heading; a focusable control receives initial focus). Responsive = UX-3 `PRIMARY_TEST_WIDTHS` (375/768/1440)
   for the render, `BREAKPOINTS` incl. `wide`/1920 for max-width containment, content centered within
@@ -59,12 +59,12 @@ conventions (`FOCUS_CONTRACT`, `OVERLAY_DISMISS`, breakpoints, `overlayHost`) `[
 
 Four steps, advanced by explicit primary action (BR-1):
 
-| # | Step id | Kind | Intent | M1.0 impl | Deferred |
-|---|---------|------|--------|-----------|----------|
-| 1 | `welcome` | `intro` | What Vida is (one line) + "Get started" | render | — |
-| 2 | `privacy` | `explain` | Local-first expectation-setting (BR-4); trust moment | render (local-first copy) | full ZK-crypto claim → M3 |
-| 3 | `vault` | `vault-create` | Vault readiness — the reserved seat for the account/vault-creation step | **confirmation only** ("your vault is ready on this device"); no implied crypto action (BR-4) | real key creation + passphrase → AR-3/UX-5b/M3 |
-| 4 | `ready` | `complete` | Confirm + set marker + hand off to Home `/` | render + mark | — |
+| #   | Step id   | Kind           | Intent                                                                  | M1.0 impl                                                                                     | Deferred                                       |
+| --- | --------- | -------------- | ----------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------- |
+| 1   | `welcome` | `intro`        | What Vida is (one line) + "Get started"                                 | render                                                                                        | —                                              |
+| 2   | `privacy` | `explain`      | Local-first expectation-setting (BR-4); trust moment                    | render (local-first copy)                                                                     | full ZK-crypto claim → M3                      |
+| 3   | `vault`   | `vault-create` | Vault readiness — the reserved seat for the account/vault-creation step | **confirmation only** ("your vault is ready on this device"); no implied crypto action (BR-4) | real key creation + passphrase → AR-3/UX-5b/M3 |
+| 4   | `ready`   | `complete`     | Confirm + set marker + hand off to Home `/`                             | render + mark                                                                                 | —                                              |
 
 > **Step 3 honesty (critique finding).** In M1.0 the `vault` step performs no action (there is no key to create),
 > so its copy MUST be a **confirmation** ("your local vault is ready"), never "Create your vault" — the latter
@@ -116,13 +116,13 @@ Per state, what the copy MAY assert (design contract, not final prose):
 
 ### §3.5 Deferred-seam register
 
-| Seam | M1.0 posture | Owner |
-|------|--------------|-------|
-| Vault-key creation (Argon2id / Account Key) | no-op; vault = open local DB | AR-3 / M3 |
-| Passphrase capture | none/trivial `[ADR-017:22]` | AR-3 / UX-5b / M3 |
-| Unlock-on-every-launch UX | absent (auth off) | UX-5b / M3 |
-| Full ZK-crypto copy | replaced by local-first copy (BR-4) | UX-5b / M3 |
-| Per-name / multi-vault first-run | single vault `'vida'` | AR-4 / auth |
+| Seam                                        | M1.0 posture                        | Owner             |
+| ------------------------------------------- | ----------------------------------- | ----------------- |
+| Vault-key creation (Argon2id / Account Key) | no-op; vault = open local DB        | AR-3 / M3         |
+| Passphrase capture                          | none/trivial `[ADR-017:22]`         | AR-3 / UX-5b / M3 |
+| Unlock-on-every-launch UX                   | absent (auth off)                   | UX-5b / M3        |
+| Full ZK-crypto copy                         | replaced by local-first copy (BR-4) | UX-5b / M3        |
+| Per-name / multi-vault first-run            | single vault `'vida'`               | AR-4 / auth       |
 
 ---
 

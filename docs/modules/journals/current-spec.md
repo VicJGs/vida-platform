@@ -9,6 +9,7 @@ the journal daily dashboard. Journals owns the ENGINE, never the journal page (J
 this issue is service-only. Delivery docs: `docs/features/journals/delivery/{interpretation,slice-map,seam-contract}.md`.
 
 ## Build status (per slice)
+
 - **Slice 1 · Contribution registry + types + typed errors — SHIPPED.** Pure logic, no store.
 - **Slice 2 · `buildDashboard` + pure selection resolution — SHIPPED** (this session). Pure logic, no store.
   Persisted `getSelection`/`setSelection` are SEAMS (no Preferences journal-selection field / generalized
@@ -21,6 +22,7 @@ this issue is service-only. Delivery docs: `docs/features/journals/delivery/{int
   selection controls) — `fe-journals`.
 
 ## Exposed surface (SHIPPED — Slice 1)
+
 All in `@vida/core/services/journals` (barrel-exported from `@vida/core`). Types live here, NOT `@vida/types`
 (layering: `SectionData.state` reuses the `@vida/core` `TerminalState` canon; `@vida/types` can't import `@vida/core`).
 
@@ -54,8 +56,9 @@ All in `@vida/core/services/journals` (barrel-exported from `@vida/core`). Types
   - SEAM (N-3): `getSelection`/`setSelection` (no storage yet).
 
 ## Types (`services/journals/types.ts`)
+
 - `JournalSelection = Record<string, readonly string[]>` (enabled dataPoint ids per module, S2) · `DashboardData
-  = { summary: SectionData[], agenda: SectionData[] }` (S2) · `JournalSnapshot` (id/snapshotDate/capturedAt/summary, S3)
+= { summary: SectionData[], agenda: SectionData[] }` (S2) · `JournalSnapshot` (id/snapshotDate/capturedAt/summary, S3)
   · `JournalView` (date/source:'snapshot'|'live'/summary/agenda?/capturedAt?/liveComparative?, S3) · `ReviewPeriod`
   (from/to/kind?, S4) · `ReviewData` (period/snapshots, S4).
 - `HomeSectionKey = 'summary' | 'agenda' | 'entry'` (moved from `apps/web/src/home/section-model.ts`; backend owns it).
@@ -69,6 +72,7 @@ All in `@vida/core/services/journals` (barrel-exported from `@vida/core`). Types
   `InsufficientHistory(period)` · `ProviderUnavailable(module)`.
 
 ## Tests
+
 - `services/journals/__tests__/registry.test.ts` — 8 pure-logic tests (S1): deterministic `list()` order,
   overwrite-dedup, empty/get-unknown edges, plain-module-string, dueIn-optional, error `.name`s, + a `@ts-expect-error`
   locking the `TerminalState` canon against `'populated'`.
@@ -82,6 +86,7 @@ All in `@vida/core/services/journals` (barrel-exported from `@vida/core`). Types
   all-malformed), malformed-skip.
 
 ## Registered contributions (first-consumer-pull — each module registers at its own build; no composition root at M1)
+
 Shipped `register<X>Journal(registry, svc)` helpers (summary-only unless noted; the due-work agenda rides the SESSIONS
 `dueIn()` lane, not `JournalContribution.dueIn` — JR-5 / SS-7): gamification · projects · habits · finance · books ·
 knowledge · learning-education · purposes · relationships · notifications · **tasks (S9, 2026-10-19 —
@@ -91,10 +96,11 @@ convention)**. Consequence (documented, not a defect): `buildDashboard().agenda`
 to pull.
 
 ## Not owned (delegated / cited — JR-1)
+
 - **The journal ENTRY body** (today's `type:'journal'` page) is Notes-owned and rides `NotesService.ensureJournal`. Its
   Home cache key `['journal', date]` is read through the notes read-after-write barrier (`readAfterWrites(['journal:<date>'])`).
   A body write invalidates it plus `['calendar','journal']`, and the editor seeds from the notes latest-body overlay
   (notes-rescope R0 — `docs/modules/notes/current-business-rules.md` BR-R0-8/8a/8b).
-The journal `pages` row + NP-2 + the `/summary` block interface + the free-form TipTap entry → **Notes & Pages**;
-metric math → `analytics.ts` (present, never recompute, JR-10); review scheduling/delivery → Notifications + Sessions
-(Wave 4). The `apps/web/src/home` UX-6 placeholder migration to re-import these types → **fe-journals** first-consumer pull.
+  The journal `pages` row + NP-2 + the `/summary` block interface + the free-form TipTap entry → **Notes & Pages**;
+  metric math → `analytics.ts` (present, never recompute, JR-10); review scheduling/delivery → Notifications + Sessions
+  (Wave 4). The `apps/web/src/home` UX-6 placeholder migration to re-import these types → **fe-journals** first-consumer pull.

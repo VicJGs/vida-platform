@@ -5,10 +5,5 @@
 // and move_money/surface_notification handlers are homed downstream (DF-12).
 export * from './types'
 export * from './balance'
-export {
-  createEconomyHandlers,
-  registerEconomyEffects,
-  dispatchConsequence,
-  type EconomyHandlers,
-} from './handlers'
+export { createEconomyHandlers, registerEconomyEffects, dispatchConsequence, type EconomyHandlers } from './handlers'
 export { createCurrencyRegistry, SHIPPED_CURRENCIES, type CurrencyRegistry, type CurrencyDef } from './registry'

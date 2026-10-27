@@ -1,7 +1,7 @@
 # U8 — Dialog · forward spec (Step 1, document-first lite) → DS-5 contract → Tamagui v2
 
 DS-5 primitive 8/10 (**overlay/organism tier, 1st of 3**). A **modal** surface that blocks the rest of the app
-until the user completes or dismisses a focused task. The first *modal* primitive — the category shift from
+until the user completes or dismisses a focused task. The first _modal_ primitive — the category shift from
 Select/Menu (floating-but-non-modal) is the **focus TRAP**, an **inert background**, and a **scrim**.
 Implements `docs/specs/components/ds-5-primitive-contracts/dialog.md` against Tamagui v2 in `@vida/ui`.
 Gate: §XXVI per-component double-gate + component Visual Gate. Task: ui-1-vida-ui-primitives (LIF-86).
@@ -22,16 +22,19 @@ for dimension props on ALL 8 primitives → 0px; root-fixed to the primitive rad
 
 ---
 
-## 1. Intent  [FACT: dialog.md §Intent]
+## 1. Intent [FACT: dialog.md §Intent]
+
 A **modal** surface that blocks the rest of the app until the user completes or dismisses a focused task or
 decision.
 
-### What it is NOT  [FACT: dialog.md §Intent]
+### What it is NOT [FACT: dialog.md §Intent]
+
 - **NOT transient feedback** → that is `Toast` (U10), announced via `aria-live`, focus not moved.
 - **NOT a non-blocking anchored surface** → that is `Popover` (U9), anchored to a trigger, no focus trap.
 - **NOT a whole route/page** → that is the router (UX-3).
 
 ## 2. Baseline (code-as-is — verified this session)
+
 - **Build approach settled by the shipped pattern — no fork.** U1–U7 are hand-built on `@tamagui/core`
   (`styled()` + native `render:'<tag>'` + injected CSS for what `styled()` can't see; no new deps, web-first).
   A dialog kit (`@tamagui/*`, Radix) is out of scope by definition — UI-1's reason to exist is to **build** the
@@ -59,10 +62,10 @@ decision.
   - `render:'<tag>'` for semantic hosts; `forwardRef`; `NODE_ENV` dev-warn precedent; jsdom `*.test.tsx`;
     `composeHandlers`/`assignRef` ref/handler helpers pattern. [FACT: menu.tsx:114-131]
 - **Divergence from Menu (do NOT copy wholesale) — this is the modal delta:**
-  - **No `trigger` slot.** Dialog is *fully controlled* by `open`/`onOpenChange` (contract API §11-24 has no
+  - **No `trigger` slot.** Dialog is _fully controlled_ by `open`/`onOpenChange` (contract API §11-24 has no
     trigger). So "return focus to the trigger" (§XIV) is done by **capturing `document.activeElement` at open** and
     restoring it on close — NOT Menu's `cloneElement` trigger ref. [FACT: dialog.md:11-24; engineering §XIV]
-  - **Focus TRAP** (the one sanctioned trap, §XIV): Tab/Shift+Tab cycle *within* the panel. Menu did NOT trap (Tab
+  - **Focus TRAP** (the one sanctioned trap, §XIV): Tab/Shift+Tab cycle _within_ the panel. Menu did NOT trap (Tab
     closes it). [FACT: dialog.md:48; engineering §XIV]
   - **Centered, not anchored** → no `getBoundingClientRect`/flip/positioning math (Menu's biggest chunk). The panel
     is flex-centered in a full-viewport container. Simpler geometry; harder focus.
@@ -70,15 +73,16 @@ decision.
     [FACT: dialog.md:49]
 - **Verify:** `pnpm --filter @vida/ui typecheck && build && test` (currently @vida/ui **160** tests). [FACT: CLAUDE.md]
 
-## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]])  [FACT: dialog.md:11-24]
+## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]]) [FACT: dialog.md:11-24]
+
 ```ts
 export interface DialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   /** REQUIRED — the accessible name (aria-labelledby). */
   title: React.ReactNode
-  description?: React.ReactNode  // aria-describedby
-  footer?: React.ReactNode       // slot (actions)
+  description?: React.ReactNode // aria-describedby
+  footer?: React.ReactNode // slot (actions)
   size?: 'sm' | 'md' | 'lg'
   /** Esc + backdrop click close. Default true; set false for destructive-confirm dialogs. */
   dismissible?: boolean
@@ -86,24 +90,28 @@ export interface DialogProps {
 }
 // forwardRef<HTMLDivElement, DialogProps> → the dialog surface (panel). Props exported.
 ```
+
 - **Ship the interface verbatim.** No `showCloseButton`/`onClose` extras. A visible close (✕) affordance is NOT in
   the contract — dismissal is Esc + backdrop (dismissible) or the consumer's `footer` actions (Cancel/Confirm).
   → **DEF-U8-a** (contract has no close-button slot; a consumer composes one in `footer`/`children`). [FACT: no such
   prop in dialog.md:11-24] — the U5-Card/U6-Tabs "state matrix can outrun the API" precedent.
 
-## 4. Visual states (8, per §VIII — a modal *container*; interactive states live on inner controls)  [FACT: dialog.md:26-32]
-| State | Trigger | Visual (exact) | Token |
-|-------|---------|----------------|-------|
-| **default** | `open` | scrim (dim overlay) + centered panel: `$background`, `$radius` (radiusCard), inset padding | `dialog.background` · `dialog.radius` · `zIndex.modal` · scrim |
-| **loading** | async content | panel body shows consumer skeleton/spinner; consumer sets `aria-busy`; consumer disables actions | (consumer-composed; no `loading` prop → **DEF-U8-b**) |
-| **empty** | no content yet | consumer empty-state rendered in `children` | `dialog.background` |
-| hover · focus · active · disabled · error | — | **N/A at the shell** — live on the Button/Input controls *inside* the dialog (their own contracts). Documented as the container-primitive exception (§VIII), demonstrated in stories. |
+## 4. Visual states (8, per §VIII — a modal _container_; interactive states live on inner controls) [FACT: dialog.md:26-32]
 
-## 5. Motion spec (B12)  [FACT: dialog.md:38-43]
-| Transition | Duration | Easing | Property |
-|-----------|----------|--------|----------|
-| scrim in | `duration.fast` (150) | `easing.out` | **opacity** (0 → ~0.5) |
+| State                                     | Trigger        | Visual (exact)                                                                                                                                                                        | Token                                                          |
+| ----------------------------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------- |
+| **default**                               | `open`         | scrim (dim overlay) + centered panel: `$background`, `$radius` (radiusCard), inset padding                                                                                            | `dialog.background` · `dialog.radius` · `zIndex.modal` · scrim |
+| **loading**                               | async content  | panel body shows consumer skeleton/spinner; consumer sets `aria-busy`; consumer disables actions                                                                                      | (consumer-composed; no `loading` prop → **DEF-U8-b**)          |
+| **empty**                                 | no content yet | consumer empty-state rendered in `children`                                                                                                                                           | `dialog.background`                                            |
+| hover · focus · active · disabled · error | —              | **N/A at the shell** — live on the Button/Input controls _inside_ the dialog (their own contracts). Documented as the container-primitive exception (§VIII), demonstrated in stories. |
+
+## 5. Motion spec (B12) [FACT: dialog.md:38-43]
+
+| Transition  | Duration                  | Easing       | Property                                                            |
+| ----------- | ------------------------- | ------------ | ------------------------------------------------------------------- |
+| scrim in    | `duration.fast` (150)     | `easing.out` | **opacity** (0 → ~0.5)                                              |
 | panel enter | `duration.moderate` (250) | `easing.out` | **opacity** (0→1) + **transform** scale(0.96→1) + translateY(8px→0) |
+
 Reduced-motion: scrim + panel appear instantly (no scale/translate) — `@media (prefers-reduced-motion:reduce)`.
 B12: only `opacity`/`transform` in every transition — never background/size/top. [FACT: themes/CLAUDE.md B12]
 
@@ -118,14 +126,15 @@ modal must never render invisible. Reduced-motion → `@media` sets `animation:n
 ("mounts on open, unmounts on close, no hidden retained tree", §52). → **DEF-U8-d** (an exit fade would need a
 delayed-unmount state machine; deferred, bounded).
 
-## 6. Accessibility contract  [FACT: dialog.md:45-49; engineering §XIV verbatim]
+## 6. Accessibility contract [FACT: dialog.md:45-49; engineering §XIV verbatim]
+
 - **Role** `dialog`, `aria-modal="true"`, `aria-labelledby`→ generated title id, `aria-describedby`→ generated
   description id (**only when `description` is provided** — no dangling idref).
 - **On open: focus moves to the first focusable element inside the panel**; if none, focus the panel itself
   (`tabIndex={-1}`) so focus is never lost and the SR announces the dialog. [FACT: §XIV "focus moves to the first
   focusable element inside"]
 - **On close: focus returns to the element that was focused when the dialog opened** (captured `document.activeElement`
-  at the top of the open-effect, *before* focus-in moves it). Restore is **guarded**: only
+  at the top of the open-effect, _before_ focus-in moves it). Restore is **guarded**: only
   `if (captured && document.contains(captured) && typeof captured.focus === 'function')` — else fall back to
   `document.body` so a trigger that unmounted while the dialog was open never throws or loses focus (Gate-1 MAT-2).
   [FACT: §XIV "focus returns to the element that triggered it"]
@@ -143,13 +152,15 @@ delayed-unmount state machine; deferred, bounded).
 - Background body siblings get `inert` + `aria-hidden="true"` while open, restored on close — **identified by excluding
   the dialog's own portal-root container by identity** (Gate-1 BLOCK-1), never by tag/class. [FACT: dialog.md:49]
 
-## 7. Performance budget  [FACT: dialog.md:52]
+## 7. Performance budget [FACT: dialog.md:52]
+
 Portals to a dedicated body-child container; mounts on open, unmounts on close (no hidden retained tree). Scrim is one
 opacity layer. **Body scroll-lock is DEFERRED (Gate-1 MAT-4, DEF-U8-g)** — the contract's perf budget does not mandate
 it, and a naive `overflow:hidden` risks CLS (scrollbar removal, engineering §XIII ≤0.1), clobbers nested-dialog state,
 and misses iOS Safari. A robust ref-counted + scrollbar-gutter lock is a bounded follow-up, not UI-1 primitive scope.
 
 ## 8. Component tokens (three-layer intact) + sub-theme
+
 - `dialog.background → {color.surface.primary}` → `$background` on the panel (in `<Theme name="Dialog">`).
 - `dialog.radius → {radius.card}` → `$radius`.
 - **Scrim** = `$colorSurfaceInverse` (base semantic, inherited through the Dialog sub-theme) at **opacity 0.5**,
@@ -158,6 +169,7 @@ and misses iOS Safari. A robust ref-counted + scrollbar-gutter lock is a bounded
   token exists → **DEF-U8-e** (value review at brand pass). [INTERP: common modal widths; provisional palette]
 
 ## 9. PLAN — build steps (Step 1 → implementation after both approvals)
+
 1. **`internal/dialog-styles.ts`** — injected sheet (menu-styles precedent), but a **keyframe `animation`, not a
    `.is-open` transition** (Gate-1 BLOCK-2): `@keyframes vida-dialog-scrim-in { from{opacity:0} to{opacity:0.5} }` +
    `@keyframes vida-dialog-panel-in { from{opacity:0;transform:scale(0.96) translateY(8px)} to{opacity:1;transform:none} }`;
@@ -172,7 +184,7 @@ and misses iOS Safari. A robust ref-counted + scrollbar-gutter lock is a bounded
      Gate-1 MIN-3) + `DialogDescription` (render:'p', carries `descId`) + a `<footer>` slot (render:'footer').
    - **Portal root (Gate-1 BLOCK-1 + Gate-2 DEF-REV-1):** the dedicated `<div data-vida-dialog-root>` is created in a
      **lazy `useState` initializer** — `useState(() => (typeof document !== 'undefined' ? document.createElement('div')
-     : null))` — so it exists **during the first render** (thus `createPortal(<Theme name="Dialog">…, rootDiv)` renders
+: null))` — so it exists **during the first render** (thus `createPortal(<Theme name="Dialog">…, rootDiv)` renders
      the panel in the FIRST commit; an effect-created div would be null on first render → panel on the 2nd commit → the
      [[portal-open-focus-needs-a-mount-gated-effect-dep]] trap). Only `appendChild`/`removeChild` happen in a mount
      `useLayoutEffect` (keep the `typeof document` guard — menu.tsx:411 precedent, even under `disableSSR:true`). The
@@ -182,21 +194,21 @@ and misses iOS Safari. A robust ref-counted + scrollbar-gutter lock is a bounded
      (previously-focused element). **No `entered` state, no internal `open` state** (controlled-only; the keyframe
      removes the reveal flag).
    - **Effects:**
-     (a) *focus + capture* — a `useLayoutEffect` keyed on `open`: when open, `prevFocusRef.current =
-     document.activeElement` (capture BEFORE moving focus, Gate-1 MAT-2) → focus `F[0]` (first focusable in the panel)
+     (a) _focus + capture_ — a `useLayoutEffect` keyed on `open`: when open, `prevFocusRef.current =
+document.activeElement` (capture BEFORE moving focus, Gate-1 MAT-2) → focus `F[0]` (first focusable in the panel)
      or the panel itself if `F` is empty. Panel renders in the FIRST commit (no pos-gate, so — unlike Menu — the
      focusable children ARE present when this effect runs; the [[portal-open-focus-needs-a-mount-gated-effect-dep]]
      two-commit trap does not apply here, verified: Dialog never defers the panel behind a measured `pos`). Cleanup
      (close/unmount): guarded restore to `prevFocusRef.current` (see §6).
-     (b) *inert background* — a `useEffect` keyed on `open`: set `inert`+`aria-hidden` on every `document.body.children`
+     (b) _inert background_ — a `useEffect` keyed on `open`: set `inert`+`aria-hidden` on every `document.body.children`
      el `!== rootRef.current` (saving prior values); cleanup restores.
    - **Focus trap:** panel `onKeyDown` computes `F` via selector `a[href], button:not([disabled]),
-     input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])` and
+input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])` and
      applies the §6 algorithm (0/1/panel-focused/boundary cases). `Escape` → `dismissible && onOpenChange(false)`.
    - **Dismiss:** scrim/positioner `onPointerDown` (target outside panel) → `dismissible && onOpenChange(false)`;
      panel stops propagation. (pointerdown, not click — the Menu outside-dismiss precedent.)
    - `role="dialog"`, `aria-modal="true"`, `aria-labelledby={titleId}`, `aria-describedby={description ? descId :
-     undefined}`, `tabIndex={-1}` on panel; `zIndex="$modal"` on panel, `"$overlay"` on scrim. `forwardRef` → panel,
+undefined}`, `tabIndex={-1}` on panel; `zIndex="$modal"` on panel, `"$overlay"` on scrim. `forwardRef` → panel,
      merged with internal `panelRef` (`assignRef`).
    - Dev-warns (`NODE_ENV !== 'production'`): `title` missing/nullish; **`dismissible === false` with no focusable
      descendant in the panel** (Gate-1 MAT-3 / DEF-U8-f — a keyboard user would be trapped).
@@ -209,9 +221,11 @@ and misses iOS Safari. A robust ref-counted + scrollbar-gutter lock is a bounded
 7. **`packages/ui/src/CLAUDE.md`** — §XXIX currency (Dialog paragraph: modal trap + inert + scrim + focus-return).
 
 ## 10. Test plan (jsdom — 24 tests, parity with U7)
+
 Each test file opts into DOM via a `// @vitest-environment jsdom` docblock (vite `test.environment:'node'`; the 7
 shipped `*.test.tsx` all use this docblock — Gate-2 DEF-REV-2). Assertions are DOM/class-based, never `getComputedStyle`
 of an `@media`/`@keyframes` result (jsdom evaluates neither) — motion/reduced-motion truth is the Visual Gate's job.
+
 1. renders nothing when `open={false}` (no portal node)
 2. `role="dialog"` + `aria-modal="true"` present when open
 3. `aria-labelledby` points to the rendered `title`; title text present
@@ -222,7 +236,7 @@ of an `@media`/`@keyframes` result (jsdom evaluates neither) — motion/reduced-
 8. `Escape` closes (calls `onOpenChange(false)`) when `dismissible` (default)
 9. `Escape` does nothing when `dismissible={false}`
 10. backdrop (scrim) pointerdown closes when dismissible; not when `dismissible={false}`
-11. pointerdown *inside* the panel does NOT close
+11. pointerdown _inside_ the panel does NOT close
 12. Tab from the last focusable wraps to the first (trap)
 13. Shift+Tab from the first focusable wraps to the last (trap)
 14. `footer` slot renders
@@ -243,29 +257,33 @@ of an `@media`/`@keyframes` result (jsdom evaluates neither) — motion/reduced-
 > feature to test. → 24 tests.
 
 ## 11. Deferrals / DS defects flagged (bounded)
+
 - **DEF-U8-a** — contract has no close-button (✕) slot; dismissal = Esc/backdrop (dismissible) or `footer` actions.
 - **DEF-U8-b** — no `loading` prop (consumer-composed skeleton + `aria-busy`), like U5/U6.
 - **DEF-U8-c** — no scrim component token (contract §34 flags it); scrim reaches the `surface.inverse` semantic @ 0.5.
 - **DEF-U8-d** — exit animation deferred (immediate unmount per perf budget); a delayed-unmount state machine if wanted.
 - **DEF-U8-e** — no dialog-size token; maxWidths are provisional (brand-pass value review).
-- **DEF-U8-f** *(Gate-1 MAT-3)* — `dismissible={false}` makes Esc inert, a deliberate deviation from engineering §XIV
+- **DEF-U8-f** _(Gate-1 MAT-3)_ — `dismissible={false}` makes Esc inert, a deliberate deviation from engineering §XIV
   ("Esc closes every overlay") for the destructive-confirm case; the contract vs standard tension is flagged for DS, and
   a dev-warn guards the keyboard-trap footgun.
-- **DEF-U8-g** *(Gate-1 MAT-4)* — body scroll-lock deferred (not in the contract's perf budget; a naive lock risks
+- **DEF-U8-g** _(Gate-1 MAT-4)_ — body scroll-lock deferred (not in the contract's perf budget; a naive lock risks
   CLS/nested-clobber/iOS); a robust ref-counted + scrollbar-gutter lock is a bounded follow-up.
-- **DEF-U8-h** *(Visual-Gate, DS-WIDE)* — Tamagui reads `$name` on **dimension** props (borderRadius/space/size) from
+- **DEF-U8-h** _(Visual-Gate, DS-WIDE)_ — Tamagui reads `$name` on **dimension** props (borderRadius/space/size) from
   the **token scale**, not the component sub-theme (theme = colors only). So `borderRadius:'$radius'` (a sub-theme key)
   was inert → 0px on all 8 primitives. Fixed at U8 across Button/Input/Checkbox/Select/Card/Menu/Dialog to the primitive
   token (`$md` control / `$lg` card). DS should decide whether component dimension tokens are worth expressing at all
   given this Tamagui constraint. [[tamagui-dimension-props-read-token-scale-not-theme]]
 
 ## 12. Open questions
+
 - **OQ-1 [RESOLVED via contract + §XIV]:** focus target on open = **first focusable inside**, panel fallback if none
   (dialog.md:47 + engineering §XIV verbatim). Not a fork.
 - **OQ-2 [RESOLVED via contract]:** no visible close button in the API → DEF-U8-a, ship verbatim, footer/children compose it.
 
 ## 13. Gate 1 — independent adversarial critique resolutions (Rev 2)
+
 Verdict REVISE → 2 blockers + 4 material + 3 minor, ALL addressed in-plan:
+
 - **BLOCK-1 (inert would hit the dialog itself)** — `<Theme>` renders a `display:contents` span, tag-indistinguishable
   from the app root; portal now targets a **dedicated `<div data-vida-dialog-root>`** and the inert pass excludes it
   **by identity**. §6, §9.2, test #23. ✅
@@ -285,6 +303,7 @@ Verdict REVISE → 2 blockers + 4 material + 3 minor, ALL addressed in-plan:
   DEF-U8-c); B12 clean (maxWidth is an instant style, not animated); pointerdown-not-click dismiss.
 
 ## 14. Gate 2 — /preflight + second independent critique resolutions (Rev 3)
+
 - **/preflight → PASSED** — single frontend layer fully specified; 7 bounded assumptions, none blocking; no ground-truth
   module docs (currency = `packages/ui/src/CLAUDE.md`).
 - **Second independent critique → REVISE (1 material + 2 minor), all addressed:**

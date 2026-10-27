@@ -1,6 +1,6 @@
 <!-- Business Rules — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 · docs/intake/books.md -->
 
-# Business Rules — Books  (level: Feature / own module)
+# Business Rules — Books (level: Feature / own module)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, + the extension-model
 > principle. Every rule below complies.
@@ -41,11 +41,11 @@
 - **BK-9 — TOC ≠ syllabus (⚠ INTENDED).** The TOC is a first-class Books feature, usable before owning any
   copy; entry = manual OR ISBN/metadata lookup (both deliverables). Syllabus/schedule belong to Education;
   they meet only through the partition (BK-13). Chapters stay a flat list `[INTERP: nested sections not
-  requested]`. `[INTENT B8; FACT: book_chapters L2445-2469]`
+requested]`. `[INTENT B8; FACT: book_chapters L2445-2469]`
 - **BK-10 — Reading sessions are a `reading` Session sub-type, mode-adaptive (⚠ INTENDED).** A reading session is
   a base `sessions` row (`sub_type='reading'`) + a **Books-owned 1:1 extension** keyed `session_id` (ADR-004 S1) —
   the shared timer/scheduling/runtime rides the base, the mode-adaptive capture is the extension. **Still never a
-  `study_session` reuse** — `reading` and `study` are *distinct* sub-types (the framework lists both as separate
+  `study_session` reuse** — `reading` and `study` are _distinct_ sub-types (the framework lists both as separate
   extensions), and never a standalone Books session table. Manual (physical/braille): time, pages read, where the
   user stopped. Digital/audio: granular position + statistics. **Page-photo capture** (optional): the photo is
   processed for position (OCR = a scoped extract, AI5/AI6) AND **stored encrypted as a visual reading journal** —
@@ -72,8 +72,8 @@
   (AI1), cloud = egress + scope-min (AI3), the untrusted OCR'd page carries provenance (AI5), AI-derived rows carry
   `source=ai` (AI6) — **not** AI4 agents. All **opt-in**: the user is informed (the consent step = the X4/AI1 gate),
   owns the risk, the OS provides the safety net; every integration has a manual fallback path. `[INTENT B3/B8; ADR-014
-  X1/X2/X3/X5/X9/X11; ADR-015 AI1/AI3/AI5/AI6; candidate constitution amendment — joins the Projects-surfaced
-  extension-model principle]`
+X1/X2/X3/X5/X9/X11; ADR-015 AI1/AI3/AI5/AI6; candidate constitution amendment — joins the Projects-surfaced
+extension-model principle]`
 - **BK-15 — The Reader is core and in-app (⚠ INTENDED).** One surface, three modes (read · listen — including
   TTS-converted files · annotate live in all modes), on all 3 platforms; files never leave the encrypted
   store to be read. Auto-session tracking. `[INTENT B3/B12]`
@@ -81,7 +81,7 @@
   (ADR-006 SP1, Books-scoped) — grouping + visualization, not columns; summary + key-takeaways are notes elements with
   dedicated per-type UIs; skill/purpose links are owned by Skills/Purposes. The book row stays lean.
   ⚠ Supersedes the inline FACT columns `books.genre`/`tags` — `entity_tags` migration in the amendment. `[INTENT B11;
-  ADR-006 SP1]`
+ADR-006 SP1]`
 - **BK-17 — Defaults before personalization; sparse is normal.** Every view ships a default; TOC-only books,
   copy-less books, unsynced mappings, and empty shelves render gracefully and invite increments (anti-lost).
   `[INTENT B12]`
@@ -89,6 +89,7 @@
   LWW per entity; files ride the attachment pipeline. `[FACT: LF-2; ADR-003]`
 
 ## Validation & edge cases
+
 - FACT CHECKs today: `format`{physical,ebook,audiobook} · `status`{want_to_read,reading,completed,dropped} ·
   `rating` 1-5 · `progress` 0-100 · `UNIQUE(book_id, chapter_number)`. `[FACT: L2414-2423, L2468]`
   ⚠ `books.format` (single) is superseded by per-asset formats {physical, pdf, epub, audiobook, braille,
@@ -104,21 +105,23 @@
   content in its own right). `[INTERP B10/B16b]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Reading Hub | skeleton | "nothing being read — add a book / start a plan" + CTA | typed read error, retry | strip + quotas + statistics + alerts |
-| Bookshelf (gallery/list/table) | skeleton | "your shelf is empty" + Add Book CTA | typed error, retry | grouped/filtered shelf incl. TOC-only entries |
-| Book Hub (any tab) | skeleton | tab-specific empty + CTA (e.g. "no quotes yet") | typed error, retry | tab content, sparse-graceful |
-| Reader — read/listen | opening + decrypting file | asset has no file → "add a copy" | decrypt/render/playback error → typed, never silent | reading with live annotation + position indicator |
-| Cross-format position | mapping… | **"not synced yet" + native position** (BK-4) | transcription failed → same state + retry via integration consent | mapped position shown, source labeled |
-| Companion mode | — | fresh session (timer at 0) | photo OCR fail → manual entry fallback | session logged: time, pages, stop-point, photos |
-| Add Book wizard | lookup querying | manual blank form | lookup error/declined consent → manual path stays open | book (+TOC) registered |
-| Plan wizard / per-plan | computing distribution | "no plans — create one" | validation (target in past, zero quota) inline | plan live: distribution + projection |
-| Quota recalculation | recomputing | — | cannot reach target by date → flagged proposal (extend date / raise quota), never silent | reshaped plan + make-up path |
-| All Quotes library | skeleton | "no quotes captured yet" | typed error, retry | grouped, searchable, inter-links + embed locations |
-| Conflict prompt (BK-8) | — | — | unresolved conflict blocks unified progress (flagged, not guessed) | resolved by answer or preset rule |
+
+| Capability                     | loading                   | empty                                                  | error                                                                                    | success                                            |
+| ------------------------------ | ------------------------- | ------------------------------------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Reading Hub                    | skeleton                  | "nothing being read — add a book / start a plan" + CTA | typed read error, retry                                                                  | strip + quotas + statistics + alerts               |
+| Bookshelf (gallery/list/table) | skeleton                  | "your shelf is empty" + Add Book CTA                   | typed error, retry                                                                       | grouped/filtered shelf incl. TOC-only entries      |
+| Book Hub (any tab)             | skeleton                  | tab-specific empty + CTA (e.g. "no quotes yet")        | typed error, retry                                                                       | tab content, sparse-graceful                       |
+| Reader — read/listen           | opening + decrypting file | asset has no file → "add a copy"                       | decrypt/render/playback error → typed, never silent                                      | reading with live annotation + position indicator  |
+| Cross-format position          | mapping…                  | **"not synced yet" + native position** (BK-4)          | transcription failed → same state + retry via integration consent                        | mapped position shown, source labeled              |
+| Companion mode                 | —                         | fresh session (timer at 0)                             | photo OCR fail → manual entry fallback                                                   | session logged: time, pages, stop-point, photos    |
+| Add Book wizard                | lookup querying           | manual blank form                                      | lookup error/declined consent → manual path stays open                                   | book (+TOC) registered                             |
+| Plan wizard / per-plan         | computing distribution    | "no plans — create one"                                | validation (target in past, zero quota) inline                                           | plan live: distribution + projection               |
+| Quota recalculation            | recomputing               | —                                                      | cannot reach target by date → flagged proposal (extend date / raise quota), never silent | reshaped plan + make-up path                       |
+| All Quotes library             | skeleton                  | "no quotes captured yet"                               | typed error, retry                                                                       | grouped, searchable, inter-links + embed locations |
+| Conflict prompt (BK-8)         | —                         | —                                                      | unresolved conflict blocks unified progress (flagged, not guessed)                       | resolved by answer or preset rule                  |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A pending/failed mapping is a visible state, never an approximated position (BK-4). `[INTENT]`
 - Unresolvable progress conflict → unified progress flags "conflicted" rather than showing either value as
   truth (BK-8). `[INTENT B16a]`
@@ -129,6 +132,7 @@
   `[INTENT B9]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 **The FACT base is 2 tables + types; the module is essentially INTENDED** (second-largest surface after
 Education): `book_assets` · `book_bookmarks`/`book_highlights`/`book_quotes` · `reading_sessions` (+photo
 attachments) · `reading_plans` (+plan↔books arrangement) · `book_subjects` · mapping/anchor data · quote-embed
@@ -142,4 +146,5 @@ OCR/TTS/transcription X11→AI1/AI3/AI5/AI6 (not AI4). Live invariants today: BK
 `UNIQUE(book_id, chapter_number)`. `[FACT: ADR-002 L2409-2469; INTENT: intake; ADR-004/006/011/014/015]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

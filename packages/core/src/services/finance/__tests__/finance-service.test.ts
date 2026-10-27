@@ -72,7 +72,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -198,7 +201,12 @@ describe('mod-finance S1 — entity CRUD', () => {
   })
 
   it('createInvestment (nullable account_id) + soft delete hides (FIN-15)', async () => {
-    const inv = await h.svc.createInvestment({ name: 'VOO', investment_type: 'stock', quantity: 10, current_price: 500_00 })
+    const inv = await h.svc.createInvestment({
+      name: 'VOO',
+      investment_type: 'stock',
+      quantity: 10,
+      current_price: 500_00,
+    })
     expect(inv.account_id).toBeNull()
     expect(inv.quantity).toBe(10)
     await h.svc.softDeleteInvestment(inv.id)
@@ -233,7 +241,14 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
   let acctB: string
   beforeEach(async () => {
     h = await setup()
-    acctA = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })).id
+    acctA = (
+      await h.svc.createAccount({
+        name: 'A',
+        account_type: 'checking',
+        opening_balance: 100_00,
+        current_balance: 100_00,
+      })
+    ).id
     acctB = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
   })
 
@@ -245,14 +260,25 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
   })
 
   it('createTransaction returns tags:[] — inline tags retired → entity_tags (FN-10, S6)', async () => {
-    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'income', amount: 1_00, date: '2026-09-10' })
+    const t = await h.svc.createTransaction({
+      account_id: acctA,
+      transaction_type: 'income',
+      amount: 1_00,
+      date: '2026-09-10',
+    })
     expect(t.tags).toEqual([])
     expect(t.transfer_to_account_id).toBeNull()
   })
 
   it('createTransaction rejects a transfer_to on a non-transfer + a transfer with no target (FN-4)', async () => {
     await expect(
-      h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 1_00, date: '2026-09-10', transfer_to_account_id: acctB }),
+      h.svc.createTransaction({
+        account_id: acctA,
+        transaction_type: 'expense',
+        amount: 1_00,
+        date: '2026-09-10',
+        transfer_to_account_id: acctB,
+      }),
     ).rejects.toBeInstanceOf(InvalidTransferError)
     await expect(
       h.svc.createTransaction({ account_id: acctA, transaction_type: 'transfer', amount: 1_00, date: '2026-09-10' }),
@@ -260,7 +286,12 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
   })
 
   it('createTransfer moves money: source −amount, destination +amount (FN-4, one row)', async () => {
-    const t = await h.svc.createTransfer({ fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-12' })
+    const t = await h.svc.createTransfer({
+      fromAccountId: acctA,
+      toAccountId: acctB,
+      amount: 40_00,
+      date: '2026-09-12',
+    })
     expect(t.transaction_type).toBe('transfer')
     expect(t.transfer_to_account_id).toBe(acctB)
     expect(await h.svc.getBalance(acctA)).toBe(60_00) // 100 − 40
@@ -276,14 +307,24 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
   })
 
   it('updateTransaction re-derives the balance (FN-3, never a manual correction)', async () => {
-    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 20_00, date: '2026-09-10' })
+    const t = await h.svc.createTransaction({
+      account_id: acctA,
+      transaction_type: 'expense',
+      amount: 20_00,
+      date: '2026-09-10',
+    })
     expect(await h.svc.getBalance(acctA)).toBe(80_00)
     await h.svc.updateTransaction(t.id, { amount: 5_00 })
     expect(await h.svc.getBalance(acctA)).toBe(95_00) // re-derived: 100 − 5
   })
 
   it('softDeleteTransaction removes it from the balance derivation + list (FN-3)', async () => {
-    const t = await h.svc.createTransaction({ account_id: acctA, transaction_type: 'expense', amount: 30_00, date: '2026-09-10' })
+    const t = await h.svc.createTransaction({
+      account_id: acctA,
+      transaction_type: 'expense',
+      amount: 30_00,
+      date: '2026-09-10',
+    })
     expect(await h.svc.getBalance(acctA)).toBe(70_00)
     await h.svc.softDeleteTransaction(t.id)
     expect(await h.svc.getBalance(acctA)).toBe(100_00) // deleted row excluded
@@ -316,7 +357,12 @@ describe('mod-finance S2 — ledger + derived balance + transfers', () => {
   })
 
   it('updateTransaction rejects an account_id change that turns a transfer into a self-transfer (FN-4)', async () => {
-    const t = await h.svc.createTransfer({ fromAccountId: acctA, toAccountId: acctB, amount: 10_00, date: '2026-09-12' })
+    const t = await h.svc.createTransfer({
+      fromAccountId: acctA,
+      toAccountId: acctB,
+      amount: 10_00,
+      date: '2026-09-12',
+    })
     // changing source to equal the destination (transfer_to=B) must re-trigger FN-4 even though
     // neither transaction_type nor transfer_to_account_id is in the patch.
     await expect(h.svc.updateTransaction(t.id, { account_id: acctB })).rejects.toBeInstanceOf(InvalidTransferError)
@@ -332,10 +378,25 @@ describe('mod-finance S3 — derived analytics', () => {
   // ── getOverview (FIN-17) ──────────────────────────────────────────
   describe('getOverview (FIN-17)', () => {
     it('netWorth = FN-7 simple sum; monthly totals EXCLUDE transfers (FN-12); clean path partial:false', async () => {
-      const a = await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 1_000_00, current_balance: 1_000_00 })
+      const a = await h.svc.createAccount({
+        name: 'A',
+        account_type: 'checking',
+        opening_balance: 1_000_00,
+        current_balance: 1_000_00,
+      })
       const b = await h.svc.createAccount({ name: 'B', account_type: 'savings' })
-      await h.svc.createTransaction({ account_id: a.id, transaction_type: 'income', amount: 200_00, date: '2026-09-10' })
-      await h.svc.createTransaction({ account_id: a.id, transaction_type: 'expense', amount: 50_00, date: '2026-09-15' })
+      await h.svc.createTransaction({
+        account_id: a.id,
+        transaction_type: 'income',
+        amount: 200_00,
+        date: '2026-09-10',
+      })
+      await h.svc.createTransaction({
+        account_id: a.id,
+        transaction_type: 'expense',
+        amount: 50_00,
+        date: '2026-09-15',
+      })
       await h.svc.createTransfer({ fromAccountId: a.id, toAccountId: b.id, amount: 30_00, date: '2026-09-20' })
       await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 5_000_00 })
       await h.svc.createLiability({ name: 'Loan', liability_type: 'personal_loan', current_balance: 2_000_00 })
@@ -354,7 +415,12 @@ describe('mod-finance S3 — derived analytics', () => {
     })
 
     it('investments are NOT a net-worth term (FN-7, N1)', async () => {
-      await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })
+      await h.svc.createAccount({
+        name: 'A',
+        account_type: 'checking',
+        opening_balance: 100_00,
+        current_balance: 100_00,
+      })
       const before = (await h.svc.getOverview({ month: '2026-09' })).netWorth
       await h.svc.createInvestment({ name: 'VOO', investment_type: 'stock', quantity: 10, current_price: 500_00 })
       const after = (await h.svc.getOverview({ month: '2026-09' })).netWorth
@@ -373,15 +439,36 @@ describe('mod-finance S3 — derived analytics', () => {
     })
 
     it('inactive accounts still count toward totalBalance (N2)', async () => {
-      await h.svc.createAccount({ name: 'Active', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })
-      await h.svc.createAccount({ name: 'Closed', account_type: 'checking', opening_balance: 500_00, current_balance: 500_00, is_active: false })
+      await h.svc.createAccount({
+        name: 'Active',
+        account_type: 'checking',
+        opening_balance: 100_00,
+        current_balance: 100_00,
+      })
+      await h.svc.createAccount({
+        name: 'Closed',
+        account_type: 'checking',
+        opening_balance: 500_00,
+        current_balance: 500_00,
+        is_active: false,
+      })
       const o = await h.svc.getOverview({ month: '2026-09' })
       expect(o.totalBalance).toBe(600_00) // both included
     })
 
     it('empty dataset → all-zero overview, unvalued 0, partial:false', async () => {
       const o = await h.svc.getOverview({ month: '2026-09' })
-      expect(o).toMatchObject({ totalBalance: 0, totalAssets: 0, totalLiabilities: 0, netWorth: 0, monthlyIncome: 0, monthlyExpenses: 0, unvaluedAssets: 0, unvaluedLiabilities: 0, partial: false })
+      expect(o).toMatchObject({
+        totalBalance: 0,
+        totalAssets: 0,
+        totalLiabilities: 0,
+        netWorth: 0,
+        monthlyIncome: 0,
+        monthlyExpenses: 0,
+        unvaluedAssets: 0,
+        unvaluedLiabilities: 0,
+        partial: false,
+      })
     })
 
     it('defaults to the current calendar month when unpinned', async () => {
@@ -395,7 +482,13 @@ describe('mod-finance S3 — derived analytics', () => {
   describe('getInvestmentValue (FIN-19)', () => {
     it('value + gain/loss with fractional-share rounding; gainLossPct is a ratio (D3)', async () => {
       // qty 2.5 × price 100_00 = 250_00 ; cost 2.5 × 80_00 = 200_00 ; gain 50_00 ; pct 0.25
-      const inv = await h.svc.createInvestment({ name: 'ETF', investment_type: 'etf', quantity: 2.5, purchase_price: 80_00, current_price: 100_00 })
+      const inv = await h.svc.createInvestment({
+        name: 'ETF',
+        investment_type: 'etf',
+        quantity: 2.5,
+        purchase_price: 80_00,
+        current_price: 100_00,
+      })
       const v = await h.svc.getInvestmentValue(inv.id)
       expect(v.currentValue).toBe(250_00)
       expect(v.costBasis).toBe(200_00)
@@ -414,7 +507,13 @@ describe('mod-finance S3 — derived analytics', () => {
     })
 
     it('a zero cost basis yields a null gainLossPct (no divide-by-zero)', async () => {
-      const inv = await h.svc.createInvestment({ name: 'Gift', investment_type: 'stock', quantity: 10, purchase_price: 0, current_price: 100_00 })
+      const inv = await h.svc.createInvestment({
+        name: 'Gift',
+        investment_type: 'stock',
+        quantity: 10,
+        purchase_price: 0,
+        current_price: 100_00,
+      })
       const v = await h.svc.getInvestmentValue(inv.id)
       expect(v.currentValue).toBe(1_000_00)
       expect(v.costBasis).toBe(0)
@@ -441,10 +540,34 @@ describe('mod-finance S3 — derived analytics', () => {
     beforeEach(async () => {
       const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
       const b = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 40_00, category: 'food', date: '2026-08-10' })
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 60_00, category: 'food', date: '2026-09-10' })
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'rent', date: '2026-09-11' })
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'income', amount: 500_00, category: 'salary', date: '2026-09-01' })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'expense',
+        amount: 40_00,
+        category: 'food',
+        date: '2026-08-10',
+      })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'expense',
+        amount: 60_00,
+        category: 'food',
+        date: '2026-09-10',
+      })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'expense',
+        amount: 10_00,
+        category: 'rent',
+        date: '2026-09-11',
+      })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'income',
+        amount: 500_00,
+        category: 'salary',
+        date: '2026-09-01',
+      })
       await h.svc.createTransfer({ fromAccountId: a, toAccountId: b, amount: 25_00, date: '2026-09-15' }) // must never appear
     })
 
@@ -479,8 +602,20 @@ describe('mod-finance S3 — derived analytics', () => {
 
     it('equal-total categories sort deterministically (stable tiebreak, no ORDER BY)', async () => {
       const a = (await h.svc.createAccount({ name: 'C', account_type: 'checking' })).id
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'zeta', date: '2026-10-01' })
-      await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 10_00, category: 'alpha', date: '2026-10-02' })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'expense',
+        amount: 10_00,
+        category: 'zeta',
+        date: '2026-10-01',
+      })
+      await h.svc.createTransaction({
+        account_id: a,
+        transaction_type: 'expense',
+        amount: 10_00,
+        category: 'alpha',
+        date: '2026-10-02',
+      })
       const rows = await h.svc.getSpendingByCategory({ from: '2026-10-01', to: '2026-10-31' })
       expect(rows.map((r) => r.category)).toEqual(['alpha', 'zeta']) // equal totals → category asc, not row order
     })
@@ -528,13 +663,22 @@ describe('mod-finance S4 — move_money effect handler', () => {
 
   beforeEach(async () => {
     h = await setup()
-    acctA = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 100_00, current_balance: 100_00 })).id
+    acctA = (
+      await h.svc.createAccount({
+        name: 'A',
+        account_type: 'checking',
+        opening_balance: 100_00,
+        current_balance: 100_00,
+      })
+    ).id
     acctB = (await h.svc.createAccount({ name: 'B', account_type: 'savings' })).id
     wire()
   })
 
   it('registers + executes move_money as ONE transfer row that moves both balances (FIN-26/BR-S4-1)', async () => {
-    const res = await rail.applyEffect(ev({ payload: { fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-20' } }))
+    const res = await rail.applyEffect(
+      ev({ payload: { fromAccountId: acctA, toAccountId: acctB, amount: 40_00, date: '2026-09-20' } }),
+    )
     expect(res.applied).toBe(true)
     const transfers = (await h.svc.listTransactions()).filter((t) => t.transaction_type === 'transfer')
     expect(transfers).toHaveLength(1)
@@ -570,7 +714,13 @@ describe('mod-finance S4 — move_money effect handler', () => {
     // deny-safe port is the default; a penalty lock must fail loud and revert the whole effect.
     await expect(
       // a penalty's target dimension IS the box being locked → targetRef = the box id (producer convention)
-      rail.applyEffect(ev({ transition: 'penalty', targetRef: 'box-1', payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, lockTarget: 'box-1' } })),
+      rail.applyEffect(
+        ev({
+          transition: 'penalty',
+          targetRef: 'box-1',
+          payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, lockTarget: 'box-1' },
+        }),
+      ),
     ).rejects.toBeInstanceOf(StoreLayerNotActive)
     expect(await h.svc.listTransactions()).toHaveLength(0) // transfer rolled back
     expect(await h.db.select().from(appliedEffects).all()).toHaveLength(0) // dedup key not burned (same tx rollback)
@@ -587,7 +737,13 @@ describe('mod-finance S4 — move_money effect handler', () => {
       async unlock() {},
     }
     wire(spyLock)
-    const res = await rail.applyEffect(ev({ transition: 'penalty', targetRef: 'box-1', payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, date: '2026-09-20', lockTarget: 'box-1' } }))
+    const res = await rail.applyEffect(
+      ev({
+        transition: 'penalty',
+        targetRef: 'box-1',
+        payload: { fromAccountId: acctA, toAccountId: acctB, amount: 20_00, date: '2026-09-20', lockTarget: 'box-1' },
+      }),
+    )
     expect(res.applied).toBe(true)
     expect(received).toBe(true) // lock was called WITH the tx
     expect((await h.svc.listTransactions()).filter((t) => t.transaction_type === 'transfer')).toHaveLength(1)
@@ -608,7 +764,14 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
   // ── FIN-20 recurring forecast ─────────────────────────────────────
   it('forecastRecurring projects a monthly recurring txn across the range; non-recurring excluded (FIN-20)', async () => {
     const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
-    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 20_00, date: '2026-01-15', is_recurring: true, recurring_frequency: 'monthly' })
+    await h.svc.createTransaction({
+      account_id: a,
+      transaction_type: 'expense',
+      amount: 20_00,
+      date: '2026-01-15',
+      is_recurring: true,
+      recurring_frequency: 'monthly',
+    })
     await h.svc.createTransaction({ account_id: a, transaction_type: 'income', amount: 5_00, date: '2026-01-20' }) // one-off, excluded
     const fc = await h.svc.forecastRecurring({ from: '2026-01-01', to: '2026-03-31' })
     expect(fc.map((f) => f.date)).toEqual(['2026-01-15', '2026-02-15', '2026-03-15'])
@@ -617,7 +780,14 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
 
   it('forecastRecurring clamps a month-end anchor + never drifts the day (Jan 31 → Feb 28 → Mar 31, F3)', async () => {
     const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
-    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 90_00, date: '2026-01-31', is_recurring: true, recurring_frequency: 'monthly' })
+    await h.svc.createTransaction({
+      account_id: a,
+      transaction_type: 'expense',
+      amount: 90_00,
+      date: '2026-01-31',
+      is_recurring: true,
+      recurring_frequency: 'monthly',
+    })
     const fc = await h.svc.forecastRecurring({ from: '2026-01-01', to: '2026-04-30' })
     expect(fc.map((f) => f.date)).toEqual(['2026-01-31', '2026-02-28', '2026-03-31', '2026-04-30']) // Feb not skipped; day restored to 31
   })
@@ -625,7 +795,14 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
   it('forecastRecurring does NOT silently vanish for a far-past anchor (arithmetic jump, F1)', async () => {
     const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking' })).id
     // a daily recurring anchored 26 years before the window — the old O(distance) advance loop starved to []
-    await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 1_00, date: '2000-01-01', is_recurring: true, recurring_frequency: 'daily' })
+    await h.svc.createTransaction({
+      account_id: a,
+      transaction_type: 'expense',
+      amount: 1_00,
+      date: '2000-01-01',
+      is_recurring: true,
+      recurring_frequency: 'daily',
+    })
     const fc = await h.svc.forecastRecurring({ from: '2026-03-01', to: '2026-03-05' })
     expect(fc.map((f) => f.date)).toEqual(['2026-03-01', '2026-03-02', '2026-03-03', '2026-03-04', '2026-03-05'])
   })
@@ -659,7 +836,14 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
     // an existing manual txn that one imported row should auto-match (date+amount within tolerance)
     await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 25_00, date: '2026-02-01' })
     const rows: ParsedStatementRow[] = [
-      { sourceRowId: 'r1', date: '2026-02-01', amountCents: 25_00, account_id: a, transaction_type: 'expense', description: 'Coffee' }, // matches existing
+      {
+        sourceRowId: 'r1',
+        date: '2026-02-01',
+        amountCents: 25_00,
+        account_id: a,
+        transaction_type: 'expense',
+        description: 'Coffee',
+      }, // matches existing
       { sourceRowId: 'r2', date: '2026-02-05', amountCents: 300_00, account_id: a, transaction_type: 'income' }, // new
     ]
     const { batchId, staged } = await h.svc.importStatement(rows)
@@ -704,7 +888,11 @@ describe('mod-finance S5 — external / ingestion / config seams', () => {
   it('assertExternalAccess delegates to the injected guard (permit resolves, deny → ZeroKnowledgeViolationError)', async () => {
     const permitSvc = createFinanceService({ db: h.db, deviceId: 'test-device', ingestionGuard: stubGuard(true) })
     await expect(permitSvc.assertExternalAccess(act)).resolves.toBeUndefined()
-    const denySvc = createFinanceService({ db: h.db, deviceId: 'test-device', ingestionGuard: stubGuard(false, 'server_proxy_refused') })
+    const denySvc = createFinanceService({
+      db: h.db,
+      deviceId: 'test-device',
+      ingestionGuard: stubGuard(false, 'server_proxy_refused'),
+    })
     await expect(denySvc.assertExternalAccess(act)).rejects.toBeInstanceOf(ZeroKnowledgeViolationError)
   })
 })
@@ -717,7 +905,12 @@ describe('mod-finance S6 — cross-module providers + delegates', () => {
 
   // ── FIN-33 Purpose measurement-source read seam ───────────────────
   it('getNetWorth returns the value + partial flag (ADR-011 §3.6); partial when an asset is unvalued', async () => {
-    await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 1_000_00, current_balance: 1_000_00 })
+    await h.svc.createAccount({
+      name: 'A',
+      account_type: 'checking',
+      opening_balance: 1_000_00,
+      current_balance: 1_000_00,
+    })
     await h.svc.createAsset({ name: 'Car', asset_type: 'vehicle', current_value: 5_000_00 })
     const clean = await h.svc.getNetWorth({ month: '2026-09' })
     expect(clean).toEqual({ value: 6_000_00, partial: false })
@@ -755,7 +948,14 @@ describe('mod-finance S6 — cross-module providers + delegates', () => {
 
   // ── FIN-32 + FIN-37 the Journal contribution ──────────────────────
   it('registers ONE finance Journal contribution; summary(date) = today txns + net-worth snapshot (FIN-32)', async () => {
-    const a = (await h.svc.createAccount({ name: 'A', account_type: 'checking', opening_balance: 200_00, current_balance: 200_00 })).id
+    const a = (
+      await h.svc.createAccount({
+        name: 'A',
+        account_type: 'checking',
+        opening_balance: 200_00,
+        current_balance: 200_00,
+      })
+    ).id
     await h.svc.createTransaction({ account_id: a, transaction_type: 'expense', amount: 30_00, date: '2026-03-15' })
     const registry = createJournalRegistry()
     registerFinanceJournal(registry, h.svc)
@@ -780,8 +980,19 @@ describe('mod-finance S6 — cross-module providers + delegates', () => {
   })
 
   it('dueIn(range) surfaces upcoming G9 installments (liabilities/income next_payment_date), empty → state:empty (FIN-37)', async () => {
-    await h.svc.createLiability({ name: 'Mortgage', liability_type: 'mortgage', current_balance: 100_000_00, next_payment_date: '2026-04-01', monthly_payment: 1_500_00 })
-    await h.svc.createIncomeStream({ name: 'Salary', income_type: 'salary', amount: 5_000_00, next_payment_date: '2026-04-05' })
+    await h.svc.createLiability({
+      name: 'Mortgage',
+      liability_type: 'mortgage',
+      current_balance: 100_000_00,
+      next_payment_date: '2026-04-01',
+      monthly_payment: 1_500_00,
+    })
+    await h.svc.createIncomeStream({
+      name: 'Salary',
+      income_type: 'salary',
+      amount: 5_000_00,
+      next_payment_date: '2026-04-05',
+    })
     const contrib = createFinanceJournalContribution(h.svc)
     const agenda = await contrib.dueIn!({ from: '2026-04-01', to: '2026-04-30' })
     expect(agenda.sectionKey).toBe('agenda')
@@ -804,7 +1015,14 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
 
   // ── FL-01 residency CRUD ──────────────────────────────────────────
   it('setResidency + list + soft-delete (FL-01); invalid owner_type rejects; not-found fails loud', async () => {
-    const r = await fl.setResidency({ owner_type: 'user', owner_id: 'u1', jurisdiction_code: 'US-CA', residency_type: 'resident', start_date: '2020-01-01', notes: 'primary' })
+    const r = await fl.setResidency({
+      owner_type: 'user',
+      owner_id: 'u1',
+      jurisdiction_code: 'US-CA',
+      residency_type: 'resident',
+      start_date: '2020-01-01',
+      notes: 'primary',
+    })
     expect(r.id).toBeTruthy()
     expect(r.owner_type).toBe('user')
     expect(r.end_date).toBeNull() // nullable coalesced
@@ -816,13 +1034,27 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
     expect((await fl.listResidencies()).find((x) => x.id === r.id)).toBeUndefined()
     // invalid enum + not-found
     // @ts-expect-error — invalid owner_type is the failure path under test
-    await expect(fl.setResidency({ owner_type: 'nope', owner_id: 'u', jurisdiction_code: 'X', residency_type: 't', start_date: '2020-01-01', notes: 'n' })).rejects.toThrow()
+    await expect(
+      fl.setResidency({
+        owner_type: 'nope',
+        owner_id: 'u',
+        jurisdiction_code: 'X',
+        residency_type: 't',
+        start_date: '2020-01-01',
+        notes: 'n',
+      }),
+    ).rejects.toThrow()
     await expect(fl.updateResidency('missing', { notes: 'x' })).rejects.toThrow(/not found/i)
   })
 
   // ── FL-03 legal-entity CRUD ───────────────────────────────────────
   it('registerLegalEntity (project_id optional, no-FK); [E] name/registration_ref round-trip (FL-03)', async () => {
-    const e = await fl.registerLegalEntity({ name: 'Acme LLC', entity_type: 'llc', jurisdiction_code: 'US-DE', registration_ref: 'REG-123' })
+    const e = await fl.registerLegalEntity({
+      name: 'Acme LLC',
+      entity_type: 'llc',
+      jurisdiction_code: 'US-DE',
+      registration_ref: 'REG-123',
+    })
     expect(e.project_id).toBeNull() // optional forward-dep, no-FK
     expect(e.name).toBe('Acme LLC')
     expect(e.registration_ref).toBe('REG-123')
@@ -849,9 +1081,19 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
 
   it('assertExternalGrant fails closed with no enforcer (M1); delegates when wired (FL-09)', async () => {
     await expect(fl.assertExternalGrant('cap-1', action)).rejects.toBeInstanceOf(ExternalGrantMissing)
-    const allowFl = createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc, enforcer: stubEnforcer(true) })
+    const allowFl = createFiscalLegalService({
+      db: h.db,
+      deviceId: 'test-device',
+      finance: h.svc,
+      enforcer: stubEnforcer(true),
+    })
     await expect(allowFl.assertExternalGrant('cap-1', action)).resolves.toBeUndefined()
-    const denyFl = createFiscalLegalService({ db: h.db, deviceId: 'test-device', finance: h.svc, enforcer: stubEnforcer(false) })
+    const denyFl = createFiscalLegalService({
+      db: h.db,
+      deviceId: 'test-device',
+      finance: h.svc,
+      enforcer: stubEnforcer(false),
+    })
     await expect(denyFl.assertExternalGrant('cap-1', action)).rejects.toBeInstanceOf(ExternalGrantMissing)
   })
 
@@ -886,7 +1128,10 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
   it('deriveObligations refuses an unverified pack (RulePackUnverified) and never persists', async () => {
     const fl = flWith()
     await expect(
-      fl.deriveObligations({ from: '2026-01-01', to: '2026-12-31' }, { jurisdiction_code: 'US-CA', version: 'v1', verified: false }),
+      fl.deriveObligations(
+        { from: '2026-01-01', to: '2026-12-31' },
+        { jurisdiction_code: 'US-CA', version: 'v1', verified: false },
+      ),
     ).rejects.toBeInstanceOf(RulePackUnverified)
     // a verified handle has no CONTENT to evaluate at M1 (owed) → no candidates, still no persist
     expect(await fl.deriveObligations({ from: '2026-01-01', to: '2026-12-31' }, verifiedPack())).toEqual([])
@@ -897,8 +1142,12 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
   it('confirmObligation persists exactly one obligation + surfaces the deferred fan-out (NoAutoAction structural)', async () => {
     const fl = flWith()
     const result = await fl.confirmObligation({
-      jurisdiction_code: 'US-CA', owner_type: 'user', owner_id: 'u1',
-      obligation_type: 'income_tax_filing', due_date: '2026-04-15', source_rulepack_version: 'v1',
+      jurisdiction_code: 'US-CA',
+      owner_type: 'user',
+      owner_id: 'u1',
+      obligation_type: 'income_tax_filing',
+      due_date: '2026-04-15',
+      source_rulepack_version: 'v1',
     })
     expect(result.obligation.id).toBeTruthy()
     expect(result.obligation.status).toBe('pending')
@@ -910,7 +1159,10 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
 
   // ── FL-06 ADVISE — deny-safe + positive stamp/disclosure via injected stub ──
   const stubAi = (content: string): AiService =>
-    ({ checkModelCall: async () => ({ permitted: true, disclosure: {} }), askModel: async () => ({ content }) }) as unknown as AiService
+    ({
+      checkModelCall: async () => ({ permitted: true, disclosure: {} }),
+      askModel: async () => ({ content }),
+    }) as unknown as AiService
 
   it('model: no AI → ModelUnavailable; unverified pack → InsufficientRuleData', async () => {
     await expect(
@@ -924,13 +1176,21 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
     ).rejects.toBeInstanceOf(InsufficientRuleData)
     // boundary validation: an empty defId / bad mode is rejected before any AI reach (parity with the other S8 ops)
     await expect(
-      flWith({ ai: stubAi('x') }).model({ defId: '', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'p' }, verifiedPack()),
+      flWith({ ai: stubAi('x') }).model(
+        { defId: '', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'p' },
+        verifiedPack(),
+      ),
     ).rejects.toThrow()
   })
 
   it('model with an injected AI stub returns source=ai + BOTH disclosures (FL-3 label + the mode bound)', async () => {
     const fl = flWith({ ai: stubAi('You may owe estimated tax quarterly.') })
-    const scenario: WhatIfScenario = { defId: 'd', jurisdiction_code: 'US-CA', mode: 'on_device', prompt: 'incorporate here?' }
+    const scenario: WhatIfScenario = {
+      defId: 'd',
+      jurisdiction_code: 'US-CA',
+      mode: 'on_device',
+      prompt: 'incorporate here?',
+    }
     const adv = await fl.model(scenario, verifiedPack())
     expect(adv.content).toContain('estimated tax')
     expect(adv.source).toBe('ai')
@@ -941,10 +1201,24 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
   // ── FL-07 — prepareFilingSummary RETURNS the real deliverable; exportFiling deny-safe ──
   it('prepareFilingSummary assembles + returns the summary (deliverable); only the format-export is deferred', async () => {
     const fl = flWith()
-    await fl.setResidency({ owner_type: 'user', owner_id: 'u1', jurisdiction_code: 'US-CA', residency_type: 'resident', start_date: '2020-01-01', notes: 'n' })
+    await fl.setResidency({
+      owner_type: 'user',
+      owner_id: 'u1',
+      jurisdiction_code: 'US-CA',
+      residency_type: 'resident',
+      start_date: '2020-01-01',
+      notes: 'n',
+    })
     const a = await h.svc.createAccount({ name: 'A', account_type: 'checking' })
     await fl.linkMoneyTouch('account', a.id, 'US-CA')
-    await fl.confirmObligation({ jurisdiction_code: 'US-CA', owner_type: 'user', owner_id: 'u1', obligation_type: 'filing', due_date: '2026-04-15', source_rulepack_version: 'v1' })
+    await fl.confirmObligation({
+      jurisdiction_code: 'US-CA',
+      owner_type: 'user',
+      owner_id: 'u1',
+      obligation_type: 'filing',
+      due_date: '2026-04-15',
+      source_rulepack_version: 'v1',
+    })
     const summary = await fl.prepareFilingSummary('US-CA')
     expect(summary.jurisdiction_code).toBe('US-CA')
     expect(summary.residencies.length).toBe(1)
@@ -957,7 +1231,13 @@ describe('mod-finance S8 — fiscal-legal INFORM / DERIVE / ADVISE (guarded)', (
   // ── FL-08 — long-run impact feed is deny-safe (never a silent no-op) ──
   it('feedLongRunImpact fails loud when the Purpose contributions writer is absent (ContributionsSinkNotActive)', async () => {
     await expect(
-      flWith().feedLongRunImpact({ goal_type: 'purpose', goal_id: 'p1', contributor_type: 'finance_target', contributor_id: 'f1', contribution_percentage: 10 }),
+      flWith().feedLongRunImpact({
+        goal_type: 'purpose',
+        goal_id: 'p1',
+        contributor_type: 'finance_target',
+        contributor_id: 'f1',
+        contribution_percentage: 10,
+      }),
     ).rejects.toBeInstanceOf(ContributionsSinkNotActive)
   })
 })

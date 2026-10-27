@@ -30,26 +30,26 @@ repos; seam registration is a `registerX(registry, svc)` helper; deps after S1 a
   for deliverable-source reads `[FACT: projects/types.ts:28-29; service.ts:61]` — tasks has no such read.
   [[spaces-junctions-split-read-write-tagentity-blind-inserts]]
 - **Tags — the write is `spaces.tagEntity(tagId,'task',id)` / `untagEntity`** `[FACT: foundation/spaces/service.ts:
-  44-45,128-155]` (idempotent BR-14; resolve-then-soft-delete BR-15; validates `entity_type` BR-2). It **blind-inserts
+44-45,128-155]` (idempotent BR-14; resolve-then-soft-delete BR-15; validates `entity_type` BR-2). It **blind-inserts
   an unresolved `tag_id`** (validates the type, never the tag) ⇒ the create path must guard
   (`flashcards/service.ts:189-192`: `tagsRepo.findById(tagId) == null ⇒ TagNotFound`; `findById` is soft-delete
   filtered `[FACT: db/repository.ts:356-363]` so a soft-deleted tag also refuses). The remove path stays unguarded.
 - **Tags — the read is a raw read-only `entity_tags` repo** `[FACT: notes/service.ts:276-282 getTagsForEntity;
-  knowledge/service.ts:184]` with the hand-appended `isNull(deleted_at)` ([[repository-findwhere-skips-softdelete-filter]]).
+knowledge/service.ts:184]` with the hand-appended `isNull(deleted_at)` ([[repository-findwhere-skips-softdelete-filter]]).
   No read API on `SpacesService` (it "owns the WRITE half").
 - **Notes — `notes.ensureEntityNote(pageType, entityType, entityId, seed)`** `[FACT: notes/types.ts:68-73;
-  service.ts:159-173]` is idempotent (returns the existing non-deleted page of that `pageType` for the entity, else
+service.ts:159-173]` is idempotent (returns the existing non-deleted page of that `pageType` for the entity, else
   creates with a deterministic seed). **`PAGE_TYPE` has a dedicated `'task_note'`** `[FACT: @vida/types/note.ts:23-30;
-  schema/notes.ts:46 SQL CHECK]` — knowledge/books fall back to `'note'` only because they have no dedicated type.
+schema/notes.ts:46 SQL CHECK]` — knowledge/books fall back to `'note'` only because they have no dedicated type.
   ⇒ tasks uses `'task_note'`. Seed = `{ title: task.title }` (the knowledge precedent; a seed is applied once at
   creation — status/kind would go stale, so they are not seeded).
 - **Views — the primitive is `ViewsService`** `[FACT: foundation/views/service.ts:25-37]`: `createView · updateView ·
-  deleteView · getView · cloneView`. **No `listViews`, no pin, no order.** `[FACT: schema/foundation/spaces.ts views
-  table — columns: space_id · name · layout · filter · grouping · sort · deleted_at; NO is_pinned / sort_order]`.
+deleteView · getView · cloneView`. **No `listViews`, no pin, no order.** `[FACT: schema/foundation/spaces.ts views
+table — columns: space_id · name · layout · filter · grouping · sort · deleted_at; NO is_pinned / sort_order]`.
   `[FACT: ADR-007:84-88 §3.5]` "a Task board is a `views` row with `entity_types=[task]`"; "**Nav placement /
   default-view preference lives in Preferences**". `[FACT: xcut-views XCU-20/XCU-21]` XCU-21 = "Preferences service
   (out of views scope)". `[FACT: grep services/preferences/types.ts — no view/pin surface]`. `[FACT: db/schema/
-  preferences.ts:56-58]` `user_preferences.dashboard_layout`/`default_dashboard_view` are DASHBOARD-scoped, not
+preferences.ts:56-58]` `user_preferences.dashboard_layout`/`default_dashboard_view` are DASHBOARD-scoped, not
   per-view; `[FACT: :92-101]` `nav_preferences` = dock/mobile-nav only (no view id, pin, or order);
   `[FACT: :111]` `command_bar_history.is_pinned` is the ⌘K palette store. `[FACT: spaces BR-9]`
   `spaces.default_view_id` names a Space's opener (Space-scoped, one slot). ⇒ **`pinView`/`reorderViews` have NO
@@ -73,6 +73,7 @@ repos; seam registration is a `registerX(registry, svc)` helper; deps after S1 a
   `[FACT: projects/types.ts:31]`). Follow the built pattern; the seam-contract is updated at currency (§XXIX).
 
 ## What is already built (the grounding floor)
+
 - `SpacesService` (tag CRUD + `tagEntity`/`untagEntity`, AR-6) · `TaggableTypeRegistry` seeded with `'task'` ·
   `NotesService.ensureEntityNote` (+ `pages.type` CHECK incl. `task_note`) · `ViewsService` CRUD/clone + `views` table ·
   `ViewProviderRegistry` (EMPTY) + `ViewEngine.resolve` · tasks S1–S7 (`listTasks` soft-delete-filtered; `getTask`;
@@ -81,7 +82,9 @@ repos; seam registration is a `registerX(registry, svc)` helper; deps after S1 a
   `[FACT: grep — none]` ⇒ **tasks is the FIRST consumer of both** (first-consumer-pull applies to any substrate gap).
 
 ## Scope (what's in ① vs deferred)
+
 **In (net-new, all on the built floor):**
+
 1. **Tags** — `tagTask(taskId, tagId)` · `untagTask(taskId, tagId)` · `getTaskTags(taskId)`.
 2. **Notes** — `getTaskNote(taskId)` (find-or-create the `task_note` page).
 3. **Views (cite-level, C8)** — `saveView(input)` (create, or REPLACE the config when `id` given) · `listViews()`
@@ -97,6 +100,7 @@ repos; seam registration is a `registerX(registry, svc)` helper; deps after S1 a
    `TimerNotWiredError` is KEPT as-is — renaming a shipped error would be a seam change).
 
 **Deferred — each traced to its homing doc, NOT manufactured:**
+
 - **`pinView(id)` / `reorderViews(ids)`** → **Preferences-OWNED (doc-resolved C8, see §Resolved below)** — not a
   tasks ① op; recorded as a first-consumer-pull gap against the Preferences corpus.
 - The full V1 anatomy (predicate-DSL grammar, cross-type resolution, per-layout required fields) → the dedicated
@@ -114,18 +118,20 @@ repos; seam registration is a `registerX(registry, svc)` helper; deps after S1 a
   projects precedent `service.ts:382-384`); tasks owns ONE guiding page.
 
 ## Resolved by the docs — C8: `pinView` / `reorderViews` are Preferences-owned
+
 Rerun C8 asked that this scoping be surfaced; the corpus answers it without a judgment call:
+
 - **Origin.** `pinView`/`reorderViews` entered the tasks contract at the first documentation commit (`77723cf`)
   from Victor's resolved intake gap **G1**: "a view = a saved configuration of {…}, **named, reorderable, pinnable**,
   user-created. Ships with presets (Today, Board, All-by-project)" `[FACT: docs/intake/tasks.md:49-51]`. So "pin" and
-  "reorder" are view-builder *nav placement* intents (which saved views show as tabs, in what order), not view
+  "reorder" are view-builder _nav placement_ intents (which saved views show as tabs, in what order), not view
   CONFIG (filter × layout × grouping — the `views` row, V1).
 - **Owner.** `[FACT: ADR-007:84-88 §3.5]` "**Nav placement / default-view preference lives in Preferences**
   (generalizing per-module visibility to per-Space), as established in ADR-006." `[FACT: information-architecture.md
-  §6:128-131]` "Per-module visibility generalizes to **per-Space visibility, configured in Preferences** (ADR-006/007)."
+§6:128-131]` "Per-module visibility generalizes to **per-Space visibility, configured in Preferences** (ADR-006/007)."
   `[FACT: xcut-views XCU-21]` "Boundary note: the views service owns the view rows; **Preferences owns which opens
   where**" → candidate home "Preferences service (out of views scope)". `[FACT: views table — no pin/order column;
-  preferences.ts:56-58/92-101/111 — no view-scoped pin/order column; parts/preferences.md — no PRE row]`.
+preferences.ts:56-58/92-101/111 — no view-scoped pin/order column; parts/preferences.md — no PRE row]`.
 - **Therefore:** tasks' ① view surface is `saveView` + `listViews` (the row half); `pinView`/`reorderViews` are a
   Preferences capability the tasks contract NAMED but does not OWN (the same shape as `surface_calendar` in S3 D1:
   a valid capability tasks consumes, not emits). Not a deferral tasks manufactures — ownership the ADR assigns.
@@ -141,6 +147,7 @@ Rerun C8 asked that this scoping be surfaced; the corpus answers it without a ju
   service pulls it when fe-tasks' view-switcher lands.
 
 ## Operations
+
 ```ts
 // Tags (TAS-27) — writes delegate to SpacesService; the read is a raw read-only entity_tags repo
 tagTask(taskId: string, tagId: string): Promise<EntityTagRow>   // TaskNotFoundError · TagNotFound (live-tag guard) · TasksDepNotWiredError('spaces')
@@ -157,36 +164,48 @@ registerTasksReadProvider(providers: ViewProviderRegistry, svc: TasksService): v
 // Presets data (TAS-30)
 export const TASK_VIEW_PRESETS: readonly TaskViewPreset[]
 ```
+
 Substrate addition (first-consumer-pull): `ViewsService.listViews(): Promise<ViewRow[]>` — `repo.findAll()`
 (soft-delete filtered), ordered by `created_at` then `id` (findAll has no ORDER BY — the S7 g2 F2 lesson).
 
 ## Types (net-new)
+
 ```ts
 /** The tasks-side view input = the WHOLE config (the view-builder draft). `entity_types` is NOT accepted — tasks STAMPS
  *  `['task']` (ADR-007 §3.5: a task view IS a views row with entity_types=[task]); predicates/grouping/sort pass through
  *  opaque (the DSL is the 007 pass). With `id`, the config is REPLACED (see flow) — there is no partial-patch form. */
 export interface SaveTaskViewInput {
-  id?: string                      // present ⇒ replace that task view's config
+  id?: string // present ⇒ replace that task view's config
   name: string
-  layout: ViewLayout               // VIEW_LAYOUT (BR-10)
-  space_id?: string | null         // create: NULL = global All-Tasks view (V2). update: OMITTED ⇒ ownership unchanged
-  tags?: string[]                  // tag ids (filter.tags) — omitted ⇒ none
+  layout: ViewLayout // VIEW_LAYOUT (BR-10)
+  space_id?: string | null // create: NULL = global All-Tasks view (V2). update: OMITTED ⇒ ownership unchanged
+  tags?: string[] // tag ids (filter.tags) — omitted ⇒ none
   predicates?: Record<string, unknown> // omitted ⇒ none
-  grouping?: ViewGrouping          // omitted ⇒ null
-  sort?: unknown                   // omitted ⇒ null
+  grouping?: ViewGrouping // omitted ⇒ null
+  sort?: unknown // omitted ⇒ null
 }
 /** A shipped preset = a task view config bound to the `kind` discriminator (T4 — the preset does NOT own one).
  *  `kind` is BOTH the tab binding (which preset shows for which kind, TAS-30) AND, when non-null, the preset's
  *  `predicates.kind` (expressible through the provider via the new `kind` filter key). */
-export interface TaskViewPreset { key: 'today' | 'board' | 'all_by_project'; kind: TaskKind | null; view: Omit<SaveTaskViewInput, 'id' | 'space_id'> }
+export interface TaskViewPreset {
+  key: 'today' | 'board' | 'all_by_project'
+  kind: TaskKind | null
+  view: Omit<SaveTaskViewInput, 'id' | 'space_id'>
+}
 /** S8 — `kind` filter key (own-table, additive): `ListTasksFilter.kind?: TaskKind` (validated by `TaskKindSchema`). */
 
-export class TasksDepNotWiredError extends Error { constructor(dep: 'spaces' | 'notes' | 'views') }
-export class TaskViewNotFoundError extends Error { constructor(viewId: string) } // absent, soft-deleted, or NOT a task view
+export class TasksDepNotWiredError extends Error {
+  constructor(dep: 'spaces' | 'notes' | 'views')
+}
+export class TaskViewNotFoundError extends Error {
+  constructor(viewId: string)
+} // absent, soft-deleted, or NOT a task view
 ```
+
 `TagNotFound` is re-used from `foundation/spaces/types` (the flashcards precedent) — no tasks-local duplicate.
 
 ## Operation flow + invariants
+
 - **`tagTask`:** `getTask` ⇒ `TaskNotFoundError`; `spaces` absent ⇒ `TasksDepNotWiredError('spaces')`;
   read-only `tagsRepo.findById(tagId)` null ⇒ `TagNotFound` (orphan guard — soft-deleted tags refuse too);
   `spaces.tagEntity(tagId,'task',taskId)` (idempotent: re-tag ⇒ same row; re-tag-after-untag ⇒ revived row).
@@ -206,7 +225,7 @@ export class TaskViewNotFoundError extends Error { constructor(viewId: string) }
   §3.3/§3.5 heterogeneous views are first-class; an "includes" guard would silently drop the other types because
   `filter` is ONE JSON column that `encodePatch` replaces whole `[FACT: views/service.ts:44]`). Then
   `views.updateView(id, { name, layout, filter: { entity_types:['task'], tags?, predicates? }, grouping ?? null,
-  sort ?? null, ...(space_id !== undefined ? { space_id } : {}) })` — the CONFIG (name · layout · filter · grouping ·
+sort ?? null, ...(space_id !== undefined ? { space_id } : {}) })` — the CONFIG (name · layout · filter · grouping ·
   sort) is written in full from the input (omitted optional keys ⇒ cleared: no tags/predicates, grouping/sort null);
   `space_id` is OWNERSHIP, not config — changed only when given. Rationale: "save" = the view-builder writing its
   whole draft (business-rules.md:35 R5 "save fails → keep editing"); a partial-patch form has no caller in ①.
@@ -219,14 +238,14 @@ export class TaskViewNotFoundError extends Error { constructor(viewId: string) }
      and the top-level grain do NOT apply (a sub-task IS returned by id; the by-id contract S7 relies on, BR-TK-S7-3,
      now honoured from the tasks side — one universal key).
   2. else the known `ListTasksFilter` keys are PICKED from `predicates` — `const PROVIDER_KEYS = ['status','priority',
-     'project_id','parent_task_id','completed','due_before','kind'] as const satisfies readonly (keyof ListTasksFilter)[]`
+'project_id','parent_task_id','completed','due_before','kind'] as const satisfies readonly (keyof ListTasksFilter)[]`
      (a `const` tuple narrows `k` to the literal key union so `shape[k]` is typed per key; `noUncheckedIndexedAccess`
      is NOT enabled in `tsconfig.base.json` — preflight A2) — and validated **per key** via
      the INNER object schema: `ListTasksFilterSchema` is `z.object({…}).optional()` `[FACT: validators/task.ts:76-85]`
      and a `ZodOptional` exposes `.unwrap()`, not `.shape`, in zod 4.4.3 `[FACT: node_modules/.pnpm/zod@4.4.3/…/
-     v4/classic/schemas.d.ts:600-602; core/package.json "zod": "^4.4.3"]` ⇒ refactor: export
+v4/classic/schemas.d.ts:600-602; core/package.json "zod": "^4.4.3"]` ⇒ refactor: export
      `ListTasksFilterFieldsSchema = z.object({…})` and define `ListTasksFilterSchema =
-     ListTasksFilterFieldsSchema.optional()` (behaviour unchanged for `listTasks`); the provider uses
+ListTasksFilterFieldsSchema.optional()` (behaviour unchanged for `listTasks`); the provider uses
      `ListTasksFilterFieldsSchema.shape[k].safeParse(v)`; an invalid value drops that key (ignored, never a throw);
      unknown keys are ignored.
   3. **grain:** unless `predicates.parent_task_id` was given, `parent_task_id: null` is applied — top-level only,
@@ -239,7 +258,7 @@ export class TaskViewNotFoundError extends Error { constructor(viewId: string) }
      (cycle-safe even though BR-3 forbids cycles on write) ⇒ the requested ids ∪ all live descendants; then keep
      the tasks whose live `entity_tags` rows carry **any** of the expanded ids. Soft-deleted descendants are not
      expanded, and **the walk stops at a soft-deleted node** — a live grandchild beneath it is NOT reached (`a ⊃ a/x
-     ⊃ a/x/y` with `a/x` soft-deleted ⇒ `a/x/y`'s tasks drop out of the `a` view; Spaces has no delete-reparent rule,
+⊃ a/x/y` with `a/x` soft-deleted ⇒ `a/x/y`'s tasks drop out of the `a` view; Spaces has no delete-reparent rule,
      so the cut is the honest reading); an unknown id expands to itself (matches nothing). **Input hardening
      (XCU-13 "honours what it understands"):** `filter.tags` arrives from opaque JSON — accept only
      `Array.isArray(t)` and keep only `string` members; anything else (e.g. `tags:'abc'`) is IGNORED, never iterated.
@@ -267,24 +286,27 @@ export class TaskViewNotFoundError extends Error { constructor(viewId: string) }
   admits `db/schema/foundation/spaces` — no widening; gate 10 adds the positive assertion.
 
 ## Deps / validators
+
 - `spaces?: SpacesService` · `notes?: NotesService` · `views?: ViewsService` — type-only imports
   (`../../foundation/spaces`, `../notes`, `../../foundation/views`). Optional + fail-loud (the S4 shape).
 - `SaveTaskViewSchema` (`validators/task.ts`): `id?: uuid-ish string · name: min 1 · layout: ViewLayoutSchema ·
-  space_id?: string|null · tags?: string[] · predicates?: z.record(z.string(), z.unknown()) [zod v4 takes TWO args] ·
-  grouping?: {field?: string} · sort?: unknown`. Authored as **`z.strictObject({…})`** (zod 4.4.3: `.strict()` is
+space_id?: string|null · tags?: string[] · predicates?: z.record(z.string(), z.unknown()) [zod v4 takes TWO args] ·
+grouping?: {field?: string} · sort?: unknown`. Authored as **`z.strictObject({…})`** (zod 4.4.3: `.strict()` is
   `@deprecated` in favour of `z.strictObject` — preflight A3) so `entity_types` is REJECTED if present — the stamp is
   not overridable.
 - `ListTasksFilterFieldsSchema` += `kind: TaskKindSchema.optional()`; `ListTasksFilter` += `kind?: TaskKind`;
   `listTasks` += the `kind` predicate (own-table, additive, non-breaking).
 - **No `@vida/types` change, no migration, no schema change, no new dep.** One substrate addition
   (`ViewsService.listViews` + its spaces test) **with its §XXIX currency in the SAME commit**: `docs/core/spaces/
-  current-spec.md:30` (the `ViewsService` line) + its BR table + `:50` test count + `packages/core/src/foundation/
-  views/CLAUDE.md`; and `packages/core/src/services/tasks/CLAUDE.md` Status (stale through S7 — rewritten to S1–S8).
+current-spec.md:30` (the `ViewsService` line) + its BR table + `:50` test count + `packages/core/src/foundation/
+views/CLAUDE.md`; and `packages/core/src/services/tasks/CLAUDE.md` Status (stale through S7 — rewritten to S1–S8).
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3, REAL spaces/notes/views services + registries)
+
 Harness: `createTaggableTypeRegistry()` · `createSpacesService(db, dev, registry)` · `createBacklinkResolver(db, dev)` ·
 `createNotesService({db, deviceId, spaces, backlinks, registry})` · `createViewsService(db, dev)` ·
 `createViewProviderRegistry()` + `createViewEngine(registry)` (the notes/spaces test wiring).
+
 1. **tagTask** happy path ⇒ an `entity_tags` row `{tag_id, entity_type:'task', entity_id}`; `getTaskTags` returns it;
    re-tag ⇒ same row id (idempotent); untag ⇒ `getTaskTags` empty; re-tag after untag ⇒ the row REVIVED (same id);
    `getTaskTags(unknownId)` ⇒ `[]` (a read, no throw).
@@ -311,7 +333,7 @@ Harness: `createTaggableTypeRegistry()` · `createSpacesService(db, dev, registr
 7. **ReadProvider — end to end through the REAL engine:** register via `registerTasksReadProvider`; a saved task view
    with `predicates:{status:'completed'}` resolved by `ViewEngine.resolve(view)` ⇒ `state:'success'`, rows = the
    completed top-level tasks only, `degraded:[]`; a view selecting `['task','page']` ⇒ `state:'success'` (a MISSING
-   provider is *degraded*, not *error* `[FACT: engine.ts:49-51,77]`), task rows present, `degraded` = exactly one
+   provider is _degraded_, not _error_ `[FACT: engine.ts:49-51,77]`), task rows present, `degraded` = exactly one
    entry naming `page` (BR-11) — the seam works in both directions (S7 consumed; S8 provides).
 8. provider predicates: `{id}` ⇒ exactly that task (or `[]`); `{id:<subtask>}` ⇒ that sub-task row (by-id
    short-circuits the grain); an unknown key ⇒ ignored; an INVALID known value (`status:'bogus'`) ⇒ that key dropped,
@@ -328,19 +350,21 @@ Harness: `createTaggableTypeRegistry()` · `createSpacesService(db, dev, registr
 10. **Structural (C5/TK-9):** the existing import-scoped test passes unchanged (`db/schema/foundation/spaces` is
     already admitted) + the positive assertion: `service.ts` imports `db/schema/foundation/spaces` and
     `foundation/{spaces,views}` / `services/notes` type-only, and still no `services/{projects,relationships,
-    learning-education,languages}` and no `db/schema` barrel.
+learning-education,languages}` and no `db/schema` barrel.
 11. Full tasks suite green (76 + S8) · tsc 0 · eslint 0 · full `@vida/core` suite ALONE at the end.
 
 ## Preflight addendum (gate 2 — `/preflight` PASSED, 0 rule gaps; folded before Approval 2)
+
 Independent preflight + ADR-006/007/009/002 check: every S8 choice CONFORMS (table in the gate record). Two
 implementability corrections are binding on the build, the rest are implementer facts:
+
 - **A1 (binding) — `PageRow` is imported in `types.ts` ONLY.** The structural gate reads `service.ts` import lines
   and admits only `db/schema/(tasks|foundation/)`; `import type { PageRow } from '../../db/schema/notes'` in
   `service.ts` would fail it, and the notes barrel does not re-export `PageRow`. `types.ts` (ungated; already imports
   `db/schema/foundation/sessions`) carries `getTaskNote(): Promise<PageRow>`; `service.ts` lets the return type infer
   from `notes.ensureEntityNote(...)` (no `explicit-function-return-type` rule is active). The notes barrel is untouched.
 - **A3 (binding) — zod 4.4.3 shapes:** `z.strictObject({...})` (not the deprecated `.strict()`); `z.record(z.string(),
-  z.unknown())` (two args); `ZodOptional.unwrap()` exists, `.shape` does not → the `ListTasksFilterFieldsSchema` split.
+z.unknown())` (two args); `ZodOptional.unwrap()` exists, `.shape` does not → the `ListTasksFilterFieldsSchema` split.
 - **A2** — `noUncheckedIndexedAccess` is OFF; `noUnusedLocals`/`noUnusedParameters` are ON (no dead helpers);
   `isolatedModules` ON (type-only names use `import type`). ESLint = recommended + `no-unused-vars` (`^_` args) +
   `no-explicit-any: warn`; the `and(...)!` assertion is already used in this file (`:312,368`).
@@ -370,7 +394,7 @@ implementability corrections are binding on the build, the rest are implementer 
   `foundation/spaces/__tests__/spaces.test.ts` next to the `cloneView (XCU-05)` describe.
 - **Build-time refinement (§XXVIII, signature only — no decision changed):** the provider helpers take
   `{ svc, db, deviceId }` (not bare `svc`) — `createTasksReadProvider(deps)` / `registerTasksReadProvider(providers,
-  deps)` — because the `tags` membership read (nested expansion + the `entity_tags` scan) is a raw foundation-junction
+deps)` — because the `tags` membership read (nested expansion + the `entity_tags` scan) is a raw foundation-junction
   read that the public `TasksService` surface does not expose; this is exactly the `registerTasksTimer(deps)` shape
   (`service.ts:92`). `grouping?: ViewGrouping | null` widened on the substrate `CreateViewInput` (type-accuracy: the
   runtime already treats `== null` as a NULL write) so REPLACE can clear it.
@@ -379,7 +403,9 @@ implementability corrections are binding on the build, the rest are implementer 
   `service.ts:92-107` (module-level `export function` shape for the provider helpers).
 
 ## Addendum — g2 code review (post-implementation; §XXVIII: the spec never lags the code)
+
 Independent g2: **REVISE → folded → re-verified.** The code matched the spec; 1 BLOCKING + 5 NITs, all folded:
+
 - **F1 (blocking)** gate-9 asserted a real-clock `listViews` ORDER for three presets saved in the same ms (random id
   tiebreak ⇒ flaky) → set equality (the spec's gate 9 never asked for order).
 - **F2 — a soft-deleted REQUESTED tag now matches nothing** (semantic sharpened, BR-TK-S8-9): `expandTagIds` expands
@@ -395,11 +421,12 @@ Independent g2: **REVISE → folded → re-verified.** The code matched the spec
 - **F6** currency gaps beyond the list: `docs/core/spaces/current-spec.md` registry line (first registrant: tasks),
   the union INTERPRETATION recorded in `delivery/interpretation.md`, the Preferences first-consumer-pull gap in the task
   file's homed deferrals.
-Verified sound by g2 (not re-litigated): guard orders, REPLACE semantics + `encodePatch` nulls, `parseFilter` edge
-inputs, by-id short-circuit, per-key validation, no import cycle, no barrel collision, both structural gates, test 6's
-fake clock.
+  Verified sound by g2 (not re-litigated): guard orders, REPLACE semantics + `encodePatch` nulls, `parseFilter` edge
+  inputs, by-id short-circuit, per-key validation, no import cycle, no barrel collision, both structural gates, test 6's
+  fake clock.
 
 ## Out of scope
+
 `pinView`/`reorderViews` (Preferences-owned — ADR-007 §3.5 / IA §6 / XCU-21; filed as a Preferences first-consumer
 pull) · a multi-tag INTERSECTION combinator (007 DSL pass — a predicate, not membership) · a partial-patch
 `updateView` form (no ① caller) · the predicate-DSL

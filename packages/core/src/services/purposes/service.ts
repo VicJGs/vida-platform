@@ -15,7 +15,14 @@
 import { and, eq, isNull, isNotNull } from 'drizzle-orm'
 import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE } from '@vida/types'
 import type { ContributionGoalType, ContributionContributorType, BindingMode, Frequency } from '@vida/types'
-import { normalize, rollup, assertAcyclic, MeasurementCycle, type Binding, type EntityRef } from '../../foundation/measurement'
+import {
+  normalize,
+  rollup,
+  assertAcyclic,
+  MeasurementCycle,
+  type Binding,
+  type EntityRef,
+} from '../../foundation/measurement'
 import { type SessionTypeDef, DuplicateSubType } from '../../foundation/sessions'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { purposes, targets, dreams, purposeMetrics, purposeMetricValues, targetReviews } from '../../db/schema/purposes'
@@ -135,7 +142,11 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   const dreamsRepo = createRepository(db, dreams, { deviceId, softDelete: true, encryptedFields: [] })
   // Metrics + the value ledger carry NO deleted_at → softDelete:false (delete = hard).
   const metricsRepo = createRepository(db, purposeMetrics, { deviceId, softDelete: false, encryptedFields: [] })
-  const metricValuesRepo = createRepository(db, purposeMetricValues, { deviceId, softDelete: false, encryptedFields: [] })
+  const metricValuesRepo = createRepository(db, purposeMetricValues, {
+    deviceId,
+    softDelete: false,
+    encryptedFields: [],
+  })
   // contributions carries deleted_at → softDelete:true.
   const contributionsRepo = createRepository(db, contributions, { deviceId, softDelete: true, encryptedFields: [] })
   // S7 ledgers: target_reviews has NO deleted_at (ledger) → softDelete:false; purpose_reviews + plan_steps carry it.
@@ -197,7 +208,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     } satisfies CreateInput<typeof purposes>)
   }
 
-  async function updatePurpose(id: string, patch: Parameters<PurposesService['updatePurpose']>[1]): Promise<PurposeRow> {
+  async function updatePurpose(
+    id: string,
+    patch: Parameters<PurposesService['updatePurpose']>[1],
+  ): Promise<PurposeRow> {
     const v = UpdatePurposeSchema.parse(patch)
     const existing = await purposesRepo.findById(id)
     if (!existing) throw new PurposeNotFoundError(id)
@@ -252,7 +266,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     const v = CreateTargetSchema.parse(input)
     // measurement_method is bind-managed on a non-manual target (its binding ref) — a live binding goes through
     // bind() so the DAG guard runs; reject a direct create that would smuggle a ref past it (g2 MINOR).
-    if (v.measurement_method != null && v.binding_mode != null && v.binding_mode !== 'manual') throw new BindingRefManaged()
+    if (v.measurement_method != null && v.binding_mode != null && v.binding_mode !== 'manual')
+      throw new BindingRefManaged()
     return targetsRepo.create({
       purpose_id: v.purpose_id ?? null, // nullable spine joint (PG-9)
       title: v.title,
@@ -282,7 +297,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     // measurement_method is bind-managed on a non-manual target (its binding ref) — reject a direct write that
     // would corrupt the ref / bypass the DAG guard (g2 MINOR). Clear the binding (bind → manual) first.
     const effectiveMode = v.binding_mode !== undefined ? v.binding_mode : existing.binding_mode
-    if (v.measurement_method !== undefined && effectiveMode != null && effectiveMode !== 'manual') throw new BindingRefManaged()
+    if (v.measurement_method !== undefined && effectiveMode != null && effectiveMode !== 'manual')
+      throw new BindingRefManaged()
     const data = stripUndefined({
       purpose_id: v.purpose_id,
       title: v.title,
@@ -413,7 +429,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     } satisfies CreateInput<typeof purposeMetrics>)
   }
 
-  async function updateMetric(id: string, patch: Parameters<PurposesService['updateMetric']>[1]): Promise<PurposeMetricRow> {
+  async function updateMetric(
+    id: string,
+    patch: Parameters<PurposesService['updateMetric']>[1],
+  ): Promise<PurposeMetricRow> {
     const v = UpdateMetricSchema.parse(patch)
     if (!(await metricsRepo.findById(id))) throw new MetricNotFoundError(id)
     const data = stripUndefined({
@@ -543,7 +562,13 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
       case 'quantitative':
         return t.current_value == null || t.target_value == null
           ? null
-          : normalize({ kind: 'quantitative', current: t.current_value, baseline: 0, target: t.target_value, isHigherBetter: true })
+          : normalize({
+              kind: 'quantitative',
+              current: t.current_value,
+              baseline: 0,
+              target: t.target_value,
+              isHigherBetter: true,
+            })
       case 'milestone':
         return normalize({ kind: 'milestone', done: t.status === 'completed' })
       case 'rate':
@@ -673,7 +698,10 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     return i <= 0 || i === key.length - 1 ? null : { type: key.slice(0, i), id: key.slice(i + 1) }
   }
 
-  async function bind(target: { type: 'target'; id: string }, input: Parameters<PurposesService['bind']>[1]): Promise<TargetRow> {
+  async function bind(
+    target: { type: 'target'; id: string },
+    input: Parameters<PurposesService['bind']>[1],
+  ): Promise<TargetRow> {
     const v = BindSchema.parse(input)
     if (!(await targetsRepo.findById(target.id))) throw new TargetNotFoundError(target.id)
     if (v.binding_mode === 'manual') {
@@ -685,7 +713,8 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
     const edges: Binding[] = []
     // Existing binding edges — exclude the target being (re)bound, its old edge is replaced by the proposed one.
     for (const t of await targetsRepo.findAll()) {
-      if (t.id === target.id || t.binding_mode == null || t.binding_mode === 'manual' || t.measurement_method == null) continue
+      if (t.id === target.id || t.binding_mode == null || t.binding_mode === 'manual' || t.measurement_method == null)
+        continue
       const src = parseRefKey(t.measurement_method)
       if (src) edges.push({ mode: t.binding_mode as BindingMode, source: src, target: { type: 'target', id: t.id } })
     }
@@ -892,7 +921,9 @@ export function createPurposesService(deps: PurposesServiceDeps): PurposesServic
   // The SS-7 due-work lane (canonical DueItem). TARGETS ONLY — purposes carry no next_review_date (schema/purposes.ts
   // :52-70), so review-due is target-grained. urgency=0 (M1.2 ranking, sessions/service.ts:705); est_minutes=15 default.
   async function dueIn(range: TimeRange): Promise<DueItem[]> {
-    const withReview = await targetsRepo.findWhere(and(isNotNull(targets.next_review_date), isNull(targets.deleted_at))!)
+    const withReview = await targetsRepo.findWhere(
+      and(isNotNull(targets.next_review_date), isNull(targets.deleted_at))!,
+    )
     const items: DueItem[] = []
     for (const t of withReview) {
       if (!t.next_review_date) continue

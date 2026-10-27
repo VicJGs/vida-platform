@@ -9,12 +9,8 @@
 import type { ConsequenceKind } from '@vida/types'
 import type { LedgerEntry, CurrencyBalance } from './types'
 
-export function computeBalance(
-  rows: LedgerEntry[],
-  ceiling?: number | null,
-): CurrencyBalance {
-  const sumBy = (k: ConsequenceKind): number =>
-    rows.filter((r) => r.kind === k).reduce((acc, r) => acc + r.amount, 0)
+export function computeBalance(rows: LedgerEntry[], ceiling?: number | null): CurrencyBalance {
+  const sumBy = (k: ConsequenceKind): number => rows.filter((r) => r.kind === k).reduce((acc, r) => acc + r.amount, 0)
 
   const earned = sumBy('earn')
   const locked = sumBy('lock')

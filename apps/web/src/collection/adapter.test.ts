@@ -44,10 +44,7 @@ describe('toCollectionChrome — the chrome mapping', () => {
   })
 
   it('derives filterActive + sortLabel from the saved view', () => {
-    const chrome = toCollectionChrome(
-      view({ filter: { tags: ['x'] }, sort: { field: 'due', dir: 'asc' } }),
-      resolved(),
-    )
+    const chrome = toCollectionChrome(view({ filter: { tags: ['x'] }, sort: { field: 'due', dir: 'asc' } }), resolved())
     expect(chrome.filterActive).toBe(true)
     expect(chrome.sortLabel).toBe('due ↑')
   })

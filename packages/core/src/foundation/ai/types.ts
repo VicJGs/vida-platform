@@ -58,13 +58,7 @@ export class UnknownAiMode extends Error {
 // ─── S2 — askModel core: mediated primitive · cloud=egress+scope-min · AI-egress audit ───
 // (XCU-22 / XCU-19 / XCU-27, + the on-device runtime seam XCU-26 consumed by the dispatch)
 
-import type {
-  EgressAuditRecord,
-  EgressDenyReason,
-  EgressSlice,
-  EgressTarget,
-  UserInitiationProof,
-} from '../egress'
+import type { EgressAuditRecord, EgressDenyReason, EgressSlice, EgressTarget, UserInitiationProof } from '../egress'
 
 // The model's output. Minimal at M1 (a model returns text); the concrete
 // response contract is a build-phase / M2 runtime concern (U-1). Never produced
@@ -211,8 +205,7 @@ export interface AiConnection {
   keyCustody: 'mediator'
 }
 
-export type AiConnectionDenyReason =
-  | 'key_not_mediated' // XCU-25 — a config whose key is not mediator-custodied is refused (fail-closed)
+export type AiConnectionDenyReason = 'key_not_mediated' // XCU-25 — a config whose key is not mediator-custodied is refused (fail-closed)
 
 // The durable ai_connections STORE port — M2 wires it ([E] + mediator key custody).
 // M1 default = an in-memory map inside the registry. `[FACT: ADR-015:114; ADR-002 §L2]`

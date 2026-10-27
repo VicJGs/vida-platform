@@ -1,9 +1,11 @@
-# Current Business Rules — check-ins   (level: Module · tier: STANDARD)
+# Current Business Rules — check-ins (level: Module · tier: STANDARD)
+
 > Coverage: schema (full) + colocated types/validators + 4/5 intake aspects — status: full (code) · full (aspects harvested).
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Check-ins are "deeply personal" (ADR-002 L982-985) → ZK-1 governs every free-text field. A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-19-mod-check-ins  ·  Source of truth = the code (Currency Rule §3.2b).
+> Last refreshed: 2026-09-19-mod-check-ins · Source of truth = the code (Currency Rule §3.2b).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
+
 - **CK-1 — Encrypted reflection, plaintext scales.** `top_intentions`, `wins`, `gratitude`, `challenges`,
   `tomorrow_focus`, `reflection`, `custom_data`, template `name`/`description`/question `label`/`placeholder`
   are `[E]` (ZK-1). `mood_score`/`energy_level`, `check_in_type`, `check_in_date`, schedule config are
@@ -16,7 +18,7 @@
   > ⚠ **CONTRADICTION (stale aspect doc):** business-rules.md CK-2 + structure-data.md still call this a "bug —
   > UNIQUE on date alone." The schema fixed it. The code is the truth.
 - **CK-3 — Six check-in types.** ✅ **REALIZED** — `CHECK_IN_TYPE = [morning, afternoon, evening, weekly_review,
-  monthly_review, yearly_review]`. `[FACT: entities/user.ts:104-111]`
+monthly_review, yearly_review]`. `[FACT: entities/user.ts:104-111]`
   > ⚠ **CONTRADICTION (stale):** aspect docs say "ships only 3 (morning, evening, weekly_review)." Now 6.
 - **CK-4 — Default template per type; columns = the built-in default.** The hardcoded `daily_check_ins` columns
   ARE the built-in default template, materialized for querying/trends; `custom_data` stores answers to **extra**
@@ -44,6 +46,7 @@
 - **CK-12 — Local-first.** Every check-in/template edit succeeds locally first; LWW on structured columns. `[FACT: LF-2; ADR-003]`
 
 ## 3. Rule inventory — explicit · implicit · invented
+
 - **EXPLICIT (schema-realized):** CK-1 ([E] tags), CK-2 (UNIQUE slot), CK-3 (6 types), CK-5 (UNIQUE field_key +
   field_type enum), CK-10 (no deleted_at, no-FK) — all cited to `check-ins.ts` / `entities/user.ts`.
 - **EXPLICIT (intake-specified, to build in service):** CK-4 (default templates + seed), CK-7 (Journal link),
@@ -55,6 +58,7 @@
   fix" framing) and the **unrealized E9 split** (CK-11) — both flagged above, neither is an invented rule.
 
 ## 4. Validation & edge cases
+
 - Enum CHECKs (SQL migration, sourced from the tuples): `check_in_type` (6), `field_type` (6), `schedule_type`
   (3), `preferred_time` (4); `mood_score`/`energy_level` BETWEEN 1 AND 10. `[FACT: entities/user.ts:104-126; check-ins.ts:52-53]`
 - A required template question blocks completion until answered (CK-5). A scale answer outside min/max is
@@ -62,17 +66,20 @@
   Editing yesterday's check-in is allowed and re-feeds its Journal day page (CK-7). `[FACT: business-rules.md:55-58]`
 
 ## 5. Terminal states
+
 Per capability: entry wizard · history/calendar · mood/energy trends · review · template builder · reminder fire
 — each with loading/empty/error/success enumerated in `docs/features/check-ins/business-rules.md:60-68` and
 mirrored in current-spec §5. Fail-loud on every error path (§6).
 
 ## 6. Failure behavior (fail loud — constitution §5)
+
 - A failed check-in save reverts optimistic state with a typed error — never silent loss of a personal entry. `[FACT: business-rules.md:71]`
 - A review where a module read fails shows available progress + a flag, never a falsely-complete review. `[INTENT G7]`
 - Trend/streak compute errors show a flagged partial, never a wrong number. `[INTENT G6,G9]`
 - Validating service methods reject asynchronously (not sync throw) — factory-service convention. `[FACT: memory factory-service-no-this-for-intra-calls]`
 
 ## Completion checklist
+
 - [x] §1 invariants with [FACT] (+ 3 stale-doc contradictions + 1 unrealized INTENDED delta flagged)
 - [x] §3 inventory (explicit/implicit/INVENTED classified) · [x] §4 validation/edge · [x] §5 states · [x] §6 fail-loud
 - [x] inherits docs/core; no child rule contradicts a parent · load-bearing [UNKNOWN] (CK-11 E9 scope) surfaced for the Decomposition Gate

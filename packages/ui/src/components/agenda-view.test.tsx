@@ -21,7 +21,14 @@ const WEEK: AgendaDay[] = [
     items: [
       { id: 'a', title: 'Read ch. 4', daypart: 'evening', weight: 'can' },
       { id: 'b', title: 'Morning check-in', daypart: 'morning', done: true },
-      { id: 'c', title: 'Finish the re-plan draft', daypart: 'morning', time: '09:30', weight: 'must', color: '#2563EB' },
+      {
+        id: 'c',
+        title: 'Finish the re-plan draft',
+        daypart: 'morning',
+        time: '09:30',
+        weight: 'must',
+        color: '#2563EB',
+      },
       { id: 'd', title: 'Call Mariana', daypart: 'afternoon', time: '17:00', done: false },
     ],
   },
@@ -59,10 +66,11 @@ describe('AgendaView', () => {
       expect(getByRole('list', { name: new RegExp(`Thursday.*${p}$`) })).toBe(lists[i])
     })
     // input order preserved within a daypart (b before c), evening item moved after afternoon
-    expect(within(lists[0]).getAllByRole('listitem').map((li) => li.textContent)).toEqual([
-      expect.stringContaining('Morning check-in'),
-      expect.stringContaining('Finish the re-plan draft'),
-    ])
+    expect(
+      within(lists[0])
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual([expect.stringContaining('Morning check-in'), expect.stringContaining('Finish the re-plan draft')])
     expect(within(lists[2]).getByText('Read ch. 4')).toBeTruthy()
     // Friday: ONE flat list, single-id labelledby, no daypart eyebrows inside its day
     expect(lists[3].getAttribute('aria-labelledby')?.split(' ')).toHaveLength(1)
@@ -101,7 +109,9 @@ describe('AgendaView', () => {
   })
 
   it('completion control: role="checkbox" only for completable items when onToggleItem is given', () => {
-    const { getAllByRole } = renderUI(<AgendaView days={WEEK} today={TODAY} onToggleItem={() => {}} aria-label="Agenda" />)
+    const { getAllByRole } = renderUI(
+      <AgendaView days={WEEK} today={TODAY} onToggleItem={() => {}} aria-label="Agenda" />,
+    )
     // b (done), d, e are completable; a, c, f are not
     const boxes = getAllByRole('checkbox')
     expect(boxes).toHaveLength(3)
@@ -195,7 +205,9 @@ describe('AgendaView', () => {
   })
 
   it('empty → role="status"; the slot overrides it', () => {
-    const { getByRole } = renderUI(<AgendaView days={[]} state="empty" empty={<span>Free week</span>} aria-label="Agenda" />)
+    const { getByRole } = renderUI(
+      <AgendaView days={[]} state="empty" empty={<span>Free week</span>} aria-label="Agenda" />,
+    )
     expect(getByRole('status').textContent).toBe('Free week')
   })
 

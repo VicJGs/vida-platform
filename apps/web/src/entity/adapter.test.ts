@@ -132,4 +132,3 @@ describe('toEntityProps — the rename seam passes through (notes-rescope R3)', 
     expect(p.titleRef).toBe(titleRef)
   })
 })
-

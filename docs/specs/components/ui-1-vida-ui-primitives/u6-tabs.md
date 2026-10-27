@@ -17,19 +17,22 @@ all addressed in-place (D2/D3/D4/D5, dev-warns, M1 relabel). **Next: Gate 2 — 
 
 ---
 
-## 1. Intent  [FACT: tabs.md §Intent]
+## 1. Intent [FACT: tabs.md §Intent]
+
 Switch between **peer views of the same content region**. Exactly one panel visible at a time; the tab strip is a
 persistent control surface, not a route.
 
-### What it is NOT  [FACT: tabs.md §Intent]
+### What it is NOT [FACT: tabs.md §Intent]
+
 - **NOT page navigation** → that is nav links / the router (UX-3), not Tabs.
 - **NOT a sequential flow** → that is a `Stepper` (does not exist; out of scope).
 - **NOT a menu of actions** → that is `Menu` (U7).
 
 ## 2. Baseline (code-as-is — verified this session)
+
 - **Build approach settled by the shipped pattern — no fork.** U1–U5 are hand-built on `@tamagui/core`
   (`styled()` + native `render:'<tag>'` element + injected CSS for what `styled()` can't see; **no new deps**,
-  web-first). ADR-001 §9 names *Tamagui* and core IS Tamagui; UI-1's reason to exist is to **build** these
+  web-first). ADR-001 §9 names _Tamagui_ and core IS Tamagui; UI-1's reason to exist is to **build** these
   primitives. A tabs kit (`@tamagui/tabs` / Radix) is out of scope by definition.
   [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]] [FACT: U1–U5 pattern; ADR-001 §9]
 - **Sub-theme already generated, not yet registered.** `light_Tabs`/`dark_Tabs` exist in `themes.ts:33-34`
@@ -37,7 +40,7 @@ persistent control surface, not a route.
   only Button/Input/Checkbox/Select/Card (`:15-24`, `:75-84`). → the U6 config change is **additive**: import +
   add `light_/dark_Tabs` to the `themes:` object. [FACT: themes.ts:33-34; tamagui.config.ts:15-24,75-84]
 - **Component tokens** [FACT: component.json.tabs]: `text → {color.text.muted}`, `textActive →
-  {color.text.primary}`, `indicator → {color.brand.primary}`, `border → {color.border.default}` (the 1px
+{color.text.primary}`, `indicator → {color.brand.primary}`, `border → {color.border.default}` (the 1px
   tablist baseline rule). All four resolve to shipped DS-2 semantic tokens (three-layer intact). **No hover/
   disabled/focus component token** — hover = an overlay opacity, focus = `color.focus.ring` (primitive), disabled
   = reduced opacity (contract §Visual States). [FACT: component.json.tabs; tabs.md §Visual States]
@@ -53,22 +56,24 @@ persistent control surface, not a route.
   - a `hoverStyle`/`variant` for hover label-strengthen (`select.tsx` hover → `$colorTextMuted`), won as a Tamagui
     variant not injected CSS ([[injected-css-loses-to-tamagui-variants]]).
   - `{...rest}` spread-first (N1, `button.tsx:192`); `NODE_ENV` dev-warn (`button.tsx:169`); forwardRef; jsdom `*.test.tsx`.
-  [FACT: files read]
+    [FACT: files read]
 - **Verify:** `pnpm --filter @vida/ui typecheck && build && test` (currently @vida/ui **113** tests). [FACT: CLAUDE.md]
 
-## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]])  [FACT: tabs.md:9-20]
+## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]]) [FACT: tabs.md:9-20]
+
 ```ts
 export interface TabsProps {
   value?: string
   defaultValue?: string
   onValueChange?: (v: string) => void
   items: ReadonlyArray<{ value: string; label: React.ReactNode; disabled?: boolean }>
-  orientation?: 'horizontal' | 'vertical'   // default 'horizontal'
+  orientation?: 'horizontal' | 'vertical' // default 'horizontal'
   size?: 'sm' | 'md' | 'lg'
-  children: React.ReactNode   // the panels (one visible at a time)
+  children: React.ReactNode // the panels (one visible at a time)
 }
 // forwardRef<HTMLDivElement | View, TabsProps>. Props exported.
 ```
+
 - **Controlled + uncontrolled** in one prop pair (`value` controlled; `defaultValue` seeds internal state). The
   React "controlled-or-uncontrolled" pattern — the mechanism (single source of truth, `onValueChange` always
   fires) is a **Step 2** design item. [INTERP: tabs.md API; React controlled pattern] → §9 D-list.
@@ -77,7 +82,8 @@ export interface TabsProps {
   `data-value`/keyed convention) is a **Step 2** structural decision — the contract is silent on the wiring.
   [UNKNOWN: tabs.md gives `children: ReactNode` only → §10 V-list; resolve in Step 2 grounded in the ARIA contract]
 
-## 4. Visual states (contract §Visual States — per tab unless noted)  [FACT: tabs.md §Visual States]
+## 4. Visual states (contract §Visual States — per tab unless noted) [FACT: tabs.md §Visual States]
+
 - **default** — unselected: muted label (`tabs.text`), no indicator; tablist sits on a 1px `tabs.border` baseline.
 - **hover** — label strengthens toward active (hover overlay opacity, B12).
 - **focus** — `:focus-visible` 2px ring on the tab (`color.focus.ring`), pointer-suppressed.
@@ -87,11 +93,13 @@ export interface TabsProps {
 - **error** — **N/A at the tab level** (a failed panel renders its own error inside the panel). [FACT: contract]
 - **empty** — **N/A** (Tabs always has ≥1 tab; an empty `items` set renders nothing — guard at the consumer). [FACT: contract]
 
-## 5. Motion (B12 — the indicator is the showcase)  [FACT: tabs.md §Motion]
-| Transition | Duration | Easing | Property |
-|-----------|----------|--------|----------|
+## 5. Motion (B12 — the indicator is the showcase) [FACT: tabs.md §Motion]
+
+| Transition      | Duration                  | Easing         | Property                                            |
+| --------------- | ------------------------- | -------------- | --------------------------------------------------- |
 | indicator moves | `duration.moderate` (250) | `easing.inOut` | **transform: translateX/Y only** (never left/width) |
-| panel swap | `duration.fast` | `easing.out` | opacity |
+| panel swap      | `duration.fast`           | `easing.out`   | opacity                                             |
+
 - **Reduced-motion:** indicator **jumps** instantly; panel swaps without fade. [FACT: contract; motion §IX]
 - ⚠ **The width problem (Step 2 core design):** tabs have different widths, so the indicator must both **resize**
   (per active tab) and **move**. B12 permits animating **transform only** → the resize is an **instant** width/
@@ -99,7 +107,8 @@ export interface TabsProps {
   in a layout effect; drive `transform: translateX(offset)` + set width instantly) is designed + gated in Step 2.
   [FACT: contract "never left/width — B12"; §Performance "single transform, no per-frame layout"] → §9 D / §10 V.
 
-## 6. Accessibility (contract §A11y — [FACT: engineering §XIV])  [FACT: tabs.md §A11y]
+## 6. Accessibility (contract §A11y — [FACT: engineering §XIV]) [FACT: tabs.md §A11y]
+
 - **Roles:** container `tablist`; each tab `tab` with `aria-selected` + `aria-controls`→panel id; each panel
   `tabpanel` with `aria-labelledby`→tab id. `useId`-based id wiring (collision-safe, the Select precedent).
 - **Keyboard:** ←/→ (↑/↓ when `orientation="vertical"`) move selection between tabs via **roving tabindex**
@@ -108,11 +117,13 @@ export interface TabsProps {
 - **Focus on change:** "focus moves to the selected tab's panel" — verbatim §XIV. (Selection-follows-focus vs
   manual-activation is a **Step 2** decision grounded in the WAI-ARIA tabs pattern + this verbatim line.) → §9 D.
 
-## 7. Performance budget  [FACT: tabs.md §Performance]
+## 7. Performance budget [FACT: tabs.md §Performance]
+
 Only the active panel mounted, **or** all mounted with inactive ones `hidden` (consumer choice — Step 2 picks the
 default + whether it's configurable); indicator uses a **single transform**, no per-frame layout.
 
 ## 8. Definition of Done (U6) — acceptance
+
 - [ ] `TabsProps` = the contract interface **verbatim**; controlled (`value`) + uncontrolled (`defaultValue`) both
       work; `onValueChange` always fires on change; `items` drives the strip, `children` supply the panels.
 - [ ] Roles: `tablist` / `tab` (`aria-selected` + `aria-controls`) / `tabpanel` (`aria-labelledby`); `useId` wiring —
@@ -131,6 +142,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
       disabled muted + skipped; vertical orientation; **dark theme** correct — Victor confirms.
 
 ## 9. Decisions to make in Step 2 (planning) — flagged, not yet decided
+
 - **D1** — controlled/uncontrolled state machine (single source of truth; `onValueChange` semantics).
 - **D2** — how panels bind to tabs by `value` (sub-component `Tabs.Panel` vs keyed children vs `data-value`) — the
   contract is silent (§3); resolve grounded in the `aria-controls`/`aria-labelledby` id wiring.
@@ -142,6 +154,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
 - **D7** — arrow-key edge behavior: wrap vs clamp (WAI-ARIA allows either; pick + document).
 
 ## 10. Verify-at-impl (measure/confirm in-browser or against installed types — Step 2/impl)
+
 - **[V1]** Indicator translates (not left/width) and **resizes instantly** — confirm in compiled CSS + Visual Gate slide.
 - **[V2]** Roving tabindex + arrow/Home/End + disabled-skip + Tab-into-panel — jsdom + a real keyboard pass in Storybook.
 - **[V3]** `render:'button'` tab forwards the needed props/ref inside a `tablist` container (Select-trigger precedent).
@@ -149,6 +162,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
 - **[V5]** Vertical orientation re-maps keys + axis correctly — Visual Gate + jsdom.
 
 ## 11. Files (planned — confirmed in Step 2)
+
 - `packages/ui/src/components/tabs.tsx` — the primitive (tablist + tabs from `items` + indicator + panels + state
   machine + roving tabindex + keyboard).
 - `packages/ui/src/components/tabs.stories.tsx` — Visual-Gate surface: all applicable states × light｜dark; a live
@@ -166,6 +180,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
 # STEP 2 — PLAN (Rev 2) — gate-ready
 
 ## 12. Decisions resolved (D1–D7 → grounded)
+
 - **D1 — controlled/uncontrolled state = the Select mechanism verbatim.** `isControlled = value !== undefined`;
   `innerValue` seeded per **D8** (`defaultValue` iff it names an enabled tab, else `firstEnabledValue` — a tablist
   always has a selection, contract "≥1 tab");
@@ -173,19 +188,19 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   fires `onValueChange` (both modes). [FACT: select.tsx:136-138,188-196 — exact precedent] → no new pattern.
 - **D2 — panels bind via a compound `Tabs.Panel` sub-component (the ARIA contract forces a wrapper).** The contract
   gives `children: ReactNode` + mandates each panel be a `role="tabpanel"` with `aria-labelledby`→tab id and the tab's
-  `aria-controls`→panel id (§6). *Something* must carry the value→panel mapping AND let Tabs own the wrapper element —
+  `aria-controls`→panel id (§6). _Something_ must carry the value→panel mapping AND let Tabs own the wrapper element —
   so Tabs exports `Tabs.Panel` (`{ value: string; children: ReactNode }`); Tabs collects panels with
   **`React.Children.toArray(children)`** (flattens fragments, drops `null`/`false`/conditional children) then keeps
   only `isValidElement(c) && c.type === Tabs.Panel` before reading `c.props.value` (a non-Panel or a
   `{cond && <Tabs.Panel/>}` that evaluated false never throws) — matches `current`, and renders each into a
   Tabs-owned `role="tabpanel"` wrapper (id/`aria-labelledby`/`hidden`). [M4] **`TabsProps.children` stays `ReactNode`
-  verbatim** — the sub-component is the *shape* of those children,
+  verbatim** — the sub-component is the _shape_ of those children,
   not a change to the authored interface. Derived from §6 ARIA, not invented (the U5-slots precedent). [INTERP: tabs.md
   §6 + APG tabs pattern] → **DEF-U6-a** (§15): the contract should formalize the panel API; DS decides `Tabs.Panel`
   vs a `panels` prop. **Consumer contract:** every `Tabs.Panel.value` should match an `items[].value`; a dev-warn
   fires on an orphan panel or a tab with no panel (§14 dev-warns).
 - **D3 — indicator = absolute bar in a `position:relative` tablist; measured via `offsetLeft/Top` + `offsetWidth/
-  Height`; ONLY transform animates (B12).** Because the tablist is `position:relative` and the indicator + tabs are
+Height`; ONLY transform animates (B12).** Because the tablist is `position:relative` and the indicator + tabs are
   its children, a tab's `offsetLeft`/`offsetTop` is relative to the tablist (the offsetParent) — the value the
   indicator needs directly. A `useLayoutEffect` reads the active tab element (ref array, callback-ref narrowed to
   `HTMLElement` — select.tsx:404-406 precedent) and stores `{ start, size }`. **Re-measure deps** (all four matter —
@@ -193,7 +208,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   tablist** (label reflow / container resize, jsdom-guarded like Select's `scrollIntoView?.`) and
   **`document.fonts?.ready.then(remeasure)`** [M3] (web-font swap changes label widths — the classic mis-measure; also
   jsdom-guarded). Indicator inline style: horizontal → `transform: translateX(start)px; width: size px; height: 2px;
-  bottom: 0`; vertical → `transform: translateY(start)px; height: size px; width: 2px; insetInlineStart: 0`. **Both
+bottom: 0`; vertical → `transform: translateY(start)px; height: size px; width: 2px; insetInlineStart: 0`. **Both
   `transform` AND `width`/`height` are written every render** — they are **independent** style properties (not the
   mutually-exclusive `top`/`bottom` pair), each must reflect the measured tab; the general principle that Tamagui does
   not clear a stale inline style still applies, so writing them explicitly every render is correct hygiene. [INTERP:
@@ -212,7 +227,7 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   for tabs whose panels display without latency (only-active-mounted, D5, is instant). [FACT: tabs.md §6 "move
   selection"; WAI-ARIA APG tabs]. (Not manual activation — that would contradict "arrows move selection".)
 - **D5 — only the active panel mounts (default + only behavior in the verbatim API).** Contract §7 offers "only active"
-  **or** "all mounted + `hidden`" as *consumer choice*, but `TabsProps` authors **no mount-strategy prop** — so U6
+  **or** "all mounted + `hidden`" as _consumer choice_, but `TabsProps` authors **no mount-strategy prop** — so U6
   ships the performance-budget default (**only active panel mounted**, matching "one visible at a time" + "only the
   active panel mounted") and does not invent a knob. [FACT: tabs.md §7; verbatim API has no such prop] → **DEF-U6-b**
   (§15): DS adds `keepMounted?: boolean` if state-preservation is later needed (exact parallel to U5's DEF-U5-f — a
@@ -233,17 +248,18 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   select.tsx:177-186 helpers.]
 - **D6 — `size` → padding + label size variant; `orientation` → axis + arrow-key remap.** `size` (Select precedent,
   a Tamagui `variant`, `defaultVariants:{size:'md'}`): `sm → py $8 / px $12 / $caption` · `md → py $12 / px $16 /
-  $small` · `lg → py $16 / px $20 / $body`. `orientation`: `horizontal` (default) → tablist `flexDirection:'row'`,
+$small` · `lg → py $16 / px $20 / $body`. `orientation`: `horizontal` (default) → tablist `flexDirection:'row'`,
   baseline on `borderBottom`, indicator on the bottom edge, ←/→ keys; `vertical` → `flexDirection:'column'`, baseline
   on `borderInlineStart`, indicator on the inline-start edge, ↑/↓ keys. [FACT: tabs.md API + §6; select.tsx size
   variant] → a `variant` for size, a plain prop-branch for orientation (axis choices are structural, not a theme key).
 - **D7 — arrow keys WRAP (tablist convention), disabled tabs skipped, Home/End clamp to first/last enabled.** APG's
   tabs pattern wraps (last→first); a tablist is a short closed ring where wrap is expected. This **intentionally
-  differs from Select's no-wrap** (select.tsx:186) — a *listbox* is a long scrollable list where wrap is disorienting;
-  a *tablist* is not. Documented, not silent. Reuse Select's `firstEnabled`/`lastEnabled`/`step` helpers but make
+  differs from Select's no-wrap** (select.tsx:186) — a _listbox_ is a long scrollable list where wrap is disorienting;
+  a _tablist_ is not. Documented, not silent. Reuse Select's `firstEnabled`/`lastEnabled`/`step` helpers but make
   `step` **wrap** at the ends. [FACT: WAI-ARIA APG tabs (wrap) vs listbox (no-wrap); select.tsx:177-186]
 
 ## 13. Structure (the gate target)
+
 ```
 <TabsRoot ref={ref} orientation={orientation}>                        // styled(View,{name:'Tabs'}) → <div> (no role; the tablist child carries it). forwardRef→HTMLDivElement. {...rest} FIRST (N1) [m1]
   <TabList role="tablist" aria-orientation={orientation}               // aria-orientation = APG addition beyond the literal §6 (intentional) [m2]. position:relative; flexDirection row|column; baseline border on the trailing edge ($border)
@@ -277,12 +293,13 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   ))}
 </TabsRoot>
 ```
+
 - **`activate(i)`** = focus `tabEls[i]` + `select(items[i].value)` (auto-activation, D4). Used by click + all key nav.
 - **Panel `tabIndex` [B1] — always `0`, documented tradeoff.** APG makes a `tabpanel` focusable so keyboard users
-  reach *static* panel content; it also notes a panel that *already contains* a focusable element does not strictly
+  reach _static_ panel content; it also notes a panel that _already contains_ a focusable element does not strictly
   need `tabIndex=0` (the inner control is the Tab stop). U6 sets `tabIndex={0}` **unconditionally** — the shipped
   norm (Radix `Tabs.Content`, Reach) — rather than runtime-inspecting each panel for focusable descendants: it
-  guarantees the contract's "Tab moves focus into the panel" for *every* panel (incl. read-only ones), and the only
+  guarantees the contract's "Tab moves focus into the panel" for _every_ panel (incl. read-only ones), and the only
   cost is one extra (harmless, correctly-labelled) Tab stop before a focusable child. This is a deliberate,
   grounded choice, not an oversight; if a consumer finds the extra stop undesirable it is a DS refinement, not a UI-1
   bug. [FACT: WAI-ARIA APG tabs; Radix/Reach precedent.]
@@ -297,14 +314,16 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   flag (Select `.is-open` precedent); reduced-motion drops it. [FACT: select-styles.ts]
 
 ## 14. Dev-warns (NODE_ENV-guarded, DCE'd in prod — Button/Select precedent)
+
 1. A `Tabs.Panel` whose `value` matches no `items[].value` (orphan panel) — warn.
 2. An `items[]` entry with no matching `Tabs.Panel` — warn (a tab that controls nothing).
 3. `value`/`defaultValue` not matching any `items[].value` — warn (unreachable selection).
 4. `value`/`defaultValue` naming a **disabled** tab — warn [B2] (selection contradicts `aria-disabled`; uncontrolled
    falls back to first-enabled per D8, controlled left to the consumer).
-[FACT: button.tsx:169 dev-warn precedent; the D2 consumer contract; §12 D8.]
+   [FACT: button.tsx:169 dev-warn precedent; the D2 consumer contract; §12 D8.]
 
 ## 15. Deferrals + defects (bounded, flagged — not silent)
+
 - **DEF-U6-a (for DS) — the panel API is unspecified.** Contract gives `children: ReactNode`; the ARIA wiring forces a
   wrapper, so U6 introduces the compound `Tabs.Panel`. DS decides whether to formalize `Tabs.Panel` or switch to a
   `panels` prop. [[deliverable-is-the-doc-not-my-discretion]]
@@ -316,15 +335,18 @@ default + whether it's configurable); indicator uses a **single transform**, no 
   demonstrates it. [FACT: tabs.md §Visual States loading row; U5 DEF-U5-f precedent.]
 
 ## 16. Verify-at-impl (adds to §10)
+
 - **[V6]** `ResizeObserver` re-measures the indicator when a label reflows / container resizes — Visual Gate (resize
   the frame, indicator tracks). jsdom-guarded so tests don't throw.
 - **[V7]** First mount places the indicator **without** a slide (the `ready` flag) — Visual Gate on load.
 - **[V8]** Auto-activation: arrow changes selection AND the panel — jsdom (selection) + Visual Gate (panel swap).
 
 ## 17. Gate 1 — independent critique resolutions (REVISE → all addressed)
+
 Fresh adversarial subagent; verdict REVISE (2 blockers + 3 material + 4 minor). It independently confirmed the token
 grounding (component.json:tabs + themes.ts:33-34), the additive config change, the verbatim `TabsProps`, B12 legality
 of the transform/width asymmetry, and the D1/D6/D7 precedent citations. Resolutions:
+
 - **B1 (panel `tabIndex={0}` vs focusable-content APG case)** → §13 panel note: unconditional `tabIndex={0}` is a
   deliberate, grounded choice (Radix/Reach norm; guarantees "Tab into panel" for read-only panels; cost = one harmless
   extra stop) — not an oversight; a consumer-tunable extra-stop is a DS refinement.
@@ -341,6 +363,7 @@ of the transform/width asymmetry, and the D1/D6/D7 precedent citations. Resoluti
   hardened to `toArray` + `isValidElement` + `type===Tabs.Panel` (D2).
 
 ## 18. Build result + gates (2026-08-08) — IMPLEMENTED, Visual Gate PASS
+
 Files: `components/tabs.tsx` (+ compound `Tabs.Panel`) · `tabs.stories.tsx` · `tabs.test.tsx` (**23 jsdom**) ·
 `internal/tabs-styles.ts` (**new** — indicator transform transition + panel enter keyframe + hover strengthen +
 reduced-motion, reading `motion.ts`) · `tamagui.config.ts` (+`light_/dark_Tabs`) · `index.ts` (barrel: `Tabs`,
@@ -354,6 +377,7 @@ assumptions, 2 folded in: indicator thickness; indicator-in-tablist axe-verify) 
 implemented → **Component Visual Gate PASS** (Victor confirmed, both themes).
 
 **Visual Gate — measured in real Brave** (Playwright; the B12 showcase is unverifiable in jsdom where `offset*`=0):
+
 - **Indicator sits under the active tab + slides via transform, resizes instantly:** before `{x:32,w:118}` = active
   tab; after ArrowRight `{x:150,w:83}` = the new tab; `transform: translateX(0)→translateX(118px)`, width 118→83,
   `transition: transform 0.25s cubic-bezier(0.4,0,0.6,1)` — **transform ONLY** (no width/left in the transition). B12 ✓.

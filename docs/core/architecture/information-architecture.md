@@ -26,7 +26,7 @@ Vida navigation has **two co-primary axes** that coexist:
 
 - **Module dock — the content axis.** The fixed, grouped list of modules. Each module's canonical surface (its
   content home) lives here. This is where the user goes "to Finance," "to Tasks," "to Relationships."
-- **Spaces bar — the cross-cutting axis.** User-composed **Spaces** (built on tags + saved views) that cut *across*
+- **Spaces bar — the cross-cutting axis.** User-composed **Spaces** (built on tags + saved views) that cut _across_
   modules — e.g. a `#work` Space showing tasks, notes, projects, and contacts tagged `#work` together.
 
 **Ownership rule (resolves overlap):** the **module dock owns canonical content homes**; the **Spaces bar overlays
@@ -52,13 +52,13 @@ nav is designed to read it, but the table is built with Preferences (M1.1).
 
 Every module carries one placement (encoded in `module-map.ts`), anchored in its `identity.md`:
 
-| Class | Meaning |
-|-------|---------|
-| **dock** | a top-level content home in the module dock |
-| **global** | an always-present cross-cutting surface (owned by a module), reached from anywhere |
-| **secondary** | a reachable standalone page, but surfaced within another realm's flow (not a dock item) |
-| **non-nav** | lives entirely inside another realm; no nav entry of its own |
-| **spaces-only** | dissolved into the Spaces axis; not a module |
+| Class           | Meaning                                                                                 |
+| --------------- | --------------------------------------------------------------------------------------- |
+| **dock**        | a top-level content home in the module dock                                             |
+| **global**      | an always-present cross-cutting surface (owned by a module), reached from anywhere      |
+| **secondary**   | a reachable standalone page, but surfaced within another realm's flow (not a dock item) |
+| **non-nav**     | lives entirely inside another realm; no nav entry of its own                            |
+| **spaces-only** | dissolved into the Spaces axis; not a module                                            |
 
 ---
 
@@ -66,30 +66,30 @@ Every module carries one placement (encoded in `module-map.ts`), anchored in its
 
 Grouped per `system-overview.md §2`. Every user-facing module is placed.
 
-| Group | Modules (dock) |
-|-------|----------------|
-| **Integration** | Notes *(Journals = Home, see §4)* |
-| **Productivity** | Tasks · Habits · Projects · **Routines** |
-| **Knowledge** | Learning · Books · Knowledge · Skills · Sessions |
-| **Personal Growth** | Purposes & Goals *(capstone)* · Health |
-| **Life Management** | Finance · Relationships |
-| **Platform Services** | Gamification *(conditional — see §5)* |
+| Group                 | Modules (dock)                                   |
+| --------------------- | ------------------------------------------------ |
+| **Integration**       | Notes _(Journals = Home, see §4)_                |
+| **Productivity**      | Tasks · Habits · Projects · **Routines**         |
+| **Knowledge**         | Learning · Books · Knowledge · Skills · Sessions |
+| **Personal Growth**   | Purposes & Goals _(capstone)_ · Health           |
+| **Life Management**   | Finance · Relationships                          |
+| **Platform Services** | Gamification _(conditional — see §5)_            |
 
 **Routines is a dock item** — the OS's cross-module **orchestration cockpit**, "the place the user actually runs a
-block of life," the *active* counterpart to the passive Global Calendar. It *launches* Session sub-types but is
+block of life," the _active_ counterpart to the passive Global Calendar. It _launches_ Session sub-types but is
 explicitly "Not a session engine" — it is its own surface, not inside Sessions. `[routines/identity.md:5-8,45]`
 
 ---
 
 ## 4. Per-module surface class
 
-For each dock module, the IA reserves the *shape* of its surfaces. Specific view **modes** are NOT defined here —
+For each dock module, the IA reserves the _shape_ of its surfaces. Specific view **modes** are NOT defined here —
 they are each module's **per-module VIEWS review** (ADR-007 §3.6) at M1.1+. Every dock module has: a **top view**
 (multi-mode where its `identity.md` documents one), **standalone entity pages**, and **aggregate/index surfaces**.
 Examples (from each module's `identity.md`): Tasks — a multi-layout All-Tasks view + task pages + cross-module
 aggregate; Relationships — a multi-mode top view (dashboard / graph / contacts) + contact & network pages; Finance —
 a dashboard (financial/accounts) + account pages + net-worth tree; Habits — dashboard + per-habit analytics page.
-*(The complete surface inventory lives in the unit's `view-intent-harvest.md`.)*
+_(The complete surface inventory lives in the unit's `view-intent-harvest.md`.)_
 
 ---
 
@@ -97,14 +97,14 @@ a dashboard (financial/accounts) + account pages + net-worth tree; Habits — da
 
 **Global surfaces** (owned, reached from anywhere):
 
-| Surface | Route | Owner |
-|---------|-------|-------|
-| **Home** = Journal daily dashboard | `/` | Journals |
-| **Calendar** (dueIn aggregator — the passive view Routines mirrors) | `/calendar` | Sessions |
-| **Search (⌘K)** | overlay | Preferences *(UX by UX-2)* |
-| **Notifications** (inbox + badge) | `/notifications` | Notifications |
-| **Settings** | `/settings` | Preferences |
-| **Graph** (neural graph) | `/graph` | Notes / Relationships |
+| Surface                                                             | Route            | Owner                      |
+| ------------------------------------------------------------------- | ---------------- | -------------------------- |
+| **Home** = Journal daily dashboard                                  | `/`              | Journals                   |
+| **Calendar** (dueIn aggregator — the passive view Routines mirrors) | `/calendar`      | Sessions                   |
+| **Search (⌘K)**                                                     | overlay          | Preferences _(UX by UX-2)_ |
+| **Notifications** (inbox + badge)                                   | `/notifications` | Notifications              |
+| **Settings**                                                        | `/settings`      | Preferences                |
+| **Graph** (neural graph)                                            | `/graph`         | Notes / Relationships      |
 
 **Secondary:** **Check-ins** — the daily entry is surfaced within the Journal/Home flow, plus a reachable standalone
 page. Not a primary dock item. `[check-ins/identity.md:25]`
@@ -113,6 +113,7 @@ page. Not a primary dock item. `[check-ins/identity.md:25]`
 `feature_gamification` is on**. `[gamification/identity.md:8,43]`
 
 **Non-nav (live entirely inside another realm):**
+
 - **Pomodoro** → Focus Mode, the runtime of the `focus` Session sub-type; explicitly "not a standalone module."
   Reached from a Task or the Notes `/pomodoro` widget. `[pomodoro/identity.md:6,41]`
 - **Flashcards** → a study-method service inside Knowledge; explicitly "not its own module." `[flashcards/identity.md:3,38]`
@@ -158,6 +159,7 @@ code-splitting and a < 80 KB initial bundle; search/route params are Zod-validat
 ---
 
 ## References
+
 - `system-overview.md §2` — the module inventory this IA organizes
 - `apps/web/src/nav/module-map.ts` — the canonical nav/module map (code)
 - ADR-006 (Spaces & Tags), ADR-007 (Saved Views) — the substrate this IA amends (§1)

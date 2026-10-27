@@ -59,7 +59,15 @@ export function createFinanceJournalContribution(svc: FinanceService): JournalCo
       const upcoming = [
         ...liabilities.flatMap((l) =>
           inRange(l.next_payment_date)
-            ? [{ kind: 'liability' as const, id: l.id, name: l.name, date: l.next_payment_date, amount: l.monthly_payment ?? null }]
+            ? [
+                {
+                  kind: 'liability' as const,
+                  id: l.id,
+                  name: l.name,
+                  date: l.next_payment_date,
+                  amount: l.monthly_payment ?? null,
+                },
+              ]
             : [],
         ),
         ...incomes.flatMap((i) =>

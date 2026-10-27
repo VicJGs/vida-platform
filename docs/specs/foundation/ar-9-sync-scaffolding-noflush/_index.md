@@ -1,6 +1,8 @@
 # Spec: component:ar-9-sync-scaffolding-noflush
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented (2026-08-05 — 2 gate critiques + post-impl SHIP; core 183/183, typecheck 10/10, eslint 0)   <!-- draft → approved → implemented -->
+
+Status: implemented (2026-08-05 — 2 gate critiques + post-impl SHIP; core 183/183, typecheck 10/10, eslint 0) <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-05-ar-9-sync-scaffolding-noflush.
@@ -23,6 +25,7 @@ skeleton** — reserved public seams the M4 activation (AR-9b) fills with HLC/Yj
 reserves the shape. [FACT: ADR-017:28 "fill the stubs"; roadmap.md:88 "engine stubbed (M4 activates)"]
 
 ### What it is NOT (each fenced against a named owner — no boundary crossing)
+
 - **NOT the `sync_queue` table, the enqueue-WRITE, or the queue dedup/collapse.** All are **DB-6** (the
   co-transactional `enqueue` + its `UNIQUE(...)` UPSERT coalescing, ADR-004 §3.4 / ADR-003 §8.2) and
   already shipped. [FACT: m1.0-delivery-plan.md:183 "moved → DB-6"; migrations/001_sync_queue.ts;
@@ -40,11 +43,13 @@ reserves the shape. [FACT: ADR-017:28 "fill the stubs"; roadmap.md:88 "engine st
   never redefines. [FACT: packages/types/src/sync.ts]
 
 ### Reconciliation of the ADR-017 "0 lines" vs plan-`#15` apparent conflict (recorded for the critic)
+
 ADR-017:21 says the sync files "stay empty stubs (0 lines today)" and :61 sequences AR-9 in the
 hardening pass "after the feature deliverable"; the reconstruction places AR-9 at `#15` (before the
-M1.1 modules) and has it *write* a stub. Resolved, not decided ad-hoc:
+M1.1 modules) and has it _write_ a stub. Resolved, not decided ad-hoc:
+
 - **The authority that re-scoped AR-9 is the later doc, not this inference.** ADR-017:21's "0 lines
-  today" is superseded on the sequencing axis by the sanctioned replan: ADR-017:59-61 *delegates* the
+  today" is superseded on the sequencing axis by the sanctioned replan: ADR-017:59-61 _delegates_ the
   order, and the replan (delivery-plan:183 + reconstructed:72) assigns AR-9 a full **`B·F·C·L`
   doc-spine + gate at `#15`** — an artifact set that is **incompatible with a 0-line no-op**. That, not
   "fill presupposes seams," is why AR-9 writes the skeleton now. (ADR-017:28 "**fill** the stubs" is
@@ -55,11 +60,12 @@ M1.1 modules) and has it *write* a stub. Resolved, not decided ad-hoc:
   no-op. [FACT: roadmap.md:31-34; m1.0-delivery-plan.md:183 Doc `B·F·C·L`]
 
 ### 1.1 Gathered source set (delivery-plan §2.1 `[B]` DoD — routed, not derived)
+
 - **Authoritative scope:** `m1.0-delivery-plan.md:183` (the AR-9 row).
 - **Governing decision:** `ADR-003` §8 (offline queue/dedup/retry), §6.1 (field-LWW seam), §4.2 (Yjs
   seam); `ADR-017` §5/:21/:28 (scaffold-only, fill-later).
 - **Producer contract (fixed, consumed):** `migrations/001_sync_queue.ts`; `db/schema/foundation/
-  sync-queue.ts` (`SyncQueueRow`); `repository.ts:267` (`enqueue`; docblock :255).
+sync-queue.ts` (`SyncQueueRow`); `repository.ts:267` (`enqueue`; docblock :255).
 - **Types reused:** `packages/types/src/sync.ts` — `SyncOperation`, `SyncQueueItem`, `SyncQueueStatus`,
   `SyncBlob*`, `YjsSyncUnit`, `SyncCursor`, `SyncTriggerConfig`, `SyncResult`.
 - **Pattern in active use:** `foundation/sessions/registry.ts`, `foundation/spaces/service.ts`,
@@ -83,33 +89,37 @@ export class SyncNotActivated extends Error {
 ```
 
 `sync/queue.ts` — the sync-queue reader/flush seam (ADR-003 §8.1):
+
 ```ts
 export interface SyncQueueReader {
   /** Read pending items FIFO by created_at (ADR-003 §8.1). Activated at M4. */
-  readPending(): Promise<SyncQueueItem[]>          // [INTERP: SyncQueueItem from @vida/types]
+  readPending(): Promise<SyncQueueItem[]> // [INTERP: SyncQueueItem from @vida/types]
 }
-export function createSyncQueueReader(db: DrizzleDb): SyncQueueReader  // stub → readPending throws SyncNotActivated
+export function createSyncQueueReader(db: DrizzleDb): SyncQueueReader // stub → readPending throws SyncNotActivated
 ```
+
 > **No `collapse()` here (critique fix).** The create→delete collapse / last-state-wins dedup is the
-> *producer's* `UNIQUE(table_name,row_id,operation)` UPSERT — **DB-6**, already shipped (SY-5; ADR-003
+> _producer's_ `UNIQUE(table_name,row_id,operation)` UPSERT — **DB-6**, already shipped (SY-5; ADR-003
 > §8.2). Reserving it on the AR-9 reader would duplicate DB-layer logic AR-9 does not own. Any push-time
 > no-op filter is **AR-9b's**. [FACT: repository.ts:255-267; current-business-rules.md SY-5; ADR-003 §8.2]
 
 `sync/resolver.ts` — the field-LWW merge seam (ADR-003 §6.1); signature reserved, **no HLC, no merge**:
+
 ```ts
 export interface FieldLWWResolver {
-  merge(local: SyncBlob, remote: SyncBlob): SyncBlob   // [INTERP: SyncBlob from @vida/types §4.1]
+  merge(local: SyncBlob, remote: SyncBlob): SyncBlob // [INTERP: SyncBlob from @vida/types §4.1]
 }
-export function createFieldLWWResolver(): FieldLWWResolver  // stub → merge() throws SyncNotActivated
+export function createFieldLWWResolver(): FieldLWWResolver // stub → merge() throws SyncNotActivated
 ```
 
 `sync/crdt.ts` — the per-page Yjs seam (ADR-003 §4.2); signature reserved, **dependency-free** (no `yjs`):
+
 ```ts
 export interface YjsSyncSeam {
-  encode(unit: YjsSyncUnit): Uint8Array               // [INTERP: YjsSyncUnit from @vida/types §4.2]
+  encode(unit: YjsSyncUnit): Uint8Array // [INTERP: YjsSyncUnit from @vida/types §4.2]
   apply(unit: YjsSyncUnit, update: Uint8Array): void
 }
-export function createYjsSyncSeam(): YjsSyncSeam        // stub → both throw SyncNotActivated
+export function createYjsSyncSeam(): YjsSyncSeam // stub → both throw SyncNotActivated
 ```
 
 `sync/index.ts` — barrel: `export * from './types' | './queue' | './resolver' | './crdt'`.
@@ -117,17 +127,19 @@ Root `packages/core/src/index.ts` — add `export * from './sync'` under a heade
 (AR-9 · ADR-003 §8, scaffold-only). [FACT: index.ts pattern lines for foundation/services]
 
 ## 3. Business rules
+
 Governed by `docs/core/sync/current-business-rules.md` — the load-bearing ones for AR-9-now:
 **SY-1** no-flush (zero network I/O) · **SY-2** consumer-only of the queue · **SY-3** payload opaque (ZK)
 · **SY-8** resolver/crdt shape-only · **SY-9** activation is non-structural. [FACT: current-business-rules.md]
 
 ## 4. Definition of Done (verified by Vitest — no network, no schema change)
+
 1. `pnpm --filter @vida/core typecheck` — zero errors; `@vida/core` re-exports the `sync` barrel.
 2. `sync/__tests__/scaffold.test.ts`: (a) module imports + all exports resolve; (b) each seam method
-   throws `SyncNotActivated` (proves *stubbed*, M4-inert — the meaningful invariant); (c) each factory
+   throws `SyncNotActivated` (proves _stubbed_, M4-inert — the meaningful invariant); (c) each factory
    **constructs** without touching the DB or network (SY-1); (d) **no-consumer guard** — a repo-level
    assertion that no non-test module under `packages/`/`apps/` imports `core/src/sync/{queue,resolver,
-   crdt}` yet, locking the no-flush invariant AR-9b will later flip. (The naïve "no `fetch` string in
+crdt}` yet, locking the no-flush invariant AR-9b will later flip. (The naïve "no `fetch` string in
    `sync/`" check is dropped — trivially green by construction, proves nothing. Critique fix #6.)
 3. No new runtime dependency (no `yjs`); no migration; no `_sync_*` column added; `repository.ts`
    untouched (its interim `_sync_lww_ts = Date.now()` stays — corrected by DB-2/AR-9b, not AR-9).
@@ -136,6 +148,7 @@ Governed by `docs/core/sync/current-business-rules.md` — the load-bearing ones
    layer.
 
 ## 5. Build prompt (executable — cites §1–§4)
+
 Create `packages/core/src/sync/{types,queue,resolver,crdt,index}.ts` per §2, reusing all types from
 `@vida/types/src/sync.ts` (§1.1) and following the `foundation/*` factory+interface+`types.ts`-error
 pattern. All seam bodies throw `SyncNotActivated` (§2) — **no working logic, no `yjs`, no network, no
@@ -143,7 +156,8 @@ schema change** (§1 What-it-is-NOT, §4). Add `export * from './sync'` to the c
 `sync/__tests__/scaffold.test.ts` per §4.2. Gate: `/critique` → engineering quality-gate; then `[C]`+`[L]`.
 
 ## 6. Open items — resolved by the independent critique (2026-08-05, verdict REVISE→fixed)
-- **[RESOLVED]** stub idiom = *throw `SyncNotActivated`* (message-bearing + named, §2), not no-op —
+
+- **[RESOLVED]** stub idiom = _throw `SyncNotActivated`_ (message-bearing + named, §2), not no-op —
   explicit "sync off", matches the `types.ts` error idiom + vault.ts:31 guard. Critic **verified zero
   consumers** import the sync seams today, so the throw breaks nothing; the DoD §4.2(d) guard locks it.
 - **[RESOLVED]** `collapse()` **removed** from the AR-9 reader — it duplicates DB-6's UPSERT dedup

@@ -1,7 +1,7 @@
 # fe-codec-flow-session — Interpretation Layer (Entity Delivery Flow ②, Step 1)
 
-> **Unit:** LIF-210 · ② Frontend CODEC #11 · the **Flow/Session shell** — *deliverable-per-stage · attach
-> (doc/photo/audio) · mark-done/proof · effect-rail log*. G6 net-new. Blocked by `fe-codec-patterns` (#2) +
+> **Unit:** LIF-210 · ② Frontend CODEC #11 · the **Flow/Session shell** — _deliverable-per-stage · attach
+> (doc/photo/audio) · mark-done/proof · effect-rail log_. G6 net-new. Blocked by `fe-codec-patterns` (#2) +
 > `fe-codec-entity-facet` (#6) [FACT: docs/specs/foundation/frontend-replan/reconstructed-structure.md:31].
 > **Scope:** web, M1.0. The **4th archetype shell** (Collection #4 ✅, Dashboard #5 ✅, Entity #6 ✅, **Flow/Session #11 ← this**)
 > — it FRAMES a staged progression (a sequence of stages, each with a deliverable + attach + done/proof) + an effect-rail log,
@@ -18,10 +18,10 @@
 The **Flow/Session shell** — the archetype behind every **staged, do-this-then-that** surface in the OS: a session you run
 to completion, a routine you step through, a wizard you fill, a drill you grind. It is defined as:
 
-> **Flow / Session** = *"a **deliverable-per-stage page** + the persistent HUD"* [FACT: decomposition.md:33] — concretely,
-> *"entity title + summary · the current **stage** · the **deliverable + a description of what it should be** · **attach**
-> (document / photo / audio / file) · **mark-done or require proof**"*, and *"sessions **log to the entity via the effect
-> rail**"* [FACT: frontend-quality-bar/_index.md:134-138]. Session **types are open/extensible** (study · class · focus ·
+> **Flow / Session** = _"a **deliverable-per-stage page** + the persistent HUD"_ [FACT: decomposition.md:33] — concretely,
+> _"entity title + summary · the current **stage** · the **deliverable + a description of what it should be** · **attach**
+> (document / photo / audio / file) · **mark-done or require proof**"_, and _"sessions **log to the entity via the effect
+> rail**"_ [FACT: frontend-quality-bar/_index.md:134-138]. Session **types are open/extensible** (study · class · focus ·
 > reading · practice · workout · work · review · user-made) [FACT: quality-bar/_index.md:136; ADR-004-session-framework.md:33-35].
 
 **Where it sits — a FLOW FRAME that composes consumer-supplied stage bodies + a persistent effect log:**
@@ -39,23 +39,24 @@ the session/flow data (↑ @vida/core, apps/web)   THIS UNIT (FlowSessionView, @
 
 > **The Flow shell renders NO stage internals and fires NO effects — the load-bearing contrast, identical to its three
 > siblings.** Collection composed the 7 view renderers; Dashboard composed block widgets; Entity composed two facets; the Flow
-> shell composes **a sequence of stage bodies + a log of already-fired effects**, and *neither the stage body nor the effect
-> write is this unit's job* [FACT: collection-view.tsx:17-20; dashboard-view.tsx:17-24; entity-view.tsx:9-27]:
+> shell composes **a sequence of stage bodies + a log of already-fired effects**, and _neither the stage body nor the effect
+> write is this unit's job_ [FACT: collection-view.tsx:17-20; dashboard-view.tsx:17-24; entity-view.tsx:9-27]:
+>
 > - The **stage body** (what a deliverable + its description + the attach control + the proof affordance actually look like for
->   *this* flow) is the consumer's — a focus session's stage ≠ a grading-builder's stage ≠ a book-wizard's step.
+>   _this_ flow) is the consumer's — a focus session's stage ≠ a grading-builder's stage ≠ a book-wizard's step.
 > - The **effect rail** is an ADR-004 **backend** mechanism — the framework fires a catalogued set of writes on lifecycle
 >   transitions (`complete_habit · log_time · emit_measurement · … · award_xp · surface_journal · surface_calendar`)
 >   [FACT: docs/core/decisions/ADR-004-session-framework.md:60-62]. The shell only **displays the log** of what fired; it owns
->   no write. The shell emits lifecycle INTENTS via callbacks (the pomodoro-widget precedent — *"emits lifecycle intents via
->   callbacks"*) and the app wires the real transition/effect service [FACT: packages/ui/src/CLAUDE.md:273 "pomodoro-widget"].
+>   no write. The shell emits lifecycle INTENTS via callbacks (the pomodoro-widget precedent — _"emits lifecycle intents via
+>   callbacks"_) and the app wires the real transition/effect service [FACT: packages/ui/src/CLAUDE.md:273 "pomodoro-widget"].
 >
 > **So this unit builds the FRAME that sequences consumer-supplied stage bodies, surfaces the attach + done/proof affordances,
 > and presents the effect-rail log** — the Collection/Dashboard/Entity agnostic-composition move, applied to a staged flow.
 > The genuinely novel thing `FlowSessionView` owns that its siblings don't: **the staged-deliverable progression + the
 > effect-rail log surface**.
 
-> **The timer is NOT in this unit.** *"A persistent timer HUD follows the user across the OS"* is a **separate** shell element
-> — region 6, `fe-session-hud` #16 (*"persistent timer + stage + controls; reads active `focus` session"*)
+> **The timer is NOT in this unit.** _"A persistent timer HUD follows the user across the OS"_ is a **separate** shell element
+> — region 6, `fe-session-hud` #16 (_"persistent timer + stage + controls; reads active `focus` session"_)
 > [FACT: quality-bar/_index.md:137,154; decomposition.md:57; g6-reshape-runbook.md:50]. The countdown widget itself already
 > ships (ui-2 V5 `pomodoro-widget`) [FACT: packages/ui/src/CLAUDE.md "pomodoro-widget is UI-2 · V5"]. This shell frames the
 > **deliverable-per-stage** structure; the HUD composes the timer + a stage glance on top of it.
@@ -71,9 +72,9 @@ the session/flow data (↑ @vida/core, apps/web)   THIS UNIT (FlowSessionView, @
   dashboard-view.tsx:8-28,164-220], `EntityView` (a facet frame, merged/tabbed, slot-gated editor) [FACT:
   entity-view.tsx:34-66,116-207]. The Flow shell is the same shape with a **staged-sequence** composition + an **effect-log**
   surface.
-- **`fe-codec-entity-facet` `EntityView` (#6 ✅ — a declared blocker)** — the runtime page shows *"entity title + summary"*
+- **`fe-codec-entity-facet` `EntityView` (#6 ✅ — a declared blocker)** — the runtime page shows _"entity title + summary"_
   at its head [FACT: decomposition.md:70; quality-bar/_index.md:134], i.e. the identity of the entity the session/flow is
-  *about* (ADR-004 attachment). The `#6` dep means the Flow shell **composes or mirrors the EntityView header chrome** for
+  _about_ (ADR-004 attachment). The `#6` dep means the Flow shell **composes or mirrors the EntityView header chrome** for
   that attached-entity identity. The exact relationship — compose `EntityView` as the host vs reuse only its serif-title header
   pattern — is a §6 precision (resolved at greybox/`/contract`) [FACT: reconstructed-structure.md:31 deps `#2 #6`;
   entity-view.tsx:143-158].
@@ -95,23 +96,24 @@ the session/flow data (↑ @vida/core, apps/web)   THIS UNIT (FlowSessionView, @
   `useTheme().get('web')`; dimensions via the token SCALE (radius `card → $lg`), never a sub-theme key, no hard-coded palette
   [FACT: packages/ui/src/CLAUDE.md "Dimension props read the TOKEN SCALE"; "tabular"; "eyebrow"; "accent … useTheme().get('web')"].
 - **The SHIPPED ADR-004 contracts the app-plane adapter binds (`@vida/core`, uncrossable from `@vida/ui`)** — the **4-dimension
-  Integration Contract** (*Attachment · Effects · Lifecycle · Permissions*) [FACT: ADR-004-session-framework.md:19]: the
+  Integration Contract** (_Attachment · Effects · Lifecycle · Permissions_) [FACT: ADR-004-session-framework.md:19]: the
   `session_attachments` polymorphic links (type/instance) [FACT: ADR-004:57-58], the catalogued **effect set** fired on
   lifecycle transitions [FACT: ADR-004:60-62], the lifecycle state machine `scheduled|planned → in_progress → completed |
-  skipped | missed | rescheduled` [FACT: ADR-004:65], the permissions guardrail (effects scoped to attachments, no
+skipped | missed | rescheduled` [FACT: ADR-004:65], the permissions guardrail (effects scoped to attachments, no
   double-count, subset-of-shipped) [FACT: ADR-004:69-71]; `note_attachments` (encrypted file blobs — doc/photo/audio) [FACT:
   packages/core/src/db/schema/notes.ts:90-92] + the `deliverable_note` page per stage [FACT: quality-bar/_index.md:138,155].
   The adapter maps the real session + its attachments + its fired-effect log → the shell's props — it does NOT invent a table.
 
 ### THE boundary that governs every home (load-bearing)
+
 **`@vida/ui` CANNOT import `@vida/core` NOR `@vida/types`** — deps are `@tamagui/*` + `date-fns`/`sigma`/`graphology` ONLY
 [FACT: packages/ui/package.json — all three shipped shells split on this]. So the Flow shell **SPLITS across two planes**,
 exactly as Collection + Dashboard + Entity split [FACT: collection-view.tsx:23-25; dashboard-view.tsx:12-14; entity-view.tsx:20-23]:
 
-| plane | what | why |
-|---|---|---|
+| plane          | what                                                                                                                                                                                                                                                                                                                                                                                                   | why                                                                        |
+| -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------- |
 | **`@vida/ui`** | the presentational **`FlowSessionView`** — the flow frame: header (attached-entity title/summary) + the staged progression (current stage + the sequence) + the per-stage deliverable/attach/done-proof slots + the effect-rail LOG surface + per-stage threaded state; stage bodies + log entries supplied as **slots/render-props**, structurally typed; lifecycle **intents** emitted via callbacks | presentational, state-as-prop (BR-2); no `@vida/core`/`@vida/types` import |
-| **`apps/web`** | the **canon-wiring convention** — map a real `sessions` row (sub_type · status · stages) + its `session_attachments`/`note_attachments` + its fired-effect log → the shell's props; wire the attach / mark-done / proof intents to the sessions service (`transition`/`attach`); resolve the attached entity via `isEntityType()` | imports `@vida/core` → can't live in `@vida/ui` |
+| **`apps/web`** | the **canon-wiring convention** — map a real `sessions` row (sub_type · status · stages) + its `session_attachments`/`note_attachments` + its fired-effect log → the shell's props; wire the attach / mark-done / proof intents to the sessions service (`transition`/`attach`); resolve the attached entity via `isEntityType()`                                                                      | imports `@vida/core` → can't live in `@vida/ui`                            |
 
 ## 2. NEEDS (what the unit must deliver)
 
@@ -139,7 +141,7 @@ exactly as Collection + Dashboard + Entity split [FACT: collection-view.tsx:23-2
    dashboard-view.tsx:27-28; entity-view.tsx:30-32].
 3. **The `apps/web` session/flow↔FlowSessionView adapter CONVENTION** — the documented shape a consumer uses to map a
    `sessions` row + attachments + the fired-effect log into `FlowSessionView` props and to wire the attach/done/proof intents
-   to the sessions service. **Whether this ships as code or type+convention is a Step-2 decomposition call** (no *built*
+   to the sessions service. **Whether this ships as code or type+convention is a Step-2 decomposition call** (no _built_
    consumer exists — the runtime page #23 / HUD #16 / module flows ship after #11; the Collection/Dashboard/Entity adapter
    precedent: ship pure mapping + types + convention now, defer the live hook) [FACT: fe-codec-entity-facet/delivery/interpretation.md R3].
 4. **Visual-Gate harness** — a Storybook specimen: a multi-stage flow (done/current/upcoming) × single-stage × with-effect-log /
@@ -185,8 +187,8 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
   pomodoro widget own the countdown; a wrong read would embed a timer this unit has no business owning [FACT:
   decomposition.md:57; quality-bar/_index.md:154; g6-reshape-runbook.md:50].
 - **`state` is a PROP across the package boundary** (BR-2) — `@vida/ui` never derives; the app derives via the 8-state machine
-  + passes it, per stage/surface [FACT: dashboard-view.tsx:38-39; entity-view.tsx:117-118; list-view.tsx state-as-prop].
-- **The attached-entity identity is CONSUMED, not owned** — the header shows the entity the session is *about* (ADR-004
+  - passes it, per stage/surface [FACT: dashboard-view.tsx:38-39; entity-view.tsx:117-118; list-view.tsx state-as-prop].
+- **The attached-entity identity is CONSUMED, not owned** — the header shows the entity the session is _about_ (ADR-004
   attachment), resolved in `apps/web` (`isEntityType()` + the entity row); the shell takes it as a title/summary slot (the #6
   dep — compose/mirror EntityView's header) [FACT: ADR-004:57-58; decomposition.md:70; entity-view.tsx:143-158].
 - **Degrade, never crash** — a no-stages / nothing-to-do flow renders a calm `EmptyState`, not a blank; an errored surface
@@ -212,15 +214,17 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
 ## 5. THE 3-LENS AUDIT
 
 ### WRONG — contradicts a standard or a bar decision
-- *(none found.)* The flow-frame / stage-body split, the display-the-log-emit-intents boundary, the timer-is-the-HUD's
+
+- _(none found.)_ The flow-frame / stage-body split, the display-the-log-emit-intents boundary, the timer-is-the-HUD's
   separation, and the state-as-prop boundary are all consistent with the canon + all three shipped siblings' resolved homes +
   the pomodoro-widget's deferred-session-engine seam.
 
 ### MISSING — the archetype requires it, nothing exists
+
 - **M1** **No Flow/Session shell** — every staged surface in the OS needs one; `@vida/ui` ships no `FlowSessionView` and no
   staged-deliverable frame [FACT: grep clean — no FlowSession/FlowView/StageRail/StepFlow in packages/ui or apps/web; agent map].
 - **M2** **No staged-deliverable progression primitive** — the data-views render lenses (list/timeline/board…), but none
-  frames a *do-this-then-that* sequence with per-stage deliverable + attach + done/proof [FACT: packages/ui/src/CLAUDE.md
+  frames a _do-this-then-that_ sequence with per-stage deliverable + attach + done/proof [FACT: packages/ui/src/CLAUDE.md
   (8 UI-2 views are read-lenses + the pomodoro timer); grep clean].
 - **M3** **No effect-rail LOG surface** — the `SyncStatus` pill shows a single save state; no component presents a chronological
   log of fired session effects [FACT: packages/ui/src/CLAUDE.md "SyncStatus"; grep clean].
@@ -228,6 +232,7 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
   attachments + the effect log into `FlowSessionView` props + wiring the intents [FACT: apps/web/src surface dirs are `.gitkeep`].
 
 ### OVERFLOWING — past this shell's job (homed by the docs, NOT deferred)
+
 - **O1** **The persistent timer HUD (region 6)** → `fe-session-hud` #16 — a separate shell element, not this unit [FACT:
   decomposition.md:57; quality-bar/_index.md:154; g6-reshape-runbook.md:50].
 - **O2** **The session runtime PAGE** (the live route composing this shell with real data) → `fe-session-runtime` #23 [FACT:
@@ -255,7 +260,7 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
   props; emits intents); canon-wiring (sessions service, attachments, effect-log map, entity resolve) → `apps/web`. The
   Collection + Dashboard + Entity splits are the exact precedents [FACT: collection-view.tsx:23-25; dashboard-view.tsx:12-14;
   entity-view.tsx:20-23].
-- **R3 — The `apps/web` adapter ships the pure mapping + types + convention; only the LIVE hook defers.** No *built* consumer
+- **R3 — The `apps/web` adapter ships the pure mapping + types + convention; only the LIVE hook defers.** No _built_ consumer
   exists; the runtime page / HUD / module flows ship after #11. The Collection/Dashboard/Entity adapters are the exact
   precedent (ship pure mapping + types + convention now; defer the live React-Query hook to the first consumer) [FACT:
   fe-codec-entity-facet/delivery/interpretation.md R3]. Ratified at Step 2.
@@ -269,7 +274,8 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
   entity-view.tsx:116-133].
 
 ### Two precisions kept (flagged, not silently decided)
-1. **The #6 (entity-facet) relationship** — the runtime page shows *"entity title + summary"* [FACT: decomposition.md:70], and
+
+1. **The #6 (entity-facet) relationship** — the runtime page shows _"entity title + summary"_ [FACT: decomposition.md:70], and
    #11 declares a hard dep on #6. Does the Flow shell **compose `EntityView` as its host** (the flow lives as a facet/section
    inside the entity shell) or **reuse only EntityView's serif-title header pattern** for the attached-entity identity? The
    greybox answers it; grounded, not guessed [FACT: reconstructed-structure.md:31 deps `#2 #6`; entity-view.tsx:143-158].
@@ -280,21 +286,21 @@ docs/specs/components/ui-2-platform-views/flow-session-view.md · _index.md (upd
 
 ## 7. ENVISION GATE (Step 1.5) — FIRES (doc test §3.75, applied to facts — NOT a decision)
 
-The firing is a **mechanical one-question test**, not a judgment or a human choice; the human's role is the blocking *review*
+The firing is a **mechanical one-question test**, not a judgment or a human choice; the human's role is the blocking _review_
 of the greybox, not whether the gate fires [FACT: entity-delivery-flow.md:104-107,129-132;
 [[envision-gate-firing-is-a-doc-test-not-a-human-decision]]].
 
-**Test:** *"Is there a user affordance whose UI answer isn't already obvious from an existing shipped surface?"* — Yes → fire
+**Test:** _"Is there a user affordance whose UI answer isn't already obvious from an existing shipped surface?"_ — Yes → fire
 (module hub · standalone entity page · novel interaction surface); No → skip [FACT: entity-delivery-flow.md:104-107].
 
 Applied, per affordance:
 
-| affordance | UI answer obvious from a shipped surface? | FACT |
-|---|---|---|
-| **the staged-deliverable progression** (the current stage + the done/current/upcoming sequence, deliverable-per-stage) | **NO** — no shipped surface frames a *do-this-then-that* staged walk; the staged-deliverable structure is an explicit **design-intent extension** of ADR-004 | quality-bar/_index.md:134-135,139,150; grep clean |
-| **the attach + mark-done/require-proof affordance** (attach doc/photo/audio to a stage, mark it done or demand proof) | **NO** — no shipped surface composes a per-stage attach + proof gate | quality-bar/_index.md:135-136,155; grep clean |
-| **the effect-rail log surface** (a running, honest log of the effects a session fired to the entity) | **NO** — only a single-state `SyncStatus` pill ships; a chronological fired-effect log has no shipped UI answer | quality-bar/_index.md:137-138; packages/ui/src/CLAUDE.md "SyncStatus"; grep clean |
-| the 8-state / tokens / reduced-motion / timer internals | YES — fe-codec-patterns + the pomodoro widget ship | packages/ui/src/CLAUDE.md |
+| affordance                                                                                                             | UI answer obvious from a shipped surface?                                                                                                                    | FACT                                                                               |
+| ---------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------- |
+| **the staged-deliverable progression** (the current stage + the done/current/upcoming sequence, deliverable-per-stage) | **NO** — no shipped surface frames a _do-this-then-that_ staged walk; the staged-deliverable structure is an explicit **design-intent extension** of ADR-004 | quality-bar/\_index.md:134-135,139,150; grep clean                                 |
+| **the attach + mark-done/require-proof affordance** (attach doc/photo/audio to a stage, mark it done or demand proof)  | **NO** — no shipped surface composes a per-stage attach + proof gate                                                                                         | quality-bar/\_index.md:135-136,155; grep clean                                     |
+| **the effect-rail log surface** (a running, honest log of the effects a session fired to the entity)                   | **NO** — only a single-state `SyncStatus` pill ships; a chronological fired-effect log has no shipped UI answer                                              | quality-bar/\_index.md:137-138; packages/ui/src/CLAUDE.md "SyncStatus"; grep clean |
+| the 8-state / tokens / reduced-motion / timer internals                                                                | YES — fe-codec-patterns + the pomodoro widget ship                                                                                                           | packages/ui/src/CLAUDE.md                                                          |
 
 **Result = FIRE.** The Flow/Session shell is an archetype shell / **novel interaction surface** (the fire case "a novel
 interaction surface"), and the staged-deliverable progression + the attach/proof gate + the effect-rail log have no shipped UI

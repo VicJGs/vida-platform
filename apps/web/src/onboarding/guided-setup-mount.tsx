@@ -29,8 +29,7 @@ export function GuidedSetupTakeover({ mode, initialPreset, onPreview, onClose }:
   const renderStepBody = (step: GuidedSetupStep) => {
     if (step.id === 'modules')
       return <ModulePickerView groups={getDockModuleGroups()} enabled={modules.enabled} onToggle={modules.toggle} />
-    if (step.id === 'theme')
-      return <ThemePickerView selected={theme.selected} mode={mode} onSelect={theme.preview} />
+    if (step.id === 'theme') return <ThemePickerView selected={theme.selected} mode={mode} onSelect={theme.preview} />
     return null
   }
 

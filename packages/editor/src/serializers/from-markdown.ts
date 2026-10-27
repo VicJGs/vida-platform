@@ -182,7 +182,10 @@ function parseFrontmatter(lines: string[]): { fm: Record<string, unknown>; warni
 // ── block parsing ────────────────────────────────────────────────────────────────────────────────────────────────────
 function parseCommentAttr(s: string): string {
   // Inverse order of escapeCommentAttr: entities first, `&amp;` LAST (post-impl m1).
-  return s.replace(/&#45;&#45;/g, '--').replace(/&#39;/g, "'").replace(/&amp;/g, '&')
+  return s
+    .replace(/&#45;&#45;/g, '--')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, '&')
 }
 
 interface Ctx {

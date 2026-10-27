@@ -32,15 +32,15 @@ re-prove the build-edge graph (XS-first, acyclic); reconcile task files ↔ `.tr
 
 ## 3. Authorities & certified inputs
 
-| Input | Role |
-|---|---|
-| `coverage-report.md` | certified join key — the 33-issue set covers the 1200-id corpus (SHIP) |
-| `decomposition.md` | the 33 issues + build-deps (→XS) + runtime read-seams + item-ids |
-| `traceability.md` | 1200-key id→issue matrix (fold-target evidence) |
-| ADR-021 §3.2/§3.4/§3.6 | XS-first grain · first-consumer-pull clarification · per-phase gate |
-| ADR-019 §3.5 | substrates/services by **first-consumer pull**, never substrate-first-regardless |
-| `backend-consolidation-plan.md` §5 P5 + §4 | operation set · g1-N2 (aggregator re-home) · g1-N5 (execution order) |
-| live Linear (`tracker_sync --status`) | current 26 `mod-*` + aggregators + milestone spine |
+| Input                                      | Role                                                                             |
+| ------------------------------------------ | -------------------------------------------------------------------------------- |
+| `coverage-report.md`                       | certified join key — the 33-issue set covers the 1200-id corpus (SHIP)           |
+| `decomposition.md`                         | the 33 issues + build-deps (→XS) + runtime read-seams + item-ids                 |
+| `traceability.md`                          | 1200-key id→issue matrix (fold-target evidence)                                  |
+| ADR-021 §3.2/§3.4/§3.6                     | XS-first grain · first-consumer-pull clarification · per-phase gate              |
+| ADR-019 §3.5                               | substrates/services by **first-consumer pull**, never substrate-first-regardless |
+| `backend-consolidation-plan.md` §5 P5 + §4 | operation set · g1-N2 (aggregator re-home) · g1-N5 (execution order)             |
+| live Linear (`tracker_sync --status`)      | current 26 `mod-*` + aggregators + milestone spine                               |
 
 ## 4. Target structure — milestone × issue (intent-homed)
 
@@ -48,15 +48,15 @@ re-prove the build-edge graph (XS-first, acyclic); reconcile task files ↔ `.tr
 a build-dep pulls its provider **no later than itself** (transitive closure). The 22 MOD keep their current milestone
 homes by module identity. Project = `M1 — Whole Manual OS` throughout (ADR-016 tier); milestone = slice.
 
-| Milestone | XS (built first, new) | MOD (reshaped continuing / new) |
-|---|---|---|
-| **M1.1 — Hub & Foundation** | spaces-tags-links · views · templates · effect-rail · measurement-engine · **capability** ⚠ | notes-and-pages · preferences · journals · sessions · check-ins **(5)** |
-| **M1.2 — Feature Modules** | ingestion · ai · egress-guard · backlinks-search-export · notifications-delivery | books · finance · gamification · habits · knowledge · learning-education · notifications · projects · relationships · routines · tasks · purposes-and-goals **(12)** |
-| **M1.3 — Depth & Recovered** | — | health-core · **health-nutrition** · **health-training** · languages · skills **(5)** |
+| Milestone                    | XS (built first, new)                                                                       | MOD (reshaped continuing / new)                                                                                                                                      |
+| ---------------------------- | ------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **M1.1 — Hub & Foundation**  | spaces-tags-links · views · templates · effect-rail · measurement-engine · **capability** ⚠ | notes-and-pages · preferences · journals · sessions · check-ins **(5)**                                                                                              |
+| **M1.2 — Feature Modules**   | ingestion · ai · egress-guard · backlinks-search-export · notifications-delivery            | books · finance · gamification · habits · knowledge · learning-education · notifications · projects · relationships · routines · tasks · purposes-and-goals **(12)** |
+| **M1.3 — Depth & Recovered** | —                                                                                           | health-core · **health-nutrition** · **health-training** · languages · skills **(5)**                                                                                |
 
 Totals: **11 XS** (6 @ M1.1 + 5 @ M1.2) + **22 MOD** (5 + 12 + 5) = **33**. ✅ matches `decomposition.md`.
 
-⚠ **`XS-capability` is @M1.1 by transitivity, not first-MOD-consumer.** Its first *MOD* consumer is M1.2
+⚠ **`XS-capability` is @M1.1 by transitivity, not first-MOD-consumer.** Its first _MOD_ consumer is M1.2
 (gamification), but `XS-templates` (M1.1, pulled by notes) build-deps `XS-capability` → forced to M1.1. The gate
 re-derives the full transitive closure to confirm no other XS is mis-homed the same way. Candidate to double-check:
 `XS-views` (build-dep of `XS-templates`@M1.1 → M1.1 ✓) and `XS-effect-rail` (build-dep of `XS-measurement-engine` used
@@ -73,19 +73,20 @@ by journals/sessions @M1.1 → M1.1 ✓).
 
 Each new file carries: `# Task`, `# Profile: Add Backend Component`, `# Project: M1 — Whole Manual OS`,
 `# Milestone: <per §4>`, `# Source: decomposition.md (P3) + coverage-report.md (P4)`, a Goal = the issue's item-set
-+ its build-deps/runtime-seams (verbatim from `decomposition.md`), and `## Dependencies` blocked-by = its build-deps.
+
+- its build-deps/runtime-seams (verbatim from `decomposition.md`), and `## Dependencies` blocked-by = its build-deps.
 
 ### 5.2 RESHAPE — 20 continuing issues (KEEP `# Linear:` header = same issue, reshaped)
 
 **Rename+reshape (5)** — file slug changes, `# Linear:` preserved, `.tracker-map.json` slug key updated:
 
-| Current slug (LIF) | → New slug | Note |
-|---|---|---|
-| `mod-notes` (LIF-131, **in-progress**) | `mod-notes-and-pages` | reshape-not-delete (g1-N5); reports re-plan, not phantom Done |
-| `mod-checkins` | `mod-check-ins` | |
-| `mod-learning` | `mod-learning-education` | |
-| `mod-purposes` | `mod-purposes-and-goals` | |
-| `mod-health` (LIF-126) | `mod-health-core` | + 2 new splits (§5.1); health 1→3 |
+| Current slug (LIF)                     | → New slug               | Note                                                          |
+| -------------------------------------- | ------------------------ | ------------------------------------------------------------- |
+| `mod-notes` (LIF-131, **in-progress**) | `mod-notes-and-pages`    | reshape-not-delete (g1-N5); reports re-plan, not phantom Done |
+| `mod-checkins`                         | `mod-check-ins`          |                                                               |
+| `mod-learning`                         | `mod-learning-education` |                                                               |
+| `mod-purposes`                         | `mod-purposes-and-goals` |                                                               |
+| `mod-health` (LIF-126)                 | `mod-health-core`        | + 2 new splits (§5.1); health 1→3                             |
 
 **Keep-name reshape (15)** — slug + LIF unchanged; Goal/scope updated to ride the XS services + edges re-derived:
 `mod-books` · `mod-finance` · `mod-gamification` · `mod-habits` · `mod-journals` · `mod-knowledge` · `mod-languages` ·
@@ -94,14 +95,14 @@ Each new file carries: `# Task`, `# Profile: Add Backend Component`, `# Project:
 
 ### 5.3 RETIRE / FOLD — 6 superseded (KEEP LIF; `tracker_sync --retire LIF-NN` → CANCELED; fold pointer in file)
 
-| Current slug (LIF) | Folded into | Coverage evidence |
-|---|---|---|
-| `mod-spaces` (LIF-141) | **XS-spaces-tags-links** (now cross-cutting) | `xcut-spaces:XCU-SP-27` ∈ XS-spaces-tags-links |
-| `mod-fiscal-legal` | **MOD-finance** | `finance:FL-01…FL-10` ∈ MOD-finance |
-| `mod-finance-commitments` | **MOD-finance** | commitments intent ∈ `finance:FIN-*` (no separate id-set) |
-| `mod-bucket-list` | **MOD-purposes-and-goals** | dreams (ADR-006 / §5.7); no standalone id-set |
-| `mod-duties` | **dissolved** (ADR-006 worked-example) | no id-set in the 1200 |
-| `mod-projects-investigations` | **MOD-projects** | investigations intent ∈ `projects:PRO-*` |
+| Current slug (LIF)            | Folded into                                  | Coverage evidence                                         |
+| ----------------------------- | -------------------------------------------- | --------------------------------------------------------- |
+| `mod-spaces` (LIF-141)        | **XS-spaces-tags-links** (now cross-cutting) | `xcut-spaces:XCU-SP-27` ∈ XS-spaces-tags-links            |
+| `mod-fiscal-legal`            | **MOD-finance**                              | `finance:FL-01…FL-10` ∈ MOD-finance                       |
+| `mod-finance-commitments`     | **MOD-finance**                              | commitments intent ∈ `finance:FIN-*` (no separate id-set) |
+| `mod-bucket-list`             | **MOD-purposes-and-goals**                   | dreams (ADR-006 / §5.7); no standalone id-set             |
+| `mod-duties`                  | **dissolved** (ADR-006 worked-example)       | no id-set in the 1200                                     |
+| `mod-projects-investigations` | **MOD-projects**                             | investigations intent ∈ `projects:PRO-*`                  |
 
 > **Correction vs the Step-1 grounding note ("5 retire"):** it is **6** — `mod-projects-investigations` belongs here.
 > Arithmetic closes: 26 current = 20 reshaped + 6 retired; new = 22 MOD + 11 XS = 33.
@@ -114,7 +115,7 @@ Each new file carries: `# Task`, `# Profile: Add Backend Component`, `# Project:
 >
 > **Fold-coverage caveat (gate N3):** 4 of 6 folds are id-backed (`mod-spaces`→`XCU-SP-27`; `mod-fiscal-legal`→
 > `finance:FL-01…10`; `mod-bucket-list`→purposes dreams; `mod-duties`→dissolved-no-ids). **`mod-finance-commitments`
-> and `mod-projects-investigations` have NO distinct id-set** — their intent is covered *by composition* inside
+> and `mod-projects-investigations` have NO distinct id-set** — their intent is covered _by composition_ inside
 > `finance:FIN-*` / `projects:PRO-*` (commitments = liability/obligation rows; investigations = intake
 > `_scope-reconciliation-v1.md:46`), NOT by ids landing in a fold target. So the §9 risk-1 "ids land in fold target"
 > mitigation is **vacuous for these two** — their coverage rests on P4 SHIP + the design-is-composition ruling, which
@@ -136,15 +137,15 @@ decoupled provider contracts, may be bidirectional — PLAN §4 of P3). **Re-pro
 **6.2 Aggregator re-home (`← every MOD-*`):** these carry the old 26-`mod-*` blocked-by; remap to the new 22 MOD (drop
 6 retired · apply 5 renames · add 2 health splits):
 
-| Aggregator (milestone) | Action |
-|---|---|
-| `db-10-seed-and-fixtures` (M1.4) | blocked-by → 22 MOD (+ existing db-6/7/9) |
-| `db-11-adr-002-reconciliation` (M1.4) | blocked-by → 22 MOD (+ db-1) |
-| `mig-1-v1-retire` (M1.4) | blocked-by → 22 MOD (+ db-1) |
-| `hard-1-summary-registry` (M1.4) | blocked-by → 22 MOD (summary contributors) |
-| `db-5-encryption-boundary-map` (M3.0) | blocked-by → 22 MOD (+ ar-3) |
-| `hard-2-rollups` (M1.4) | `mod-gamification`→`MOD-gamification`, `mod-purposes`→`MOD-purposes-and-goals`; **flag:** does it also need `XS-measurement-engine`? (gate) |
-| `hard-3-graph-backlinks` (M1.4) | no `mod-*` dep today; **flag:** does `XS-backlinks-search-export` now supersede part of it? (gate — do not silently rewire) |
+| Aggregator (milestone)                | Action                                                                                                                                      |
+| ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| `db-10-seed-and-fixtures` (M1.4)      | blocked-by → 22 MOD (+ existing db-6/7/9)                                                                                                   |
+| `db-11-adr-002-reconciliation` (M1.4) | blocked-by → 22 MOD (+ db-1)                                                                                                                |
+| `mig-1-v1-retire` (M1.4)              | blocked-by → 22 MOD (+ db-1)                                                                                                                |
+| `hard-1-summary-registry` (M1.4)      | blocked-by → 22 MOD (summary contributors)                                                                                                  |
+| `db-5-encryption-boundary-map` (M3.0) | blocked-by → 22 MOD (+ ar-3)                                                                                                                |
+| `hard-2-rollups` (M1.4)               | `mod-gamification`→`MOD-gamification`, `mod-purposes`→`MOD-purposes-and-goals`; **flag:** does it also need `XS-measurement-engine`? (gate) |
+| `hard-3-graph-backlinks` (M1.4)       | no `mod-*` dep today; **flag:** does `XS-backlinks-search-export` now supersede part of it? (gate — do not silently rewire)                 |
 
 **6.3 XS not re-listed on aggregators:** an aggregator needing "every MOD" transitively pulls the XS via each MOD's
 build edge, so XS need not be enumerated on it — EXCEPT where an aggregator directly consumes an XS engine (hard-2 →
@@ -152,9 +153,10 @@ measurement; hard-3 → backlinks). Those direct edges are added explicitly and 
 
 **6.4 Downstream slug-rename fan-out (gate B1 fix — the dangling-edge trap).** blocked-by edges are resolved by
 **slug**, not LIF (`tracker_sync.py` `_parse_blockers` collects backtick slugs → slug→slug link). So a rename changes
-the key that *every OTHER file* references. §6.1 (the 22 MOD) and §6.2 (7 aggregators) rewrite their blocked-by
+the key that _every OTHER file_ references. §6.1 (the 22 MOD) and §6.2 (7 aggregators) rewrite their blocked-by
 wholesale — but issues **outside** that scope that cite a renamed/retired slug are NOT covered and would dangle on the
 next `--sync`. Confirmed on disk — the M2 integration consumers:
+
 - `p3-3-integrations-health-wearables` `blocked by mod-health` → **`mod-health-core`**
 - `p3-6-calendar-extraction` `blocked by mod-learning` → **`mod-learning-education`**
 
@@ -195,13 +197,13 @@ Acceptance #3 ("0 dangling") is checked by a final `grep` + `--status` showing n
 
 ## 9. Risks (mitigated)
 
-| Risk | Mitigation |
-|---|---|
-| A fold silently drops intent | every fold target is a P4-certified home; gate re-checks each retiree's ids land in its fold target via `traceability.md` |
-| An XS mis-homed to the wrong milestone | gate re-derives the transitive build-dep closure (the `XS-capability` class of error) |
-| Deleted aggregator edge re-added by add-only sync | remove BOTH sides (task file + Linear); §7.4 |
-| LIF-131 reported as phantom-Done | reshape-not-delete + `--status` before write (g1-N5) |
-| Live-write partial failure leaves a split-brain tracker | reshape+verify locally first; live write is the LAST step; `--status` re-verify after |
+| Risk                                                    | Mitigation                                                                                                                |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| A fold silently drops intent                            | every fold target is a P4-certified home; gate re-checks each retiree's ids land in its fold target via `traceability.md` |
+| An XS mis-homed to the wrong milestone                  | gate re-derives the transitive build-dep closure (the `XS-capability` class of error)                                     |
+| Deleted aggregator edge re-added by add-only sync       | remove BOTH sides (task file + Linear); §7.4                                                                              |
+| LIF-131 reported as phantom-Done                        | reshape-not-delete + `--status` before write (g1-N5)                                                                      |
+| Live-write partial failure leaves a split-brain tracker | reshape+verify locally first; live write is the LAST step; `--status` re-verify after                                     |
 
 ## 10. Acceptance criteria (gate-checkable)
 
@@ -222,9 +224,9 @@ not forgotten (Victor, 2026-09-15):
 
 - **Input already exists:** P4 homed **222 P6 UI legs** (`coverage-report.md` C5 — 212 `ui` split-legs + 10
   UI-boundary rows; **0 `service` legs**, so the split is clean). `traceability.md` already carries each with a P6
-  bucket tag → the frontend corpus is *derivable from the existing artifacts*, not a fresh intake.
+  bucket tag → the frontend corpus is _derivable from the existing artifacts_, not a fresh intake.
 - **P6 runs the same shape as P1→P5, one tier down:** decompose the 222 UI legs into frontend issues (consumer-pull
-  homing — a UI leg homes at its owning module's *frontend* milestone, riding the finished service tier) → a P6
+  homing — a UI leg homes at its owning module's _frontend_ milestone, riding the finished service tier) → a P6
   coverage gate (⋃ frontend-issues ⊇ 222 UI legs, 0 unhomed) → a **P6 Linear reorg** that reuses THIS plan's
   mechanics verbatim: **slug-vs-LIF join care (§6.4), scripted `--retire`, add-only-edge deletion (§7.4), reshape→
   `--status`→gate-2→live-write order (g1-N5)**, plus the Entity Delivery Flow ①/② fork now scoped to the frontend
@@ -244,4 +246,4 @@ not forgotten (Victor, 2026-09-15):
 - **Approval 2 (gate-2 — after local reshape, before live write, §7.3):** `/critique` + on-disk critic verify the
   reshaped task files + `--status` diff = intended set, acyclic, no orphans/phantoms.
 - **Accept & log (Step 8):** `/session-log`; record verdict + LIF IDs + flagged edges (hard-2/hard-3).
-</content>
+  </content>

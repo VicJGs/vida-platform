@@ -269,26 +269,26 @@ DELETE:
 
 **Message types (client → server):**
 
-| Type | Payload | Description |
-|------|---------|-------------|
-| `auth` | `{ token, device_id }` | Authenticate connection |
-| `push_blob` | `{ header, payload }` | Push an encrypted sync blob |
-| `push_yjs` | `{ page_id, payload }` | Push encrypted Yjs state |
-| `push_attachment_meta` | `{ header, payload }` | Push attachment metadata blob |
-| `sync_request` | `{ since }` | Request changes since timestamp |
-| `ack` | `{ blob_id }` | Acknowledge receipt of a blob |
-| `ping` | `{}` | Heartbeat |
+| Type                   | Payload                | Description                     |
+| ---------------------- | ---------------------- | ------------------------------- |
+| `auth`                 | `{ token, device_id }` | Authenticate connection         |
+| `push_blob`            | `{ header, payload }`  | Push an encrypted sync blob     |
+| `push_yjs`             | `{ page_id, payload }` | Push encrypted Yjs state        |
+| `push_attachment_meta` | `{ header, payload }`  | Push attachment metadata blob   |
+| `sync_request`         | `{ since }`            | Request changes since timestamp |
+| `ack`                  | `{ blob_id }`          | Acknowledge receipt of a blob   |
+| `ping`                 | `{}`                   | Heartbeat                       |
 
 **Message types (server → client):**
 
-| Type | Payload | Description |
-|------|---------|-------------|
-| `auth_ok` | `{ server_time }` | Auth succeeded |
-| `blob` | `{ header, payload }` | Incoming sync blob from another device |
-| `yjs_update` | `{ page_id, payload }` | Incoming Yjs state from another device |
-| `ack` | `{ blob_id }` | Server confirmed storage |
-| `pong` | `{}` | Heartbeat response |
-| `device_revoked` | `{ device_id }` | A device was deauthorized |
+| Type             | Payload                | Description                            |
+| ---------------- | ---------------------- | -------------------------------------- |
+| `auth_ok`        | `{ server_time }`      | Auth succeeded                         |
+| `blob`           | `{ header, payload }`  | Incoming sync blob from another device |
+| `yjs_update`     | `{ page_id, payload }` | Incoming Yjs state from another device |
+| `ack`            | `{ blob_id }`          | Server confirmed storage               |
+| `pong`           | `{}`                   | Heartbeat response                     |
+| `device_revoked` | `{ device_id }`        | A device was deauthorized              |
 
 ### 5.3 HTTP Polling Endpoints (Fallback)
 
@@ -320,7 +320,7 @@ For all non-page tables (and page metadata), conflicts are resolved using **fiel
 
 Every LWW timestamp in this protocol — the row-level `_sync_lww_ts` **and** every value in the field-level `_sync_field_ts` map — is produced by a **Hybrid Logical Clock (HLC)**, not a bare wall clock. This is what the word "logical" in the constitution (business-rules.md SU-2) and in ADR-002 §3 means: a clock that orders by **causality**, not by each device's uncorrected `Date.now()`.
 
-**Why not a bare wall clock.** LWW picks the write with the higher timestamp. If device A's clock runs ahead of B's by δ, an edit made on A *earlier in real time* can carry a higher timestamp than a *later* edit on B — so B's newer write is **silently discarded** with no conflict surfaced. On a single-user, multi-device, offline-resilient vault this still bites: offline devices accumulate edits, clocks drift / DST-jump / get set by hand, a device rejoins after a week. The loss is silent and permanent — it violates the "all writes succeed locally" promise. An HLC removes this: on every merge the receiving clock jumps past any remote time it observes, so a skewed clock self-corrects the moment it syncs.
+**Why not a bare wall clock.** LWW picks the write with the higher timestamp. If device A's clock runs ahead of B's by δ, an edit made on A _earlier in real time_ can carry a higher timestamp than a _later_ edit on B — so B's newer write is **silently discarded** with no conflict surfaced. On a single-user, multi-device, offline-resilient vault this still bites: offline devices accumulate edits, clocks drift / DST-jump / get set by hand, a device rejoins after a week. The loss is silent and permanent — it violates the "all writes succeed locally" promise. An HLC removes this: on every merge the receiving clock jumps past any remote time it observes, so a skewed clock self-corrects the moment it syncs.
 
 **An HLC stamp is a pair `(physical_ms, counter)`.** The canonical update rules (Kulkarni/Demirbas):
 
@@ -347,7 +347,7 @@ The `max(last_l, …)` in the local rule handles a **backward wall-clock jump** 
 
 **Storage representation (build-phase).** SQLite `INTEGER` is a signed 64-bit (`i64`) and could hold a packed HLC, **but** Drizzle/JS reads it into a `number` (float64), capped at `Number.MAX_SAFE_INTEGER = 2⁵³`. A naive pack `physical_ms × 2ᵏ + counter` breaks: `physical_ms` today ≈ 2⁴⁰·⁷, so even a 12-bit counter overflows the JS-safe range by ~2039, and a 16-bit counter overflows today. So the encoding is a real build-phase choice — a zero-padded sortable **string**, a **`BigInt`-typed** column, or **two columns** (`physical`, `counter`) — and it is **coupled to the wire header** (`SyncBlobHeader.sync_lww_ts` / `field_timestamps`) and the server **`blob_index`** (§9.4), which must stay comparable or change together.
 
-**Interim state (not yet built).** The HLC/field-LWW merge logic is not implemented — `packages/core/src/sync/` holds only empty stubs (`crdt.ts`, `queue.ts`, `resolver.ts`); the `mergeFieldLWW`/`hlc.ts` below are the *proposed* targets. Today `packages/core/src/db/repository.ts` stamps `_sync_lww_ts = Date.now()` (interim v0), and the shared type `packages/types/src/sync.ts` still comments the field "Logical timestamp" — both are corrected in the build edit that introduces the HLC.
+**Interim state (not yet built).** The HLC/field-LWW merge logic is not implemented — `packages/core/src/sync/` holds only empty stubs (`crdt.ts`, `queue.ts`, `resolver.ts`); the `mergeFieldLWW`/`hlc.ts` below are the _proposed_ targets. Today `packages/core/src/db/repository.ts` stamps `_sync_lww_ts = Date.now()` (interim v0), and the shared type `packages/types/src/sync.ts` still comments the field "Logical timestamp" — both are corrected in the build edit that introduces the HLC.
 
 **How it works:**
 
@@ -381,7 +381,7 @@ Device B receives Device A's blob:
 // packages/core/src/sync/field-lww.ts
 
 interface FieldTimestamps {
-  [fieldName: string]: number  // HLC stamp (see "The clock: Hybrid Logical Clock" above), NOT raw Unix ms
+  [fieldName: string]: number // HLC stamp (see "The clock: Hybrid Logical Clock" above), NOT raw Unix ms
 }
 
 /**
@@ -393,8 +393,8 @@ function mergeFieldLWW(
   localFieldTs: FieldTimestamps,
   remoteRow: Record<string, unknown>,
   remoteFieldTs: FieldTimestamps,
-  immutableFields: string[],  // id, created_at, _sync_id — never merged
-  localDeviceId: string,      // for the global tie-break on equal HLC stamps
+  immutableFields: string[], // id, created_at, _sync_id — never merged
+  localDeviceId: string, // for the global tie-break on equal HLC stamps
   remoteDeviceId: string,
 ): { merged: Record<string, unknown>; mergedTs: FieldTimestamps; changed: boolean } {
   const merged = { ...localRow }
@@ -404,17 +404,15 @@ function mergeFieldLWW(
   for (const field of Object.keys(remoteFieldTs)) {
     if (immutableFields.includes(field)) continue
 
-    const remoteTs = remoteFieldTs[field] ?? 0  // HLC stamp
-    const localTs = localFieldTs[field] ?? 0     // HLC stamp
+    const remoteTs = remoteFieldTs[field] ?? 0 // HLC stamp
+    const localTs = localFieldTs[field] ?? 0 // HLC stamp
 
     // Compare HLC stamps; on an exact tie, break globally by device id so BOTH
     // devices pick the SAME winner (lexicographically-higher _sync_device_id).
     // This replaces the old "keep local" rule, which was deterministic per-device
     // but NOT globally — two devices setting the same field to different values at
     // the same stamp would diverge permanently.
-    const remoteWins =
-      remoteTs > localTs ||
-      (remoteTs === localTs && remoteDeviceId > localDeviceId)
+    const remoteWins = remoteTs > localTs || (remoteTs === localTs && remoteDeviceId > localDeviceId)
 
     if (remoteWins) {
       merged[field] = remoteRow[field]
@@ -428,9 +426,11 @@ function mergeFieldLWW(
 ```
 
 **Immutable fields (never merged, set once at creation):**
+
 - `id`, `_sync_id`, `created_at`
 
 **Fields excluded from field-level tracking (managed by sync engine):**
+
 - `_sync_version`, `_sync_device_id`, `_sync_lww_ts`, `_sync_status`, `_sync_hash`
 - `updated_at` (a user-facing wall-clock `Date.now()` value — DATA-2 Unix ms; set to the wall-clock time of the merge, **not** the HLC max, so HLC stamps never pollute the human-readable "last modified" column)
 
@@ -458,14 +458,14 @@ The Yjs document is the authoritative source for page content. The `content` col
 
 ### 6.3 Conflict Edge Cases
 
-| Scenario | Resolution |
-|----------|------------|
-| Same field edited on two devices offline | Field-level LWW: highest timestamp wins |
-| Different fields edited on two devices | Both changes preserved (field-level merge) |
-| Row created on two devices with same UUIDv7 | Extremely unlikely (UUIDv7 includes random bits). If it happens: row_id collision detected, second device regenerates ID |
-| Row deleted on one device, edited on another | Ordered by **HLC field-timestamps**, not the raw wall-clock `deleted_at`: `deleted_at` is a field-tracked mutable field, so it carries its own HLC stamp in `_sync_field_ts`. Delete wins if `_sync_field_ts['deleted_at']` > the edited field's HLC stamp; otherwise the edit wins and `deleted_at` is cleared. (Soft-delete is thus plain field-level LWW under the same clock — no separate delete-ordering rule, no residual wall-clock comparison that skew could corrupt.) |
-| Page metadata edited + content edited simultaneously | Independent sync units — no conflict possible between them |
-| Attachment row metadata vs. binary blob | Independent pipelines — no conflict possible |
+| Scenario                                             | Resolution                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Same field edited on two devices offline             | Field-level LWW: highest timestamp wins                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| Different fields edited on two devices               | Both changes preserved (field-level merge)                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Row created on two devices with same UUIDv7          | Extremely unlikely (UUIDv7 includes random bits). If it happens: row_id collision detected, second device regenerates ID                                                                                                                                                                                                                                                                                                                                                         |
+| Row deleted on one device, edited on another         | Ordered by **HLC field-timestamps**, not the raw wall-clock `deleted_at`: `deleted_at` is a field-tracked mutable field, so it carries its own HLC stamp in `_sync_field_ts`. Delete wins if `_sync_field_ts['deleted_at']` > the edited field's HLC stamp; otherwise the edit wins and `deleted_at` is cleared. (Soft-delete is thus plain field-level LWW under the same clock — no separate delete-ordering rule, no residual wall-clock comparison that skew could corrupt.) |
+| Page metadata edited + content edited simultaneously | Independent sync units — no conflict possible between them                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| Attachment row metadata vs. binary blob              | Independent pipelines — no conflict possible                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 
 ---
 
@@ -473,30 +473,30 @@ The Yjs document is the authoritative source for page content. The `content` col
 
 ### 7.1 Structured Data (LWW Tables)
 
-| Trigger | Behavior |
-|---------|----------|
+| Trigger                  | Behavior                                                                                                                                                                        |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **On write (debounced)** | After any local write, start a 2-second debounce timer. If no further writes occur within 2s, push all pending changes. Rapid edits (e.g., toggling checkboxes) batch together. |
-| **On reconnect** | When network connectivity returns (or WebSocket reconnects), flush the entire sync queue immediately. |
-| **Manual sync** | User can trigger sync from settings or a sync button. Flushes queue + pulls latest. |
-| **Periodic background** | Every 5 minutes while the app is open, check for pending items and pull remote changes. Safety net for missed triggers. |
-| **App lifecycle** | On app foreground (mobile): pull changes. On app background/close: flush queue if possible. |
+| **On reconnect**         | When network connectivity returns (or WebSocket reconnects), flush the entire sync queue immediately.                                                                           |
+| **Manual sync**          | User can trigger sync from settings or a sync button. Flushes queue + pulls latest.                                                                                             |
+| **Periodic background**  | Every 5 minutes while the app is open, check for pending items and pull remote changes. Safety net for missed triggers.                                                         |
+| **App lifecycle**        | On app foreground (mobile): pull changes. On app background/close: flush queue if possible.                                                                                     |
 
 ### 7.2 Yjs Editor Content
 
-| Trigger | Behavior |
-|---------|----------|
-| **Interval while editing** | While a page is open in the editor, sync Yjs state every **5 seconds** if there are local changes. |
-| **On blur / navigate away** | When the user leaves the page (blur event, route change), immediately sync the final Yjs state. |
-| **On save (Ctrl+S / Cmd+S)** | Explicit save triggers immediate Yjs sync. |
-| **On reconnect** | Same as structured data — flush pending Yjs updates. |
+| Trigger                      | Behavior                                                                                           |
+| ---------------------------- | -------------------------------------------------------------------------------------------------- |
+| **Interval while editing**   | While a page is open in the editor, sync Yjs state every **5 seconds** if there are local changes. |
+| **On blur / navigate away**  | When the user leaves the page (blur event, route change), immediately sync the final Yjs state.    |
+| **On save (Ctrl+S / Cmd+S)** | Explicit save triggers immediate Yjs sync.                                                         |
+| **On reconnect**             | Same as structured data — flush pending Yjs updates.                                               |
 
 ### 7.3 Attachments
 
-| Trigger | Behavior |
-|---------|----------|
-| **On add** | Immediately start background upload (non-blocking). Metadata row enters normal LWW queue. |
-| **On demand (pull)** | Download attachment blob only when user opens the containing page. Cache locally after first download. |
-| **Thumbnail pre-fetch** | During background sync, optionally pre-fetch thumbnails (< 100KB each) for gallery views. |
+| Trigger                 | Behavior                                                                                               |
+| ----------------------- | ------------------------------------------------------------------------------------------------------ |
+| **On add**              | Immediately start background upload (non-blocking). Metadata row enters normal LWW queue.              |
+| **On demand (pull)**    | Download attachment blob only when user opens the containing page. Cache locally after first download. |
+| **Thumbnail pre-fetch** | During background sync, optionally pre-fetch thumbnails (< 100KB each) for gallery views.              |
 
 ---
 
@@ -545,28 +545,28 @@ Strategy: UPSERT by (table_name, row_id)
 
 ### 8.3 Retry & Error Handling
 
-| Condition | Behavior |
-|-----------|----------|
-| Network error (transient) | Retry with exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s max |
-| Server 5xx | Same retry strategy as network error |
-| Server 4xx (client error) | Do NOT retry. Mark as `failed`. Log error for debugging. |
+| Condition                         | Behavior                                                                                |
+| --------------------------------- | --------------------------------------------------------------------------------------- |
+| Network error (transient)         | Retry with exponential backoff: 1s, 2s, 4s, 8s, 16s, 30s max                            |
+| Server 5xx                        | Same retry strategy as network error                                                    |
+| Server 4xx (client error)         | Do NOT retry. Mark as `failed`. Log error for debugging.                                |
 | Max retries exceeded (3 attempts) | Mark as `failed`. Surface in UI as "X changes failed to sync". User can retry manually. |
-| Auth error (401/403) | Stop all sync. Prompt user to re-authenticate. |
-| Encryption error | Stop sync for that blob. Log error. Do not corrupt remote state. |
+| Auth error (401/403)              | Stop all sync. Prompt user to re-authenticate.                                          |
+| Encryption error                  | Stop sync for that blob. Log error. Do not corrupt remote state.                        |
 
 ### 8.4 Offline Capabilities Matrix
 
-| Feature | Offline Support |
-|---------|----------------|
-| Create/edit/delete any entity | Full — writes to local SQLite |
-| View all local data | Full — reads from local SQLite |
-| Search (FTS5) | Full — local index |
-| Edit notes (TipTap) | Full — Yjs state stored locally |
-| View attachments (already cached) | Full |
-| View attachments (not yet cached) | Not available — needs download |
-| Pomodoro timer | Full — runs locally |
-| Analytics/charts | Full — computed from local data |
-| Sync | Not available — queued for reconnect |
+| Feature                           | Offline Support                      |
+| --------------------------------- | ------------------------------------ |
+| Create/edit/delete any entity     | Full — writes to local SQLite        |
+| View all local data               | Full — reads from local SQLite       |
+| Search (FTS5)                     | Full — local index                   |
+| Edit notes (TipTap)               | Full — Yjs state stored locally      |
+| View attachments (already cached) | Full                                 |
+| View attachments (not yet cached) | Not available — needs download       |
+| Pomodoro timer                    | Full — runs locally                  |
+| Analytics/charts                  | Full — computed from local data      |
+| Sync                              | Not available — queued for reconnect |
 
 ---
 
@@ -576,17 +576,17 @@ The server is a **zero-knowledge blob relay**. It performs the following functio
 
 ### 9.1 Server Responsibilities
 
-| Function | Implementation |
-|----------|---------------|
-| **Auth** | SRP (Secure Remote Password) — verify identity without seeing passwords |
-| **Blob storage** | Store encrypted sync blobs in R2, indexed by `(user_id, table, row_id)` |
-| **Blob relay** | When Device A pushes a blob, relay it to all other online devices via WebSocket |
-| **Yjs storage** | Store latest encrypted Yjs snapshot per page in R2 |
-| **Attachment storage** | Store encrypted attachment files in R2, serve via signed URLs |
-| **Change feed** | Maintain an ordered log of blob updates per user for pull requests |
-| **Device registry** | Track registered devices, enforce device limits |
-| **Billing** | Manage subscriptions (if applicable) |
-| **Garbage collection** | Delete soft-deleted blobs after 30 days |
+| Function               | Implementation                                                                  |
+| ---------------------- | ------------------------------------------------------------------------------- |
+| **Auth**               | SRP (Secure Remote Password) — verify identity without seeing passwords         |
+| **Blob storage**       | Store encrypted sync blobs in R2, indexed by `(user_id, table, row_id)`         |
+| **Blob relay**         | When Device A pushes a blob, relay it to all other online devices via WebSocket |
+| **Yjs storage**        | Store latest encrypted Yjs snapshot per page in R2                              |
+| **Attachment storage** | Store encrypted attachment files in R2, serve via signed URLs                   |
+| **Change feed**        | Maintain an ordered log of blob updates per user for pull requests              |
+| **Device registry**    | Track registered devices, enforce device limits                                 |
+| **Billing**            | Manage subscriptions (if applicable)                                            |
+| **Garbage collection** | Delete soft-deleted blobs after 30 days                                         |
 
 ### 9.2 Server Does NOT
 
@@ -926,9 +926,9 @@ What the user SHOULD do after revoking a lost device:
 ### 12.4 Device Limits
 
 | Plan | Max Devices |
-|------|-------------|
-| Free | 3 |
-| Pro | 10 |
+| ---- | ----------- |
+| Free | 3           |
+| Pro  | 10          |
 
 Attempting to register beyond the limit returns `429 Too Many Devices`.
 
@@ -988,6 +988,7 @@ vida-export-2026-03-13/
 ### 14.1 Sync Header Leakage
 
 The sync blob header is plaintext (the server needs it for routing). This intentionally reveals:
+
 - Table name (what type of entity)
 - Row ID (opaque UUIDv7)
 - Sync version and timestamp
@@ -1000,6 +1001,7 @@ The sync blob header is plaintext (the server needs it for routing). This intent
 ### 14.2 Metadata Analysis Risks
 
 An adversary with server access could infer:
+
 - How many entities a user has per table
 - When the user is active (from timestamps)
 - How often they edit (from version numbers)
@@ -1010,6 +1012,7 @@ An adversary with server access could infer:
 ### 14.3 Replay Protection
 
 Each sync blob includes a unique nonce (24 bytes, random) for XChaCha20-Poly1305. Replaying an old blob would:
+
 1. Be detected by the version number (server rejects lower versions)
 2. Be detected by the LWW timestamp (client rejects older timestamps)
 3. Not compromise encryption (nonces are never reused)
@@ -1017,10 +1020,12 @@ Each sync blob includes a unique nonce (24 bytes, random) for XChaCha20-Poly1305
 ### 14.4 Device Compromise
 
 If a device is compromised (stolen, malware), the attacker has:
+
 - The local SQLite database (encrypted with SQLCipher, key derived from Vault Key)
 - The Vault Key (if the app was unlocked)
 
 **Mitigation:**
+
 1. User revokes the device immediately
 2. User changes master password → new Vault Key
 3. All existing data on the compromised device becomes stale (can't sync)
@@ -1033,13 +1038,13 @@ If a device is compromised (stolen, malware), the attacker has:
 
 The sync protocol is implemented incrementally across the development roadmap:
 
-| Phase | Scope | What's Added |
-|-------|-------|-------------|
-| **0 (Foundation)** | Basic push/pull | sync_queue, LWW sync for single table (pages), HTTP polling only |
+| Phase                    | Scope            | What's Added                                                          |
+| ------------------------ | ---------------- | --------------------------------------------------------------------- |
+| **0 (Foundation)**       | Basic push/pull  | sync_queue, LWW sync for single table (pages), HTTP polling only      |
 | **1 (Journals + Tasks)** | Multi-table sync | LWW for tasks + pages, Yjs sync for page content, WebSocket transport |
-| **3 (Mobile)** | Cross-device | Full sync engine, priority-based initial sync, offline queue |
-| **6 (Desktop)** | Third platform | Same sync engine, platform-specific SQLite adapter |
-| **9 (Polish)** | Full feature set | Data export, attachment pipeline optimization, device management UI |
+| **3 (Mobile)**           | Cross-device     | Full sync engine, priority-based initial sync, offline queue          |
+| **6 (Desktop)**          | Third platform   | Same sync engine, platform-specific SQLite adapter                    |
+| **9 (Polish)**           | Full feature set | Data export, attachment pipeline optimization, device management UI   |
 
 ---
 
@@ -1047,24 +1052,24 @@ The sync protocol is implemented incrementally across the development roadmap:
 
 ### 16.1 Sync Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/sync/push` | Push encrypted blobs (batch) |
-| `GET` | `/api/sync/pull?since={ts}&limit={n}` | Pull changes since timestamp |
-| `POST` | `/api/sync/push-yjs` | Push encrypted Yjs snapshots |
-| `GET` | `/api/sync/pull-yjs?since={ts}` | Pull Yjs snapshots |
-| `POST` | `/api/sync/attachments/upload-url` | Get signed R2 upload URL |
-| `POST` | `/api/sync/attachments/download-url` | Get signed R2 download URL |
-| `WSS` | `/ws` | WebSocket connection for real-time sync |
+| Method | Path                                  | Description                             |
+| ------ | ------------------------------------- | --------------------------------------- |
+| `POST` | `/api/sync/push`                      | Push encrypted blobs (batch)            |
+| `GET`  | `/api/sync/pull?since={ts}&limit={n}` | Pull changes since timestamp            |
+| `POST` | `/api/sync/push-yjs`                  | Push encrypted Yjs snapshots            |
+| `GET`  | `/api/sync/pull-yjs?since={ts}`       | Pull Yjs snapshots                      |
+| `POST` | `/api/sync/attachments/upload-url`    | Get signed R2 upload URL                |
+| `POST` | `/api/sync/attachments/download-url`  | Get signed R2 download URL              |
+| `WSS`  | `/ws`                                 | WebSocket connection for real-time sync |
 
 ### 16.2 Device Endpoints
 
-| Method | Path | Description |
-|--------|------|-------------|
-| `POST` | `/api/devices/register` | Register a new device |
-| `GET` | `/api/devices` | List all devices |
-| `DELETE` | `/api/devices/{id}` | Revoke a device |
-| `PATCH` | `/api/devices/{id}` | Update device name |
+| Method   | Path                    | Description           |
+| -------- | ----------------------- | --------------------- |
+| `POST`   | `/api/devices/register` | Register a new device |
+| `GET`    | `/api/devices`          | List all devices      |
+| `DELETE` | `/api/devices/{id}`     | Revoke a device       |
+| `PATCH`  | `/api/devices/{id}`     | Update device name    |
 
 ### 16.3 Export Endpoint
 
@@ -1086,16 +1091,16 @@ This column is classified as **P (plaintext)** — it contains only schema-defin
 
 ## 18. Decisions Deferred
 
-| Decision | Deferred To |
-|----------|-------------|
-| WebSocket implementation (Cloudflare Durable Objects vs. third-party) | Phase 1.7 (Sync Server) |
-| Exact debounce timing tuning (2s vs 3s, 5s vs 10s for Yjs) | Phase 1.7, adjusted based on real-world testing |
-| Sync blob compression algorithm (LZ4 vs zstd) | Phase 1.7 |
-| Change log retention period (90 days vs configurable) | Phase 1.7 |
-| Thumbnail pre-fetch strategy (eager vs. lazy) | Phase 3 (Mobile) |
-| Device limit enforcement per pricing plan | Post-Phase 12 (Billing) |
-| Bandwidth throttling / rate limiting specifics | Phase 1.7 |
+| Decision                                                              | Deferred To                                     |
+| --------------------------------------------------------------------- | ----------------------------------------------- |
+| WebSocket implementation (Cloudflare Durable Objects vs. third-party) | Phase 1.7 (Sync Server)                         |
+| Exact debounce timing tuning (2s vs 3s, 5s vs 10s for Yjs)            | Phase 1.7, adjusted based on real-world testing |
+| Sync blob compression algorithm (LZ4 vs zstd)                         | Phase 1.7                                       |
+| Change log retention period (90 days vs configurable)                 | Phase 1.7                                       |
+| Thumbnail pre-fetch strategy (eager vs. lazy)                         | Phase 3 (Mobile)                                |
+| Device limit enforcement per pricing plan                             | Post-Phase 12 (Billing)                         |
+| Bandwidth throttling / rate limiting specifics                        | Phase 1.7                                       |
 
 ---
 
-*This ADR is the single source of truth for the Vida Platform sync protocol. Any deviation requires a new ADR with justification.*
+_This ADR is the single source of truth for the Vida Platform sync protocol. Any deviation requires a new ADR with justification._

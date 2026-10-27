@@ -22,7 +22,13 @@ const LAYOUTS: readonly ViewLayout[] = ['list']
 // date-fns is not in apps/web's deps. Deterministic for a fixed `at`, so `?sample` stays Gate-stable (BR-S5-8).
 // Two formatters so a multi-year ledger stays unambiguous: the year is shown ONLY for entries outside `now`'s year.
 const DATE_TIME = new Intl.DateTimeFormat('en', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
-const DATE_TIME_YEAR = new Intl.DateTimeFormat('en', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+const DATE_TIME_YEAR = new Intl.DateTimeFormat('en', {
+  year: 'numeric',
+  month: 'short',
+  day: 'numeric',
+  hour: '2-digit',
+  minute: '2-digit',
+})
 const formatAt = (at: number, now: number): string =>
   (new Date(at).getFullYear() === new Date(now).getFullYear() ? DATE_TIME : DATE_TIME_YEAR).format(at)
 
@@ -69,20 +75,49 @@ function ActivityRow({ entry, now }: { entry: ActivityEntry; now: number }) {
 }
 
 /** The paginated-list pager (EC-8, 50/page) — shown whenever there is data; prev/next disabled at the bounds. */
-function Pager({ index, count, total, onPage }: { index: number; count: number; total: number; onPage: (i: number) => void }) {
+function Pager({
+  index,
+  count,
+  total,
+  onPage,
+}: {
+  index: number
+  count: number
+  total: number
+  onPage: (i: number) => void
+}) {
   const start = index * PAGE_SIZE + 1
   const end = Math.min(total, start + PAGE_SIZE - 1)
   return (
-    <View flexDirection="row" alignItems="center" justifyContent="space-between" gap="$12" role="group" aria-label="Pagination">
+    <View
+      flexDirection="row"
+      alignItems="center"
+      justifyContent="space-between"
+      gap="$12"
+      role="group"
+      aria-label="Pagination"
+    >
       <Text fontSize="$caption" color="$colorTextMuted" style={TABULAR}>
         {start}–{end} of {total}
       </Text>
       {count > 1 ? (
         <View flexDirection="row" gap="$8">
-          <Button intent="ghost" size="small" disabled={index === 0} onPress={() => onPage(index - 1)} aria-label="Previous page">
+          <Button
+            intent="ghost"
+            size="small"
+            disabled={index === 0}
+            onPress={() => onPage(index - 1)}
+            aria-label="Previous page"
+          >
             Previous
           </Button>
-          <Button intent="ghost" size="small" disabled={index >= count - 1} onPress={() => onPage(index + 1)} aria-label="Next page">
+          <Button
+            intent="ghost"
+            size="small"
+            disabled={index >= count - 1}
+            onPress={() => onPage(index + 1)}
+            aria-label="Next page"
+          >
             Next
           </Button>
         </View>
@@ -125,7 +160,9 @@ export function ActivityMode() {
         }
         aria-label="Activity"
       />
-      {data.total > 0 ? <Pager index={data.page.index} count={data.page.count} total={data.total} onPage={data.setPage} /> : null}
+      {data.total > 0 ? (
+        <Pager index={data.page.index} count={data.page.count} total={data.total} onPage={data.setPage} />
+      ) : null}
     </View>
   )
 }

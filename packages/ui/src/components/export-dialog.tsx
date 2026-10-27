@@ -62,7 +62,14 @@ const Radio = styled(View, {
 })
 // The 3px left accent bar for the selected row (aria-hidden; clipped to the radius by Radio's overflow:hidden — the
 // Toast accent precedent). Only the bar + Dot carry selection, so the row's border stays quiet.
-const AccentBar = styled(View, { position: 'absolute', left: 0, top: 0, bottom: 0, width: 3, backgroundColor: '$colorBrandPrimary' })
+const AccentBar = styled(View, {
+  position: 'absolute',
+  left: 0,
+  top: 0,
+  bottom: 0,
+  width: 3,
+  backgroundColor: '$colorBrandPrimary',
+})
 const Dot = styled(View, {
   width: 16,
   height: 16,

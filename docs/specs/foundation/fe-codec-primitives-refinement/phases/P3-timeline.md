@@ -2,15 +2,18 @@
 
 > **Phase 3** of fe-codec-primitives-refinement (LIF-230). Profile: change-frontend-component · Entity Delivery Flow ②.
 > §XXVI gate artifact (the PLAN). Acceptance oracle = `../mockups/views-refinement.html` (Timeline plate, before→after)
-> + `../mockups/views-alive-concept.html` (Timeline · now-fulcrum). Status: **Approval 1 ✅ · grounded (§4b) · /preflight
-> BLOCKED→resolved (G1 ordering · G2 fulcrum total-function · G3 skeleton 3-col) · gate-2 /critique REVISE→fixed (fulcrum
-> continuity = combined-sequence trim) → SHIP → AWAITING APPROVAL 2 (cleared to implement).**
+>
+> - `../mockups/views-alive-concept.html` (Timeline · now-fulcrum). Status: **Approval 1 ✅ · grounded (§4b) · /preflight
+>   BLOCKED→resolved (G1 ordering · G2 fulcrum total-function · G3 skeleton 3-col) · gate-2 /critique REVISE→fixed (fulcrum
+>   continuity = combined-sequence trim) → SHIP → AWAITING APPROVAL 2 (cleared to implement).**
 
 ## 0. Source model
+
 Code-first (frontend-source-of-truth.md). Tokens/variants only; no hard-coded palette (brand values = M4/Figma).
 Base = editorial preset; same tokens, no new palette. All PRESENTATIONAL (BR-2 state-as-prop; LV-5 content boundary).
 
 ## 1. Baseline (ground truth — `packages/ui/src/components/timeline.tsx`)
+
 `Timeline<T>` is **UI-2 · V3**, the data-view spine laid out as a **continuous vertical rail**, purely presentational:
 `items · renderItem · getKey · getLabel? · state · empty? · error? · loadingCount · density · ref · aria`.
 It owns: the `role="list"` container (state-dependent role), `role="listitem"` rows, the **rail column** (aria-hidden:
@@ -21,10 +24,12 @@ trim, continuous via root `gap:0` + Content `paddingBottom`=density), the option
 `packages/ui/src/CLAUDE.md` timeline paragraph ≡ code. `[FACT: timeline.tsx:22-139; docs/specs/components/ui-2-platform-views/v3-timeline.md]`
 
 ## 2. The crux (the /contract boundary — resolve before building)
+
 The mockups show (a) an **editorial date + hollow/now dot** refinement and (b) a **now-fulcrum**: past = toned record,
 future = light intention, with a `now` divider between them. Split by the LV-5 boundary (P1 precedent):
 
 **timeline OWNS (this phase builds):**
+
 - **L1 chrome polish** (the rail + the date — both already the renderer's):
   - **Date GUTTER (layout change — R1 resolved).** The oracle renders the date in a **left gutter**, not inline:
     `TimelineItem` goes from the current 2-col `[rail | content]` to a **3-col `[when | rail | content]`** grid (the
@@ -52,9 +57,9 @@ future = light intention, with a `now` divider between them. Split by the LV-5 b
   - `present` (the **now ITEM** — views-refinement model) → **accent dot** (`$colorBrandPrimary` fill + border) with a
     **soft accent ring**. `[oracle: views-refinement.html:67]`
   - `future` → **hollow dot faded** (`opacity` on the **dot only**) + date held at **`$colorTextMuted` at full opacity**
-    (the intention reads via the *dot*, NOT a sub-AA date — **R2**, the Card pattern verbatim: "dim the CHROME, hold the
+    (the intention reads via the _dot_, NOT a sub-AA date — **R2**, the Card pattern verbatim: "dim the CHROME, hold the
     TEXT" — a blanket opacity composited muted text to 2.4–2.6, axe-confirmed). `[oracle: alive-concept.html:63-65; FACT:
-    card.tsx:208-209; card-refinement.md:88-89]`
+card.tsx:208-209; card-refinement.md:88-89]`
   - `past` / absent → the L1 hollow dot. `[oracle: alive-concept.html:59]`
 - **L2 §2b — `nowFulcrum?`** (NEW, optional boolean; `nowLabel?: ReactNode` default `"now"`): a **separate** divider for
   the journal model (alive-concept), orthogonal to a `present` item (R3 resolved — the two compose). When set AND
@@ -62,17 +67,19 @@ future = light intention, with a `now` divider between them. Split by the LV-5 b
   deterministic boundary; consumer-ordered items, renderer never sorts) — an accent eyebrow (`nowLabel`,
   `$colorBrandPrimary`, uppercase tracked) in the `when` gutter + an accent dot-with-ring on the rail + a solid accent
   rail segment. The reusable "journal spine." For continuity (R4), the **4-branch line trim is computed over the COMBINED
-  render sequence** (items + the fulcrum spliced in as a pseudo-row), NOT the items array — so the rail connects *through*
+  render sequence** (items + the fulcrum spliced in as a pseudo-row), NOT the items array — so the rail connects _through_
   the fulcrum in every case (interior: both neighbours resolve to "middle"; top-of-list: the fulcrum is "first", trims
   `top:18`). The fulcrum is an `aria-hidden` **non-listitem** row (stable key `'now-fulcrum'`); items keep
   `role="listitem"`. `[oracle: alive-concept.html:67-71,153]`
 
 **CONSUMER OWNS (NOT this phase — composed in renderItem; documented as the pattern):**
+
 - The **title typography** of past (serif italic, toned) vs future (muted) rows — that is `renderItem`'s output, and the
   consumer already computed `getTemporalState`, so it styles its own row body. timeline exposes the rail/date + the hook;
   the row body stays the consumer's (LV-5, exactly P1's honest-scope split). `[FACT: v1-list-view.md LV-5; P1-list-view.md §2]`
 
 ## 3. Contract (the exact diff to `TimelineProps<T>`) — DRAFT (preflight to confirm §4a)
+
 ```ts
 + export type TemporalState = 'past' | 'present' | 'future'
   export interface TimelineProps<T> {
@@ -90,7 +97,9 @@ future = light intention, with a `now` divider between them. Split by the LV-5 b
     ref?: Ref<HTMLDivElement>; 'aria-label'?: string; 'aria-labelledby'?: string
   }
 ```
+
 Rules:
+
 - **Layout:** `TimelineItem` becomes a **3-col grid** `[when | rail | content]` (R1). The gutter width is a **layout
   number** (`style`), not a token — the tabs `indicatorStyle` / gallery `tileStyle` precedent (fixed px, `useTabletUp`
   reduction at 375). The rail column + continuity trick (root `gap:0`, Content `paddingBottom`) are **unchanged**.
@@ -109,6 +118,7 @@ Rules:
   guard style). `getTemporalState` absent → all dots neutral/hollow (today's behavior, non-breaking).
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking):** Brave, full matrix **3 presets × light/dark × 3 densities** — timeline renders in the **3-col
   gutter layout**; serif+eyebrow dates in the gutter; hollow resting dots; `present` accent dot + soft ring; `future` faded
   **dot** (date full-opacity); the **now-fulcrum divider** (accent eyebrow + accent dot-ring + accent segment) at the
@@ -130,13 +140,14 @@ Rules:
   v3-timeline spec change-log.
 
 ## 4a. Preflight (to run at gate — grounded checks)
+
 - **F1** confirm `$colorSurfacePrimary` + `$colorTextMuted` resolve for a hollow dot (fill+border) on the unnamed host in
   both modes (dark: paper→surface, border still visible against warm-dark surfaces — the tight constraint) — verify at Visual Gate.
 - **F2** confirm `useTheme().get('web')` reaches `colorBrandPrimary` for the ring box-shadow at the timeline host (pomodoro
   precedent was a widget; confirm in a data-view host) — else fall back to a filled accent dot WITHOUT the ring (still a
   valid token-pure "now").
 - **F3 (now model — RESOLVED, total function).** Two orthogonal, composable affordances:
-  (a) **`present` item** → the accent now-*dot* on that listitem (views-refinement model); 0..1 present items (dev-warn if >1).
+  (a) **`present` item** → the accent now-_dot_ on that listitem (views-refinement model); 0..1 present items (dev-warn if >1).
   (b) **`nowFulcrum`** → ONE inserted divider (alive-concept journal model), independent of (a).
   **Ordering contract (G1):** the renderer **does NOT sort** — the consumer passes items in temporal order (the board/list
   "provider orders upstream" precedent, ADR-007 §3.3). **Placement algorithm (G2) — deterministic/total:** the fulcrum
@@ -154,7 +165,9 @@ Rules:
   `aria-busy` unchanged `[FACT: timeline.tsx:87-100]`.
 
 ## 4b. Grounding ledger (code + docs verified — No-Guessing, 2026-10-06)
+
 Every mechanism traces to a real source line (not the CLAUDE.md digest):
+
 - **Serif date family + sizes:** `primitive.json:139` display=`'Spectral',Georgia,serif` (reader=Fraunces, quietDesk=Source
   Serif 4 — all serif); `:154-159` caption=12 · small=14 · display=36 → date = **`$display` FAMILY at `$small` size**.
 - **Color tokens** all present in `themes.ts`: colorSurfacePrimary · colorTextMuted · colorBorderDefault · colorBrandPrimary · colorSurfaceSecondary.
@@ -168,7 +181,9 @@ Every mechanism traces to a real source line (not the CLAUDE.md digest):
 - **Continuity invariant** to preserve: `timeline.tsx:9-12,39` root `gap:0` + Content `paddingBottom`; `:109-117` 4-branch trim.
 
 ## 5. Implementation prompt
+
 Types-first: add `TemporalState` + extend `TimelineProps<T>` (§3) in `timeline.tsx`.
+
 1. **Layout:** `TimelineItem` → 3-col grid `[when | rail | content]` (a `When` styled host: right-aligned gutter,
    `style`-driven width + `useTabletUp` narrowing at 375; rail + Content continuity unchanged).
 2. **Date chrome:** `Label` → `fontFamily:'$display'`, size `$small`, `style={{fontVariantNumeric:'tabular-nums'}}` (pomodoro
@@ -185,6 +200,6 @@ Types-first: add `TemporalState` + extend `TimelineProps<T>` (§3) in `timeline.
    (columns stay aligned loading→loaded). Keep the continuous-rail invariant (root `gap:0`, Content `paddingBottom`),
    state-dependent role, dev-warns.
 6. Update `.stories.tsx`: gutter dates (serif+eyebrow), temporal states (past/present/future), the now-fulcrum journal story,
-   + the full-matrix Visual-Gate cells. Update tests (§4) + §XXIX currency (CLAUDE.md timeline paragraph + v3-timeline change-log).
+   - the full-matrix Visual-Gate cells. Update tests (§4) + §XXIX currency (CLAUDE.md timeline paragraph + v3-timeline change-log).
 7. Document the consumer title-treatment pattern (past serif-italic-toned, future muted) in the CLAUDE.md note as "composed in
    renderItem", NOT built here (LV-5).

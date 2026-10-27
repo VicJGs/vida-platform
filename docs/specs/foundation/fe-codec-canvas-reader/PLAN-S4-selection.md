@@ -1,10 +1,12 @@
 # PLAN — S4 · Selection affordance
 
 > Entity Delivery Flow ② · per-slice §XXVI PLAN (gate 1). Slice S4 of 6. Home: `@vida/ui` (extends `canvas-reader.tsx`
-> + the barrel). Grounded in `delivery/seam-contract.md` §A (the 4 `on*Selection` + the highlight mark) + `envision.md`
-> EC-4/EC-3/EC-12/EC-15 + `interpretation.md` IR-NEEDS-3 (the body is a consumer slot the shell does not own/parse).
+>
+> - the barrel). Grounded in `delivery/seam-contract.md` §A (the 4 `on*Selection` + the highlight mark) + `envision.md`
+>   EC-4/EC-3/EC-12/EC-15 + `interpretation.md` IR-NEEDS-3 (the body is a consumer slot the shell does not own/parse).
 
 ## §1 · Context
+
 The way an annotation is **born**: selecting a passage offers Highlight · Quote · Bookmark (+ Listen-from-here), and a
 highlighted span reads as a **marked inline span** within the text. This is the first slice that must reconcile a hard
 architectural fact: **the reading body is the consumer's `renderContent` slot — the shell does not render, own, or parse
@@ -13,11 +15,13 @@ body. The selection UI must therefore be **presentational pieces the consumer co
 `Range`), not a shell-positioned overlay.
 
 ## §2 · The surfacing model (the S4 design decision — doc-resolved, confirm at Approval 1)
+
 **DECISION: export two presentational pieces the consumer composes in `renderContent`; CanvasReader gains NO selection
 props.** Grounded:
+
 - **IR-NEEDS-3 / ORG-DELEGATES:** the shell renders the body via a slot and does not parse it → it has no `Range`, cannot
   know a selection exists or where it is, cannot anchor an overlay to it.
-- **EC-12 (feel): "immediate + in-place, not a buried form"** → the action set must sit *at the selection*; only the
+- **EC-12 (feel): "immediate + in-place, not a buried form"** → the action set must sit _at the selection_; only the
   consumer (who owns the `Range` in `renderContent`) can place it. A shell-rendered top-of-column bar would be exactly the
   "buried form" EC-12 warns against.
 - **Envision greybox note:** "the real affordance is a **selection popover**" — i.e. consumer-anchored.
@@ -33,6 +37,7 @@ but violates EC-12 in-place feel [a bar can't anchor to the Range] and asks the 
 doesn't render. Doc-contrary.)_
 
 ## §3 · Business rules (S4 scope)
+
 - **BR-S4-1 (SelectionActions = the birth action set, EC-4):** an exported `role="toolbar"` of up to four icon Buttons —
   **Highlight · Quote · Bookmark** (the three natures, IR-2) **+ Listen-from-here**. Each button renders **only when its
   handler is passed** (the `collection onFilter` / shell render-when-handler precedent); emits its intent, **never writes**
@@ -42,11 +47,11 @@ doesn't render. Doc-contrary.)_
   Button's `aria-label` carries the name (the icon-only-Button contract). SVG uses `currentColor` so it adopts the
   Button's intent colour.
 - **BR-S4-3 (Listen-from-here degrades, IR-7):** the Listen-from-here action renders only when `onListenFrom` is passed
-  AND `listenAvailable !== false`; when TTS is unavailable it is **omitted** (not an error) — the full listen *states*
+  AND `listenAvailable !== false`; when TTS is unavailable it is **omitted** (not an error) — the full listen _states_
   are S5's, S4 only gates the birth action.
 - **BR-S4-4 (ReaderHighlightMark = the inline mark, EC-3):** an exported inline component that wraps a highlighted span so
   it **reads as marked within the text** — a **2px accent underline** (`borderBottomWidth: 2` + `borderBottomColor:
-  $colorBrandPrimary`, the calendar `TodayMark` / list-tick precedent; **≥2px** so it reads as a deliberate mark and clears
+$colorBrandPrimary`, the calendar `TodayMark` / list-tick precedent; **≥2px** so it reads as a deliberate mark and clears
   the ≥3:1 graphical floor reliably across all 6 cells — a 1px hairline is too thin), **text held at `$colorTextPrimary`**
   so body AA is unaffected (the "mark the chrome, hold the text" rule). **Token-pure: no accent-surface bg tint** (no such
   token — the list-view P1 lesson; an accent background would be M4 palette churn). The mark is a graphical object → ≥3:1.
@@ -66,17 +71,18 @@ doesn't render. Doc-contrary.)_
 - **BR-S4-7 (tokens/type, EC-10/11):** DIRECT semantic tokens; accent on the icons + the mark (flips per preset); AA
   full-matrix incl. warm-dark (button labels are aria-only; icon + mark carry the graphical 3:1 floor).
 - **BR-S4-8 (CanvasReader unchanged for selection):** no new `CanvasReaderProps`; the consumer composes `SelectionActions`
-  + `ReaderHighlightMark` inside `renderContent`. Both are added to the package barrel.
+  - `ReaderHighlightMark` inside `renderContent`. Both are added to the package barrel.
 
 ## §4 · Contract (new exports — NOT on `CanvasReaderProps`)
+
 ```ts
 interface SelectionActionsProps {
   onHighlight?: () => void
   onQuote?: () => void
   onBookmark?: () => void
   onListenFrom?: () => void
-  listenAvailable?: boolean          // default true; false ⇒ Listen-from-here omitted (IR-7)
-  'aria-label'?: string              // default "Turn selection into"
+  listenAvailable?: boolean // default true; false ⇒ Listen-from-here omitted (IR-7)
+  'aria-label'?: string // default "Turn selection into"
   ref?: Ref<HTMLDivElement>
 }
 function SelectionActions(props: SelectionActionsProps): JSX.Element
@@ -88,6 +94,7 @@ function ReaderHighlightMark(props: ReaderHighlightMarkProps): JSX.Element
 ```
 
 ## §5 · Acceptance (Visual Gate MUSTs)
+
 - **EC-4:** the action set offers Highlight · Quote · Bookmark (+ Listen-from-here); each emits its intent.
 - **EC-15:** every control is a **real inline SVG icon**, never an emoji (gate asserts `<svg>` present, 0 emoji).
 - **EC-3:** a `ReaderHighlightMark` span reads as a **marked inline span** (accent underline) within body text, text AA held.
@@ -95,7 +102,7 @@ function ReaderHighlightMark(props: ReaderHighlightMarkProps): JSX.Element
   `position:fixed` box over a highlighted span) reads as immediate + in-place (not a buried form). ⚠ The shipped `Popover`
   is **trigger-anchored (cloneElement), NOT Range-anchored** (`popover.tsx:47-59`) — so the live
   `getSelection().getRangeAt(0).getBoundingClientRect()` → position wiring is the **apps/web consumer's** (S6 / fe-books
-  #36), NOT this slice. S4 proves the *pieces* + a representative placement, not the Range→rect math.
+  #36), NOT this slice. S4 proves the _pieces_ + a representative placement, not the Range→rect math.
 - icons + mark are graphical objects **≥3:1** (both modes × 3 presets); body text AA 0-fail incl. warm-dark ·
 - **each action ≥ 44×44** (§X touch target) · **focus ring + hover state** on each icon button (§VIII hover visually
   distinct — ghost fills `$colorSurfaceSecondary`; the 16px icon still ≥3:1 on the hover surface) · reduced-motion (none) ·
@@ -103,6 +110,7 @@ function ReaderHighlightMark(props: ReaderHighlightMarkProps): JSX.Element
 - tsc 0 · eslint 0 · tests green · **axe 0**.
 
 ## §6 · Implementation prompt
+
 1. `canvas-reader.tsx` —
    - 4 inline SVG icon components (`HighlightIcon`/`QuoteIcon`/`BookmarkIcon`/`ListenIcon`, `aria-hidden`, 16px,
      `currentColor`).
@@ -123,6 +131,7 @@ function ReaderHighlightMark(props: ReaderHighlightMarkProps): JSX.Element
    3:1 + body AA + axe) → §XXIX (`CLAUDE.md` + `canvas-reader.md` S4 block + barrel note).
 
 ## Deviations / open
+
 - The §2 surfacing model (exported pieces, consumer-anchored; callbacks off `CanvasReaderProps`) is the one material
   departure from the PROPOSED seam-contract — doc-resolved (IR-NEEDS-3 + EC-12 + greybox), surfaced for Approval 1.
 - **Rejected third option — a `renderSelection?: (range) => ReactNode` render-prop ON `CanvasReader`:** tempting, but

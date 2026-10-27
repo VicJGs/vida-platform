@@ -19,15 +19,18 @@ verified correct in-text; `tabs.tsx:243-249` wrapping stepper confirmed; +transf
 
 ---
 
-## 1. Intent  [FACT: menu.md §Intent]
-A list of **actions/commands** opened from a trigger. Items *do* things (fire `onSelect`, then the menu closes).
+## 1. Intent [FACT: menu.md §Intent]
 
-### What it is NOT  [FACT: menu.md §Intent]
+A list of **actions/commands** opened from a trigger. Items _do_ things (fire `onSelect`, then the menu closes).
+
+### What it is NOT [FACT: menu.md §Intent]
+
 - **NOT value selection** → that is `Select` (U4), which commits a form value and keeps focus on the trigger.
 - **NOT persistent navigation** → that is nav links / the router (UX-3).
 - **NOT a modal task** → that is `Dialog` (U8).
 
 ## 2. Baseline (code-as-is — verified this session)
+
 - **Build approach settled by the shipped pattern — no fork.** U1–U6 are hand-built on `@tamagui/core`
   (`styled()` + native `render:'<tag>'` + injected CSS for what `styled()` can't see; no new deps, web-first). A menu
   kit (`@tamagui/*` / Radix) is out of scope by definition — UI-1's reason to exist is to **build** these primitives.
@@ -37,7 +40,7 @@ A list of **actions/commands** opened from a trigger. Items *do* things (fire `o
   Button/Input/Checkbox/Select/Card/Tabs. → the U7 config change is **additive**: import + add `light_/dark_Menu` to
   the `themes:` object (the Select/Card/Tabs precedent). [FACT: themes.ts:24-25; tamagui.config.ts:12-27,74-89]
 - **Component tokens** [FACT: tokens/component.json → menu]: `background → {color.surface.primary}` · `border →
-  {color.border.default}` · `itemText → {color.text.primary}` · `itemBackgroundHover → {color.surface.secondary}`
+{color.border.default}` · `itemText → {color.text.primary}` · `itemBackgroundHover → {color.surface.secondary}`
   (hover/roving highlight fill) · `radius → {radius.control}`. All five resolve to shipped DS-2 semantics (three-layer
   intact). **No component token for:** the **danger** item label (contract §41 reads `{color.signal.danger}` semantic
   directly), the **active/press** overlay (overlay opacity), **disabled** (reduced opacity), or the **empty** muted row
@@ -63,34 +66,37 @@ A list of **actions/commands** opened from a trigger. Items *do* things (fire `o
   trigger"; WAI-ARIA APG menu-button vs combobox]
 - **Verify:** `pnpm --filter @vida/ui typecheck && build && test` (currently @vida/ui **136** tests). [FACT: CLAUDE.md]
 
-## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]])  [FACT: menu.md:9-27]
+## 3. API surface (ship verbatim — [[deliverable-is-the-doc-not-my-discretion]]) [FACT: menu.md:9-27]
+
 ```ts
 export interface MenuItem {
   id: string
   label: React.ReactNode
   onSelect?: () => void
   disabled?: boolean
-  intent?: 'default' | 'danger'   // destructive items (narrower than the global intent set — correct for a menu)
-  leading?: React.ReactNode       // icon slot
+  intent?: 'default' | 'danger' // destructive items (narrower than the global intent set — correct for a menu)
+  leading?: React.ReactNode // icon slot
 }
 export interface MenuProps {
-  trigger: React.ReactNode        // slot (usually a Button)
+  trigger: React.ReactNode // slot (usually a Button)
   items: ReadonlyArray<MenuItem>
   open?: boolean
   defaultOpen?: boolean
   onOpenChange?: (open: boolean) => void
-  placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end'   // default 'bottom-start' [INTERP]
+  placement?: 'bottom-start' | 'bottom-end' | 'top-start' | 'top-end' // default 'bottom-start' [INTERP]
 }
 // forwardRef<HTMLButtonElement | View, MenuProps> (the trigger). Props exported.
 ```
+
 - **Controlled + uncontrolled open** in one prop pair (`open` controlled; `defaultOpen` seeds internal state;
   `onOpenChange` always fires). The Select/Tabs controlled-or-uncontrolled precedent → §12 D1. [INTERP: menu.md API]
 - **`trigger` is a slot ReactNode**, but the trigger must carry `role="button"`/`aria-haspopup="menu"`/`aria-expanded`
-  + the open handler + the forwarded ref. How Menu attaches those onto a consumer-supplied node (`cloneElement` onto
-  the slot vs wrapping it in a focusable host) is a **Step 2** structural decision — the contract is silent on the
-  wiring. [UNKNOWN: menu.md gives `trigger: ReactNode` + `forwardRef→trigger` → §10 V; resolve in Step 2] → §12 D9.
+  - the open handler + the forwarded ref. How Menu attaches those onto a consumer-supplied node (`cloneElement` onto
+    the slot vs wrapping it in a focusable host) is a **Step 2** structural decision — the contract is silent on the
+    wiring. [UNKNOWN: menu.md gives `trigger: ReactNode` + `forwardRef→trigger` → §10 V; resolve in Step 2] → §12 D9.
 
-## 4. Visual states (contract §Visual States — menu open/closed · per item)  [FACT: menu.md:29-39]
+## 4. Visual states (contract §Visual States — menu open/closed · per item) [FACT: menu.md:29-39]
+
 - **default** — open, item resting: surface panel (`menu.background`, `menu.radius`, `zIndex.dropdown`), item text
   (`menu.itemText`).
 - **hover** — pointer on an item: highlight fill (`menu.itemBackgroundHover`).
@@ -103,32 +109,37 @@ export interface MenuProps {
 - **empty** — no items: a muted **"No actions"** placeholder row (`menu.itemText` @ muted), non-interactive.
 - **Danger items:** `intent="danger"` → label in `{color.signal.danger}` (destructive affordance). [FACT: menu.md:41]
 
-## 5. Motion (B12)  [FACT: menu.md:43-48]
-| Transition | Duration | Easing | Property |
-|-----------|----------|--------|----------|
-| menu open | `duration.fast` (150) | `easing.out` | opacity + transform (scale/translateY from the trigger edge) |
+## 5. Motion (B12) [FACT: menu.md:43-48]
+
+| Transition | Duration              | Easing       | Property                                                     |
+| ---------- | --------------------- | ------------ | ------------------------------------------------------------ |
+| menu open  | `duration.fast` (150) | `easing.out` | opacity + transform (scale/translateY from the trigger edge) |
+
 - **Reduced-motion:** appears instantly. [FACT: menu.md:48; motion §IX]
 - Injected CSS reading `motion.ts` (the Select panel-enter precedent); B12-legal (transform + opacity only). The
   transform-origin follows `placement` (top vs bottom → grows from the trigger edge). [INTERP: menu.md "from the
   trigger edge" + select-styles.ts] → §12.
 
-## 6. Accessibility (contract §A11y — [FACT: engineering §XIV])  [FACT: menu.md:49-52]
+## 6. Accessibility (contract §A11y — [FACT: engineering §XIV]) [FACT: menu.md:49-52]
+
 - **Roles:** trigger `role="button"` + `aria-haspopup="menu"` + `aria-expanded`; panel `role="menu"`; items
   `role="menuitem"` (`menuitemcheckbox`/`radio` variants out of scope). `useId` id wiring (Select precedent).
 - **Keyboard:** **Enter/Space/↓** open (focus **first** item); **↑/↓** roving; **Enter/Space** activate (→ `onSelect`
-  + close); **Esc** closes; **type-ahead** (first-letter jump); **disabled items skipped**. **Focus returns to the
-  trigger on close** (§XIV). [FACT: menu.md:51]
+  - close); **Esc** closes; **type-ahead** (first-letter jump); **disabled items skipped**. **Focus returns to the
+    trigger on close** (§XIV). [FACT: menu.md:51]
 - **Focus model = roving DOM focus** (the menu-button pattern): the panel/items take real focus (only the active item
   is `tabIndex=0`, rest `-1`, `.focus()` moves down), NOT `aria-activedescendant`. This is the Select **divergence**
   (§2). [INTERP: menu.md "roving" + "focus returns to the trigger"; WAI-ARIA APG menu button] → §12 D2.
 - Not a form control — no `aria-invalid`/`required`. [FACT: menu.md:52]
 
-## 7. Performance budget  [FACT: menu.md:54-55]
+## 7. Performance budget [FACT: menu.md:54-55]
+
 Panel **portals to body**; single active item focused at a time (no per-item focus churn); closes on select/outside-
 click. Panel mounts only while open (enter animation on mount; the Select `.is-open` precedent). [INTERP: menu.md +
 select.tsx]
 
 ## 8. Definition of Done (U7) — acceptance
+
 - [ ] `MenuProps` + `MenuItem` = the contract interfaces **verbatim**; `intent` on items is `default|danger`.
 - [ ] Controlled (`open`) + uncontrolled (`defaultOpen`) both work; `onOpenChange` always fires on open/close.
 - [ ] Roles: trigger `button` + `aria-haspopup="menu"` + `aria-expanded`; panel `role="menu"`; items `role="menuitem"`
@@ -149,6 +160,7 @@ select.tsx]
       measured); Esc returns focus to the trigger; **dark theme** correct — Victor confirms.
 
 ## 9. Decisions to make in Step 2 (planning) — flagged, not yet decided
+
 - **D1** — controlled/uncontrolled **open** state machine (`open`/`defaultOpen`/`onOpenChange` semantics; Select/Tabs
   precedent).
 - **D2** — **focus model**: roving DOM focus on `menuitem`s (the menu-button pattern) — panel takes focus on open,
@@ -169,6 +181,7 @@ select.tsx]
   `aria-haspopup`/`aria-expanded`/`onClick`/ref, vs wrapping it in a focusable host. Grounded in `forwardRef→trigger`.
 
 ## 10. Verify-at-impl (measure/confirm in-browser or against installed types — Step 2/impl)
+
 - **[V1]** Panel portals + the `_Menu` sub-theme crosses the portal (`$background` resolves) — Visual Gate both themes.
 - **[V2]** Roving DOM focus: ↑/↓ move real focus between `menuitem`s; disabled skipped; Esc returns focus to trigger —
   jsdom (`document.activeElement`) + a real keyboard pass in Storybook.
@@ -178,6 +191,7 @@ select.tsx]
 - **[V6]** Type-ahead jumps to the first matching enabled item — jsdom + Storybook.
 
 ## 11. Files (planned — confirmed in Step 2)
+
 - `packages/ui/src/components/menu.tsx` — the primitive (trigger slot wiring + portalled `role="menu"` panel + items
   from `items` + open state machine + roving focus + keyboard + type-ahead + positioning).
 - `packages/ui/src/components/menu.stories.tsx` — Visual-Gate surface: all applicable states × light｜dark; the 4
@@ -220,12 +234,12 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
   - **No `aria-activedescendant`** anywhere. The panel/menu is NOT `tabIndex`-focusable itself; focus lives on items.
   - **Highlight is driven by `activeIndex` STATE, NOT `:focus-visible` [Gate1 #2].** `:focus-visible` is a browser
     heuristic that is NOT reliably applied to a **programmatically** focused element — on open-by-pointer (trigger
-    *click* → seed → `.focus()`), the last modality was a pointer, so Chromium may not paint `:focus-visible` on the
+    _click_ → seed → `.focus()`), the last modality was a pointer, so Chromium may not paint `:focus-visible` on the
     first item and the required "highlight = focus" (menu.md:34) would be **absent on the most common open path**. So the
     fill is a Tamagui variant keyed to `i === activeIndex` (the `select.tsx:407` `.is-active` + `select-styles.ts`
     precedent — a state class, jsdom-assertable), **not** `focusVisibleStyle`. `focusVisibleStyle` carries ONLY the 2px
     outline ring. [FACT: :focus-visible programmatic-focus heuristic; select.tsx:407; menu.md:34.]
-  [FACT: menu.md:34,50-51 "roving", "focus returns to the trigger"; WAI-ARIA APG menu button; select.tsx:156,302-304,404-406.]
+    [FACT: menu.md:34,50-51 "roving", "focus returns to the trigger"; WAI-ARIA APG menu button; select.tsx:156,302-304,404-406.]
 
 - **D3 — positioning: generalize Select's single-`top` two-phase anchor to 4 placements + flip + clamp.**
   `PanelPos = { left: number; top: number; minWidth: number; maxWidth: number; maxHeight: number }` — the
@@ -241,11 +255,11 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
      - **horizontal align:** `start` → `left = rect.left`; `end` → `left = rect.right - panelWidth`. Then **clamp**
        `left ∈ [8, vw - panelWidth - 8]` (the `select.tsx:289` clamp, both edges).
      - `maxHeight = min(<cap>, openUp ? spaceAbove : spaceBelow)`; set `entered=true` → triggers the enter transition.
-  `<cap>` = **none by default** (a menu is short); if it exceeds viewport, `maxHeight` + `overflowY:auto` (Select's 320
-  cap pattern is available if needed). [FACT: select.tsx:122-124,198-212,271-298.] → D3 is Select's math, 4-corner-ized.
+       `<cap>` = **none by default** (a menu is short); if it exceeds viewport, `maxHeight` + `overflowY:auto` (Select's 320
+       cap pattern is available if needed). [FACT: select.tsx:122-124,198-212,271-298.] → D3 is Select's math, 4-corner-ized.
   - **No first-paint flash for `end` placement [Gate1 #6].** Phase 1 renders start-aligned (`left = rect.left`) at
     `opacity:0`; phase 2 corrects `left` for `end`. Because phase 2 is a **`useLayoutEffect`** it runs **synchronously
-    before the browser paints** (its whole purpose vs `useEffect`) — the provisional (wrong-x) frame is *never painted*,
+    before the browser paints** (its whole purpose vs `useEffect`) — the provisional (wrong-x) frame is _never painted_,
     so there is no flash **even under reduced-motion** (where `.is-open` sets `opacity:1` instantly). The `opacity:0`→
     `is-open` gate is belt-and-suspenders; the pre-paint layout effect is the real guarantee. The content-hug width is
     identical in both phases (content doesn't change), so the measured `offsetWidth` equals the painted width. Confirm at
@@ -271,16 +285,16 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
 
 - **D6 — motion: injected CSS reading `motion.ts`, transform-origin per placement (B12).** New `internal/menu-styles.ts`
   (the `select-styles.ts` precedent): `.vida-menu-panel { opacity:0; transform: translateY(±4px) scale(0.98);
-  transition: opacity <fast> <out>, transform <fast> <out>; transform-origin: <edge> }` and `.vida-menu-panel.is-open {
-  opacity:1; transform:none }`. **Sign + origin by placement:** bottom → `translateY(-4px)`, `transform-origin: top`;
+transition: opacity <fast> <out>, transform <fast> <out>; transform-origin: <edge> }` and `.vida-menu-panel.is-open {
+opacity:1; transform:none }`. **Sign + origin by placement:** bottom → `translateY(-4px)`, `transform-origin: top`;
   top → `translateY(4px)`, `transform-origin: bottom` (grows "from the trigger edge", menu.md:46). The `is-open` class
   flips post-mount via the `entered` flag (`select.tsx:143,297,376`). Reduced-motion `@media (prefers-reduced-motion:
-  reduce)` → `transition:none` (instant). Item hover/press/focus fills are **instant** state swaps (B12-legal). [FACT:
+reduce)` → `transition:none` (instant). Item hover/press/focus fills are **instant** state swaps (B12-legal). [FACT:
   select-styles.ts; motion.ts; menu.md:43-48.]
 
 - **D7 — empty state: a DISABLED "No actions" `menuitem` inside `role="menu"` [Gate1 #4].** When `items.length === 0`,
   the panel renders (`role="menu"`, `aria-label` from the accessible name) containing a single **`role="menuitem"
-  aria-disabled="true"`** row with muted text "No actions" (`$colorTextMuted`). NOT `aria-hidden` on a `View`: a
+aria-disabled="true"`** row with muted text "No actions" (`$colorTextMuted`). NOT `aria-hidden` on a `View`: a
   `role="menu"` with zero `menuitem` descendants + only `aria-hidden` content is an empty-composite-widget that axe /
   screen readers flag (and DoD requires axe-clean), whereas a real disabled, non-actionable `menuitem` is announceable
   and matches the contract's "placeholder **row**" (menu.md:39). It is `tabIndex=-1`, skipped by nav (it's disabled).
@@ -290,11 +304,11 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
 
 - **D8 — danger item = a Tamagui `intent` VARIANT on the LABEL `<Text>`, not the row `<View>` [Gate1 #1].** A Tamagui
   `<Text>` that sets its own `color` does **not** inherit the parent `View`'s `color` — so putting `color:
-  '$colorSignalDanger'` on the row `View` while the label is a child `<Text color="$itemText">` would render the label
+'$colorSignalDanger'` on the row `View` while the label is a child `<Text color="$itemText">` would render the label
   **primary, not red** (exactly why `button.tsx:66-78` colors `ButtonText` itself and `select.tsx:415` sets `color` on
   the option's own `<Text>`). So the danger decision lives on a **`styled(Text)` item label** with a variant:
   `MenuItemLabel = styled(Text, { name:'Menu', color:'$itemText', variants: { intent: { default:{}, danger:{
-  color:'$colorSignalDanger' } } } })`. The row `View` keeps only `disabled` (opacity) + the `is-active`/hover FILL
+color:'$colorSignalDanger' } } } })`. The row `View` keeps only `disabled` (opacity) + the `is-active`/hover FILL
   variants (D2). `$colorSignalDanger` resolves under `<Theme name="Menu">` via the base-theme cascade (verified:
   themes.ts `colorSignalDanger → danger500`; Select uses base `$colorTextMuted`/`$colorFocusRing` under `name:'Select'`
   the same way). Prop-driven color MUST be a variant, not injected CSS — [[injected-css-loses-to-tamagui-variants]] (the
@@ -306,8 +320,8 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
   - Require a **single valid element**: `isValidElement(trigger)` else **dev-warn #1** + render `trigger` raw (no
     wiring) — a fragment/string/array can't receive a ref or aria. [FACT: menu.md:26 "usually a Button".]
   - `cloneElement(trigger, { ref: composedTriggerRef, 'aria-haspopup': 'menu', 'aria-expanded': isOpen, 'aria-controls':
-    isOpen ? menuId : undefined, onClick: compose(trigger.props.onClick, toggle), onKeyDown: compose(trigger.props.
-    onKeyDown, onTriggerKeyDown) })`. `compose(theirs, ours)` calls the consumer's handler first, then ours unless
+isOpen ? menuId : undefined, onClick: compose(trigger.props.onClick, toggle), onKeyDown: compose(trigger.props.
+onKeyDown, onTriggerKeyDown) })`. `compose(theirs, ours)` calls the consumer's handler first, then ours unless
     `defaultPrevented` (standard event-merge). Button spreads `{...rest}` FIRST so these computed a11y props win
     (`button.tsx:186,191`) and forwards `ref` to the native `<button>` (`button.tsx:151` forwardRef + render:'button').
   - **`composedTriggerRef`** merges three refs: Menu's internal `triggerRef` (for positioning/focus), the **forwarded**
@@ -320,6 +334,7 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
     `role="button"` (a `<Button>` already is one; forcing it onto a non-button trigger is the consumer's contract — documented).
 
 ## 13. Structure (the gate target)
+
 ```
 <>
   {cloneElement(trigger, {                          // D9 — decorate the consumer's element (usually <Button>)
@@ -359,15 +374,16 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
     </Theme>, document.body)}
 </>
 ```
+
 - **Styled defs:** `MenuItemRow = styled(View, { name:'Menu', flexDirection:'row', alignItems:'center', gap:'$8',
-  cursor:'pointer', paddingVertical:'$8', paddingHorizontal:'$12', borderRadius:'$radius',
-  focusVisibleStyle:{ outlineColor:'$colorFocusRing', outlineWidth:2, outlineStyle:'solid', outlineOffset:-2 },
-  hoverStyle:{ backgroundColor:'$itemBackgroundHover' }, variants: { active:{ true:{ backgroundColor:'$itemBackgroundHover' } },
-  disabled:{ true:{ opacity:0.5, cursor:'not-allowed', hoverStyle:{ backgroundColor:'transparent' } } } } })` — the
+cursor:'pointer', paddingVertical:'$8', paddingHorizontal:'$12', borderRadius:'$radius',
+focusVisibleStyle:{ outlineColor:'$colorFocusRing', outlineWidth:2, outlineStyle:'solid', outlineOffset:-2 },
+hoverStyle:{ backgroundColor:'$itemBackgroundHover' }, variants: { active:{ true:{ backgroundColor:'$itemBackgroundHover' } },
+disabled:{ true:{ opacity:0.5, cursor:'not-allowed', hoverStyle:{ backgroundColor:'transparent' } } } } })` — the
   **row layout is explicit** (the `select.tsx:89-98` option precedent) [Gate1 #5]; the FILL is the `active` variant
   (state, D2) + `hoverStyle` (pointer), both **instant** swaps (B12-legal); `focusVisibleStyle` carries ONLY the outline
   ring. `MenuItemLabel = styled(Text, { name:'Menu', fontFamily:'$body', color:'$itemText', variants:{ intent:{
-  default:{}, danger:{ color:'$colorSignalDanger' } } } })` (D8).
+default:{}, danger:{ color:'$colorSignalDanger' } } } })` (D8).
 - **`toggle` seeds `activeIndex` [Gate1 #3]:** `toggle = () => isOpen ? close() : openMenu(firstEnabled())` — click-open
   routes through the **same seeded `openMenu`** as the keyboard paths (a bare boolean flip would leave `activeIndex=-1`
   and the layout effect would focus nothing). `openMenu(active)` sets `activeIndex=active`, computes provisional `pos`,
@@ -377,7 +393,7 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
 - **`focusItem(i)`** = `setActiveIndex(i)` (the layout effect does the actual `.focus()` — single focus authority, D2).
 - **`onTriggerKeyDown`** (on the trigger, D4 open row): `ArrowDown`/`Enter`/`Space` → `preventDefault` +
   `openMenu(firstEnabled())`; `ArrowUp` → `preventDefault` + `openMenu(lastEnabled())`. Other keys fall through (native).
-  - **`preventDefault` on Enter/Space is REQUIRED, not cosmetic [preflight fold].** The trigger is *usually* a native
+  - **`preventDefault` on Enter/Space is REQUIRED, not cosmetic [preflight fold].** The trigger is _usually_ a native
     `<button>` (a `<Button>`, `render:'button'`), which synthesizes a **`click` on Enter-keydown / Space-keyup**. Without
     `preventDefault` in `onTriggerKeyDown`, Enter would fire BOTH my keydown handler (→ `openMenu`) AND the native click
     (→ my composed `onClick` → `toggle` → immediately close) = a double-fire that opens-then-closes. `preventDefault` on
@@ -398,14 +414,16 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
   (the `select.tsx:159-173` pattern) + a dev-warn if absent → **dev-warn #2**.
 
 ## 14. Dev-warns (NODE_ENV-guarded, DCE'd in prod — Button/Select precedent, `select.tsx:165-173`)
+
 1. `trigger` is not a valid single element (`!isValidElement`) — can't receive ref/aria; rendered raw, unwired.
 2. No accessible name (`aria-label`/`aria-labelledby`) for the menu panel.
 3. `items` is empty (renders the "No actions" row — usually a bug at the call site).
 4. Two `items[].id` collide (ids must be unique for `itemId(i)` / test targeting) — [INTERP: `MenuItem.id` is the key].
 
 ## 15. Deferrals + defects (bounded, flagged — not silent)
+
 - **DEF-U7-a (for DS) — no `menu.itemTextDanger` component token.** Danger reads the base semantic `{color.signal.
-  danger}` directly (D8), breaking the three-layer "item colors come from a `menu.*` token" convention that
+danger}` directly (D8), breaking the three-layer "item colors come from a `menu.*` token" convention that
   `itemText`/`itemBackgroundHover` follow. DS may add `menu.itemTextDanger → {color.signal.danger}`. (Parallel to the
   Tabs/Select token-gap DEFs.) [FACT: component.json menu has no danger key; menu.md:41 reaches the semantic.]
 - **DEF-U7-b (for DS) — no `menuitemcheckbox`/`menuitemradio`.** The contract fences them out of scope (menu.md:50); a
@@ -414,6 +432,7 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
   `Menu` is a future composition. [FACT: menu.md API is a flat `items` array.]
 
 ## 16. Verify-at-impl (adds to §10)
+
 - **[V7]** `compose(theirs, ours)` event-merge respects `defaultPrevented` (consumer can veto open) — jsdom.
 - **[V8]** `mergeRefs` assigns internal + forwarded + the consumer's own trigger ref (React 19 `props.ref`) — jsdom
   (assert all three receive the node); context7 the ref-as-prop read if `undefined`.
@@ -421,10 +440,12 @@ type-ahead, enabled-nav helpers) is the **Select mechanism reused**; the two net
   race between open-seed and arrow) — jsdom (`document.activeElement` after each key).
 
 ## 17. Gate 1 — independent critique resolutions (REVISE → all addressed)
+
 Fresh adversarial subagent; verdict **REVISE (1 blocker + 4 material + 3 minor)**. It independently verified the token
 cascade under `name:'Menu'` (Select uses base tokens the same way), every cited `select.tsx` line, the Button
 `{...rest}`/ref passthrough (cloneElement-onto-`<Button>` wires correctly), `zIndex.dropdown`, B12 legality, the
 single-`top` discipline, and the verbatim API. Resolutions (all in-plan, Rev 3):
+
 - **B(#1) — danger color on the wrong element** → **D8** rewritten: danger is a variant on a `styled(Text)`
   **`MenuItemLabel`**, not the row `View` (a `<Text>` with its own `color` doesn't inherit the View's — `button.tsx:66-78`/
   `select.tsx:415` precedent). §13 label is now `<MenuItemLabel intent=…>`.
@@ -448,6 +469,7 @@ single-`top` discipline, and the verbatim API. Resolutions (all in-plan, Rev 3):
 **Rev 3 (2026-08-08) — Gate 1 resolutions (§17 above): all 8 addressed in-place. Next: Gate 2 — /preflight + gate-2 critique.**
 
 ## 18. Build result + gates (2026-08-08) — IMPLEMENTED, Visual Gate PASS
+
 Files: `components/menu.tsx` (+ `MenuItem`/`MenuProps`) · `menu.stories.tsx` · `menu.test.tsx` (**24 jsdom**) ·
 `internal/menu-styles.ts` (**new** — panel enter opacity+transform from the trigger edge, reduced-motion, reading
 `motion.ts`) · `tamagui.config.ts` (+`light_/dark_Menu`) · `index.ts` (barrel: `Menu`, `MenuProps`, `MenuItem`).
@@ -455,9 +477,10 @@ Files: `components/menu.tsx` (+ `MenuItem`/`MenuProps`) · `menu.stories.tsx` ·
 build + build-storybook ✓ · root typecheck **10/10**. Siblings unregressed.
 
 Gate trail: Step 1 forward spec → Step 2 PLAN (D1–D9) → **Gate 1** independent critique REVISE (1 blocker + 4 material
-+ 3 minor) → all fixed (Rev 3, §17) → **Approval 1** → **Gate 2** /preflight **PASSED** (1 critical fold: trigger
-Enter/Space `preventDefault`) + gate-2 critique **SHIP** → **Approval 2** → implemented → **Component Visual Gate PASS**
-(Victor confirmed, both themes).
+
+- 3 minor) → all fixed (Rev 3, §17) → **Approval 1** → **Gate 2** /preflight **PASSED** (1 critical fold: trigger
+  Enter/Space `preventDefault`) + gate-2 critique **SHIP** → **Approval 2** → implemented → **Component Visual Gate PASS**
+  (Victor confirmed, both themes).
 
 **Impl bug caught by jsdom (the focus-authority test earned its keep):** on open, React commits TWICE before the panel
 is focusable — first with `pos=null` (panel unrendered), then after the seed effect sets `pos`. The roving-focus + the
@@ -466,6 +489,7 @@ refine layout effects didn't re-run across that second commit, so the first `.fo
 correctly. [[portal-open-focus-needs-a-mount-gated-effect-dep]] — carries to U8 Dialog / U9 Popover (same open-then-focus).
 
 **Visual Gate — measured in real Brave** (Playwright; the flip/slide/colour are unverifiable in jsdom, `getBoundingClientRect`=0):
+
 - **B12 motion:** panel `transition: opacity 0.15s cubic-bezier(0,0,0.3,1), transform 0.15s cubic-bezier(0,0,0.3,1)` —
   **transform + opacity ONLY** (no bg/color/width). ✓
 - **Danger distinct:** light label `rgb(239,68,68)` vs default `rgb(15,23,42)`; dark `rgb(239,68,68)` vs `rgb(248,250,252)`.

@@ -23,10 +23,7 @@ import {
   SESSION_STATUS,
   EFFECT_TYPE,
 } from '@vida/types'
-import {
-  StatusSchema,
-  PrioritySchema,
-} from './common'
+import { StatusSchema, PrioritySchema } from './common'
 import { SyncOperationSchema } from './sync'
 import { AccountTypeSchema } from './finance'
 import { MasteryLevelSchema } from './learning'

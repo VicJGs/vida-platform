@@ -76,7 +76,9 @@ const FIXTURES: Record<string, EditorDocument> = {
               { type: 'paragraph', content: [{ type: 'text', text: 'parent' }] },
               {
                 type: 'bulletList',
-                content: [{ type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'child' }] }] }],
+                content: [
+                  { type: 'listItem', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'child' }] }] },
+                ],
               },
             ],
           },
@@ -104,8 +106,16 @@ const FIXTURES: Record<string, EditorDocument> = {
       {
         type: 'taskList',
         content: [
-          { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'todo' }] }] },
-          { type: 'taskItem', attrs: { checked: true }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'done' }] }] },
+          {
+            type: 'taskItem',
+            attrs: { checked: false },
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'todo' }] }],
+          },
+          {
+            type: 'taskItem',
+            attrs: { checked: true },
+            content: [{ type: 'paragraph', content: [{ type: 'text', text: 'done' }] }],
+          },
         ],
       },
     ],
@@ -139,11 +149,22 @@ const FIXTURES: Record<string, EditorDocument> = {
   },
   callout: {
     type: 'doc',
-    content: [{ type: 'callout', attrs: { variant: 'success' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'note' }] }] }],
+    content: [
+      {
+        type: 'callout',
+        attrs: { variant: 'success' },
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'note' }] }],
+      },
+    ],
   },
   hardBreak: {
     type: 'doc',
-    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'line1' }, { type: 'hardBreak' }, { type: 'text', text: 'line2' }] }],
+    content: [
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'line1' }, { type: 'hardBreak' }, { type: 'text', text: 'line2' }],
+      },
+    ],
   },
   integrationTyped: {
     type: 'doc',
@@ -166,7 +187,10 @@ const FIXTURES: Record<string, EditorDocument> = {
     // M2: a parenthesised URL must survive
     type: 'doc',
     content: [
-      { type: 'paragraph', content: [{ type: 'text', text: 'wiki', marks: [{ type: 'link', attrs: { href: 'https://e.com/a(b)c' } }] }] },
+      {
+        type: 'paragraph',
+        content: [{ type: 'text', text: 'wiki', marks: [{ type: 'link', attrs: { href: 'https://e.com/a(b)c' } }] }],
+      },
     ],
   },
   codeBlockWithFence: {
@@ -197,7 +221,19 @@ describe('E6 markdown serializers — BR-5 round-trip identity (JSON→md→JSON
       ;(n.content as { type: string; content?: unknown[] }[] | undefined)?.forEach(walk)
     }
     Object.values(FIXTURES).forEach((d) => d.content.forEach((n) => walk(n as never)))
-    for (const t of ['paragraph', 'heading', 'bulletList', 'orderedList', 'taskList', 'blockquote', 'codeBlock', 'horizontalRule', 'image', 'table', 'callout']) {
+    for (const t of [
+      'paragraph',
+      'heading',
+      'bulletList',
+      'orderedList',
+      'taskList',
+      'blockquote',
+      'codeBlock',
+      'horizontalRule',
+      'image',
+      'table',
+      'callout',
+    ]) {
       expect(seen.has(t)).toBe(true)
     }
   })
@@ -232,10 +268,17 @@ describe('E6 — integration_block_handling modes (BR-E6-5)', () => {
 })
 
 describe('E6 — frontmatter (BR-E6-6)', () => {
-  const doc: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'body' }] }] }
+  const doc: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'body' }] }],
+  }
 
   it('emits + parses a YAML fence when include_frontmatter is true', () => {
-    const md = toMarkdown(doc, { include_frontmatter: true, frontmatter: { title: 'T', tags: ['a', 'b'] }, integration_block_handling: 'comment' })
+    const md = toMarkdown(doc, {
+      include_frontmatter: true,
+      frontmatter: { title: 'T', tags: ['a', 'b'] },
+      integration_block_handling: 'comment',
+    })
     expect(md.startsWith('---\n')).toBe(true)
     const res = fromMarkdown(md)
     expect(res.document).toEqual(doc)
@@ -262,7 +305,10 @@ describe('E6 — degrade, never throw (BR-E6-9)', () => {
   })
 
   it('toMarkdown on an unknown node type does not throw', () => {
-    const doc = { type: 'doc', content: [{ type: 'futureBlock', content: [{ type: 'text', text: 'x' }] }] } as unknown as EditorDocument
+    const doc = {
+      type: 'doc',
+      content: [{ type: 'futureBlock', content: [{ type: 'text', text: 'x' }] }],
+    } as unknown as EditorDocument
     expect(() => toMarkdown(doc, COMMENT)).not.toThrow()
   })
 })

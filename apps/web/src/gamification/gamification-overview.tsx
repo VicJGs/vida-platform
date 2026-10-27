@@ -33,7 +33,14 @@ function BalancesList({ lines }: { lines: readonly CurrencyLine[] }) {
   return (
     <View gap="$12" role="list" aria-label="Currency balances">
       {lines.map((line) => (
-        <View key={line.def.code} role="listitem" flexDirection="row" justifyContent="space-between" alignItems="baseline" gap="$12">
+        <View
+          key={line.def.code}
+          role="listitem"
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="baseline"
+          gap="$12"
+        >
           <Text fontSize="$body" color="$colorTextPrimary">
             {line.def.name ?? line.def.code}
           </Text>
@@ -57,7 +64,14 @@ function RecentUnlocksList({ unlocks, now }: { unlocks: readonly RecentUnlock[];
   return (
     <View gap="$12" role="list" aria-label="Recent achievements">
       {unlocks.map((u) => (
-        <View key={u.achievement.id} role="listitem" flexDirection="row" justifyContent="space-between" alignItems="baseline" gap="$12">
+        <View
+          key={u.achievement.id}
+          role="listitem"
+          flexDirection="row"
+          justifyContent="space-between"
+          alignItems="baseline"
+          gap="$12"
+        >
           <View gap="$2" flex={1}>
             <Text fontSize="$body" color="$colorTextPrimary">
               {u.achievement.title}
@@ -87,7 +101,12 @@ export function GamificationOverviewPanel({
   const blocks: DashboardBlock[] = [
     { id: 'level', title: 'Level', size: 'lg', state: 'success' },
     { id: 'balances', title: 'Currencies', size: 'md', state: overview.balances.length > 0 ? 'success' : 'empty' },
-    { id: 'achievements', title: 'Recent achievements', size: 'md', state: overview.recentUnlocks.length > 0 ? 'success' : 'empty' },
+    {
+      id: 'achievements',
+      title: 'Recent achievements',
+      size: 'md',
+      state: overview.recentUnlocks.length > 0 ? 'success' : 'empty',
+    },
   ]
 
   const renderBlock = (b: DashboardBlock): ReactNode => {
@@ -115,5 +134,13 @@ export function GamificationOverviewPanel({
     )
   }
 
-  return <DashboardView title="Your System" blocks={blocks} renderBlock={renderBlock} blockEmpty={blockEmpty} aria-label="System overview" />
+  return (
+    <DashboardView
+      title="Your System"
+      blocks={blocks}
+      renderBlock={renderBlock}
+      blockEmpty={blockEmpty}
+      aria-label="System overview"
+    />
+  )
 }

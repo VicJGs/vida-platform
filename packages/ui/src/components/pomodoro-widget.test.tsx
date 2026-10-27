@@ -77,7 +77,11 @@ describe('PomodoroWidget', () => {
   it('B3: durationMs change resets atomically (idle → no warn)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { getByText, rerender } = renderUI({ durationMs: 60_000, 'aria-label': 'Focus' })
-    rerender(<UIProvider><PomodoroWidget durationMs={30_000} aria-label="Focus" /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <PomodoroWidget durationMs={30_000} aria-label="Focus" />
+      </UIProvider>,
+    )
     expect(getByText('00:30')).not.toBeNull()
     expect(warn).not.toHaveBeenCalled()
   })
@@ -87,7 +91,11 @@ describe('PomodoroWidget', () => {
     const { getByText, rerender } = renderUI({ durationMs: 60_000, 'aria-label': 'Focus' })
     fireEvent.click(getByText('Start'))
     advance(1000)
-    rerender(<UIProvider><PomodoroWidget durationMs={30_000} aria-label="Focus" /></UIProvider>)
+    rerender(
+      <UIProvider>
+        <PomodoroWidget durationMs={30_000} aria-label="Focus" />
+      </UIProvider>,
+    )
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('mid-run'))
     expect(getByText('00:30')).not.toBeNull()
     expect(getByText('Start')).not.toBeNull() // idle

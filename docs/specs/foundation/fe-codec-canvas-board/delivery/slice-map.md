@@ -5,6 +5,7 @@
 > cross-module data is deferred to first consumer / #19). Every `structural` EC maps to ≥1 slice (plane-aware).
 
 ## What #10 builds (and what it does not)
+
 - **Builds:** the net-new immersive **Canvas frame** (`@vida/ui`) + the two worked-example composition conventions
   (`apps/web`). The frame hosts the already-shipped `GalleryView` (vision-board) and month `CalendarView`
   (calendar-grid). Read-only throughout (R1).
@@ -14,8 +15,10 @@
 
 ## Slices
 
-### S1 — `CanvasView` immersive frame  ·  plane: **frontend**  ·  home: `@vida/ui`
+### S1 — `CanvasView` immersive frame · plane: **frontend** · home: `@vida/ui`
+
 The net-new shell. A read-only editorial frame that hosts exactly one view-mode renderer at canvas scale.
+
 - **Masthead:** `eyebrow?` (uppercase archetype label) · `title` (REQUIRED, user-named surface — never the month,
   EC-5 resolution A) · `meta?` (quiet subline) · `progress?` slot (consumer-filled board-level meter, EC-3) ·
   `actions?` slot (read-only only — e.g. month nav, EC-6) · a hairline divider.
@@ -28,8 +31,10 @@ The net-new shell. A read-only editorial frame that hosts exactly one view-mode 
 - **Covers:** EC-1 (editorial masthead) · EC-3 (progress slot) · EC-4 (empty ownership) · EC-6 (read-only/action
   slot) · EC-7 (preset feel) · EC-8 (AA full matrix).
 
-### S2 — canvas composition conventions + adapters  ·  plane: **frontend**  ·  home: `apps/web`
+### S2 — canvas composition conventions + adapters · plane: **frontend** · home: `apps/web`
+
 Type + convention (no live data hook — deferred to first consumer, R7; the collection/dashboard adapter precedent).
+
 - **`VisionBoardCanvas` convention:** `CanvasView` hosting `GalleryView` over dreams — imagery-first tiles; a
   **reference `renderItem`** demonstrating the measure-driven progress bar **and** label (EC-9/R9/R9a: `milestone`→
   steps bar, unmeasured→none, etc.); the board-level realized meter wired into the `progress?` slot; `title` from the
@@ -41,19 +46,21 @@ Type + convention (no live data hook — deferred to first consumer, R7; the col
   unchanged, title=user-named) · EC-9 (measure-driven progress style+label convention).
 
 ## EC → slice coverage (plane-aware)
-| EC | Type | Slice(s) | Plane | Gate |
-|----|------|----------|-------|------|
-| EC-1 editorial masthead | structural | S1 | frontend | Visual-Gate MUST |
-| EC-2 imagery-first gallery | structural | S2 (S1 hosts) | frontend | Visual-Gate MUST |
-| EC-3 progress slot | structural | S1 (slot) · S2 (fills) | frontend | Visual-Gate MUST |
-| EC-4 empty ownership (vision=teaching / calendar=grid) | structural | S1 | frontend | Visual-Gate MUST |
-| EC-5 month CalendarView unchanged + user-named title | structural | S2 (S1 title prop) | frontend | Visual-Gate MUST |
-| EC-6 read-only / action slot | structural | S1 | frontend | Visual-Gate MUST |
-| EC-7 preset re-voice | feel | S1 | frontend | live Visual Gate (feel) |
-| EC-8 AA full matrix | structural | S1 (+S2 reference) | frontend | Visual-Gate MUST |
-| EC-9 measure-driven progress style+label | structural | S2 (convention) | frontend | Visual-Gate MUST |
+
+| EC                                                     | Type       | Slice(s)               | Plane    | Gate                    |
+| ------------------------------------------------------ | ---------- | ---------------------- | -------- | ----------------------- |
+| EC-1 editorial masthead                                | structural | S1                     | frontend | Visual-Gate MUST        |
+| EC-2 imagery-first gallery                             | structural | S2 (S1 hosts)          | frontend | Visual-Gate MUST        |
+| EC-3 progress slot                                     | structural | S1 (slot) · S2 (fills) | frontend | Visual-Gate MUST        |
+| EC-4 empty ownership (vision=teaching / calendar=grid) | structural | S1                     | frontend | Visual-Gate MUST        |
+| EC-5 month CalendarView unchanged + user-named title   | structural | S2 (S1 title prop)     | frontend | Visual-Gate MUST        |
+| EC-6 read-only / action slot                           | structural | S1                     | frontend | Visual-Gate MUST        |
+| EC-7 preset re-voice                                   | feel       | S1                     | frontend | live Visual Gate (feel) |
+| EC-8 AA full matrix                                    | structural | S1 (+S2 reference)     | frontend | Visual-Gate MUST        |
+| EC-9 measure-driven progress style+label               | structural | S2 (convention)        | frontend | Visual-Gate MUST        |
 
 All 8 `structural` ECs are homed; EC-7 (feel) → live gate. No unhomed intent.
 
 ## Build order
+
 S1 (the frame) → S2 (compositions that consume it). S1's Visual Gate must PASS before S2.

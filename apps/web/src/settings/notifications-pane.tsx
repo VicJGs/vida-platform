@@ -33,23 +33,46 @@ export function NotificationsPane() {
         <OptionRow
           label="In-app"
           description="Show notifications inside Vida"
-          control={<Switch disabled={readOnly} aria-label="In-app notifications" checked={notifInApp} onCheckedChange={setNotifInApp} />}
+          control={
+            <Switch
+              disabled={readOnly}
+              aria-label="In-app notifications"
+              checked={notifInApp}
+              onCheckedChange={setNotifInApp}
+            />
+          }
         />
         <OptionRow
           label="Push"
           description="Send notifications to this device"
-          control={<Switch disabled={readOnly} aria-label="Push notifications" checked={notifPush} onCheckedChange={setNotifPush} />}
+          control={
+            <Switch
+              disabled={readOnly}
+              aria-label="Push notifications"
+              checked={notifPush}
+              onCheckedChange={setNotifPush}
+            />
+          }
         />
         <OptionRow
           label="Email"
           description="Send notifications by email"
-          control={<Switch disabled={readOnly} aria-label="Email notifications" checked={notifEmail} onCheckedChange={setNotifEmail} />}
+          control={
+            <Switch
+              disabled={readOnly}
+              aria-label="Email notifications"
+              checked={notifEmail}
+              onCheckedChange={setNotifEmail}
+            />
+          }
         />
         <OptionRow
           label="Quiet hours"
           description="Pause notifications overnight"
           last
-          control={<Switch disabled={readOnly} aria-label="Quiet hours" checked={quietHours} onCheckedChange={setQuietHours} />}
+          control={
+            <Switch disabled={readOnly} aria-label="Quiet hours" checked={quietHours} onCheckedChange={setQuietHours} />
+          }
         />
       </View>
     </Card>

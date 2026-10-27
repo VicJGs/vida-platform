@@ -35,7 +35,10 @@ function contrib(
     summary: (date) => ({ sectionKey, module, dataPoints: [], state: 'success' as const, items: [date] }),
   }
   return withDueIn
-    ? { ...base, dueIn: (range) => ({ sectionKey: 'agenda', module, dataPoints: [], state: 'empty' as const, items: [range] }) }
+    ? {
+        ...base,
+        dueIn: (range) => ({ sectionKey: 'agenda', module, dataPoints: [], state: 'empty' as const, items: [range] }),
+      }
     : base
 }
 

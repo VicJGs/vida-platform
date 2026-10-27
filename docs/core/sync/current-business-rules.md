@@ -1,5 +1,7 @@
 # Sync engine — CURRENT BUSINESS RULES
+
 # Durable ground-truth (§XXIX). Reflects SHIPPED code as of AR-9 (LIF-80, 2026-08-05).
+
 # SY-1/2/3/8/9 are enforced now (scaffold); SY-4/5/6/7 are the activation contract (AR-9b/M4).
 
 - **SY-1 No-flush invariant (the defining constraint).** In M1.0 the engine performs **zero network

@@ -18,9 +18,9 @@ service tier must provide, across all ~21 modules + the cross-cutting services �
 - **C1 · Nothing dropped, and provably so.** Two mechanical guards (§4), not "we read carefully":
   (a) **no deferred-intent flag is orphaned** — every deferral marker in the sources maps to a corpus
   item; (b) **no live derivation/invariant is unaccounted** — every `BR-`/rule id and every
-  derive/compute/rollup/aggregate-class verb in the sources is accounted for in Part A. *(C1 does not
+  derive/compute/rollup/aggregate-class verb in the sources is accounted for in Part A. _(C1 does not
   claim magic completeness — it claims these two enumerable surfaces are provably covered; the human
-  sweep + corpus gate cover the residue.)*
+  sweep + corpus gate cover the residue.)_
 - **C2 · No guessing:** every corpus item is **FACT** (cited doc line), **INTERPRETATION** (derived,
   reasoning shown), or **UNKNOWN** (flagged) — never invented.
 - **C3 · Boundary-drawn:** each item is **service** (this campaign) vs **UI** (P6) per ADR-020; an item
@@ -35,20 +35,20 @@ the corpus, so completeness is guaranteed HERE.
 
 ## 2. Sources (the authoritative corpus inputs — exhaustive)
 
-| # | Source | What it contributes | Path |
-|---|--------|---------------------|------|
-| S1 | Per-module 5-aspect docs | the intent authority (identity/business-rules/contract/structure-data/conventions) | `docs/features/<module>/*` |
-| S2 | DB-4 intake docs | the per-module intent intake | `docs/intake/<module>.md` |
-| S3 | m1.1-delivery-plan §9 | per-module deferred-to-build service scope (4 buckets) | `docs/roadmap/m1.1-delivery-plan.md` |
-| S4 | Realignment reruns | per-module reframes (R6/measurement/X*/AI*) | `docs/specs/foundation/realignment-master-plan/part-1.2-reruns/<module>.md` |
-| S5 | Cross-cutting ADRs | shared-service intent — sessions(004)/review(005)/spaces(006)/views(007)/capability(008)/templates(009)/measurement(011)/economy(012)/notifications(013)/ingestion(014)/AI(015) | `docs/core/decisions/ADR-0*.md` |
-| S6 | Capability framework | ADR-004–015 capabilities + mechanical predicates | `docs/specs/foundation/capability-framework.md` |
-| S7 | Service layer-doc stubs | the intended per-module service shape | `packages/core/src/services/<module>/CLAUDE.md` |
-| S8 | Product spec | the module/feature intent (8 modules + additional domains) | `CLAUDE.md` (project) |
-| S9 | Notes intent (deleted) | recoverable at `main` HEAD — `docs/features/notes-and-pages/*`, `docs/intake/notes-and-pages.md`, `docs/specs/foundation/db-4-notes-and-pages/*` | `git show main:<path>` |
-| **S10** | **Foundation substrate durable docs** | **the kept-current substrate CONTRACT services must honor + each doc's "Deferred (not in this increment)" forward-intent** (backlinks, economy, measurement, capability, spaces, sync, effects) | `docs/core/<substrate>/current-spec.md` + `current-business-rules.md` |
+| #       | Source                                | What it contributes                                                                                                                                                                             | Path                                                                        |
+| ------- | ------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| S1      | Per-module 5-aspect docs              | the intent authority (identity/business-rules/contract/structure-data/conventions)                                                                                                              | `docs/features/<module>/*`                                                  |
+| S2      | DB-4 intake docs                      | the per-module intent intake                                                                                                                                                                    | `docs/intake/<module>.md`                                                   |
+| S3      | m1.1-delivery-plan §9                 | per-module deferred-to-build service scope (4 buckets)                                                                                                                                          | `docs/roadmap/m1.1-delivery-plan.md`                                        |
+| S4      | Realignment reruns                    | per-module reframes (R6/measurement/X*/AI*)                                                                                                                                                     | `docs/specs/foundation/realignment-master-plan/part-1.2-reruns/<module>.md` |
+| S5      | Cross-cutting ADRs                    | shared-service intent — sessions(004)/review(005)/spaces(006)/views(007)/capability(008)/templates(009)/measurement(011)/economy(012)/notifications(013)/ingestion(014)/AI(015)                 | `docs/core/decisions/ADR-0*.md`                                             |
+| S6      | Capability framework                  | ADR-004–015 capabilities + mechanical predicates                                                                                                                                                | `docs/specs/foundation/capability-framework.md`                             |
+| S7      | Service layer-doc stubs               | the intended per-module service shape                                                                                                                                                           | `packages/core/src/services/<module>/CLAUDE.md`                             |
+| S8      | Product spec                          | the module/feature intent (8 modules + additional domains)                                                                                                                                      | `CLAUDE.md` (project)                                                       |
+| S9      | Notes intent (deleted)                | recoverable at `main` HEAD — `docs/features/notes-and-pages/*`, `docs/intake/notes-and-pages.md`, `docs/specs/foundation/db-4-notes-and-pages/*`                                                | `git show main:<path>`                                                      |
+| **S10** | **Foundation substrate durable docs** | **the kept-current substrate CONTRACT services must honor + each doc's "Deferred (not in this increment)" forward-intent** (backlinks, economy, measurement, capability, spaces, sync, effects) | `docs/core/<substrate>/current-spec.md` + `current-business-rules.md`       |
 
-**Cross-check input (not a primary source):** `reconstructed-structure.md #31–#48` MOD-* rows enumerate
+**Cross-check input (not a primary source):** `reconstructed-structure.md #31–#48` MOD-\* rows enumerate
 per-module capabilities ([[issue-title-lists-capabilities-not-builds]]) — read as a reconciliation check
 that no module under-states a capability the decomposition already named, not as an intent source.
 
@@ -59,10 +59,10 @@ notifications, pomodoro (→sessions). **Confirm against `docs/features/README.m
 
 **Dissolved/accumulated contexts — explicit disposition (do NOT skip because "not a module"):**
 
-| Context | Disposition | Read intent from |
-|---|---|---|
-| Spaces | foundation, touches every module, accumulates their needs | `docs/intake/spaces.md` + `docs/core/spaces/*` (S10) |
-| Languages | dissolved → Spaces, but live doc set + service stub remain | `docs/features/languages/*` + `services/languages/CLAUDE.md` |
+| Context                                                    | Disposition                                                           | Read intent from                                                 |
+| ---------------------------------------------------------- | --------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| Spaces                                                     | foundation, touches every module, accumulates their needs             | `docs/intake/spaces.md` + `docs/core/spaces/*` (S10)             |
+| Languages                                                  | dissolved → Spaces, but live doc set + service stub remain            | `docs/features/languages/*` + `services/languages/CLAUDE.md`     |
 | Duties · Dreams/Bucket-List · Commitments · Investigations | dissolved into accumulators (ADR-006 worked-examples / later modules) | their `docs/intake/*` + `docs/features/README.md:52-63` pointers |
 
 ## 3. Method
@@ -107,7 +107,7 @@ real items.
 ## 5. Corpus structure (`corpus.md`)
 
 - **Part A — Per-module service intent:** one table per module. Cols: `id · description · source(file:line) ·
-  FACT/INTERP/UNKNOWN · service|UI · cross-cutting? · candidate home`.
+FACT/INTERP/UNKNOWN · service|UI · cross-cutting? · candidate home`.
 - **Part B — Cross-cutting services register:** the extracted shared services (from C4) — e.g. `summary(date)`
   aggregation, `dueIn(range)`, backlinks/entity-link resolve, search/FTS5, measurement rollups, export,
   effect-rail consumption, notification dispatch — each with contributing modules + source.
@@ -124,15 +124,15 @@ only if requested — default is batched delegated readers, not a Workflow.)
 
 ## 7. Gate (P1's own — two points)
 
-1. **Method gate (before the sweep):** `/critique` on THIS plan → Approval 1. *(Done: REVISE→resolved.)*
+1. **Method gate (before the sweep):** `/critique` on THIS plan → Approval 1. _(Done: REVISE→resolved.)_
 2. **Corpus gate (after the sweep):** independent adversarial critic on `corpus.md` — spot-check modules for
    dropped intent, verify every Part C/C2 row is homed, no INTERPRETATION smuggled as FACT, dedup (§4c) real
-   + the §4a/§4b/§4c checks pass + Victor glance → corpus ratified.
+   - the §4a/§4b/§4c checks pass + Victor glance → corpus ratified.
 
 ## 8. Acceptance (P1 done when)
 
 - [ ] Every module in the roster + every dissolved context (§2 table) has Part A coverage; notes intent
-  restored from `main` HEAD.
+      restored from `main` HEAD.
 - [ ] Part B lists every cross-cutting service candidate with its contributing modules.
 - [ ] Part C: every deferred-intent flag (§4a idiom set) is homed to a corpus item (0 orphan flags).
 - [ ] Part C2: every `BR-`id + derivation verb (§4b) maps to a Part A item.
@@ -142,5 +142,6 @@ only if requested — default is batched delegated readers, not a Workflow.)
 - [ ] Corpus gate (§7.2) passes; Victor glance done.
 
 ## 9. Out of scope for P1
+
 Deciding the issue list / decomposition axis (P3) · any schema change (P2) · any frontend intent beyond
 classifying items as UI (P6) · building anything.

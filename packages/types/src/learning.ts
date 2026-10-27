@@ -39,14 +39,7 @@ export type ReadingPlanArrangement = (typeof READING_PLAN_ARRANGEMENT)[number]
 export const READING_PLAN_GOAL_TYPE = ['manual', 'auto'] as const
 export type ReadingPlanGoalType = (typeof READING_PLAN_GOAL_TYPE)[number]
 
-export const MASTERY_LEVEL = [
-  'novice',
-  'beginner',
-  'intermediate',
-  'advanced',
-  'expert',
-  'master',
-] as const
+export const MASTERY_LEVEL = ['novice', 'beginner', 'intermediate', 'advanced', 'expert', 'master'] as const
 export type MasteryLevel = (typeof MASTERY_LEVEL)[number]
 
 export const SKILL_RESOURCE_TYPE = ['course', 'book'] as const
@@ -76,14 +69,7 @@ export type LanguageStatus = (typeof LANGUAGE_STATUS)[number]
 export const LEARNING_PHASE = ['foundation', 'building', 'fluency'] as const
 export type LearningPhase = (typeof LEARNING_PHASE)[number]
 
-export const LANGUAGE_SKILL_TYPE = [
-  'listening',
-  'speaking',
-  'reading',
-  'writing',
-  'vocabulary',
-  'grammar',
-] as const
+export const LANGUAGE_SKILL_TYPE = ['listening', 'speaking', 'reading', 'writing', 'vocabulary', 'grammar'] as const
 export type LanguageSkillType = (typeof LANGUAGE_SKILL_TYPE)[number]
 
 export const PRACTICE_ACTIVITY_TYPE = [
@@ -163,15 +149,7 @@ export const GRADING_SCALE_TYPE = ['letter', 'numeric', 'pass_fail', 'custom'] a
 export type GradingScaleType = (typeof GRADING_SCALE_TYPE)[number]
 
 /** A weighted grading-system component's type (ED-7 component enumeration). */
-export const GRADING_COMPONENT_TYPE = [
-  'homework',
-  'task',
-  'exam',
-  'quiz',
-  'test',
-  'presentation',
-  'work',
-] as const
+export const GRADING_COMPONENT_TYPE = ['homework', 'task', 'exam', 'quiz', 'test', 'presentation', 'work'] as const
 export type GradingComponentType = (typeof GRADING_COMPONENT_TYPE)[number]
 
 /** A user-shaped grading system (ED-7). Scoped to an institution/program/subject (`scope`+`scope_id`, no FK); a

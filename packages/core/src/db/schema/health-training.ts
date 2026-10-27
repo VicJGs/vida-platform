@@ -26,7 +26,13 @@
 // ============================================================================
 
 import { sqliteTable, text, integer, real, index } from 'drizzle-orm/sqlite-core'
-import { METRIC_SIDE, PHYSICAL_ROLE_AUTHORING_SOURCE, MOVEMENT_PATTERN, WORKOUT_SET_CATEGORY, BURN_SOURCE } from '@vida/types'
+import {
+  METRIC_SIDE,
+  PHYSICAL_ROLE_AUTHORING_SOURCE,
+  MOVEMENT_PATTERN,
+  WORKOUT_SET_CATEGORY,
+  BURN_SOURCE,
+} from '@vida/types'
 import { baseColumns, enumText, json, calendarDate, boolInt } from './_shared'
 
 // --- exercises: the movement catalog ----------------------------------------
@@ -74,9 +80,7 @@ export const exercisePlans = sqliteTable(
     status: text('status'), // OPEN no-CHECK
     goal_ids: json<string[]>('goal_ids'), // no-FK JSON → Core health_goals
     role_id: text('role_id'), // no-FK; nullable → Core physical_roles
-    authoring_source: enumText('authoring_source', PHYSICAL_ROLE_AUTHORING_SOURCE)
-      .notNull()
-      .default('manual'), // FIXED → CHECK (reused)
+    authoring_source: enumText('authoring_source', PHYSICAL_ROLE_AUTHORING_SOURCE).notNull().default('manual'), // FIXED → CHECK (reused)
     deleted_at: integer('deleted_at'), // the documented floor (L18)
   },
   (t) => [index('idx_exercise_plans_status').on(t.status)], // partial WHERE deleted_at IS NULL in migration

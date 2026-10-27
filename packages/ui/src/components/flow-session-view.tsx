@@ -92,9 +92,20 @@ export interface FlowSessionViewProps {
 const TEMPORAL: Record<StageStatus, TemporalState> = { done: 'past', current: 'present', upcoming: 'future' }
 
 // ── styled hosts (unnamed → base theme; no sub-theme — the LV-3 convention) ──────────────────────────────
-const FlowRoot = styled(View, { flexDirection: 'column', gap: '$32', width: '100%', maxWidth: 820, marginHorizontal: 'auto' })
-const Header = styled(View, { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between', gap: '$16' })
-const TitleGroup = styled(View, { flexShrink: 1, gap: '$16' })          // 16px title→meta rhythm (EC-5, review-2)
+const FlowRoot = styled(View, {
+  flexDirection: 'column',
+  gap: '$32',
+  width: '100%',
+  maxWidth: 820,
+  marginHorizontal: 'auto',
+})
+const Header = styled(View, {
+  flexDirection: 'row',
+  alignItems: 'flex-start',
+  justifyContent: 'space-between',
+  gap: '$16',
+})
+const TitleGroup = styled(View, { flexShrink: 1, gap: '$16' }) // 16px title→meta rhythm (EC-5, review-2)
 const MetaGroup = styled(View, { gap: '$8', maxWidth: 320 })
 const HeaderAside = styled(View, { alignItems: 'flex-end', gap: '$8' })
 // One wrapping row holds every affordance — nested non-wrapping sub-rows overflow the narrow card column at 375 (RNW
@@ -132,7 +143,9 @@ function StageBody({
     return (
       <Card padding="default">
         <View role="status">
-          <Text fontSize="$small" color="$colorTextMuted">Couldn’t load this stage.</Text>
+          <Text fontSize="$small" color="$colorTextMuted">
+            Couldn’t load this stage.
+          </Text>
         </View>
       </Card>
     )
@@ -142,8 +155,14 @@ function StageBody({
     return (
       <Card padding="default">
         <View gap="$4">
-          <Text fontFamily="$display" fontSize="$subheading" color="$colorTextMuted">{stage.title}</Text>
-          {stage.proof != null && <Text fontSize="$caption" color="$colorTextMuted">✓ {stage.proof}</Text>}
+          <Text fontFamily="$display" fontSize="$subheading" color="$colorTextMuted">
+            {stage.title}
+          </Text>
+          {stage.proof != null && (
+            <Text fontSize="$caption" color="$colorTextMuted">
+              ✓ {stage.proof}
+            </Text>
+          )}
         </View>
       </Card>
     )
@@ -153,10 +172,10 @@ function StageBody({
     return (
       <Card padding="default">
         <View gap="$4">
-          <Text fontFamily="$display" fontSize="$subheading" color="$colorTextMuted">{stage.title}</Text>
-          {renderStage != null && (
-            <View>{renderStage(stage)}</View>
-          )}
+          <Text fontFamily="$display" fontSize="$subheading" color="$colorTextMuted">
+            {stage.title}
+          </Text>
+          {renderStage != null && <View>{renderStage(stage)}</View>}
         </View>
       </Card>
     )
@@ -170,18 +189,38 @@ function StageBody({
   return (
     <Card
       padding="spacious"
-      header={<Text fontFamily="$display" fontSize="$heading" color="$colorTextPrimary">{stage.title}</Text>}
+      header={
+        <Text fontFamily="$display" fontSize="$heading" color="$colorTextPrimary">
+          {stage.title}
+        </Text>
+      }
       footer={
         hasAffordances ? (
           <AffordanceRow>
-            {onMarkDone != null ? <Button intent="primary" size="sm" onPress={() => onMarkDone(stage.id)}>Mark done</Button> : null}
-            {onRequireProof != null ? <Button intent="secondary" size="sm" onPress={() => onRequireProof(stage.id)}>Require proof</Button> : null}
+            {onMarkDone != null ? (
+              <Button intent="primary" size="sm" onPress={() => onMarkDone(stage.id)}>
+                Mark done
+              </Button>
+            ) : null}
+            {onRequireProof != null ? (
+              <Button intent="secondary" size="sm" onPress={() => onRequireProof(stage.id)}>
+                Require proof
+              </Button>
+            ) : null}
             {onAttach != null ? (
               <>
-                <Text fontSize="$small" color="$colorTextMuted" marginLeft="$4">Attach</Text>
-                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'document')}>Document</Button>
-                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'photo')}>Photo</Button>
-                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'audio')}>Audio</Button>
+                <Text fontSize="$small" color="$colorTextMuted" marginLeft="$4">
+                  Attach
+                </Text>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'document')}>
+                  Document
+                </Button>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'photo')}>
+                  Photo
+                </Button>
+                <Button intent="ghost" size="sm" onPress={() => onAttach(stage.id, 'audio')}>
+                  Audio
+                </Button>
               </>
             ) : null}
           </AffordanceRow>
@@ -258,7 +297,13 @@ export function FlowSessionView({
         nowFulcrum
         nowLabel={nowLabel}
         renderItem={(s) => (
-          <StageBody stage={s} renderStage={renderStage} onAttach={onAttach} onMarkDone={onMarkDone} onRequireProof={onRequireProof} />
+          <StageBody
+            stage={s}
+            renderStage={renderStage}
+            onAttach={onAttach}
+            onMarkDone={onMarkDone}
+            onRequireProof={onRequireProof}
+          />
         )}
         aria-label="Flow stages"
       />
@@ -266,7 +311,9 @@ export function FlowSessionView({
       {/* Effect-rail LOG (BR-FS-6) — read-only; renders iff `effects` is provided. Label medium-muted (no all-caps). */}
       {effects != null && (
         <View gap="$12">
-          <Text fontSize="$subheading" fontWeight="500" color="$colorTextPrimary">{effectRailLabel}</Text>
+          <Text fontSize="$subheading" fontWeight="500" color="$colorTextPrimary">
+            {effectRailLabel}
+          </Text>
           <ListView<FlowEffect>
             items={effects}
             state={effectsState}
@@ -281,8 +328,12 @@ export function FlowSessionView({
             }
             renderItem={(e) => (
               <EffectRow>
-                <Text fontSize="$small" fontWeight="500" color="$colorTextMuted" minWidth={120}>{e.kind}</Text>
-                <Text fontSize="$body" color="$colorTextPrimary">{e.detail}</Text>
+                <Text fontSize="$small" fontWeight="500" color="$colorTextMuted" minWidth={120}>
+                  {e.kind}
+                </Text>
+                <Text fontSize="$body" color="$colorTextPrimary">
+                  {e.detail}
+                </Text>
               </EffectRow>
             )}
           />

@@ -1,6 +1,6 @@
 <!-- Contract — features/learning/education · /documentation Phase 2 · sources: ADR-002 §5.10/§5.18 · learning.ts · intake -->
 
-# Contract — Learning: Education  (level: Feature / Learning sub-context)
+# Contract — Learning: Education (level: Feature / Learning sub-context)
 
 > **Status:** types exist for the FACT base only (`Course`, `IcsFeedConfig`, `IcsSyncedEvent` in
 > `@vida/types/learning.ts`); `@vida/core` `models/learning.ts` + `utils/ics-parser.ts` exist but are **empty
@@ -9,9 +9,10 @@
 > the **designed interface**. `[FACT: learning.ts L100-128, L407-440; ADR-002 §5.10/§5.18]`
 
 ## Exposed surface (via `@vida/core`)
+
 - **Hierarchy CRUD (⚠ INTENDED):** `createInstitution` / `createSelfTaughtPath` · `createProgram(parentRef)` ·
   `createCurriculum(programId, {fromTemplate?})` (fork = deep copy + lineage, ED-11) · `createTerm(curriculumId,
-  {level: year|semester|term, parent?})` (ED-12) · `createSubject(curriculumId, {termId?, degreeTier})` (routing
+{level: year|semester|term, parent?})` (ED-12) · `createSubject(curriculumId, {termId?, degreeTier})` (routing
   enforced, ED-3) · `getHierarchy(programId)` (collapsed per A1)
 - **Subjects (= `courses`, FACT base)** (`Course` `[FACT: learning.ts L100-128]`): CRUD + `listSubjects(filter)`;
   modules via `total_modules`/`completed_modules`.
@@ -19,12 +20,12 @@
   `getWeeklySchedule(range)` → sessions across subjects (My-Week, ⚠ immature) · `listSessions(subjectId)`
 - **ICS (FACT base):** `addFeed(url, {default_course_id?, auto_create_sessions?})` (a user-added URL = X2
   `user-managed`, under `external_in_ok` X5) · `syncFeed(id)` (device-mediated, X1; add-only dedup `UNIQUE(feed_id,uid)`
-  + `ignoreEvent` = X8, never delete) · `matchEvent(eventId, subjectId)` · `ignoreEvent(eventId)` `[FACT: §5.18;
-  ADR-014 X1/X2/X5/X8]`
+  - `ignoreEvent` = X8, never delete) · `matchEvent(eventId, subjectId)` · `ignoreEvent(eventId)` `[FACT: §5.18;
+ADR-014 X1/X2/X5/X8]`
 - **Grading systems (⚠ INTENDED, ED-7):** `createGradingSystem(scope: institution|program|subject, {scale,
-  components:[{type, weight, points}]})` · `computeGrade(subjectId)` · `computeGPA(termId|curriculumId)`
+components:[{type, weight, points}]})` · `computeGrade(subjectId)` · `computeGPA(termId|curriculumId)`
 - **Assessments (⚠ INTENDED, ED-8):** `createAssessment(subjectId, {type: exam|quiz|test|presentation|work,
-  date, weight, modality})` · `recordResult(id, score)` → grade recomputes · `listAssessments(type|subject|range)`
+date, weight, modality})` · `recordResult(id, score)` → grade recomputes · `listAssessments(type|subject|range)`
 - **Homework (⚠ INTENDED, ED-9):** consumed via the **Tasks→Education API** (Tasks owns the entity):
   `listEducationTasks(subjectId|all)` · education-scoped task UI.
 - **Vault (⚠ INTENDED, ED-13):** `addDocument(subjectId, file)` (inline/R2) · `getVault(subjectId)` → docs +
@@ -35,6 +36,7 @@
   storage. `[INTENT ED-10; ADR-011 M1/M2/M3]`
 
 ## What it consumes (outside dependencies)
+
 - **Tasks** — the dedicated Tasks→Education API (homework/education-tasks; TK-9-compliant). `[INTENT H4]`
 - **Notes & Pages** — notes on Program/Curriculum/Subject (in-vault)/session via `pages` (`course` is a valid
   target today; new entity_types with the amendment). `[FACT: ADR-002 L1344; INTENT H11]`
@@ -46,6 +48,7 @@
   (AI5), auto-recorded rows carry `source=ai` (AI6); **not** an AI4 agent. `[ADR-014 X11; ADR-015 AI1/AI5/AI6]`
 
 ## Fed by / Consumed by
+
 - **Hub for the Learning siblings:** **Sessions & Scheduling** (own foundation module since 2026-07-12)
   provides Education's `class_session` sub-type + targets subjects via `study_session`, and consumes Education
   deadlines/topics as a `dueIn()` provider + a pace-signal source (G10); Flashcards (decks per
@@ -58,6 +61,7 @@
 - **Purpose/Gamification** → study progress signals (⚠ INTENDED). `[INTENT]`
 
 ## Contract error cases
+
 - `createSubject` without a resolvable parent chain → typed `UnroutedSubjectError` (ED-3). `[INTENT]`
 - `syncFeed` failure → recorded in `last_error`, typed `IcsSyncError` (never silent-stale). `[FACT: L3590]`
 - Grading components summing ≠ 100% → typed `GradingWeightError` (flag, don't normalize). `[INTERP ED-7]`
@@ -65,4 +69,5 @@
 - Fork of a template never mutates the base (`TemplateImmutableError` on attempted write). `[INTENT ED-11]`
 
 ## Completion checklist
+
 - [x] exposed + consumed + fed-by + consumed-by · [x] types/errors cited · [x] integration via documented points · [x] [FACT/INTENT] each claim · [x] not-yet-coded + INTENDED flagged

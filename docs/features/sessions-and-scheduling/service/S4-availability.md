@@ -7,6 +7,7 @@
 factory deps. Independent of S1–S3 (only needs the factory + repos).
 
 ## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+
 - `setAvailability(input): Availability` — create a recurring window (`study_availability`).
 - `updateAvailability(id, patch): Availability` — patch a window.
 - `removeAvailability(id): void` — **hard delete** (no `deleted_at`; syncs `operation:'delete'`).
@@ -16,8 +17,9 @@ factory deps. Independent of S1–S3 (only needs the factory + repos).
 - `listAvailabilityExceptions(): AvailabilityException[]` — all exceptions.
 
 ## §2 Operation-flow & invariants
+
 - **Repos (nuance-1, corrected):** `study_availability` + `availability_exceptions` → `{deviceId,
-  encryptedFields:[], softDelete:false}` — **neither carries `deleted_at`** (bare `...baseColumns`); `remove*` is
+encryptedFields:[], softDelete:false}` — **neither carries `deleted_at`** (bare `...baseColumns`); `remove*` is
   a hard delete. `[FACT: scheduling.ts:44,59 (no deleted_at); migration 014]`
 - **Validation (IR-5, fail-loud, typed `InvalidSessionInput(field)` — reused):**
   - `study_availability`: `day_of_week` ∈ 0..6 (else `InvalidSessionInput('day_of_week')`); `preference_score`
@@ -32,7 +34,7 @@ factory deps. Independent of S1–S3 (only needs the factory + repos).
 - **`is_available` is orthogonal to the window (NOT a contradiction) — doc-resolved.** `study_availability`
   rows are **always timed** (`start/end_time` notNull); `is_available` flags whether that recurring window is
   **free (`true`, default)** or a **blackout (`false`)** — a `false`+times row is a valid recurring-unavailable
-  window. For `availability_exceptions`, `is_available` + *optional* times = whole-day (`false`, no times) or
+  window. For `availability_exceptions`, `is_available` + _optional_ times = whole-day (`false`, no times) or
   partial (times given) (un)availability. S4 validates the times if present but NEVER rejects a `false`+times
   combination. `[FACT: intake:31-33 "recurring weekly windows"; SS-9; structure-data:16]`
 - **NO uniqueness / overlap constraint — doc-resolved.** structure-data, SS-9, and the intake impose none, and
@@ -45,10 +47,12 @@ factory deps. Independent of S1–S3 (only needs the factory + repos).
   windows (deferred), the Global Calendar only renders placed results (M2). S4 builds the CRUD only.
 
 ## §3 Contract (delta)
+
 Adds the 7 methods to `SessionsService`. Input types `AvailabilityInput` / `AvailabilityExceptionInput` +
 patch. Rows returned decrypted. Reuses `InvalidSessionInput`. No new factory deps or typed errors.
 
 ## §4 Acceptance criteria (Verification Gate — live unlocked vault)
+
 1. `setAvailability({day_of_week:1, start_time:'09:00', end_time:'11:00', preference_score:4})` writes a row;
    `listAvailability` returns it; a `sync_queue` row is enqueued.
 2. `updateAvailability` patches a field; `removeAvailability` hard-deletes (gone from `listAvailability`;
@@ -60,13 +64,14 @@ patch. Rows returned decrypted. Reuses `InvalidSessionInput`. No new factory dep
    `listAvailabilityExceptions` returns it; `exception_date:'10/01/2026'` → `InvalidSessionInput('exception_date')`.
 5. `removeAvailabilityException` hard-deletes.
 6. **Blackout window accepted (not rejected):** `setAvailability({day_of_week:2, start_time:'13:00',
-   end_time:'14:00', is_available:false})` succeeds and round-trips `is_available:false` (a recurring
+end_time:'14:00', is_available:false})` succeeds and round-trips `is_available:false` (a recurring
    unavailable window — doc-resolved orthogonality).
 7. **Overlap allowed (no dedupe/reject):** two `setAvailability` calls for the same `day_of_week` with
    overlapping times both persist (`listAvailability` returns 2) — valid Planner input (SS-9/G5).
 8. `tsc` clean; full `@vida/core` suite green.
 
 ## §5 Implementation prompt (order)
+
 1. `types.ts` — `AvailabilityInput`, `AvailabilityPatch`, `AvailabilityExceptionInput` (+ `Availability` /
    `AvailabilityException` = the row types).
 2. `validators/session.ts` — `AvailabilitySchema` + `AvailabilityExceptionSchema` (Zod; ranges + HH:MM + date).
@@ -75,5 +80,6 @@ patch. Rows returned decrypted. Reuses `InvalidSessionInput`. No new factory dep
 4. `__tests__` — AC1–AC5 on a live vault.
 
 ## §6 Out of scope (homed)
+
 Routines presetting windows → Routines module · Global Calendar render → M2 · `generatePlan` consuming
 availability → S5 (endpoints) / M1.2 (algorithm) · `reason` encryption activation → M3/DB-5.

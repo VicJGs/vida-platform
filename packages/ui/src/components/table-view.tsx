@@ -168,7 +168,13 @@ export function TableView<T>({
           ) : effectiveEmpty ? (
             // A DESIGNED empty row spanning the grid (NOT a role="status" message — the calendar divergence, TV-4).
             <BodyRow role="row">
-              <View role="cell" aria-colspan={columns.length} flexGrow={1} paddingVertical={pad} paddingHorizontal="$12">
+              <View
+                role="cell"
+                aria-colspan={columns.length}
+                flexGrow={1}
+                paddingVertical={pad}
+                paddingHorizontal="$12"
+              >
                 {empty ?? <Message>Nothing here yet.</Message>}
               </View>
             </BodyRow>

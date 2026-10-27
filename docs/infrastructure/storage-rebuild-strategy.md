@@ -47,6 +47,7 @@ packages/core/src/db/schema/
 5. Missing consolidation primitives (`effect_event_id`, `category_bidx`, HLC rep, derive-nullable progress) → per their owning issues.
 
 ## Open decisions for ADR-016
+
 - **DDL generation — dual-authoring vs. drizzle-kit (OPEN).** The documented model authors each table **twice**: a
   Drizzle object (queries/types) **and** a hand-written SQL migration (DDL) kept in sync by hand (`migrations/001_initial.ts`
   header: "Matches schema.ts and ADR-002 exactly"). Across ~130 tables this is real drift risk. The only alternative
@@ -58,14 +59,14 @@ packages/core/src/db/schema/
 
 ## Phasing axis — foundation-first, then dependency-wave
 
-| Phase | Contents |
-|-------|----------|
-| **P0 · Primitives** | `_shared.ts` · `_registry.ts` · directory · barrel — **this session, DB-1/LIF-61** |
-| **P1 · Notes/Tags/Spaces hub** | pages · links · tags · entity_tags · spaces · views · capability registry · templates · grants |
-| **P2 · Sessions foundation** | sessions spine · planned_blocks · session_attachments · applied_effects |
-| **P3 · Economy/measurement** | currencies · consequence_ledger · rules · values · contributions · purpose_reviews · plan_steps |
-| **P4…N · Domains (wave order)** | one gated phase **per table**, walked in FK-dependency order |
-| **P-final · Reconcile** | rewrite ADR-002 §5/§7/§8 from the authored schema; FTS5; encryption map; repository/migrations |
+| Phase                           | Contents                                                                                        |
+| ------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **P0 · Primitives**             | `_shared.ts` · `_registry.ts` · directory · barrel — **this session, DB-1/LIF-61**              |
+| **P1 · Notes/Tags/Spaces hub**  | pages · links · tags · entity_tags · spaces · views · capability registry · templates · grants  |
+| **P2 · Sessions foundation**    | sessions spine · planned_blocks · session_attachments · applied_effects                         |
+| **P3 · Economy/measurement**    | currencies · consequence_ledger · rules · values · contributions · purpose_reviews · plan_steps |
+| **P4…N · Domains (wave order)** | one gated phase **per table**, walked in FK-dependency order                                    |
+| **P-final · Reconcile**         | rewrite ADR-002 §5/§7/§8 from the authored schema; FTS5; encryption map; repository/migrations  |
 
 ## Gating model — **per table**
 

@@ -48,7 +48,12 @@ describe('rollup (§3.3)', () => {
   })
   it('respects explicit weights', () => {
     // (1*3 + 0*1) / (3+1) = 0.75
-    expect(rollup([{ progress: 1, weight: 3 }, { progress: 0, weight: 1 }])).toBe(0.75)
+    expect(
+      rollup([
+        { progress: 1, weight: 3 },
+        { progress: 0, weight: 1 },
+      ]),
+    ).toBe(0.75)
   })
   it('excludes null-progress children (unmeasured cannot drag down)', () => {
     expect(rollup([{ progress: 1 }, { progress: null }])).toBe(1)

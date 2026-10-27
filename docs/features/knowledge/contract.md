@@ -1,6 +1,6 @@
 <!-- Contract — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 Learning (study_topics L2557-2621, knowledge_notes L2715-2738) · learning.ts · intake -->
 
-# Contract — Knowledge  (level: Feature / own module)
+# Contract — Knowledge (level: Feature / own module)
 
 > **Status:** the FACT base has schema only — `study_topics`, `topic_reviews`, `knowledge_notes` exist in
 > Drizzle; `@vida/core/models/learning.ts` is an **empty placeholder (0 lines)** — no service. Everything below
@@ -10,6 +10,7 @@
 ## Exposed surface (via `@vida/core`)
 
 **Objects & kinds (⚠ INTENDED):**
+
 - `createKind({name, learningRealm, defaultMethodId?, parentKindId?})` · `listKinds()` — the user's
   extensible kind **registry**; seeds **topic / concept / definition** on first run, editable (KN-3/KN-4).
   `parentKindId?` is `[INTERP]` (flat registry may suffice).
@@ -20,39 +21,45 @@
   `resource_type` writes.
 
 **Containers (⚠ INTENDED):**
+
 - `createContainer({type: module|area|subject, name})` · `tagMembership(containerId, memberRef, scopedTag)` —
   many-to-many via the `entity_tags` primitive (ADR-006 SP1, scoped; KN-7); `listContainers(view)` regroups per
   view. An Area may join multiple OS-modules.
 
 **Study methods, curves & review (⚠ INTENDED):**
-- `listMethods()` / `registerMethod(spec)` — **thin wrappers over the one OS capability registry** (ADR-008), *not* a
+
+- `listMethods()` / `registerMethod(spec)` — **thin wrappers over the one OS capability registry** (ADR-008), _not_ a
   parallel store: `registerMethod` registers a `kind=study_method` capability; `listMethods()` reads the
   `kind='study_method'` partition (F2/D2). · `listCurves()` / `defineCurve(spec)` (SM-2 = a built-in preset).
 - `bindMethod({targetLevel: area|subject|unit|topic|kind, targetId, methodId, curveId?})` (KN-8) — default
   resolved from the target kind's `learning_realm` (KN-4).
 - `getDue(range, {level?})` → items due across levels/methods · `recordReview({objectId|levelRef, methodId,
-  quality|signal})` → logs a `review_event`, **re-derives mastery** (KN-9). Generalizes v1's review tab +
+quality|signal})` → logs a `review_event`, **re-derives mastery** (KN-9). Generalizes v1's review tab +
   `topic_reviews`.
 
 **Notes & references (⚠ INTENDED):**
+
 - Knowledge note = a `pages` entity (KN-5): `openObjectNote(objectId)` → creates/returns a `pages` row of the
   knowledge `entity_type` (personalizable render); **never** a `knowledge_notes` insert.
 - `addReference(objectId, {title, source, type})` · `listReferences(objectId)` — first-class References (K6),
   replacing the `resource_urls` array.
 
 **Compound sets (⚠ INTENDED):**
+
 - `buildCompoundSet(consumerModule, spec)` / `applyDefaultCompoundSet(consumerModule)` (KN-11) — the builder +
   the shipped default. AI-assist is an **extension-model** call (opt-in, consent-gated). `[INTENT KN-C]`
 
 **Knowledge Lab (⚠ INTENDED):**
+
 - `createLabEntry({hypothesis, dataRefs[]})` · `concludeLabEntry(id, conclusion)` → optionally
   `promoteToObject(entryId)` — new knowledge from own-module data. `[INTENT 07-06]`
 
 **Search (⚠ INTENDED):** `searchKnowledge(query)` over `fts_knowledge` (K11) — absent today. `[FACT: L3641-3670]`
 
 ## Consumed / provided contracts (cross-module)
+
 - **PROVIDES → Education (KN-10):** `getMasterySource(subjectRef)` → `{objectMastery, assessmentResults,
-  paceVsSyllabus}` compounded signal. Education owns the rollup + the **syllabus-as-calendar** entity (forward
+paceVsSyllabus}` compounded signal. Education owns the rollup + the **syllabus-as-calendar** entity (forward
   dep). Knowledge never writes Education's measurement. `[[../learning/education/contract]]`
 - **CONSUMES ← Books:** chapters/quotes referenced by objects via `entity_links` / `reading_chapter_id`; book
   annotations & quotes remain **Books-owned** (never duplicated here). `[FACT: books/contract.md L49]`
@@ -67,10 +74,12 @@
 - **FUTURE consumers:** Skills · Languages · Finance · Health — each via its own `compound_set`.
 
 ## Events emitted (⚠ INTENDED)
+
 `object.created` · `review.recorded` (→ mastery re-derive → Gamification/Journal) · `mastery.changed`
 (→ Education measurement source) · `lab.concluded` (→ new object). `[INTENT]`
 
 ## Error modes
+
 Typed errors only; optimistic writes revert on failure (LF-2, never silent loss). Broken parent-kind /
 parent-object refs rejected at write. A cross-module measurement mismatch is **flagged, not guessed**
 (No-Guessing). `[INTENT; FACT: ADR-003 offline queue]`

@@ -36,7 +36,10 @@ describe('parseContentResult (BR-R0-4)', () => {
 
   it('drops an empty `content` array on a non-doc node (the editor never writes one)', () => {
     const raw = JSON.stringify({ type: 'doc', content: [{ type: 'paragraph', content: [] }, para('y')] })
-    expect(parseContentResult(raw)).toEqual({ status: 'ok', doc: { type: 'doc', content: [{ type: 'paragraph' }, para('y')] } })
+    expect(parseContentResult(raw)).toEqual({
+      status: 'ok',
+      doc: { type: 'doc', content: [{ type: 'paragraph' }, para('y')] },
+    })
   })
 
   it.each([
@@ -64,8 +67,16 @@ describe('parseContentResult (BR-R0-4)', () => {
 describe('toNoteEntity — contentStatus + rawContent (test 11)', () => {
   const row = (content: string | null) =>
     ({
-      id: 'p1', type: 'note', title: 'T', content, is_favorite: false, is_archived: false,
-      updated_at: Date.now(), journal_date: null, icon: null, cover_image: null,
+      id: 'p1',
+      type: 'note',
+      title: 'T',
+      content,
+      is_favorite: false,
+      is_archived: false,
+      updated_at: Date.now(),
+      journal_date: null,
+      icon: null,
+      cover_image: null,
     }) as unknown as Parameters<typeof toNoteEntity>[0]
 
   it('ok', () => {
@@ -87,8 +98,14 @@ describe('toNoteEntity — contentStatus + rawContent (test 11)', () => {
 describe('toNotesRow — labels (notes-rescope R1, E-3 / BR-R1-2)', () => {
   const row = (type: string, title: string | null) =>
     ({
-      id: 'p1', type, title, content: null, is_favorite: false, is_archived: false,
-      updated_at: Date.now(), journal_date: null,
+      id: 'p1',
+      type,
+      title,
+      content: null,
+      is_favorite: false,
+      is_archived: false,
+      updated_at: Date.now(),
+      journal_date: null,
     }) as unknown as Parameters<typeof toNotesRow>[0]
 
   it('a titled page keeps its title; labelFromType false', () => {
@@ -103,12 +120,22 @@ describe('toNotesRow — labels (notes-rescope R1, E-3 / BR-R1-2)', () => {
 describe('toNotesRow — icon + cover (notes-rescope R3, E-4)', () => {
   const row = (icon: string | null, cover_image: string | null) =>
     ({
-      id: 'p1', type: 'note', title: 'T', content: null, is_favorite: false, is_archived: false,
-      updated_at: Date.now(), journal_date: null, icon, cover_image,
+      id: 'p1',
+      type: 'note',
+      title: 'T',
+      content: null,
+      is_favorite: false,
+      is_archived: false,
+      updated_at: Date.now(),
+      journal_date: null,
+      icon,
+      cover_image,
     }) as unknown as Parameters<typeof toNotesRow>[0]
   it('carries icon + cover from the page row', () => {
-    expect(toNotesRow(row('book-open', 'https://e.com/c.png'))).toMatchObject({ icon: 'book-open', cover: 'https://e.com/c.png' })
+    expect(toNotesRow(row('book-open', 'https://e.com/c.png'))).toMatchObject({
+      icon: 'book-open',
+      cover: 'https://e.com/c.png',
+    })
     expect(toNotesRow(row(null, null))).toMatchObject({ icon: null, cover: null })
   })
 })
-

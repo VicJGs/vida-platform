@@ -6,7 +6,7 @@
 
 ## 0. What this unit is (one paragraph)
 
-The CODEC **Canvas** archetype is *"immersive: Editor · Graph · Reader · **Vision-board** · **Calendar-grid**"*
+The CODEC **Canvas** archetype is _"immersive: Editor · Graph · Reader · **Vision-board** · **Calendar-grid**"_
 `[FACT: docs/specs/foundation/frontend-replan/decomposition.md:32]`. Unit #10 owns the last two sub-modes:
 **Vision-board** (consumer: Purposes → "Dreams vision-board", `[FACT: decomposition.md:97]`) and **Calendar-grid**
 (consumer: Global Calendar `/calendar`, `[FACT: decomposition.md:66]`). The decisive constraint from ground truth:
@@ -25,6 +25,7 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
 ## 1. DEPENDENCIES — every upstream, cited
 
 ### Hard deps (the two task blockers)
+
 - `fe-codec-patterns` `[FACT: .claude/tasks/fe-codec-canvas-board.md:15]` — the cross-cutting pattern-kit:
   - 8-state machine `INTERACTION_STATE` + `deriveInteractionState` + `collapseToTerminal`, in **`apps/web`**
     (`apps/web/src/state-conventions/interaction-state.ts`) — imports the `@vida/core` canon; the UI package gets
@@ -36,17 +37,18 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
 - `fe-codec-viewmodes` `[FACT: .claude/tasks/fe-codec-canvas-board.md:16]` — completes the canonical 7 renderers;
   the two this unit composes:
   - **`GalleryView<T>`** — `{ items, renderItem, getKey, state?, empty?, error?, loadingCount=6, minTileWidth=200,
-    getWeight?, density, ref, 'aria-label'? }` `[FACT: packages/ui/src/components/gallery-view.tsx:19-38]`; RN-safe
+getWeight?, density, ref, 'aria-label'? }` `[FACT: packages/ui/src/components/gallery-view.tsx:19-38]`; RN-safe
     `flexWrap` grid; `getWeight` featured tiles clamped `[1,8]` with explicit `flexShrink:1`
     `[FACT: gallery-view.tsx:78-89]`.
   - **`CalendarView<T>`** — `{ items, getDate (Date|'YYYY-MM-DD'), renderItem, getKey, month?, onMonthChange?,
-    today?, weekStartsOn=1, maxPerDay=3, state?, error?, ref, 'aria-label'? }`
+today?, weekStartsOn=1, maxPerDay=3, state?, error?, ref, 'aria-label'? }`
     `[FACT: calendar-view.tsx:23-40]`; **TZ-safe day-keying** (string used as-is / `format(d,'yyyy-MM-dd')` local)
     `[FACT: calendar-view.tsx:120-128]`; **fixed 42-cell grid** `[FACT: calendar-view.tsx:112]`; `role="table"`;
     P5 month-grid polish shipped (serif title · eyebrow weekdays · tabular figures · today accent+underline ·
     weekend/OOS tone) `[FACT: packages/ui/src/CLAUDE.md:250-269]`.
 
 ### Shared-spine deps (the renderers' internals — consumed transitively, not re-built)
+
 - `internal/data-view.tsx` — `ViewState = 'loading'|'empty'|'error'|'success'` (local union, structurally ≡
   `@vida/core` `TerminalState`, **no cross-import**) + `Message` + `resolveDataViewState` + `warnMissingName`
   `[FACT: packages/ui/src/internal/data-view.tsx:11,15-23,28-67]`. CalendarView reuses the spine PIECES but **not**
@@ -55,6 +57,7 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
   `[FACT: packages/ui/src/CLAUDE.md:21-24]`.
 
 ### Data-source deps (consumed by the `apps/web` adapter, deferred to first consumer)
+
 - **Dreams** entity (vision-board data) — absorbed from `bucket_list_items`; imagery-first; derived progress
   `[FACT: ADR-007:36-37]`. Delivered as a **Saved View** (`layout='gallery'` over a `dreams` root tag), ADR-007
   Space mechanism `[FACT: ADR-007:59-61,86]`.
@@ -85,16 +88,16 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
 
 ## 3. ORGANIZATION — owns vs consumes vs delegates
 
-| Concern | Disposition | Home | Cite |
-|---|---|---|---|
-| Immersive Canvas **frame/shell** (header, hosted-renderer region, read-only chrome, terminal states) | **OWNS (net-new)** | `@vida/ui` | sibling shells dashboard/flow-session `[FACT: fe-codec-dashboard/delivery/interpretation.md:9-20]` |
-| `GalleryView` / `CalendarView` renderers | **CONSUMES (shipped)** | `@vida/ui` (existing) | `[FACT: ADR-007:27; gallery-view.tsx; calendar-view.tsx]` |
-| Terminal/interaction state derivation | **DELEGATES** (prop in) | `apps/web` patterns kit | `[FACT: fe-codec-patterns/.../interpretation.md:52-56]` |
-| Dreams / `dueIn` data + live hook | **DELEGATES** (adapter, deferred to first consumer) | `apps/web` | dashboard/collection adapter precedent `[FACT: fe-codec-dashboard/.../interpretation.md:133]` |
-| Multi-range renderers + Living lens | **OUT (deferred)** | `fe-calendar` #19 | `[FACT: calendar-vision.md:4]` |
-| Any write (drag/reposition/move/check) | **OUT (Capability)** | owning module, ADR-008 | `[FACT: calendar-vision.md:2; ADR-007:94]` |
-| View chrome (filter/layout-switch/create-view) | **OUT** | Collection shell (#4) | `[FACT: fe-codec-collection; ADR-007 §Layout]` |
-| Imagery-first Gallery variant (cover field) | **CONSUMES** via `getWeight`/`renderItem` | existing GalleryView | `[FACT: gallery-view.tsx:38; ADR-007:61-62]` |
+| Concern                                                                                              | Disposition                                         | Home                    | Cite                                                                                               |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| Immersive Canvas **frame/shell** (header, hosted-renderer region, read-only chrome, terminal states) | **OWNS (net-new)**                                  | `@vida/ui`              | sibling shells dashboard/flow-session `[FACT: fe-codec-dashboard/delivery/interpretation.md:9-20]` |
+| `GalleryView` / `CalendarView` renderers                                                             | **CONSUMES (shipped)**                              | `@vida/ui` (existing)   | `[FACT: ADR-007:27; gallery-view.tsx; calendar-view.tsx]`                                          |
+| Terminal/interaction state derivation                                                                | **DELEGATES** (prop in)                             | `apps/web` patterns kit | `[FACT: fe-codec-patterns/.../interpretation.md:52-56]`                                            |
+| Dreams / `dueIn` data + live hook                                                                    | **DELEGATES** (adapter, deferred to first consumer) | `apps/web`              | dashboard/collection adapter precedent `[FACT: fe-codec-dashboard/.../interpretation.md:133]`      |
+| Multi-range renderers + Living lens                                                                  | **OUT (deferred)**                                  | `fe-calendar` #19       | `[FACT: calendar-vision.md:4]`                                                                     |
+| Any write (drag/reposition/move/check)                                                               | **OUT (Capability)**                                | owning module, ADR-008  | `[FACT: calendar-vision.md:2; ADR-007:94]`                                                         |
+| View chrome (filter/layout-switch/create-view)                                                       | **OUT**                                             | Collection shell (#4)   | `[FACT: fe-codec-collection; ADR-007 §Layout]`                                                     |
+| Imagery-first Gallery variant (cover field)                                                          | **CONSUMES** via `getWeight`/`renderItem`           | existing GalleryView    | `[FACT: gallery-view.tsx:38; ADR-007:61-62]`                                                       |
 
 **Split rule (BR-2):** `@vida/ui` = presentational shell + LOCAL union types (no `@vida/types`/`@vida/core`);
 `apps/web` = adapter + data wiring `[FACT: fe-codec-dashboard/.../interpretation.md:101-114]`.
@@ -107,7 +110,7 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
   a box = a **write = the owning module's Capability (ADR-008)**, composed in elsewhere
   `[FACT: calendar-vision.md:2; ADR-007:94]`. A free-positioned drag-and-drop vision board is therefore **out of
   scope at M1** — the vision board is an imagery-first **Gallery**, not a free canvas `[INTERPRETATION: ADR-007:36-37
-  "Gallery view" + R1]`. (Guards against the [[dont-manufacture-a-deferral-to-cut-build-phase-scope]] inverse:
+"Gallery view" + R1]`. (Guards against the [[dont-manufacture-a-deferral-to-cut-build-phase-scope]] inverse:
   drag is genuinely a Capability, not a deferral I invented.)
 - **R2 — No new renderers in #10.** The month grid and the gallery already ship; the multi-range/Living renderers
   are #19's home. #10's net-new surface is the **frame**, not pixels inside the grid
@@ -115,7 +118,7 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
   [[grep-the-capability-before-building-a-codec-primitive]].)
 - **R3 — #19 builds ON #10.** Because `fe-calendar #19 blocked by fe-codec-canvas-board`
   `[FACT: fe-calendar.md:15]`, #10 must ship a **reusable Canvas frame** a multi-range renderer can be dropped into
-  — not a one-off calendar page. The frame hosts *a* view-mode renderer at canvas scale.
+  — not a one-off calendar page. The frame hosts _a_ view-mode renderer at canvas scale.
 - **R4 — State as a prop; no derivation in UI.** `@vida/ui` can't import the canon; the shell threads `state` to its
   hosted renderer and renders its own frame-level terminal states (skeleton/empty-teaching/error) the same way
   dashboard/flow-session do `[FACT: fe-codec-dashboard/.../interpretation.md; data-view.tsx:34-67]`.
@@ -131,7 +134,7 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
   fixed style — it is resolved from the entity's `measurement_kind` (`quantitative · milestone · rate · qualitative`,
   `[FACT: packages/types/src/measurement.ts:5]`) plus the **unmeasured** case (`progress()` →
   `PurposeProgressView{value|null, …, unmeasured}`; "no `measurement_kind` ⇒ no derive", `[FACT:
-  docs/modules/purposes/current-business-rules.md:88]`): a `milestone` dream → a steps bar · `quantitative` → value/
+docs/modules/purposes/current-business-rules.md:88]`): a `milestone` dream → a steps bar · `quantitative` → value/
   target · `rate` → a completion ratio · `qualitative` → a status (no numeric bar) · **unmeasured → no bar**. A board
   is a Saved View over a **Space**, which may hold mixed pursuable entities across the OS (Tasks · Habits · Routines ·
   Projects · Dreams · Health · Finance) `[FACT: docs/core/decisions/ADR-011-universal-measurability-progress-propagation.md:8,111]`.
@@ -151,18 +154,18 @@ entity-facet #6): a shell composes shipped renderers via props; it never writes.
 
 ## 5. Envision Gate trigger — the §3.75 one-question test
 
-> *"Is there a user affordance whose UI answer isn't already obvious from an existing shipped surface?"*
+> _"Is there a user affordance whose UI answer isn't already obvious from an existing shipped surface?"_
 > `[FACT: entity-delivery-flow.md:104-107]`
 
 **Verdict: FIRES.** This is a doc test I apply and report, not a question for Victor
 ([[envision-gate-firing-is-a-doc-test-not-a-human-decision]]).
 
 - The **immersive Canvas frame** has **no shipped equivalent** — dashboard is a block grid, collection is a
-  switcher+chrome, entity-facet is a title+facet frame; none answer "what does an *immersive, read-only, single-
-  renderer canvas* look like?" → YES, fire.
+  switcher+chrome, entity-facet is a title+facet frame; none answer "what does an _immersive, read-only, single-
+  renderer canvas_ look like?" → YES, fire.
 - The **vision board**'s imagery-first presentation + derived-progress framing over dreams is a novel surface
-  (a Gallery *wrapped as a canvas*), not obvious from the bare GalleryView story → YES, fire.
-- The **calendar-grid canvas** reuses a shipped renderer, but its *canvas framing* (how the month grid sits in an
+  (a Gallery _wrapped as a canvas_), not obvious from the bare GalleryView story → YES, fire.
+- The **calendar-grid canvas** reuses a shipped renderer, but its _canvas framing_ (how the month grid sits in an
   immersive frame, what chrome it carries) is unproven → covered by the same greybox.
 
 → Author a **throwaway greybox** (real `@vida/ui` primitives + fake dreams/calendar data) covering both surfaces ×
@@ -187,6 +190,7 @@ meaningful states, for **Victor's blocking review**, before decomposition.
 ---
 
 ## Interpretation Gate — ready for review
+
 Baseline done · source gated (ADR-007, calendar-vision.md, decomposition.md, sibling interpretations, shipped
 renderer source) · every claim FACT/INTERPRETATION/UNKNOWN. **Next: Envision greybox (FIRES) → Victor's blocking
 review → Decomposition.**

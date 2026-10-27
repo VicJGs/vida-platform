@@ -4,9 +4,11 @@
 
 export const SETTINGS_COPY = {
   /** EC-7 — a first-read failure: nothing was loaded, the panes show the defaults. */
-  readErrorDefaults: 'Couldn’t load your saved settings — showing defaults, read-only. Your data is safe on this device.',
+  readErrorDefaults:
+    'Couldn’t load your saved settings — showing defaults, read-only. Your data is safe on this device.',
   /** EC-7 — a later read failure: the last loaded values are still shown. */
-  readErrorKept: 'Couldn’t refresh your settings — showing what was last loaded, read-only. Your data is safe on this device.',
+  readErrorKept:
+    'Couldn’t refresh your settings — showing what was last loaded, read-only. Your data is safe on this device.',
   /** C5 — the revert toast (fired by the writer once per failed batch). */
   saveFailedTitle: 'Couldn’t save that change',
   saveFailedBody: 'It’s back to how it was. Your data is safe on this device.',

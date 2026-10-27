@@ -37,6 +37,7 @@ resolveOfferedSet(spaceId: string, surface: RenderTarget): Promise<CapabilityDef
 ```
 
 ## Contract invariants the consumer can rely on
+
 - **Fail-closed**: any unknown/missing input ⇒ `allowed:false` (or `CapabilityDenied`); never a silent allow.
   `[FACT: ADR-010 §3.2:72-73]`.
 - **Shipped bypass**: a trusted (`is_user_type=false`) def is always `allowed` — enforcement is only for user code.
@@ -52,6 +53,7 @@ resolveOfferedSet(spaceId: string, surface: RenderTarget): Promise<CapabilityDef
   Space's `space_enabled_blocks` palette. `[FACT: xcut-spaces.md:49]`.
 
 ## Seams this contract does NOT cross (delegated)
+
 Effect firing (`EffectRail` `#32`) · external-in per-source layer (XS-ingestion `#44`) · egress mediation + per-target
 consent + audit (XS-egress-guard `#43`) · sandbox execution (`#116`) · idempotency write path (ADR-004 §3.2.5) · the
 grant/consent UX + add-menu rendering (P6). Consumers call `assertPermitted` then perform the action through their own

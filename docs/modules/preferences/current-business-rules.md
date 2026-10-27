@@ -7,6 +7,7 @@
 > Inherits `docs/features/preferences/business-rules.md` (PR-1…PR-12) + the CORE constitution (ZK/LF).
 
 ## Enforced now (Slice 1 · user_preferences)
+
 - **BR-PREF-1 (PR-1/IR-c)** — plaintext config, never `[E]`. Repo registered with `encryptedFields: []`. E9 fields
   (`persona`/`motivation_style`/`active_modules`/`onboarding_completed`) are plaintext; PII is NOT present (stays in
   `user_profile`, PR-10). `[FACT: service.ts createRepository encryptedFields:[]; schema/preferences.ts:9]`
@@ -29,23 +30,27 @@
   `[FACT: service.ts toMerged]`
 
 ## Enforced now (Slice 2 · nav_preferences)
+
 - **BR-PREF-1/2/3/4/8/9 apply identically** to `nav_preferences` via `getNavPreferences`/`updateNavPreferences`
   (plaintext · read-or-DEFAULT · create-on-write singleton · Zod `dock_position`/`dock_size` · co-tx sync_queue ·
   `??` falsy-preservation). `mobile_nav_items` is the parsed JSON array (IR-e). `[FACT: service.ts toMergedNav/updateNavPreferences]`
 
 ## Enforced now (Slice 3 · command_bar_history)
+
 - **BR-PREF-10 (PR-6/BR-P3)** — `recordCommand` upserts by `command_key` (UNIQUE): re-record increments `use_count`
-  + sets `last_used_at`, never duplicates. `getCommandHistory` orders pinned-first, then frecency (`use_count` desc,
-  `last_used_at` desc, nulls last). `pinCommand` sets `is_pinned`; **no-op on an unrecorded key** (D-S3, docs silent).
-  *(Revised by preferences-rescope D-R5-3: with a non-empty `command_label`, `pinCommand` on an unrecorded key creates the
-  row pinned + unused.)* `RecordCommandSchema` fail-loud on empty `command_key`. Returns the Drizzle `CommandBarHistoryRow` (raw-reader house
-  convention; the `@vida/types` interface reconcile is DB-11). `[FACT: service.ts recordCommand/pinCommand/getCommandHistory]`
+  - sets `last_used_at`, never duplicates. `getCommandHistory` orders pinned-first, then frecency (`use_count` desc,
+    `last_used_at` desc, nulls last). `pinCommand` sets `is_pinned`; **no-op on an unrecorded key** (D-S3, docs silent).
+    _(Revised by preferences-rescope D-R5-3: with a non-empty `command_label`, `pinCommand` on an unrecorded key creates the
+    row pinned + unused.)_ `RecordCommandSchema` fail-loud on empty `command_key`. Returns the Drizzle `CommandBarHistoryRow` (raw-reader house
+    convention; the `@vida/types` interface reconcile is DB-11). `[FACT: service.ts recordCommand/pinCommand/getCommandHistory]`
 
 ## ① backend complete
+
 All 3 slices shipped. Remaining for the module: ② frontend (fe-preferences, LIF-134) + the DB-11 `CommandBarHistory`
 interface reconcile (created_at/updated_at) + the deferred `sessions` inline-read migration onto the seam.
 
 ## ② seam — enforced live (preferences-rescope R2, 2026-10-22)
+
 - **PR-2** read never `undefined` (the view mapper over DEFAULTS) · **PR-4** auto-save debounced 500 ms + optimistic with
   revert (the writer; the visible copy lands in R3) · **PR-9** every write local + sync_queue (via the service) ·
   **BR-PREF-3** one row per vault even under concurrent first writes (serial queue) · **BR-PREF-6** ② side: visibility
@@ -53,13 +58,14 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
   **BR-PREF-9** falsy values survive (spread merges, `??` reads). `feature_gamification` defaults OFF (GM-1).
 
 ## ② surface — enforced live (preferences-rescope R3, 2026-10-26 · built, pending Visual Gate)
+
 - **R3-BR-1** one read definition per table (`preferences-queries.ts`), used by `usePreferences` and the boot seed — one
   read path, one cache entry per table.
 - **R3-BR-2 (B2, N6)** boot seeds both keys before the first themed paint; the seed never rejects (MUST-4) — a failed read
   boots on the defaults (PR-2). Both definitions set `retryOnMount: false`, so an errored query stays in error until the
   user presses Retry (`state-conventions.md` §3); without it every mounting reader refetches → an unbounded loop.
   Recorded limits: on a failed seed a later successful read can flip theme/arrangement to the persisted value; a failure
-  *inside* the memoized composition-root `build()` is not recovered by refetch.
+  _inside_ the memoized composition-root `build()` is not recovered by refetch.
 - **R3-BR-3 (PR-5, C3 theme)** `theme-store` is a derived cache of the user row — no theme setters; writes go through the
   writer (optimistic re-theme, follows a revert). The guided-setup preview is a layer, cleared on every exit (finish ·
   skip · close); until R7 a finish also returns to the saved theme.
@@ -78,6 +84,7 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
 - **R3-BR-10 (F17)** every R3 string lives in `settings/settings-copy.ts`, `lintCopy`-tested.
 
 ## ② surface — enforced live (preferences-rescope R4, 2026-10-26 · Visual Gate PASS, Victor `visual-approved` 2026-10-27)
+
 - **R4-BR-1 (D8)** reduce motion persists through `update({ reduceMotion })` → `nav_preferences.reduce_motion`
   (optimistic, reverts + one toast on a failed batch — PR-4/R3-BR-7); the mirror no longer holds it.
 - **R4-BR-2** `theme-store.reduceMotion` derives from the nav cache entry in the same subscription (boot-seeded → the
@@ -89,6 +96,7 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
   camera goes instant (1 ms durations, no inertia).
 
 ## ② surface — enforced live (preferences-rescope R5, 2026-10-27 · Visual Gate PASS, Victor `visual-approved` 2026-10-27)
+
 - **R5-BR-1 (D11)** the Modules pane persists through `update(viewPatch)`: show/hide + Atlas/Sync → `module_visibility`,
   rename → `dashboard_layout.moduleNames` (both map merges, IR-2; rename trimmed, ≤ 40 chars). Every row control speaks
   the display name. Controls are `lg` (≥44 targets). The mirror no longer holds the module maps.
@@ -107,6 +115,7 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
 - **Not live (D-R5-2):** the dock reader is unit-proven only — `ModuleDock` has no production mount (shell-rescope).
 
 ## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0 — superseded in part by R2/R3)
+
 The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
 registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not
 `getMergedPreferences`; **PR-4 (persist + revert-on-error), PR-5 (theme from the DB value), PR-9 (local write +
@@ -114,6 +123,7 @@ sync_queue) are unmet in the app**; the escape hatch (business-rules.md:28) is U
 (`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R5:** Locale/Notifications (R6) persist; the onboarding commit (R7).
 
 ## Delegated (never enforced here — other domains own them)
+
 PR-8 (account/data), PR-10 (PII stays in `user_profile`), PR-11 (`sms` never a channel), PR-12 (integration
 `connection_config` is mediator-held `[E]`), N7 quiet-hours reschedule (Notifications' runtime; Preferences is the
 config source only).

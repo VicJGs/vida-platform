@@ -15,10 +15,7 @@ import { and, eq, isNull, type SQL } from 'drizzle-orm'
 import { hashContent } from '../../encryption/vault'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
-import {
-  capabilityGrants,
-  type CapabilityGrantRow,
-} from '../../db/schema/foundation/capability'
+import { capabilityGrants, type CapabilityGrantRow } from '../../db/schema/foundation/capability'
 import type { CapabilityRegistry } from './registry'
 import {
   SENSITIVE_MODULE_CLASSES,
@@ -59,13 +56,9 @@ function isSensitive(moduleClass: string): moduleClass is SensitiveModuleClass {
 function decide(grant: CapabilityGrant, action: CapabilityAction): EnforcementDecision {
   switch (action.type) {
     case 'effect':
-      return grant.granted_effects.includes(action.effect)
-        ? ALLOW
-        : { allowed: false, reason: 'not_in_envelope' }
+      return grant.granted_effects.includes(action.effect) ? ALLOW : { allowed: false, reason: 'not_in_envelope' }
     case 'binding':
-      return grant.granted_bindings.includes(action.entityType)
-        ? ALLOW
-        : { allowed: false, reason: 'not_in_envelope' }
+      return grant.granted_bindings.includes(action.entityType) ? ALLOW : { allowed: false, reason: 'not_in_envelope' }
     case 'media':
       return grant.media_ok ? ALLOW : { allowed: false, reason: 'media_not_granted' }
     case 'sensitive':
@@ -145,10 +138,7 @@ export function createCapabilityEnforcer(
   // not resolve. `activeGrant` is the single source of that clause, reused by revoke.
   function activeGrant(defId: string): SQL {
     // and() types as SQL | undefined (its all-undefined case); both args here are always defined.
-    return and(
-      eq(capabilityGrants.capability_def_id, defId),
-      isNull(capabilityGrants.deleted_at),
-    ) as SQL
+    return and(eq(capabilityGrants.capability_def_id, defId), isNull(capabilityGrants.deleted_at)) as SQL
   }
 
   async function getGrant(defId: string): Promise<CapabilityGrant | null> {
@@ -167,10 +157,7 @@ export function createCapabilityEnforcer(
     return envelopeCurrent(def, grant)
   }
 
-  async function checkAction(
-    defId: string,
-    action: CapabilityAction,
-  ): Promise<EnforcementDecision> {
+  async function checkAction(defId: string, action: CapabilityAction): Promise<EnforcementDecision> {
     const def = await registry.get(defId) // throws CapabilityNotFound if unresolvable
     if (!def.is_user_type) return ALLOW // INV-2 — shipped/trusted bypass, no grant read
     const grant = await getGrant(defId)

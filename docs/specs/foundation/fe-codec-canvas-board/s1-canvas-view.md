@@ -4,12 +4,14 @@
 > `slice-map.md` S1. Covers EC-1, EC-3, EC-4, EC-6, EC-7, EC-8.
 
 ## 1. Scope
+
 The net-new CODEC **Canvas** archetype frame — a read-only, immersive editorial shell that hosts exactly one view-mode
 renderer at canvas scale. Masthead (eyebrow · user-named title · meta · progress slot · read-only action slot ·
 hairline) + a hosted-renderer region (`children`) + an optional teaching-`empty` override. No renderer logic, no data,
 no writes. The frame `#19` and `fe-purposes` later fill (R3).
 
 ## 2. Business rules
+
 - **BR-CB-S1-1** — Non-generic plain component; React-19 ref-as-prop → the region element (dashboard/entity precedent).
 - **BR-CB-S1-2** — `role="region"`; accessible name via `aria-label` | `aria-labelledby`; the visible `title` names the
   region by default (`useId` + `warnMissingName`), the data-view convention. (EC-8/§XIV)
@@ -46,9 +48,11 @@ no writes. The frame `#19` and `fe-purposes` later fill (R3).
 - **BR-CB-S1-11** — `className`/`data-*` measurement hooks on the masthead + body (`vida-canvas-*`) for the Visual Gate.
 
 ## 3. Contract
+
 Per `seam-contract.md` §1 (`CanvasViewProps`) + §2 (state rule). No API additions here.
 
 ## 4. Acceptance
+
 - tsc 0 · eslint 0 · jsdom tests green (masthead renders all slots; title names region; **empty override shows when
   `state==='empty'`+provided else children; error override shows when `state==='error'`+provided else children; loading/
   success always → children** (BR-CB-S1-6); aria-label warn path; ref forwards).
@@ -63,6 +67,7 @@ Per `seam-contract.md` §1 (`CanvasViewProps`) + §2 (state rule). No API additi
   - **BR-CB-S1-12 responsive — at 375 the `actions` slot reflows below the title-group; no overflow/collision at 375/768/1440.**
 
 ## 5. Implementation plan
+
 1. `packages/ui/src/components/canvas-view.tsx` — `CanvasViewProps` (local types) + unnamed `styled` hosts
    (`CanvasRoot`/`Masthead`/`Hairline`) + `CanvasMasthead` (eyebrow/title/meta/progress/actions) + the body switch
    (BR-CB-S1-6) + `useId`/`warnMissingName`/`role="region"`.
@@ -73,6 +78,7 @@ Per `seam-contract.md` §1 (`CanvasViewProps`) + §2 (state rule). No API additi
 5. `/component-audit` → `/critique` → Visual Gate (Brave) → §XXIX currency (`packages/ui/src/CLAUDE.md` digest).
 
 ## Change log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                                                                       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ----------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | 2026-10-18 | fe-calendar #19 S1-chrome fix (`docs/specs/fixes/fe-calendar-s1-chrome-375/`) | Two corrections the #19 Visual Gate surfaced, both making the frame meet BR-CB-S1-12: **(1) title `lineHeight="$display"`** — the title was set on the body `$true` line box (24px for 36px glyphs; `@tamagui/core` `Text` never derives line-height from `fontSize`), so a wrapped title overlapped itself; now 36/41. **(2) `Actions` `maxWidth:'100%'` + `flexWrap:'wrap'`** (keeps `flexShrink:0`) — wide action content (the calendar's 6×48px toolbar + nav at 768; quietDesk at 375) couldn't reflow and overflowed the page. Consumers pass actions as the slot's direct children. Visual Gate PASS (Victor-reviewed): calendar · CanvasView (single + wrapping title) · CanvasEditor, 3 presets × L/D × 375/768/1440 — 0 page overflow, no wrap overlap, axe 0. |

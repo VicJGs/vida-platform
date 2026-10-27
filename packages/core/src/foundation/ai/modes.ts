@@ -6,14 +6,7 @@
 // no ports, no I/O. Twin of ingestion/classification.ts.
 // ============================================================================
 
-import {
-  AI_MODES,
-  AI_PROVENANCE,
-  UnknownAiMode,
-  type AiMode,
-  type AiModeDisclosure,
-  type AiProvenance,
-} from './types'
+import { AI_MODES, AI_PROVENANCE, UnknownAiMode, type AiMode, type AiModeDisclosure, type AiProvenance } from './types'
 
 function isMode(v: string): v is AiMode {
   return (AI_MODES as readonly string[]).includes(v)
@@ -35,16 +28,14 @@ export function resolveMode(mode: string): AiMode {
 const DISCLOSURES: Record<AiMode, AiModeDisclosure> = {
   on_device: {
     mode: 'on_device',
-    whoSees:
-      'no one for content; only the model source at acquisition time (which model/version + IP/timing)',
+    whoSees: 'no one for content; only the model source at acquisition time (which model/version + IP/timing)',
     whatLeaks:
       'no vault content — the ZK-safe-for-content path; residual = acquiring the local model (mitigable via the ADR-014 Layer-2 whole-set/mirror discipline); runtime must be telemetry-off / no-ambient-network',
     serverPosture: 'blind',
   },
   cloud: {
     mode: 'cloud',
-    whoSees:
-      'the model provider you chose (Anthropic/OpenAI/…) — a named third-party observer',
+    whoSees: 'the model provider you chose (Anthropic/OpenAI/…) — a named third-party observer',
     whatLeaks:
       'the user-chosen slice of vault content, in PLAINTEXT (content, not metadata), plus your IP + API-key identity and a cross-call profile over time; provider no-train/zero-retention is REQUESTED where offered but cannot be verified — disclosed as requested, not guaranteed',
     serverPosture: 'blind (device→provider direct — a cloud call never touches our server, ZK-1)',

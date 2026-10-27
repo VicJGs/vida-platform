@@ -18,7 +18,10 @@ function renderUI(ui: React.ReactElement) {
   return render(<UIProvider>{ui}</UIProvider>)
 }
 const cls = (el: Element | null, prefix: string) =>
-  (el?.getAttribute('class')?.split(/\s+/) ?? []).filter((c) => c.startsWith(prefix)).sort().join(' ')
+  (el?.getAttribute('class')?.split(/\s+/) ?? [])
+    .filter((c) => c.startsWith(prefix))
+    .sort()
+    .join(' ')
 
 // The approved greybox week: Oct 5–11 2026, Thu 8 = today (PLAN-S5 / concept board data).
 const P = { career: '#1D4ED8', health: '#5A6B3F', growth: '#9A2A2A', admin: '#64748B' }
@@ -29,12 +32,36 @@ const BUDGET: PurposeBudget[] = [
   { id: 'l', name: 'Learning', color: P.admin, hours: null, fraction: null },
 ]
 const THREADS: HabitThread[] = [
-  { id: 'm', name: 'Meditate', color: P.health, days: ['kept', 'kept', 'kept', 'today', 'future', 'future', 'future'], streak: '12-day streak' },
-  { id: 'r', name: 'Read 20 min', color: P.growth, days: ['kept', 'missed', 'kept', 'today', 'future', 'future', 'future'], streak: 'broke Tue · back on' },
+  {
+    id: 'm',
+    name: 'Meditate',
+    color: P.health,
+    days: ['kept', 'kept', 'kept', 'today', 'future', 'future', 'future'],
+    streak: '12-day streak',
+  },
+  {
+    id: 'r',
+    name: 'Read 20 min',
+    color: P.growth,
+    days: ['kept', 'missed', 'kept', 'today', 'future', 'future', 'future'],
+    streak: 'broke Tue · back on',
+  },
 ]
 const DAYS: LivingDay[] = [
-  { date: '2026-10-05', kind: 'past', record: 'Shipped the re-plan draft — a good, quiet start.', done: [{ id: 'd1', title: 'Re-plan draft', color: P.career }], focus: '2h40 deep focus' },
-  { date: '2026-10-06', kind: 'past', record: 'Caught the finance import up.', done: [{ id: 'd2', title: '1:1 with Ana', color: P.career }], focus: '1h10 focus' },
+  {
+    date: '2026-10-05',
+    kind: 'past',
+    record: 'Shipped the re-plan draft — a good, quiet start.',
+    done: [{ id: 'd1', title: 'Re-plan draft', color: P.career }],
+    focus: '2h40 deep focus',
+  },
+  {
+    date: '2026-10-06',
+    kind: 'past',
+    record: 'Caught the finance import up.',
+    done: [{ id: 'd2', title: '1:1 with Ana', color: P.career }],
+    focus: '1h10 focus',
+  },
   { date: '2026-10-07', kind: 'past', record: 'A slow one.', focus: '0h focus' },
   {
     date: '2026-10-08',
@@ -46,8 +73,18 @@ const DAYS: LivingDay[] = [
       { kind: 'item', item: { id: 't3', title: 'Gym', time: '18:00', color: P.health } },
     ],
   },
-  { date: '2026-10-09', kind: 'future', intent: 'Wrap the week, review what moved.', plan: [{ id: 'f1', title: 'Design sync', time: '11:00', color: P.career }] },
-  { date: '2026-10-10', kind: 'future', intent: 'Rest. Nothing owed.', plan: [{ id: 'f2', title: 'Family lunch', color: P.health }] },
+  {
+    date: '2026-10-09',
+    kind: 'future',
+    intent: 'Wrap the week, review what moved.',
+    plan: [{ id: 'f1', title: 'Design sync', time: '11:00', color: P.career }],
+  },
+  {
+    date: '2026-10-10',
+    kind: 'future',
+    intent: 'Rest. Nothing owed.',
+    plan: [{ id: 'f2', title: 'Family lunch', color: P.health }],
+  },
   { date: '2026-10-11', kind: 'future', intent: 'Plan the week ahead.' },
 ]
 const living = (props: Partial<React.ComponentProps<typeof LivingView>> = {}) => (
@@ -74,7 +111,9 @@ describe('LivingView — layout + lanes', () => {
 
   it('budget entries: hours "6h" / "4h30"; zero = "0h · none yet"; null = "unmeasured" with no fill', () => {
     const { getByRole, container } = renderUI(living())
-    const items = within(within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list')).getAllByRole('listitem')
+    const items = within(
+      within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list'),
+    ).getAllByRole('listitem')
     expect(items.map((i) => i.textContent)).toEqual([
       expect.stringContaining('Career, 6 hours'),
       expect.stringContaining('Health, 0 hours, none yet'),
@@ -92,8 +131,12 @@ describe('LivingView — layout + lanes', () => {
     const { container } = renderUI(
       <>
         {living()}
-        <Text data-ref="emph" color="$colorBrandEmphasis">r</Text>
-        <Text data-ref="prim" color="$colorTextPrimary">r</Text>
+        <Text data-ref="emph" color="$colorBrandEmphasis">
+          r
+        </Text>
+        <Text data-ref="prim" color="$colorTextPrimary">
+          r
+        </Text>
       </>,
     )
     const names = container.querySelectorAll('.vida-living-budget-name')
@@ -103,9 +146,16 @@ describe('LivingView — layout + lanes', () => {
 
   it('stale: last-known hours + "as of last read"; ignored for null hours', () => {
     const { getByRole } = renderUI(
-      living({ budget: [{ id: 'c', name: 'Career', color: P.career, hours: 2, fraction: 0.5, stale: true }, { id: 'x', name: 'X', color: P.admin, hours: null, fraction: null, stale: true }] }),
+      living({
+        budget: [
+          { id: 'c', name: 'Career', color: P.career, hours: 2, fraction: 0.5, stale: true },
+          { id: 'x', name: 'X', color: P.admin, hours: null, fraction: null, stale: true },
+        ],
+      }),
     )
-    const items = within(within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list')).getAllByRole('listitem')
+    const items = within(
+      within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list'),
+    ).getAllByRole('listitem')
     expect(items[0].textContent).toContain('Career, 2 hours, as of last read')
     expect(items[1].textContent).not.toContain('as of last read')
   })
@@ -121,9 +171,13 @@ describe('LivingView — layout + lanes', () => {
 
   it('threads: one row each, 7 nodes with a class per state, 6 connectors, hollow nodes aria-hidden', () => {
     const { container, getByRole } = renderUI(living())
-    const rows = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getAllByRole('listitem')
+    const rows = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getAllByRole(
+      'listitem',
+    )
     expect(rows).toHaveLength(2)
-    expect(rows[1].querySelectorAll('.vida-thread-kept, .vida-thread-missed, .vida-thread-today, .vida-thread-future')).toHaveLength(7)
+    expect(
+      rows[1].querySelectorAll('.vida-thread-kept, .vida-thread-missed, .vida-thread-today, .vida-thread-future'),
+    ).toHaveLength(7)
     expect(rows[1].querySelectorAll('.vida-thread-missed')).toHaveLength(1)
     expect(rows[1].querySelectorAll('.vida-thread-today')).toHaveLength(1)
     expect(rows[1].querySelectorAll('.vida-thread-future')).toHaveLength(3)
@@ -133,7 +187,9 @@ describe('LivingView — layout + lanes', () => {
 
   it('a thread row reads as one sentence by weekday (TZ-safe), with the streak', () => {
     const { getByRole } = renderUI(living())
-    const rows = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getAllByRole('listitem')
+    const rows = within(within(getByRole('group', { name: 'Habit threads' })).getByRole('list')).getAllByRole(
+      'listitem',
+    )
     expect(rows[1].textContent).toContain(
       'Read 20 min: kept Mon, Wed; missed Tue; today Thu; upcoming Fri, Sat, Sun — broke Tue · back on',
     )
@@ -142,7 +198,11 @@ describe('LivingView — layout + lanes', () => {
 
 describe('LivingView — S7 amendments (V13 color? · off)', () => {
   // A rest day (a non-daily habit's unscheduled day) + a thread/purpose with no colour source (D-S6-DEV-2/-3).
-  const REST: HabitThread = { id: 'g', name: 'Gym', days: ['kept', 'off', 'missed', 'today', 'off', 'future', 'future'] }
+  const REST: HabitThread = {
+    id: 'g',
+    name: 'Gym',
+    days: ['kept', 'off', 'missed', 'today', 'off', 'future', 'future'],
+  }
   const UNCOLOURED: PurposeBudget = { id: 'u', name: 'Health', hours: null, fraction: null }
   const muted = () => {
     const ref = renderUI(<View className="ref" backgroundColor="$colorTextMuted" />)
@@ -233,7 +293,9 @@ describe('LivingView — temporal day Cards', () => {
     const { container } = renderUI(
       <>
         {living()}
-        <Text data-ref="sub" fontFamily="$display" fontSize="$subheading" lineHeight="$subheading">r</Text>
+        <Text data-ref="sub" fontFamily="$display" fontSize="$subheading" lineHeight="$subheading">
+          r
+        </Text>
       </>,
     )
     const n = container.querySelector('.vida-living-daynum')
@@ -247,7 +309,9 @@ describe('LivingView — review-folded coverage', () => {
     const { getByRole, container } = renderUI(
       <>
         {living()}
-        <Text data-ref="emph" color="$colorBrandEmphasis">r</Text>
+        <Text data-ref="emph" color="$colorBrandEmphasis">
+          r
+        </Text>
       </>,
     )
     const thu = getByRole('group', { name: 'Thu 8, today' })
@@ -270,7 +334,9 @@ describe('LivingView — review-folded coverage', () => {
     const fills = container.querySelectorAll('.vida-living-fill')
     expect(fills).toHaveLength(1)
     expect((fills[0] as HTMLElement).style.width).toBe('100%')
-    const items = within(within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list')).getAllByRole('listitem')
+    const items = within(
+      within(getByRole('group', { name: 'Purpose budget · This week' })).getByRole('list'),
+    ).getAllByRole('listitem')
     expect(items[1].textContent).toContain('B, unmeasured')
   })
 
@@ -320,10 +386,16 @@ describe('LivingView — states + guards', () => {
 
   it('empty: the designed layout + sr "Nothing this week." (or the slot replaces it)', () => {
     const bare = DAYS.map(({ date, kind }) => ({ date, kind }))
-    const { getByRole, rerender, queryByRole } = renderUI(living({ days: bare, budget: [], threads: [], state: 'empty' }))
+    const { getByRole, rerender, queryByRole } = renderUI(
+      living({ days: bare, budget: [], threads: [], state: 'empty' }),
+    )
     expect(getByRole('status').textContent).toBe('Nothing this week.')
     expect(getByRole('region', { name: 'Week columns' })).toBeTruthy()
-    rerender(<UIProvider>{living({ days: bare, budget: [], threads: [], state: 'empty', empty: <span>Quiet week</span> })}</UIProvider>)
+    rerender(
+      <UIProvider>
+        {living({ days: bare, budget: [], threads: [], state: 'empty', empty: <span>Quiet week</span> })}
+      </UIProvider>,
+    )
     expect(getByRole('status').textContent).toBe('Quiet week')
     expect(queryByRole('region')).toBeNull()
   })

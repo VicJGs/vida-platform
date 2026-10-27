@@ -67,8 +67,16 @@ const standardBlocks: EditorDocument = {
     {
       type: 'taskList',
       content: [
-        { type: 'taskItem', attrs: { checked: true }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Done item' }] }] },
-        { type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open item' }] }] },
+        {
+          type: 'taskItem',
+          attrs: { checked: true },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Done item' }] }],
+        },
+        {
+          type: 'taskItem',
+          attrs: { checked: false },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Open item' }] }],
+        },
       ],
     },
     {
@@ -91,9 +99,21 @@ const standardBlocks: EditorDocument = {
       ],
     },
     { type: 'image', attrs: { src: 'https://placehold.co/240x120/png', alt: 'A placeholder image' } },
-    { type: 'callout', attrs: { variant: 'info' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Info callout — the default variant.' }] }] },
-    { type: 'callout', attrs: { variant: 'success' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Success callout.' }] }] },
-    { type: 'callout', attrs: { variant: 'danger' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Danger callout.' }] }] },
+    {
+      type: 'callout',
+      attrs: { variant: 'info' },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Info callout — the default variant.' }] }],
+    },
+    {
+      type: 'callout',
+      attrs: { variant: 'success' },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Success callout.' }] }],
+    },
+    {
+      type: 'callout',
+      attrs: { variant: 'danger' },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Danger callout.' }] }],
+    },
     { type: 'codeBlock', content: [{ type: 'text', text: 'const x = 1 // styled, StarterKit-owned' }] },
     { type: 'horizontalRule' },
     { type: 'paragraph', content: [{ type: 'text', text: 'A divider sits above this paragraph.' }] },
@@ -177,7 +197,9 @@ const integrationBlocks: EditorDocument = {
     { type: 'heading', attrs: { level: 2 }, content: [{ type: 'text', text: 'Integration blocks (placeholders)' }] },
     {
       type: 'paragraph',
-      content: [{ type: 'text', text: 'Each renders a placeholder until its module ships (E5 — the ADR-008 inline seam).' }],
+      content: [
+        { type: 'text', text: 'Each renders a placeholder until its module ships (E5 — the ADR-008 inline seam).' },
+      ],
     },
     ...INTEGRATION_BLOCK_TYPE.map((type) => ({ type })),
   ],

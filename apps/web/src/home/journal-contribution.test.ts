@@ -1,11 +1,7 @@
 // Pure — env node. Locks the registry seam as signature-only + inert (BR-2; the engine is MOD-journals #33).
 import { describe, expect, it } from 'vitest'
 
-import {
-  JournalSeamNotActivated,
-  registerJournalContribution,
-  type JournalContribution,
-} from './journal-contribution'
+import { JournalSeamNotActivated, registerJournalContribution, type JournalContribution } from './journal-contribution'
 
 describe('registerJournalContribution (deferred seam)', () => {
   it('throws JournalSeamNotActivated — inert until the engine activates it', () => {

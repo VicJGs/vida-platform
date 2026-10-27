@@ -1,10 +1,11 @@
 <!-- Conventions — features/learning/education · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · intake -->
 
-# Conventions — Learning: Education  (level: Feature / Learning sub-context)
+# Conventions — Learning: Education (level: Feature / Learning sub-context)
 
 ## How to build here
+
 - **Route every Subject up the chain.** Never create an orphaned subject; its curriculum (→ term? → degree tier)
-  must resolve (ED-3). Skipped levels (A1) are *collapsed*, not broken. `[INTENT H2]`
+  must resolve (ED-3). Skipped levels (A1) are _collapsed_, not broken. `[INTENT H2]`
 - **Attach to the Subject, schedule the session.** Assessments, grades, documents, homework, notes → the Subject;
   meetings → `class_sessions` derived from the one `subject_schedule` (ED-4/ED-5). `[INTENT H5/H7]`
 - **Three schedule methods, one source.** ICS (device-side) · document extraction (deferred) · manual — all write
@@ -16,7 +17,7 @@
 - **Progress is measured, Education-forged.** Use the Education measurement entity — `measurement_kind` × `binding_mode`
   (M1/M2, the Projects axes; the old flat `grade/deliverable/goal/manual/count` decomposes onto them), **never
   Projects' storage** (ED-10). Progress is a nullable override that derives (M3), never a stored counter. `[INTENT H12;
-  ADR-011 M1/M2/M3]`
+ADR-011 M1/M2/M3]`
 - **Fork, don't mutate.** Curriculum templates are immutable bases; forking deep-copies with a lineage pointer
   (ED-11). `[INTENT A3/H10]`
 - **Ship defaults with every personalizable view.** Personalization is unlimited, but a default schema always
@@ -26,6 +27,7 @@
   vault (ED-13). `[INTENT H6]`
 
 ## Naming & layout
+
 - Display naming: **"Subjects" vs "Courses" is a user Preference (visual only — no DB change)**. `[INTENT H9]`
 - Degree tiers (⚠ INTENDED enum): `high_school` / `bachelor` / `master` / `doctorate`. Term levels: `year` /
   `semester` / `term` (hierarchical). Assessment types: `exam` / `quiz` / `test` / `presentation` / `work`.
@@ -36,6 +38,7 @@
   for durations, soft delete, `_sync_*`; enums = unions + CHECK + Zod. `[FACT: CLAUDE.md Conventions]`
 
 ## Local landmines / "never do"
+
 - **Never** orphan a subject in a flat list — the v2 `courses` mistake this reframe fixes (ED-3). `[INTENT]`
 - **Never** hand-set grades, GPA, or progress — all derived (ED-7/ED-10); progress is a nullable override that
   derives (M3), never a `NOT NULL DEFAULT 0` counter. `[INTENT; ADR-011 M3]`
@@ -51,4 +54,5 @@
 - **Never** ship a personalizable view without a default (ED-15). `[INTENT]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

@@ -25,9 +25,7 @@ import {
 
 // createNotificationDeliveryEngine — the delivery mechanism over deny-safe ports. No
 // enforcer/egress params (gating is upstream, IR-2/DEL-3); M1 ports default to deny-safe.
-export function createNotificationDeliveryEngine(
-  ports?: NotificationPorts,
-): NotificationDeliveryEngine {
+export function createNotificationDeliveryEngine(ports?: NotificationPorts): NotificationDeliveryEngine {
   const osScheduler = ports?.osScheduler ?? denySafeOsScheduler
   const wakeRelay = ports?.wakeRelay ?? denySafeWakeRelay
   const email = ports?.email ?? denySafeEmail
@@ -71,10 +69,7 @@ export function createNotificationDeliveryEngine(
     return { inApp: true, delivered, fallbacks }
   }
 
-  const scheduleLocal = async (
-    occ: DueOccurrence,
-    quietHours: QuietHours,
-  ): Promise<ScheduleResult> => {
+  const scheduleLocal = async (occ: DueOccurrence, quietHours: QuietHours): Promise<ScheduleResult> => {
     // XCU-05 — bake quiet-hours BEFORE the OS scheduler (the alert fires with the app closed).
     const baked = bakeQuietHours(occ, quietHours)
     if (baked.action === 'suppress') {

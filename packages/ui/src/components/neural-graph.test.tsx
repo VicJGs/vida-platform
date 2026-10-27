@@ -57,7 +57,9 @@ describe('NeuralGraph', () => {
 
   it('a node button fires onNodeClick(id) — keyboard/SR path', () => {
     const onNodeClick = vi.fn()
-    const { getByRole } = renderUI(<NeuralGraph nodes={NODES} edges={EDGES} onNodeClick={onNodeClick} aria-label="Map" />)
+    const { getByRole } = renderUI(
+      <NeuralGraph nodes={NODES} edges={EDGES} onNodeClick={onNodeClick} aria-label="Map" />,
+    )
     fireEvent.click(getByRole('button', { name: /^Alpha,/ }))
     expect(onNodeClick).toHaveBeenCalledWith('a')
   })

@@ -33,8 +33,12 @@ describe('CanvasView — frame', () => {
     const { container } = renderUI(
       <>
         <CanvasView title="This week · Oct 12 – Oct 18, 2026">{child}</CanvasView>
-        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
-        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">ref</Text>
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">
+          ref
+        </Text>
+        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">
+          ref
+        </Text>
       </>,
     )
     // jsdom resolves no CSS vars, so assert the pairing STRUCTURALLY: Tamagui emits a font-scoped line-height atomic

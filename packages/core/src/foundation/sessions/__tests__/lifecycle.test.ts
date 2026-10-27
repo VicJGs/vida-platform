@@ -41,7 +41,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -57,7 +60,13 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
 
 // The shipped `focus` type declares effects [attach_pomodoro, log_time] (both non-projection),
 // so completion needs handlers registered — register no-op stubs so applyEffect can fire.
-async function setup(): Promise<{ deps: TransitionDeps; db: DrizzleDb; driver: SqliteDriver; registry: SessionRegistry; rail: EffectRail }> {
+async function setup(): Promise<{
+  deps: TransitionDeps
+  db: DrizzleDb
+  driver: SqliteDriver
+  registry: SessionRegistry
+  rail: EffectRail
+}> {
   await initVault()
   const bsql = new Database(':memory:')
   const driver = createBetterSqlite3Driver(bsql)
@@ -102,7 +111,7 @@ describe('XS-effect-rail #32 · S3 — lifecycle engine (XCU-09)', () => {
     const [row] = await db.select().from(sessions).where(eq(sessions.id, s.id)).all()
     expect(row.status).toBe('in_progress')
     expect(row.started_at).not.toBeNull()
-    expect((await db.select().from(appliedEffects).all())).toHaveLength(0)
+    expect(await db.select().from(appliedEffects).all()).toHaveLength(0)
     await driver.close()
   })
 
@@ -117,7 +126,7 @@ describe('XS-effect-rail #32 · S3 — lifecycle engine (XCU-09)', () => {
     const [row] = await db.select().from(sessions).where(eq(sessions.id, s.id)).all()
     expect(row.status).toBe('completed')
     expect(row.ended_at).not.toBeNull()
-    expect((await db.select().from(appliedEffects).all())).toHaveLength(2)
+    expect(await db.select().from(appliedEffects).all()).toHaveLength(2)
     await driver.close()
   })
 
@@ -129,7 +138,7 @@ describe('XS-effect-rail #32 · S3 — lifecycle engine (XCU-09)', () => {
 
     const [row] = await db.select().from(sessions).where(eq(sessions.id, s.id)).all()
     expect(row.status).toBe('scheduled') // unchanged
-    expect((await db.select().from(appliedEffects).all())).toHaveLength(0)
+    expect(await db.select().from(appliedEffects).all()).toHaveLength(0)
     await driver.close()
   })
 
@@ -143,7 +152,7 @@ describe('XS-effect-rail #32 · S3 — lifecycle engine (XCU-09)', () => {
 
     expect(first.fired).toBe(2)
     expect(second.fired).toBe(0) // ledger dedupes the identical events
-    expect((await db.select().from(appliedEffects).all())).toHaveLength(2)
+    expect(await db.select().from(appliedEffects).all()).toHaveLength(2)
     await driver.close()
   })
 

@@ -8,6 +8,7 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
 `schema/preferences.ts` · migration 013). Issue: mod-preferences #37 (LIF-133), M1.1.1 Backend.
 
 ## Build status (per slice)
+
 - **Slice 1 · `user_preferences` — SHIPPED** (this session). Service + types + validator + tests.
 - **Slice 2 · `nav_preferences` — SHIPPED** (this session). `getNavPreferences`/`updateNavPreferences` +
   `MergedNavPreferences` + `NavPreferencesFields`/`UpdateNavPreferencesSchema` + `NAV_PREFERENCES_DEFAULTS`.
@@ -21,6 +22,7 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
   unit-proven, D-R5-2); Locale/Notifications (R6) and the onboarding commit (R7) are still in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
 
 ## Exposed surface (SHIPPED — Slice 1)
+
 `createPreferencesService(opts: { db: DrizzleDb; deviceId: string }): PreferencesService` — factory-object, single
 options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`, `softDelete: false`).
 
@@ -41,26 +43,31 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   convention for raw list readers; `_sync_status` union boundary → DB-11 interface reconcile) (Slice 3).
 
 ## Types
+
 - `@vida/types/entities/user.ts` — `UserPreferences` (extended to the full schema shape: +G4 ×6, `module_visibility`,
   E9 ×4) + `MergedPreferences = Omit<UserPreferences, keyof SyncableEntity>` (the config view).
 - `@vida/core/src/validators/user.ts` — `UserPreferencesFields` (z.object) + `UpdatePreferencesSchema` (`.partial()`).
 - `USER_PREFERENCES_DEFAULTS: MergedPreferences` (service export) — mirrors every schema `.default(...)` (PR-2 base).
 
 ## Internal shape
+
 - `toMerged(row)` — row → config view; `?? DEFAULTS.x` for non-null-typed fields (preserves falsy-valid 0/false),
   JSON columns (`dashboard_layout`/`module_visibility`/`active_modules`) parsed with default fallback (IR-e).
 - `serialize(patch)` — config patch → repo write shape; JSON columns `JSON.stringify`d to TEXT.
 - `parseJson(v, fallback)` — try/catch parse; malformed → fallback (never throws).
 
 ## Consumers
+
 - `sessions/service.ts:213-228` reads `pomodoro_*` from the raw table today (IR-3 seam); `getMergedPreferences`
   supersedes it — migration is a deferred hygiene follow-up.
 
 ## Tests
+
 `services/preferences/__tests__/preferences-service.test.ts` — 10 live-store tests (better-sqlite3 + migrate +
 `initVault`), covering AC1–9 + the metadata-strip assertion.
 
 ## ② Live seam — preferences-rescope R2 (2026-10-22)
+
 - **Registered** in the composition root (`Services.preferences`, no deps). The ② read/write seam is
   `apps/web/src/preferences/` (see its CLAUDE.md): React Query over SQLite (`['preferences','user']` /
   `['preferences','nav']`, 5 min / 30 min; R5 adds `['preferences','commands']` — `commandHistoryQuery`, written only
@@ -77,6 +84,7 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   `PreferencesBridge` also owns the hide flush (`visibilitychange`/`pagehide` → `flushAll`) `[FACT: preferences/preferences-bridge.tsx:52-63]`.
 
 ## ② Surface — preferences-rescope R5 (2026-10-27 · Visual Gate PASS, Victor `visual-approved`)
+
 - **Modules pane** reads the view, writes `update(viewPatch)` (map merges; rename trimmed ≤ 40; `lg` controls).
 - **Nav readers** (⌘K `deriveNavCommands`, the dock's `visibleDockGroups`) run the map through `nav/nav-prefs`
   `applyNavPrefs` — hideable keys only (Settings/Home never hidden, EC-8 read side). The dock has no production mount yet
@@ -86,6 +94,7 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   is the combobox's description. Rules: `current-business-rules.md` "R5".
 
 ## ② Surface — preferences-rescope R3 (2026-10-26 · built, pending Visual Gate)
+
 - **Boot seed.** `App` holds Loading until `seedPreferences` settles (both keys, `retry: 0`, never rejects), so the theme
   and the Home arrangement render the persisted value from the first frame; a failed read boots on the defaults (PR-2).
   Read definitions are shared (`preferences/preferences-queries.ts`, `retryOnMount: false`).
@@ -108,6 +117,7 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
   device", no Saving state); a failed batch → the writer's one revert toast. All R3 copy: `settings/settings-copy.ts`.
 
 ## ② Surface plane — as-built baseline (preferences-rescope Step 0, 2026-10-21, worktree @ `c025710`)
+
 Cross-plane baseline for the entity re-scope. Service plane above is **current** (no service commit since `3e82608`).
 The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/CLAUDE.md`; this section pins the
 **wiring facts** the re-scope reconciles against.
@@ -123,7 +133,7 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   `state:'success'`; `useUpdatePreferences()` returns store setters, `persist` a commented no-op, and has **no callers**
   (panes bind the stores directly) `[FACT: settings/use-preferences.ts:19-43]`. `SettingsSurface` has **no loading
   branch** and the error branch replaces the pane `[FACT: settings/settings-surface.tsx:65,117-133]`.
-- **Stores.** *(baseline; R3 made `theme-store` a derived cache and moved `arrangement` off `preferences-store`.)*
+- **Stores.** _(baseline; R3 made `theme-store` a derived cache and moved `arrangement` off `preferences-store`.)_
   `theme-store` `{selection: THEME_DEFAULT}` feeds `<UIProvider selection>` `[FACT: App.tsx:35-40,102]`;
   `preferences-store` holds reduceMotion · arrangement · moduleVisibility · moduleNames · dateFormat · timeFormat ·
   weekStartsOn · notifInApp/Push/Email · quietHours `[FACT: stores/preferences-store.ts:68-80]`. Both expose a
@@ -135,17 +145,17 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   replaces whole JSON columns → `dashboard_layout` writes must be read-merge-write (§B HARD INVARIANT `:60-68`).
 - **Readers.** `moduleVisibility`/`moduleNames`/`reduceMotion`/`dateFormat`/`timeFormat`/`weekStartsOn` have **0
   readers** outside settings/ + the stores; `useHomeArrangement` reads `arrangement` live in-session
-  `[FACT: home/home-surface.tsx:25-27,74-76]` *(baseline; since R3 it reads the persisted
-  `usePreferences().view.arrangement`)* *(R5: the module maps are read by the Modules pane, ⌘K and the dock reader via
-  `usePreferences().view` + `nav/nav-prefs` `applyNavPrefs`)* *(fe-calendar #157/#158 later added a mirror reader of
-  `timeFormat`/`weekStartsOn` — see "② Live seam" above)*; `ModuleDock` is mounted nowhere (test-only import — still
+  `[FACT: home/home-surface.tsx:25-27,74-76]` _(baseline; since R3 it reads the persisted
+  `usePreferences().view.arrangement`)_ _(R5: the module maps are read by the Modules pane, ⌘K and the dock reader via
+  `usePreferences().view` + `nav/nav-prefs` `applyNavPrefs`)_ _(fe-calendar #157/#158 later added a mirror reader of
+  `timeFormat`/`weekStartsOn` — see "② Live seam" above)_; `ModuleDock` is mounted nowhere (test-only import — still
   true after R5; mounting is shell-rescope's, D-R5-2); `isFeatureEnabled`
   always `false` `[FACT: shell/feature-flags.ts:10-12]`; `stubShellPrefs` resolves `DEFAULT_PLACEMENT`
   `[FACT: shell/shell-prefs.ts:15-16]`; `usePersona()` = `?persona` dev override or `'neutral'`
   `[FACT: gamification/use-persona.ts:33-36]`.
 - **Gaps in the controls.** No `game` preset in the Settings preset Select (`appearance-pane.tsx:16-20` vs
-  `packages/ui/src/theme-resolution.ts:30`) *(kept by design: `game` is a module, not a theme — D3)*; no persona control
-  *(R3 added it)*; Mode offers Light/Dark only while `theme` allows
+  `packages/ui/src/theme-resolution.ts:30`) _(kept by design: `game` is a module, not a theme — D3)_; no persona control
+  _(R3 added it)_; Mode offers Light/Dark only while `theme` allows
   `system` (default) `[FACT: appearance-pane.tsx:13-14; packages/types/src/entities/user.ts:186]`.
 - **Onboarding.** `useModuleSelection().commit` and `useThemeSelection().commit` are `Promise.resolve()`
   `[FACT: onboarding/use-module-selection.ts:36; use-theme-selection.ts:39]`; `GuidedSetupSlotButton` has **0
@@ -156,5 +166,6 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   EC-10 (persona → copy) `[FACT: census/b-system-features.md:59-76,153-166; a-notes-home.md:158,165]`.
 
 ## Not owned (delegated / cited)
+
 Account/auth/PII (PR-8/PR-10 — PII stays in `user_profile`) · data import/export (PR-8) · ADR-014 integration
 credentials (PR-12) · `ai_connections`/ADR-015 · `sms` channel (PR-11, never). No schema work in this issue.

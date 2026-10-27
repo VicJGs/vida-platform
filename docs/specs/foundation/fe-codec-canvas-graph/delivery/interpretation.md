@@ -5,11 +5,13 @@
 > Unit: G6 CODEC #8 · LIF-205 · profile add-frontend-component / Default.
 
 ## 0. One-line scope
+
 EXTEND the shipped `@vida/ui` `NeuralGraph` (UI-2 · V7) to the **editorial "ink voice"** archetype form
 (CODEC · Canvas: Graph), resolving the 3 conformance findings deferred here from the LIF-230 audit. An
 EXTEND-in-place of one renderer — NOT a new composing shell.
 
 ## 1. DEPENDENCIES (what must already be true / what this consumes)
+
 - [FACT: g6-reshape-runbook.md:38] #8 `fe-codec-canvas-graph` = "Canvas: Graph — editorial ink voice",
   kind "ext UI-2", deps `fe-codec-theme, fe-codec-patterns`.
 - [FACT: reconstructed-structure.md:28 (frontend-replan)] #8 deps = `#1 #2` → theme + patterns. Both
@@ -36,7 +38,9 @@ EXTEND-in-place of one renderer — NOT a new composing shell.
   Reader · Vision-board · Calendar-grid — "where the soul lives".
 
 ## 2. NEEDS (what this unit must deliver)
+
 The 3 LIF-230 audit findings ([FACT: .claude/tasks/fe-codec-canvas-graph.md ⚑ section]), each a NEED:
+
 1. **Ink voice / theme-driven colors** — [FACT: neural-graph.tsx:47-48] `DEFAULT_NODE_COLOR='#6366f1'` +
    `DEFAULT_EDGE_COLOR='#cbd5e1'` are hard-coded, outside Tamagui theming (NG-7). [FACT: surface-map.md:28]
    "must render in the editorial ink voice (not a blue SaaS graph)"; [FACT: surface-map.md:141, the
@@ -56,6 +60,7 @@ the `@vida/ui` renderer extension. [UNKNOWN: needs Step 2] whether apps/web gets
 the route stays as-is.
 
 ## 3. ORGANIZATION (where the work lives + the boundary)
+
 - [FACT: neural-graph.tsx:10-11 comment] PRESENTATIONAL boundary: `nodes`/`edges` are props the app
   provides (AR-8 graph-prep, which `@vida/ui` can't import). The renderer never fetches/shapes data.
 - [INTERP] @vida/ui owns the renderer extension (neural-graph.tsx + stories + test + the CLAUDE.md digest +
@@ -64,6 +69,7 @@ the route stays as-is.
   would be a wrong-direction edge → all new types stay LOCAL to @vida/ui.
 
 ## 4. IMPLICIT RULES (the traps — catch them here, not in the browser)
+
 - [FACT: neural-graph.tsx:12-15 comment] the effect MUST stay keyed on `graphKey` (content signature), NOT
   the nodes/edges array refs — else an equal-content new array kills+rebuilds+relayouts the WebGL context
   every render (browsers cap ~16 live contexts → crash). A theme-color change must likewise NOT thrash the
@@ -82,6 +88,7 @@ the route stays as-is.
 - [FACT: neural-graph.tsx:93-110] the degree-map / dangling-edge dev-warn runs in jsdom (testable) — keep.
 
 ## 5. Envision Gate pre-assessment (the §3.75 trigger test — reported, Victor reviews)
+
 - The test [FACT: entity-delivery-flow.md §3.75, via scenario default.md:24]: "Is there a user affordance
   whose UI answer isn't already obvious from an existing shipped surface?"
 - [INTERP: from §1-§4] NO. The graph surface is already shipped and rendering; its affordances (view the
@@ -94,6 +101,7 @@ the route stays as-is.
   was Victor's; the TRIGGER was this doc test.
 
 ## 6. Open UNKNOWNs (blocking until resolved)
+
 - [UNKNOWN: Step 1.5 → Victor] confirm the Envision-Gate SKIP (§5).
 - [UNKNOWN: Step 2 Decomposition] slice split — one @vida/ui renderer-extension slice vs splitting the 3
   findings; and whether apps/web gets any net code.

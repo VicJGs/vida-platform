@@ -50,7 +50,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -87,11 +90,7 @@ const userDef = (over: Partial<CapabilityDefinition> = {}): CapabilityDefinition
   ...over,
 })
 
-async function seedGrant(
-  db: Awaited<ReturnType<typeof harness>>['db'],
-  defId: string,
-  env: Partial<GrantEnvelope>,
-) {
+async function seedGrant(db: Awaited<ReturnType<typeof harness>>['db'], defId: string, env: Partial<GrantEnvelope>) {
   const repo = createRepository(db, capabilityGrants, {
     deviceId: 'device-1',
     encryptedFields: [],
@@ -123,10 +122,21 @@ const act = (over: Partial<EgressAct> = {}): EgressAct => ({
   userInitiation: userInit(),
   ...over,
 })
-const yesConsent: EgressConsentPort = { async hasTargetConsent() { return true } }
+const yesConsent: EgressConsentPort = {
+  async hasTargetConsent() {
+    return true
+  },
+}
 function capturingAudit() {
   const entries: EgressAuditRecord[] = []
-  return { entries, port: { async record(e: EgressAuditRecord) { entries.push(e) } } }
+  return {
+    entries,
+    port: {
+      async record(e: EgressAuditRecord) {
+        entries.push(e)
+      },
+    },
+  }
 }
 
 beforeAll(async () => {

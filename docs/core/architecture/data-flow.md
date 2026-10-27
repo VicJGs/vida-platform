@@ -7,6 +7,7 @@ This document describes how data moves through the Vida Platform at every layer 
 **Governs:** All service implementations in `packages/core/src/services/`. Every service must follow the data flow described here.
 
 **Code it documents:**
+
 - `packages/core/src/db/repository.ts` — Generic repository with `encryptRow`, `decryptRow`, `create`, `update`, `findById`, `findAll`
 - `packages/core/src/db/adapter.ts` — Database adapter interface with `SqliteDriver`, `DatabaseAdapter`, `initializeConnection`
 - `packages/core/src/encryption/vault.ts` — Encryption primitives with `encryptField`, `decryptField`, `hashContent`
@@ -214,15 +215,15 @@ Every syncable table has sync metadata columns managed automatically by the repo
 
 ### Sync Columns
 
-| Column | Type | Managed By | Purpose |
-|--------|------|-----------|---------|
-| `_sync_id` | TEXT (UUIDv4) | Repository `create()` | Stable sync identifier, set once |
-| `_sync_version` | INTEGER | Repository `create()`, `update()` | Incremented on every write |
-| `_sync_device_id` | TEXT | Repository `create()`, `update()` | Device that last modified this row |
-| `_sync_lww_ts` | INTEGER | Repository `create()`, `update()` | `Date.now()` (interim v0) — used for LWW conflict resolution; target = HLC stamp (causal, device-id tie-break) per ADR-003 §6.1 |
-| `_sync_status` | TEXT | Repository + sync engine | `'pending'` on write, `'synced'` after server ACK |
-| `_sync_hash` | TEXT | Repository `create()`, `update()` | SHA-256 of pre-encryption row for change detection |
-| `_sync_field_ts` | TEXT (JSON) | Repository `update()` | Per-field timestamps for field-level LWW |
+| Column            | Type          | Managed By                        | Purpose                                                                                                                         |
+| ----------------- | ------------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| `_sync_id`        | TEXT (UUIDv4) | Repository `create()`             | Stable sync identifier, set once                                                                                                |
+| `_sync_version`   | INTEGER       | Repository `create()`, `update()` | Incremented on every write                                                                                                      |
+| `_sync_device_id` | TEXT          | Repository `create()`, `update()` | Device that last modified this row                                                                                              |
+| `_sync_lww_ts`    | INTEGER       | Repository `create()`, `update()` | `Date.now()` (interim v0) — used for LWW conflict resolution; target = HLC stamp (causal, device-id tie-break) per ADR-003 §6.1 |
+| `_sync_status`    | TEXT          | Repository + sync engine          | `'pending'` on write, `'synced'` after server ACK                                                                               |
+| `_sync_hash`      | TEXT          | Repository `create()`, `update()` | SHA-256 of pre-encryption row for change detection                                                                              |
+| `_sync_field_ts`  | TEXT (JSON)   | Repository `update()`             | Per-field timestamps for field-level LWW                                                                                        |
 
 ### Field Timestamp Tracking (`_sync_field_ts`)
 
@@ -289,7 +290,8 @@ export async function createTask(input: unknown): Promise<Task> {
 
   // [5] POST-COMMIT SIDE EFFECTS — Best-effort, applied exactly-once via the effect rail
   const effectEventId = deriveEffectEventId('task_created', task.id) // idempotency key (framework R1)
-  await applyEffects({ // illustrative — the rail's emit API; name is a build-phase detail
+  await applyEffects({
+    // illustrative — the rail's emit API; name is a build-phase detail
     source: { entityType: 'task', entityId: task.id, action: 'task_created' },
     effectEventId, // effect applied at most once → no duplicate currency grant
   })
@@ -316,9 +318,7 @@ export async function createTask(input: unknown): Promise<Task> {
 The default pattern is single-entity. When the UI requires batch operations (e.g., completing multiple habits at once), the service provides an explicit batch method:
 
 ```typescript
-export async function batchCompleteHabits(
-  entries: { habitId: string; data: unknown }[]
-): Promise<HabitCompletion[]> {
+export async function batchCompleteHabits(entries: { habitId: string; data: unknown }[]): Promise<HabitCompletion[]> {
   return db.transaction(async (tx) => {
     const results: HabitCompletion[] = []
     for (const entry of entries) {
@@ -339,13 +339,13 @@ Errors are categorized by origin and handled at the appropriate layer.
 
 ### Error Types
 
-| Error Type | Origin | Handling |
-|-----------|--------|----------|
-| **Zod validation error** | Invalid input shape | Caught at UI (form errors) or service (throws `ServiceError` with code `VALIDATION_FAILED`) |
-| **ServiceError** | Business rule violation | Thrown by service, caught by UI mutation error handler, mapped to user-facing toast/message by error code |
-| **VaultLockedError** | Vault not unlocked | Thrown by repository when `getVaultKey()` fails. UI redirects to unlock screen |
-| **Database error** | SQLite constraint violation, disk error | Caught by repository, wrapped in `ServiceError` with code `DB_ERROR` |
-| **Encryption error** | Corrupt ciphertext, wrong key | Caught by repository during `decryptRow`. Logged, row marked as corrupted |
+| Error Type               | Origin                                  | Handling                                                                                                  |
+| ------------------------ | --------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **Zod validation error** | Invalid input shape                     | Caught at UI (form errors) or service (throws `ServiceError` with code `VALIDATION_FAILED`)               |
+| **ServiceError**         | Business rule violation                 | Thrown by service, caught by UI mutation error handler, mapped to user-facing toast/message by error code |
+| **VaultLockedError**     | Vault not unlocked                      | Thrown by repository when `getVaultKey()` fails. UI redirects to unlock screen                            |
+| **Database error**       | SQLite constraint violation, disk error | Caught by repository, wrapped in `ServiceError` with code `DB_ERROR`                                      |
+| **Encryption error**     | Corrupt ciphertext, wrong key           | Caught by repository during `decryptRow`. Logged, row marked as corrupted                                 |
 
 ### ServiceError Class
 
@@ -356,7 +356,7 @@ export class ServiceError extends Error {
   constructor(
     public code: string,
     message: string,
-    public details?: unknown
+    public details?: unknown,
   ) {
     super(message)
     this.name = 'ServiceError'
@@ -421,6 +421,7 @@ export function useCreateTask() {
 ```
 
 **Key patterns:**
+
 - `queryKey` structure: `[entityType]` for lists, `[entityType, id]` for single entities
 - `staleTime` varies by data type (see cross-module-integration.md section 9)
 - Mutations invalidate their own entity list + any reactive cross-module views
@@ -452,6 +453,7 @@ export const useTaskUIStore = create<TaskUIState>((set) => ({
 ```
 
 **What goes in Zustand:**
+
 - View mode (list/board/calendar/gallery/neural)
 - Active filter selections
 - Selected item IDs (multi-select)
@@ -461,6 +463,7 @@ export const useTaskUIStore = create<TaskUIState>((set) => ({
 - Modal/dialog open state
 
 **What does NOT go in Zustand:**
+
 - Entity data (tasks, habits, notes, etc.) — use React Query
 - User preferences (theme, locale, etc.) — stored in SQLite, read via React Query
 - Anything that should persist across sessions — stored in SQLite
@@ -553,7 +556,10 @@ export const createTaskSchema = z.object({
   description: z.string().max(10000).optional(),
   status: z.enum(['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled']).optional(),
   priority: z.enum(['lowest', 'low', 'medium', 'high', 'highest']).optional(),
-  due_date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  due_date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   project_id: z.string().optional(),
   // ... remaining fields
 })

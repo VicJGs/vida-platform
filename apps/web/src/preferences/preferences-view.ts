@@ -81,7 +81,9 @@ export function toView(user: MergedPreferences, nav: MergedNavPreferences): Pref
       density: user.compact_mode ? 'dense' : 'calm',
     },
     reduceMotion: nav.reduce_motion ?? false,
-    arrangement: ARRANGEMENTS.includes(arrangement as HomeArrangement) ? (arrangement as HomeArrangement) : 'journalFirst',
+    arrangement: ARRANGEMENTS.includes(arrangement as HomeArrangement)
+      ? (arrangement as HomeArrangement)
+      : 'journalFirst',
     moduleVisibility: boolMap(user.module_visibility),
     moduleNames: stringMap(layout.moduleNames),
     dateFormat: (DATE_FORMATS as readonly string[]).includes(user.date_format) ? user.date_format : 'YYYY-MM-DD',
@@ -137,7 +139,8 @@ export function applyUserPatch(base: MergedPreferences, patch: Partial<MergedPre
     const prev = layoutOf(base)
     const sub = patch.dashboard_layout as Layout
     const merged: Layout = { ...prev, ...sub }
-    if (sub.moduleNames !== undefined) merged.moduleNames = { ...stringMap(prev.moduleNames), ...stringMap(sub.moduleNames) }
+    if (sub.moduleNames !== undefined)
+      merged.moduleNames = { ...stringMap(prev.moduleNames), ...stringMap(sub.moduleNames) }
     next.dashboard_layout = merged
   }
   if (patch.module_visibility !== undefined && patch.module_visibility !== null) {

@@ -1,12 +1,16 @@
 # Spec: component:ui-2-platform-views · V3 — timeline (+ shared data-view extraction)
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) — TWO parts: A refactor-extract, B new component -->
+
 Status: implemented + Visual Gate PASS (Victor, 2026-08-10) — DONE
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md (shared BR-1..BR-6). Reuses the V1 spine.
+Parent: docs/specs/components/ui-2-platform-views/\_index.md (shared BR-1..BR-6). Reuses the V1 spine.
 
 ## 1. Identity
+
 V3 has **two parts** — the rule-of-three trigger fires here:
+
 - **Part A — extract `packages/ui/src/internal/data-view.tsx`** (the shared data-view spine now duplicated 2× across
   list-view + gallery-view) and **rewire V1 + V2 to consume it** (behavior-preserving; the 246 existing tests are the
   regression guard). `[FACT: list-view.tsx:21,84,108-126 ≡ gallery-view.tsx equivalents — byte-identical logic]`
@@ -16,6 +20,7 @@ V3 has **two parts** — the rule-of-three trigger fires here:
   `[FACT: view-intent-harvest.md:21,24,35]`
 
 ## 2. Part A — the shared `internal/data-view` extraction
+
 The `internal/` folder is where @vida/ui puts non-component shared code (`toast-store.ts` precedent). `data-view.tsx`
 exports exactly the 3× (soon-to-be) duplicated pieces — NOT a mega-component (the container/wrapper/skeleton layout
 GENUINELY differs per view, so the 4-branch switch stays local; only the error-prone shared logic is extracted).
@@ -34,11 +39,10 @@ GENUINELY differs per view, so the 4-branch switch stays local; only the error-p
     now). Args: `{ state, itemCount, ariaLabel?, ariaLabelledby?, name: string }`. Computes `effectiveEmpty` + `role`
     and fires the **3 dev-warns** (prefixed `[vida/ui] ${name}:`). `[FACT: card.tsx warns during render]`
 - **DV-2 · Preserve the tested warn substrings (regression-critical).** The extracted warnings MUST still contain
-  `` `empty `items`` ``, `stale render`, and `accessible name` — the existing list/gallery tests assert
-  `stringContaining(...)` on these. `[FACT: list-view.test.tsx / gallery-view.test.tsx dev-warn assertions]`
+  `` `empty `items`` ``, `stale render`, and `accessible name`— the existing list/gallery tests assert`stringContaining(...)`on these.`[FACT: list-view.test.tsx / gallery-view.test.tsx dev-warn assertions]`
 - **DV-3 · Rewire V1 + V2 (behavior-preserving).** list-view + gallery-view: delete their local `ViewState`/`Message`/
   `effectiveEmpty`/dev-guards/`role`; import + call `resolveDataViewState({ state, itemCount: items.length,
-  ariaLabel: rest['aria-label'], ariaLabelledby: rest['aria-labelledby'], name: 'ListView'|'GalleryView' })`. The
+ariaLabel: rest['aria-label'], ariaLabelledby: rest['aria-labelledby'], name: 'ListView'|'GalleryView' })`. The
   per-view 4-branch switch (which element renders per phase) + container + wrapper + skeleton **stay local**. No
   public API change; no test change expected (green 246 must stay green — the guard).
 - **DV-4 · A `data-view.test.ts`** unit-tests `resolveDataViewState` directly (role per state, effectiveEmpty
@@ -48,6 +52,7 @@ GENUINELY differs per view, so the 4-branch switch stays local; only the error-p
   the helper (M1, deliberate).
 
 ## 3. Part B — timeline (Business Rules; reuses V1 spine via the Part-A helper)
+
 - **TL-1 · Spine reuse.** `items`/`renderItem`/`getKey`/`state`/`empty`/`error`/`loadingCount` + terminal states +
   `role="list"`/`listitem` + `resolveDataViewState` + React-19 ref-prop — identical to V1/V2. `[FACT: v1-list-view.md]`
 - **TL-2 · The temporal layout (the delta) — a CONTINUOUS rail (B1 fix).** A vertical sequence. Each item is a
@@ -65,7 +70,7 @@ GENUINELY differs per view, so the 4-branch switch stays local; only the error-p
     - **first** `{top:18,bottom:0}` (starts at the dot, no overhang above).
     - **last** `{top:0,height:18}` (ends at the dot, no overhang below).
     - **middle** `{top:0,bottom:0}` (full → connects flush to both neighbours).
-    `[INTERP: standard vertical-timeline, fixed-offset construction]`
+      `[INTERP: standard vertical-timeline, fixed-offset construction]`
   - **Content** (`flex:1`, `paddingBottom` = density gap [except the last item]): an optional **`getLabel?(item,index)`
     temporal label** rendered as REAL content (muted `$small`, first in DOM order, **NOT aria-hidden** — B2: the
     temporal datum is meaningful row content) + `renderItem` output. Row interactivity stays the consumer's, LV-5.
@@ -86,6 +91,7 @@ GENUINELY differs per view, so the 4-branch switch stays local; only the error-p
   absent, via the shared helper). `[FACT: v1-list-view.md LV-5]`
 
 ## 4. Contract (Part B)
+
 ```ts
 import { type ViewState, resolveDataViewState, Message } from '../internal/data-view'
 
@@ -98,19 +104,21 @@ export interface TimelineProps<T> {
   state?: ViewState
   empty?: ReactNode
   error?: ReactNode
-  loadingCount?: number            // default 5
+  loadingCount?: number // default 5
   density?: 'compact' | 'default' | 'spacious'
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
   'aria-labelledby'?: string
 }
-export function Timeline<T>(props: TimelineProps<T>): ReactElement   // generic; React-19 ref-as-prop
+export function Timeline<T>(props: TimelineProps<T>): ReactElement // generic; React-19 ref-as-prop
 ```
+
 - 8-state matrix (§VIII): identical coverage to V1 (default(success sequence) · loading(rail skeletons + aria-busy) ·
   empty/error(`status`) · hover/focus/active/disabled n/a-container · dark · responsive — a vertical stack reflows
   trivially). Sub-theme: none. Export `Timeline`/`TimelineProps` from `index.ts`. `*.test.tsx` + `*.stories.tsx`.
 
 ## 5. Acceptance
+
 - [ ] **Part A:** `internal/data-view.tsx` (ViewState + Message + resolveDataViewState) + `data-view.test.ts`;
       list-view + gallery-view rewired; **the pre-V3 @vida/ui suite (246) stays green unchanged** (behavior-preserving
       regression guard), + new data-view + timeline tests raise the total; barrel ViewState export unchanged.
@@ -123,6 +131,7 @@ export function Timeline<T>(props: TimelineProps<T>): ReactElement   // generic;
 - [ ] `pnpm --filter @vida/ui typecheck && build && test` green; root typecheck 10/10; §XXIX CLAUDE.md paragraph.
 
 ## 6. Implementation Prompt (ordered)
+
 1. **Part A first** — create `internal/data-view.tsx` (move ViewState + Message + resolveDataViewState, preserving warn
    substrings DV-2); add `data-view.test.ts`; rewire list-view (re-export ViewState) + gallery-view; **run the full
    suite → 246 green** BEFORE Part B (proves the refactor is clean).
@@ -135,8 +144,8 @@ export function Timeline<T>(props: TimelineProps<T>): ReactElement   // generic;
    `SkeletonBar` (`$colorSurfaceSecondary`, `$md`, `$24` h).
 4. **State switch** (via `resolveDataViewState`) — loading→rail skeleton rows; empty/error→`Message` role=status;
    success→`items.map((item,i)=>{ const isFirst=i===0, isLast=i===items.length-1;
-   const lineStyle = isFirst&&isLast ? null : isFirst ? {top:18,bottom:0} : isLast ? {top:0,height:18} : {top:0,bottom:0};
-   ... })`→`TimelineItem` with Rail (dot + `RailLine` rendered ONLY when `lineStyle!==null`) + `Content`
+const lineStyle = isFirst&&isLast ? null : isFirst ? {top:18,bottom:0} : isLast ? {top:0,height:18} : {top:0,bottom:0};
+... })`→`TimelineItem` with Rail (dot + `RailLine` rendered ONLY when `lineStyle!==null`) + `Content`
    (paddingBottom unless isLast; optional `getLabel` label + renderItem). `aria-busy={state==='loading'||undefined}` on root.
 5. **A11y + dev-guards** — via the shared helper; rail column (line+dot) aria-hidden; the `getLabel` label is real
    content (not hidden), first in DOM order inside the listitem (TL-6/B2).
@@ -146,12 +155,14 @@ export function Timeline<T>(props: TimelineProps<T>): ReactElement   // generic;
 8. **Export** + CLAUDE.md paragraph (+ note the Part-A extraction in the layer doc).
 
 ## 7. Deferred (same as V1 §6)
+
 Selection · grouping · virtualization. Gantt/duration bars (a richer timeline variant) → later if a consumer needs it.
 
 ## 8. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-10 | ui-2-platform-views | V3 sub-spec authored at PLAN — Part A (extract internal/data-view, rewire V1+V2) + Part B (timeline); gate-1 next |
-| 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed (Part A validated clean): **B1** (rail was discontinuous — line-in-item can't cross root gap → moved density to content paddingBottom, root gap:0, rail columns flush + fixed-offset dot trim, no measurement), **B2** (temporal label = real content in the listitem, not aria-hidden), M1 (aria-busy stays local), M2 (`.test.ts` tests pure fn only), M3 (disclosed Message `width:100%` benign visual delta to list-view), minors (RailDot 12×12, rail `width:'$24'` token) |
-| 2026-08-10 | ui-2-platform-views | preflight PASSED (`$full` token verified emitted; position/absolute precedent). Gate-2 critique **REVISE**→fixed: geometry + Part A behavior-preservation confirmed CORRECT; 1 blocker = **lone-item trim** (isFirst&&isLast fell through to `first` → dangling nub) → 4-branch rule (lone → NO line) + test; minors: skeleton reuses RailDot@$12 no-line, zIndex local-comment, test-count framing. **Approval 2 pending.** |
+
+| Date       | Session                                     | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ---------- | ------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-10 | ui-2-platform-views                         | V3 sub-spec authored at PLAN — Part A (extract internal/data-view, rewire V1+V2) + Part B (timeline); gate-1 next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-08-10 | ui-2-platform-views                         | Rev 2 — gate-1 critique REVISE→fixed (Part A validated clean): **B1** (rail was discontinuous — line-in-item can't cross root gap → moved density to content paddingBottom, root gap:0, rail columns flush + fixed-offset dot trim, no measurement), **B2** (temporal label = real content in the listitem, not aria-hidden), M1 (aria-busy stays local), M2 (`.test.ts` tests pure fn only), M3 (disclosed Message `width:100%` benign visual delta to list-view), minors (RailDot 12×12, rail `width:'$24'` token)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-08-10 | ui-2-platform-views                         | preflight PASSED (`$full` token verified emitted; position/absolute precedent). Gate-2 critique **REVISE**→fixed: geometry + Part A behavior-preservation confirmed CORRECT; 1 blocker = **lone-item trim** (isFirst&&isLast fell through to `first` → dangling nub) → 4-branch rule (lone → NO line) + test; minors: skeleton reuses RailDot@$12 no-line, zIndex local-comment, test-count framing. **Approval 2 pending.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | 2026-10-06 | fe-codec-primitives-refinement P3 (LIF-230) | **CODEC editorial lift + now-fulcrum alive-hook** (full §XXVI double-gate + blocking Visual Gate + 2 independent code-reviews). Added (all optional, back-compat, presentational): date **GUTTER** (3-col `[when\|rail\|content]`, serif `$display`@`$small` + tabular + `getEyebrow`), **hollow dots**, **`getTemporalState`** (present accent+ring via `useTheme().get('web')` · future faded DOT-only, date held AA per Card BR-C-7a), **`nowFulcrum`** (accent "now" divider before first non-past; trim over the combined render sequence so the rail connects through it; `aria-hidden` non-listitem; NUL-sentinel key). `TemporalState` exported. tsc 0 · eslint 0 · timeline **14 tests** · Visual Gate PASS (3 presets × light/dark: serif AA 15.84–17.29 · eyebrow 4.94–6.53 incl. warm-dark · accent flips per preset · axe 0 · 375 fit). Review-caught + fixed: phantom-gutter on no-op `nowFulcrum` (hoist `fulcrumAt`), key collision (NUL sentinel), `TemporalState` barrel gap. Spec: `…/fe-codec-primitives-refinement/phases/P3-timeline.md`. |

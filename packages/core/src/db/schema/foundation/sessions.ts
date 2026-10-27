@@ -40,10 +40,7 @@ export const sessions = sqliteTable(
     key_learnings: text('key_learnings'),
     deleted_at: integer('deleted_at'), // soft delete
   },
-  (t) => [
-    index('idx_sessions_status').on(t.status),
-    index('idx_sessions_sub_type').on(t.sub_type),
-  ],
+  (t) => [index('idx_sessions_status').on(t.status), index('idx_sessions_sub_type').on(t.sub_type)],
 )
 
 // --- The sub-type registry (SessionTypeDef, dims 2-4 declarations) — ADR-004 §3.2 ---

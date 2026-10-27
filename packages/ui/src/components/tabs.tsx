@@ -71,7 +71,14 @@ const TabList = styled(View, {
       // (Tab flexShrink:0) and the list scrolls, instead of overflowing the viewport. overflow:auto only engages
       // when needed, so 2-tab consumers never see a scrollbar. The panel is a sibling (unaffected). maxWidth:100%
       // bounds the list to its container so the scroll is contained, not a document overflow.
-      horizontal: { flexDirection: 'row', borderBottomWidth: 1, borderColor: '$colorBorderDefault', maxWidth: '100%', overflowX: 'auto', overflowY: 'hidden' },
+      horizontal: {
+        flexDirection: 'row',
+        borderBottomWidth: 1,
+        borderColor: '$colorBorderDefault',
+        maxWidth: '100%',
+        overflowX: 'auto',
+        overflowY: 'hidden',
+      },
       vertical: { flexDirection: 'column', borderLeftWidth: 1, borderColor: '$colorBorderDefault' },
     },
   } as const,
@@ -148,8 +155,7 @@ const TabsInner = forwardRef<ComponentRef<typeof TabsRoot>, TabsProps>(function 
   // ── controlled / uncontrolled (Select precedent) + enabled-clamped seed (D1/D8) ─────────────────────
   const isControlled = value !== undefined
   const enabledValues = items.filter((it) => !it.disabled).map((it) => it.value)
-  const seed =
-    defaultValue !== undefined && enabledValues.includes(defaultValue) ? defaultValue : enabledValues[0]
+  const seed = defaultValue !== undefined && enabledValues.includes(defaultValue) ? defaultValue : enabledValues[0]
   const [innerValue, setInnerValue] = useState<string | undefined>(seed)
   const current = isControlled ? value : innerValue
 
@@ -316,7 +322,12 @@ const TabsInner = forwardRef<ComponentRef<typeof TabsRoot>, TabsProps>(function 
             </Tab>
           )
         })}
-        <Indicator className="vida-tabs-indicator" aria-hidden data-ready={ready ? 'true' : 'false'} style={indicatorStyle} />
+        <Indicator
+          className="vida-tabs-indicator"
+          aria-hidden
+          data-ready={ready ? 'true' : 'false'}
+          style={indicatorStyle}
+        />
       </TabList>
 
       {activePanel && (

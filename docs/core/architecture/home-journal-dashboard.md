@@ -16,13 +16,13 @@ this model. `[FACT: derived-graph.md:31 "Home/Journal screen DESIGN within the s
 
 The dashboard models exactly three sections, all placed in the shell `content` region:
 
-| Section | What it shows | Render hint | Source |
-|---------|---------------|-------------|--------|
-| `summary` | Today's recap — what happened, aggregated across modules | `data-view` | `journals/identity.md:8` |
-| `agenda` | What is due **today** (a single-day range, not the range Calendar — BR-5) | `list` | `journals/identity.md:9,45-46` |
-| `entry` | The free-form markdown journal entry (Notes & Pages owns the editor; referenced as a mount seam) | `editor-seam` | `journals/identity.md:42-43` |
+| Section   | What it shows                                                                                    | Render hint   | Source                         |
+| --------- | ------------------------------------------------------------------------------------------------ | ------------- | ------------------------------ |
+| `summary` | Today's recap — what happened, aggregated across modules                                         | `data-view`   | `journals/identity.md:8`       |
+| `agenda`  | What is due **today** (a single-day range, not the range Calendar — BR-5)                        | `list`        | `journals/identity.md:9,45-46` |
+| `entry`   | The free-form markdown journal entry (Notes & Pages owns the editor; referenced as a mount seam) | `editor-seam` | `journals/identity.md:42-43`   |
 
-`renderHint` names the *intended* UI-1/UI-2 renderer as a string — it imports no component (design model). The
+`renderHint` names the _intended_ UI-1/UI-2 renderer as a string — it imports no component (design model). The
 placement references the `ShellRegion` type from UX-3 (`shell/regions.ts`); the region is the shell's, the
 placement is Home's.
 
@@ -57,7 +57,7 @@ module is dropped). The persisted storage (`get/setSelection`) is a deferred sea
 
 - **Aggregation engine** — `journal-service.ts` (`buildDashboard`/`captureSnapshot`/`getJournal`/`buildReview`) →
   **MOD-journals #33** (M1.1; "0 lines INTENDED"). `[FACT: journals/identity.md:15-16]`
-- **Real module providers** — each module's `summary(date)`/`dueIn` → each **MOD-*** (M1.1+).
+- **Real module providers** — each module's `summary(date)`/`dueIn` → each **MOD-\*** (M1.1+).
 - **The journal page** — the `pages` row, `/summary` block, TipTap entry + `[[links]]` → **Notes & Pages**.
 - **The improvement lens** — snapshots + Wrapped-style temporal reviews → **design-pass / Wave 3-4**.
 - **The rendered screen** — the React Home component + `/` route wiring → **Phase-1b** (consumes this model).

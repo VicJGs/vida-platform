@@ -158,7 +158,11 @@ export interface HabitsService {
   // ── S3: backfill + window ────────────────────────────────────────
   /** HAB-13 — log/edit a completion for a PAST date; recomputes streaks (HB-2). Rejects a future date or a
    *  date beyond the user's configured backfill window with `BackfillWindowError` (HB-10). */
-  backfillCompletion(habitId: string, pastDate: string, input?: Omit<LogCompletionInput, 'date'>): Promise<HabitCompletion>
+  backfillCompletion(
+    habitId: string,
+    pastDate: string,
+    input?: Omit<LogCompletionInput, 'date'>,
+  ): Promise<HabitCompletion>
 
   // ── S4: derived reads (read-only; the M5 measure seam) ───────────
   /** HAB-05 — active habits scheduled for today (grouping into display modes is ②). */

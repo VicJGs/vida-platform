@@ -1,6 +1,6 @@
 <!-- Business Rules — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 · project.ts L109-256 · docs/intake/purposes-and-goals.md RESOLUTION · ADR-004 §3.2.5 · core/business-rules INT-1a/INT-2/PC-2 -->
 
-# Business Rules — Purposes & Goals  (level: Feature — CAPSTONE / higher-order)
+# Business Rules — Purposes & Goals (level: Feature — CAPSTONE / higher-order)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, SU-1/2, INT-1, **INT-2**,
 > PC-2, DATA-3/4. Every rule below complies. **Altitude note:** the v2 surface is 6 tables + 3 bare junctions,
@@ -11,21 +11,21 @@
 ## Invariants (what is ALWAYS / NEVER true)
 
 - **PG-1 — Encrypted content.** `[E]` (client-side, ZK-1): `values.*name/description`, `purposes.title/description/
-  vision/why`, `targets.title/description/unit`, `purpose_metrics.name/description/unit`, `target_reviews.reflection/
-  next_actions`, `purpose_reviews.*` free-text, `contributions.contribution_notes`, `dreams.title/description/
-  estimated_cost`. Plaintext = config/enums/dates/numeric-measures/FKs. `[FACT: ADR-002 §5.7 [E]; project.ts]`
+vision/why`, `targets.title/description/unit`, `purpose_metrics.name/description/unit`, `target_reviews.reflection/
+next_actions`, `purpose_reviews.*` free-text, `contributions.contribution_notes`, `dreams.title/description/
+estimated_cost`. Plaintext = config/enums/dates/numeric-measures/FKs. `[FACT: ADR-002 §5.7 [E]; project.ts]`
 - **PG-2 — Optional-but-omnipresent (the meaning-spine).** NOTHING in the OS requires a purpose; EVERYTHING may
   ladder into one, and the OS surfaces that laddering everywhere. Purposes is the **directional/meaning plane**
   (where is my life going / does my work ladder up) — a distinct axis from Journals' **operational plane** (what
   happened / what's due). Same provider seam, orthogonal axis → never merged. `[INTENT PG1]`
-- **PG-3 — Universal measurability (nothing is unmeasurable).** Every *pursuable* entity exposes a normalized
+- **PG-3 — Universal measurability (nothing is unmeasurable).** Every _pursuable_ entity exposes a normalized
   **`progress ∈ [0,1]`** via a declared **`measurement_kind`**: SOLID = `quantitative` (current/target/`unit`,
   direction via `is_higher_better`+`baseline_value`) · `milestone`/`checklist` (n-of-m) · `rate`/`streak` (Habits/
   Routines); ABSTRACT = `qualitative` (a self-rating scale, or a status-ladder mapped to representative values). An
   abstract goal is **measured by judgment**, never left un-tracked. Reference data (contacts, notes) is NOT pursuable
   and contributes no progress. **Cross-cutting:** `measurement_kind` + `binding_mode` + the `progress()` contract are
   owned by the capstone ADR at **CORE level** and land on every pursuable module (Tasks · Habits · Routines · Projects ·
-  Dreams · Health · Finance measurables), *consumed* here — Purpose is the rollup apex, not the owner. Each such module
+  Dreams · Health · Finance measurables), _consumed_ here — Purpose is the rollup apex, not the owner. Each such module
   owes an `[INTENT]` amendment (→ ADR-002 §5.20 stream ii). `[INTENT PG2]`
 - **PG-4 — Derive-by-default + manual override.** A measurable computes its value from its kind/sources by default;
   the stored column is an **override slot** (NULL = derive), à la Knowledge "tune the curve, not the number." The v2
@@ -56,12 +56,12 @@
   (`targets.purpose_id` becomes nullable). `[INTENT PG4/PG9; SUPERSEDES v1 SR-003]`
 - **PG-10 — Contribution = FIRST-CLASS weighted edge (a Purpose-DOMAIN mechanism, NOT a universal primitive).**
   Laddering-with-weight lives in a first-class polymorphic **`contributions`** entity `{ goal(purpose|target),
-  contributor(entity_type/entity_id), contribution_percentage, contribution_notes[E] }` — NOT on a junction (weight is
+contributor(entity_type/entity_id), contribution_percentage, contribution_notes[E] }` — NOT on a junction (weight is
   payload, and the junction **bare-pairs pattern** carries none — ADR-002 §4.3 L485). **Ownership boundary (INT-1a):**
-  the two *universal* association primitives — `entity_links` (reference) + `entity_tags` (grouping) — are owned by the
-  **Spaces tier**; `contributions` is **Purpose-domain machinery** for weighted goal-laddering, *not* a third universal
+  the two _universal_ association primitives — `entity_links` (reference) + `entity_tags` (grouping) — are owned by the
+  **Spaces tier**; `contributions` is **Purpose-domain machinery** for weighted goal-laddering, _not_ a third universal
   primitive. It renders in the neural graph but is not a Spaces primitive. Retires the bare `purpose_habits/routines/
-  projects` junctions. Contributor set: habits · routines · projects · tasks · dreams · finance-targets · check-ins.
+projects` junctions. Contributor set: habits · routines · projects · tasks · dreams · finance-targets · check-ins.
   `[INTENT PG7; FACT: ADR-002 §4.3 L485 junction pattern; core INT-1a; PC-2]`
 - **PG-11 — Goal decomposes into ACTION via the generic universe; plan_steps DOCUMENT, sub-tasks TRACK.** A goal
   decomposes through first-class **Tasks** (nested via `parent_task_id`) + **Projects › Milestones › Deliverables** —
@@ -87,15 +87,15 @@
   Finance, streak ← Habits, body-weight ← Health) — a query contract, INT-1-respecting (no direct table reads), NOT a
   new write engine (cf. PG-7). A metric_value keeps a provenance **`source`** {manual,auto} (matches Health's
   provenance axis). Restores `is_higher_better` + `baseline_value` (progress direction). `[INTENT PG6; FACT: INT-1;
-  v2 dropped both]`
+v2 dropped both]`
 - **PG-16 — Dreams = the single aspiration entity.** `bucket_list_items` COLLAPSES into `dreams` (dreams absorbs
   `status`/`progress`/`target_date`/`completed_date`/`priority`/`steps`|`project_id`/imagery/`location`). "Bucket
   List" is **a Space over dreams** (a `#before-i-die` tag + Gallery vision-board view), not a module. `[FACT: PG8
-  RESOLVED 2026-07-15; ADR-002 bucket_list_items L3319 → dreams L1931]`
+RESOLVED 2026-07-15; ADR-002 bucket_list_items L3319 → dreams L1931]`
 - **PG-17 — Analytics derived, no denormalized counters.** Progress, contribution rollups, alignment trends
   recompute deterministically from current state + the reviews/metric-values ledgers. No cached progress/streak
   columns are trusted as truth (PG-4 override slots excepted, and only when explicitly set). `[INTENT PG2; FACT:
-  sessions SS-12]`
+sessions SS-12]`
 - **PG-18 — Notes via `pages`, tags via Spaces, graph via `entity_links`.** Value/Purpose/Target/Dream get
   standalone pages (`entity_type` reserved for `purpose`/`target`/`purpose_metric_value`; Value/Dream = ⚠ INTENDED
   additions), scoped tags via the Spaces universal vocabulary, and appear in the neural graph. No inline `notes`
@@ -108,6 +108,7 @@
   (HLC, ADR-003) on structured columns; ledgers merge by natural key. `[FACT: LF-2; ADR-003]`
 
 ## Validation & edge cases
+
 - Enum CHECKs (v2 floor): `purposes.domain`∈LifeDomain(8: health·career·finance·relationships·personal_growth·
   spiritual·recreation·environment); `*.status`(5); `targets.target_type`∈{quantitative,qualitative,milestone,
   habit_based} (⚠ becomes `measurement_kind`); `*.priority`(5); `review_frequency`(6); `calculation_method`∈{sum,
@@ -124,22 +125,24 @@
   `[INTERP PG-10/PG-17]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Purpose/Goal standalone page (rollup) | skeleton | "no goals yet — set one" | typed read error, retry | vision/why + derived progress + contributors + reviews |
-| Compute progress (derived rollup) | computing | "unmeasured" (no kind/sources) | source read error → show partial + flag | normalized % across heterogeneous kinds |
-| Create/edit a bound source (binding) | — | — | cycle (PG-8) or invalid ref → typed error, no save | binding saved; measurable now auto-updates |
-| Auto-completion event (e.g. expense→task) | — | — | effect fails → measurable unchanged + flagged | idempotent write once; rollup re-derives up the ladder |
-| Contribution (weighted edge) | — | "nothing ladders here yet" | invalid contributor → typed error | contributor added w/ weight; rollup reflects it |
-| Review (purpose/target) due + conduct | skeleton | "none due" | save error → draft retained, retry | review saved; next_review scheduled as a `review` session |
-| Provider (summary / dueIn) | — | no items in range | provider error → flagged, others unaffected | goals/reviews surfaced on Journal + Calendar |
-| Values layer | skeleton | "no values defined" | typed error, retry | values shown with the purposes laddering to each |
-| Dream / vision-board (Space) | skeleton | "no dreams yet" | typed error, retry | Gallery of dreams w/ imagery + derived progress |
+
+| Capability                                | loading   | empty                          | error                                              | success                                                   |
+| ----------------------------------------- | --------- | ------------------------------ | -------------------------------------------------- | --------------------------------------------------------- |
+| Purpose/Goal standalone page (rollup)     | skeleton  | "no goals yet — set one"       | typed read error, retry                            | vision/why + derived progress + contributors + reviews    |
+| Compute progress (derived rollup)         | computing | "unmeasured" (no kind/sources) | source read error → show partial + flag            | normalized % across heterogeneous kinds                   |
+| Create/edit a bound source (binding)      | —         | —                              | cycle (PG-8) or invalid ref → typed error, no save | binding saved; measurable now auto-updates                |
+| Auto-completion event (e.g. expense→task) | —         | —                              | effect fails → measurable unchanged + flagged      | idempotent write once; rollup re-derives up the ladder    |
+| Contribution (weighted edge)              | —         | "nothing ladders here yet"     | invalid contributor → typed error                  | contributor added w/ weight; rollup reflects it           |
+| Review (purpose/target) due + conduct     | skeleton  | "none due"                     | save error → draft retained, retry                 | review saved; next_review scheduled as a `review` session |
+| Provider (summary / dueIn)                | —         | no items in range              | provider error → flagged, others unaffected        | goals/reviews surfaced on Journal + Calendar              |
+| Values layer                              | skeleton  | "no values defined"            | typed error, retry                                 | values shown with the purposes laddering to each          |
+| Dream / vision-board (Space)              | skeleton  | "no dreams yet"                | typed error, retry                                 | Gallery of dreams w/ imagery + derived progress           |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A binding write (PG-6/PG-7) that fails leaves the measurable **unchanged** and **flags** the failure — never a
   silent partial update. The idempotent `effect_event_id` guarantees no double-apply on retry/multi-device. `[FACT:
-  INT-2]`
+INT-2]`
 - A cyclic binding (PG-8) is **rejected with a typed error**, never silently broken to absorb the cycle.
 - A failed contribution rollup or provider emit leaves the goal/review **succeeding locally** and flags the
   derivation — never drops it silently (aggregator resilience). `[INTENT PG-14]`
@@ -147,6 +150,7 @@
 - A `qualitative` measure with no scale is shown **"unmeasured"**, never a fake `0%` (PG-3).
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 INTENDED, not in ADR-002 §5.7 / `project.ts` today (→ consolidate into the **ADR-002 amendment (§5.20 ledger)** +
 the capstone ADR): **PG-2/PG-9** `values` table + the optional-joint nullability (SR-003 relax on `targets.
 purpose_id`); **PG-3/PG-4/PG-15** `measurement_kind` (supersedes `target_type`) + normalized-progress derivation +
@@ -161,4 +165,5 @@ restored; **PG-13** review-session wiring; **PG-14** provider registration; **PG
 grep clean of packages/core/src/services]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT/INTERP] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution (incl. INT-2) · [x] spec/code drift flagged · [x] capstone measurability contract stated

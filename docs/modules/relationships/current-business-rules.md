@@ -1,5 +1,7 @@
 # Relationships (CRM) — current business rules
+
 # Durable §XXIX currency doc. Promoted from the per-slice specs as the ① backend is built.
+
 # Module: mod-relationships #56 · LIF-137 · service `createRelationshipsService` over DB-4 025_relationships (8 tables).
 
 > Inherits the CORE constitution (ZK-1/2/3, LF-1/2/3). PII-heaviest module — ZK-1 paramount. Intent authority =
@@ -9,6 +11,7 @@
 > `closeness_tier`, snooze/priority, event-anchor, G8 fields are all LIVE columns.
 
 ## S1 — Contact spine (built · REL-01…06, REL-17, REL-54, REL-55, REL-58)
+
 - **BR-RL-S1-1** — contact CRUD: `createContact`/`updateContact`/`listContacts`/`getContact`/`toggleFavorite` over the
   `contacts` repo. `createContact` backfills the NN-default columns (`relationship_type:'acquaintance'`,
   `interaction_count:0`, `is_favorite:false`) and **re-reads** after insert → a faithful `ContactView` (all nullable
@@ -38,6 +41,7 @@
   (ContactReminder), `anchor_type`/`anchor_days_before` (ReminderGroup), and `NetworkGroup`/`NetworkGroupContact`.
 
 ## S2 — Interactions ledger + derived contact stats (built · REL-12…16, REL-19/20/21)
+
 - **BR-RL-S2-1** — `logInteraction`/`updateInteraction`/`deleteInteraction`/`getTimeline` over the `interactions`
   ledger (no `deleted_at` → `deleteInteraction` is hard-delete). `getTimeline` = contact's interactions, `date` desc
   (`created_at` desc tiebreak). `logInteraction` backfills `interaction_type`('in_person')/`follow_up_needed`(false)
@@ -57,6 +61,7 @@
 - **BR-RL-S2-6** — health recompute (contract "stats + health") is **S6** (derived health engine); S2 does STATS only.
 
 ## S3 — Events (built · REL-26…29)
+
 - **BR-RL-S3-1 (REL-26)** — `createEvent` over `contact_events` (child, no `deleted_at`); backfills `event_type:'custom'`
   / `is_recurring:true`; `reminder_days` JSON serialize/parse → `EventView`; re-reads; guards a live `contact_id`
   (`ContactNotFoundError`).
@@ -74,6 +79,7 @@
 - **BR-RL-S3-5** — `event_type`(4) validated; `event_date` required (`MM-DD` or `YYYY-MM-DD`).
 
 ## S4 — Reminders + groups + dueIn producer (built · REL-30…42)
+
 - **BR-RL-S4-1 (REL-30/31/32)** — `createReminder` (guard live contact; backfill is_recurring/is_completed/is_snoozed
   false; re-read), `completeReminder` (is_completed), `snoozeReminder(id,until)` (is_snoozed + snoozed_until). Unknown →
   `ReminderNotFoundError`. `contact_reminders` has no `deleted_at` (child).
@@ -94,6 +100,7 @@
   Preferences; S9 light-honor). The local dueIn `label` may carry the decrypted title/name (on-device consumers).
 
 ## S5 — Networks + graph data-prep (built · REL-43…46)
+
 - **BR-RL-S5-1 (REL-43)** — `createNetwork` over `network_groups` (no `deleted_at`, is_active governs lifecycle);
   backfill is_active; re-read.
 - **BR-RL-S5-2 (REL-44/45, RL-4)** — `addToNetwork(networkId, contactId)` guards a live network
@@ -106,6 +113,7 @@
   health = REL-47 (S6); network notes/tags = S8.
 
 ## S6 — Health engine (derived · REL-22…25, 47) — the build-phase design-pass
+
 - **BR-RL-S6-1 (REL-22/23)** — `getContactHealth(id, asOf?): {band, score, factors, partial?}`. `new` iff
   interaction_count=0 (score null, never overdue). Else: `daysOverdue = max(0, daysBetween(next_contact_date, today))`
   (today = asOf ?? realToday); `weight = closenessWeight(relationship_type, is_favorite)` (onion — family/romantic 2.0 ·
@@ -123,6 +131,7 @@
   The formula is a documented, tunable design choice (the UNKNOWN homed to this [F] spec — resolved now).
 
 ## S7 — Device import (deny-safe X1/X8 · built · REL-07…11)
+
 - **BR-RL-S7-1 (REL-07/10/11, X1)** — `importDeviceContacts(device?)` is deny-safe: absent port ⇒
   `ContactsPermissionError` (no partial silent import); present port supplies on-device-parsed `RawContact[]` (X1 —
   server-plaintext never exists in this shape, refuse-not-downgrade inherent). Returns STAGING, never auto-commits.
@@ -137,6 +146,7 @@
   ([[XS security services share a deny-safe-port build shape]]).
 
 ## S8 — Tags + pages + links (built · REL-48/49/50)
+
 - **BR-RL-S8-1 (REL-48)** — `tagContact`/`untagContact`/`tagNetwork`/`untagNetwork` delegate ALL tag writes to
   `spaces.tagEntity`/`untagEntity` (read/write split; Spaces owns the junction, idempotent SP1 BR-14).
   Relationships guards the owned entity (`ContactNotFoundError`/`NetworkNotFoundError`); tag-id validation is Spaces'.
@@ -149,6 +159,7 @@
 - **Deps grew** (S8): `RelationshipsServiceDeps` += REQUIRED `spaces: SpacesService` + `notes: NotesService`.
 
 ## S9 — Fan-out + Journal + seams (built · the ① closer · REL-51/52/53/57, 33/36/38, N7)
+
 - **BR-RL-S9-1 (REL-53)** — `getDayRelationshipsDigest(date)` → `{interactionsToday, eventsToday, remindersDue}`
   (direct counts: interactions on date; events occurring that day via MM-DD match / one-time date; explicit reminders
   effective-due that day, completed excluded). `journal.ts`: `createRelationshipsJournalContribution(svc)` (summary,
@@ -163,5 +174,6 @@
   M1 relationships code for these.
 
 ## ① backend COMPLETE — all 9 slices (S1–S9) · 50 live-store tests · 59 legs REL-01…59.
+
 S6 health engine (derived, NOT a measurement — C1) · S7 device import (deny-safe X1/X8) · S8 tags/pages/links ·
 S9 fan-out + Journal `/summary` + deny-safe seams.

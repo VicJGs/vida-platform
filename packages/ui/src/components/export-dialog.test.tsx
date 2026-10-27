@@ -8,7 +8,13 @@ import { ExportDialog, type ExportDialogProps } from './export-dialog'
 afterEach(cleanup)
 const noop = () => {}
 function renderUI(props: Partial<ExportDialogProps> = {}) {
-  const full: ExportDialogProps = { open: true, onOpenChange: noop, onExport: noop, 'aria-label': undefined as never, ...props }
+  const full: ExportDialogProps = {
+    open: true,
+    onOpenChange: noop,
+    onExport: noop,
+    'aria-label': undefined as never,
+    ...props,
+  }
   return render(<UIProvider>{<ExportDialog {...full} />}</UIProvider>)
 }
 

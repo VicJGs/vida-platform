@@ -16,6 +16,7 @@
 > code as read for this plan.
 
 ## 1. Problem (as-built, after R5)
+
 - **Locale doesn't persist (D16).** The pane reads and writes the transitional mirror for all three fields
   `[FACT: settings/locale-pane.tsx:3,31-36]`. The seam to persist them already exists: `toUserPatch` maps
   `dateFormat`/`timeFormat`/`weekStartsOn` → their columns `[FACT: preferences/preferences-view.ts:113-115]`. The pane never
@@ -44,13 +45,14 @@
   values (7 → 1, unknown → `YYYY-MM-DD`) are asserted here; they need no new code.
 
 ## 2. Business rules (after R6)
+
 - **R6-BR-1 · The Locale pane persists, on R3's path.** It reads `usePreferences().view.{dateFormat, timeFormat,
-  weekStartsOn}` and writes `useSettings().update({ … })` — optimistic cache write → user queue → one batched write
+weekStartsOn}` and writes `useSettings().update({ … })` — optimistic cache write → user queue → one batched write
   (R5-BR-1 shape). The week Select keeps its string ↔ `0|1` boundary mapping (`locale-pane.tsx:20-27`). The date Select's
   options come from the mapper's `DATE_FORMATS` (one list, so the pane can't offer a value the read degrades away).
   Read-only keeps today's `disabled` (R3, EC-7).
 - **R6-BR-2 · The Notifications pane persists, same path.** Four switches read the view and write `update({ notifInApp |
-  notifPush | notifEmail | quietHours })`. Copy and M1 scope unchanged (no start/end inputs — notifications-rescope).
+notifPush | notifEmail | quietHours })`. Copy and M1 scope unchanged (no start/end inputs — notifications-rescope).
 - **R6-BR-3 · The Global Calendar reads the view.** `index.tsx` swaps the two mirror selectors for
   `usePreferences().view.{weekStartsOn, timeFormat}`. No other calendar change: the values already flow to every range.
   **First frame — a real fix, not only a claim.** `seedPreferences` runs inside the boot gate `[FACT: App.tsx:85]` before
@@ -66,12 +68,12 @@
     `[FACT: specs/foundation/fe-gamification/delivery/PLAN-S5-activity.md:55-61]` — it pins `Intl`, not a 12h/24h choice;
     today's `hour: '2-digit'` (always 12h) was an unpinned implementation choice.
   - **Shape.** Four module-level `Intl.DateTimeFormat`s (with/without year × 12h/24h, no hook): **24h** = `hour: '2-digit'`
-    + `hourCycle: 'h23'` → `Oct 27, 14:05` / `00:05` (not `hour12: false`, which can render `24:05`); **12h** =
-    `hour: 'numeric'` + `hourCycle: 'h12'` → `Oct 27, 2:05 PM` (Intl's `'en'` output, unpadded hour — measured in Node,
-    2026-10-27). No doc specifies a padded `02:05 PM`.
+    - `hourCycle: 'h23'` → `Oct 27, 14:05` / `00:05` (not `hour12: false`, which can render `24:05`); **12h** =
+      `hour: 'numeric'` + `hourCycle: 'h12'` → `Oct 27, 2:05 PM` (Intl's `'en'` output, unpadded hour — measured in Node,
+      2026-10-27). No doc specifies a padded `02:05 PM`.
   - **No app-wide 12h display standard exists** (UNKNOWN — grep of docs/core + docs/ui finds none). The only documented 12h
     shape is fe-calendar's **lowercase** `h:mm am|pm` for week/day blocks `[FACT: fe-calendar PLAN-S3:43-47 BR-CAL-S3-3;
-    packages/ui/src/internal/week-layout.ts:26]`, a calendar-renderer rule, not app-wide. R6 does **not** hand-roll
+packages/ui/src/internal/week-layout.ts:26]`, a calendar-renderer rule, not app-wide. R6 does **not** hand-roll
     lowercase in Activity (that would override BR-S5-8's native `Intl`). Finding recorded, not fixed here: the Global
     Calendar itself renders two 12h shapes — `9:00 am` (WeekView) vs `9:00 AM` (`formatTime`, agenda/month chips,
     `calendar-derive.ts:245`, code only, no doc) → edge to the calendar owner (sessions-rescope, IA:103).
@@ -119,18 +121,20 @@
   through `SETTINGS_COPY`).
 
 ## 3. Design (file order)
-| # | File | Change |
-|---|---|---|
-| 1 | `preferences/preferences-view.ts` (+test) | own `TimeFormat` · `WeekStartsOn`; `DATE_FORMATS` (already exported) feeds the pane. **Extend** the existing degrade test (`preferences-view.test.ts:50-65` has 7 → 1 + unknown → `YYYY-MM-DD`): add 0 → 0 and any `time_format` ≠ `'12h'` → `'24h'`. Relabel `:22` "equals the shipped store defaults" → the C10 defaults-parity guard now carried by the mapper (`reconciliation.md:60`) |
-| 2 | `settings/locale-pane.tsx` (+test) | R6-BR-1 rebind; options from `DATE_FORMATS`; header comment refresh (X5) |
-| 3 | `settings/notifications-pane.tsx` (+test) | R6-BR-2 rebind; header comment refresh |
-| 4 | `app/calendar/index.tsx` · `calendar-surface.test.tsx` | R6-BR-3 selector swap. The test has its own composition-root mock with no `preferences` service (`:22-36`) and a new QueryClient per render (`:52-55`): switch to `compositionRootMock({ sessions, tasks, … })` (takes `extra`) in an async factory, then `seedPreferences` into the per-render client before render; the 7 `usePreferencesStore.setState` seeds become `testPreferences.state.user` edits. Exact seeding fixed in the IMPL-PLAN |
-| 5 | `gamification/activity-mode.tsx` · `activity.test.tsx` · `gamification.test.tsx` | R6-BR-4 four formatters. Both tests gain the prefs wrapper + `compositionRootMock`: `activity.test.tsx` (direct mount) and the "EC-8 Activity" case in `gamification.test.tsx:82-91`, which mounts `ActivityMode` through `GamificationSurface` under `UIProvider` only (`:16-17`) — it throws "No QueryClient set" without it. Other gamification cases are unaffected (Tabs mount only the active panel, `packages/ui/src/components/tabs.test.tsx:35`) |
-| 6 | `preferences/preferences-hide-flush.tsx` (+test) · `App.tsx` · `App.test.tsx` | R6-BR-5 rename + strip the hydrate half |
-| 7 | `stores/preferences-store.ts` · `preferences-store.test.ts` | **deleted** |
-| 8 | Docs (§XXIX) | `docs/modules/preferences/current-*` (R6 rules; "only Locale/Notifications still bind the mirror" retired) · `docs/infrastructure/web-client-runtime/current-spec.md:138` (`PreferencesBridge` → `PreferencesHideFlush`) + `:216-220` (fe-calendar reader → the view) · `web-client-runtime/current-business-rules.md:54,101` · `apps/web/src/settings/CLAUDE.md:64,67,79,86-87,98` · `apps/web/src/preferences/CLAUDE.md:45` (`home/CLAUDE.md:26` "no longer" line stays) · `.claude/docs/decisions.md:75` **annotated** (superseded by R6: view, not store), not rewritten · reconciliation C3/D16/D17/D19 · slice-map R6 status + EC/visual-line corrections (R6-BR-6/7) · the notes-rescope edge onto `.claude/tasks/notes-rescope.md` (R6-BR-7) · this task file |
+
+| #   | File                                                                             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| --- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `preferences/preferences-view.ts` (+test)                                        | own `TimeFormat` · `WeekStartsOn`; `DATE_FORMATS` (already exported) feeds the pane. **Extend** the existing degrade test (`preferences-view.test.ts:50-65` has 7 → 1 + unknown → `YYYY-MM-DD`): add 0 → 0 and any `time_format` ≠ `'12h'` → `'24h'`. Relabel `:22` "equals the shipped store defaults" → the C10 defaults-parity guard now carried by the mapper (`reconciliation.md:60`)                                                                                                                                                                                                                                                                                                                                                                            |
+| 2   | `settings/locale-pane.tsx` (+test)                                               | R6-BR-1 rebind; options from `DATE_FORMATS`; header comment refresh (X5)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 3   | `settings/notifications-pane.tsx` (+test)                                        | R6-BR-2 rebind; header comment refresh                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 4   | `app/calendar/index.tsx` · `calendar-surface.test.tsx`                           | R6-BR-3 selector swap. The test has its own composition-root mock with no `preferences` service (`:22-36`) and a new QueryClient per render (`:52-55`): switch to `compositionRootMock({ sessions, tasks, … })` (takes `extra`) in an async factory, then `seedPreferences` into the per-render client before render; the 7 `usePreferencesStore.setState` seeds become `testPreferences.state.user` edits. Exact seeding fixed in the IMPL-PLAN                                                                                                                                                                                                                                                                                                                      |
+| 5   | `gamification/activity-mode.tsx` · `activity.test.tsx` · `gamification.test.tsx` | R6-BR-4 four formatters. Both tests gain the prefs wrapper + `compositionRootMock`: `activity.test.tsx` (direct mount) and the "EC-8 Activity" case in `gamification.test.tsx:82-91`, which mounts `ActivityMode` through `GamificationSurface` under `UIProvider` only (`:16-17`) — it throws "No QueryClient set" without it. Other gamification cases are unaffected (Tabs mount only the active panel, `packages/ui/src/components/tabs.test.tsx:35`)                                                                                                                                                                                                                                                                                                             |
+| 6   | `preferences/preferences-hide-flush.tsx` (+test) · `App.tsx` · `App.test.tsx`    | R6-BR-5 rename + strip the hydrate half                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 7   | `stores/preferences-store.ts` · `preferences-store.test.ts`                      | **deleted**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 8   | Docs (§XXIX)                                                                     | `docs/modules/preferences/current-*` (R6 rules; "only Locale/Notifications still bind the mirror" retired) · `docs/infrastructure/web-client-runtime/current-spec.md:138` (`PreferencesBridge` → `PreferencesHideFlush`) + `:216-220` (fe-calendar reader → the view) · `web-client-runtime/current-business-rules.md:54,101` · `apps/web/src/settings/CLAUDE.md:64,67,79,86-87,98` · `apps/web/src/preferences/CLAUDE.md:45` (`home/CLAUDE.md:26` "no longer" line stays) · `.claude/docs/decisions.md:75` **annotated** (superseded by R6: view, not store), not rewritten · reconciliation C3/D16/D17/D19 · slice-map R6 status + EC/visual-line corrections (R6-BR-6/7) · the notes-rescope edge onto `.claude/tasks/notes-rescope.md` (R6-BR-7) · this task file |
 
 Edges filed at R8 (not built here):
+
 - **notes-rescope:** written onto its task file at #8 (R6-BR-7) — the notes calendar layout ignores `week_starts_on`;
   removing it per NOT-48 / the EC-1 re-pin closes this.
 - **sessions-rescope (Global Calendar owner):** two 12h shapes on one surface — `9:00 am` (WeekView, documented
@@ -140,7 +144,9 @@ Edges filed at R8 (not built here):
 - **fe-calendar (closed):** its BR-16 reader now reads the view, not the store — its docs' store cites go stale (refreshed in #8).
 
 ## 4. Acceptance
+
 **Verification Gate (Vitest + live smoke)**
+
 1. **Mapper (extends `preferences-view.test.ts:50-65`):** new cases 0 → 0 and `time_format` anything but `'12h'` →
    `'24h'`; the existing 7 → 1 and unknown → `'YYYY-MM-DD'` cases stay green (already-built R2 evidence, not new).
 2. **Locale pane:** renders the seeded view (Sunday · 12h · `DD/MM/YYYY`); each Select change writes the column after the
@@ -167,18 +173,15 @@ Edges filed at R8 (not built here):
    on → reload → all five persist; the Global Calendar month + week start Sunday and show 12h times; reload inside the
    500 ms debounce window still persists (F18 flush, now via `PreferencesHideFlush`).
 
-**Visual Gate**
-9. Locale + Notifications panes: light/dark × 375/768/1440, axe 0, keyboard reachable, focus ring, read-only state,
-   "Saved on this device" after a write, search finds both panes' rows, single column at 375
-   (EC-1 · EC-2 · EC-3 · EC-6 · EC-7 · EC-10 · EC-11).
-10. Global Calendar month + week after Sunday/12h, light/dark × 375/768/1440 (incl. the condensed 375 month starting
-    Sunday): first column Sunday, period label + "this week" correct, times 12h; then back to Monday/24h.
-    10a. **No-flash:** Sunday persisted → reload directly on `/calendar` → no Monday-first frame (R3's theme no-flash
-    probe pattern, with a negative control).
-11. Activity (`?sample`), light/dark × 375/768/1440: 24h default, 12h after the switch; no overflow at 375.
-12. Stage 4: Victor `visual-approved`.
+**Visual Gate** 9. Locale + Notifications panes: light/dark × 375/768/1440, axe 0, keyboard reachable, focus ring, read-only state,
+"Saved on this device" after a write, search finds both panes' rows, single column at 375
+(EC-1 · EC-2 · EC-3 · EC-6 · EC-7 · EC-10 · EC-11). 10. Global Calendar month + week after Sunday/12h, light/dark × 375/768/1440 (incl. the condensed 375 month starting
+Sunday): first column Sunday, period label + "this week" correct, times 12h; then back to Monday/24h.
+10a. **No-flash:** Sunday persisted → reload directly on `/calendar` → no Monday-first frame (R3's theme no-flash
+probe pattern, with a negative control). 11. Activity (`?sample`), light/dark × 375/768/1440: 24h default, 12h after the switch; no overflow at 375. 12. Stage 4: Victor `visual-approved`.
 
 ## 5. Out of scope (owned elsewhere, unchanged)
+
 - Notification delivery, quiet-hours start/end, channel readers → notifications-rescope (G3-E5, coverage :117).
 - `date_format` readers → first pattern-date surface (first-consumer pull, interpretation §3.4).
 - The notes calendar layout → notes-rescope R6 (R6-BR-7).
@@ -186,6 +189,7 @@ Edges filed at R8 (not built here):
 - Onboarding writes → R7.
 
 ## 6. Risks
+
 - **Blast radius of `usePreferences()` in two new trees.** Calendar and Activity tests render without a query host today;
   both need the prefs wrapper + `compositionRootMock` (R3 step-16 lesson). Enumerated in #4/#5; IMPL-PLAN greps every
   test that renders the calendar route, `ActivityMode` or the gamification surface (today: `calendar-surface.test.tsx`, `activity.test.tsx`, `gamification.test.tsx`) before building.
@@ -197,10 +201,11 @@ Edges filed at R8 (not built here):
 - **Machine load** from parallel sessions → suite timeouts (F008); suites run alone.
 
 ## 7. Gate record
-| Date | Step | Result |
-|---|---|---|
-| 2026-10-27 | §XXVI.1a baseline | `docs/modules/preferences/current-spec.md` re-swept: fe-calendar mirror reader + bridge flush ownership recorded |
-| 2026-10-27 | PLAN rev 1 | drafted |
-| 2026-10-27 | Gate-1 /critique (independent) | **REVISE** — 4 blocking: (1) R6-BR-3 first frame unproven → 4a + 10a (and recorded as a real fix: today's mirror hydrates after first render); (2) `gamification.test.tsx` EC-8 case missing from design → #5; (3) §XXIX doc list incomplete/vague → concrete list in #8; (4) R6-BR-7 framed as "correction" → explicit ⚑ DECISION with the interim gap, branch/commit, written edge, alternative. Nits folded: extend (not add) mapper tests + relabel parity test · 12h shape `hour:'numeric'` (= calendar `2:05 PM`) · four module-level formatters, no hook · calendar test seeding spelled out · EC-2/6/10 + "Saved" · matrix on Visual 10/11 · 2 mutations added · onboarding-branch observer note. All cites verified on disk. → **rev 2** |
-| 2026-10-27 | Governing-doc check (Victor: "check the documentation") | Direction confirmed: store dissolve = BR-RT-7 / `data-flow.md:463-466` (prefs/locale never in Zustand); Locale/Notif persist = ADR-002 §5.17 + `intake/preferences.md`. Two corrections → **rev 3**: R6-BR-7 re-grounded on NOT-48 (G3: Note→List/Gallery/Neural) — doc-resolved, no longer a decision; R6-BR-4 12h shape re-grounded on BR-S5-8 (native `Intl`), the false "same as the calendar" claim removed (calendar has two 12h shapes; edge → sessions-rescope) |
-| 2026-10-27 | Approval 1 | **Victor: "Approved"** (rev 3) |
+
+| Date       | Step                                                    | Result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------- | ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-27 | §XXVI.1a baseline                                       | `docs/modules/preferences/current-spec.md` re-swept: fe-calendar mirror reader + bridge flush ownership recorded                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-10-27 | PLAN rev 1                                              | drafted                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 2026-10-27 | Gate-1 /critique (independent)                          | **REVISE** — 4 blocking: (1) R6-BR-3 first frame unproven → 4a + 10a (and recorded as a real fix: today's mirror hydrates after first render); (2) `gamification.test.tsx` EC-8 case missing from design → #5; (3) §XXIX doc list incomplete/vague → concrete list in #8; (4) R6-BR-7 framed as "correction" → explicit ⚑ DECISION with the interim gap, branch/commit, written edge, alternative. Nits folded: extend (not add) mapper tests + relabel parity test · 12h shape `hour:'numeric'` (= calendar `2:05 PM`) · four module-level formatters, no hook · calendar test seeding spelled out · EC-2/6/10 + "Saved" · matrix on Visual 10/11 · 2 mutations added · onboarding-branch observer note. All cites verified on disk. → **rev 2** |
+| 2026-10-27 | Governing-doc check (Victor: "check the documentation") | Direction confirmed: store dissolve = BR-RT-7 / `data-flow.md:463-466` (prefs/locale never in Zustand); Locale/Notif persist = ADR-002 §5.17 + `intake/preferences.md`. Two corrections → **rev 3**: R6-BR-7 re-grounded on NOT-48 (G3: Note→List/Gallery/Neural) — doc-resolved, no longer a decision; R6-BR-4 12h shape re-grounded on BR-S5-8 (native `Intl`), the false "same as the calendar" claim removed (calendar has two 12h shapes; edge → sessions-rescope)                                                                                                                                                                                                                                                                           |
+| 2026-10-27 | Approval 1                                              | **Victor: "Approved"** (rev 3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |

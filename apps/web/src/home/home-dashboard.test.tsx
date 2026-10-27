@@ -17,12 +17,23 @@ const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
 
 describe('HomeDashboard (S1)', () => {
   it('EC-4 — renders a standalone-widget grid across the OS domains', () => {
-    const { getByText, getByRole } = renderUI(<HomeDashboard widgets={useHomeWidgets()} renderWidget={renderHomeWidget} />)
+    const { getByText, getByRole } = renderUI(
+      <HomeDashboard widgets={useHomeWidgets()} renderWidget={renderHomeWidget} />,
+    )
     // the dashboard region + heading
     expect(getByRole('region')).not.toBeNull()
     expect(getByText('Your day across the OS')).not.toBeNull()
     // the OS-domain cells (the personalized grid)
-    for (const title of ['Today across the OS', 'Finances', 'Tasks', 'Habits', 'Projects', 'Purposes', 'Dreams', 'Schedule']) {
+    for (const title of [
+      'Today across the OS',
+      'Finances',
+      'Tasks',
+      'Habits',
+      'Projects',
+      'Purposes',
+      'Dreams',
+      'Schedule',
+    ]) {
       expect(getByText(title)).not.toBeNull()
     }
     // the standalone placeholder body (the renderWidget seam) describes what the widget will show — no faked data

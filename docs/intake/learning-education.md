@@ -1,11 +1,15 @@
 # Intake: Learning — Courses & Classes
+
 <!-- /documentation Phase 1 (Intake). Sub-context 1 of 5 of Learning. No-Guessing: every claim cited. -->
+
 Context: features/learning/courses-and-classes (Wave 2 — Learning foundation; hub the other Learning sub-contexts + Tasks link to)
 Sources: v2 (ADR-002 §5.10 courses + §5.18 ICS + @vida/types/learning.ts + CLAUDE.md §7) · v1 (life-os src/features/learning + types/learning.ts) · user intent
 Session: 2026-07-01 · documentation-blueprint
 
 ## A. WHAT EXISTS — v2 (current, authoritative)
+
 **Data model — 3 tables** (of the Learning domain; other 9 tables belong to sibling sub-contexts) `[FACT: ADR-002 §5.10 L2372-2403, §5.18 L3581-3630; learning.ts]`:
+
 - `courses` (= courses AND classes): `title`[E], `description`[E], `provider`[E], `instructor`[E], `url`[E], `course_type`{online,in_person,hybrid,self_paced}, `status`{not_started,in_progress,completed,dropped}, `progress` 0-100, `total_modules`/`completed_modules`, `start_date`/`end_date`/`target_completion`, `estimated_hours` (min), `rating` 1-5, `tags`[E], **`metadata`[E] JSON — "course-specific data, e.g. college class schedule"**. `[FACT: L2372-2403; learning.ts L100-128]`
 - `ics_feed_configs`: `feed_url`[E], `feed_name`[E], `is_active`, `auto_create_sessions`, `default_course_id` (SET NULL), `sync_interval_hours` (def 6), `last_synced_at`, `last_error`[E], `metadata`[E]. `[FACT: L3581-3601]`
 - `ics_synced_events`: `feed_id` (CASCADE), `uid`, `summary`/`description`/`location`[E], `start_time`/`end_time`, `recurrence_rule`, `matched_course_id` (SET NULL), `created_session_id`, `is_ignored`, `raw_event`[E]. **UNIQUE(feed_id, uid)**. `[FACT: L3604-3630]`
@@ -15,7 +19,9 @@ Session: 2026-07-01 · documentation-blueprint
 **Cross-cutting:** `course` is a valid `entity_links` note target `[FACT: ADR-002 L1344]`; Tasks link via `task.course_id` (homework?) `[FACT: ADR-002 §5.3]`; study_sessions/books/topics reference courses (sibling sub-contexts).
 
 ## B. WHAT v1 DID — life-os learning (legacy)
+
 `[FACT: life-os src/features/learning + types/learning.ts]`
+
 - Pages: CoursesPage · **CourseDetailPage** · LearningDashboard + (Books/Skills/Knowledge/StudyPlanner/StudySessions — sibling sub-contexts). `[FACT: pages]`
 - v1 `course_type` = **`online_course` | `college_class`** (v2 changed to online/in_person/hybrid/self_paced). `[FACT: types L7]`
 - v1 **`CollegeGrade`** enum (A+…F, W, I, P, NP) + **`CollegeClassData`** interface (schedule + `grade`) **stored in course metadata** — same metadata-JSON pattern v2 keeps. `[FACT: types L8, L16-25]`
@@ -23,12 +29,14 @@ Session: 2026-07-01 · documentation-blueprint
 - v1 had `schedule`/`scheduling` component dirs. `[FACT: components]`
 
 ### Key notes (v2 vs intent)
+
 1. **Classes are `courses`**, distinguished by `course_type`; college class schedule lives in **`courses.metadata` JSON** (unstructured). `[FACT: L2391; learning.ts L126-127]`
 2. **NO tables for homework, exams/quizzes/tests, syllabus/schedule documents** — all named in CLAUDE.md §7 but absent from the schema. `[FACT: §5.10 has none]`
 3. v2 **dropped structured grades/GPA** (v1 `CollegeGrade`); only a 1-5 `rating` remains → the reconciliation "Learning verify" item. `[FACT: learning.ts vs v1 types L8]`
 4. ICS sync is well-modeled (2 tables) incl. `auto_create_sessions` + event↔course matching. `[FACT: §5.18]`
 
 ## C. GAP MAP — genuine unknowns (need Victor's intent; not answerable from sources)
+
 G1 — **Scope / views**: courses/classes list · **class standalone page** (info · schedule · syllabus · books · homework · exams · study sessions · knowledge) · **weekly schedule** view (from ICS). Confirm.
 G2 — ⚠ **Class schedule structure**: today it's `courses.metadata` JSON (unstructured). Keep as JSON, or a **structured** class-schedule (a table / derived from `ics_synced_events`)? The "weekly schedule" view needs consistent structure. Resolve.
 G3 — ⚠ **Grades / GPA (reconciliation verify)**: v1 had `CollegeGrade` + grade; v2 dropped it (only `rating`). **Restore structured grades + GPA calculation** for college classes? (ties to v1 CR-002 GPA, OR-003 grade calc.) Decide.
@@ -43,9 +51,11 @@ G11 — **Tags**: `courses.tags` inline `[E]` → shared scoped tags? Confirm.
 G12 — **Course progress**: `progress` + `total_modules`/`completed_modules` — auto-derived (from completed modules / study sessions / homework), or manual? Confirm.
 
 ## ⚠⚠ SCOPE REFRAME — IN PROGRESS (Victor, 2026-07-01) — NOT gaps yet; establish hierarchy first, THEN gaps
+
 The current flat `courses`/`classes` organization is **wrong** vs Victor's vision. New model (net-new in v2, not in v1):
 
 **Two study MODES** (unified under one hierarchy):
+
 - **Formal education** — institution-granted (high school, university bachelor/master, doctorate/PhD).
 - **Self-taught** — no institution; the learner **mirrors a formal degree's program/curriculum** to self-direct learning.
 
@@ -53,6 +63,7 @@ The current flat `courses`/`classes` organization is **wrong** vs Victor's visio
 Self-taught can **draw inspiration from existing institutions' programs** — mix/fork them into his own curriculum.
 
 **Full hierarchy (8 levels, top→down):** `[INTENT: Victor 2026-07-01]`
+
 1. **Institution / Self-taught** — a real institution OR the self-taught mode marker.
 2. **Program** — the field/pursuit the user wants to learn (Computer Science, Medicine).
 3. **Curriculum** — **what the user wants to learn, as he shapes the program.** Formal → bounded by what the
@@ -69,7 +80,8 @@ Self-taught can **draw inspiration from existing institutions' programs** — mi
 grouping → the sub-context will be **RENAMED** (no longer "Courses & Classes") and needs new parent tables.
 
 **Accepted additions (Victor confirmed "it matches", 2026-07-02):** `[INTENT]`
-- **A1 — Optional depth.** Every intermediate level is skippable; the hierarchy is the *maximum* shape, each user
+
+- **A1 — Optional depth.** Every intermediate level is skippable; the hierarchy is the _maximum_ shape, each user
   collapses it (formal PhD = all 8; casual self-taught = Program → Subject → Topic).
 - **A2 — Progress rolls up the whole chain** (derived cache, Projects pattern): Topic → Module → Subject → Term →
   Degree → Curriculum → Program. Degree may weight the rollup.
@@ -81,26 +93,28 @@ grouping → the sub-context will be **RENAMED** (no longer "Courses & Classes")
 Status: **SCOPE SET** → gaps reshaped below.
 
 ## C2. RESHAPED GAP MAP (2026-07-02) — supersedes G1–G12 above (folded in; originals kept for audit)
+
 H1 — **Naming**: rename the sub-context — "Learning: Education"? (folder `docs/features/learning/education/`).
 H2 — **New tables**: `institutions` · `programs` · `curricula` (+ fork/template lineage) · `degrees` (or a
-  degree field on curriculum?) · `terms` · subjects = existing `courses` (renamed? reinterpreted?) · **`classes`
-  (Master-Instance, A4)**. Confirm which are real tables vs fields. → ADR-002 amendment (largest yet).
+degree field on curriculum?) · `terms` · subjects = existing `courses` (renamed? reinterpreted?) · **`classes`
+(Master-Instance, A4)**. Confirm which are real tables vs fields. → ADR-002 amendment (largest yet).
 H3 — **Grades/GPA** (ex-G3): restore structured grades at the Class/assessment level, GPA rolls up per Term/
-  Degree/Curriculum? (v1 CollegeGrade + reconciliation verify-item.)
+Degree/Curriculum? (v1 CollegeGrade + reconciliation verify-item.)
 H4 — **Homework** (ex-G4): a Task (`course_id`→subject/class) surfaced class-scoped, or own entity?
 H5 — **Assessments** (ex-G5): `course_assessments` table (exam/quiz/test, date, weight, grade → feeds H3)
-  attached to a **Class** (instance) or Subject?
+attached to a **Class** (instance) or Subject?
 H6 — **Documents** (ex-G6): syllabus/schedule vault per Subject/Class (Projects PJ-8 pattern, inline+R2)?
 H7 — **Auto-record scope** (ex-G7): ICS auto-record NOW; syllabus/schedule scraping DEFERRED (AI/extension)?
 H8 — **ICS flow** (ex-G8): device-side fetch; events match to a **Class** (A4) → weekly schedule. Confirm.
 H9 — **Views** (ex-G1): hierarchy browser (Program→…→Topic) · Class standalone page · weekly schedule ·
-  program/curriculum dashboards (rollup, A2). Confirm set.
+program/curriculum dashboards (rollup, A2). Confirm set.
 H10 — **Curriculum templates** (A3): source = local seed pack + user-imported files (ZK)? Fork = deep copy with
-  lineage pointer? Confirm.
+lineage pointer? Confirm.
 H11 — **Notes/tags** (ex-G10/G11): pages on which levels (program/curriculum/subject/class)? shared scoped tags?
 H12 — **Progress** (ex-G12): rollup weights — plain count first, degree-weighted later (A2)? Confirm.
 
 ## Resolution
+
 `[INTENT: Victor, 2026-07-02/03]` — **WHOLE.** All H-gaps + views + review items resolved.
 
 - **H1 — Name: "Learning: Education"** (folder `docs/features/learning/education/`). CONFIRMED.
@@ -186,14 +200,16 @@ H12 — **Progress** (ex-G12): rollup weights — plain count first, degree-weig
   (curriculum → term → degree tier) — never an orphaned flat list like v2's `courses`.
 
 ### ⚠ New INTENDED surface (→ ADR-002 amendment, largest yet + design passes)
+
 `institutions` · `self_taught` · `programs` · `curricula`(+lineage) · `terms` · `class_sessions` ·
 `subject_schedules` (3-method) · `grading_systems` (builder) · assessments (per subject, vs H5) · education-task
 entity (Tasks Universe) · vault per subject · multi-type Education progress (shared design with Projects
 measurement pass).
 
 ## Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-07-01 | documentation-blueprint | intake harvested (v2 ADR-002 §5.10 courses + §5.18 ICS + learning.ts + CLAUDE.md §7; v1 life-os learning — CollegeGrade/CollegeClassData/TopicImportSource); gap map G1–G12. ⚠ Big INTENDED surface: no tables for homework/exams/syllabus-docs; grades/GPA dropped; schedule is metadata JSON; heavy auto-record. First of 5 Learning sub-contexts. |
-| 2026-07-01/02 | documentation-blueprint | ⚠⚠ SCOPE REFRAME (Victor): 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic) + A1–A4 additions accepted. G1–G12 superseded by reshaped H1–H12. Sub-context RENAMED → **Learning: Education**. |
-| 2026-07-03 | documentation-blueprint | H1–H12 + views resolved → intake **WHOLE**. Grading-system builder (flexible weights/modality); assessments incl. presentations + works; homework = education-task in Tasks Universe; subject_schedules (ICS/doc/manual); Education-forged measurement (Projects pattern, separate storage); full H9 view set (dashboard, 10-tab hub, 6 dedicated-page families) + My-Week/assessments-view/GPA-report as INTENDED-immature; template gallery subtab. |
+
+| Date          | Session                 | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-01    | documentation-blueprint | intake harvested (v2 ADR-002 §5.10 courses + §5.18 ICS + learning.ts + CLAUDE.md §7; v1 life-os learning — CollegeGrade/CollegeClassData/TopicImportSource); gap map G1–G12. ⚠ Big INTENDED surface: no tables for homework/exams/syllabus-docs; grades/GPA dropped; schedule is metadata JSON; heavy auto-record. First of 5 Learning sub-contexts.                                                                                                  |
+| 2026-07-01/02 | documentation-blueprint | ⚠⚠ SCOPE REFRAME (Victor): 8-level hierarchy (Institution/Self-taught → Program → Curriculum → Degree → Term → Subject → Module → Topic) + A1–A4 additions accepted. G1–G12 superseded by reshaped H1–H12. Sub-context RENAMED → **Learning: Education**.                                                                                                                                                                                             |
+| 2026-07-03    | documentation-blueprint | H1–H12 + views resolved → intake **WHOLE**. Grading-system builder (flexible weights/modality); assessments incl. presentations + works; homework = education-task in Tasks Universe; subject_schedules (ICS/doc/manual); Education-forged measurement (Projects pattern, separate storage); full H9 view set (dashboard, 10-tab hub, 6 dedicated-page families) + My-Week/assessments-view/GPA-report as INTENDED-immature; template gallery subtab. |

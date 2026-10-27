@@ -20,11 +20,5 @@ export type MealSource = (typeof MEAL_SOURCE)[number]
 
 // Daily-meal-plan generation method (structure-data.md:24). An `ai`/`hybrid` plan
 // carries source=ai (AI6). `[ADR-015 AI6]`
-export const MEAL_GENERATION_METHOD = [
-  'manual',
-  'ai',
-  'template',
-  'goal-optimized',
-  'hybrid',
-] as const
+export const MEAL_GENERATION_METHOD = ['manual', 'ai', 'template', 'goal-optimized', 'hybrid'] as const
 export type MealGenerationMethod = (typeof MEAL_GENERATION_METHOD)[number]

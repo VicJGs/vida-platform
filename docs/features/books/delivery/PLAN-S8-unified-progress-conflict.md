@@ -1,4 +1,4 @@
-# PLAN — S8: Unified progress + conflict resolution  (BOO-13/34/35)
+# PLAN — S8: Unified progress + conflict resolution (BOO-13/34/35)
 
 > Entity Delivery Flow (v1) · per-slice SERVICE track · slice 8 of 10.
 > Gate 1 = this SPEC (§XXVI.2 /critique → Approval 1). Grounded in the corpus (No-Guessing).
@@ -8,22 +8,23 @@
 
 > The aspect docs + the Part-1.2 rerun driver-tokens are the intent authority; they outrank the slice-map/seam-contract.
 
-| S8 element | Authoritative doc source (intent) |
-|---|---|
-| **Unified progress is DERIVED** from asset positions; `books.progress` = nullable override (`NULL ⇒ derive`, M3); never hand-set | **BK-3** (`business-rules.md:18-22`) · **BOO-13** (`parts/books.md:23`) · `structure-data.md:9,12-14,40-41` · `conventions.md:11-13` |
-| return shape `number \| 'conflicted' \| null`; `null` = unmeasured | `seam-contract.md:117` (`getUnifiedProgress`) · BR-2 (measurement `engine.ts:44` — empty/all-null ⇒ null) |
-| Terminal states: **derived · manual-override · conflicted** | **BOO-13** (`parts/books.md:23` "Terminal: derived · manual-override · conflicted (BK-8)") |
-| measure vocabulary = `quantitative` × `derived-pull`; **NO stored `books.measurement_kind`** (C-M1) — Books names the axes, stores none | **BOO-14** (`parts/books.md:24`) · rerun `books.md:71` (C-M1) |
-| **Position/progress clash ⇒ ASK by default, RULE if set** — the preset rule lives in **Preferences** | **BK-8** (`business-rules.md:38-40`) · **BOO-34/35** (`parts/books.md:44-45`) |
-| conflict rule enum = `{ask, source_of_truth, last_valid, photo_valid}` | `conventions.md:36` `[INTENT B16]` |
-| **Conflict resolution is derived, not a table** — React-Query-derived `getConflicts`; `PositionConflictPending` (typed); an unresolved conflict **blocks** unified progress (flagged "conflicted", never guessed) | **interpretation.md:153-156** (rule 7) `[FACT: db-4-books/_index.md:32-33; BK-8]` |
-| `getConflicts(bookId)` / `resolveConflict(id, choice)` — the conflict-resolution engine; clash between sources (assets, photo capture) surfaces; unresolved blocks; `PositionConflictPending` on write; preset rule read from Preferences, auto-applies | **BOO-34** (`parts/books.md:44`) · `seam-contract.md:47,58,116-118` |
-| `ConflictItem = { id; bookId; sources: PositionSource[]; blocking: true }` | `seam-contract.md:47` (frozen type) |
-| cross-format mapping is **unbuilt at M1** (always `not-synced`) → heterogeneous-unit assets (epub/audio) cannot normalize ⇒ unmeasured, never guessed (fail loud) | **BK-4** (`business-rules.md:23-30`) · `types.ts:123-130` (`MappedPosition` always `not-synced` at M1) |
-| narrow deny-safe `PreferencesPort?` (NIT-3) — "two toggle/rule reads"; S8 appends the conflict-rule read; absent ⇒ permissive default | `interpretation.md:59-60` · `types.ts:74-77,180-185` |
-| invalidate unified progress on any asset-position/session write | **BOO-13** (`parts/books.md:23`) · `structure-data.md:38-41` — **React-Query (P6) concern**; the service stays derive-on-read (no cache to bust here) |
+| S8 element                                                                                                                                                                                                                                              | Authoritative doc source (intent)                                                                                                                     |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Unified progress is DERIVED** from asset positions; `books.progress` = nullable override (`NULL ⇒ derive`, M3); never hand-set                                                                                                                        | **BK-3** (`business-rules.md:18-22`) · **BOO-13** (`parts/books.md:23`) · `structure-data.md:9,12-14,40-41` · `conventions.md:11-13`                  |
+| return shape `number \| 'conflicted' \| null`; `null` = unmeasured                                                                                                                                                                                      | `seam-contract.md:117` (`getUnifiedProgress`) · BR-2 (measurement `engine.ts:44` — empty/all-null ⇒ null)                                             |
+| Terminal states: **derived · manual-override · conflicted**                                                                                                                                                                                             | **BOO-13** (`parts/books.md:23` "Terminal: derived · manual-override · conflicted (BK-8)")                                                            |
+| measure vocabulary = `quantitative` × `derived-pull`; **NO stored `books.measurement_kind`** (C-M1) — Books names the axes, stores none                                                                                                                 | **BOO-14** (`parts/books.md:24`) · rerun `books.md:71` (C-M1)                                                                                         |
+| **Position/progress clash ⇒ ASK by default, RULE if set** — the preset rule lives in **Preferences**                                                                                                                                                    | **BK-8** (`business-rules.md:38-40`) · **BOO-34/35** (`parts/books.md:44-45`)                                                                         |
+| conflict rule enum = `{ask, source_of_truth, last_valid, photo_valid}`                                                                                                                                                                                  | `conventions.md:36` `[INTENT B16]`                                                                                                                    |
+| **Conflict resolution is derived, not a table** — React-Query-derived `getConflicts`; `PositionConflictPending` (typed); an unresolved conflict **blocks** unified progress (flagged "conflicted", never guessed)                                       | **interpretation.md:153-156** (rule 7) `[FACT: db-4-books/_index.md:32-33; BK-8]`                                                                     |
+| `getConflicts(bookId)` / `resolveConflict(id, choice)` — the conflict-resolution engine; clash between sources (assets, photo capture) surfaces; unresolved blocks; `PositionConflictPending` on write; preset rule read from Preferences, auto-applies | **BOO-34** (`parts/books.md:44`) · `seam-contract.md:47,58,116-118`                                                                                   |
+| `ConflictItem = { id; bookId; sources: PositionSource[]; blocking: true }`                                                                                                                                                                              | `seam-contract.md:47` (frozen type)                                                                                                                   |
+| cross-format mapping is **unbuilt at M1** (always `not-synced`) → heterogeneous-unit assets (epub/audio) cannot normalize ⇒ unmeasured, never guessed (fail loud)                                                                                       | **BK-4** (`business-rules.md:23-30`) · `types.ts:123-130` (`MappedPosition` always `not-synced` at M1)                                                |
+| narrow deny-safe `PreferencesPort?` (NIT-3) — "two toggle/rule reads"; S8 appends the conflict-rule read; absent ⇒ permissive default                                                                                                                   | `interpretation.md:59-60` · `types.ts:74-77,180-185`                                                                                                  |
+| invalidate unified progress on any asset-position/session write                                                                                                                                                                                         | **BOO-13** (`parts/books.md:23`) · `structure-data.md:38-41` — **React-Query (P6) concern**; the service stays derive-on-read (no cache to bust here) |
 
 **Genuinely build-phase (resolved here, grounded — not deferred):**
+
 - The derivation **arithmetic** (quantitative `normalize` over `native_position`/`total_pages`) — grounded in `foundation/measurement engine.ts:14-22` + BOO-14 (`quantitative`/`derived-pull`).
 - **Which assets produce a candidate at M1**: page-unit formats only (`pdf·physical·braille`) with a strict-integer `native_position` and a work-level `total_pages > 0`. `epub` (location) and `audiobook` (timestamp) carry non-page units whose normalization needs the **unbuilt** cross-format mapping (BK-4), and `other` is an unknown unit by definition → all three are **unmeasured** (`null`, BR-2), never guessed. `[INTERP: BK-4 + BR-2; the honest M1 candidate set]`
 - `ConflictChoice` / `PositionSource` / `ConflictRule` type shapes (new S8 service-layer types — the `MappedPosition`/`MasterySource` precedent, NOT `@vida/types`).
@@ -44,7 +45,7 @@
 
 ---
 
-## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S8-*)
+## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S8-\*)
 
 - **BR-BK-S8-1 (unified progress is derive-on-read / BK-3, BOO-13)** — `getUnifiedProgress(bookId)` returns
   `number | 'conflicted' | null`. It composes `resolveProgress(book.progress, derive)` (`engine.ts:56`): a non-null
@@ -142,19 +143,31 @@
 ## §5 Implementation prompt (type-first; factory-object; no `this.`)
 
 **Types (`services/books/types.ts`):**
+
 ```ts
 export type ConflictRule = 'ask' | 'source_of_truth' | 'last_valid' | 'photo_valid'
 export type ConflictChoice =
   | { rule: 'source_of_truth'; assetId: string }
   | { rule: 'last_valid' }
   | { rule: 'photo_valid' }
-export interface PositionSource { assetId: string; format: BookAssetFormat; nativePosition: string; progress: number }
-export interface ConflictItem { id: string; bookId: string; sources: PositionSource[]; blocking: true }
+export interface PositionSource {
+  assetId: string
+  format: BookAssetFormat
+  nativePosition: string
+  progress: number
+}
+export interface ConflictItem {
+  id: string
+  bookId: string
+  sources: PositionSource[]
+  blocking: true
+}
 // PreferencesPort += getConflictRule(bookId): Promise<ConflictChoice | undefined>; setConflictRule(bookId, choice): Promise<void>
 // BookView.unifiedProgress: number | 'conflicted' | null
 ```
 
 **Service (`services/books/service.ts`) — hoisted closures:**
+
 - `computeCandidates(bookId): Promise<PositionSource[]>` — load non-deleted assets; filter page-unit + strict-int + `total_pages>0`; map each to `{assetId, format, nativePosition, progress: Math.round(normalize(...)*100)}` (store the rounded 0–100 in `PositionSource.progress` for `sources` + comparison). Drop non-candidates.
 - `resolveClash(bookId, sources): Promise<number | 'conflicted'>` — distinct-value check; agreement ⇒ value; clash ⇒ read rule, apply BR-BK-S8-5 (`last_valid` tie-break: sort by `updated_at` desc then `id` desc).
 - `getUnifiedProgress(bookId)` — load book (`BookNotFoundError`); `resolveProgress`-style: `book.progress != null` ⇒ clamp 0–100 return; else `computeCandidates` → `[]`⇒null, else `resolveClash`.
@@ -170,11 +183,11 @@ export interface ConflictItem { id: string; bookId: string; sources: PositionSou
 
 ## §6 g1 resolution (interpretations pre-grounded in the corpus)
 
-| Potential g1 flag | Resolution (grounded) |
-|---|---|
-| "Why not `rollup()` across assets?" | Assets are competing measurements of ONE work's progress, not weighted children — BK-8 makes disagreement a *conflict*, not an average. `rollup` is for parent/child pursuables (purposes/targets), not same-work copies. `[business-rules.md:38-40]` |
-| "epub/audio excluded = under-building?" | The cross-format mapping that normalizes non-page units is **unbuilt at M1** (BK-4; `getMappedPosition` always `not-synced`). Including them would require a guessed position — explicitly forbidden (fail loud). Honest M1 set. `[business-rules.md:23-30]` |
-| "`PositionConflictPending` throw-site invented?" | **Fixed (g1 B1).** Not thrown in S8 — a conflict is a non-throwing `'conflicted'` flag. The error is the signal for a consumer that NEEDS a definite number; the first is S9 `getReadingMeasureSource`. S8 exports it as a forward seam, documents the S9 throw-site, and throws nothing. Presetting a forward-looking rule (`photo_valid`) is a legitimate successful write, not an error (BK-8). `[seam-contract.md:58; BK-8; interpretation.md:153-156]` |
-| "absent-port write — fail loud or no-op?" | **Doc-grounded to no-op (Victor directive "ground everything in the docs").** My first draft invented `PreferencesUnavailableError`; the docs forbid it: `types.ts:77` ("absent ⇒ permissive, a convenience policy not a security gate; real keys M2/P6") + the `revokeLookupGrant` precedent (**BR-BK-S2-6**: "no dep ⇒ no-op"). Absent port ⇒ silent no-op; the real write lands M2/P6. **No new error type.** `[types.ts:76-77; BR-BK-S2-6; interpretation.md:60]` |
-| "`resolveConflict` silently persists a bad `source_of_truth`?" | **Fixed (g1 B2).** The write validates `assetId` ∈ the book's non-deleted assets → `BookAssetNotFoundError`. A read-side "asset not currently in the clash" (positions moved) stays a benign `'conflicted'`; a write-side "asset that can't exist" is a structural error. `[business-rules.md:38-40]` |
-| "conflict rule per-book vs global?" | Modeled per-book (the conflict is per-book; mirrors BK-7 per-book>global precedence). A global-rule fallback is an M2 Preferences-schema concern (real keys = M2). `[types.ts:75-77]` |
+| Potential g1 flag                                              | Resolution (grounded)                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| "Why not `rollup()` across assets?"                            | Assets are competing measurements of ONE work's progress, not weighted children — BK-8 makes disagreement a _conflict_, not an average. `rollup` is for parent/child pursuables (purposes/targets), not same-work copies. `[business-rules.md:38-40]`                                                                                                                                                                                                                 |
+| "epub/audio excluded = under-building?"                        | The cross-format mapping that normalizes non-page units is **unbuilt at M1** (BK-4; `getMappedPosition` always `not-synced`). Including them would require a guessed position — explicitly forbidden (fail loud). Honest M1 set. `[business-rules.md:23-30]`                                                                                                                                                                                                          |
+| "`PositionConflictPending` throw-site invented?"               | **Fixed (g1 B1).** Not thrown in S8 — a conflict is a non-throwing `'conflicted'` flag. The error is the signal for a consumer that NEEDS a definite number; the first is S9 `getReadingMeasureSource`. S8 exports it as a forward seam, documents the S9 throw-site, and throws nothing. Presetting a forward-looking rule (`photo_valid`) is a legitimate successful write, not an error (BK-8). `[seam-contract.md:58; BK-8; interpretation.md:153-156]`           |
+| "absent-port write — fail loud or no-op?"                      | **Doc-grounded to no-op (Victor directive "ground everything in the docs").** My first draft invented `PreferencesUnavailableError`; the docs forbid it: `types.ts:77` ("absent ⇒ permissive, a convenience policy not a security gate; real keys M2/P6") + the `revokeLookupGrant` precedent (**BR-BK-S2-6**: "no dep ⇒ no-op"). Absent port ⇒ silent no-op; the real write lands M2/P6. **No new error type.** `[types.ts:76-77; BR-BK-S2-6; interpretation.md:60]` |
+| "`resolveConflict` silently persists a bad `source_of_truth`?" | **Fixed (g1 B2).** The write validates `assetId` ∈ the book's non-deleted assets → `BookAssetNotFoundError`. A read-side "asset not currently in the clash" (positions moved) stays a benign `'conflicted'`; a write-side "asset that can't exist" is a structural error. `[business-rules.md:38-40]`                                                                                                                                                                 |
+| "conflict rule per-book vs global?"                            | Modeled per-book (the conflict is per-book; mirrors BK-7 per-book>global precedence). A global-rule fallback is an M2 Preferences-schema concern (real keys = M2). `[types.ts:75-77]`                                                                                                                                                                                                                                                                                 |

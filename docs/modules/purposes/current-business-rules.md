@@ -94,7 +94,7 @@
   **Channel A** = in-module LEAVES (spine-targets via `purpose_id` each `computeProgress(target)` + `purpose_metrics`
   each `metricLeaf01`), equal-weight peers; **Channel B** = direct CONTRIBUTIONS, weighted by `contribution_percentage`.
   Each channel rolls up on its own scale, then the two channel-results combine **equal-weight**. This keeps
-  `contribution_percentage` meaningful *within* B and stops a weight-1 in-module leaf drowning under a weight-60
+  `contribution_percentage` meaningful _within_ B and stops a weight-1 in-module leaf drowning under a weight-60
   contribution. Targets + metrics feed a purpose via the direct `purpose_id` channel (PG-5 "contributor→target→purpose";
   `target`/`purpose_metric` ∉ contributor vocabulary, so never via contributions). A `purpose_metric` leaf is
   **direction-aware** (it carries `baseline_value` + `is_higher_better`, unlike a target), reading its current value
@@ -181,7 +181,7 @@
   biweekly) add days; month-based (monthly/quarterly/yearly) add months and **clamp the day** to the target month's
   last day (Jan 31 +1mo → Feb 28, never a rollover). A NULL `review_frequency` leaves `next_review_date` unchanged.
 - **BR-PG-S7-7** — **`plan_steps` is a doc checklist (PG-11), not a tracked entity.** `addPlanStep(owner:{task|
-  target}, …)` appends (`is_completed:false`); `togglePlanStep` flips completion and **stamps/clears `completed_at`**
+target}, …)` appends (`is_completed:false`); `togglePlanStep` flips completion and **stamps/clears `completed_at`**
   in sync; `listPlanSteps(owner)` returns active steps (`findWhere` + explicit `isNull(deleted_at)`, since findWhere
   skips the soft-delete filter). A toggle on a missing id → `PlanStepNotFoundError`.
 
@@ -191,7 +191,7 @@
   never touches `entity_tags`/`entity_links`/`pages` directly** (the read/write split, SP1/SP4). `tagEntity`/
   `untagEntity`/`linkEntity`/`unlinkEntity` are thin SCOPED wrappers over `spaces.tagEntity`/`untagEntity`/
   `createLink`/`removeLink` (arg-reordered to spaces' `(tagId, entityType, entityId)` / `(pageId, entityType,
-  entityId, context)`); each delegated write is idempotent (resolve-then-revive / resolve-then-soft-delete, BR-14/15).
+entityId, context)`); each delegated write is idempotent (resolve-then-revive / resolve-then-soft-delete, BR-14/15).
 - **BR-PG-S8-2** — **No `registry` dep (write-only slice).** `spaces`/`notes` self-validate `entity_type` against the
   taggable-type registry they are constructed with (`spaces.assertRegistered`; `notes.createPage` validates too). The
   purposes entity_types (`value`/`purpose`/`target`/`dream`/`purpose_metric_value`) are **already seeded** in the
@@ -200,7 +200,7 @@
   `registry` first-consumer). An unregistered type passed to a wrapper surfaces `spaces`' `UnknownEntityType` (BR-2) —
   the write-through preserves validation, proven by test.
 - **BR-PG-S8-3** — **Two typed entity-type unions, grounded in PG-18.** `PurposeTagLinkType =
-  value|purpose|target|dream|purpose_metric_value` governs tag/link (the full PG-18 target set, incl. the
+value|purpose|target|dream|purpose_metric_value` governs tag/link (the full PG-18 target set, incl. the
   `purpose_metric_value` ledger row). `PurposeNoteType = value|purpose|target|dream` governs `ensureEntityNote` — a
   `purpose_metric_value` ledger row has **no title**, so it is a tag/link target only, never a standalone-note subject.
 - **BR-PG-S8-4** — **`ensureEntityNote` find-or-creates a TITLED standalone note** (`type:'note'`, **no new
@@ -218,8 +218,8 @@
 ## S9 — provider (Journal summary + DueProvider) + emit-only fan-out + PG-19 deletion (the ① closer)
 
 - **BR-PG-S9-1** — **Purposes registers as a PROVIDER (PG-14), naming no consumer.** `registerPurposesJournal(registry,
-  svc)` registers a `summary(date)` `JournalContribution` (`sectionKey:'summary'`); `registerPurposesDueProvider(sessions,
-  svc)` registers a `DueProvider` into the sessions SS-7 lane. Both registry handles are PARAMS to the standalone
+svc)` registers a `summary(date)` `JournalContribution` (`sectionKey:'summary'`); `registerPurposesDueProvider(sessions,
+svc)` registers a `DueProvider` into the sessions SS-7 lane. Both registry handles are PARAMS to the standalone
   helpers (`journal.ts`), NOT service deps — the projects precedent; avoids an unused `journal` dep (the S8 registry-drop
   parallel). The summary is PULL (the Journals registry calls it at render, ADR-004 §3.2.5), never a rail push.
 - **BR-PG-S9-2** — **`getDayPurposesDigest(date) = {activePurposes, reviewsDue}` is COUNTS only.** `activePurposes` =

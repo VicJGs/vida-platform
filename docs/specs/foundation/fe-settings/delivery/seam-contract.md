@@ -14,7 +14,8 @@ preferences DB op from apps/web is blocked today** by the `values` worker seam �
 UI-3/first-consumer" home (fe-codec-seams db/CLAUDE.md) that **fe-notes also deferred** (shipped `useNotesRows` stubbed
 `[FACT: apps/web/src/notes/use-notes-rows.ts]`).
 
-**Resolution (the established fe-* deferred-data pattern — NOT a new decision):**
+**Resolution (the established fe-\* deferred-data pattern — NOT a new decision):**
+
 - **EC-5 live-apply needs NO DB** — it flows through the Zustand theme store → `UIProvider selection` (AR-4). S2/S3
   apply theme/mode/density/motion live **in-session**, for real.
 - **Hydrate-on-boot + persistence = deferred seams** — `usePreferences` (read) + `useUpdatePreferences`/
@@ -43,19 +44,19 @@ Malformed JSON falls back to default, never crashes `[FACT: business-rules.md:26
 
 ## B. Control → preference field mapping (the build-phase storage resolution, R-2)
 
-| Control | Field | Write call |
-|---|---|---|
-| Theme preset | `theme` is scheme only — **preset/density are app-store state** persisted alongside; preset has no dedicated column → carried in `dashboard_layout.theme` sub-key (open JSON) + the live store | `updatePreferences({ dashboard_layout })` + store |
-| Mode (light/dark/system) | `user_preferences.theme` enum `[FACT: preferences.ts:45]` | `updatePreferences({ theme })` + store |
-| Density (comfortable/compact) | `user_preferences.compact_mode` bool `[FACT: :47]` | `updatePreferences({ compact_mode })` + store |
-| Reduce motion | `nav_preferences.reduce_motion` bool `[FACT: :100]` | `updateNavPreferences({ reduce_motion })` |
-| Home arrangement | `dashboard_layout.arrangement` (`'journalFirst'｜'dashboardFirst'`) — `contract.md:39` homes Dashboard/Home → `dashboard_layout` | `updatePreferences({ dashboard_layout })` |
-| Module show/hide | `module_visibility` map `[FACT: validators/user.ts:48]` | `setModuleVisibility(key, visible)` |
-| Module rename | `dashboard_layout.moduleNames` (`Record<moduleKey,string>`) — open JSON (module_visibility is bool-only) | `updatePreferences({ dashboard_layout })` |
-| Feature Atlas on/off | `module_visibility['features']` (surface show/hide) | `setModuleVisibility('features', on)` |
-| Sync-log visibility | `module_visibility['sync']` | `setModuleVisibility('sync', on)` |
-| Locale (date/time/week) | `date_format` · `time_format` · `week_starts_on` (existing) | `updatePreferences({…})` |
-| Notifications | `notification_in_app/push/email` · `quiet_hours_*` (existing) | `updatePreferences({…})` |
+| Control                       | Field                                                                                                                                                                                          | Write call                                        |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------- |
+| Theme preset                  | `theme` is scheme only — **preset/density are app-store state** persisted alongside; preset has no dedicated column → carried in `dashboard_layout.theme` sub-key (open JSON) + the live store | `updatePreferences({ dashboard_layout })` + store |
+| Mode (light/dark/system)      | `user_preferences.theme` enum `[FACT: preferences.ts:45]`                                                                                                                                      | `updatePreferences({ theme })` + store            |
+| Density (comfortable/compact) | `user_preferences.compact_mode` bool `[FACT: :47]`                                                                                                                                             | `updatePreferences({ compact_mode })` + store     |
+| Reduce motion                 | `nav_preferences.reduce_motion` bool `[FACT: :100]`                                                                                                                                            | `updateNavPreferences({ reduce_motion })`         |
+| Home arrangement              | `dashboard_layout.arrangement` (`'journalFirst'｜'dashboardFirst'`) — `contract.md:39` homes Dashboard/Home → `dashboard_layout`                                                               | `updatePreferences({ dashboard_layout })`         |
+| Module show/hide              | `module_visibility` map `[FACT: validators/user.ts:48]`                                                                                                                                        | `setModuleVisibility(key, visible)`               |
+| Module rename                 | `dashboard_layout.moduleNames` (`Record<moduleKey,string>`) — open JSON (module_visibility is bool-only)                                                                                       | `updatePreferences({ dashboard_layout })`         |
+| Feature Atlas on/off          | `module_visibility['features']` (surface show/hide)                                                                                                                                            | `setModuleVisibility('features', on)`             |
+| Sync-log visibility           | `module_visibility['sync']`                                                                                                                                                                    | `setModuleVisibility('sync', on)`                 |
+| Locale (date/time/week)       | `date_format` · `time_format` · `week_starts_on` (existing)                                                                                                                                    | `updatePreferences({…})`                          |
+| Notifications                 | `notification_in_app/push/email` · `quiet_hours_*` (existing)                                                                                                                                  | `updatePreferences({…})`                          |
 
 > **⚠ HARD INVARIANT (gate-1 #2) — `dashboard_layout` writes are read-modify-write.** `updatePreferences` does a
 > WHOLE-COLUMN replace (`JSON.stringify` of whatever object you pass, `[FACT: service.ts:159-161]`), so a naive
@@ -72,14 +73,15 @@ Malformed JSON falls back to default, never crashes `[FACT: business-rules.md:26
 ```ts
 // a Zustand store the APP owns (AR-4: @vida/ui holds NO theme state)
 interface ThemeStore {
-  selection: ThemeSelection                 // { preset, mode, density } — feeds <UIProvider selection>
-  setPreset(p: ThemePreset): void           // each setter: optimistic store update + persist (B) + revert on error
+  selection: ThemeSelection // { preset, mode, density } — feeds <UIProvider selection>
+  setPreset(p: ThemePreset): void // each setter: optimistic store update + persist (B) + revert on error
   setMode(m: ThemeMode): void
   setDensity(d: ThemeDensity): void
-  hydrate(p: MergedPreferences): void        // cold-boot: map prefs → selection (fallback THEME_DEFAULT)
+  hydrate(p: MergedPreferences): void // cold-boot: map prefs → selection (fallback THEME_DEFAULT)
 }
 // App.tsx: <UIProvider selection={useThemeStore(s => s.selection)}>  // replaces selection={THEME_DEFAULT}
 ```
+
 `ThemeSelection`/`ThemePreset`/`ThemeMode`/`ThemeDensity`/`THEME_DEFAULT` imported from `@vida/ui`
 `[FACT: packages/ui/src/theme-resolution.ts:25]`.
 
@@ -93,18 +95,21 @@ nothing — EC-4 "wired" would overstate. (A ~2-line touch in `home/home-surface
 ## D. `Switch` primitive contract (S1 — net-new `@vida/ui`, EC-3)
 
 ```ts
-export interface SwitchProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'|'onChange'|'checked'|'defaultChecked'|'type'> {
+export interface SwitchProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'onChange' | 'checked' | 'defaultChecked' | 'type'
+> {
   checked?: boolean
   defaultChecked?: boolean
-  onCheckedChange?: (checked: boolean) => void   // mirrors CheckboxProps
+  onCheckedChange?: (checked: boolean) => void // mirrors CheckboxProps
   disabled?: boolean
-  size?: SwitchSize                               // 'md' default
-  label?: ReactNode                               // associates natively; when omitted an aria-label is REQUIRED
+  size?: SwitchSize // 'md' default
+  label?: ReactNode // associates natively; when omitted an aria-label is REQUIRED
   name?: string
   value?: string
 }
 ```
+
 - **APG `role="switch"`** (`aria-checked`), native `<input type="checkbox" role="switch">` wrapper (the Checkbox
   recipe `[FACT: packages/ui/src/components/checkbox.tsx:99]`) → keyboard/focus/label for free.
 - Pill track + knob; **state machine off `:checked`/`:focus-visible`** via `internal/switch-styles.ts` (the

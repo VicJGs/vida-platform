@@ -4,6 +4,7 @@
 > before any code. **Single-plane (backend).** Ratify = no slice (already built + gated); one EXTEND slice.
 
 ## Ratified (no slice — built + AR-6-gated, currency-marked at close)
+
 21 legs: XCU-01–04, 06 (seam), 07–20, 22, SP-34 (seams). See `reconciliation.md` §A/§D.
 
 ## Slice S1 — `ViewsService.cloneView` (BACKEND · extend · the only owed code)
@@ -11,9 +12,11 @@
 **Leg:** XCU-05. **Plane:** backend → **Verification Gate** (functional + live-store smoke).
 
 **Contract (doc-grounded — no invented params):**
+
 ```
 cloneView(sourceId: string, targetSpaceId?: string | null): Promise<ViewRow>
 ```
+
 - `targetSpaceId` is the ONLY documented variation on clone — the global↔Space redirect (ADR-007:50-51,
   intake spaces.md:72). Omitted → copy `source.space_id` (plain independent copy). **No `name` override** —
   rename-on-clone is nowhere in the docs (ADR-007 / intake say only "independent copy" + global↔Space); dropped.
@@ -37,6 +40,7 @@ cloneView(sourceId: string, targetSpaceId?: string | null): Promise<ViewRow>
 parse→stringify round-trip that could reject malformed-but-stored JSON. Resolve in the slice's §5 spec.
 
 **Acceptance / Verification Gate:**
+
 1. clone of a global view (source `space_id=null`) with `targetSpaceId` → new row, `space_id` set, same name/layout/filter/grouping/sort, **new id**.
 2. clone with no `targetSpaceId` → independent copy, same `space_id`+`name`, new id; mutating the clone does not touch the source (independence).
 3. clone of an absent id → `ViewNotFound`.
@@ -45,7 +49,9 @@ parse→stringify round-trip that could reject malformed-but-stored JSON. Resolv
 6. typecheck 0 · lint 0 · `@vida/core` suite green (+ new cases).
 
 ## Gate plan (Step 6)
+
 S1 runs the §XXVI per-step gate: `/document-context` (spaces, baseline done) → slice §5 spec via `/documentation-component` → `/critique` (Approval 1) → `/preflight` → `/critique` (Approval 2) → implement → **Verification Gate** (live-store smoke). Then Step 7 `/critique` SHIP → Step 8 Currency (§XXIX) refresh `docs/core/spaces/current-*` with the cloneView delta.
 
 ## Re-scope Gate — APPROVAL REQUESTED
+
 One backend slice (S1 `cloneView`). 21 legs ratify with no code. Approve to proceed to S1's spec + build.

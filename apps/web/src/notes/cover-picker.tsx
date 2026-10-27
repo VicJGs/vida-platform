@@ -96,7 +96,12 @@ export function CoverPickerDialog({ open, onOpenChange, pageId, current, onChoos
                 <Text flex={1} fontSize="$small" color="$colorTextPrimary">
                   {a.filename}
                 </Text>
-                <Button size="sm" intent="ghost" aria-label={`Use as cover: ${a.filename}`} onPress={() => choose(`attachment:${a.id}`)}>
+                <Button
+                  size="sm"
+                  intent="ghost"
+                  aria-label={`Use as cover: ${a.filename}`}
+                  onPress={() => choose(`attachment:${a.id}`)}
+                >
                   Use as cover
                 </Button>
               </View>

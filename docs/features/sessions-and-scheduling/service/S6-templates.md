@@ -9,6 +9,7 @@ runtime does NOT bind a template to a timer (no `template_id` column) — buildi
 `resolveFocusConfig` to drop its dead `templateId` branch (§XXVIII).
 
 ## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+
 - `createTemplate(input): SessionTemplate` — create a focus preset (`name` required).
 - `updateTemplate(id, patch): SessionTemplate` — patch preset fields.
 - `deleteTemplate(id): void` — **hard delete** (no `deleted_at`; syncs `operation:'delete'`).
@@ -16,6 +17,7 @@ runtime does NOT bind a template to a timer (no `template_id` column) — buildi
 - `setDefaultTemplate(id): void` — mark `id` default, unset every other (single-winner, PD-3 / contract.md:40).
 
 ## §2 Operation-flow & invariants
+
 - **Repo (nuance-1):** `session_templates` → `{deviceId, encryptedFields:[], softDelete:false}` — **no
   `deleted_at`** (bare `...baseColumns`); `deleteTemplate` = hard delete. `name`/`description` `[E]` pass through
   the M1.0 seam (nuance-3). `[FACT: scheduling.ts:91; migration 014:176-202]`
@@ -30,10 +32,12 @@ runtime does NOT bind a template to a timer (no `template_id` column) — buildi
 - **Reads** decrypt-on-read; every mutation enqueues `sync_queue`.
 
 ## §3 Contract (delta)
+
 Adds the 5 methods to `SessionsService`. `TemplateInput` (name + optional preset fields), `TemplatePatch`,
 `SessionTemplate` = the row type. Reuses `InvalidSessionInput`. No new factory deps or typed errors.
 
 ## §4 Acceptance criteria (Verification Gate — live unlocked vault)
+
 1. `createTemplate({name:'Deep Work', work_minutes:50})` writes a row (other fields = DDL defaults);
    `listTemplates` returns it; `sync_queue` enqueued.
 2. `updateTemplate` patches a field; `deleteTemplate` hard-deletes (gone from `listTemplates`; `sync_queue`
@@ -41,7 +45,7 @@ Adds the 5 methods to `SessionsService`. `TemplateInput` (name + optional preset
 3. Typed validation, no write: `name:''` → `InvalidSessionInput('name')`; `work_minutes:0` →
    `InvalidSessionInput('work_minutes')`.
 4. **Single-winner:** `createTemplate({name:'A', is_default:true})` then `createTemplate({name:'B',
-   is_default:true})` → only B is default (`listTemplates` shows exactly one `is_default:true`);
+is_default:true})` → only B is default (`listTemplates` shows exactly one `is_default:true`);
    `setDefaultTemplate(A.id)` → only A default.
 5. A created preset round-trips **all** the fields the ② UI applies (`work_minutes`, break minutes,
    `intervals_before_long_break`, `focus_technique`) — the returned row equals the DB row. (The backend does
@@ -49,6 +53,7 @@ Adds the 5 methods to `SessionsService`. `TemplateInput` (name + optional preset
 6. `tsc` clean; full `@vida/core` suite green.
 
 ## §5 Implementation prompt (order)
+
 1. `types.ts` — `TemplateInput`, `TemplatePatch`, `SessionTemplate` (= `SessionTemplateRow`).
 2. `validators/session.ts` — `TemplateSchema` + `TemplatePatchSchema` (name non-empty; minutes/intervals ≥ 1).
 3. `service.ts` — `templateRepo` (already added in S3 for `resolveFocusConfig` — reuse it) + a hoisted
@@ -56,6 +61,7 @@ Adds the 5 methods to `SessionsService`. `TemplateInput` (name + optional preset
 4. `__tests__` — AC1–AC5 on a live vault.
 
 ## §6 Out of scope (homed)
+
 `usage_count`/`last_used_at` **bump-on-use** → the UI/consumption side (`fe-sessions` selects a template) or a
 later wire — S6 exposes the fields via CRUD but does not auto-increment on `startFocus` (S3 reads config, does
 not mutate the template) · `name`/`description` encryption activation → M3/DB-5 · template picker UI → `fe-sessions`.

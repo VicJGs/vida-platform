@@ -31,38 +31,116 @@ const ROWS: Row[] = [
 ]
 const STATUS_LABEL: Record<Row['status'], string> = { todo: 'To Do', doing: 'In Progress', done: 'Done' }
 const card = (r: Row) => (
-  <Card interactive><Text color="$colorTextPrimary" fontSize="$small">{r.title}</Text></Card>
+  <Card interactive>
+    <Text color="$colorTextPrimary" fontSize="$small">
+      {r.title}
+    </Text>
+  </Card>
 )
 const COLUMNS: Column<Row>[] = [
-  { key: 'title', header: 'Title', render: (r) => <Text color="$colorTextPrimary" fontSize="$small">{r.title}</Text>, sort: 'asc' },
-  { key: 'status', header: 'Status', render: (r) => <Text color="$colorTextMuted" fontSize="$small">{STATUS_LABEL[r.status]}</Text>, width: 120 },
-  { key: 'owner', header: 'Owner', render: (r) => <Text color="$colorTextMuted" fontSize="$small">{r.owner}</Text>, width: 100 },
-  { key: 'due', header: 'Due', render: (r) => <Text color="$colorTextMuted" fontSize="$small">{r.due}</Text>, width: 120 },
+  {
+    key: 'title',
+    header: 'Title',
+    render: (r) => (
+      <Text color="$colorTextPrimary" fontSize="$small">
+        {r.title}
+      </Text>
+    ),
+    sort: 'asc',
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    render: (r) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {STATUS_LABEL[r.status]}
+      </Text>
+    ),
+    width: 120,
+  },
+  {
+    key: 'owner',
+    header: 'Owner',
+    render: (r) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {r.owner}
+      </Text>
+    ),
+    width: 100,
+  },
+  {
+    key: 'due',
+    header: 'Due',
+    render: (r) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {r.due}
+      </Text>
+    ),
+    width: 120,
+  },
 ]
 const GROUPS: BoardGroup<Row>[] = (['todo', 'doing', 'done'] as const).map((s) => ({
-  id: s, title: STATUS_LABEL[s], items: ROWS.filter((r) => r.status === s),
+  id: s,
+  title: STATUS_LABEL[s],
+  items: ROWS.filter((r) => r.status === s),
 }))
 const NODES: GraphNode[] = ROWS.map((r) => ({ id: r.id, label: r.title }))
-const EDGES: GraphEdge[] = [{ source: '1', target: '4' }, { source: '2', target: '3' }, { source: '4', target: '5' }]
+const EDGES: GraphEdge[] = [
+  { source: '1', target: '4' },
+  { source: '2', target: '3' },
+  { source: '4', target: '5' },
+]
 
 // the consumer's renderView — dispatches the active layout to its real renderer with its real props + the threaded state.
 function renderView(layout: ViewLayout, state: ViewState) {
   const common = { state, getKey: (r: Row) => r.id, 'aria-label': 'Tasks' as const }
   switch (layout) {
-    case 'list': return <ListView<Row> items={ROWS} renderItem={card} {...common} />
-    case 'table': return <TableView<Row> items={ROWS} columns={COLUMNS} {...common} />
-    case 'board': return <BoardView<Row> groups={GROUPS} renderCard={card} getKey={(r) => r.id} state={state} aria-label="Tasks" />
-    case 'gallery': return <GalleryView<Row> items={ROWS} renderItem={card} {...common} />
-    case 'calendar': return <CalendarView<Row> items={ROWS} getDate={(r) => r.due} renderItem={(r) => <Text fontSize="$small" color="$colorTextPrimary">{r.title}</Text>} month={new Date('2026-10-01')} today={new Date('2026-10-04')} getKey={(r) => r.id} state={state === 'empty' ? 'success' : state} aria-label="Tasks" />
-    case 'timeline': return <Timeline<Row> items={ROWS} renderItem={card} getLabel={(r) => r.due} {...common} />
-    case 'graph': return <NeuralGraph nodes={NODES} edges={EDGES} state={state} aria-label="Tasks" />
+    case 'list':
+      return <ListView<Row> items={ROWS} renderItem={card} {...common} />
+    case 'table':
+      return <TableView<Row> items={ROWS} columns={COLUMNS} {...common} />
+    case 'board':
+      return <BoardView<Row> groups={GROUPS} renderCard={card} getKey={(r) => r.id} state={state} aria-label="Tasks" />
+    case 'gallery':
+      return <GalleryView<Row> items={ROWS} renderItem={card} {...common} />
+    case 'calendar':
+      return (
+        <CalendarView<Row>
+          items={ROWS}
+          getDate={(r) => r.due}
+          renderItem={(r) => (
+            <Text fontSize="$small" color="$colorTextPrimary">
+              {r.title}
+            </Text>
+          )}
+          month={new Date('2026-10-01')}
+          today={new Date('2026-10-04')}
+          getKey={(r) => r.id}
+          state={state === 'empty' ? 'success' : state}
+          aria-label="Tasks"
+        />
+      )
+    case 'timeline':
+      return <Timeline<Row> items={ROWS} renderItem={card} getLabel={(r) => r.due} {...common} />
+    case 'graph':
+      return <NeuralGraph nodes={NODES} edges={EDGES} state={state} aria-label="Tasks" />
   }
 }
 
 const ALL: ViewLayout[] = ['list', 'table', 'board', 'gallery', 'calendar', 'graph', 'timeline']
 
 // CollectionView is CONTROLLED (layout is a prop) → a tiny stateful wrapper for the interactive stories.
-function Controlled({ state, count, width, chrome }: { state: ViewState; count?: number; width?: number; chrome?: boolean }) {
+function Controlled({
+  state,
+  count,
+  width,
+  chrome,
+}: {
+  state: ViewState
+  count?: number
+  width?: number
+  chrome?: boolean
+}) {
   const [layout, setLayout] = useState<ViewLayout>('list')
   const [filterActive, setFilterActive] = useState(false)
   const chromeProps = chrome
@@ -104,7 +182,10 @@ export const Playground: Story = { args: { state: 'success' }, render: (a) => <C
 // Narrow surface — a 375px CONTAINER (the renderer-scroll surface). NB: the switcher condense is VIEWPORT-driven
 // (window.matchMedia <768, useTabletUp) — proving it requires an actual browser resize to <768 (the Visual Gate does
 // this via a 375 viewport), not just this container width. At a real 375 viewport the switcher becomes "View: {label}".
-export const Narrow375: Story = { args: { state: 'success' }, render: (a) => <Controlled state={a.state} width={375} chrome /> }
+export const Narrow375: Story = {
+  args: { state: 'success' },
+  render: (a) => <Controlled state={a.state} width={375} chrome />,
+}
 
 // State coverage — the chrome (title · count · Filter/Sort/+ · switcher) persists + stays ACTIVE in every state (EC-2);
 // empty = teaching-invitation.
@@ -113,7 +194,9 @@ export const StateCoverage: Story = {
     <View gap="$24">
       {(['success', 'loading', 'error', 'empty'] as const).map((s) => (
         <View key={s} gap="$4">
-          <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">state = {s}</Text>
+          <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">
+            state = {s}
+          </Text>
           <Controlled state={s} count={s === 'success' ? ROWS.length : 0} width={720} chrome />
         </View>
       ))}

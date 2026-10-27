@@ -1,6 +1,6 @@
 <!-- Business Rules — features/learning/education · /documentation Phase 2 · sources: ADR-002 §5.10/§5.18 · learning.ts · CLAUDE.md §7 · intake -->
 
-# Business Rules — Learning: Education  (level: Feature / Learning sub-context)
+# Business Rules — Learning: Education (level: Feature / Learning sub-context)
 
 > Inherits the CORE constitution `[[../../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, + the extension-model
 > principle. Every rule below complies.
@@ -15,7 +15,7 @@
   **self_taught** row (separate tables). Below that, formal and self-taught are structurally identical.
   `[INTENT H2, reframe]`
 - **ED-3 — Subjects are always routed (⚠ INTENDED).** A Subject belongs up the chain (curriculum → term →
-  degree tier) — never an orphaned flat list. Intermediate levels may be *skipped* (A1) but a subject's parent
+  degree tier) — never an orphaned flat list. Intermediate levels may be _skipped_ (A1) but a subject's parent
   chain is always resolvable. `[INTENT H2 addendum, A1]`
 - **ED-4 — A class is a session of a Subject (⚠ INTENDED).** `class_sessions` are the individual meetings; the
   weekly schedule renders from sessions; assessments/grades/documents/homework/notes attach to the **Subject**,
@@ -66,6 +66,7 @@
   retiring the inline `courses.tags` (As-is floor). `[FACT: LF-2/ADR-003; INTENT H11; ADR-006 SP1]`
 
 ## Validation & edge cases
+
 - Enum CHECKs (current): `course_type`{online,in_person,hybrid,self_paced}, `status`{not_started,in_progress,
   completed,dropped}, `rating` 1-5. `[FACT: §5.10]` ⚠ `course_type` is superseded by the mode living at the
   Institution/Self-taught level — reconcile at build (candidate: keep as a subject-level modality).
@@ -76,24 +77,27 @@
 - Deleting a curriculum does not delete the base template it forked from (lineage is a pointer). `[INTERP ED-11]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Programs Dashboard | skeleton | "no programs — start one" + CTA | typed read error, retry | programs + measured progress (acing/lacking) |
-| Education Hub (any tab) | skeleton | tab-specific empty + CTA | typed error, retry | entities in chosen view/grouping |
-| Curriculum builder | loading base | blank canvas or template gallery | save/fork error → typed, draft kept | shaped curriculum (+lineage if forked) |
-| Weekly schedule / My-Week (⚠ immature) | building from schedules | "no sessions this week" | partial subject read → flag | sessions across subjects |
-| ICS sync | fetching (device) | "no events in feed" | fetch/parse error → `last_error`, retry | events deduped + matched per subject |
-| Grading system builder | loading | "no system — create or inherit" | validation (weights) inline | system saved; grades recompute |
-| Assessment entry / type pages | loading | "none scheduled" | validation error inline | assessment saved; grade feeds system |
-| Subject page | skeleton | sparse-data placeholders (ED-14) | typed error, retry | schedule + vault + assessments + homework |
-| Vault (docs+notes) | loading | "vault empty" | decrypt/R2 error → typed | encrypted docs + notes in one place |
+
+| Capability                             | loading                 | empty                            | error                                   | success                                      |
+| -------------------------------------- | ----------------------- | -------------------------------- | --------------------------------------- | -------------------------------------------- |
+| Programs Dashboard                     | skeleton                | "no programs — start one" + CTA  | typed read error, retry                 | programs + measured progress (acing/lacking) |
+| Education Hub (any tab)                | skeleton                | tab-specific empty + CTA         | typed error, retry                      | entities in chosen view/grouping             |
+| Curriculum builder                     | loading base            | blank canvas or template gallery | save/fork error → typed, draft kept     | shaped curriculum (+lineage if forked)       |
+| Weekly schedule / My-Week (⚠ immature) | building from schedules | "no sessions this week"          | partial subject read → flag             | sessions across subjects                     |
+| ICS sync                               | fetching (device)       | "no events in feed"              | fetch/parse error → `last_error`, retry | events deduped + matched per subject         |
+| Grading system builder                 | loading                 | "no system — create or inherit"  | validation (weights) inline             | system saved; grades recompute               |
+| Assessment entry / type pages          | loading                 | "none scheduled"                 | validation error inline                 | assessment saved; grade feeds system         |
+| Subject page                           | skeleton                | sparse-data placeholders (ED-14) | typed error, retry                      | schedule + vault + assessments + homework    |
+| Vault (docs+notes)                     | loading                 | "vault empty"                    | decrypt/R2 error → typed                | encrypted docs + notes in one place          |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A failed grade/progress computation shows a flagged partial, never a wrong number as truth. `[INTENT ED-7/ED-10]`
 - ICS failures land in `last_error` and surface on the feed config — never silent stale schedules. `[FACT: L3590]`
 - Any ingestion path requiring server plaintext is refused absent explicit opt-in (extension model). `[FACT: ZK-1]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 **The FACT base is 3 tables + types; nearly the entire hierarchy is INTENDED** (the largest ADR-002 amendment
 yet): `institutions` · `self_taught` · `programs` · `curricula`(+lineage) · `terms`(hierarchical) ·
 `class_sessions` · `subject_schedules` · `grading_systems` · assessments · education-task entity (Tasks) ·
@@ -107,4 +111,5 @@ reframes]; decompose ED-10's measurement enum→`measurement_kind`×`binding_mod
 (schema), ED-16. `[FACT: ADR-002 §5.10/§5.18; INTENT: intake; ADR-006/011/014/015]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

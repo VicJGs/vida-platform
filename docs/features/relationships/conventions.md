@@ -1,8 +1,9 @@
 <!-- Conventions — features/relationships · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · v1 relationships · intake -->
 
-# Conventions — Relationships (CRM)  (level: Feature)
+# Conventions — Relationships (CRM) (level: Feature)
 
 ## How to build here
+
 - **PII is always encrypted.** Every identifying field is `[E]`; never log, index, or sync contact PII in
   plaintext (RL-1, ZK-1). `[FACT: ADR-002 §5.9 [E]; ZK-1]`
 - **Contact stats are derived, never stored truth.** Recompute `last_interaction_date`/`interaction_count` from
@@ -17,7 +18,7 @@
   it, **spawn a Task** (via `contact_id`) — don't make the event a task (RL-8/RL-9). `[INTENT G1,G12]`
 - **Reminders are notification producers (N1).** The three mechanisms (RL-6) each produce a notification riding ADR-013's three-tier delivery (`local-scheduled` from the `dueIn` seam); the Reminders page creates, due reminders/events
   render on the global Calendar (parked) + Journal /summary. Notifications is the dispatcher — don't build a bespoke reminder-firing path. `[INTENT G1; ADR-013 N1]`
-- **Group reminders never auto-send; the push carries no PII (N2).** `message_template` nudges the *user*; a group may be birthday-anchored for
+- **Group reminders never auto-send; the push carries no PII (N2).** `message_template` nudges the _user_; a group may be birthday-anchored for
   important people (RL-7). The off-device wake payload is **content-free** (N2) — the device composes the nudge locally after decrypt. `[INTENT G11; ADR-013 N2]`
 - **Import is device-mediated (X1) + reconciled (X8).** Phone-contact import runs on the device (parse/normalize/encrypt on-device); PII never hits the server in plaintext, a server-plaintext path is **refused, not downgraded** (X1); the merge uses `import_staging` — match-against-existing, per-row status, commit on confirm (X8, RL-11). `[INTENT G7; ADR-014 X1/X8]`
 - **Notes via `pages`.** Contact + network descriptions are linked `pages` rows (`entity_type` ∈ contact,
@@ -26,6 +27,7 @@
   don't reintroduce an inline per-contact list (RL-10). `[INTENT G10; ADR-006 SP1/SP3]`
 
 ## Naming & layout
+
 - Enum values are canonical (string-literal unions in `@vida/types`, SQL CHECK + Zod in `@vida/core`, never TS
   `enum`): `relationship_type`(9), `interaction_type`(8), `sentiment`(positive/neutral/negative),
   `event_type`(birthday/anniversary/holiday/custom), `frequency`(6). `[FACT: relationship.ts L13-36; ADR-002 §5.9]`
@@ -35,6 +37,7 @@
   may be `MM-DD`), soft delete, `_sync_*`. `[FACT: CLAUDE.md Conventions; docs/core/conventions.md]`
 
 ## Local landmines / "never do"
+
 - **Never** store or sync contact PII unencrypted (RL-1). `[FACT: ZK-1]`
 - **Never** hand-edit contact stats or health — they derive from the ledger (RL-3/RL-5). `[INTENT G4,G5]`
 - **Never** draw contact↔contact edges in the graph — membership only (RL-4). `[INTENT G3]`
@@ -46,4 +49,5 @@
 - **Never** reintroduce an inline per-contact tag list — use `entity_tags` (RL-10). `[INTENT G10; ADR-006 SP1]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

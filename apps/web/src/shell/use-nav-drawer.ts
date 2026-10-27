@@ -16,7 +16,10 @@ const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]), [tabi
  * @param open   the drawer open flag (`isMobileNavOpen`)
  * @param onClose called on Escape (app-shell closes the drawer)
  */
-export function useNavDrawer(open: boolean, onClose: () => void): {
+export function useNavDrawer(
+  open: boolean,
+  onClose: () => void,
+): {
   drawerRef: React.RefObject<HTMLElement | null>
 } {
   const drawerRef = useRef<HTMLElement | null>(null)

@@ -12,30 +12,34 @@
 > `lib/query-client.ts:15`.
 
 ## Files (build order)
-| # | File | Change |
-|---|---|---|
-| 1 | `packages/core/src/services/preferences/service.ts` + `__tests__/preferences-service.test.ts:128` | `feature_gamification: false` + the docblock (F11 divergence); the test expects `false` · `schema/preferences.ts:83` comment · rebuild `@vida/core` dist |
-| 2 | `apps/web/src/preferences/preferences-keys.ts` | keys + cache constants |
-| 3 | `apps/web/src/preferences/preferences-view.test.ts` → `preferences-view.ts` | the `PreferencesView` type; `toView`, `defaultView`, `toUserPatch`, `toNavPatch`, `applyUserPatch`, `applyNavPatch`; degrade + sentinel |
-| 4 | `apps/web/src/preferences/write-queue.test.ts` → `write-queue.ts` | `createWriteQueue<P>({ debounceMs, write })` |
-| 5 | `apps/web/src/test/preferences-test-utils.tsx` | `createPrefsWrapper()` providing the **singleton** `queryClient` · `fakePreferencesService()` (in-memory, `await`s between read and create) · `compositionRootMock(extra?)`. **Must not import `db/composition-root` or `preferences-writer`, even transitively.** Each test: `afterEach(() => { queryClient.clear(); resetPreferencesWriterForTests() })` |
-| 6 | `apps/web/src/preferences/preferences-writer.test.ts` → `preferences-writer.ts` | `createPreferencesWriter({ getService, queryClient, debounceMs })` + the `preferencesWriter` singleton; the exported API |
-| 7 | `apps/web/src/preferences/use-preferences.test.tsx` → `use-preferences.ts` | `usePreferences`, `useUpdatePreferences` |
-| 8 | `apps/web/src/preferences/preferences-bridge.test.tsx` → `preferences-bridge.tsx` | field-diff hydrate + the hide-flush registration |
-| 9 | `apps/web/src/db/composition-root.ts` (+ its test) | `Services.preferences` |
-| 10 | `apps/web/src/App.tsx` | hoist QCP; mount `<PreferencesBridge/>`; fix the `:21` comment |
-| 11 | `apps/web/src/settings/settings-surface.tsx`; delete `settings/use-preferences.ts` | import `usePreferences` from `../preferences/use-preferences` (`.state`) |
-| 12 | tests touched by the hoist/registration | `App.test.tsx` (add `compositionRootMock()`; its boot mock has no `getDbClient`) · `App.integration.test.tsx` (`compositionRootMock({ notes: { listPages } })`) · any `settings/*` test importing the old seam |
-| 13 | docs | per PLAN-R2 §4.9 + `apps/web/src/preferences/CLAUDE.md` |
+
+| #   | File                                                                                              | Change                                                                                                                                                                                                                                                                                                                                                     |
+| --- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `packages/core/src/services/preferences/service.ts` + `__tests__/preferences-service.test.ts:128` | `feature_gamification: false` + the docblock (F11 divergence); the test expects `false` · `schema/preferences.ts:83` comment · rebuild `@vida/core` dist                                                                                                                                                                                                   |
+| 2   | `apps/web/src/preferences/preferences-keys.ts`                                                    | keys + cache constants                                                                                                                                                                                                                                                                                                                                     |
+| 3   | `apps/web/src/preferences/preferences-view.test.ts` → `preferences-view.ts`                       | the `PreferencesView` type; `toView`, `defaultView`, `toUserPatch`, `toNavPatch`, `applyUserPatch`, `applyNavPatch`; degrade + sentinel                                                                                                                                                                                                                    |
+| 4   | `apps/web/src/preferences/write-queue.test.ts` → `write-queue.ts`                                 | `createWriteQueue<P>({ debounceMs, write })`                                                                                                                                                                                                                                                                                                               |
+| 5   | `apps/web/src/test/preferences-test-utils.tsx`                                                    | `createPrefsWrapper()` providing the **singleton** `queryClient` · `fakePreferencesService()` (in-memory, `await`s between read and create) · `compositionRootMock(extra?)`. **Must not import `db/composition-root` or `preferences-writer`, even transitively.** Each test: `afterEach(() => { queryClient.clear(); resetPreferencesWriterForTests() })` |
+| 6   | `apps/web/src/preferences/preferences-writer.test.ts` → `preferences-writer.ts`                   | `createPreferencesWriter({ getService, queryClient, debounceMs })` + the `preferencesWriter` singleton; the exported API                                                                                                                                                                                                                                   |
+| 7   | `apps/web/src/preferences/use-preferences.test.tsx` → `use-preferences.ts`                        | `usePreferences`, `useUpdatePreferences`                                                                                                                                                                                                                                                                                                                   |
+| 8   | `apps/web/src/preferences/preferences-bridge.test.tsx` → `preferences-bridge.tsx`                 | field-diff hydrate + the hide-flush registration                                                                                                                                                                                                                                                                                                           |
+| 9   | `apps/web/src/db/composition-root.ts` (+ its test)                                                | `Services.preferences`                                                                                                                                                                                                                                                                                                                                     |
+| 10  | `apps/web/src/App.tsx`                                                                            | hoist QCP; mount `<PreferencesBridge/>`; fix the `:21` comment                                                                                                                                                                                                                                                                                             |
+| 11  | `apps/web/src/settings/settings-surface.tsx`; delete `settings/use-preferences.ts`                | import `usePreferences` from `../preferences/use-preferences` (`.state`)                                                                                                                                                                                                                                                                                   |
+| 12  | tests touched by the hoist/registration                                                           | `App.test.tsx` (add `compositionRootMock()`; its boot mock has no `getDbClient`) · `App.integration.test.tsx` (`compositionRootMock({ notes: { listPages } })`) · any `settings/*` test importing the old seam                                                                                                                                             |
+| 13  | docs                                                                                              | per PLAN-R2 §4.9 + `apps/web/src/preferences/CLAUDE.md`                                                                                                                                                                                                                                                                                                    |
 
 ## Key algorithms
+
 **`createWriteQueue<P>({ debounceMs, write: (batch: P[]) => Promise<R> })`**
+
 - `enqueue(p) → Promise<R>`: push onto the current batch, (re)arm the debounce timer, and return the batch's shared promise.
 - When the timer fires (or on `flush()`), the batch is sealed and chained onto the serial tail. It runs `write(batch)`.
 - Every caller of a batch resolves or rejects together.
 - `isIdle()` = no open batch and nothing in flight.
 
 **`preferencesWriter`** (per table `t ∈ {user, nav}`):
+
 - State: `confirmed[t]: Merged | undefined` (seeded from the first successful query read via `noteConfirmed(t, value)`,
   called by the query's `queryFn`) · `pending[t]: Patch[]`.
 - `cacheValue(t) = pending[t].reduce(apply, confirmed[t] ?? DEFAULTS[t])`.
@@ -80,6 +84,7 @@
   - no import cycle (`settings-model` imports only `nav/module-map`, which imports nothing).
 
   Tests cover all three cases.
+
 - **BR-PREF-9:** `applyUserPatch`/`applyNavPatch` use object spread, so an explicit `false`/`0` patch value applies; the
   mapper reads with `??`, never `||`. A test asserts `compact_mode: false` and `week_starts_on: 0` survive.
 
@@ -90,6 +95,7 @@ loading if either loads) · `view = toView(user.data ?? DEFAULTS, nav.data ?? DE
 error/loading, for read-only display).
 
 **`useUpdatePreferences()`:** `update(viewPatch)`:
+
 1. split into user/nav patches via `toUserPatch`/`toNavPatch`;
 2. drop each part that is a no-op against `writer.current(t)` (echo);
 3. `saveState 'saving'`;
@@ -103,23 +109,24 @@ hydrated view (structural equality for the two maps) and call `usePreferencesSto
 
 **View → store map (11 fields):**
 
-| Store field | Source |
-|---|---|
-| `reduceMotion` | `nav.reduce_motion` |
-| `arrangement` | `dashboard_layout.arrangement` |
-| `moduleVisibility` | `module_visibility ?? {}` |
-| `moduleNames` | `dashboard_layout.moduleNames ?? {}` |
-| `dateFormat` | `date_format` (degraded) |
-| `timeFormat` | `time_format` |
-| `weekStartsOn` | `week_starts_on` (degraded to `0\|1`) |
+| Store field                               | Source                                     |
+| ----------------------------------------- | ------------------------------------------ |
+| `reduceMotion`                            | `nav.reduce_motion`                        |
+| `arrangement`                             | `dashboard_layout.arrangement`             |
+| `moduleVisibility`                        | `module_visibility ?? {}`                  |
+| `moduleNames`                             | `dashboard_layout.moduleNames ?? {}`       |
+| `dateFormat`                              | `date_format` (degraded)                   |
+| `timeFormat`                              | `time_format`                              |
+| `weekStartsOn`                            | `week_starts_on` (degraded to `0\|1`)      |
 | `notifInApp` / `notifPush` / `notifEmail` | `notification_in_app` / `_push` / `_email` |
-| `quietHours` | `quiet_hours_enabled` |
+| `quietHours`                              | `quiet_hours_enabled`                      |
 
 `dashboard_layout` writes merge per sub-key (and map-merge `moduleNames`); a writer call never replaces the whole object
 or deletes a sub-key, by design (documented in `preferences/CLAUDE.md`). A `useEffect` registers
 `visibilitychange` (when `document.visibilityState === 'hidden'`) + `pagehide` → `preferencesWriter.flushAll()`, with cleanup.
 
 ## Build steps
+
 1. Core default (row 1) → `pnpm --filter @vida/core exec vitest run src/services/preferences` → `pnpm --filter @vida/core build`.
 2. For rows 3, 4, 6, 7, 8: test red → implement → green, per file. Each test set covers PLAN-R2 §4.1–4.5 exactly.
 3. Rows 9–12: wiring, then the affected tests (row 12), then the full apps/web suite.
@@ -131,6 +138,7 @@ or deletes a sub-key, by design (documented in `preferences/CLAUDE.md`). A `useE
 
    Run the suites with **no dev servers running** (R1 lesson: load flakes). Re-run any red alone and on `main` before
    classifying it.
+
 5. Live smoke (PLAN-R2 §4.8): `vite --port 5176` (a fresh origin) on the worktree; console
    `await import('/src/preferences/preferences-writer.ts')`. Simulate hide with
    `Object.defineProperty(document,'visibilityState',{value:'hidden',configurable:true}); document.dispatchEvent(new Event('visibilitychange'))`.
@@ -144,6 +152,7 @@ or deletes a sub-key, by design (documented in `preferences/CLAUDE.md`). A `useE
    (on Victor's go).
 
 ## Added tests (from the step-5 critique)
+
 - **B2:** a pending patch + a concurrent query resolution → the patch stays visible.
 - **B1:** a write before any read → nothing stamped until the batch settles; on failure, `fresh` is adopted and the key
   invalidated.
@@ -151,6 +160,7 @@ or deletes a sub-key, by design (documented in `preferences/CLAUDE.md`). A `useE
 - An empty diff on a fresh vault → **no row created**.
 
 ## Gate record
+
 - **rev 1 → /preflight:** BR-PREF-6 gap + BR-PREF-9 → folded → PASSED.
 - **rev 2 → critique: REVISE** (4 blocking, 11 nits) → folded:
   - B1: no stamping before the first read; adopt `fresh`; invalidate on failure.
@@ -161,14 +171,16 @@ or deletes a sub-key, by design (documented in `preferences/CLAUDE.md`). A `useE
     validation · the view→store map · per-sub-key semantics · `setQueryDefaults` · live Settings/console checks.
 
 ## Risks / watch
+
 - `diffToPatch` must emit JSON columns whole (the service replaces columns).
 - `noteConfirmed` from `queryFn` must not overwrite a newer `confirmed` from a just-settled write. Guard it: accept a read
   only if no batch settled after the read started (a per-table epoch counter).
 - Fake timers + RTL `waitFor`: use `vi.useFakeTimers({ shouldAdvanceTime: true })` in the hook tests.
 
 ## Build record — refinements during implementation (§XXVIII: recorded, within the approved design)
+
 - **`createWriteQueue` gained `onSettled(outcome, { batch, idle })`**, called once per batch after it leaves the in-flight
-  count. The writer's cache sync must run once per batch, and an `isIdle()` check made *inside* `write()` would always see
+  count. The writer's cache sync must run once per batch, and an `isIdle()` check made _inside_ `write()` would always see
   its own batch in flight. Plus `dispose()` (tests/teardown) and a `try` around `onSettled`.
 - **The writer gained `withoutEcho(t, patch)`**, so the hook's echo check reuses the writer's one merge instead of
   duplicating it. It passes the patch through unchanged before the first read.

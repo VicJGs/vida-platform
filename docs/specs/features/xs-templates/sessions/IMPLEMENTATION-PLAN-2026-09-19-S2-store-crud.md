@@ -1,16 +1,17 @@
-# IMPLEMENTATION-PLAN — xs-templates S2  (§XXVI gate 2 = build-steps)
+# IMPLEMENTATION-PLAN — xs-templates S2 (§XXVI gate 2 = build-steps)
 
 Status: draft (gate 2). Executes SPEC `PLAN-2026-09-19-S2-store-crud.md` §1–§4. Every step cites a spec rule;
 nothing invented. Env: Node 24 via nvm. Branch `xs-templates`.
 
 ## Grounding notes folded from gate-2 prep
+
 - **`initVault()` IS required in the S2 test (corrected post-impl, §XXVIII).** The empty-`[E]` seam only skips FIELD
   encryption (`key()` isn't fetched); but `repo.create` still computes each row's `_sync_hash` via
   `vault.hashContent` → `assertReady()`, which throws "Vault not initialized" without `initVault()`. So the test
   MUST `await initVault()` in `beforeEach` (as `enforcer.test.ts`'s `harness()` does). `[FACT: repository.ts:169 computeSyncHash → vault.ts:256 hashContent → :31 assertReady; enforcer.test.ts harness]`
 - **`migrate` builds the `templates` table.** The runner applies `ALL_MIGRATIONS` incl. `011_templates` (registered) →
   the live test DB has the table. `[FACT: Step 0 substrate map; migrations/runner.ts ALL_MIGRATIONS]`
-- **`repo.create` mints id/_sync_*/timestamps** — pass only domain fields (name, bundle), like `createView`.
+- **`repo.create` mints id/_sync_\*/timestamps** — pass only domain fields (name, bundle), like `createView`.
   `[FACT: views service.ts:66-73]`
 
 ## Build steps (ordered)
@@ -41,7 +42,9 @@ nothing invented. Env: Node 24 via nvm. Branch `xs-templates`.
    Expect tsc 0 + **901 prior + new S2 tests** green. (No `@vida/types` rebuild — S2 adds no new `@vida/types` exports.)
 
 ## Deviation
+
 Any divergence → §XXVIII. Update this plan + task `## Build Steps` in lockstep.
 
 ## Done-check
+
 SPEC §4 all ticked → S2 done → S3 (capture + invariants).

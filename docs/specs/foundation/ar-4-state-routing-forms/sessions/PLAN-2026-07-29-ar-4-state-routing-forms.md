@@ -1,4 +1,5 @@
 # PLAN (gate 1 = the SPEC) — ar-4-state-routing-forms
+
 Session: 2026-07-29-ar-4-state-routing-forms · authored 2026-07-30 · Profile: Generic Coding Session
 Status: IMPLEMENTED (2026-07-30, branch `ar-4-state-routing-forms`) — typecheck 10/10, web 18/18, build green → post-impl gate
 Unit: AR-4 (LIF-75) · Milestone: M1.0 Boot & DB spine · Home: `apps/web/src/`
@@ -8,17 +9,20 @@ Ground truth: `docs/infrastructure/web-client-runtime/current-{spec,business-rul
 ---
 
 ## 1. Identity
+
 AR-4 stands up the `apps/web` client runtime per ADR-001 §12: the four shared planes — **Zustand** (UI state),
 **React Query v5** (async/local-SQLite state), **TanStack Router** (routing), **TanStack Form + Zod** (forms) —
 **plus the main↔worker DB binding that AR-2 explicitly handed to AR-4** (`worker.ts:9`; `db/CLAUDE.md`; AR-2
-PLAN:66) — as the *mechanism* every later feature route mounts onto. The React Query plane has no data source
+PLAN:66) — as the _mechanism_ every later feature route mounts onto. The React Query plane has no data source
 without the binding, so it is core to AR-4, not adjacent. `[FACT: delivery-plan §149; ADR-001:144-155; worker.ts:9]`
 
 **What it is NOT:** not any module's screens/hooks/stores/forms (those land per-module, M1.1+); not the app
 layout/IA (UX-3) or final shell (UI-4); not encryption/sync wiring; not mobile/desktop. `[INTERP: delivery-plan §5 decomposition]`
 
 ## 2. Business Rules (inherited from `current-business-rules.md` BR-RT-1…12)
+
 Governing invariants the build must satisfy — full text + cites in the durable doc; the load-bearing ones here:
+
 - **BR-RT-1** React Query owns all DB-derived data; Zustand only ephemeral UI state — no overlap. `[data-flow.md:383,463]`
 - **BR-RT-3** `queryFn` reads local SQLite via a core service, never HTTP; `refetchOnWindowFocus:false`. `[performance-strategy.md:295,301]`
 - **BR-RT-5** cache times by volatility (global `staleTime 30s/gcTime 5m/retry 1`). `[performance-strategy.md:238-301]`
@@ -27,13 +31,14 @@ Governing invariants the build must satisfy — full text + cites in the durable
 - **BR-RT-11** providers mount in `App.tsx` (`QueryClientProvider` ⊃ `RouterProvider`); `main.tsx` stays bare. `[platform-strategy.md:296]`
 
 ## 3. Decisions RESOLVED for Approval 1 (the 4 open items)
+
 Each is `[INTERP]` grounded in a `[FACT]`, offered for the gate — not silently baked.
 
 **D1 · CODE HOME — adopt the architecture-doc homes; the plan-table shorthand is reconciled to match.**
 `stores/` (Zustand) · `hooks/` (React Query) · `routes.tsx` (router tree) · `App.tsx` (providers). The QueryClient
 config + form factory (third-party wrappers) go in **`lib/`** — a documented convention, NOT an invention:
 engineering §XX File Organization lists `lib/ — utilities, helpers, third-party wrappers`. `[FACT: process.md §XX:66]`
-Reject the delivery-plan §149 `{stores,router,forms}` literal — it is a roadmap-table Home *cell*; the architecture
+Reject the delivery-plan §149 `{stores,router,forms}` literal — it is a roadmap-table Home _cell_; the architecture
 docs govern (`platform-strategy.md §9`, `performance-strategy.md §5-6`). [[read-architecture-before-implementing]]
 Follow-up (hygiene, non-blocking): update the §149 Home cell to match. `[FACT: delivery-plan §149 vs architecture §9]`
 
@@ -65,8 +70,9 @@ is Playwright-deferred (LIF-103). `[FACT: adapter.ts:210; core/index.ts:67; serv
 
 **D5 · MAIN↔WORKER DB BINDING — the documented AR-4 layer (NOT a scope choice; assigned by AR-2).**
 The DB engine + driver run inside `worker.ts`, exposing today only a minimal `open|exec|query|close` postMessage
-protocol (an AR-2 proof). `worker.ts:9` + `db/CLAUDE.md` + AR-2 PLAN:66 assign the *app-facing binding* to AR-4.
+protocol (an AR-2 proof). `worker.ts:9` + `db/CLAUDE.md` + AR-2 PLAN:66 assign the _app-facing binding_ to AR-4.
 AR-4 builds:
+
 - **a main-thread DB client** that spawns the worker, correlates `{id}` request/response, promisifies replies
   (rejecting on `{ok:false, error}`, worker.ts:81-87), and is shaped as an `SqliteDriver` **proxy** (interface at
   `adapter.ts:60`) so `getSchemaVersion` / `createDrizzleProxy` / (later) the repository work unchanged across the
@@ -88,6 +94,7 @@ AR-4 builds:
   `IF NOT EXISTS`). `[FACT: worker.ts:21-29; adapter.ts:249-251]`
 
 ## 4. Acceptance (Definition of Done — testable)
+
 - [ ] `pnpm --filter @vida/web build` + root `pnpm typecheck` green (strict, zero suppressions). `[§XV]`
 - [ ] Deps added + pinned (latest stable, React-19 compatible; zod reuses `^4.4.3`): `zustand`,
       `@tanstack/react-query`, `@tanstack/react-router`, `@tanstack/react-form`. Versions verified via context7. `[ADR-001 §22]`
@@ -117,7 +124,9 @@ AR-4 builds:
       runtime deps pre-code-split will exceed a naive build; measured when the shell lands. `[INTERP: performance-strategy.md:311]`
 
 ## 5. Implementation Prompt (ordered build sequence — feeds gate 2 / Build Steps)
+
 Ordered by dependency then risk (additive, each step leaves the build green):
+
 1. **Deps** — add + pin `zustand`, `@tanstack/react-query`, `@tanstack/react-router`, `@tanstack/react-form` to
    `apps/web/package.json` (versions via context7, latest stable / React-19 compatible; zod reuses `^4.4.3`);
    `pnpm install`. Satisfies §4 deps row. Risk R3: React-19 peer ranges — verify each at add-time.
@@ -152,9 +161,10 @@ Ordered by dependency then risk (additive, each step leaves the build green):
 13. **Verify + Currency** — `pnpm --filter @vida/web build` + root `pnpm typecheck` + tests green; grep-clean per §4;
     refresh `current-*` (incl. `web-client-runtime` + the `apps/web/src/db` layer doc's AR-4 line) to as-built (§XXIX).
     Flag the Vite 6→7 drift as a follow-up (do not bump in AR-4).
-Done-check = §4.
+    Done-check = §4.
 
 ## 6. Risks & Out-of-scope
+
 **Risks:** (R1) TanStack Router API drift vs training data → verify via context7 before step 4, treat as
 `[UNKNOWN]` until confirmed. (R2) TanStack Form + Zod adapter shape changed across versions → verify at step 7.
 (R3) React 19 peer-dep conflicts → verify at step 1. (R4) RESOLVED — the reference read is `getSchemaVersion`
@@ -172,9 +182,10 @@ StrictMode** — the worker is spawned once (module-scope or ref-guarded), not p
 mount (UI-3) · encryption/sync wiring · SSR/Server Components (this is a Vite SPA) · mobile/desktop runtimes.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | gate-1 PLAN authored; D1-D4 resolved for Approval 1 |
-| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | independent critique = REVISE → fixed all 3 MUST + 3 SHOULD + 2 NIT (test-env split, getSchemaVersion reference, ADR-020 mechanism, lib/ cite, StrictMode singletons, Vite-drift flag, bundle-budget deferral, tsconfig confirm) |
+
+| Date       | Session                             | Change                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | ----------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | gate-1 PLAN authored; D1-D4 resolved for Approval 1                                                                                                                                                                                                                                                                                                                                           |
+| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | independent critique = REVISE → fixed all 3 MUST + 3 SHOULD + 2 NIT (test-env split, getSchemaVersion reference, ADR-020 mechanism, lib/ cite, StrictMode singletons, Vite-drift flag, bundle-budget deferral, tsconfig confirm)                                                                                                                                                              |
 | 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | **preflight = BLOCKED → resolved**: added D5 (main↔worker DB binding) — the documented AR-4 layer (worker.ts:9) my PLAN omitted. Client proxy + protocol extension + first-run + app-boot; D4 reference query re-routed through it. Victor corrected the manufactured A/B scope fork — the binding is AR-4's by documentation, not a choice. Scope enlarged; needs 2nd critique + Approval 2. |
-| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | **2nd independent critique = SHIP** + fixes: MF-1 (0-byte app/* stubs → author placeholder before lazy()); SF-2 (worker open already migrates → no double-migrate at boot + injectable worker for mock test); SF-3 (alias exec→run, don't rename, per R7); NIT-4 (removed duplicate test-env step); NIT-5 (values/batch seam commented in WorkerRequest union). Gate 2 clear. |
+| 2026-07-30 | 2026-07-29-ar-4-state-routing-forms | **2nd independent critique = SHIP** + fixes: MF-1 (0-byte app/\* stubs → author placeholder before lazy()); SF-2 (worker open already migrates → no double-migrate at boot + injectable worker for mock test); SF-3 (alias exec→run, don't rename, per R7); NIT-4 (removed duplicate test-env step); NIT-5 (values/batch seam commented in WorkerRequest union). Gate 2 clear.                |

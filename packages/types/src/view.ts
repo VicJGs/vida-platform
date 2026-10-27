@@ -14,13 +14,5 @@
 /** The renderer a view selects — FIXED (ADR-007 §3.3, V3). `@vida/ui` view
  *  components (calendar/list/gallery/graph/timeline …) are the renderers a
  *  view *picks*; they are not the unit of "a view". */
-export const VIEW_LAYOUT = [
-  'list',
-  'table',
-  'board',
-  'gallery',
-  'calendar',
-  'graph',
-  'timeline',
-] as const
+export const VIEW_LAYOUT = ['list', 'table', 'board', 'gallery', 'calendar', 'graph', 'timeline'] as const
 export type ViewLayout = (typeof VIEW_LAYOUT)[number]

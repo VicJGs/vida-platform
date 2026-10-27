@@ -1,4 +1,5 @@
 # Backlink resolution — CURRENT BUSINESS RULES
+
 # Durable ground-truth (§XXIX). AR-8 increment #1 (2026-08-04).
 
 - **BL-1 Read-only.** The resolver never mutates `entity_links`. Link creation/removal is AR-6's

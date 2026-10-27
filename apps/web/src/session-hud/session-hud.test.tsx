@@ -1,13 +1,7 @@
 // @vitest-environment jsdom
 import { act, cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { type ReactNode } from 'react'
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from '@tanstack/react-router'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { UIProvider } from '@vida/ui'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { SessionHud } from './session-hud'
@@ -178,14 +172,18 @@ describe('SessionHud forms', () => {
 
 describe('SessionHud composition + a11y', () => {
   it('the pause control is a DOM SIBLING of the anchor, never nested (§E)', async () => {
-    const { container } = await renderHud(<SessionHud read={active(focusCountdown())} port={port()} __compact={false} />)
+    const { container } = await renderHud(
+      <SessionHud read={active(focusCountdown())} port={port()} __compact={false} />,
+    )
     const button = container.querySelector('button')!
     expect(button.closest('a')).toBeNull()
   })
 
   it('?sample deep-link preserves the sample param (seam §D, g1-B5)', async () => {
     window.history.pushState({}, '', '/?sample=focus')
-    const { container } = await renderHud(<SessionHud read={active(focusCountdown())} port={port()} __compact={false} />)
+    const { container } = await renderHud(
+      <SessionHud read={active(focusCountdown())} port={port()} __compact={false} />,
+    )
     expect(container.querySelector('a')!.getAttribute('href')).toContain('sample=focus')
   })
 

@@ -11,8 +11,9 @@ Owner unit: **`fix-data-plane-boot-open` (LIF-250)** (`.claude/tasks/fix-data-pl
 `data-plane-wiring` (#59, LIF-237, PR #148). Homed in M1.2.4 by the golive-replan placement rule (g3-order §1).
 
 ## Findings
-1. **Dev server — intermittent `open` timeout.** On a page load `/calendar` showed *"Failed to open the local database:
-   DB worker RPC 1 (open) timed out after 15000ms"* (the client's RPC budget `RPC_TIMEOUT_MS = 15_000`
+
+1. **Dev server — intermittent `open` timeout.** On a page load `/calendar` showed _"Failed to open the local database:
+   DB worker RPC 1 (open) timed out after 15000ms"_ (the client's RPC budget `RPC_TIMEOUT_MS = 15_000`
    [FACT: apps/web/src/db/client.ts:50,94-96]). It recurred on several loads (with and without a vite dependency
    re-optimize reload). The app's own **Retry** (boot clears its memo on failure [FACT: apps/web/src/db/boot.ts:33-42])
    opened the DB every time with the seeded data intact. Worker script 200, no `pageerror`, no worker console output.
@@ -27,6 +28,7 @@ Owner unit: **`fix-data-plane-boot-open` (LIF-250)** (`.claude/tasks/fix-data-pl
    Dev React is several × slower than prod, so the number is not a verdict; it must be re-measured on a booting prod build.
 
 ## Facets
+
 - **Hypotheses (UNKNOWN until reproduced — label, don't assume):** (a) the previous document's worker still holds the
   exclusive `AccessHandlePoolVFS` OPFS sync-access handles when the next page's worker opens (fits the dev intermittency +
   Retry recovering); (b) the production worker's wasm locate/instantiate path differs from dev (`import.meta.url`
@@ -40,10 +42,12 @@ Owner unit: **`fix-data-plane-boot-open` (LIF-250)** (`.claude/tasks/fix-data-pl
 - **Blast radius:** the whole live app (every surface sits behind BR-RT-BOOT) — dev is degraded, prod is broken.
 
 ## Files
+
 - `apps/web/src/db/{client,boot,worker,web-driver,web-adapter}.ts` · `apps/web/vite.config.ts` (the build's worker + wasm
   config). S7 changed none of them (empty diff).
 
 ## Acceptance (the fix unit's Verification Gate)
+
 - [ ] Root cause stated for EACH symptom (dev intermittency · prod never opening), labelled FACT, with a reproduction.
 - [ ] A production build boots and opens OPFS on a fresh origin AND on a reload, in Brave/Chromium, 10/10 loads; dev 10/10.
 - [ ] If (a) holds: the worker releases the VFS handles on page hide/unload, or the client retries `open` with backoff
@@ -60,13 +64,13 @@ Owner unit: **`fix-data-plane-boot-open` (LIF-250)** (`.claude/tasks/fix-data-pl
 **Reproduction** (worktree `fix-data-plane-boot-open` @ `8f2542b`, Brave headless via Playwright, an init script timing every
 worker RPC from the main thread, temporary phase marks inside the worker — reverted):
 
-| Condition | Result | `open` RPC round-trip |
-|---|---|---|
-| dev, fresh origin, `/calendar` | **5 of 7 timed out**; Retry opened 4/4 | the timed-out `open` replied **ok=true at 16 764–26 852 ms** |
-| dev, reload (migrated) | 4/4 opened | 6.5–7.0 s |
-| prod (`vite build` + `vite preview`), fresh, idle | 2/2 opened | 9 365 ms |
-| prod, reload | 3/3 opened | 1 268–1 527 ms |
-| prod, fresh, 3 boots in parallel (load) | **3/3 timed out** | (wasm requested 1.4–1.7 s after spawn in every run) |
+| Condition                                         | Result                                 | `open` RPC round-trip                                        |
+| ------------------------------------------------- | -------------------------------------- | ------------------------------------------------------------ |
+| dev, fresh origin, `/calendar`                    | **5 of 7 timed out**; Retry opened 4/4 | the timed-out `open` replied **ok=true at 16 764–26 852 ms** |
+| dev, reload (migrated)                            | 4/4 opened                             | 6.5–7.0 s                                                    |
+| prod (`vite build` + `vite preview`), fresh, idle | 2/2 opened                             | 9 365 ms                                                     |
+| prod, reload                                      | 3/3 opened                             | 1 268–1 527 ms                                               |
+| prod, fresh, 3 boots in parallel (load)           | **3/3 timed out**                      | (wasm requested 1.4–1.7 s after spawn in every run)          |
 
 Phase breakdown of a fresh dev `open` (inside the worker): module graph evaluation **5.0–8.7 s** (up to 12.2 s under load;
 prod ≈ 0.4 s) · wasm factory + VFS `isReady` 0.3–0.5 s · `adapter.open` 0.4 s · **`migrate` 8.0–8.6 s** (32 migrations,
@@ -87,6 +91,7 @@ concurrent first calls each bootstrap a module + VFS). This violates BR-RT-D5 "s
 `PLAN-R3-boot-appearance.md` R3-BR-2 limit (2).
 
 **Corrections to the filing record:**
+
 - Finding 2 "production build — `open` never completes … the wasm is never requested": **contradicted** — prod opened
   5/5 unloaded and requested the wasm in 10/10 runs, including the 3 timeouts.
 - Hypotheses (a) OPFS handles held by the previous document · (b) prod wasm locate path · (c) automated-Chromium quirk:
@@ -98,34 +103,37 @@ concurrent first calls each bootstrap a module + VFS). This violates BR-RT-D5 "s
   violation above). Page teardown is preferences-rescope R1 (`registerTeardown`, BR-8).
 
 ## Governing rules (the fix restores these; nothing here is a new decision)
-| Rule | Source |
-|---|---|
-| Per-request timeout, **no hang**; reject on worker crash; error+retry state; open-memo cleared on failure | `infrastructure/web-client-runtime/current-spec.md:77-79` |
-| Spawned once + **opened once** | BR-RT-D5 (`web-client-runtime/current-business-rules.md:54-59`) |
-| No query before DB-ready; `open` migrates internally | BR-RT-BOOT (`:76-77`) · ADR-002:4010 · BR-DB7-3 |
-| Boot error+retry = the shipped error precedent; degrade, never crash | `core/architecture/state-conventions.md` §1, §3 |
-| Boot shows the neutral "Loading…" surface until ready | UI-4 `s4-onboarding.md` S4-BR-c · `performance-strategy.md` §6 |
-| Every entity close runs live on real OPFS | ELC-7 (`golive-replan/process.md:41`) |
+
+| Rule                                                                                                      | Source                                                          |
+| --------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------- |
+| Per-request timeout, **no hang**; reject on worker crash; error+retry state; open-memo cleared on failure | `infrastructure/web-client-runtime/current-spec.md:77-79`       |
+| Spawned once + **opened once**                                                                            | BR-RT-D5 (`web-client-runtime/current-business-rules.md:54-59`) |
+| No query before DB-ready; `open` migrates internally                                                      | BR-RT-BOOT (`:76-77`) · ADR-002:4010 · BR-DB7-3                 |
+| Boot error+retry = the shipped error precedent; degrade, never crash                                      | `core/architecture/state-conventions.md` §1, §3                 |
+| Boot shows the neutral "Loading…" surface until ready                                                     | UI-4 `s4-onboarding.md` S4-BR-c · `performance-strategy.md` §6  |
+| Every entity close runs live on real OPFS                                                                 | ELC-7 (`golive-replan/process.md:41`)                           |
 
 ## Resolution — the change table
-| File | Today | Change | Ends up |
-|---|---|---|---|
-| `apps/web/src/db/worker.ts` | `open` re-runs on every call; `driver` overwritten; no receipt signal | post `{ id, ack: true }` on receipt of `open`/`migrate`; `open` memoized (`opening ??= …`, cleared on failure and by `close`) | one open per worker (BR-RT-D5); the client knows the worker is alive |
-| `apps/web/src/db/client.ts` | one 15 s timer per request from `postMessage` | `open`/`migrate`: a **receipt watchdog** (`OPEN_ACK_TIMEOUT_MS`) that runs only until the ack, then no wall-clock (crash → `onerror`, failure → error reply). Every other op: unchanged 15 s. Ack messages never settle a request | "no hang" kept for a dead/never-started worker; a live, migrating `open` is never failed |
-| `apps/web/src/db/web-adapter.ts` | `ensureModule` sets `api` after awaits | memoize the bootstrap **promise** (cleared on failure and by `destroy`) | single-flight module + VFS bootstrap |
-| `apps/web/src/db/composition-root.ts` | `buildPromise ??= build()` caches a rejection | clear `buildPromise` on rejection (the `boot.ts:36-46` rule) | a failed build is retried by the next `getServices()` |
-| `apps/web/src/db/client.test.ts` | `:96-107` asserts `open` rejects at 15 s (encodes the defect) | rewrite: a read still rejects at 15 s · `open` rejects only without an ack · an acked `open` resolving after 30 s+ succeeds · crash after ack rejects · ack never settles | the contract under test |
-| `apps/web/src/db/{worker,web-adapter}` tests | none for idempotency | worker-level test of repeated/concurrent `open` → one `adapter.open` (mocked adapter) | BR-RT-D5 proven |
-| `apps/web/src/db/composition-root.singleton.test.ts` | build-once only | + a rejected build is retried | memo rule proven |
-| `apps/web/playwright.prod.config.ts` + `e2e-prod/boot.spec.ts` (new) | E2E serves the dev server only (`playwright.config.ts:35-36`) | `vite build && vite preview` on its own port; a route-served blank same-origin page wipes OPFS (no app boot); spec: fresh boot reaches the app (no error, not Loading) → reload → boots again; console clean | the production boot can't regress silently |
-| `apps/web/package.json` | no `e2e` script → `turbo run e2e` (`ci.yml:89`) runs nothing | `"e2e"`: dev suite + prod suite (`test:e2e` kept) | CI's E2E job actually runs |
-| docs | F007 "root cause UNKNOWN, press Retry" · `current-spec.md:66-67` stale seam note · `worker.ts:23` "applies 001/002/003" | F007 → root cause + fix · `web-client-runtime/current-*` (resilience + D5 + BR-RT-BOOT) · comment fixed · `decisions.md` entry | §XXIX current |
+
+| File                                                                 | Today                                                                                                                   | Change                                                                                                                                                                                                                            | Ends up                                                                                  |
+| -------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- |
+| `apps/web/src/db/worker.ts`                                          | `open` re-runs on every call; `driver` overwritten; no receipt signal                                                   | post `{ id, ack: true }` on receipt of `open`/`migrate`; `open` memoized (`opening ??= …`, cleared on failure and by `close`)                                                                                                     | one open per worker (BR-RT-D5); the client knows the worker is alive                     |
+| `apps/web/src/db/client.ts`                                          | one 15 s timer per request from `postMessage`                                                                           | `open`/`migrate`: a **receipt watchdog** (`OPEN_ACK_TIMEOUT_MS`) that runs only until the ack, then no wall-clock (crash → `onerror`, failure → error reply). Every other op: unchanged 15 s. Ack messages never settle a request | "no hang" kept for a dead/never-started worker; a live, migrating `open` is never failed |
+| `apps/web/src/db/web-adapter.ts`                                     | `ensureModule` sets `api` after awaits                                                                                  | memoize the bootstrap **promise** (cleared on failure and by `destroy`)                                                                                                                                                           | single-flight module + VFS bootstrap                                                     |
+| `apps/web/src/db/composition-root.ts`                                | `buildPromise ??= build()` caches a rejection                                                                           | clear `buildPromise` on rejection (the `boot.ts:36-46` rule)                                                                                                                                                                      | a failed build is retried by the next `getServices()`                                    |
+| `apps/web/src/db/client.test.ts`                                     | `:96-107` asserts `open` rejects at 15 s (encodes the defect)                                                           | rewrite: a read still rejects at 15 s · `open` rejects only without an ack · an acked `open` resolving after 30 s+ succeeds · crash after ack rejects · ack never settles                                                         | the contract under test                                                                  |
+| `apps/web/src/db/{worker,web-adapter}` tests                         | none for idempotency                                                                                                    | worker-level test of repeated/concurrent `open` → one `adapter.open` (mocked adapter)                                                                                                                                             | BR-RT-D5 proven                                                                          |
+| `apps/web/src/db/composition-root.singleton.test.ts`                 | build-once only                                                                                                         | + a rejected build is retried                                                                                                                                                                                                     | memo rule proven                                                                         |
+| `apps/web/playwright.prod.config.ts` + `e2e-prod/boot.spec.ts` (new) | E2E serves the dev server only (`playwright.config.ts:35-36`)                                                           | `vite build && vite preview` on its own port; a route-served blank same-origin page wipes OPFS (no app boot); spec: fresh boot reaches the app (no error, not Loading) → reload → boots again; console clean                      | the production boot can't regress silently                                               |
+| `apps/web/package.json`                                              | no `e2e` script → `turbo run e2e` (`ci.yml:89`) runs nothing                                                            | `"e2e"`: dev suite + prod suite (`test:e2e` kept)                                                                                                                                                                                 | CI's E2E job actually runs                                                               |
+| docs                                                                 | F007 "root cause UNKNOWN, press Retry" · `current-spec.md:66-67` stale seam note · `worker.ts:23` "applies 001/002/003" | F007 → root cause + fix · `web-client-runtime/current-*` (resilience + D5 + BR-RT-BOOT) · comment fixed · `decisions.md` entry                                                                                                    | §XXIX current                                                                            |
 
 `OPEN_ACK_TIMEOUT_MS` = **60 000** [INTERP — grounded]: the docs fix "no hang" but no value (`current-spec.md:77`); the ack
 can only be sent after the worker module evaluates, measured at up to 12.2 s in dev under load, so the receipt watchdog
 must sit well above that; 60 s ≈ 5×. A crash or module load failure still rejects immediately through `onerror`.
 
 ## Acceptance (revised — replaces the filing's list)
+
 - [x] Root cause stated per symptom with reproduction, FACT-labelled (§ Triage).
 - [x] Dev 10/10 and prod 10/10 boots, fresh origin + reload, **including 3-parallel load** (the condition that reproduced
       the prod timeout), Brave; no timeout screen; console clean. → dev fresh 10/10 (under build load; 6 opens >15 s) ·
@@ -144,6 +152,7 @@ must sit well above that; 60 s ≈ 5×. A crash or module load failure still rej
 - [x] §XXIX currency (F007 · web-client-runtime `current-*` · db + e2e `CLAUDE.md` · decisions).
 
 ## Build steps (ordered; each leaves the tree green)
+
 1. `web-adapter.ts` single-flight bootstrap — no deps — risk: `destroy` must reset it (covered).
 2. `worker.ts` ack + idempotent `open` + worker test — dep 1 — risk: `close` then `open` in one worker must reopen (memo reset in `close`).
 3. `client.ts` per-op deadline + `client.test.ts` rewrite — dep 2 (protocol) — risk: an ack arriving after the final
@@ -154,5 +163,6 @@ must sit well above that; 60 s ≈ 5×. A crash or module load failure still rej
 7. Currency + commit/PR — dep 6.
 
 ## Out of scope
+
 Page teardown / bfcache (preferences-rescope R1) · the `App.tsx` boot gate and boot frame (R3) · first-run migration cost
 (no doc budget; measured above, recorded) · `@vida/core` migration runner · anything M2–M4 (crypto, sync, multi-device).

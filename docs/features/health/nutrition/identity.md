@@ -1,22 +1,23 @@
 <!-- Identity — features/health/nutrition · Phase 2 · sources: docs/intake/health.md (⭐⭐ 18-DB Notion: 9 Nutrition
      DBs) + health/core/*. Health has NO v2 schema (recovered domain). -->
 
-# Identity — Health: Nutrition  (level: Feature / Health pillar 2 of 2)
+# Identity — Health: Nutrition (level: Feature / Health pillar 2 of 2)
 
-**What it is.** The **Nutrition pillar** — the *fuel* lever on the body. Composed **libraries** (Ingredients →
+**What it is.** The **Nutrition pillar** — the _fuel_ lever on the body. Composed **libraries** (Ingredients →
 Dishes), a strategic **Nutritional Plan**, **Daily Meal Plans**, logged **Meals**, a **Shopping** list, and the
 food-side of the Adaptation engine (Experiments, Responses). It computes **what to eat** from the user's Goals and
 **recomputes intake dynamically** against training burn. `[INTENT: 9 Nutrition DBs; Victor Vision]`
 
-**The desire behind it.** The user wants nutrition that *serves his training and body goals on a healthy path* —
+**The desire behind it.** The user wants nutrition that _serves his training and body goals on a healthy path_ —
 intake targets derived from goals + calories burned, a personal food/dish library, meals that fit real life
 (homemade · restaurant · meal-prep · travel), and the freedom to **test what actually works on his body** (meal
 timing, portions, food choices) or follow a **doctor's prescription** and validate it. He thinks about food
-**functionally** — by *which body system it serves* (gut · immune · hormonal · cognitive · …) and by *whole-food
-type* — and treats **cooking as something he can choose to learn**. Flexible enough to keep tracking while traveling
+**functionally** — by _which body system it serves_ (gut · immune · hormonal · cognitive · …) and by _whole-food
+type_ — and treats **cooking as something he can choose to learn**. Flexible enough to keep tracking while traveling
 — including logging a meal by **photo**. `[INTENT: Victor Vision + Notion 1.0 functional axis + CI-3]`
 
 **What it owns.** `[INTENT]`
+
 - **Ingredient library** (`Nutrition Ingredients`) — atomic foods: macros · fiber · micronutrients · category ·
   allergens · **whole-food type** (leafy-greens/cruciferous/roots/bioactive-fruits/nuts-seeds/legumes/whole-grains/
   animal-proteins/spices/functional-beverages) · **functional area** (the 8-system "area of action" — editable starter). `[INTENT CI-3]`
@@ -33,6 +34,7 @@ type* — and treats **cooking as something he can choose to learn**. Flexible e
 - **Shopping** (`Shopping Cart`) — procurement: item · source · cost · purchase status · storage.
 
 **What it composes (borrows).** `[FACT: reshape §B]`
+
 - **Core** — **Health Goals** (Nutrition Goal phases = body-composition goals) · the **energy loop** (intake
   recomputes vs burn, HC-6) · the **Adaptation engine** (Experiments + Responses, pillar=nutrition).
 - **Finance** — meal/shopping **cost**. **Scheduler/`dueIn()`** — planned meals → agenda (a meal is scheduled,
@@ -42,6 +44,7 @@ type* — and treats **cooking as something he can choose to learn**. Flexible e
   (X11 split; AI1 `on_device`-preferred).
 
 **What it is NOT.**
+
 - **Not a Session.** A meal is a **logged/scheduled entity** — no runtime/timer — so it uses the scheduler but is
   not a `workout`-style sub-type. `[INTENT HL6]`
 - **Not the goal/metric owner.** Nutrition Goals + macro targets are **Core** (specialize Purposes); Nutrition
@@ -57,4 +60,5 @@ type* — and treats **cooking as something he can choose to learn**. Flexible e
   its scientific shape is **pending research** (may be reshaped). `[INTENT CI-3/R2]`
 
 ## Completion checklist
+
 - [x] what/desire/owns/composes/NOT filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}`

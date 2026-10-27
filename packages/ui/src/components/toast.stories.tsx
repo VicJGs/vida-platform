@@ -26,13 +26,24 @@ export const Playground: Story = {
   render: (args) => (
     <View height={420} gap={12} alignItems="flex-start">
       <View flexDirection="row" gap={12} flexWrap="wrap">
-        <Button intent="secondary" onPress={() => toast({ title: 'Saved', description: 'Your changes were saved.', intent: 'info' })}>
+        <Button
+          intent="secondary"
+          onPress={() => toast({ title: 'Saved', description: 'Your changes were saved.', intent: 'info' })}
+        >
           Info
         </Button>
-        <Button intent="secondary" onPress={() => toast({ title: 'Uploaded', description: 'File uploaded successfully.', intent: 'success' })}>
+        <Button
+          intent="secondary"
+          onPress={() => toast({ title: 'Uploaded', description: 'File uploaded successfully.', intent: 'success' })}
+        >
           Success
         </Button>
-        <Button intent="secondary" onPress={() => toast({ title: 'Upload failed', description: 'Check your connection and retry.', intent: 'danger' })}>
+        <Button
+          intent="secondary"
+          onPress={() =>
+            toast({ title: 'Upload failed', description: 'Check your connection and retry.', intent: 'danger' })
+          }
+        >
           Danger
         </Button>
       </View>
@@ -97,7 +108,14 @@ export const Loading: Story = {
             <svg width={14} height={14} viewBox="0 0 24 24" fill="none" aria-hidden="true">
               <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" strokeOpacity="0.25" />
               <path d="M12 3a9 9 0 0 1 9 9" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
-                <animateTransform attributeName="transform" type="rotate" from="0 12 12" to="360 12 12" dur="0.8s" repeatCount="indefinite" />
+                <animateTransform
+                  attributeName="transform"
+                  type="rotate"
+                  from="0 12 12"
+                  to="360 12 12"
+                  dur="0.8s"
+                  repeatCount="indefinite"
+                />
               </path>
             </svg>
           </View>

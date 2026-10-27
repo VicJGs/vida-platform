@@ -29,26 +29,13 @@ export type BasisPoints = number
 // Shared enums (used across 2+ domains)
 // ---------------------------------------------------------------------------
 
-export const STATUS = [
-  'not_started',
-  'in_progress',
-  'completed',
-  'on_hold',
-  'cancelled',
-] as const
+export const STATUS = ['not_started', 'in_progress', 'completed', 'on_hold', 'cancelled'] as const
 export type Status = (typeof STATUS)[number]
 
 export const PRIORITY = ['critical', 'high', 'medium', 'low', 'none'] as const
 export type Priority = (typeof PRIORITY)[number]
 
-export const FREQUENCY = [
-  'daily',
-  'weekly',
-  'biweekly',
-  'monthly',
-  'quarterly',
-  'yearly',
-] as const
+export const FREQUENCY = ['daily', 'weekly', 'biweekly', 'monthly', 'quarterly', 'yearly'] as const
 export type Frequency = (typeof FREQUENCY)[number]
 
 export const LIFE_DOMAIN = [
@@ -83,14 +70,7 @@ export interface BaseEntity {
 // Notifications
 // ---------------------------------------------------------------------------
 
-export const NOTIFICATION_TYPE = [
-  'info',
-  'success',
-  'warning',
-  'error',
-  'reminder',
-  'achievement',
-] as const
+export const NOTIFICATION_TYPE = ['info', 'success', 'warning', 'error', 'reminder', 'achievement'] as const
 export type NotificationType = (typeof NOTIFICATION_TYPE)[number]
 
 export interface Notification {
@@ -121,4 +101,3 @@ export interface Notification {
   effect_event_id: string | null
   created_at: Timestamp
 }
-

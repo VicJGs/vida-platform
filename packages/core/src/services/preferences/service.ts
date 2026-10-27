@@ -27,11 +27,7 @@ import {
   type NavPreferencesRow,
   type CommandBarHistoryRow,
 } from '../../db/schema/preferences'
-import {
-  UpdatePreferencesSchema,
-  UpdateNavPreferencesSchema,
-  RecordCommandSchema,
-} from '../../validators/user'
+import { UpdatePreferencesSchema, UpdateNavPreferencesSchema, RecordCommandSchema } from '../../validators/user'
 import type { MergedPreferences, MergedNavPreferences } from '@vida/types'
 import { InvalidModuleError } from './types'
 
@@ -237,10 +233,7 @@ export interface PreferencesService {
   getCommandHistory(): Promise<CommandBarHistoryRow[]>
 }
 
-export function createPreferencesService(opts: {
-  db: DrizzleDb
-  deviceId: string
-}): PreferencesService {
+export function createPreferencesService(opts: { db: DrizzleDb; deviceId: string }): PreferencesService {
   const { db, deviceId } = opts
   // encryptedFields: [] — plaintext config (PR-1); softDelete: false — no deleted_at.
   const repo = createRepository(db, userPreferences, {
@@ -267,9 +260,7 @@ export function createPreferencesService(opts: {
   async function updatePreferences(patch: Partial<MergedPreferences>): Promise<MergedPreferences> {
     const parsed = UpdatePreferencesSchema.safeParse(patch)
     if (!parsed.success) {
-      throw new Error(
-        `Invalid preferences patch: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`,
-      )
+      throw new Error(`Invalid preferences patch: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`)
     }
     const existing = (await repo.findAll())[0]
     const row = existing
@@ -296,14 +287,10 @@ export function createPreferencesService(opts: {
     return row ? toMergedNav(row) : { ...NAV_PREFERENCES_DEFAULTS }
   }
 
-  async function updateNavPreferences(
-    patch: Partial<MergedNavPreferences>,
-  ): Promise<MergedNavPreferences> {
+  async function updateNavPreferences(patch: Partial<MergedNavPreferences>): Promise<MergedNavPreferences> {
     const parsed = UpdateNavPreferencesSchema.safeParse(patch)
     if (!parsed.success) {
-      throw new Error(
-        `Invalid nav preferences patch: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`,
-      )
+      throw new Error(`Invalid nav preferences patch: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`)
     }
     const existing = (await navRepo.findAll())[0]
     const row = existing
@@ -319,9 +306,7 @@ export function createPreferencesService(opts: {
   ): Promise<void> {
     const parsed = RecordCommandSchema.safeParse({ command_key, command_label, command_category })
     if (!parsed.success) {
-      throw new Error(
-        `Invalid command record: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`,
-      )
+      throw new Error(`Invalid command record: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`)
     }
     const now = Date.now()
     const found = (await commandRepo.findWhere(eq(commandBarHistory.command_key, command_key)))[0]
@@ -355,9 +340,7 @@ export function createPreferencesService(opts: {
     if (!pinned || command_label === undefined || command_label.trim() === '') return
     const parsed = RecordCommandSchema.safeParse({ command_key, command_label, command_category })
     if (!parsed.success) {
-      throw new Error(
-        `Invalid command record: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`,
-      )
+      throw new Error(`Invalid command record: ${parsed.error.issues[0]?.path.join('.') || 'unknown field'}`)
     }
     await commandRepo.create({
       command_key,

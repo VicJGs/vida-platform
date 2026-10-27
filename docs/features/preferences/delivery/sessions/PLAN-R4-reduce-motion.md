@@ -17,6 +17,7 @@
 > read for this plan.
 
 ## 1. Problem (as-built, after R3)
+
 - **The switch doesn't persist (D8).** Appearance's "Reduce motion" `Switch` reads and writes the transitional mirror
   `preferences-store` `[FACT: apps/web/src/settings/appearance-pane.tsx:50-51,125-126]`. R3 left it there on purpose
   (PLAN-R3 §3, appearance-pane row). The writer can already persist it: `toNavPatch` maps `reduceMotion` →
@@ -43,6 +44,7 @@
   consumer.
 
 ## 2. Business rules (after R4)
+
 - **R4-BR-1 · The switch persists.** Appearance reads `usePreferences().view.reduceMotion` and writes
   `update({ reduceMotion })`, on the path R3 gave the theme controls (optimistic cache write → the nav queue →
   `nav_preferences.reduce_motion`). The mirror loses the field: `reduceMotion`/`setReduceMotion` leave `preferences-store`,
@@ -94,6 +96,7 @@
   deps `[FACT: neural-graph.tsx:200]`.
 
 ### §XXVIII D-R4-1 — the hook reads a context, not the attribute (Victor, Approval 1)
+
 - **The doc says:** "the hook and the CSS both key on it" (the attribute) `[FACT: interpretation.md:150-154]`.
 - **Why the literal reading fails:** to key on a DOM attribute the hook must subscribe to it. React 19 subscribes
   `useSyncExternalStore` in a **passive** effect `[FACT: react-dom-client.development.js:8144]`, so the observer starts
@@ -109,30 +112,33 @@
   EC-10 and EC-12 ("reduced-motion → instant") on exactly the boot path R3 made flash-free.
 
 ## 3. Design
-| File | Change |
-|---|---|
-| `packages/ui/src/internal/reduced-motion-css.ts` (new) | `reducedMotionCss(selectors, declarations)` → the `@media` rule + the `[data-vida-motion="reduce"]` twin (each selector prefixed) · `MOTION_ATTR` / `MOTION_REDUCE` constants |
-| `packages/ui/src/internal/{dialog,interaction,switch,tabs,menu,sync-status,card,popover,toast,select,checkbox}-styles.ts` · `internal/calendar-motion.ts` | the reduced-motion line → `reducedMotionCss(…)`, same selectors and declarations |
-| `packages/ui/src/hooks/use-reduced-motion.ts` | `ReducedMotionContext` + the hook (R4-BR-5); JSDoc: the two triggers, and new gates use the helper |
-| `packages/ui/src/provider.tsx` | `UIProviderProps.reduceMotion?` · the context provider · the `[reduceMotion]` attribute effect, whose own cleanup removes it · `clearCodec` unchanged (D-R4-2) |
-| `packages/ui/src/components/neural-graph.tsx` | `INSTANT_CAMERA` when `reduced`: the three durations at 1 ms + `inertiaRatio: 0` (R4-BR-8, D-R4-3) |
-| `apps/web/src/shell/shell-panel-styles.ts` | the hand-written twin (R4-BR-4) |
-| `apps/web/src/stores/theme-store.ts` | `reduceMotion` from `NAV_PREFS_KEY` in the same subscription · the reset helper covers it |
-| `apps/web/src/App.tsx` | `<UIProvider selection={selection} reduceMotion={reduceMotion}>` |
-| `apps/web/src/settings/appearance-pane.tsx` | the switch on `view.reduceMotion` + `update({ reduceMotion })` |
-| `apps/web/src/stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` | `reduceMotion` removed (9 mirrored fields) · the stale "OS-media-query-driven" comment goes with it |
-| **Docs (§XXIX, same commit)** | |
-| `docs/specs/foundation/fe-codec-theme/delivery/seam-contract.md` | `UIProviderProps.reduceMotion`; the :63 invariant → the swap honours the OS query **or** the in-app preference |
-| `docs/ui/token-pipeline/current-business-rules.md` B12 (:44-50) · `packages/ui/src/themes/CLAUDE.md` (:45-49) | B12's second trigger (`[data-vida-motion="reduce"]`); new gates go through `reducedMotionCss` |
-| `apps/web/src/shell/CLAUDE.md` (:108, :113) | the shell panel's reduced-motion rule names both triggers |
-| `docs/features/preferences/delivery/interpretation.md` (:150-154) | D-R4-1: one prop, two carriers |
-| `docs/features/preferences/delivery/reconciliation.md` | D8/D9 → ✅ · "12" → 13 (calendar-motion) · the §H EC rows (:170, :175 + EC-9/EC-12) |
-| `docs/modules/preferences/current-*` | the switch persists; the app-wide gate |
-| `.claude/tasks/shell-rescope.md` | the file edge: `shell-panel-styles.ts` twin added by R4 (D9 names shell-rescope too, reconciliation.md:76) |
-| `.claude/tasks/fe-codec-theme` edge | recorded in the slice-map edge list (:114) — no task file of its own exists; the seam-contract refresh above is the record |
+
+| File                                                                                                                                                      | Change                                                                                                                                                                        |
+| --------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/ui/src/internal/reduced-motion-css.ts` (new)                                                                                                    | `reducedMotionCss(selectors, declarations)` → the `@media` rule + the `[data-vida-motion="reduce"]` twin (each selector prefixed) · `MOTION_ATTR` / `MOTION_REDUCE` constants |
+| `packages/ui/src/internal/{dialog,interaction,switch,tabs,menu,sync-status,card,popover,toast,select,checkbox}-styles.ts` · `internal/calendar-motion.ts` | the reduced-motion line → `reducedMotionCss(…)`, same selectors and declarations                                                                                              |
+| `packages/ui/src/hooks/use-reduced-motion.ts`                                                                                                             | `ReducedMotionContext` + the hook (R4-BR-5); JSDoc: the two triggers, and new gates use the helper                                                                            |
+| `packages/ui/src/provider.tsx`                                                                                                                            | `UIProviderProps.reduceMotion?` · the context provider · the `[reduceMotion]` attribute effect, whose own cleanup removes it · `clearCodec` unchanged (D-R4-2)                |
+| `packages/ui/src/components/neural-graph.tsx`                                                                                                             | `INSTANT_CAMERA` when `reduced`: the three durations at 1 ms + `inertiaRatio: 0` (R4-BR-8, D-R4-3)                                                                            |
+| `apps/web/src/shell/shell-panel-styles.ts`                                                                                                                | the hand-written twin (R4-BR-4)                                                                                                                                               |
+| `apps/web/src/stores/theme-store.ts`                                                                                                                      | `reduceMotion` from `NAV_PREFS_KEY` in the same subscription · the reset helper covers it                                                                                     |
+| `apps/web/src/App.tsx`                                                                                                                                    | `<UIProvider selection={selection} reduceMotion={reduceMotion}>`                                                                                                              |
+| `apps/web/src/settings/appearance-pane.tsx`                                                                                                               | the switch on `view.reduceMotion` + `update({ reduceMotion })`                                                                                                                |
+| `apps/web/src/stores/preferences-store.ts` · `preferences/preferences-bridge.tsx`                                                                         | `reduceMotion` removed (9 mirrored fields) · the stale "OS-media-query-driven" comment goes with it                                                                           |
+| **Docs (§XXIX, same commit)**                                                                                                                             |                                                                                                                                                                               |
+| `docs/specs/foundation/fe-codec-theme/delivery/seam-contract.md`                                                                                          | `UIProviderProps.reduceMotion`; the :63 invariant → the swap honours the OS query **or** the in-app preference                                                                |
+| `docs/ui/token-pipeline/current-business-rules.md` B12 (:44-50) · `packages/ui/src/themes/CLAUDE.md` (:45-49)                                             | B12's second trigger (`[data-vida-motion="reduce"]`); new gates go through `reducedMotionCss`                                                                                 |
+| `apps/web/src/shell/CLAUDE.md` (:108, :113)                                                                                                               | the shell panel's reduced-motion rule names both triggers                                                                                                                     |
+| `docs/features/preferences/delivery/interpretation.md` (:150-154)                                                                                         | D-R4-1: one prop, two carriers                                                                                                                                                |
+| `docs/features/preferences/delivery/reconciliation.md`                                                                                                    | D8/D9 → ✅ · "12" → 13 (calendar-motion) · the §H EC rows (:170, :175 + EC-9/EC-12)                                                                                           |
+| `docs/modules/preferences/current-*`                                                                                                                      | the switch persists; the app-wide gate                                                                                                                                        |
+| `.claude/tasks/shell-rescope.md`                                                                                                                          | the file edge: `shell-panel-styles.ts` twin added by R4 (D9 names shell-rescope too, reconciliation.md:76)                                                                    |
+| `.claude/tasks/fe-codec-theme` edge                                                                                                                       | recorded in the slice-map edge list (:114) — no task file of its own exists; the seam-contract refresh above is the record                                                    |
 
 ## 4. Acceptance
+
 **Verification Gate (Vitest + live smoke)**
+
 1. **Persist:** toggling the switch calls `update({ reduceMotion: true })`; the nav write carries `reduce_motion: true` (stored 1); a
    reload (fresh cache over the same DB) reads `true`. Live smoke on real OPFS: toggle → reload → the row and the view
    agree.
@@ -161,28 +167,24 @@
    `clearCodec` → 3 fails · (i) graph ignores `reduced` for the camera → 6 fails.
 10. `tsc` 0 (after `pnpm --filter @vida/ui build`) · eslint 0 · the suite green (F008 timeouts re-run alone and recorded).
 
-**Visual Gate (real browser, dev server, real OPFS)**
-11. Toggle on → reload → `data-vida-motion="reduce"` on the first themed frame, and every live animated surface is instant,
-    in light and dark: Dialog, Menu, Popover, Select (panel + chevron), Tabs (indicator + panel), Toast, Switch, Checkbox,
-    Card elevation, the interaction overlay, the indeterminate progress, the calendar today-pulse + range-fade, the shell
-    panels + scrim (EC-12), the Button spinner (static arc), onboarding steps (EC-10). Probe: `document.getAnimations()`
-    empty after each trigger, plus computed `animation-name` / `transition-duration` on the element.
-    - **Not checked live, recorded:** the neural graph (the M1 route renders `nodes={[]}`, `app/graph/index.tsx:9`) is
-      covered by acceptance 6. **fe-home EC-9** is satisfied by absence: the arrangement render has no motion source, so
-      there is nothing to gate.
-12. Toggle off + OS emulated `reduce` → still instant (R4-BR-6). Toggle off + OS `no-preference` → the animations run
-    (negative control: the probe sees them).
-13. A preset/mode/density swap with the preference on → no animation (codec EC-7).
-14. The Settings pane at 375/768/1440 × light/dark: the switch states (off · on · disabled read-only) · axe 0 · the switch
-    is named "Reduce motion" · focus ring visible.
-15. Victor `visual-approved` (stage 4).
+**Visual Gate (real browser, dev server, real OPFS)** 11. Toggle on → reload → `data-vida-motion="reduce"` on the first themed frame, and every live animated surface is instant,
+in light and dark: Dialog, Menu, Popover, Select (panel + chevron), Tabs (indicator + panel), Toast, Switch, Checkbox,
+Card elevation, the interaction overlay, the indeterminate progress, the calendar today-pulse + range-fade, the shell
+panels + scrim (EC-12), the Button spinner (static arc), onboarding steps (EC-10). Probe: `document.getAnimations()`
+empty after each trigger, plus computed `animation-name` / `transition-duration` on the element. - **Not checked live, recorded:** the neural graph (the M1 route renders `nodes={[]}`, `app/graph/index.tsx:9`) is
+covered by acceptance 6. **fe-home EC-9** is satisfied by absence: the arrangement render has no motion source, so
+there is nothing to gate. 12. Toggle off + OS emulated `reduce` → still instant (R4-BR-6). Toggle off + OS `no-preference` → the animations run
+(negative control: the probe sees them). 13. A preset/mode/density swap with the preference on → no animation (codec EC-7). 14. The Settings pane at 375/768/1440 × light/dark: the switch states (off · on · disabled read-only) · axe 0 · the switch
+is named "Reduce motion" · focus ring visible. 15. Victor `visual-approved` (stage 4).
 
 ## 5. Out of scope (owned elsewhere, unchanged)
+
 The transition preference and its "reduce motion → `none`" rule (R-T; it reads this hook) · onboarding commit/revert
 (R7; onboarding offers no reduce-motion choice) · Modules/⌘K (R5) · Locale/Notifications + deleting the store (R6) · any
 change to the primitives' animations themselves.
 
 ## 6. Risks
+
 - **The first-frame guarantee depends on R3 seeding the nav key.** PLAN-R3 §6's fallback ("seed only `user`",
   PLAN-R3:271) would break it: a persisted `true` would arrive after the first frame. If that fallback is ever taken, it
   is a §XXVIII deviation that has to weigh this.
@@ -197,6 +199,7 @@ change to the primitives' animations themselves.
   the load allows. Record timeouts that pass when re-run alone.
 
 ## 7. Gate record
+
 - **rev 1 → rev 2 (2026-10-26):** independent critique REVISE, 4 blocking, all folded in:
   (1) the first-mount reasoning was wrong (`useSyncExternalStore` subscribes in a passive effect, so the observer misses
   the provider's layout-effect write), and acceptance 4 couldn't prove it (a child's layout effect runs before its

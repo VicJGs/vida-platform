@@ -16,9 +16,10 @@
   (effect_event_id, kind, target_ref)** — mirroring the rail's composite PK. The rail's local `applied_effects` is the
   replay guard; the ledger UNIQUE is cross-device convergence.
 - **BR-7 (coordinator invents no write path — §3.1).** `dispatchConsequence(rail, effects[])` fans a fire out to `rail.applyEffect` per typed effect — no new write path, no new idempotency.
-- **BR-8 (boundaries — §3.11).** Owns currencies/ledger/4-derived/lock-not-destroy/coordinator/effect-class. Does NOT own the rail (ADR-004), conditions (ADR-011 — a condition *is* a Binding), or the sandbox (ADR-010).
+- **BR-8 (boundaries — §3.11).** Owns currencies/ledger/4-derived/lock-not-destroy/coordinator/effect-class. Does NOT own the rail (ADR-004), conditions (ADR-011 — a condition _is_ a Binding), or the sandbox (ADR-010).
 
 ## Deferred (not in this increment — all homed, DF-12 + §6)
+
 `store` + `move_money` handler → MOD-finance. `surface_notification` handler → MOD-notifications. Rules table +
 condition-eval + achievement reconcile + level-curve config + below-floor clamp → MOD-gamification. User-authored rules
 sandbox → #85 CAP-authoring. `user_profile` split → Check-ins/Prefs (PII stays ⚠). Level-unlocks · user achievements/quests → ⚠ INTENDED-later.

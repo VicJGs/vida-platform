@@ -5,9 +5,7 @@
 // Lucide, tinted by a theme token via a CSS var (the gated S1 note-renderers pattern).
 // ============================================================================
 import { styled, Text, View } from '@tamagui/core'
-import {
-  StickyNote, CalendarClock, ListChecks, FolderKanban, Flag, Package, type LucideIcon,
-} from 'lucide-react'
+import { StickyNote, CalendarClock, ListChecks, FolderKanban, Flag, Package, type LucideIcon } from 'lucide-react'
 
 /** A horizontal icon+text row (the S1 note-renderers `Row` idiom). */
 export const Row = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8' })
@@ -26,7 +24,11 @@ export type IconTone = 'muted' | 'primary' | 'accent'
  *  a CSS-var color so the tint tracks the active preset/mode. */
 export function Icon({ icon: Ico, size = 16, tone = 'muted' }: { icon: LucideIcon; size?: number; tone?: IconTone }) {
   const color =
-    tone === 'accent' ? 'var(--colorBrandEmphasis)' : tone === 'primary' ? 'var(--colorTextPrimary)' : 'var(--colorTextMuted)'
+    tone === 'accent'
+      ? 'var(--colorBrandEmphasis)'
+      : tone === 'primary'
+        ? 'var(--colorTextPrimary)'
+        : 'var(--colorTextMuted)'
   return <Ico size={size} color={color} strokeWidth={2} />
 }
 

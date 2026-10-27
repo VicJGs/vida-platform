@@ -19,7 +19,7 @@ export const BundleSchema = z
     enabled_blocks: z.unknown(),
     child_structure: z.unknown().optional(),
   })
-  .refine(
-    (d) => 'root_tag' in d && (d as { root_tag?: unknown }).root_tag !== undefined,
-    { message: 'root_tag is required', path: ['root_tag'] },
-  )
+  .refine((d) => 'root_tag' in d && (d as { root_tag?: unknown }).root_tag !== undefined, {
+    message: 'root_tag is required',
+    path: ['root_tag'],
+  })

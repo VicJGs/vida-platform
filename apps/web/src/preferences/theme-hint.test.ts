@@ -15,7 +15,9 @@ afterEach(() => {
 })
 
 describe('toThemeHint', () => {
-  const cases: Array<[ThemePreset, ThemeMode]> = THEME_PRESETS.flatMap((p) => (['light', 'dark'] as const).map((m) => [p, m] as [ThemePreset, ThemeMode]))
+  const cases: Array<[ThemePreset, ThemeMode]> = THEME_PRESETS.flatMap((p) =>
+    (['light', 'dark'] as const).map((m) => [p, m] as [ThemePreset, ThemeMode]),
+  )
   it.each(cases)('%s × %s resolves to hex bg/fg (the Variable values, never the objects)', (preset, mode) => {
     const h = toThemeHint({ preset, mode, density: 'calm' })
     expect(h.scheme).toBe(mode)

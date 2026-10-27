@@ -242,7 +242,13 @@ export function NeuralGraph({
   const isGraph = state === 'success' && !effectiveEmpty // the node-list region exists with or without WebGL
 
   return (
-    <Frame ref={ref} {...rest} height={height} role={isGraph ? 'group' : undefined} aria-label={isGraph ? ariaLabel : undefined}>
+    <Frame
+      ref={ref}
+      {...rest}
+      height={height}
+      role={isGraph ? 'group' : undefined}
+      aria-label={isGraph ? ariaLabel : undefined}
+    >
       {content}
     </Frame>
   )

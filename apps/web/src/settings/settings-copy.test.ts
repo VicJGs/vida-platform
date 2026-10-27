@@ -4,7 +4,8 @@ import { describe, it, expect } from 'vitest'
 import { lintCopy } from '../voice/voice-copy'
 import { SETTINGS_COPY } from './settings-copy'
 
-const asText = (entry: string | ((label: string) => string)) => (typeof entry === 'function' ? entry('Go to Tasks') : entry)
+const asText = (entry: string | ((label: string) => string)) =>
+  typeof entry === 'function' ? entry('Go to Tasks') : entry
 
 describe('SETTINGS_COPY', () => {
   it.each(Object.entries(SETTINGS_COPY))('%s passes lintCopy', (_key, entry) => {

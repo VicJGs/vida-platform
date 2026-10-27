@@ -8,15 +8,26 @@ import type { NoteEntityData } from './use-note-entity'
 
 const updatePage = vi.fn<(id: string, patch: Record<string, unknown>) => Promise<unknown>>()
 vi.mock('../db/composition-root', () => ({
-  getServices: () => Promise.resolve({ notes: { updatePage: (id: string, p: Record<string, unknown>) => updatePage(id, p) } }),
+  getServices: () =>
+    Promise.resolve({ notes: { updatePage: (id: string, p: Record<string, unknown>) => updatePage(id, p) } }),
 }))
 vi.mock('../lib/notify-error', () => ({ notifyError: vi.fn() }))
 
 import { MetadataControls } from './page-metadata'
 
 const page: NoteEntityData = {
-  id: 'p1', type: 'note', title: 'T', content: null, contentStatus: 'absent', rawContent: null, favorite: false,
-  archived: false, updated: 'now', journalDate: null, icon: null, cover: null,
+  id: 'p1',
+  type: 'note',
+  title: 'T',
+  content: null,
+  contentStatus: 'absent',
+  rawContent: null,
+  favorite: false,
+  archived: false,
+  updated: 'now',
+  journalDate: null,
+  icon: null,
+  cover: null,
 }
 const renderUI = () =>
   render(

@@ -23,7 +23,16 @@ import { Text } from '@tamagui/core'
 import { DashboardView, type CellSize, type DashboardBlock } from '@vida/ui'
 
 /** The OS domains the Home dashboard surfaces as standalone widgets. User-selectable (personalization); M1 = all. */
-export const HOME_WIDGET_ID = ['summary', 'finance', 'tasks', 'habits', 'projects', 'purposes', 'dreams', 'schedule'] as const
+export const HOME_WIDGET_ID = [
+  'summary',
+  'finance',
+  'tasks',
+  'habits',
+  'projects',
+  'purposes',
+  'dreams',
+  'schedule',
+] as const
 export type HomeWidgetId = (typeof HOME_WIDGET_ID)[number]
 
 /** The @vida/ui per-block terminal-state canon, reused by TYPE (the dashboard-adapter precedent — never redefined). */
@@ -63,7 +72,13 @@ export interface HomeDashboardProps {
  * widget in `success` so the standalone placeholder body shows what each will surface.
  */
 export const DEFAULT_HOME_WIDGETS: readonly HomeWidget[] = [
-  { id: 'summary', title: 'Today across the OS', size: 'lg', state: 'success', hint: 'Habits · tasks · focus · check-ins — today’s recap' },
+  {
+    id: 'summary',
+    title: 'Today across the OS',
+    size: 'lg',
+    state: 'success',
+    hint: 'Habits · tasks · focus · check-ins — today’s recap',
+  },
   { id: 'finance', title: 'Finances', size: 'md', state: 'success', hint: 'Net worth · cash flow · accounts' },
   { id: 'tasks', title: 'Tasks', size: 'sm', state: 'success', hint: 'Progress · due today · overdue' },
   { id: 'habits', title: 'Habits', size: 'sm', state: 'success', hint: 'Streaks · today’s completions' },

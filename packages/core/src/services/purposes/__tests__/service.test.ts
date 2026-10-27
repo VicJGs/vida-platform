@@ -17,7 +17,12 @@ import { initVault } from '../../../encryption/vault'
 import { createPurposesService } from '../service'
 import { createMeasurementSourceRegistry, type MeasurementSourceRegistry } from '../../../foundation/measurement'
 import { createSessionRegistry, type SessionRegistry } from '../../../foundation/sessions'
-import { createEffectRegistry, createEffectRail, type EffectRegistry, type EffectEvent } from '../../../foundation/effects'
+import {
+  createEffectRegistry,
+  createEffectRail,
+  type EffectRegistry,
+  type EffectEvent,
+} from '../../../foundation/effects'
 import { createTaggableTypeRegistry } from '../../../foundation/spaces/registry'
 import { createSpacesService, UnknownEntityType, type SpacesService } from '../../../foundation/spaces'
 import { createAssociationResolver } from '../../../foundation/spaces/association-resolver'
@@ -60,7 +65,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -98,7 +106,13 @@ async function setup(
   const entityRegistry = createTaggableTypeRegistry()
   const sessionRegistry = createSessionRegistry(db, 'test-device')
   const rail = createEffectRail(db, createEffectRegistry())
-  const sessions = createSessionsService({ db, deviceId: 'test-device', registry: sessionRegistry, rail, entityRegistry })
+  const sessions = createSessionsService({
+    db,
+    deviceId: 'test-device',
+    registry: sessionRegistry,
+    rail,
+    entityRegistry,
+  })
   // S8 — the REAL spaces + notes substrates (the projects/learning-education harness precedent): tags/links WRITE
   // via SpacesService, pages via NotesService, over the shared taggable-type registry (value/purpose/target/dream/
   // purpose_metric_value pre-seeded from ENTITY_TYPES). The association resolver reads back entity_tags/links.
@@ -264,7 +278,10 @@ describe('mod-purposes S2 — dreams CRUD', () => {
     const p = await h.svc.createPurpose({ title: 'Adventure' })
     const d1 = await h.svc.createDream({ title: 'bound', purpose_id: p.id })
     await h.svc.createDream({ title: 'standalone' })
-    const upd = await h.svc.updateDream(d1.id, { steps: [{ id: 'x', text: 'go', completed: true }], progress_percentage: 30 })
+    const upd = await h.svc.updateDream(d1.id, {
+      steps: [{ id: 'x', text: 'go', completed: true }],
+      progress_percentage: 30,
+    })
     expect(JSON.parse(upd.steps!)).toHaveLength(1)
     expect(upd.progress_percentage).toBe(30)
     expect(await h.svc.listDreams(p.id)).toHaveLength(1)
@@ -309,17 +326,22 @@ describe('mod-purposes S3 — metrics + value ledger', () => {
       await h.svc.recordMetricValue(id, 20, { source: auto ? 'auto' : 'manual' })
       await h.svc.recordMetricValue(id, 30, { source: 'manual' })
     }
-    const sum = await mk('sum'); await seed(sum.id)
+    const sum = await mk('sum')
+    await seed(sum.id)
     expect((await h.svc.getMetricCurrent(sum.id)).value).toBe(60)
     expect((await h.svc.getMetricCurrent(sum.id)).source).toBe('manual') // all manual
-    const avg = await mk('average'); await seed(avg.id, true)
+    const avg = await mk('average')
+    await seed(avg.id, true)
     expect((await h.svc.getMetricCurrent(avg.id)).value).toBe(20)
     expect((await h.svc.getMetricCurrent(avg.id)).source).toBe('auto') // one auto point ⇒ auto
-    const max = await mk('max'); await seed(max.id)
+    const max = await mk('max')
+    await seed(max.id)
     expect((await h.svc.getMetricCurrent(max.id)).value).toBe(30)
-    const min = await mk('min'); await seed(min.id)
+    const min = await mk('min')
+    await seed(min.id)
     expect((await h.svc.getMetricCurrent(min.id)).value).toBe(10)
-    const count = await mk('count'); await seed(count.id)
+    const count = await mk('count')
+    await seed(count.id)
     expect((await h.svc.getMetricCurrent(count.id)).value).toBe(3)
   })
 
@@ -380,7 +402,11 @@ describe('mod-purposes S4 — contributions edge', () => {
   it("lists a goal's contributions, reweights, and soft-deletes (unlink hides it)", async () => {
     const p = await h.svc.createPurpose({ title: 'Wealth' })
     const t = await h.svc.createTarget({ title: 'Net worth' })
-    const c1 = await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'finance_target', id: 'ft1' }, { weight: 60 })
+    const c1 = await h.svc.linkContribution(
+      { type: 'purpose', id: p.id },
+      { type: 'finance_target', id: 'ft1' },
+      { weight: 60 },
+    )
     await h.svc.linkContribution({ type: 'purpose', id: p.id }, { type: 'project', id: 'pr1' }, { weight: 40 })
     await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'task', id: 'tk1' }, { weight: 100 })
     expect(await h.svc.listContributions({ type: 'purpose', id: p.id })).toHaveLength(2)
@@ -404,7 +430,12 @@ describe('mod-purposes S5 — measurability core (leaf progress)', () => {
   })
 
   it('quantitative target leaf = current/target (baseline 0, higher-better); unmeasured without current', async () => {
-    const t = await h.svc.createTarget({ title: 'Read', measurement_kind: 'quantitative', target_value: 24, current_value: 6 })
+    const t = await h.svc.createTarget({
+      title: 'Read',
+      measurement_kind: 'quantitative',
+      target_value: 24,
+      current_value: 6,
+    })
     expect((await h.svc.progress({ type: 'target', id: t.id })).value).toBe(25) // 6/24 = 25%
     const t2 = await h.svc.createTarget({ title: 'noCurrent', measurement_kind: 'quantitative', target_value: 10 })
     const v2 = await h.svc.progress({ type: 'target', id: t2.id })
@@ -444,7 +475,10 @@ describe('mod-purposes S5 — measurability core (rollup)', () => {
     const p = await h.svc.createPurpose({ title: 'x', progress: 42 })
     await h.svc.createTarget({ title: 't', purpose_id: p.id, measurement_kind: 'milestone', status: 'completed' })
     expect(await h.svc.computeProgress({ type: 'purpose', id: p.id })).toEqual({
-      value: 42, derived: false, partial: false, unmeasured: false,
+      value: 42,
+      derived: false,
+      partial: false,
+      unmeasured: false,
     })
   })
 
@@ -457,7 +491,13 @@ describe('mod-purposes S5 — measurability core (rollup)', () => {
 
   it('purpose rolls up its spine-targets (equal weight) — weighted average of target leaves', async () => {
     const p = await h.svc.createPurpose({ title: 'learn' })
-    await h.svc.createTarget({ title: 'a', purpose_id: p.id, measurement_kind: 'quantitative', target_value: 10, current_value: 10 }) // 100%
+    await h.svc.createTarget({
+      title: 'a',
+      purpose_id: p.id,
+      measurement_kind: 'quantitative',
+      target_value: 10,
+      current_value: 10,
+    }) // 100%
     await h.svc.createTarget({ title: 'b', purpose_id: p.id, measurement_kind: 'milestone' }) // 0%
     const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
     expect(v.value).toBe(50) // (100 + 0) / 2, equal weight
@@ -490,7 +530,12 @@ describe('mod-purposes S5 — measurability core (rollup)', () => {
     await h.svc.linkContribution({ type: 'target', id: t.id }, { type: 'dream', id: d.id }, { weight: 100 })
     expect((await h.svc.computeProgress({ type: 'target', id: t.id })).value).toBe(40) // leaf null → rollup contributions
     // a measured leaf wins over contributions:
-    const t2 = await h.svc.createTarget({ title: 'books', measurement_kind: 'quantitative', target_value: 4, current_value: 2 })
+    const t2 = await h.svc.createTarget({
+      title: 'books',
+      measurement_kind: 'quantitative',
+      target_value: 4,
+      current_value: 2,
+    })
     await h.svc.linkContribution({ type: 'target', id: t2.id }, { type: 'dream', id: d.id }, { weight: 100 })
     expect((await h.svc.computeProgress({ type: 'target', id: t2.id })).value).toBe(50) // leaf (2/4) wins, not the dream's 40
   })
@@ -508,8 +553,12 @@ describe('mod-purposes S5 — measurability core (rollup)', () => {
     const p = await h.svc.createPurpose({ title: 'weight-goal' })
     // lose weight: 90 (baseline) → 70 (target), currently 80 → halfway, higher-better=false
     const m = await h.svc.createMetric({
-      name: 'bodyweight', purpose_id: p.id, calculation_method: 'latest',
-      target_value: 70, baseline_value: 90, is_higher_better: false,
+      name: 'bodyweight',
+      purpose_id: p.id,
+      calculation_method: 'latest',
+      target_value: 70,
+      baseline_value: 90,
+      is_higher_better: false,
     })
     await h.svc.recordMetricValue(m.id, 80)
     const v = await h.svc.computeProgress({ type: 'purpose', id: p.id })
@@ -564,7 +613,10 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
 
   it('bind(derived-pull) persists binding_mode + the source ref in measurement_method', async () => {
     const t = await h.svc.createTarget({ title: 'net worth' })
-    const out = await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    const out = await h.svc.bind(
+      { type: 'target', id: t.id },
+      { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } },
+    )
     expect(out.binding_mode).toBe('derived-pull')
     expect(out.measurement_method).toBe('finance_target:f1') // the ${type}:${id} source key (S5 convention)
     // re-read confirms it persisted (not just the returned row)
@@ -574,7 +626,10 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
 
   it('bind(event-trigger) persists the ref too (the write path is dormant at M1)', async () => {
     const t = await h.svc.createTarget({ title: 'auto-complete on paid' })
-    const out = await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'event-trigger', ref: { type: 'task', id: 'tk1' } })
+    const out = await h.svc.bind(
+      { type: 'target', id: t.id },
+      { binding_mode: 'event-trigger', ref: { type: 'task', id: 'tk1' } },
+    )
     expect(out.binding_mode).toBe('event-trigger')
     expect(out.measurement_method).toBe('task:tk1')
   })
@@ -600,7 +655,10 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
 
   it('a derived-pull target leaf resolves NULL at M1 (empty source registry) — honest unmeasured, never 0', async () => {
     const t = await h.svc.createTarget({ title: 'net worth', target_value: 100, current_value: 50 }) // would be 50% if manual
-    await h.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    await h.svc.bind(
+      { type: 'target', id: t.id },
+      { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } },
+    )
     const v = await h.svc.progress({ type: 'target', id: t.id })
     expect(v.value).toBeNull() // derived-pull overrides the stored current_value → reads the (empty) source → null
     expect(v.unmeasured).toBe(true)
@@ -611,7 +669,10 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
     sources.advertise('finance_target:f1', () => 0.75) // Finance advertises a normalized measure, [0,1]
     const hh = await setup({ measurementSources: sources })
     const t = await hh.svc.createTarget({ title: 'net worth' })
-    await hh.svc.bind({ type: 'target', id: t.id }, { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } })
+    await hh.svc.bind(
+      { type: 'target', id: t.id },
+      { binding_mode: 'derived-pull', ref: { type: 'finance_target', id: 'f1' } },
+    )
     expect((await hh.svc.progress({ type: 'target', id: t.id })).value).toBe(75) // 0.75 → 75%
   })
 
@@ -644,8 +705,14 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
     const t1 = await h.svc.createTarget({ title: 'T1' })
     const t2 = await h.svc.createTarget({ title: 'T2' })
     const t3 = await h.svc.createTarget({ title: 'T3' })
-    await h.svc.bind({ type: 'target', id: t1.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t2.id } }) // T2→T1
-    await h.svc.bind({ type: 'target', id: t2.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t3.id } }) // T3→T2
+    await h.svc.bind(
+      { type: 'target', id: t1.id },
+      { binding_mode: 'derived-pull', ref: { type: 'target', id: t2.id } },
+    ) // T2→T1
+    await h.svc.bind(
+      { type: 'target', id: t2.id },
+      { binding_mode: 'derived-pull', ref: { type: 'target', id: t3.id } },
+    ) // T3→T2
     // T3 derives from T1 → T1→T3, closing T1←T2←T3←T1 → cycle.
     await expect(
       h.svc.bind({ type: 'target', id: t3.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: t1.id } }),
@@ -675,7 +742,10 @@ describe('mod-purposes S6 — bindings + DAG guard + derived-pull', () => {
     const c = await h.svc.createTarget({ title: 'C' })
     await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: b.id } })
     // re-bind A to derive from C instead — A's old B→A edge is replaced, no phantom cycle.
-    const out = await h.svc.bind({ type: 'target', id: a.id }, { binding_mode: 'derived-pull', ref: { type: 'target', id: c.id } })
+    const out = await h.svc.bind(
+      { type: 'target', id: a.id },
+      { binding_mode: 'derived-pull', ref: { type: 'target', id: c.id } },
+    )
     expect(out.measurement_method).toBe(`target:${c.id}`)
   })
 })
@@ -691,7 +761,11 @@ describe('mod-purposes S7 — reviews + plan_steps', () => {
 
   it('openTargetReview records the ledger, computes next_review_date, registers review, fires a scheduled session', async () => {
     const t = await h.svc.createTarget({ title: 'ship v1', review_frequency: 'weekly' })
-    const r = await h.svc.openTargetReview(t.id, { progress_rating: 7, reflection: 'on track', reviewed_at: Date.UTC(2026, 0, 1) })
+    const r = await h.svc.openTargetReview(t.id, {
+      progress_rating: 7,
+      reflection: 'on track',
+      reviewed_at: Date.UTC(2026, 0, 1),
+    })
     expect(r.target_id).toBe(t.id)
     expect(r.progress_rating).toBe(7)
     // the `review` sub-type is now registered + a scheduled review session exists (PG-13).

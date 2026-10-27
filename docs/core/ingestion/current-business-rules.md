@@ -17,7 +17,7 @@
 - **IN-4 (never auto-transmit on the egress leg).** A sensitive-read fetch requires a `UserInitiationProof`; its
   absence is the egress deny, surfaced as `sensitive_egress_unconsented`. [ADR-014:64; ADR-015:58 §3.4a] (IR-2)
 - **IN-5 (three layers by owner, honestly disclosed).** `classifyLayer` classes a connector `native |
-  public-reference | user-managed` (by owner, not mechanism; temporal); `buildDisclosure` returns the ADR-014:56-60
+public-reference | user-managed` (by owner, not mechanism; temporal); `buildDisclosure` returns the ADR-014:56-60
   matrix verbatim (who-sees · what-leaks · server-posture) — disclosed, not pretended away. An unknown layer fails
   loud (`UnknownIngestionLayer`). [ADR-014:44-60; capability-framework.md:196 (X2)] (IR-3/IR-5)
 - **IN-6 (fetch the whole set, never the subset).** `fetchWholeSet` refuses a `subset` request

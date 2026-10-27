@@ -8,8 +8,14 @@
 import type { ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import {
-  ListView, GalleryView, CalendarView, NeuralGraph, EmptyState, Card,
-  type ViewLayout, type ViewState,
+  ListView,
+  GalleryView,
+  CalendarView,
+  NeuralGraph,
+  EmptyState,
+  Card,
+  type ViewLayout,
+  type ViewState,
 } from '@vida/ui'
 import { Star } from 'lucide-react'
 import { Icon, typeLabel } from './note-chrome'
@@ -30,12 +36,28 @@ const Col = styled(View, { flexDirection: 'column', gap: '$4' })
 
 function NoteRowCard({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
-    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={cardName(r)}
-      header={<Row><Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} tone="primary" /><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text></Row>}
-      actions={r.favorite ? <Icon icon={Star} tone="accent" /> : undefined}>
+    <Card
+      interactive
+      onPress={() => onOpen(r.id)}
+      status={r.favorite ? 'warm' : 'neutral'}
+      aria-label={cardName(r)}
+      header={
+        <Row>
+          <Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} tone="primary" />
+          <Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">
+            {r.title}
+          </Text>
+        </Row>
+      }
+      actions={r.favorite ? <Icon icon={Star} tone="accent" /> : undefined}
+    >
       <Col>
-        <Text fontSize="$small" color="$colorTextMuted">{r.excerpt}</Text>
-        <Text fontSize="$small" color="$colorTextMuted">{typeLabel(r.type)} · {r.updated}</Text>
+        <Text fontSize="$small" color="$colorTextMuted">
+          {r.excerpt}
+        </Text>
+        <Text fontSize="$small" color="$colorTextMuted">
+          {typeLabel(r.type)} · {r.updated}
+        </Text>
       </Col>
     </Card>
   )
@@ -51,12 +73,25 @@ function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) 
             <CoverImage cover={r.cover} variant="tile" />
           </View>
         ) : (
-          <View height={72} borderRadius="$sm" backgroundColor="$colorSurfaceSecondary" alignItems="center" justifyContent="center">
+          <View
+            height={72}
+            borderRadius="$sm"
+            backgroundColor="$colorSurfaceSecondary"
+            alignItems="center"
+            justifyContent="center"
+          >
             <Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={24} />
           </View>
         )}
-        <Row><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text>{r.favorite && <Icon icon={Star} tone="accent" />}</Row>
-        <Text fontSize="$small" color="$colorTextMuted">{typeLabel(r.type)} · {r.updated}</Text>
+        <Row>
+          <Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">
+            {r.title}
+          </Text>
+          {r.favorite && <Icon icon={Star} tone="accent" />}
+        </Row>
+        <Text fontSize="$small" color="$colorTextMuted">
+          {typeLabel(r.type)} · {r.updated}
+        </Text>
       </Col>
     </Card>
   )
@@ -64,20 +99,68 @@ function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) 
 
 /** Render the active layout's @vida/ui renderer with notes rows. `graph` always degrades to the `empty` terminal
  *  (AR-8 graph data-prep deferred, NOT-49) unless loading/error. `table`/`board`/`timeline` aren't offered for notes. */
-export function renderNotesView(layout: ViewLayout, state: ViewState, rows: readonly NotesRow[], onOpen: (id: string) => void): ReactNode {
+export function renderNotesView(
+  layout: ViewLayout,
+  state: ViewState,
+  rows: readonly NotesRow[],
+  onOpen: (id: string) => void,
+): ReactNode {
   switch (layout) {
     case 'gallery':
-      return <GalleryView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} minTileWidth={220} renderItem={(r) => <NoteTile r={r} onOpen={onOpen} />} />
+      return (
+        <GalleryView
+          aria-label="Notes"
+          items={rows}
+          getKey={(r) => r.id}
+          state={state}
+          minTileWidth={220}
+          renderItem={(r) => <NoteTile r={r} onOpen={onOpen} />}
+        />
+      )
     case 'calendar':
-      return <CalendarView aria-label="Notes by day" items={rows} getKey={(r) => r.id} getDate={(r) => r.date} state={state === 'empty' ? 'success' : state} renderItem={(r) => <Row><Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={12} /><Text fontSize="$small">{r.title}</Text></Row>} />
+      return (
+        <CalendarView
+          aria-label="Notes by day"
+          items={rows}
+          getKey={(r) => r.id}
+          getDate={(r) => r.date}
+          state={state === 'empty' ? 'success' : state}
+          renderItem={(r) => (
+            <Row>
+              <Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={12} />
+              <Text fontSize="$small">{r.title}</Text>
+            </Row>
+          )}
+        />
+      )
     case 'graph':
       return (
-        <NeuralGraph aria-label="Notes graph" nodes={[]} edges={[]} height={380}
+        <NeuralGraph
+          aria-label="Notes graph"
+          nodes={[]}
+          edges={[]}
+          height={380}
           state={state === 'loading' || state === 'error' ? state : 'empty'}
-          empty={<EmptyState title="The graph is being prepared"><Text fontSize="$body" color="$colorTextMuted">Connections appear once link indexing is available.</Text></EmptyState>} />
+          empty={
+            <EmptyState title="The graph is being prepared">
+              <Text fontSize="$body" color="$colorTextMuted">
+                Connections appear once link indexing is available.
+              </Text>
+            </EmptyState>
+          }
+        />
       )
     case 'list':
     default:
-      return <ListView aria-label="Notes" items={rows} getKey={(r) => r.id} state={state} dividers renderItem={(r) => <NoteRowCard r={r} onOpen={onOpen} />} />
+      return (
+        <ListView
+          aria-label="Notes"
+          items={rows}
+          getKey={(r) => r.id}
+          state={state}
+          dividers
+          renderItem={(r) => <NoteRowCard r={r} onOpen={onOpen} />}
+        />
+      )
   }
 }

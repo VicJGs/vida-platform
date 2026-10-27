@@ -7,6 +7,7 @@ The `apps/web` runtime-wiring + convention layer for the four `@vida/core` compo
 service bootstrap over the worker-db Drizzle-proxy is doc-homed to UI-3/first-consumer; `apps/web/src/db/CLAUDE.md`).
 
 ## What this ships
+
 - `index.ts` — the **seams barrel**: one import site re-exporting the two shipped read-consumption adapters
   (`../collection/adapter` = SavedView seam, `../dashboard/adapter` = Capability/Block standalone seam). RATIFIES them
   as #13's seam surface (does not re-author — BR-S1-2).
@@ -22,6 +23,7 @@ service bootstrap over the worker-db Drizzle-proxy is doc-homed to UI-3/first-co
 ## The conventions (how a consumer wires each seam)
 
 ### 1. Service access — via factories; injection mechanism is the consumer's choice
+
 Each engine is obtained from its exported `@vida/core` factory (all take `db: DrizzleDb, deviceId: string` unless noted):
 `createViewsService` · `createViewEngine(registry?)` · `createViewProviderRegistry` (no args) · `createSpacesService(db,
 deviceId, registry)` · `createCapabilityRegistry` · `createCapabilityEnforcer(db, deviceId, registry)` ·
@@ -33,60 +35,75 @@ main-thread Drizzle-proxy that currently throws (`db/CLAUDE.md`). Reads go throu
 entity (golive-replan G0, `docs/specs/foundation/golive-replan/process.md` ELC-3…9); #13 stays convention-only.
 
 ### 2. ReadProvider registration (SavedView seam — the gap `collection/CLAUDE.md` leaves)
+
 The View provider registry **ships EMPTY**; each module registers its documented list/query API at its own build
 (ADR-007 §3.4, INT-1 — never a direct cross-module table read):
+
 ```ts
-const providers = createViewProviderRegistry()         // from @vida/core (pure, no db)
-providers.register({ entityType: 'task', list: (filter) => tasks.list(filter) })  // ReadProvider
+const providers = createViewProviderRegistry() // from @vida/core (pure, no db)
+providers.register({ entityType: 'task', list: (filter) => tasks.list(filter) }) // ReadProvider
 const engine = createViewEngine(providers)
-const resolved = await engine.resolve(view)            // fans the filter out; degrade-never-crash (BR-11)
+const resolved = await engine.resolve(view) // fans the filter out; degrade-never-crash (BR-11)
 // then: toCollectionChrome(savedView, resolved) → CollectionView props  (see ../collection/CLAUDE.md)
 ```
+
 A missing provider contributes nothing + a declared degraded note — the engine never throws mid-fan-out (BR-11).
 
 ### 3. offered-set → add-menu (Capability/Block seam — the gap `dashboard/CLAUDE.md` homes to "O2")
+
 A Space surface derives its add-menu from the capability offered-set:
+
 ```ts
-const offered = await offeredSet.resolveOfferedSet(spaceId, 'standalone')  // the Space's enabled_blocks PALETTE
+const offered = await offeredSet.resolveOfferedSet(spaceId, 'standalone') // the Space's enabled_blocks PALETTE
 // 'inline' → the union across the page's Spaces + the global editor base (non-restrictive)
 ```
+
 Keep **`enabled_blocks` (the offered palette / add-menu) distinct from `block_instances` (the placements)** — curating
-the palette gates *adding*, never force-deletes existing placements (ADR-008 §3.4). Standalone placements →
+the palette gates _adding_, never force-deletes existing placements (ADR-008 §3.4). Standalone placements →
 `toBlocks(...)` (see `../dashboard/CLAUDE.md`); inline placements → the `@vida/editor` slash-menu.
 
 ### 4. Template — fork-on-instantiate (ADR-009)
+
 A Template is a portable seed bundle instantiated by **FORK** — a deep copy with **no `template_id` back-link** (an
 instance and its source are independent from the first second):
+
 ```ts
-import { createTemplatesService } from '@vida/core'          // S2 surfaced this on the barrel
+import { createTemplatesService } from '@vida/core' // S2 surfaced this on the barrel
 const templates = createTemplatesService(db, deviceId)
-const list = await templates.listTemplates()                  // present the shipped presets + user templates
+const list = await templates.listTemplates() // present the shipped presets + user templates
 // instantiate(...) / captureFromSpace(...) EXECUTION is deferred in @vida/core (S3–S5) — pulled by the first consumer.
 // It returns InstantiationResult { status, seeded: string[], flagged: FlaggedMember[] } — flagged = a referenced
 // capability absent on this device → render a degraded note, not a crash (IR-4/IR-5).
 ```
+
 Never imply a live link to the template; the instance is a free-standing fork.
 
 ### 5. Spaces — the `enabled_blocks` palette (ADR-006/008)
+
 A Space = `{ root tag · Views · enabled Blocks · name }`. Curate its offered palette (the add-menu source for §3):
+
 ```ts
 import { createSpacesService } from '@vida/core'
 const spaces = createSpacesService(db, deviceId, taggableRegistry)
-await spaces.addEnabledBlock(spaceId, capabilityDefId)        // gate ADDING to the offered-set (idempotent, BR-14)
-await spaces.removeEnabledBlock(spaceId, capabilityDefId)     // remove from the menu — does NOT delete placements (IR-3)
+await spaces.addEnabledBlock(spaceId, capabilityDefId) // gate ADDING to the offered-set (idempotent, BR-14)
+await spaces.removeEnabledBlock(spaceId, capabilityDefId) // remove from the menu — does NOT delete placements (IR-3)
 ```
+
 The **scope selector (global scope state) is #15**; the **Spaces page (list/create/edit) is #20** — not this layer.
 
 ## Invariants
+
 - **View = read-only lens; Capability = the interactive/write mixture** — kept separate (quality-bar §4.3; ADR-008:71-77).
   The SavedView seam carries no entity write; a write (drag-to-move, inline edit) is a Capability.
 - **Type + convention, no live hook** — first-consumer-pull (`ProviderRead` precedent).
 - **RATIFY, don't rewrite** — the collection/dashboard adapters are frozen contracts.
 
 ## Out of scope (homed elsewhere)
+
 Live service bootstrap → UI-3/first-consumer · per-module `ReadProvider` impls → modules #27+ · per-surface live hooks
 (`useCollection`/`useDashboard`) → first consumers · Template instantiate/capture EXECUTION → `@vida/core` S3–S5 ·
 scope state → #15 · Spaces page → #20.
 
 ## Verify
+
 `pnpm --filter @vida/web test -- seams` (pure, env node).

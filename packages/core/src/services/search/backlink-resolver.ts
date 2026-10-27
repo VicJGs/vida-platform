@@ -54,9 +54,7 @@ export function createBacklinkResolver(db: DrizzleDb, deviceId: string): Backlin
     },
 
     getLinksFrom(pageId) {
-      return entityLinkRepo.findWhere(
-        and(eq(entityLinks.page_id, pageId), isNull(entityLinks.deleted_at))!,
-      )
+      return entityLinkRepo.findWhere(and(eq(entityLinks.page_id, pageId), isNull(entityLinks.deleted_at))!)
     },
 
     async resolveLink(pageId, entityType, entityId) {

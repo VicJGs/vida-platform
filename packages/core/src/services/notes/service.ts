@@ -52,9 +52,7 @@ function seedContent(seed: EntityNoteSeed): string {
   const rest = Object.keys(seed)
     .filter((k) => k !== 'title' && !LEADING.includes(k))
     .sort()
-  const lines = [...LEADING, ...rest]
-    .filter((k) => seed[k] != null)
-    .map((k) => `${k}: ${String(seed[k])}`)
+  const lines = [...LEADING, ...rest].filter((k) => seed[k] != null).map((k) => `${k}: ${String(seed[k])}`)
   if (lines.length > 0) {
     content.push({ type: 'paragraph', content: [{ type: 'text', text: lines.join(' · ') }] })
   }
@@ -191,9 +189,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       seed: EntityNoteSeed,
     ): Promise<PageRow> => {
       // NP-8 idempotent: return the existing non-deleted *_note for this (pageType, entity) if present.
-      const existing = (await service.getPagesForEntity(entityType, entityId)).find(
-        (p) => p.type === pageType,
-      )
+      const existing = (await service.getPagesForEntity(entityType, entityId)).find((p) => p.type === pageType)
       if (existing) return existing
       // Absent → create via S1 createPage (inherits registry validation, BR-S1-3) with a deterministic seed.
       return service.createPage({
@@ -251,11 +247,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
     },
 
     // ── S3: page-links + wiki resolution ────────────────────────────
-    createPageLink: async (
-      sourcePageId: string,
-      targetPageId: string,
-      context?: string,
-    ): Promise<PageLinkRow> => {
+    createPageLink: async (sourcePageId: string, targetPageId: string, context?: string): Promise<PageLinkRow> => {
       await requireLivePage(sourcePageId) // BR-R0-5 — both ends live (a revive included)
       await requireLivePage(targetPageId)
       // Business-key query INCLUDING soft-deleted (the revive path needs it) — UNIQUE(source,target)
@@ -313,8 +305,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
       await spaces.removeLink(pageId, entityType, entityId)
     },
 
-    getEntityLinksFrom: async (pageId: string): Promise<EntityLinkRow[]> =>
-      backlinks.getLinksFrom(pageId),
+    getEntityLinksFrom: async (pageId: string): Promise<EntityLinkRow[]> => backlinks.getLinksFrom(pageId),
 
     // Both lists UNMERGED; the grouped presentation is G6-tentative → ② (BR-S4-4). pageLinks via
     // getPageLinksTo(entityId) unconditionally — a non-page id yields [] anyway (D-S4-2).

@@ -6,6 +6,7 @@
 > envision EC-1…EC-8; Approval-1 + Approval-2 passed, `/critique` REVISE folded (B1–B3 + S1–S4).
 
 ## What it is
+
 A presentational `@vida/ui` SHELL that frames a standalone entity page as **two facets** — a **Layout facet** (always
 present; the consumer composes Title·bio·summary + `DashboardView` + `CollectionView`) and an **optional Editor facet**
 (the entity's linked page = the TipTap canvas, Canvas: Editor #7, composed as a slot) — in a user-chosen **merged** (one
@@ -15,6 +16,7 @@ internals. Archetype siblings: `CollectionView` (switches one renderer over the 
 block grid). Entity composes two whole facets with a mode toggle.
 
 ## Boundary
+
 `@vida/ui` is Tamagui-only (no `@vida/core`/`@vida/types`) [FACT: the collection/dashboard siblings split on this]. So
 `FacetMode` is a LOCAL union, and the Editor facet's state reuses the shipped intra-package **`ViewState`** canon imported
 directly from `internal/data-view` (NOT a new `FacetState` alias — `dashboard-view.tsx:5` imports `ViewState` the same way;
@@ -23,6 +25,7 @@ inventing a parallel-named identical type is needless surface) [FACT: dashboard-
 crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 lives in @vida/core].
 
 ## API (Seam A)
+
 - `title: string` — names the region (`aria-labelledby`→heading via `warnMissingName`/`useId`) + renders as the serif
   `$display` title [FACT: dashboard-view.tsx:180-188].
 - `subtitle?: ReactNode` · `action?: ReactNode` — the bio/summary line + the `⋯` entity-action slot.
@@ -44,15 +47,16 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   dashboard-view.tsx:164-185].
 
 ## Invariants (business rules)
+
 - **BR-E-1 Facet frame, not a renderer** — composes a Layout body + an optional Editor body the consumer supplies; owns the
   header + mode + per-facet state threading, never a facet's internals [FACT: decomposition.md:31; collection-view.tsx:9-20].
 - **BR-E-2 Controlled mode + state-as-prop** — `mode` + `editorState` are the app's (derived/persisted upstream); the shell
   never derives them [FACT: collection-view.tsx:69-74; dashboard-view.tsx:38-39].
 - **BR-E-3 Registry gate = `editor`-slot presence; empty-editor ≠ page-less** — the Editor facet (a Content tab in tabbed /
   a divided section in merged) renders **iff** an `editor` node is passed; absent → Layout stands alone (the `onFilter != null
-  → render Filter` precedent) [FACT: collection-view.tsx:179-197]. **Page-less ⇒ Layout rendered DIRECTLY regardless of
+→ render Filter` precedent) [FACT: collection-view.tsx:179-197]. **Page-less ⇒ Layout rendered DIRECTLY regardless of
   `mode`** (nothing to tab between; no Tabs, no toggle) [EC-3]. **DISTINCT from empty-editor:** `editor` present +
-  `editorState:'empty'` → the Content tab / editor section IS shown, rendering the teaching empty *body* (the page exists,
+  `editorState:'empty'` → the Content tab / editor section IS shown, rendering the teaching empty _body_ (the page exists,
   it's just blank). Both must render correctly (S3).
 - **BR-E-4 Tabbed via ui-1 `Tabs`; merged stacks with labeled regions + a divider** — tabbed = `Tabs items=[home,content]`
   with `<Tabs.Panel>` bodies, **only the active panel mounts**, seeded by `defaultFacet`/`activeFacet` (B1); merged = Layout +
@@ -72,7 +76,7 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   the collection-view switcher precedent (NOT a bare pair of buttons) (S2); omitted when no `editor` (nothing to toggle)
   [FACT: collection-view.tsx:216-228 `role="toolbar"` + `aria-pressed`; frontend-quality-bar/_index.md:142-143,117].
 - **BR-E-7 Tokens + a11y + motion** — DIRECT semantic tokens, no hard-coded palette; the title is `fontFamily:"$display"` at
-  **`fontSize:"$display"`** (the entity page's H1 — the most prominent title in the app; distinct from a shell *section*
+  **`fontSize:"$display"`** (the entity page's H1 — the most prominent title in the app; distinct from a shell _section_
   heading like dashboard's `$heading`) (S1); named region (`warnMissingName`); Tabs owns the `role="tabpanel"` + roving-tab
   a11y; reduced-motion honored on the Tabs indicator/panel motion (the Tabs `@media` convention) [FACT: tabs.tsx:27,127-131;
   packages/ui/src/CLAUDE.md "use-reduced-motion"] [EC-7].
@@ -80,7 +84,7 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   `role="heading" aria-level=1` element (`tabIndex=-1`, exposed by `titleRef` as a focus target). The region is named by a
   span that always holds `title` (also while editing), so its name is exactly the title. With `onTitleCommit`, the title is a
   button inside the heading (hint "Rename the page" via `aria-describedby`, outside the heading); click/Enter → an `Input
-  size="display"` seeded from `titleEditValue ?? title`; Enter or blur commits a changed trimmed value (empty passes
+size="display"` seeded from `titleEditValue ?? title`; Enter or blur commits a changed trimmed value (empty passes
   through), Esc reverts; each edit ends exactly once and focus returns to the title after Enter/Esc.
 - **BR-E-8 Responsive** — both modes reflow 375→768→1440 with no 375 overflow; a `maxWidth` content column centered on
   desktop; Tabs usable at 375 [FACT: collection-view.tsx:37-52 useTabletUp precedent] [EC-6].
@@ -89,6 +93,7 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
   `$display` title applies `lineHeight="$display"` (1.15) so wrapped lines never collide [FACT: entity-view.tsx:71-83,159].
 
 ## Resolved contract points (pinned at Envision; ratified here)
+
 1. **The registry gate is slot presence, not a `hasEditor` boolean** — forced by the `@vida/ui` boundary (can't consult the
    `@vida/core` registry). S2 runs `isEntityType()` + the page lookup and passes/omits the `editor` slot [FACT: _registry.ts:157].
 2. **Editor facet state ownership = the dashboard way** — `editorState` + the shell owns the generic page states, renders
@@ -96,13 +101,16 @@ crossing into `@vida/ui` [FACT: packages/core/src/db/schema/_registry.ts:5-158 l
    state), so it takes no state prop [FACT: dashboard-view.tsx:120-162; interpretation §6-2].
 
 ## Out of scope (homed by the docs)
+
 The Editor facet BODY = the TipTap block canvas (Canvas: Editor #7, not a dep — O1) · the Layout sub-shell BODIES
 (`DashboardView` #5 / `CollectionView` #4, composed — O2) · the page-ability registry itself (`@vida/core`, frozen — O3) ·
 the merged/tabbed storage schema + the live `useEntity` hook (S2 convention / first consumer — O4) · per-module entity
 surfaces + data (module ② tracks — O5) · the Flow/Session shell that consumes #6 (#11 — O6).
 
 ## Visual Gate (blocking) — MUSTs
+
 Brave, 3 presets × light/dark × 375/768/1440 + axe 0:
+
 - **EC-1** merged — Layout + divider + Editor on one surface, order summary→dashboard→views.
 - **EC-2** tabbed — `Tabs [Home|Content]`, only active panel mounts, indicator + roving; `defaultFacet:'editor'` opens on
   Content (B1 deep-link); merged→tabbed→merged holds the facet when `activeFacet` is controlled.
@@ -116,5 +124,6 @@ Brave, 3 presets × light/dark × 375/768/1440 + axe 0:
 - **EC-8** (feel) mode-switch immediacy · editor reads as a document — live-gate observation.
 
 ## Files (planned)
+
 `packages/ui/src/components/entity-view.tsx` · `.stories.tsx` (gate surface) · `.test.tsx` (jsdom) · exported from
 `index.ts`. **S2 (the `apps/web` entity↔EntityView adapter) is the next slice.**

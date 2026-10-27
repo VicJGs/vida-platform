@@ -157,8 +157,8 @@ export const LongContent: Story = {
       <View gap={12}>
         {Array.from({ length: 20 }, (_, i) => (
           <Text key={i} color="$colorTextPrimary">
-            {i + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut
-            labore et dolore magna aliqua.
+            {i + 1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore
+            et dolore magna aliqua.
           </Text>
         ))}
       </View>

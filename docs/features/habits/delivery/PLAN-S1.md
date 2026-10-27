@@ -1,9 +1,13 @@
 # PLAN — S1 · Definition CRUD + validators + `@vida/types` reconcile
+
 # Spec: feature:mod-habits · slice S1 (§XXVI g1) · Status: draft
+
 # Source-repo: packages/core/src/services/habits · packages/core/src/validators/habit.ts · packages/types/src/habit.ts
+
 # No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded per Victor's standing directive.
 
 ## 1. Identity
+
 S1 births `createHabitsService` and the CRUD surface over the DB-4 `habits` table, plus the atomic `@vida/types`
 reconcile that downstream slices depend on. Legs: **HAB-01, HAB-02, HAB-03, HAB-04, HAB-20 (axes expose/validate),
 HAB-23 (habits-level restored fields), HAB-24, HAB-26 (E-seam), HAB-28**. `[FACT: parts/habits.md:11-14,20,23,24,26,28,33,38]`
@@ -11,9 +15,10 @@ NOT in S1: the completion ledger / streak engine (S2), any derivation (S4), any 
 view surfaces are ② `fe-habits`. `[FACT: delivery/slice-map.md]`
 
 ## 2. Business Rules (S1 slice)
+
 - **BR-S1-1 · Enum validation (HAB-24).** `createHabit`/`updateHabit` validate via Zod (`z.enum` over the
   `@vida/types` tuples), mirroring the SQL CHECK: `habit_type∈{build,break}`, `frequency∈{daily,weekly,biweekly,
-  monthly,custom}`, `time_of_day∈{morning,afternoon,evening,anytime,whole_day}`, `domain∈`LIFE_DOMAIN(8),
+monthly,custom}`, `time_of_day∈{morning,afternoon,evening,anytime,whole_day}`, `domain∈`LIFE_DOMAIN(8),
   `measurement_kind∈{quantitative,milestone,rate,qualitative}`, `binding_mode∈{manual,derived-pull,event-trigger}`,
   `difficulty∈{very_easy,easy,medium,hard,very_hard}`. Never a TS `enum`. `[FACT: db/schema/habits.ts:60-83; validators/habit.ts:4-6; business-rules.md:57-58]`
 - **BR-S1-2 · `custom` requires `days_of_week` (IR-8, edge).** A `frequency:'custom'` habit with no `days_of_week`
@@ -30,7 +35,7 @@ view surfaces are ② `fe-habits`. `[FACT: delivery/slice-map.md]`
   `softDelete:true`) and hides the habit from `listHabits`/`getHabit`; it does NOT touch `habit_completions`.
   **The HB-11 hard-delete cascade is NOT an M1.0 operation** — no hard-delete surface is exposed (matching
   finance's soft-only S1); the cascade is app-layer behavior for a future hard delete. `[FACT: business-rules.md:46-47; db/schema/habits.ts:76,84; finance/service.ts:169]`
-  *(Corrects slice-map S2 "app-layer cascade" — soft-delete does not cascade; noted there.)*
+  _(Corrects slice-map S2 "app-layer cascade" — soft-delete does not cascade; noted there.)_
 - **BR-S1-6 · `[E]` pass-through (IR-4, HAB-26).** The habits repo registers `encryptedFields:[]` in M1.0 even
   though `name/description/unit/cue/reward/success_criteria` are `[E]`; field-level wiring → M3/DB-5. `[FACT: db/schema/habits.ts:35-37,56-82]`
 - **BR-S1-7 · `@vida/types` reconcile (HAB-28, IR-9).** `Habit` gains `measurement_kind`, `binding_mode`,
@@ -45,8 +50,10 @@ view surfaces are ② `fe-habits`. `[FACT: delivery/slice-map.md]`
   validation error (ZodError / HabitScheduleError). `[FACT: business-rules.md:68-76]`
 
 ## 3. Contract (S1)
+
 `createHabitsService(deps: HabitsServiceDeps): HabitsService` — deps `{ db, deviceId }` (later-slice ports added
 per slice). S1 methods:
+
 ```
 createHabit(input: CreateHabitInput): Promise<Habit>
 updateHabit(id: string, patch: UpdateHabitInput): Promise<Habit>
@@ -54,10 +61,12 @@ softDeleteHabit(id: string): Promise<void>
 getHabit(id: string): Promise<Habit | null>
 listHabits(filter?: HabitFilter): Promise<Habit[]>   // HabitFilter: { is_active?, domain?, habit_type? } (M1)
 ```
+
 Typed errors: `HabitScheduleError` (BR-S1-2); `ZodError` (validation). No bespoke not-found error (Repository
 `update`/`delete` throw on missing — finance dropped its redundant guard). `[FACT: finance/service.ts + TASKS.md finance S1 decision]`
 
 ## 4. Acceptance (S1 — every item a live-store test where marked ✓live)
+
 - [ ] `@vida/types` `Habit` reconciled (+4 −`tags`), `HabitCompletion` (+3); `pnpm typecheck` green repo-wide (no consumer break)
 - [ ] `validators/habit.ts` extended: `CreateHabitSchema`/`UpdateHabitSchema` + the 4 new enum schemas; `enum-parity.test.ts` still green
 - [ ] `createHabit` persists + echoes a FAITHFUL row (defaults backfilled, nullables null) ✓live
@@ -69,11 +78,12 @@ Typed errors: `HabitScheduleError` (BR-S1-2); `ZodError` (validation). No bespok
 - [ ] `tsc --noEmit` 0 errors; `eslint` 0; the S1 Verification Gate (Vitest + ≥2 failure paths + live-store on migrate()'d 017, initVault() first) PASSES
 
 ## 5. Implementation Prompt (ordered; cites §2/§3; nothing invented)
+
 1. **`packages/types/src/habit.ts`** — reconcile per BR-S1-7. Add imports `MeasurementKind, BindingMode` from
    `./measurement`; `Habit`: add `measurement_kind: MeasurementKind`, `binding_mode: BindingMode | null`,
    `success_criteria: string | null` (`@encrypted`), `difficulty: HabitDifficulty | null`; **remove** `tags`.
    `HabitCompletion`: add `updated_at: Timestamp`, `location: string | null` (`@encrypted`), `completion_time:
-   Timestamp | null`. (Resolve the `time_of_day` divergence: keep `time_of_day: HabitTimeOfDay` non-null — the DB
+Timestamp | null`. (Resolve the `time_of_day` divergence: keep `time_of_day: HabitTimeOfDay` non-null — the DB
    default 'anytime' guarantees a value; the mapper/serialize coalesce, BR-S1-3/BR-S1-8.) `[FACT: db/schema/habits.ts:66,79-83,96,105-107]`
 2. **`packages/core/src/validators/habit.ts`** — extend (mirror `validators/finance.ts` structure — READ it first
    for the `Fields.partial().extend()` shape). Add `MeasurementKindSchema`/`BindingModeSchema` (re-export from
@@ -99,10 +109,12 @@ Typed errors: `HabitScheduleError` (BR-S1-2); `ZodError` (validation). No bespok
    `&& pnpm --filter @vida/core lint`. Done = §4 all green → S1 Verification Gate.
 
 ## 6. Open UNKNOWNs
+
 - [UNKNOWN → read at impl] the exact `validators/finance.ts` `Fields.partial().extend()` shape (mirror it; do not invent a divergent validator style).
 - [UNKNOWN → read at impl] whether `@vida/core/index.ts` exports services individually or via a services barrel (match the finance registration exactly).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session               | Change                                                                     |
+| ---------- | --------------------- | -------------------------------------------------------------------------- |
 | 2026-09-23 | 2026-09-23-mod-habits | S1 PLAN drafted from the approved decomposition + the finance S1 precedent |

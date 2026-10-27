@@ -9,7 +9,16 @@
 // ============================================================================
 
 import type { z } from 'zod'
-import type { Account, Asset, Liability, Investment, IncomeStream, Transaction, TransactionType, Money } from '@vida/types'
+import type {
+  Account,
+  Asset,
+  Liability,
+  Investment,
+  IncomeStream,
+  Transaction,
+  TransactionType,
+  Money,
+} from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import type {
   CreateAccountSchema,

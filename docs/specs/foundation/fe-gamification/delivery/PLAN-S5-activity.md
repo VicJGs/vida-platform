@@ -17,7 +17,7 @@ spend/distribute across modules, timestamped). Gate: paginated ledger, both pres
   `[FACT: apps/web/src/gamification/CLAUDE.md:30]`.
 - **The ledger-read grounding (the one real S5 question — DOC-RESOLVED, not a new decision):** the shipped ①
   `GamificationService` exposes **no activity/ledger-history read op**. The seam-contract surface lists only
-  `getBalance`/`getBalances`, which read `consequence_ledger` *privately* inside `computeBalance`
+  `getBalance`/`getBalances`, which read `consequence_ledger` _privately_ inside `computeBalance`
   `[FACT: seam-contract.md:27; services/gamification/service.ts:126-130]`. Confirmed three times in-repo:
   - seam-contract surface has no such op `[FACT: seam-contract.md:19-64]`;
   - "no per-currency ledger op in the seam — **S5 Activity owns the ledger**" `[FACT: currencies-mode.tsx:26-27]`;
@@ -25,14 +25,14 @@ spend/distribute across modules, timestamped). Gate: paginated ledger, both pres
 - **Resolution (IR-G1 data-plane rule + the fe-notes first-consumer-pull precedent, NOT invention):** S5 builds
   the ②-side hook **type+shape-correct against the INTENDED read, data STUBBED**; the enriched history read is an
   **unbuilt ①-tier first-consumer-pull seam → filed as F-S5-1** (the F-S8-1 precedent `[FACT: TASKS.md fe-notes
-  S8]`). **No `@vida/core`/`@vida/types` change this unit** (IR-G3; the whole unit is ② `[FACT: CLAUDE.md:4-5]`).
+S8]`). **No `@vida/core`/`@vida/types` change this unit** (IR-G3; the whole unit is ② `[FACT: CLAUDE.md:4-5]`).
 - **Row shape backing the stub** (`consequence_ledger`, SYNCABLE + baseColumns): `id`, `created_at` (ms
   timestamp), `currency_id` (→ `currencies.code`, no FK), `amount` (positive magnitude; **sign implied by kind**),
   `kind` ∈ `['earn','lock','spend','distribute']`, `target_ref` (the source dimension), `effect_event_id`
   `[FACT: db/schema/foundation/economy.ts:36-52; packages/types/src/economy.ts:8]`.
 - **Env:** Node 24 `[FACT]`. S5 is **apps/web-only** (reuses the shipped `CollectionView`/`ListView`/`Pager` idiom
-  + the already-built `game` preset); **no `@vida/ui` edit** ⇒ the symlink-repoint/rebuild is NOT needed
-  (`[[worktree-apps-web-ui-symlink-resolves-to-main]]` applies only when @vida/ui changes). Verified at implement.
+  - the already-built `game` preset); **no `@vida/ui` edit** ⇒ the symlink-repoint/rebuild is NOT needed
+    (`[[worktree-apps-web-ui-symlink-resolves-to-main]]` applies only when @vida/ui changes). Verified at implement.
 
 ## §2 Business rules / invariants (S5)
 
@@ -46,7 +46,7 @@ spend/distribute across modules, timestamped). Gate: paginated ledger, both pres
   amount as a **positive magnitude**; **direction is carried by the kind LABEL + glyph**, not an asserted ± number
   — because the balance engine is not a flat two-way sign: `current = earned − locked − spent` and **`distribute`
   does not affect `current`** (it draws the `toDistribute` ceiling) `[FACT: foundation/economy/balance.ts:22-25;
-  economy.ts:41 "sign implied by kind"]`. So labels are **Earned · Locked · Spent · Distributed**; a ± prefix would
+economy.ts:41 "sign implied by kind"]`. So labels are **Earned · Locked · Spent · Distributed**; a ± prefix would
   misrepresent `lock` (a hold) and `distribute`. **Every amount uses tabular figures** (the S2 `TABULAR` style
   `{ fontVariantNumeric: 'tabular-nums' }` `[FACT: currencies-mode.tsx:18,37]`) so ledger columns align.
 - **BR-S5-4 (EC-11):** icons are **Lucide/SVG, never emoji** `[FACT: slice-map.md:69; CLAUDE.md:44]`. The kind
@@ -72,27 +72,27 @@ spend/distribute across modules, timestamped). Gate: paginated ledger, both pres
 ```ts
 // use-activity.ts — type-correct against the INTENDED ① read; data stubbed (IR-G1).
 export interface ActivityEntry {
-  id: string                 // consequence_ledger.id
-  at: number                 // consequence_ledger.created_at (Unix ms) — the "timestamped" of EC-8
-  kind: ConsequenceKind      // 'earn' | 'lock' | 'spend' | 'distribute'  (@vida/types)
-  amount: number             // positive magnitude; sign implied by kind (BR-S5-3)
-  currencyCode: string       // consequence_ledger.currency_id (→ currencies.code)
-  currencyName?: string      // display, resolved via listCurrencies × the row (honest-absent ⇒ fall back to code)
-  source: string             // consequence_ledger.target_ref — the "across modules" origin, shown as a quiet chip
+  id: string // consequence_ledger.id
+  at: number // consequence_ledger.created_at (Unix ms) — the "timestamped" of EC-8
+  kind: ConsequenceKind // 'earn' | 'lock' | 'spend' | 'distribute'  (@vida/types)
+  amount: number // positive magnitude; sign implied by kind (BR-S5-3)
+  currencyCode: string // consequence_ledger.currency_id (→ currencies.code)
+  currencyName?: string // display, resolved via listCurrencies × the row (honest-absent ⇒ fall back to code)
+  source: string // consequence_ledger.target_ref — the "across modules" origin, shown as a quiet chip
 }
 
 export interface ActivityData {
-  entries: readonly ActivityEntry[]   // the CURRENT page (page-sliced), newest first
+  entries: readonly ActivityEntry[] // the CURRENT page (page-sliced), newest first
   total: number
   page: { index: number; count: number }
   setPage: (i: number) => void
-  state: InteractionState              // 8-state → collapseToTerminal at the shell (S2 precedent)
-  now: number                          // reference instant (sample = fixed, Gate-stable); CONSUMED to show the year
-                                       // only for entries outside now's year (g2 #2/#3), and any future relative hint
-
+  state: InteractionState // 8-state → collapseToTerminal at the shell (S2 precedent)
+  now: number // reference instant (sample = fixed, Gate-stable); CONSUMED to show the year
+  // only for entries outside now's year (g2 #2/#3), and any future relative hint
 }
 export function useActivity(): ActivityData
 ```
+
 Live swap (documented in-file, deferred): `useQuery(['gamification','activity', pageIndex], () =>
 svc.listConsequences({ offset, limit: PAGE_SIZE }))` once F-S5-1 lands + a composition root exists.
 
@@ -144,4 +144,4 @@ are shipped Lucide icons already used in the unit, e.g. `Lock`/`Plus` in S2.)
   (Today / Yesterday / date, via `ListView sections`) are a defensible scannability enhancement but are NOT
   required by any doc — I will NOT add them unless you want them (avoiding manufactured scope).
 - **[INTERP-B] F-S5-1 shape.** The intended ①-read named `listConsequences({offset,limit})` → `ActivityEntry[]`
-  + total. Named for the plan only; the actual ① signature lands when F-S5-1 is built (first-consumer-pull).
+  - total. Named for the plan only; the actual ① signature lands when F-S5-1 is built (first-consumer-pull).

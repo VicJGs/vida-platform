@@ -6,12 +6,7 @@
 // owner ROUTING metadata only — never content, type, or subject entity.
 // ============================================================================
 
-import {
-  FORBIDDEN_PAYLOAD_KEYS,
-  PayloadNotContentFree,
-  type RoutingMeta,
-  type WakePayload,
-} from './types'
+import { FORBIDDEN_PAYLOAD_KEYS, PayloadNotContentFree, type RoutingMeta, type WakePayload } from './types'
 
 // XCU-08 / XCU-16 — build the content-free wake payload from owner routing metadata.
 // Defense-in-depth for the content-zero invariant (IR-3): even though `RoutingMeta`

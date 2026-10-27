@@ -1,6 +1,8 @@
 # Spec: feature:mod-gamification
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: draft            <!-- draft → approved → implemented -->
+
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: packages/core/src/modules/gamification
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-09-22-mod-gamification (§7)
@@ -14,6 +16,7 @@ Sessions: 2026-09-22-mod-gamification (§7)
 -->
 
 ## 1. Identity
+
 The **Gamification module ("the System")** backend service tier — the OS's behavioral incentive &
 consequence engine. Rules ride ADR-011 bindings; consequences ride the ADR-004 §3.2.5 effect rail
 (grant/lock currency · move_money via Finance's guarded handler · surface_notification). Multi-currency
@@ -27,21 +30,28 @@ event bus) · not the owner of streaks/signals (module-owned, read via measureme
 automation, reuses the ADR-010 envelope not the render model). `[FACT: identity.md "What it is NOT"]`
 
 ## 2. Business Rules
+
 [FILL IN — via /documentation-component after the Decomposition Gate. Source: docs/features/gamification/business-rules.md + intake RESOLUTION.]
 
 ## 3. Contract
+
 [FILL IN — the `createGamificationService` factory surface + per-slice operations. Source: docs/features/gamification/contract.md + delivery/seam-contract.md.]
 
 ## 4. Acceptance
+
 [FILL IN — testable DoD per slice; live-store Verification Gate per slice.]
+
 - [ ] ...
 
 ## 5. Implementation Prompt
+
 [FILL IN — per-slice, from the approved slice-map. Mirrors the task's ## Build Steps.]
 
 ## 6. Notes
+
 Entity Delivery Flow front matter lives at `docs/features/gamification/delivery/` (interpretation.md ·
 slice-map.md · seam-contract.md · service/ spec set) — authored at Steps 1–2 before this spec is filled.
 
 ## 7. Sessions
+
 - 2026-09-22-mod-gamification — task init + spec stub scaffolded.

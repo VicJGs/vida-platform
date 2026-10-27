@@ -22,11 +22,7 @@ import { TagNotFound } from '../../foundation/spaces'
 import { DuplicateCapabilityId } from '../../foundation/capability'
 import { DuplicateSubType, type SessionTypeDef } from '../../foundation/sessions'
 import type { Session } from '../sessions'
-import {
-  CreateCardSchema,
-  UpdateCardSchema,
-  GenerateCardsSchema,
-} from '../../validators/knowledge'
+import { CreateCardSchema, UpdateCardSchema, GenerateCardsSchema } from '../../validators/knowledge'
 import {
   FLASHCARDS_METHOD_ID,
   REVIEW_SESSION_SUB_TYPE,

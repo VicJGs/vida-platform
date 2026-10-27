@@ -535,10 +535,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
 
   // --- Assets + positions (BOO-09/10/11) — deny-safe R2 upload -----------------
 
-  async function addAsset(
-    bookId: string,
-    input: AddAssetArgs,
-  ): Promise<{ asset: BookAsset; file: AttachmentRef }> {
+  async function addAsset(bookId: string, input: AddAssetArgs): Promise<{ asset: BookAsset; file: AttachmentRef }> {
     // Split the raw blob off the metadata (the blob is bytes, not a validated value) — frozen-contract bundled shape.
     const { file, ...meta } = input
     const v = AddAssetSchema.parse(meta)
@@ -818,10 +815,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     return { session, reading: toReadingSession(reading) }
   }
 
-  async function attachPhoto(
-    sessionId: string,
-    photo: FileBlob,
-  ): Promise<{ stored: AttachmentRef; ocr: OcrResult }> {
+  async function attachPhoto(sessionId: string, photo: FileBlob): Promise<{ stored: AttachmentRef; ocr: OcrResult }> {
     const reading = await findReadingSession(sessionId) // guard + yields book_id for the upload
     // (a) store — the photo ALWAYS stores when a port is present (BK-10, conventions.md:53-54); absent ⇒
     // attachment-unavailable; a PRESENT port whose upload rejects is a real R2 error ⇒ fail-loud AssetFileError
@@ -1079,9 +1073,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
       return chosen ? chosen.progress : 'conflicted' // asset not in this clash ⇒ honest conflicted (read-side miss)
     }
     // last_valid — greatest updated_at, tie-broken by asset id descending (deterministic, BR-BK-S8-5).
-    const latest = [...candidates].sort(
-      (a, b) => b.updatedAt - a.updatedAt || (a.assetId < b.assetId ? 1 : -1),
-    )[0]!
+    const latest = [...candidates].sort((a, b) => b.updatedAt - a.updatedAt || (a.assetId < b.assetId ? 1 : -1))[0]!
     return latest.progress
   }
 
@@ -1145,17 +1137,29 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
     const book = await booksRepo.findById(bookId)
     if (!book) throw new BookNotFoundError(bookId)
     const existing = await subjectsRepo.findWhere(
-      and(isNull(bookSubjects.deleted_at), eq(bookSubjects.book_id, bookId), eq(bookSubjects.subject_id, subjectId)) as SQL,
+      and(
+        isNull(bookSubjects.deleted_at),
+        eq(bookSubjects.book_id, bookId),
+        eq(bookSubjects.subject_id, subjectId),
+      ) as SQL,
     )
     if (existing[0]) return existing[0] // idempotent — the active link (a faithful DB row)
-    const { id } = await subjectsRepo.create({ book_id: bookId, subject_id: subjectId, deleted_at: null } satisfies CreateInput<typeof bookSubjects>)
+    const { id } = await subjectsRepo.create({
+      book_id: bookId,
+      subject_id: subjectId,
+      deleted_at: null,
+    } satisfies CreateInput<typeof bookSubjects>)
     return (await subjectsRepo.findById(id)) as BookSubjectRow // re-read: create() echoes the input (B1 faithful row)
   }
 
   /** BOO-36 — soft-delete the active link; a no-op when none exists (idempotent, never throws). */
   async function unlinkSubject(bookId: string, subjectId: string): Promise<void> {
     const existing = await subjectsRepo.findWhere(
-      and(isNull(bookSubjects.deleted_at), eq(bookSubjects.book_id, bookId), eq(bookSubjects.subject_id, subjectId)) as SQL,
+      and(
+        isNull(bookSubjects.deleted_at),
+        eq(bookSubjects.book_id, bookId),
+        eq(bookSubjects.subject_id, subjectId),
+      ) as SQL,
     )
     if (existing[0]) await subjectsRepo.delete(existing[0].id)
   }
@@ -1176,10 +1180,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
 
   /** BOO-38 (BK-13) — deny-safe null at M1: Education's subject_schedules/assessments are unbuilt (#52), so a pace
    *  cannot be derived and is NEVER fabricated (the MasterySource null precedent). `_subjectId` trusted, not read. */
-  async function getPaceStatus(
-    bookId: string,
-    _subjectId: string,
-  ): Promise<'on-pace' | 'behind' | 'ahead' | null> {
+  async function getPaceStatus(bookId: string, _subjectId: string): Promise<'on-pace' | 'behind' | 'ahead' | null> {
     const book = await booksRepo.findById(bookId)
     if (!book) throw new BookNotFoundError(bookId)
     return null // Education contract unbuilt → the deny-safe signal (BR-BK-S9-5); real derivation = M2

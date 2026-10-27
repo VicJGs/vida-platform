@@ -13,6 +13,7 @@
 > `// @vitest-environment jsdom`; `packages/ui/vite.config.ts` pins `node`).
 
 ## §XXVIII — deviations from PLAN-R4 rev 2 wording (Victor, Approval 2)
+
 - **D-R4-2 · `clearCodec` does NOT remove the attribute** (PLAN R4-BR-3(a) said it would). `clearCodec` is the cleanup of
   the `[preset, density]` effect `[FACT: packages/ui/src/provider.tsx:160-168]`, so React runs it on **every theme swap**,
   not only on unmount. If it removed `data-vida-motion`, a preset or density change with the preference on would leave
@@ -35,26 +36,29 @@
   extra guarantee.
 
 ## Files (build order)
-| # | File | Change | PLAN |
-|---|---|---|---|
-| 1 | `packages/ui/src/internal/reduced-motion-css.ts` (new) | `MOTION_ATTR = 'data-vida-motion'` · `MOTION_REDUCE = 'reduce'` · `MOTION_FULL = 'full'` · `reducedMotionCss(selectors: readonly string[], declarations: string): string` | BR-4 |
-| 2 | `packages/ui/src/internal/reduced-motion-css.test.ts` (new) | helper output · the glob guard | acc. 5 |
-| 3 | the 12 gate modules (`dialog` · `interaction` · `switch` · `tabs` · `menu` · `sync-status` · `card` · `popover` · `toast` · `select` · `checkbox` `-styles.ts` · `calendar-motion.ts`) | the `@media` string → `reducedMotionCss([...], '...')` with the same selectors + declarations | BR-4 |
-| 4 | `packages/ui/src/hooks/use-reduced-motion.ts` | `ReducedMotionContext` (default `false`) + the hook | BR-5 |
-| 5 | `packages/ui/src/hooks/use-reduced-motion.test.tsx` (new, jsdom) | acc. 4 | acc. 4 |
-| 6 | `packages/ui/src/provider.tsx` | `reduceMotion?` prop (destructured, default `false`, so it never reaches `TamaguiProvider` via `{...rest}`) · `<ReducedMotionContext.Provider>` · its own `[reduceMotion]` layout effect whose cleanup removes `MOTION_ATTR` · `clearCodec` **unchanged** (D-R4-2) | BR-3 |
-| 7 | `packages/ui/src/provider.test.tsx` (new, jsdom) | acc. 3 | acc. 3 |
-| 8 | `packages/ui/src/components/neural-graph.tsx` + its test | when `reduced`: `zoomDuration: 1` · `doubleClickZoomingDuration: 1` · `inertiaDuration: 1` · `inertiaRatio: 0` (D-R4-3); otherwise `{}` · the `:50` comment reworded | BR-8, acc. 6 |
-| 9 | `pnpm --filter @vida/ui build` | dist for apps/web | §6 |
-| 10 | `apps/web/src/shell/shell-panel-styles.ts` + `shell-panel-styles.test.ts` (new, `// @vitest-environment jsdom`: apps/web defaults to `node`, `vite.config.ts:27`) | the hand-written twin + its literal check | BR-4, acc. 5 |
-| 11 | `apps/web/src/stores/theme-store.ts` + test | `reduceMotion: false` in the interface + initial state · `syncMotionFromCache()` at module load **and** in the reset helper · the subscription branch | BR-2, acc. 2 |
-| 12 | `apps/web/src/App.tsx` + `App.integration.test.tsx` | pass the prop · the seeded-nav case | acc. 7 |
-| 13 | `apps/web/src/settings/appearance-pane.tsx` + `appearance-pane.test.tsx` · `settings-surface.test.tsx` | the switch on the seam · the `usePreferencesStore` import dropped (`noUnusedLocals`) · the revert case lives in `settings-surface.test.tsx` (it has the toast spy + `failNext`, `:7-9,182-192`) | BR-1, acc. 1 |
-| 14 | `apps/web/src/stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` + tests: `preferences-store.test.ts:7,13-22,27` (swap the "untouched key" canary) · `preferences-bridge.test.tsx:20,36,39` ("10 fields" → 9) · `appearance-pane.test.tsx:25,105-108` (the "still binds the transitional store" case → the seam case) · `settings-surface.test.tsx:34` | `reduceMotion` removed (9 mirrored). apps/web tsc includes tests (`tsconfig.json` `include: ["src"]`), so every one must change in the same step | BR-1, acc. 8 |
-| 15 | docs: PLAN §3 Docs rows **plus** `apps/web/src/settings/CLAUDE.md:72,75` · `packages/ui/src/CLAUDE.md:470,740` · the hook JSDoc (`use-reduced-motion.ts:3-14`: two triggers + "new gates use the helper") | §XXIX currency | — |
+
+| #   | File                                                                                                                                                                                                                                                                                                                                                                    | Change                                                                                                                                                                                                                                                             | PLAN         |
+| --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------ |
+| 1   | `packages/ui/src/internal/reduced-motion-css.ts` (new)                                                                                                                                                                                                                                                                                                                  | `MOTION_ATTR = 'data-vida-motion'` · `MOTION_REDUCE = 'reduce'` · `MOTION_FULL = 'full'` · `reducedMotionCss(selectors: readonly string[], declarations: string): string`                                                                                          | BR-4         |
+| 2   | `packages/ui/src/internal/reduced-motion-css.test.ts` (new)                                                                                                                                                                                                                                                                                                             | helper output · the glob guard                                                                                                                                                                                                                                     | acc. 5       |
+| 3   | the 12 gate modules (`dialog` · `interaction` · `switch` · `tabs` · `menu` · `sync-status` · `card` · `popover` · `toast` · `select` · `checkbox` `-styles.ts` · `calendar-motion.ts`)                                                                                                                                                                                  | the `@media` string → `reducedMotionCss([...], '...')` with the same selectors + declarations                                                                                                                                                                      | BR-4         |
+| 4   | `packages/ui/src/hooks/use-reduced-motion.ts`                                                                                                                                                                                                                                                                                                                           | `ReducedMotionContext` (default `false`) + the hook                                                                                                                                                                                                                | BR-5         |
+| 5   | `packages/ui/src/hooks/use-reduced-motion.test.tsx` (new, jsdom)                                                                                                                                                                                                                                                                                                        | acc. 4                                                                                                                                                                                                                                                             | acc. 4       |
+| 6   | `packages/ui/src/provider.tsx`                                                                                                                                                                                                                                                                                                                                          | `reduceMotion?` prop (destructured, default `false`, so it never reaches `TamaguiProvider` via `{...rest}`) · `<ReducedMotionContext.Provider>` · its own `[reduceMotion]` layout effect whose cleanup removes `MOTION_ATTR` · `clearCodec` **unchanged** (D-R4-2) | BR-3         |
+| 7   | `packages/ui/src/provider.test.tsx` (new, jsdom)                                                                                                                                                                                                                                                                                                                        | acc. 3                                                                                                                                                                                                                                                             | acc. 3       |
+| 8   | `packages/ui/src/components/neural-graph.tsx` + its test                                                                                                                                                                                                                                                                                                                | when `reduced`: `zoomDuration: 1` · `doubleClickZoomingDuration: 1` · `inertiaDuration: 1` · `inertiaRatio: 0` (D-R4-3); otherwise `{}` · the `:50` comment reworded                                                                                               | BR-8, acc. 6 |
+| 9   | `pnpm --filter @vida/ui build`                                                                                                                                                                                                                                                                                                                                          | dist for apps/web                                                                                                                                                                                                                                                  | §6           |
+| 10  | `apps/web/src/shell/shell-panel-styles.ts` + `shell-panel-styles.test.ts` (new, `// @vitest-environment jsdom`: apps/web defaults to `node`, `vite.config.ts:27`)                                                                                                                                                                                                       | the hand-written twin + its literal check                                                                                                                                                                                                                          | BR-4, acc. 5 |
+| 11  | `apps/web/src/stores/theme-store.ts` + test                                                                                                                                                                                                                                                                                                                             | `reduceMotion: false` in the interface + initial state · `syncMotionFromCache()` at module load **and** in the reset helper · the subscription branch                                                                                                              | BR-2, acc. 2 |
+| 12  | `apps/web/src/App.tsx` + `App.integration.test.tsx`                                                                                                                                                                                                                                                                                                                     | pass the prop · the seeded-nav case                                                                                                                                                                                                                                | acc. 7       |
+| 13  | `apps/web/src/settings/appearance-pane.tsx` + `appearance-pane.test.tsx` · `settings-surface.test.tsx`                                                                                                                                                                                                                                                                  | the switch on the seam · the `usePreferencesStore` import dropped (`noUnusedLocals`) · the revert case lives in `settings-surface.test.tsx` (it has the toast spy + `failNext`, `:7-9,182-192`)                                                                    | BR-1, acc. 1 |
+| 14  | `apps/web/src/stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` + tests: `preferences-store.test.ts:7,13-22,27` (swap the "untouched key" canary) · `preferences-bridge.test.tsx:20,36,39` ("10 fields" → 9) · `appearance-pane.test.tsx:25,105-108` (the "still binds the transitional store" case → the seam case) · `settings-surface.test.tsx:34` | `reduceMotion` removed (9 mirrored). apps/web tsc includes tests (`tsconfig.json` `include: ["src"]`), so every one must change in the same step                                                                                                                   | BR-1, acc. 8 |
+| 15  | docs: PLAN §3 Docs rows **plus** `apps/web/src/settings/CLAUDE.md:72,75` · `packages/ui/src/CLAUDE.md:470,740` · the hook JSDoc (`use-reduced-motion.ts:3-14`: two triggers + "new gates use the helper")                                                                                                                                                               | §XXIX currency                                                                                                                                                                                                                                                     | —            |
 
 ## Key algorithms
+
 **1 · `reducedMotionCss`**
+
 ```ts
 export const MOTION_ATTR = 'data-vida-motion'
 export const MOTION_REDUCE = 'reduce'
@@ -70,6 +74,7 @@ export function reducedMotionCss(selectors: readonly string[], declarations: str
   )
 }
 ```
+
 - The spaced form `prefers-reduced-motion: reduce` is kept for every module. `calendar-motion.test.tsx:96` asserts it,
   and the 8 unspaced modules (dialog · switch · tabs · menu · popover · toast · select · checkbox) change form, not
   meaning. Calendar's `:95` `not.toMatch(/width|height|top|left|color/)` also holds on the helper output.
@@ -78,16 +83,19 @@ export function reducedMotionCss(selectors: readonly string[], declarations: str
   become one `reducedMotionCss` call per declaration group, so each pair stays identical.
 
 **2 · The glob guard** (`reduced-motion-css.test.ts`, node env)
+
 ```ts
-const SRC = fileURLToPath(new URL('..', import.meta.url))           // packages/ui/src
+const SRC = fileURLToPath(new URL('..', import.meta.url)) // packages/ui/src
 const ALLOW = new Set(['hooks/use-reduced-motion.ts', 'internal/reduced-motion-css.ts'])
-const files = readdirSync(SRC, { recursive: true, encoding: 'utf8' })
-  .filter((f) => /\.(ts|tsx)$/.test(f) && !/\.(test|stories)\./.test(f) && !ALLOW.has(f))
+const files = readdirSync(SRC, { recursive: true, encoding: 'utf8' }).filter(
+  (f) => /\.(ts|tsx)$/.test(f) && !/\.(test|stories)\./.test(f) && !ALLOW.has(f),
+)
 for (const f of files) {
   const src = readFileSync(join(SRC, f), 'utf8')
-  expect(src, f).not.toContain('prefers-reduced-motion')   // D-R4-4: only the helper may emit it
+  expect(src, f).not.toContain('prefers-reduced-motion') // D-R4-4: only the helper may emit it
 }
 ```
+
 Identical declarations hold by construction (D-R4-4). Verified: `readdirSync` recursive on darwin yields `/`-separated
 paths (`hooks/use-reduced-motion.ts`), and the only non-gate source mentions are `neural-graph.tsx:50` (reworded) and
 `provider.tsx:161` (re-worded to "reduced motion" at build, so the provider is scanned too — pre-ship critique nit 4).
@@ -95,6 +103,7 @@ paths (`hooks/use-reduced-motion.ts`), and the only non-gate source mentions are
 re-worded to "reduced motion" (no allow-list entry for a component file).
 
 **3 · The hook**
+
 ```ts
 export const ReducedMotionContext = createContext(false)
 
@@ -102,7 +111,7 @@ const QUERY = '(prefers-reduced-motion: reduce)'
 const hasMM = () => typeof window !== 'undefined' && typeof window.matchMedia === 'function'
 function subscribe(cb: () => void) {
   if (!hasMM()) return () => {}
-  const mq = window.matchMedia(QUERY)      // per subscribe — never cached at module scope (a per-test spy must work)
+  const mq = window.matchMedia(QUERY) // per subscribe — never cached at module scope (a per-test spy must work)
   mq.addEventListener('change', cb)
   return () => mq.removeEventListener('change', cb)
 }
@@ -115,10 +124,12 @@ export function useReducedMotion(): boolean {
   return pref || os
 }
 ```
+
 Both hooks are always called (rules of hooks), and the OR comes after. `getSnapshot` returns a primitive, so there's no
 tearing loop.
 
 **4 · The provider**
+
 ```tsx
 useLayoutEffect(() => {
   document.documentElement.setAttribute(MOTION_ATTR, reduceMotion ? MOTION_REDUCE : MOTION_FULL)
@@ -129,10 +140,12 @@ return (
   <TamaguiProvider …><ReducedMotionContext.Provider value={reduceMotion}>{children}</ReducedMotionContext.Provider></TamaguiProvider>
 )
 ```
+
 The effect's own cleanup removes only its attribute, so a toggle never touches the fonts, preset class or density
 (mutation h), and a theme swap never touches the attribute (D-R4-2).
 
 **5 · `theme-store`**: a second derived field, in the same subscription.
+
 ```ts
 const NAV_PREFS_HASH = hashKey(NAV_PREFS_KEY)
 function syncMotionFromCache() {
@@ -145,11 +158,13 @@ queryClient.getQueryCache().subscribe((event) => {
   else if (event.query.queryHash === NAV_PREFS_HASH) syncMotionFromCache()
 })
 ```
+
 `removed` → `getQueryData` is `undefined` → `false`. `resetThemeStoreForTests` calls both syncs.
 [FACT: `MergedNavPreferences = Omit<NavPreferences, keyof SyncableEntity>` (`packages/types/src/entities/user.ts:267`) and
 `NavPreferences.reduce_motion: boolean` (`user.ts:262`); the service defaults and merges it (`service.ts:183,196`).]
 
 ## Build Steps (TDD — each: write the test, see it fail, implement, see it pass)
+
 0. Baseline: `pnpm --filter @vida/ui test` + the apps/web suites in the blast radius, green before any edit (record times).
 1. Helper test (output shape: the `@media` block + the twin, identical bodies, every selector prefixed) → `reduced-motion-css.ts`.
 2. Glob guard → red on all 12 modules (+ the `neural-graph` comment) → convert the modules one by one → green. Calendar's
@@ -183,13 +198,15 @@ queryClient.getQueryCache().subscribe((event) => {
     retargeted (D-R4-2): drop the motion effect's cleanup → the unmount case fails. Plus (b′): re-add the removal to
     `clearCodec` → the theme-swap case fails. (a′): hand-write one group in a converted module → the guard fails.
     (i): durations back to `0` → step 5's exact-value assertion fails.
-12b. `pnpm --filter @vida/ui build` again after the mutations are restored, before tsc and the Visual Gate.
+    12b. `pnpm --filter @vida/ui build` again after the mutations are restored, before tsc and the Visual Gate.
 13. `tsc` 0 (packages/ui + apps/web) · eslint 0 · the full suite (load permitting; F008 re-runs recorded).
 14. Live Verification smoke on real OPFS (acc. 1) → the Visual Gate (acc. 11–15) → Victor `visual-approved`.
 15. Docs (§XXIX) · /critique on the diff → SHIP · commit.
 
 ## Preflight (2026-10-26)
+
 Ground truth read: `docs/modules/preferences/current-{spec,business-rules}.md` (R2 seam + R3 surface rules).
+
 - **Frontend:** component = the Appearance `Switch` (states: off · on · disabled read-only · "Saved on this device" ·
   reverted) · data source = `usePreferences().view.reduceMotion` · interaction = `useSettings().update`. The CODEC
   side is fully specified (provider prop, attribute, context, hook, 13 gates, graph camera).
@@ -221,6 +238,7 @@ Ground truth read: `docs/modules/preferences/current-{spec,business-rules}.md` (
 - **VERDICT: PASSED** after the two fixes.
 
 ## Gate record
+
 - rev 1 (2026-10-26): drafted from PLAN-R4 rev 2. /preflight: BLOCKED (2 doc-answered gaps) → resolved → PASSED.
 - **rev 1 → rev 2 (2026-10-26):** independent critique REVISE. 2 blocking, both verified on disk and folded in:
   **B1** `clearCodec` runs on every theme swap (`provider.tsx` `return clearCodec` in the `[preset, density]` effect) →

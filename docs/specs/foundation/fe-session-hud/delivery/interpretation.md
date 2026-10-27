@@ -19,16 +19,16 @@ the `/sessions/$id` runtime page, degrading honestly when nothing is active.
 
 ## 1. DEPENDENCIES (all shipped or stacked on this branch)
 
-| Dep | State | FACT |
-|---|---|---|
-| **`hudSlot` placement seam** — `AppShell` prop + `data-region="hudSlot"` row in the reserved top strip, built by fe-shell #14 *for this unit* | ✅ merged | `apps/web/src/shell/app-shell.tsx:71,95,298-299` |
-| **Top-strip geometry** — `reservedTopInset(bp)` 52/56; strip already carries wordmark + System/Modules toggles (icon-only ≤375) + `bar1Slot` (scope `compact` + surfaces condensed ≤375) | ✅ merged | `apps/web/src/shell/CLAUDE.md` (regions/S3 notes); `global-bar-1.tsx` |
-| **Flow seam + data-hook pattern** — `useFlowSession` (M1 stub: honest-empty + `?sample`, zero-signature live swap); fe-session-hud #16 is a NAMED first-consumer reuser | ✅ stacked (PR #143) | `apps/web/src/flow/CLAUDE.md:23-29` |
-| **`toFlowSource` assembler** — SessionLike → FlowSource (single-stage default, total status map) | ✅ stacked (PR #143) | `apps/web/src/flow/flow-source.ts` |
-| **Runtime page `/sessions/$id`** — the HUD's deep-link target | ✅ stacked (PR #143) | `apps/web/src/routes.tsx:89-93` |
-| **`@vida/ui` pomodoro-widget (UI-2 V5 + P1 refinement)** — drift-free `endAtRef` timer, intent-emitting callbacks (`onStart/onPause/…`), progress ring, tabular figures | ✅ merged | `packages/ui/src/CLAUDE.md:298-328` |
-| **Sessions service ① (MOD-sessions S1–S7)** — `startFocus/pauseFocus/resumeFocus/nextInterval/completeFocus/cancelFocus` + lifecycle `transitionSession`; timer id = the `focus_sessions` row id | ✅ merged (headless) | `packages/core/src/services/sessions/service.ts:120-166` |
-| **Shell content-inset fix** (strip↔content breathing room the HUD sits above) | ✅ stacked (PR #142) | `apps/web/src/shell/breakpoints.ts` `CONTENT_V_INSET` |
+| Dep                                                                                                                                                                                              | State                | FACT                                                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------- | --------------------------------------------------------------------- |
+| **`hudSlot` placement seam** — `AppShell` prop + `data-region="hudSlot"` row in the reserved top strip, built by fe-shell #14 _for this unit_                                                    | ✅ merged            | `apps/web/src/shell/app-shell.tsx:71,95,298-299`                      |
+| **Top-strip geometry** — `reservedTopInset(bp)` 52/56; strip already carries wordmark + System/Modules toggles (icon-only ≤375) + `bar1Slot` (scope `compact` + surfaces condensed ≤375)         | ✅ merged            | `apps/web/src/shell/CLAUDE.md` (regions/S3 notes); `global-bar-1.tsx` |
+| **Flow seam + data-hook pattern** — `useFlowSession` (M1 stub: honest-empty + `?sample`, zero-signature live swap); fe-session-hud #16 is a NAMED first-consumer reuser                          | ✅ stacked (PR #143) | `apps/web/src/flow/CLAUDE.md:23-29`                                   |
+| **`toFlowSource` assembler** — SessionLike → FlowSource (single-stage default, total status map)                                                                                                 | ✅ stacked (PR #143) | `apps/web/src/flow/flow-source.ts`                                    |
+| **Runtime page `/sessions/$id`** — the HUD's deep-link target                                                                                                                                    | ✅ stacked (PR #143) | `apps/web/src/routes.tsx:89-93`                                       |
+| **`@vida/ui` pomodoro-widget (UI-2 V5 + P1 refinement)** — drift-free `endAtRef` timer, intent-emitting callbacks (`onStart/onPause/…`), progress ring, tabular figures                          | ✅ merged            | `packages/ui/src/CLAUDE.md:298-328`                                   |
+| **Sessions service ① (MOD-sessions S1–S7)** — `startFocus/pauseFocus/resumeFocus/nextInterval/completeFocus/cancelFocus` + lifecycle `transitionSession`; timer id = the `focus_sessions` row id | ✅ merged (headless) | `packages/core/src/services/sessions/service.ts:120-166`              |
+| **Shell content-inset fix** (strip↔content breathing room the HUD sits above)                                                                                                                    | ✅ stacked (PR #142) | `apps/web/src/shell/breakpoints.ts` `CONTENT_V_INSET`                 |
 
 **Base-risk note:** PRs #142/#143 are OPEN (CI billing outage blocks merge) — this branch stacked them;
 the PR diff collapses once they land. `[FACT: gh pr list 2026-10-16 — #141/#142/#143 open]`
@@ -44,7 +44,7 @@ the PR diff collapses once they land. `[FACT: gh pr list 2026-10-16 — #141/#14
 - **N2 — Active-session CLIENT state.** With no live read, "active" in M1 is an ephemeral client concern.
   Precedent: the scope store (`stores/scope-store.ts`, `activeSpaceId|null`, emit-to-seam)
   `[FACT: shell/CLAUDE.md spaces-scope notes]`. INTERPRETATION: a `session-hud` store (activeSessionId|null)
-  + a ProviderRead-shaped seam for the later live swap — decomposition decides the exact shape.
+  - a ProviderRead-shaped seam for the later live swap — decomposition decides the exact shape.
 - **N3 — Responsive placement at ≤375.** The strip at 375 already co-fits: icon-only toggles + compact scope +
   condensed surfaces `[FACT: shell/CLAUDE.md global-bar-1/S3 notes]`. The HUD's 375 form (condensed pill? dot?
   relocation?) is a USER AFFORDANCE with no shipped answer → **Envision Gate input** (§3.75 YES).
@@ -65,6 +65,7 @@ the PR diff collapses once they land. `[FACT: gh pr list 2026-10-16 — #141/#14
   fe-check-ins #31 / fe-onboarding #26 share the `useFlowSession` reuse list `[FACT: flow/CLAUDE.md:29]`.
 
 ### Grounding addendum (Victor-directed, post-gate-1)
+
 The **pomodoro capability docs are a first-class authority for this unit** — Pomodoro IS the focus
 runtime the HUD surfaces (`[FACT: docs/features/pomodoro/identity.md:5-10 — "the runtime of the focus
 Session sub-type"]`): PD-4 fixed interval/status enums (break intervals are first-class countdowns) ·

@@ -15,6 +15,7 @@ Knowledge Lab (hypothesis→conclusion→promoted object), and homes three forwa
 search, auto-population) as explicit deny-safe seams.
 
 The two owned tables are shipped but service-less:
+
 - `compound_sets` (`schema/knowledge.ts:108-121`): `consumer_module` (OPEN, notNull), `name` `[E]`, `spec` `[E]` JSON
   opaque blob, `is_default` (notNull default false), `deleted_at`. `@vida/types` `CompoundSet` (`knowledge.ts:161`).
 - `knowledge_lab_entries` (`schema/knowledge.ts:124-133`): `hypothesis` `[E]` notNull, `data_refs` `json<string[]>()`,
@@ -27,7 +28,7 @@ coalesce nullables (faithful echo, `repository-create-returns-input-row` seam). 
 **service-side serialize/parse boundary** ([[json-t-columns-need-service-serialize-in-m10]], the S1 `key_concepts`
 precedent — `service.ts:76-96,193`), because the M1.0 repo does not auto-serialize non-encrypted values — though for
 **different reasons** (N4): `data_refs` is a `json<string[]>()` column (the `$type` lie), while `spec` is a plain
-`text()` column that happens to hold a JSON blob. Behaviour is identical (stringify on write, parse on read); the *cause*
+`text()` column that happens to hold a JSON blob. Behaviour is identical (stringify on write, parse on read); the _cause_
 differs. **M3 forward note (N3):** `spec` is `[E]`, so when field-encryption activates (M3/DB-5) the encrypt path will
 serialize it — the M1 service-side `JSON.stringify` must NOT double-stringify then ("No M3 double-stringify",
 [[json-t-columns-need-service-serialize-in-m10]]).
@@ -59,6 +60,7 @@ services/knowledge/service.ts:110-112 (current deps); habits/gamification option
 
 **#3 — The three M1-dormant surfaces return TYPED "unavailable"/"refused" states, never silent fallback — but each
 substrate's M1 behaviour differs and must be composed against its REAL branch logic (gate-1 B1/B2 correction).**
+
 - **Search (KNO-37):** no FTS5 (`fts_knowledge` = DB-8, unbuilt, `structure-data.md:46`) → `{status:'search-unavailable'}`.
 - **AI (KNO-33):** `assistCompoundSet` depends only on the injected `AiService.askModel` **contract**: `askModel`
   **throws `AiDenied`** (never returns a denial — `ai/service.ts:72,88`, `types.ts:132-142`), so the service catches it
@@ -77,7 +79,7 @@ substrate's M1 behaviour differs and must be composed against its REAL branch lo
   **stub `IngestionGuard`s** (parity with the ai throwing-stub decision, B2): a stub returning `{permitted:true,
   disclosure}` → asserts `parser-unavailable` (the real M1 seam — no source parsers built, `decomposition.md:90`); a
   stub returning `{permitted:false, reason, disclosure}` → asserts `refused`.
-`[FACT: apps/web/src/shell/use-command-search.test.ts:16; decomposition.md:89,90; structure-data.md:46; ai/service.ts:
+  `[FACT: apps/web/src/shell/use-command-search.test.ts:16; decomposition.md:89,90; structure-data.md:46; ai/service.ts:
 32,35-36,72,88; ai/types.ts:72-74; ingestion/guard.ts:48-81,117-122; ingestion/types.ts:77-82,95-101]`
 
 **#4 — `promoteToObject` requires a CONCLUDED, un-promoted entry; the `lab.concluded` EVENT is S8, not S6.** KNO-36
@@ -101,20 +103,22 @@ structure-data.md:42; contract.md:43-45; schema/knowledge.ts:29,112,116; @vida/t
 ## §2. Business rules (S6-scoped, cited)
 
 **Pages-notes (KNO-28):**
+
 - **BR-S6-1** — `openObjectNote(objectId)` guards the object exists (`KnowledgeObjectNotFoundError`) then delegates to
   `notes.ensureEntityNote('note', KNOWLEDGE_OBJECT_ENTITY_TYPE, objectId, {title})`; **idempotent** (returns the
   existing note or creates one — `ensureEntityNote` semantics). NEVER a `knowledge_notes` insert (retired, KN-5).
   `[FACT: contract.md:37-39; business-rules.md KN-5:30-33; services/notes/service.ts:159-177; headline #1]`
 - **BR-S6-2** — the seed carries the object's `title`, which the notes service folds into the page **`content`** (an H1
   via `seedContent`), NOT the page `title` column — the note's editable title/render is P6 (KN-5). `[FACT:
-  services/notes/service.ts:41-45 (seedContent → content),171-176 (ensureEntityNote sets content, not title);
-  types.ts:40-45 (EntityNoteSeed); conventions.md:14-15]` (§XXVIII: live-gate correction — the plan first assumed
+services/notes/service.ts:41-45 (seedContent → content),171-176 (ensureEntityNote sets content, not title);
+types.ts:40-45 (EntityNoteSeed); conventions.md:14-15]` (§XXVIII: live-gate correction — the plan first assumed
   `seed.title → page.title`; the shipped notes contract folds it into content.)
 
 **Compound sets (KNO-31/32):**
+
 - **BR-S6-3** — `buildCompoundSet(consumerModule, spec)` creates a `compound_sets` row (`is_default:false`), `spec`
   JSON-serialized at the boundary; `consumer_module` OPEN (no CHECK). `[FACT: contract.md:43-45; structure-data.md:42;
-  schema/knowledge.ts:108-121; headline #5]`
+schema/knowledge.ts:108-121; headline #5]`
 - **BR-S6-4** — `applyDefaultCompoundSet(consumerModule)` is **anti-lost + idempotent**: if a default set already
   exists for the consumer it is returned unchanged; else a default (`is_default:true`) is created so no user is forced
   to personalize (KN-11 / ED-15 family). `[FACT: business-rules.md KN-11:56-59; conventions.md:21-22; contract.md:43-45]`
@@ -122,17 +126,19 @@ structure-data.md:42; contract.md:43-45; schema/knowledge.ts:29,112,116; @vida/t
   on read. Companion. `[FACT: schema/knowledge.ts:120 (consumer index); repository findWhere soft-delete note]`
 
 **AI-assist seam (KNO-33) — extension-model, deny-safe:**
+
 - **BR-S6-6** — `assistCompoundSet(consumerModule, req)` composes the OPTIONAL `ai` dep against the `AiService.askModel`
   contract: if `ai` absent → `{status:'ai-unavailable'}` (no reason); else call `ai.askModel(req)` (the caller supplies
   the `AiRequest` carrying mode + consent/`userInitiation`), **catching the thrown `AiDenied`** (askModel throws, never
   returns a denial) → `{status:'ai-unavailable', reason: err.message}`; on success → `{status:'ready', suggestion:
-  response.content}`. **Opt-in** (caller wires `ai` + passes a request), **consent-gated** (the request carries the
+response.content}`. **Opt-in** (caller wires `ai` + passes a request), **consent-gated** (the request carries the
   never-auto-transmit proof), **deny-safe** (the real `createAiService` denies with both ports absent — but S6 asserts
   this via a throwing stub, no `EgressGuard` in scope). Knowledge never auto-applies a suggestion and never holds a
   model key. `[FACT: contract.md:44-45; business-rules.md KN-11:58-59 (extension-model only); ai/types.ts:72-74,83-94,
-  144-151; ai/service.ts:32,35-36,72,88; decomposition.md:87; headline #2/#3]`
+144-151; ai/service.ts:32,35-36,72,88; decomposition.md:87; headline #2/#3]`
 
 **Knowledge Lab (KNO-34/35/36):**
+
 - **BR-S6-7** — `createLabEntry({hypothesis, dataRefs?})` creates a `knowledge_lab_entries` row; `hypothesis` `[E]`
   notNull (validator rejects empty); `data_refs` JSON-serialized at the boundary; `conclusion`/`promoted_object_id`
   null at birth. `[FACT: contract.md:47-49; schema/knowledge.ts:124-133; @vida/types/knowledge.ts:173-182]`
@@ -147,31 +153,35 @@ structure-data.md:42; contract.md:43-45; schema/knowledge.ts:29,112,116; @vida/t
 - **BR-S6-10** — `listLabEntries()` reads live entries (soft-delete filtered), `data_refs` parsed. Companion.
 
 **Search seam (KNO-37) — DB-8 deferred:**
+
 - **BR-S6-11** — `searchKnowledge(query)` returns `{status:'search-unavailable'}` (typed, loud); `fts_knowledge` FTS5 is
   DB-8 and unbuilt. Never a silent empty list. `[FACT: contract.md:51; structure-data.md:46; decomposition.md:89;
-  apps/web search-unavailable convention; headline #3]`
+apps/web search-unavailable convention; headline #3]`
 
 **Auto-population seam (KNO-43) — ingestion, opt-in device-side deny-safe:**
+
 - **BR-S6-12** — `autoPopulate(act)` composes the OPTIONAL `ingestion` dep and **maps** `checkIngestion`'s
   `IngestionDecision` (a `permitted` boolean, not a `{status}` shape): if `ingestion` absent →
   `{status:'ingestion-unavailable'}`; else `const d = await ingestion.checkIngestion(act)` → `if (!d.permitted) return
-  {status:'refused', reason: d.reason, disclosure: d.disclosure}` (never downgrade); **else** (`d.permitted`) →
+{status:'refused', reason: d.reason, disclosure: d.disclosure}` (never downgrade); **else** (`d.permitted`) →
   `{status:'parser-unavailable'}` (source parsers are deferred, `decomposition.md:90`). With a real guard, a permit
   requires a **well-formed non-sensitive act AND an `external_in` grant** (`enforcer.ts:77-78`); an ungranted /
   server-plaintext / unconsented-sensitive act trips a `checkIngestion` guard → `refused`. S6 tests the MAPPING via stub
   guards (the guard's grant logic is #44's concern; parity with the ai stub). **Opt-in** (caller wires `ingestion` +
   passes the `IngestionAct` with consent), **device-side**,
   **deny-safe/refuse-not-downgrade**. `[FACT: business-rules.md:83 (K9 device-side opt-in); conventions.md:43-44;
-  parts/knowledge.md:58; ingestion/guard.ts:48-81 (checkIngestion, no mediator),117-122 (mediator only in fetch);
-  ingestion/types.ts:77-82,95-101; decomposition.md:90 (source parsers deferred); headline #3]`
+parts/knowledge.md:58; ingestion/guard.ts:48-81 (checkIngestion, no mediator),117-122 (mediator only in fetch);
+ingestion/types.ts:77-82,95-101; decomposition.md:90 (source parsers deferred); headline #3]`
 
 **Constitution (all methods):**
+
 - **BR-S6-13** — typed errors only; optimistic writes revert on failure (KNO-41, LF-2). No silent loss; a deny-safe
   seam surfaces its typed unavailable/refused state, it does not swallow. `[FACT: contract.md:73-76; parts/knowledge.md:56]`
 
 ## §3. Contract (surface additions)
 
 **Deps (`KnowledgeServiceDeps` extends):**
+
 ```ts
 notes: NotesService              // REQUIRED — openObjectNote (headline #2)
 ai?: AiService                   // OPTIONAL deny-safe — assistCompoundSet (KNO-33)
@@ -179,6 +189,7 @@ ingestion?: IngestionGuard       // OPTIONAL deny-safe — autoPopulate (KNO-43)
 ```
 
 **Methods (`KnowledgeService` extends):**
+
 ```ts
 // Pages-notes (KNO-28)
 openObjectNote(objectId): Promise<PageRow>                     // ensureEntityNote('note','knowledge_object',id,{title}); idempotent; guards object
@@ -205,12 +216,11 @@ autoPopulate(act: IngestionAct): Promise<AutoPopulateResult>        // deny-safe
 ```
 
 **Service-layer result types** (in `services/knowledge/types.ts`, NOT `@vida/types` — the `MasterySource` precedent):
+
 ```ts
-type CompoundSetSpec = Record<string, unknown>                       // opaque structured blob (headline #5)
-type AiAssistResult =
-  | { status: 'ready'; suggestion: string }
-  | { status: 'ai-unavailable'; reason?: string }
-type KnowledgeSearchResult = { status: 'search-unavailable' }        // DB-8 seam (extends when FTS5 lands)
+type CompoundSetSpec = Record<string, unknown> // opaque structured blob (headline #5)
+type AiAssistResult = { status: 'ready'; suggestion: string } | { status: 'ai-unavailable'; reason?: string }
+type KnowledgeSearchResult = { status: 'search-unavailable' } // DB-8 seam (extends when FTS5 lands)
 type AutoPopulateResult =
   | { status: 'refused'; reason: IngestionDenyReason; disclosure?: LeakDisclosure }
   | { status: 'parser-unavailable' }
@@ -229,6 +239,7 @@ new dep** (notes/ai/ingestion are all shipped substrates).
 ## §4. Acceptance (Verification Gate — live-store, Node 24)
 
 Functional, live-store (`better-sqlite3`), added to `services/knowledge/__tests__`:
+
 1. **openObjectNote** — creates a `pages` row (`entity_type='knowledge_object'`, `type='note'`, `entity_id=objectId`,
    the object title folded into `content` as an H1 — NOT the title column, per the notes contract); **idempotent** (2nd
    call returns the same page id); guards a bogus object → `KnowledgeObjectNotFoundError`. (via a real `createNotesService`)
@@ -275,6 +286,7 @@ currency (`current-spec.md` + `current-business-rules.md` S6 sections) before co
 6. **§XXIX currency** — promote §2/§3 into `current-spec.md` + `current-business-rules.md` (S6 sections), commit together.
 
 ## Gate-1 status
+
 - **Verdict: REVISE → folded (2026-09-29).** Independent critic confirmed all 5 headlines doc-grounded + SHIP-quality,
   clean 9-leg partition (0 unhomed/double/phantom), and the search/AI seams faithful. Folded 3 blockers + 2 NITs:
   - **B1** — `autoPopulate` was mis-composed against a phantom `checkIngestion` return shape + a mediator-deny that
@@ -292,6 +304,7 @@ currency (`current-spec.md` + `current-business-rules.md` S6 sections) before co
   co-transactional `sync_queue` UPSERT (`repository.ts:261-289`), `lab.concluded` event homed to S8.
 
 ## Preflight + Gate-2 status
+
 - **Preflight PASSED (2026-09-29).** All composed APIs/imports resolve: `NotesService`/`NotesServiceDeps`/
   `EntityNoteSeed` from `../notes`; `AiService`/`AiRequest`/`AiResponse` + `IngestionGuard`/`IngestionAct`/
   `IngestionDecision`/`IngestionDenyReason`/`LeakDisclosure` from the substrate barrels (`* from './types'`); `PageRow`
@@ -302,5 +315,5 @@ currency (`current-spec.md` + `current-business-rules.md` S6 sections) before co
   `external_in_not_granted` (`enforcer.ts:77-78`, `grant.external_in_ok`) unless the def is granted, so the test as
   written would land on `refused`, not `parser-unavailable`. **Fold:** the `autoPopulate` mapping tests inject **stub
   `IngestionGuard`s** (parity with the confirmed ai throwing-stub, B2) — S6 tests its own MAPPING (`permitted→
-  parser-unavailable`, `!permitted→refused`), the guard's grant logic is xs-ingestion #44's tested territory. Headline #3,
+parser-unavailable`, `!permitted→refused`), the guard's grant logic is xs-ingestion #44's tested territory. Headline #3,
   BR-S6-12, acceptance #6 updated + the "(with `external_in` granted)" qualifier added (the NIT that seeded the gap).

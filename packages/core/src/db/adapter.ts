@@ -155,7 +155,7 @@ export interface DatabaseConfig {
 
 /** Default SQLCipher config per ADR-002 §4 */
 export const DEFAULT_SQLCIPHER_CONFIG: SqlCipherConfig = {
-  passphrase: '',  // Set from Vault Key at runtime
+  passphrase: '', // Set from Vault Key at runtime
   kdf_iter: 256_000,
   hmac_algorithm: 'HMAC_SHA512',
   page_size: 4096,
@@ -209,10 +209,9 @@ const SCHEMA_VERSION_KEY = 'schema_version'
  */
 export async function getSchemaVersion(driver: SqliteDriver): Promise<number> {
   try {
-    const rows = await driver.query<{ value: string }>(
-      `SELECT value FROM app_state WHERE key = ?`,
-      [SCHEMA_VERSION_KEY],
-    )
+    const rows = await driver.query<{ value: string }>(`SELECT value FROM app_state WHERE key = ?`, [
+      SCHEMA_VERSION_KEY,
+    ])
     return rows.length > 0 ? parseInt(rows[0].value, 10) : 0
   } catch {
     // Table doesn't exist yet — first run
@@ -223,14 +222,8 @@ export async function getSchemaVersion(driver: SqliteDriver): Promise<number> {
 /**
  * Set the schema version in app_state.
  */
-export async function setSchemaVersion(
-  driver: SqliteDriver,
-  version: number,
-): Promise<void> {
-  await driver.run(
-    `INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)`,
-    [SCHEMA_VERSION_KEY, String(version)],
-  )
+export async function setSchemaVersion(driver: SqliteDriver, version: number): Promise<void> {
+  await driver.run(`INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)`, [SCHEMA_VERSION_KEY, String(version)])
 }
 
 /**
@@ -246,9 +239,7 @@ export async function runMigrations(
   migrations: Migration[],
 ): Promise<{ applied: number; currentVersion: number }> {
   const currentVersion = await getSchemaVersion(driver)
-  const pending = migrations
-    .filter((m) => m.version > currentVersion)
-    .sort((a, b) => a.version - b.version)
+  const pending = migrations.filter((m) => m.version > currentVersion).sort((a, b) => a.version - b.version)
 
   let applied = 0
 
@@ -280,10 +271,7 @@ export async function runMigrations(
  * Configure SQLCipher PRAGMAs after opening the database.
  * Must be called before any other SQL operations.
  */
-export async function configureSqlCipher(
-  driver: SqliteDriver,
-  config: SqlCipherConfig,
-): Promise<void> {
+export async function configureSqlCipher(driver: SqliteDriver, config: SqlCipherConfig): Promise<void> {
   // Set the encryption key — must be the FIRST statement after open
   await driver.run(`PRAGMA key = '${config.passphrase}'`)
 
@@ -322,9 +310,7 @@ export async function verifyCipherKey(driver: SqliteDriver): Promise<void> {
   try {
     await driver.query('SELECT count(*) FROM sqlite_master')
   } catch {
-    throw new Error(
-      'Failed to open encrypted database — wrong passphrase or corrupt file',
-    )
+    throw new Error('Failed to open encrypted database — wrong passphrase or corrupt file')
   }
 }
 
@@ -342,10 +328,7 @@ export async function verifyCipherKey(driver: SqliteDriver): Promise<void> {
  * first — this is the seam, not a code change at M3.
  * Standard connection PRAGMAs (WAL, foreign keys, tuning) always run.
  */
-export async function initializeConnection(
-  driver: SqliteDriver,
-  config: DatabaseConfig,
-): Promise<void> {
+export async function initializeConnection(driver: SqliteDriver, config: DatabaseConfig): Promise<void> {
   if (config.sqlCipher) {
     await configureSqlCipher(driver, config.sqlCipher)
     await verifyCipherKey(driver)

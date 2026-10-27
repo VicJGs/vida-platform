@@ -3,11 +3,7 @@
 // Join key = CommandHistoryEntry.command_key ↔ Command.id. The history shape is the v1 six-field contract.
 import type { Command, CommandHistoryEntry } from './types'
 
-export function rankByFrecency(
-  commands: Command[],
-  history: CommandHistoryEntry[],
-  now = 0,
-): Command[] {
+export function rankByFrecency(commands: Command[], history: CommandHistoryEntry[], now = 0): Command[] {
   const byKey = new Map(history.map((h) => [h.command_key, h]))
   return commands
     .map((cmd, index) => ({ cmd, index, entry: byKey.get(cmd.id) }))

@@ -14,6 +14,7 @@ contract that S8's guarded INFORM/DERIVE/ADVISE will consume. No schema (tables 
 ---
 
 ## §1 Context (BASELINE — code as-is)
+
 - Tables exist (`020_finance`): `fiscal_residencies` (owner_type[FIXED FISCAL_OWNER_TYPE]/owner_id/jurisdiction_code/
   residency_type/start_date/end_date?/notes[E]), `legal_entities` (project_id?/name[E]/entity_type/jurisdiction_code/
   registration_ref[E]), `fiscal_obligations` (S8). Row types exported (`FiscalResidencyRow`/`LegalEntityRow`). `[FACT: schema/finance.ts:198-258]`
@@ -25,6 +26,7 @@ contract that S8's guarded INFORM/DERIVE/ADVISE will consume. No schema (tables 
 - No fiscal-legal validators exist yet (net-new). `[FACT: grep validators/finance.ts — 0 hits]`
 
 ## §2 Business Rules (invariants this slice MUST satisfy — cited)
+
 - **BR-S7-1 (FL-4 / ZK-1).** SITUATE is the user's own local `[E]` data, computed on-device — **needs NO external
   integration** (the always-available core). `[FACT: fiscal-legal/business-rules.md:22-24]`
 - **BR-S7-2 (FL-9).** Money-touch = a **jurisdiction link on existing Finance entities** (accounts · transactions ·
@@ -44,28 +46,30 @@ contract that S8's guarded INFORM/DERIVE/ADVISE will consume. No schema (tables 
 ## §3 Design (new file `services/finance/fiscal-legal.ts`; new validators in `validators/finance.ts`)
 
 ### 3.1 Deps + typed errors
+
 ```ts
 export interface FiscalLegalServiceDeps {
   db: DrizzleDb
   deviceId: string
-  finance: FinanceService          // FL-02 linkMoneyTouch delegates to its validated update path (sync_queue, no dup)
-  enforcer?: CapabilityEnforcer    // FL-09 grant-gate; absent ⇒ ExternalGrantMissing (fail-closed, M1)
+  finance: FinanceService // FL-02 linkMoneyTouch delegates to its validated update path (sync_queue, no dup)
+  enforcer?: CapabilityEnforcer // FL-09 grant-gate; absent ⇒ ExternalGrantMissing (fail-closed, M1)
 }
 
 // FL-10 — the full typed-error contract (S8 throws the INFORM/DERIVE/ADVISE ones). EACH class's constructor sets
 // `this.name` (+ a doc-grounded message) — the NAME is the contract (FL-10 surfaces/labels), an empty-body subclass
 // reporting name:'Error' would violate it (B1). Messages trace to business-rules.md:88-96 (failure behavior).
-export class RulePackUnverified extends Error {}      // X3 sig/version fail → "rule-pack unverified", not applied (S8)
-export class ExternalGrantMissing extends Error {}    // fail-closed, no egress/fetch (S7 gate + S8)
-export class InsufficientRuleData extends Error {}    // missing pack → "insufficient rule data", no fabrication (S8)
-export class AdviceIsInformational extends Error {}   // "not professional advice" label + source=ai, unstrippable (S8)
-export class NoAutoAction extends Error {}            // never auto-applied — user confirms (S8)
-export class FilingHandsOff extends Error {}          // organized summary, HANDS OFF — never files (S8)
-export class ModelUnavailable extends Error {}        // cloud-AI failure isolated; SITUATE/TRACK spine unaffected (S8)
+export class RulePackUnverified extends Error {} // X3 sig/version fail → "rule-pack unverified", not applied (S8)
+export class ExternalGrantMissing extends Error {} // fail-closed, no egress/fetch (S7 gate + S8)
+export class InsufficientRuleData extends Error {} // missing pack → "insufficient rule data", no fabrication (S8)
+export class AdviceIsInformational extends Error {} // "not professional advice" label + source=ai, unstrippable (S8)
+export class NoAutoAction extends Error {} // never auto-applied — user confirms (S8)
+export class FilingHandsOff extends Error {} // organized summary, HANDS OFF — never files (S8)
+export class ModelUnavailable extends Error {} // cloud-AI failure isolated; SITUATE/TRACK spine unaffected (S8)
 // e.g. constructor(...) { super(<message>); this.name = '<ClassName>' } — every class, per the S4 error precedent.
 ```
 
 ### 3.2 Validators (append to `validators/finance.ts`)
+
 ```ts
 CreateResidencySchema = { owner_type: z.enum(FISCAL_OWNER_TYPE), owner_id, jurisdiction_code, residency_type,
                           start_date, end_date?: string|null, notes }   // notes notNull [E]
@@ -75,6 +79,7 @@ UpdateLegalEntitySchema = CreateLegalEntitySchema.partial()
 ```
 
 ### 3.3 Operations (the `FiscalLegalService` interface; returns Row types)
+
 ```ts
 // FL-01 — residency CRUD (the SITUATE spine).
 setResidency(input): Promise<FiscalResidencyRow>
@@ -95,9 +100,11 @@ linkMoneyTouch(entityType: MoneyTouchType, entityId: string, jurisdictionCode: s
 // FL-09 — the external-access grant-gate (fail-closed). M1: no enforcer ⇒ ExternalGrantMissing.
 assertExternalGrant(defId: string, action: CapabilityAction): Promise<void>
 ```
+
 `MoneyTouchType = 'account' | 'transaction' | 'asset' | 'investment' | 'income_stream'` (the FL-9 five; liability excluded).
 
 ### 3.4 Operation flow
+
 - **CRUD** — factory-object, hoisted closures, no `this.` `[[factory-service-no-this-for-intra-calls]]`;
   `encryptedFields: []` M1.0 pass-through for the `[E]` notNull fields (notes / name / registration_ref — required
   in the create input, no default); `softDelete: true` on both tables. `createRepository(db, fiscalResidencies, cfg)`
@@ -113,6 +120,7 @@ assertExternalGrant(defId: string, action: CapabilityAction): Promise<void>
   `const d = await enforcer.checkAction(defId, action); if (!d.allowed) throw new ExternalGrantMissing(...)`.
 
 ### 3.5 Deferred inside S7 (recorded, homed)
+
 - **INFORM/DERIVE/ADVISE** (FL-04/05/06/07/08 — rulePack/deriveObligations/model/prepareFilingSummary/impact) — **S8**.
   S7 defines their typed errors (FL-10) but builds none of them.
 - **`fiscal_obligations`** table CRUD — S8 (deriveObligations). **Projects legal-entity model** (`project_id`
@@ -120,6 +128,7 @@ assertExternalGrant(defId: string, action: CapabilityAction): Promise<void>
 - **`[E]` field encryption** (notes/name/registration_ref) — M1 pass-through; wiring → M3/DB-5. `[[m10-repos-use-empty-encryptedfields-seam]]`
 
 ## §4 Acceptance
+
 1. `setResidency`/`updateResidency`/`softDeleteResidency`/`listResidencies` — CRUD over `fiscal_residencies`; invalid `owner_type` rejects; soft-delete hides; not-found fails loud; `sync_queue` enqueued.
 2. `registerLegalEntity`/`update`/`softDelete`/`list` — CRUD over `legal_entities`; `project_id` optional (no-FK); `[E]` name/registration_ref round-trip (M1 plaintext pass-through).
 3. `linkMoneyTouch('account', id, 'US-CA')` sets the account's `jurisdiction_code` (via finance update, verified by a read); a non-money-touch type (`'liability'`/junk) fails loud; a missing entity fails loud via the finance update throw.
@@ -128,13 +137,15 @@ assertExternalGrant(defId: string, action: CapabilityAction): Promise<void>
 6. tsc 0, eslint 0. Live-store Verification Gate PASS. Finance S1–S6 untouched.
 
 ## §XXVIII deviation (impl) — `@vida/types` money-touch interfaces extended (FL-02 exposure)
+
 The PLAN said "@vida/types untouched" — **wrong**. tsc caught it: `linkMoneyTouch`/`getAccount` expose `jurisdiction_code`,
 but the `@vida/types` `Account`/`Transaction`/`Asset`/`Investment`/`IncomeStream` interfaces lacked it. This is NOT a
-new decision — the S1 slice-map (`slice-map.md:57`) **explicitly deferred it to S7**: *"`jurisdiction_code` interface
-exposure stays for S7 (FL-02)."* Fix: add `jurisdiction_code: string | null` to the **5 money-touch interfaces**
+new decision — the S1 slice-map (`slice-map.md:57`) **explicitly deferred it to S7**: _"`jurisdiction_code` interface
+exposure stays for S7 (FL-02)."_ Fix: add `jurisdiction_code: string | null` to the **5 money-touch interfaces**
 (Liability excluded, per FL-9's set). Grounded, mechanical, the documented S7 scope the PLAN under-specified. `[FACT: slice-map.md:57; schema/finance.ts nullable jurisdiction_code]`
 
 ## §5 Implementation Prompt
+
 New `services/finance/fiscal-legal.ts` (`createFiscalLegalService` + `FiscalLegalService`/`FiscalLegalServiceDeps` +
 the 7 error classes + `MoneyTouchType`); append the 4 fiscal validators to `validators/finance.ts`. Returns Row
 types (no `@vida/types` cast). Barrel-export from `index.ts`. tsc → Vitest (residency/legal-entity CRUD + invalid
@@ -145,6 +156,7 @@ enforcer allow/deny · error-class exports) → live-store smoke → code-review
 reaches. No `@vida/types` change (Row types).
 
 ## Gate-1 critique resolution (§XXVI step 2)
+
 - **B1 — RESOLVED.** Every FL-10 error class gets a `this.name`-setting constructor + a doc-grounded message
   (traced to `business-rules.md:88-96`) — the name IS the contract; empty-body `name:'Error'` would violate FL-10 (§3.1).
 - **N1 — folded** (§3.4: jurisdiction-only patch skips updateTransaction's FN-4 guard — reuse-safe).
@@ -152,6 +164,7 @@ reaches. No `@vida/types` change (Row types).
 - **N3 — folded** (all 7 errors exported from the barrel so S8 imports, never redefines; §3.1 marks each "(S8)").
 
 ## Open decisions for Approval 1
+
 - **D1** — the service returns **Row types** (`FiscalResidencyRow`/`LegalEntityRow`), no `@vida/types` interface (DB-11; the raw-reader precedent). No `_sync_status` cast needed.
 - **D2** — `linkMoneyTouch` **delegates to the injected `FinanceService`** update methods (validated + sync_queue), not a fiscal-legal-local write to finance tables. `finance` is a **required** dep — fiscal-legal is a finance sub-context (FL-1) that composes its parent; the app always constructs finance first (one-way edge, no cycle).
 - **D3** — S7 defines **all 7** FL-10 error classes (the contract), though only `ExternalGrantMissing` is thrown in S7; S8 throws the rest (doc-fixed homing, `parts/finance.md:66`).

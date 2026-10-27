@@ -12,14 +12,30 @@ const groups: BacklinkGroup[] = [
   {
     module: 'Notes',
     items: [
-      { sourceId: 'a', type: 'note', title: 'Research log', module: 'Notes', count: 2, snippet: 'linked here', latest: 50 },
+      {
+        sourceId: 'a',
+        type: 'note',
+        title: 'Research log',
+        module: 'Notes',
+        count: 2,
+        snippet: 'linked here',
+        latest: 50,
+      },
       { sourceId: 'c', type: 'note', title: 'Alpha notes', module: 'Notes', count: 1, snippet: null, latest: 10 },
     ],
   },
   {
     module: 'Projects',
     items: [
-      { sourceId: 'b', type: 'milestone_note', title: 'Launch', module: 'Projects', count: 1, snippet: null, latest: 40 },
+      {
+        sourceId: 'b',
+        type: 'milestone_note',
+        title: 'Launch',
+        module: 'Projects',
+        count: 1,
+        snippet: null,
+        latest: 40,
+      },
     ],
   },
 ]

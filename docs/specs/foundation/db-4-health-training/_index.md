@@ -10,6 +10,7 @@
 > ADR-004 — the C3 inverse of Nutrition). Composes Core #17 (goals/metrics/roles/adaptation/medical). **Zero build-decisions.**
 
 ## §0. Source model
+
 Frontend/data source-of-truth = documented intent. Ground truth for THIS unit: `docs/features/health/training/{identity,
 business-rules,structure-data,contract,conventions}.md` (all 5 aspects, read) · `docs/intake/health.md` **STATUS: WHOLE**
 (the 9 Physical-Training Notion DBs) · `ADR-004` (table-per-type Sessions — the `workout_sessions` extension) · `ADR-002`
@@ -20,7 +21,9 @@ business-rules,structure-data,contract,conventions}.md` (all 5 aspects, read) ·
 `schema/health-core.ts` (#17 — the Core spine Training composes) · `schema/_registry.ts` (`ENTITY_TYPES`).
 
 ## §1. Identity — what this unit is
+
 The exercise pillar. **5 owned tables:**
+
 - **Catalog** — `exercises` (movement library: pattern/muscles/equipment/form/risk).
 - **Plan** — `exercise_plans` (periodization: progression model/deload/energy-system; → Core goals + a Physical Role).
 - **Template** — `workout_templates` (reusable session defs).
@@ -28,7 +31,9 @@ The exercise pillar. **5 owned tables:**
 - **Log** — `workout_sets` (per-exercise, per-set planned-vs-actual; child of a workout).
 
 ### Scope boundary — doc-DECIDED (intake WHOLE, no rerun → author the floor, cite the rest)
+
 **AUTHOR (the doc-described shape — build phase):**
+
 - The 5 tables per `structure-data.md` §Entities, with P/E flags, nullable notation, and the enum split below.
 - **`workout_sessions` = the session-extension shape** (BR-DB-1 / the live precedent): `...baseColumns` (own `id` PK) +
   `session_id text notNull unique` (1:1 key → `sessions.id`, no FK), **NO `deleted_at`** (base `sessions` owns lifecycle).
@@ -38,6 +43,7 @@ The exercise pillar. **5 owned tables:**
 - **`packages/types/src/training.ts`** (net-new — grep-confirmed none exists): 3 FIXED tuples + Zod.
 
 **OUT (cite-not-author / owned elsewhere — Core inheritance + composition):**
+
 - **HT-5 — no local KPI store.** PRs/1RM/volume/max-reps are emitted as **Core `health_metric_values`** (kind=
   performance-capacity, source=derived, per-lift/per-side); Training keeps no parallel KPI table. `[HT-5; conventions L12]`
 - **Base session + runtime + scheduler → Sessions (ADR-004).** `workout_sessions` is ONLY the extension; the base `sessions`
@@ -52,10 +58,12 @@ The exercise pillar. **5 owned tables:**
   `authoring_source` provenance only; no integration table).
 
 ### Boundary — what this unit is NOT (doc-cited)
+
 NOT a session engine (composes Sessions, ADR-004) · NOT the metric owner (performance → Core, HT-5) · NOT the protocol
 library (Knowledge) · NOT modality-fragmented (property, not machineries) · NOT the goal owner (composes Core goals).
 
 ## §2. Business Rules (inherited invariants the DDL honors)
+
 - **HT [E] set** (ZK-1): `[E]` per structure-data — exercise `name`/`form_cues`/`common_errors`/`instructions`/`variations`/
   `video_url`; plan `name`/`description`; template `name`; session `performance_notes`/`issues`/`recovery_needs`; set
   `planned_reps`/`planned_weight`/`actual_reps` (encrypted numeric — the money[E] pattern: typed column + `@encrypted`).
@@ -70,28 +78,28 @@ library (Knowledge) · NOT modality-fragmented (property, not machineries) · NO
 
 **REUSE — existing `@vida/types` tuples (no new tuple; parity rows added):**
 
-| Column | Reused tuple (home) | Members |
-|---|---|---|
-| `workout_sets.side` | `METRIC_SIDE` (`health.ts`, #17) | left·right·bilateral (nullable) |
-| `exercise_plans.authoring_source` | `PHYSICAL_ROLE_AUTHORING_SOURCE` (`health.ts`, #17) | manual·llm·import |
+| Column                            | Reused tuple (home)                                 | Members                         |
+| --------------------------------- | --------------------------------------------------- | ------------------------------- |
+| `workout_sets.side`               | `METRIC_SIDE` (`health.ts`, #17)                    | left·right·bilateral (nullable) |
+| `exercise_plans.authoring_source` | `PHYSICAL_ROLE_AUTHORING_SOURCE` (`health.ts`, #17) | manual·llm·import               |
 
 **NET-NEW FIXED — closed sets (author tuple + Zod + SQL CHECK) in `training.ts`:**
 
-| Tuple | Members | Source |
-|---|---|---|
-| `MOVEMENT_PATTERN` | push·pull·hinge·squat·lunge·carry·rotation | structure-data L10 |
+| Tuple                  | Members                                          | Source             |
+| ---------------------- | ------------------------------------------------ | ------------------ |
+| `MOVEMENT_PATTERN`     | push·pull·hinge·squat·lunge·carry·rotation       | structure-data L10 |
 | `WORKOUT_SET_CATEGORY` | warm-up·main·accessory·cardio·mobility·cool-down | structure-data L26 |
-| `BURN_SOURCE` | formula·wearable·manual | structure-data L24 |
+| `BURN_SOURCE`          | formula·wearable·manual                          | structure-data L24 |
 
 **OPEN vocab — modality / not-inline-enumerated → plain TEXT (or JSON), NO CHECK, NO tuple** ([[open-vocab-columns-take-no-sql-check]]; conventions L16 "Modality = enum/tag"):
 
-| Column(s) | Why OPEN | Source |
-|---|---|---|
-| `exercises.{primary_muscle, difficulty, risk_level}` | not inline-enumerated | L11 |
+| Column(s)                                                                           | Why OPEN                                                                              | Source |
+| ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------ |
+| `exercises.{primary_muscle, difficulty, risk_level}`                                | not inline-enumerated                                                                 | L11    |
 | `exercise_plans.{progression_model, deload_frequency, energy_system_focus, status}` | modality / not inline-enumerated (Notion values not lifted into the floor entity-def) | L14-16 |
-| `workout_templates.{workout_type, set_structure}` | modality (conventions L16), not inline-enumerated | L19 |
-| `workout_sessions.location` | free label | L22 |
-| `workout_sets.form_quality` | not enumerated | L28 |
+| `workout_templates.{workout_type, set_structure}`                                   | modality (conventions L16), not inline-enumerated                                     | L19    |
+| `workout_sessions.location`                                                         | free label                                                                            | L22    |
+| `workout_sets.form_quality`                                                         | not enumerated                                                                        | L28    |
 
 ## §3. Intended shape — 5 tables (all net-new ADR-002 additions; all `[INTENT]`, no As-is floor)
 
@@ -105,6 +113,7 @@ it: `workout_templates` (bare "timestamps", L20), `workout_sessions` (session ex
 (child log). Follow the floor per-table (the #17/#18 ruling). `[FACT: structure-data L13,18]`
 
 **Table shapes** (P=plaintext · E=`[E]` · all ids no-FK plain TEXT · REAL=numeric):
+
 - **§3a `exercises`** `[INTENT L10-13]` — `baseColumns` **+ `deleted_at`**; `name`E · `movement_pattern`(FIXED
   `MOVEMENT_PATTERN`) · `primary_muscle`(OPEN) · `secondary_muscles`(JSON) · `equipment`(JSON) · `difficulty`(OPEN) ·
   `risk_level`(OPEN) · `form_cues`E · `common_errors`E · `instructions`E · `variations`E · `video_url`E ·
@@ -129,14 +138,17 @@ it: `workout_templates` (bare "timestamps", L20), `workout_sessions` (session ex
   idx on `workout_session_id`, `exercise_id`.
 
 ### §3f. `ENTITY_TYPES` registry — append 4 (SP1/SP2 open registry)
+
 `exercise` · `exercise_plan` · `workout_session` · `workout_set` (conventions L21; structure-data §ADR-002 additions L37).
 
 ### §3g. `packages/types/src/training.ts` — NET-NEW
+
 - 3 FIXED tuples (`MOVEMENT_PATTERN`, `WORKOUT_SET_CATEGORY`, `BURN_SOURCE`) `as const` + unions + 3 `z.enum` (in `validators/training.ts`).
 - REUSE (import, don't redefine): `METRIC_SIDE`, `PHYSICAL_ROLE_AUTHORING_SOURCE` (health.ts).
 - Barrel: export from `packages/types/src/index.ts` + `validators/index.ts`.
 
 ## §4. Physical home & authoring model
+
 - **Schema:** `packages/core/src/db/schema/health-training.ts` (register in `schema/index.ts` barrel; import `blob`? — no
   blob here; import `sqliteTable, text, integer, real, index`).
 - **Migration:** `packages/core/src/db/migrations/029_health_training.ts` (`version: 29`, `name: 'health_training'`,
@@ -148,11 +160,13 @@ it: `workout_templates` (bare "timestamps", L20), `workout_sessions` (session ex
   columns (3 net-new + 2 reused). Author model mirrors group #17/#18.
 
 ## §5. Phase-1 completion checklist + shape resolutions
+
 - [x] All 5 aspect docs read (no rerun — row 21 ALIGNED) · [x] no `training_*` on disk (net-new) · [x] boundaries = Core #17
-  + Sessions/Knowledge (composed) · [x] FIXED/OPEN split cited to floor lines · [x] `deleted_at` = exercises + exercise_plans
-  (floor L13/L18) · [x] session-extension shape verified (own id + session_id UNIQUE, no deleted_at).
+  - Sessions/Knowledge (composed) · [x] FIXED/OPEN split cited to floor lines · [x] `deleted_at` = exercises + exercise_plans
+    (floor L13/L18) · [x] session-extension shape verified (own id + session_id UNIQUE, no deleted_at).
 
 ### Shape resolutions — doc-determined (candidate ZERO decisions; the gate confirms)
+
 1. **`deleted_at` on `exercises` + `exercise_plans`** `[FACT: structure-data L13,18]` — the floor marks two; the other 3
    omit it (template bare "timestamps"; session-extension + child-log by convention). Follow the floor (#17/#18 ruling).
    ⚠ `workout_templates` gets NO `deleted_at` (floor bare "timestamps") despite being a definition entity — the one
@@ -167,10 +181,12 @@ it: `workout_templates` (bare "timestamps", L20), `workout_sessions` (session ex
 6. **No-FK / no measurement-economy-local-KPI / performance → Core / modality OPEN** `[FACT: HT-5/HT-7 + platform conventions]`.
 
 ### DB-11 carry-forward (cited, not fixed here)
+
 += 5 Training row interfaces + 3 net-new enums; the volume/PR/1RM deriver (→ Core metrics) + the workout runtime are
 service-phase (M1.1+), not DB-4.
 
 ## §6. Preflight — folds resolved (SQL types + NOT-NULL/DEFAULT + indexes; convention-grounded)
+
 - **F1 · numeric `INTEGER`** (`integer()`): `exercise_plans.frequency` (sessions/week) · `workout_templates.expected_duration`
   (min) · `workout_sessions.{pre_energy,satisfaction}` (1–10) · `workout_sets.{order,planned_sets,sets_done}` ·
   `workout_sets.{planned_reps,actual_reps}` (**[E]** — INTEGER + `@encrypted`, the money[E] pattern). **`REAL`** (`real()`):
@@ -181,9 +197,9 @@ service-phase (M1.1+), not DB-4.
 - **F3 · `[E]` text → `text()` + `@encrypted`** (M1.0 pass-through): exercise `name`/`form_cues`/`common_errors`/
   `instructions`/`variations`/`video_url` · plan `name`/`description` · template `name` · session `performance_notes`/
   `issues`/`recovery_needs`. **`[E]` numeric** (`planned_reps`/`actual_reps` INTEGER, `planned_weight` REAL) = typed column
-  + `@encrypted` (finance.ts precedent). No `blob` in this group.
+  - `@encrypted` (finance.ts precedent). No `blob` in this group.
 - **F4 · JSON → `json<T>()`** (TEXT): `exercises.{secondary_muscles,equipment}` · `exercise_plans.{training_focus,rest_days,
-  goal_ids}` · `workout_templates.{primary_muscle_groups,exercise_refs}`.
+goal_ids}` · `workout_templates.{primary_muscle_groups,exercise_refs}`.
 - **F5 · boolean → `boolInt()`**: `workout_templates.ai_generated` (dflt 0) · `workout_sets.is_pr` (dflt 0).
 - **F6 · indexes** (query-driven): `idx_workout_sessions_plan`(plan_id) · `idx_workout_sets_session`(workout_session_id) ·
   `idx_workout_sets_exercise`(exercise_id) · `idx_exercise_plans_status ON exercise_plans(status) WHERE deleted_at IS NULL`

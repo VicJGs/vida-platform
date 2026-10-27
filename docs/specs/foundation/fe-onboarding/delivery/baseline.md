@@ -14,14 +14,14 @@
 The first-run onboarding is **already shipped** (UX-5 model LIF-94 + UI-4 S4 render/wiring LIF-89). Code lives in
 `apps/web/src/onboarding/`:
 
-| File | Owner | What it is |
-|------|-------|-----------|
-| `steps.ts` | UX-5 | `ONBOARDING_STEPS` (4 steps: welcome · privacy · vault · ready) + `OnboardingCopyContract` (`m1`/`m3?`, BR-4 copy-honesty). Data-only, no JSX. [FACT: steps.ts:22-51] |
-| `first-run.ts` | UX-5 | `isFirstRun(flag)=flag!=='1'`, `FIRST_RUN_COMPLETE_KEY='first_run:completed'`, `FIRST_RUN_BRANCH` (App.tsx seam as data). [FACT: first-run.ts:16-37] |
-| `onboarding.tsx` | UI-4 S4 | `Onboarding({onComplete})` — the full-viewport 4-screen flow; UI-1 `Button`, `PRIMARY_LABEL` per kind, focus-to-`<h1>` (`FOCUS_CONTRACT.pageNav`), no-Escape, progress dots (aria-hidden), reduced-motion, retryable error, re-entrancy guard. Renders OUTSIDE the shell. [FACT: onboarding.tsx:32-133] |
-| `use-first-run.ts` | UI-4 S4 | `useFirstRun(dbReady)` → `{status:'resolving'|'onboarding'|'ready', markComplete}`; write-THEN-flip. [FACT: use-first-run.ts:19-45] |
-| `first-run-repo.ts` | UI-4 S4 | `read/writeFirstRunComplete` over `app_state` (`getDbClient().driver`). [FACT: first-run-repo.ts:11-27] |
-| `onboarding.md` | UX-5 | Authoritative model: M1.0 boundary, first-run contract, a11y/responsive, copy-honesty. [FACT: docs/core/architecture/onboarding.md] |
+| File                | Owner   | What it is                                                                                                                                                                                                                                                                                              |
+| ------------------- | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ | ------------------------------------------------------------------------ |
+| `steps.ts`          | UX-5    | `ONBOARDING_STEPS` (4 steps: welcome · privacy · vault · ready) + `OnboardingCopyContract` (`m1`/`m3?`, BR-4 copy-honesty). Data-only, no JSX. [FACT: steps.ts:22-51]                                                                                                                                   |
+| `first-run.ts`      | UX-5    | `isFirstRun(flag)=flag!=='1'`, `FIRST_RUN_COMPLETE_KEY='first_run:completed'`, `FIRST_RUN_BRANCH` (App.tsx seam as data). [FACT: first-run.ts:16-37]                                                                                                                                                    |
+| `onboarding.tsx`    | UI-4 S4 | `Onboarding({onComplete})` — the full-viewport 4-screen flow; UI-1 `Button`, `PRIMARY_LABEL` per kind, focus-to-`<h1>` (`FOCUS_CONTRACT.pageNav`), no-Escape, progress dots (aria-hidden), reduced-motion, retryable error, re-entrancy guard. Renders OUTSIDE the shell. [FACT: onboarding.tsx:32-133] |
+| `use-first-run.ts`  | UI-4 S4 | `useFirstRun(dbReady)` → `{status:'resolving'                                                                                                                                                                                                                                                           | 'onboarding' | 'ready', markComplete}`; write-THEN-flip. [FACT: use-first-run.ts:19-45] |
+| `first-run-repo.ts` | UI-4 S4 | `read/writeFirstRunComplete` over `app_state` (`getDbClient().driver`). [FACT: first-run-repo.ts:11-27]                                                                                                                                                                                                 |
+| `onboarding.md`     | UX-5    | Authoritative model: M1.0 boundary, first-run contract, a11y/responsive, copy-honesty. [FACT: docs/core/architecture/onboarding.md]                                                                                                                                                                     |
 
 **App mount seam** — `apps/web/src/App.tsx`: `const firstRun = useFirstRun(dbReady)`; loading gate includes
 marker resolution; the first-run branch renders `<Onboarding onComplete={firstRun.markComplete}/>` inside `UIProvider`,
@@ -39,7 +39,9 @@ The reshape tags the shipped onboarding as **"MISSING: optional guided setup; co
 [FACT: g6-reshape-runbook.md:26 legend]. Two intent legs:
 
 ### (a) Optional guided setup — the net-new Flow
+
 Concrete M1.0 definition (the only grounding, the P5 specimen):
+
 - **"Prefer a hand? Start guided setup → (pick your modules & theme — optional, skippable)"** [FACT: p5-discover-own-specimen.html:164]
 - **"the empty state does the teaching; guided setup is opt-in, never a wall"** [FACT: p5-discover-own-specimen.html:166 · fe-codec-patterns s3-empty-state.md:34 BR-S3-3]
 - Type = **Flow** (archetype), deps #11 flow-session + #2 patterns [FACT: reconstructed-structure.md:51]
@@ -50,6 +52,7 @@ an opt-in affordance (NOT a wall). **What persists the picks** (module enablemen
 in Interpretation — candidates: `nav_preferences` (modules) + fe-codec-theme ThemeProvider/preference (theme).
 
 ### (b) Copy-honesty (M1 local-first vs M3 ZK)
+
 Already encoded in the shipped model (`OnboardingCopyContract` `m1`/`m3?`, rendered `m1`-only) [FACT: steps.ts:7-12,
 onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-UI-4-render, OR means the fuller treatment.
 **Reconcile in Interpretation:** is this a RATIFY (already shipped honestly) or a real gap? Default read = largely RATIFY.
@@ -59,6 +62,7 @@ onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-U
 ## 3. Shipped dependencies (consume, do NOT rebuild)
 
 ### fe-codec-flow-session (#11, LIF-218-sibling, SHIPPED) — `packages/ui/src/components/flow-session-view.tsx`
+
 - `FlowSessionView` props: `title` (serif H1), `stages: FlowStage[]`, `renderStage?(stage)=>ReactNode`,
   `onAttach`/`onMarkDone`/`onRequireProof`, `effects?`/`effectsState`, `saveStatus` + `action` slots.
   [FACT: flow-session-view.tsx:52-89 · exported packages/ui/src/index.ts:77-83]
@@ -70,6 +74,7 @@ onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-U
   (stages = setup steps, no attach/proof) or use a lighter composition. This is the key consumption-fit question.
 
 ### fe-codec-patterns (#2, LIF-211, SHIPPED)
+
 - `@vida/ui`: `EmptyState` (with `guidedSetup?: ReactNode` slot — the opt-in setup entry point!) [FACT: empty-state.tsx:65-78,
   seam-contract.md:58], `SyncStatus`/`HonestProgress` [FACT: sync-status.tsx], `useReducedMotion`.
 - `apps/web/src/state-conventions/`: 8-state machine (`deriveInteractionState`, `collapseToTerminal`), `ReachabilityRegistry`
@@ -81,6 +86,7 @@ onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-U
 ---
 
 ## 4. M1.0 boundaries (hard constraints)
+
 - **Auth/vault OFF** — "no SRP/vault-unlock … a trivial local passphrase or none"; encryption pass-through. [FACT: ADR-017:20,22 · ADR-019:20]
 - **Copy-honesty (BR-4):** M1.0 MAY claim local-first; MUST NOT claim encrypted-at-rest / zero-knowledge; the `vault`
   step is confirmation-only. Full ZK copy → UX-5b/M3. [FACT: onboarding.md:88-96]
@@ -92,6 +98,7 @@ onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-U
 ---
 
 ## 5. Open questions carried to Step 1 (Interpretation) / Step 1.5 (Envision)
+
 1. **Consumption fit:** does guided setup render on `FlowSessionView` (presentational, no session persistence) or a
    lighter flow? (flow-session is session-shaped; guided setup is not a persisted session.) → Interpretation, grounded.
 2. **Persistence seams:** what backs "pick your modules" (→ `nav_preferences`?) and "pick your theme" (→ fe-codec-theme
@@ -108,6 +115,7 @@ onboarding.tsx:3-5]. surface-map:34 lists it as MISSING — likely written pre-U
 ---
 
 ## 6. BASELINE verdict
+
 Terrain mapped, scope doc-grounded. fe-onboarding is **not** a from-scratch onboarding build — the first-run render +
 model + copy-honesty contract ship. The net-new is the **optional/skippable guided-setup Flow (pick modules + theme)**
 on the shipped flow-session + patterns substrates, plus a copy-honesty reconcile and the guided-setup reach wiring.

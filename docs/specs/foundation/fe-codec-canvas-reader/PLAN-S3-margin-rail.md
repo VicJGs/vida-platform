@@ -6,12 +6,14 @@
 > zone; S3 adds the **right (annotations) zone** — the "living margin" the whole concept is named for.
 
 ## §1 · Context
+
 The margin rail is where annotations live beside the text. It renders annotations **grouped by chapter** (EC-14),
 **N-per-nature** (IR-10), the three natures **visually distinct** (EC-6), each row showing its **pre-resolved location**
 (IR-8 — the shell never parses `position`), under the **IR-1 affordance rule** (a highlight is never linkable). It is the
 third and final Body zone (Contents ∣ reading column ∣ **rail**); at 375 it stacks below the column (EC-9).
 
 ## §2 · Business rules (S3 scope)
+
 - **BR-S3-1 (pre-grouped, EC-14 + IR-8):** the rail renders `annotationGroups: AnnotationGroup[]` (chapter groups the
   **adapter builds** — S6), NOT a flat list it groups itself. The shell **never groups/sorts/parses** — the board-view /
   list-view `sections` precedent ("the renderer never groups"; `CLAUDE.md` board-view + list-view `sections`). Chapter
@@ -58,6 +60,7 @@ third and final Body zone (Contents ∣ reading column ∣ **rail**); at 375 it 
   accent (marker + current-signal) **flips per preset**; AA full-matrix incl. warm-dark; no new motion (static rail).
 
 ## §3 · Contract (added to `CanvasReaderProps`)
+
 ```ts
 type Nature = 'highlight' | 'bookmark' | 'quote'
 // location is ALREADY RESOLVED by the adapter (S6) — the shell only renders it (EC-14; no parsing in @vida/ui).
@@ -75,6 +78,7 @@ onLinkAnnotation?: (annotationId: string) => void // ditto — bookmark & quote 
 ```
 
 **Two `/contract` refinements from the PROPOSED seam-contract** (types there are explicitly "PROPOSED — refined per slice"):
+
 1. **flat `annotations?: ReaderAnnotation[]` → pre-grouped `annotationGroups?: AnnotationGroup[]`.** EC-14 requires
    grouping by chapter, and a flat array of `{location: ReactNode}` carries **no chapter key** to group by; the shell is
    presentational and must not derive/sort (BR-S3-1, board/list-view precedent). The adapter already derives the chapter
@@ -83,6 +87,7 @@ onLinkAnnotation?: (annotationId: string) => void // ditto — bookmark & quote 
    annotations concept — the honest, minimal type is the 4-state `ViewState` the rail actually uses.
 
 ## §4 · Acceptance (Visual Gate MUSTs)
+
 - **EC-5 (IR-1):** a highlight row shows **NO** Add-note/Link; a bookmark & a quote show both (handlers passed). The gate
   FAILS on a highlight affordance.
 - **EC-6:** the three natures are **visually distinct** (nature label + shape-differentiated accent marker), each with its
@@ -98,6 +103,7 @@ onLinkAnnotation?: (annotationId: string) => void // ditto — bookmark & quote 
 - tsc 0 · eslint 0 · tests green · **axe 0**.
 
 ## §5 · Implementation prompt
+
 1. `canvas-reader.tsx` —
    - add `Nature` · `ReaderAnnotation` · `AnnotationGroup` types (exported) + the 6 props.
    - styled hosts: `RailZone` (mirror `ContentsZone`, `borderLeftWidth` + `paddingLeft`) · `NatureMarker` (variants
@@ -124,6 +130,7 @@ onLinkAnnotation?: (annotationId: string) => void // ditto — bookmark & quote 
    `docs/specs/components/ui-2-platform-views/canvas-reader.md` S3 block).
 
 ## Deviations / open
+
 - The two §3 `/contract` refinements (flat→grouped · ReaderState→ViewState) are the only departures from the PROPOSED
   seam-contract — both grounded above, both within "refined per slice". No §XXVIII deviation (the ratified artifacts are
   the ECs/IRs, which these satisfy).

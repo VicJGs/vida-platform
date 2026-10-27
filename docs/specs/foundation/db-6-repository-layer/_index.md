@@ -11,4 +11,5 @@
 - **Doc marks:** B (baseline ✅ done) · F (this spec) · C (currency refresh post-build) · L (layer-docs)
 
 ## Sessions
+
 - `sessions/PLAN-2026-07-28-db-6-repository-layer.md` — gate-1 direction (this session).

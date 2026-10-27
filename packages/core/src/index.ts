@@ -48,12 +48,7 @@ export {
   completeLogin,
 } from './encryption/srp'
 
-export type {
-  SrpRegistrationResult,
-  SrpClientEphemeral,
-  SrpClientSession,
-  SrpLoginState,
-} from './encryption/srp'
+export type { SrpRegistrationResult, SrpClientEphemeral, SrpClientSession, SrpLoginState } from './encryption/srp'
 
 // Validators — Zod schemas for @vida/types enums
 export * from './validators'
@@ -83,23 +78,10 @@ export {
   deleteAppState,
 } from './db/app-state'
 
-export type {
-  DrizzleDb,
-  RawQueryResult,
-  Migration,
-  SqliteDriver,
-  DatabaseAdapter,
-  DatabaseConfig,
-} from './db/adapter'
+export type { DrizzleDb, RawQueryResult, Migration, SqliteDriver, DatabaseAdapter, DatabaseConfig } from './db/adapter'
 
 // Database — migration runner
-export {
-  migrate,
-  currentVersion,
-  needsMigration,
-  LATEST_VERSION,
-  listMigrations,
-} from './db/migrations/runner'
+export { migrate, currentVersion, needsMigration, LATEST_VERSION, listMigrations } from './db/migrations/runner'
 
 // Database — generic repository
 export {
@@ -113,12 +95,7 @@ export {
   decryptRow,
 } from './db/repository'
 
-export type {
-  CreateInput,
-  UpdateInput,
-  RepositoryConfig,
-  Repository,
-} from './db/repository'
+export type { CreateInput, UpdateInput, RepositoryConfig, Repository } from './db/repository'
 
 // Foundation substrate — Sessions base (AR-5 · ADR-004)
 export * from './foundation/sessions'

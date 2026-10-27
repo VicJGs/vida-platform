@@ -16,6 +16,7 @@
 - **BR-8 (progress() contract — §3.4).** A `Pursuable` declares `measurement_kind` + computes `progress()`. The substrate owns the contract; Purpose consumes it.
 
 ## Deferred (not in this increment — all homed, DF-12 + §6)
+
 `measurement_kind`/`binding_mode` columns + nullable-progress → per-module (DB-4 Stream ii). `contributions` →
 MOD-purposes. Real measurement sources → source modules (first-consumer-pull). Non-linear curves · qualitative UI ·
 DAG perf-envelope → build-phase. Multi-condition automation → **ADR-012 `rules` (economy increment)**; its

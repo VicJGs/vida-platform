@@ -46,7 +46,14 @@ describe('GalleryView', () => {
   it('getWeight scales a tile: flexGrow=w, flexBasis=w·min, maxWidth=w·min·2 — but minWidth stays the base floor', () => {
     const weight: Record<string, number> = { a: 1, b: 2, c: 1 }
     const { getAllByRole } = renderUI(
-      <GalleryView items={items} getKey={key} renderItem={tile} minTileWidth={200} getWeight={(i) => weight[i.id]!} aria-label="Gallery" />,
+      <GalleryView
+        items={items}
+        getKey={key}
+        renderItem={tile}
+        minTileWidth={200}
+        getWeight={(i) => weight[i.id]!}
+        aria-label="Gallery"
+      />,
     )
     const [a, b] = getAllByRole('listitem') as HTMLElement[]
     // base tile (w=1)
@@ -75,7 +82,14 @@ describe('GalleryView', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const bad: Record<string, number> = { a: 0, b: NaN, c: Infinity }
     const { getAllByRole } = renderUI(
-      <GalleryView items={items} getKey={key} renderItem={tile} minTileWidth={200} getWeight={(i) => bad[i.id]!} aria-label="Gallery" />,
+      <GalleryView
+        items={items}
+        getKey={key}
+        renderItem={tile}
+        minTileWidth={200}
+        getWeight={(i) => bad[i.id]!}
+        aria-label="Gallery"
+      />,
     )
     for (const cell of getAllByRole('listitem') as HTMLElement[]) {
       expect(cell.style.flexGrow).toBe('1') // all coerced to 1
@@ -88,7 +102,14 @@ describe('GalleryView', () => {
   it('getWeight above the ceiling (MAX_WEIGHT=8) → clamped + dev-warn (symmetric guard)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { getAllByRole } = renderUI(
-      <GalleryView items={items} getKey={key} renderItem={tile} minTileWidth={200} getWeight={() => 1e9} aria-label="Gallery" />,
+      <GalleryView
+        items={items}
+        getKey={key}
+        renderItem={tile}
+        minTileWidth={200}
+        getWeight={() => 1e9}
+        aria-label="Gallery"
+      />,
     )
     const cell = getAllByRole('listitem')[0] as HTMLElement
     expect(cell.style.flexGrow).toBe('8') // clamped to the ceiling, not 1e9
@@ -99,7 +120,15 @@ describe('GalleryView', () => {
 
   it('skeleton tiles stay weight-1 (uniform, data-independent) even with getWeight passed', () => {
     const { container } = renderUI(
-      <GalleryView items={[]} getKey={key} renderItem={tile} state="loading" minTileWidth={200} getWeight={() => 3} aria-label="Gallery" />,
+      <GalleryView
+        items={[]}
+        getKey={key}
+        renderItem={tile}
+        state="loading"
+        minTileWidth={200}
+        getWeight={() => 3}
+        aria-label="Gallery"
+      />,
     )
     const sk = container.querySelectorAll('[role="listitem"]')[0] as HTMLElement
     expect(sk.style.flexGrow).toBe('1')
@@ -107,9 +136,7 @@ describe('GalleryView', () => {
   })
 
   it('defaults minTileWidth to 200', () => {
-    const { getAllByRole } = renderUI(
-      <GalleryView items={items} getKey={key} renderItem={tile} aria-label="Gallery" />,
-    )
+    const { getAllByRole } = renderUI(<GalleryView items={items} getKey={key} renderItem={tile} aria-label="Gallery" />)
     expect((getAllByRole('listitem')[0] as HTMLElement).style.minWidth).toBe('200px')
   })
 

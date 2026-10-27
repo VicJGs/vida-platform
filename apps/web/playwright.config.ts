@@ -27,9 +27,7 @@ export default defineConfig({
     // can't download the bundled Chromium), point at a system Chromium-family
     // binary — `PW_EXECUTABLE_PATH=".../Brave Browser" pnpm test:e2e`. Unset in
     // CI → uses the installed Chromium. Does not affect the shipped config.
-    launchOptions: process.env.PW_EXECUTABLE_PATH
-      ? { executablePath: process.env.PW_EXECUTABLE_PATH }
-      : {},
+    launchOptions: process.env.PW_EXECUTABLE_PATH ? { executablePath: process.env.PW_EXECUTABLE_PATH } : {},
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

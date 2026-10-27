@@ -8,13 +8,7 @@ import { Text, View } from '@tamagui/core'
 // Supplemented/replaced by real primitive stories from U1 onward.
 function Welcome() {
   return (
-    <View
-      backgroundColor="$colorSurfacePrimary"
-      padding={24}
-      borderRadius={12}
-      gap={8}
-      maxWidth={520}
-    >
+    <View backgroundColor="$colorSurfacePrimary" padding={24} borderRadius={12} gap={8} maxWidth={520}>
       <Text color="$colorTextPrimary" fontSize={20}>
         Vida UI — Storybook harness (U0)
       </Text>

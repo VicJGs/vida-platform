@@ -1,6 +1,6 @@
 # Spec: feature:ui-4-app-shell-components / S5 — Integration
 
-Status: implemented      <!-- draft → approved → implemented -->  (Approval 1+2 ✅; gate-1 REVISE→fixed · preflight MEASURED · gate-2 SHIP no-drift; built + green, pending Visual Gate + PR)
+Status: implemented <!-- draft → approved → implemented --> (Approval 1+2 ✅; gate-1 REVISE→fixed · preflight MEASURED · gate-2 SHIP no-drift; built + green, pending Visual Gate + PR)
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X]. Inherits the umbrella §2 BR-1..7.
 Sessions: 2026-08-17-ui-4-app-shell-components-6
 
@@ -11,8 +11,10 @@ Sessions: 2026-08-17-ui-4-app-shell-components-6
 -->
 
 ## 1. Identity
+
 The **integration tile** — the last of the UI-4 `-c` wave. S1–S4 each shipped + merged their own slice of the
 shell (scaffold · nav chrome · command-bar · onboarding); S5 does NOT add a new rendered surface. It:
+
 1. **Verifies the composition** — S1–S4 are already wired on `main` (App.tsx provider tree + routes.tsx
    `RootComponent` + AppShell regions + command-bar + first-run branch). S5 proves they hold together as one
    shell with a full-`<App/>` integration test, and closes any residual wiring gap the baseline surfaces.
@@ -31,6 +33,7 @@ whole-shell pass) · not the graph MODULE (owner: notes, M1.1+ — S5 ships only
 placeholder page) · not a `packages/ui` change (BR-1; the barrel is measured, not edited — see §2 BR-7-S5).
 
 ## 2. Business Rules (S5 refinements of the umbrella BR-1..7)
+
 - [FACT: umbrella BR-1] **BR-1-S5 · Compose, don't rebuild; the only `packages/ui` write is the metadata
   barrel-defect fix.** S5 adds NO new `@vida/ui` component — it composes the existing `NeuralGraph` view, not
   redraws it. The sole `packages/ui` write is `"sideEffects": false` in `package.json` (DF-S5-1 / BR-7-S5) — a
@@ -69,32 +72,35 @@ placeholder page) · not a `packages/ui` change (BR-1; the barrel is measured, n
 ## 3. Contract
 
 ### 3.1 Verification matrix — S1–S4 wiring on `main` (what S5 CONFIRMS, not re-wires)
-| Seam (baseline §2) | Wired by | Evidence | S5 action |
-|--------------------|----------|----------|-----------|
-| D5 `media` config | S1 | `packages/ui` `media` object + `media-parity.test.ts` | assert parity still green |
-| Router inject → `CommandRunContext.navigate` | S3 | `command-bar.tsx` injects `useShellNavigate` | integration test: ⌘K → run nav command → route changes |
-| App.tsx first-run branch | S4 | `App.tsx:70-81` branch on `firstRun.status` | integration test: completed marker → app at `/`; unset → onboarding |
-| Search provider `search-unavailable` | S3 | `use-command-search.ts` + `search-provider.ts` | integration test: non-empty query → loud `search-unavailable` |
-| `app-shell-ui-store` `isMobileNavOpen` | S1/S2 | store field + `use-nav-drawer.ts` | regression: mobile drawer open/close/Esc/inert |
-| Breakpoint read `useMedia()` | S1 | `app-shell.tsx:48-55` | regression: dock reflow drawer→rail→sidebar at the 4 widths |
+
+| Seam (baseline §2)                           | Wired by | Evidence                                              | S5 action                                                           |
+| -------------------------------------------- | -------- | ----------------------------------------------------- | ------------------------------------------------------------------- |
+| D5 `media` config                            | S1       | `packages/ui` `media` object + `media-parity.test.ts` | assert parity still green                                           |
+| Router inject → `CommandRunContext.navigate` | S3       | `command-bar.tsx` injects `useShellNavigate`          | integration test: ⌘K → run nav command → route changes              |
+| App.tsx first-run branch                     | S4       | `App.tsx:70-81` branch on `firstRun.status`           | integration test: completed marker → app at `/`; unset → onboarding |
+| Search provider `search-unavailable`         | S3       | `use-command-search.ts` + `search-provider.ts`        | integration test: non-empty query → loud `search-unavailable`       |
+| `app-shell-ui-store` `isMobileNavOpen`       | S1/S2    | store field + `use-nav-drawer.ts`                     | regression: mobile drawer open/close/Esc/inert                      |
+| Breakpoint read `useMedia()`                 | S1       | `app-shell.tsx:48-55`                                 | regression: dock reflow drawer→rail→sidebar at the 4 widths         |
 
 If any row is NOT green on `main`, S5 closes it under the same gate (per §XXVIII if it diverges from this matrix).
 
 ### 3.2 New files (all `apps/web/src`)
+
 - `app/graph/index.tsx` — [NEW] the lazy `/graph` route component. Default export (consumed by
   `lazyRouteComponent`, the `app/notes/index.tsx` precedent). Renders `<NeuralGraph nodes={[]} edges={[]}
-  state="empty" />`. Header comment states WHY it is a dynamic-import boundary (BR-7-S5). No data fetch (M1.0 seam).
+state="empty" />`. Header comment states WHY it is a dynamic-import boundary (BR-7-S5). No data fetch (M1.0 seam).
 - `App.integration.test.tsx` — [NEW] the full-`<App/>` composition test, driving the S1–S4 seams end-to-end per
   §3.1. **Reuses the existing `App.test.tsx` stubbing precedent** [FACT: App.test.tsx:7-9] — `vi.mock('./db/boot',
-  …)` (so no worker loads, `ensureDbReady` resolves) + `vi.mock('./onboarding/first-run-repo', …)` (`read`/`write`
+…)` (so no worker loads, `ensureDbReady` resolves) + `vi.mock('./onboarding/first-run-repo', …)` (`read`/`write`
   control the first-run branch deterministically: `read→true` reaches the app+shell; `read→false` reaches
   onboarding). A NEW file (not an edit of `App.test.tsx`) so the S4 branch assertions there are preserved, not
   merged-over. `// @vitest-environment jsdom`. ⚠ heavy (Tamagui cold-compile) — if it tips the 5s default under
   machine load, use a one-off `--testTimeout`, NO config change (the S3/S4 load-noise lesson — task Notes).
 
 ### 3.3 Edited files
+
 - `routes.tsx` — add `graphRoute` = `createRoute({ path:'/graph', component: lazyRouteComponent(() =>
-  import('./app/graph')) })`; add to `rootRoute.addChildren([...])`. Mirror the `notesRoute` shape exactly
+import('./app/graph')) })`; add to `rootRoute.addChildren([...])`. Mirror the `notesRoute` shape exactly
   (routes.tsx:53-59). No other route added (per-module routes are M1.1+ waves; nav to them degrades to
   `NotFoundComponent`, BR-4).
 - `packages/ui/package.json` — [BARREL-DEFECT FIX, DF-S5-1] add `"sideEffects": false` (top-level field). The ONLY
@@ -103,11 +109,13 @@ If any row is NOT green on `main`, S5 closes it under the same gate (per §XXVII
   actually sever sigma from the initial chunk (BR-7-S5).
 
 ### 3.4 A11y / states (whole-shell, §XIV — re-verified, not newly introduced)
+
 Landmarks (`nav`/`header`/`main`) present once each; ⌘K focus-into + Esc-return; onboarding focus→h1, no-Esc;
 mobile drawer focus-trap/inert; `/graph` empty state announced via `NeuralGraph`'s `role=status` Message. No new
 ARIA surface — S5 asserts the integrated whole matches the per-unit contracts.
 
 ## 4. Acceptance (S5 DoD)
+
 - [ ] Full-`<App/>` integration test proves the S1–S4 seams compose (§3.1 matrix rows exercised end-to-end, DB +
       first-run stubbed per the `App.test.tsx` precedent)
 - [ ] `/graph` route added, `lazyRouteComponent`-split; renders `NeuralGraph` empty state, never 404/throw (BR-4-S5)
@@ -129,10 +137,11 @@ ARIA surface — S5 asserts the integrated whole matches the per-unit contracts.
 - [ ] Only `packages/ui` write is the DF-S5-1 metadata field (BR-1-S5); no new DS value/hex (BR-2)
 
 ## 5. Implementation Prompt (ordered; each step cites §2/§3)
+
 1. **Confirm the §3.1 matrix on `main`** — run the existing `apps/web` suite (typecheck + tests); confirm all six
    seams green. Record any gap; a gap → close under §XXVIII, else proceed. (Gate ground truth.)
 2. **`app/graph/index.tsx`** (§3.2, BR-4-S5) — default-export `GraphRoute` rendering `<NeuralGraph nodes={[]}
-   edges={[]} state="empty" />` + the WHY-lazy header comment.
+edges={[]} state="empty" />` + the WHY-lazy header comment.
 3. **`routes.tsx`** (§3.3, BR-7-S5) — add `graphRoute` (mirror `notesRoute`) + register in `addChildren`.
 4. **`packages/ui/package.json`** (§3.3, DF-S5-1, BR-7-S5) — add `"sideEffects": false`; re-run `@vida/ui` build +
    tests to confirm the metadata edit changes no behavior.
@@ -140,7 +149,7 @@ ARIA surface — S5 asserts the integrated whole matches the per-unit contracts.
    the `App.test.tsx` precedent (jsdom docblock).
 6. **MEASURE the build, gzipped** (BR-7-S5, §4) — `pnpm --filter @vida/web build`; for each `dist/assets/*.js`
    inspect content (grep for `barnesHutOptimize`/`forceatlas2`/sigma markers) AND gzipped size (e.g. `gzip -c
-   <file> | wc -c`). Confirm: (a) sigma markers ABSENT from the initial chunk, PRESENT in a `graph-*` chunk;
+<file> | wc -c`). Confirm: (a) sigma markers ABSENT from the initial chunk, PRESENT in a `graph-*` chunk;
    (b) record initial-chunk gzipped size. If sigma is still in the initial chunk → STOP, §XXIV triage — do not
    proceed to regression on a failed budget.
 7. **Whole-shell regression + Visual Gate** (§4) — `pnpm --filter @vida/web dev`, walk 375/768/1440/1920 in a real
@@ -151,6 +160,7 @@ ARIA surface — S5 asserts the integrated whole matches the per-unit contracts.
    Done + `tracker --sync`.
 
 ### 5b. Preflight folds (MEASURED 2026-08-17 — the load-bearing fold is empirical, not a hypothesis)
+
 The bundle claim was PROVEN by three real `pnpm --filter @vida/web build` runs on branch `ui-4-s5-integration`
 (gzipped, since §6 budgets are gzipped):
 | Build | Initial chunk (gzip) | Sigma in initial? | Graph chunk |
@@ -166,11 +176,12 @@ The bundle claim was PROVEN by three real `pnpm --filter @vida/web build` runs o
   < 80 KB" target, but that residual is NOT sigma. S5 claims only BR-7 ("sigma out of the initial bundle"), met.
   The framework-split is homed separately (§6).
 - **FOLD-3 (soundness):** `@vida/web` typecheck + `@vida/ui` typecheck both green after the 3 changes (`app/graph/
-  index.tsx`, `routes.tsx` graphRoute, `packages/ui/package.json` sideEffects); the built main chunk references the
+index.tsx`, `routes.tsx` graphRoute, `packages/ui/package.json` sideEffects); the built main chunk references the
   `graph-*` chunk as a dynamic import (confirmed lazy). ⚠ these 3 changes are applied on the branch AS the measured
   spike — the remaining S5 work (integration test, regression, Currency) is the post-Approval-2 build.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - **DF-S5-1 (RESOLVED — flagged for Approval 1, not an open question).** The measured barrel↔sigma coupling forces a
   SECOND `packages/ui` write (`"sideEffects": false`) to satisfy BR-7, which the literal umbrella BR-1 ("only the
   media edit") forbids. Resolution (BR-7-S5): BR-1 fences new `@vida/ui` **components** (its stated rationale); a
@@ -185,7 +196,8 @@ The bundle claim was PROVEN by three real `pnpm --filter @vida/web build` runs o
   folded into S5 (BR-7 does not mandate it, and scope-creeping it would violate the per-unit discipline).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-6 | S5 spec authored — §1 identity (integration tile) · §2 BR-*-S5 · §3 verification matrix + new/edited files · §4 DoD · §5 impl prompt. |
+
+| Date       | Session                                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| ---------- | -------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-17 | 2026-08-17-ui-4-app-shell-components-6 | S5 spec authored — §1 identity (integration tile) · §2 BR-\*-S5 · §3 verification matrix + new/edited files · §4 DoD · §5 impl prompt.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 2026-08-17 | 2026-08-17-ui-4-app-shell-components-6 | **Gate-1 critique REVISE → Rev 2.** B1 (BLOCKER, MEASURED): a lazy `/graph` route alone can't sever sigma — it's already in the initial chunk via the eager `@vida/ui` barrel import + no `sideEffects`. Fixed: BR-7-S5 now prescribes BOTH levers (lazy route + `"sideEffects": false`), reconciles the BR-1 conflict as flagged **DF-S5-1** (barrel-defect fix, not a component; §6 governs). M1 (§6 "None" → DF-S5-1 resolved). M2 (integration-test DB/first-run stubbing named, `App.test.tsx` precedent). M3 (measure GZIPPED vs §6 budgets, not raw bytes). M4 (Currency scoped: `shell/CLAUDE.md` covers S4+S5; `shell-layout.md` touched only if reflow changed). Minors: §XXVIII/§XXIV = standards/process.md; integration test is a NEW file (preserves `App.test.tsx`). |

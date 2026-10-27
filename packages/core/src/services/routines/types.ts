@@ -80,7 +80,13 @@ export interface RoutineDaySummaryItem {
   status?: RoutineEvaluation['status']
   policy_source?: RoutineEvaluation['policy_source']
   not_done?: RoutineStepRef[]
-  steps: { step_id: string; title: string; skipped: boolean; skip_reason: string | null; duration_minutes: number | null }[]
+  steps: {
+    step_id: string
+    title: string
+    skipped: boolean
+    skip_reason: string | null
+    duration_minutes: number | null
+  }[]
 }
 
 /** S8 — a page-link target (D2: notes/tags/links target `routine_step` + `routine`). */
@@ -296,7 +302,10 @@ export class RoutineContributionError extends Error {
 
 /** S4 — the port returned a policy whose completion kind is none of the three the docs define. Fails loud (the port owner validates). */
 export class InvalidRoutinePolicyError extends Error {
-  constructor(public readonly routineId: string, public readonly kind: unknown) {
+  constructor(
+    public readonly routineId: string,
+    public readonly kind: unknown,
+  ) {
     super(`Routine ${routineId} has an unrecognized completion policy kind: ${JSON.stringify(kind)}`)
     this.name = 'InvalidRoutinePolicyError'
   }

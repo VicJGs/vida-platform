@@ -4,10 +4,12 @@
 # PLAN S2 — The Session HUD pill
 
 ## §1 Context
+
 The render slice: `session-hud.tsx` renders a `HudRead` as the strip pill — the approved greybox made real
 over S1's clock + source. Blocking component Visual Gate closes it. S3 mounts it in the shell.
 
-## §2 Business rules (BR-HUD-S2-*)
+## §2 Business rules (BR-HUD-S2-\*)
+
 - **BR-HUD-S2-1** `hidden` renders null — NOTHING in the strip (M1 prod).
 - **BR-HUD-S2-2** `idle` = the invitation: hollow ring + "Begin a session" (≥tablet; mobile = ring glyph
   only) (EC-2; `?sample`-only in M1 per Envision answer 1). **(g1 fold)** In M1 idle is PRESENTATIONAL —
@@ -39,6 +41,7 @@ over S1's clock + source. Blocking component Visual Gate closes it. S3 mounts it
   nothing to reduce — EC-9 note).
 
 ## §3 Files
+
 - `apps/web/src/session-hud/session-hud.tsx` — `SessionHud({ read, port, __compact? })` + internal
   `HudRing`/`eyebrowFor`. No barrel.
 - `apps/web/src/session-hud/session-hud.test.tsx` — forms × affordances × a11y (test-router helper for the Link).
@@ -46,6 +49,7 @@ over S1's clock + source. Blocking component Visual Gate closes it. S3 mounts it
   (strip-true) behind a `?real=1` switch — the standalone-entry precedent; deleted with the harness at S3.
 
 ## §4 Acceptance
+
 1. tsc 0 · eslint 0 · suite green (incl. TZ-forced run).
 2. Each `HudRead`/form renders its designed shape: hidden→null · idle (both widths) · countdown(focus/break)
    · elapsed · paused-frozen · complete — asserted on eyebrow text, time text, control presence.
@@ -59,6 +63,7 @@ over S1's clock + source. Blocking component Visual Gate closes it. S3 mounts it
    nested-interactive) · 0 overflow · ring ink distinct per preset. Victor-reviewed before S3.
 
 ## §5 Implementation prompt
+
 Order: `eyebrowFor`/`HudRing` pure parts → `SessionHud` forms (hidden→idle→active) → tests → harness wire →
 gates. Mirror the greybox geometry (gap/padding/sizes already approved); reuse `useHudClock`/`useActiveSession`
 from S1 untouched.

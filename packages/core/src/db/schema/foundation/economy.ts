@@ -74,10 +74,7 @@ export const store = sqliteTable(
     currency_id: text('currency_id'), // overlay, no FK
     deleted_at: integer('deleted_at'),
   },
-  (t) => [
-    index('idx_store_parent').on(t.parent_id),
-    index('idx_store_ref').on(t.ref_type, t.ref_id),
-  ],
+  (t) => [index('idx_store_parent').on(t.parent_id), index('idx_store_ref').on(t.ref_type, t.ref_id)],
 )
 
 // --- rules: HEADLESS automation under ADR-010 — NOT an ADR-008 render-Block (§3.9 · DB-3) ---

@@ -198,11 +198,15 @@ export const Popover = forwardRef<HTMLButtonElement, PopoverProps>(function Popo
   if (process.env.NODE_ENV !== 'production') {
     if (!isValidElement(trigger)) {
       // eslint-disable-next-line no-console
-      console.warn('[vida/ui] Popover: `trigger` must be a single valid React element (it receives a ref + ARIA state).')
+      console.warn(
+        '[vida/ui] Popover: `trigger` must be a single valid React element (it receives a ref + ARIA state).',
+      )
     }
     if (ariaLabel == null && ariaLabelledby == null) {
       // eslint-disable-next-line no-console
-      console.warn('[vida/ui] Popover: provide an `aria-label` or `aria-labelledby` — a role="dialog" needs an accessible name.')
+      console.warn(
+        '[vida/ui] Popover: provide an `aria-label` or `aria-labelledby` — a role="dialog" needs an accessible name.',
+      )
     }
   }
 
@@ -274,10 +278,16 @@ export const Popover = forwardRef<HTMLButtonElement, PopoverProps>(function Popo
       rSide = openBottom ? 'bottom' : 'top'
       const top = openBottom ? rect.bottom + offset : rect.top - panelH - offset
       // cross axis = horizontal (start/end/center)
-      const left0 = align === 'end' ? rect.right - panelW : align === 'start' ? rect.left : rect.left + rect.width / 2 - panelW / 2
+      const left0 =
+        align === 'end' ? rect.right - panelW : align === 'start' ? rect.left : rect.left + rect.width / 2 - panelW / 2
       const left = clamp(left0, MARGIN, vw - panelW - MARGIN)
       aOffset = clamp(rect.left + rect.width / 2 - left - ARROW / 2, RADIUS, panelW - RADIUS - ARROW)
-      next = { left, top, maxWidth: vw - 2 * MARGIN, maxHeight: Math.min(openBottom ? spaceBelow : spaceAbove, vh - 2 * MARGIN) }
+      next = {
+        left,
+        top,
+        maxWidth: vw - 2 * MARGIN,
+        maxHeight: Math.min(openBottom ? spaceBelow : spaceAbove, vh - 2 * MARGIN),
+      }
     } else {
       // primary axis = horizontal (left/right — no start/end per the type)
       const spaceRight = vw - rect.right - offset
@@ -291,7 +301,12 @@ export const Popover = forwardRef<HTMLButtonElement, PopoverProps>(function Popo
       const top0 = rect.top + rect.height / 2 - panelH / 2
       const top = clamp(top0, MARGIN, vh - panelH - MARGIN)
       aOffset = clamp(rect.top + rect.height / 2 - top - ARROW / 2, RADIUS, panelH - RADIUS - ARROW)
-      next = { left, top, maxWidth: Math.min(openRight ? spaceRight : spaceLeft, vw - 2 * MARGIN), maxHeight: vh - 2 * MARGIN }
+      next = {
+        left,
+        top,
+        maxWidth: Math.min(openRight ? spaceRight : spaceLeft, vw - 2 * MARGIN),
+        maxHeight: vh - 2 * MARGIN,
+      }
     }
 
     setResolvedSide(rSide)

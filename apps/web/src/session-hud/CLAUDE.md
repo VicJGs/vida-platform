@@ -7,6 +7,7 @@ runtime this HUD surfaces; ADR-004 (sessions framework); the V5 pomodoro-widget 
 (`packages/ui/src/CLAUDE.md`); the shell chrome rules (`../shell/CLAUDE.md`).
 
 ## What lives here
+
 - `types.ts` (S1) — the seam: `HudRead` (tri-state `hidden`/`idle`/`active` — idle-visible is representable
   without a signature change) · `HudSource` (no `paused` boolean — paused is DERIVED from
   `timing.pausedAt`, desync-proof) · `HudTiming` (`countdown` carries `phase` focus/short-break/long-break
@@ -26,6 +27,7 @@ runtime this HUD surfaces; ADR-004 (sessions framework); the V5 pomodoro-widget 
   [F-HUD-1] + the ② shared focus-runtime client store; cold reload mid-interval honestly degrades to elapsed).
 
 ## Rules (do not violate)
+
 - **The clock is a pure projection** of `(timing, now)` — never store/decrement countdown state; never put
   the countdown value in effect deps (re-arms per tick — the V5 `arm()` trap).
 - **No `@vida/core` import** — mirror-by-value types; the service edge binds at the live swap only.
@@ -34,6 +36,7 @@ runtime this HUD surfaces; ADR-004 (sessions framework); the V5 pomodoro-widget 
   `paused`; `canPause` gates it).
 
 ## S2 — the pill (`session-hud.tsx`)
+
 `SessionHud({read, port, __compact?})` renders `HudRead`: hidden→null · idle invitation (presentational in
 M1 — no dead begin-affordance) · active = preset-aware SVG ring + tabular time + (≥tablet) PHASE eyebrow
 (`FOCUS`/`BREAK`/`PAUSED`/`<Phase> · Done`) + truncated title; the body is ONE real SPA link →
@@ -43,6 +46,7 @@ anchor, only `canPause && !complete && ≥tablet`; ONE sr-only polite status ann
 at the ANCHOR (`style textDecoration/color`); a child's `textDecorationLine:'none'` cannot cancel it.
 
 ## S3 — the shell mount (`session-hud-surface.tsx` + routes.tsx hudSlot)
+
 The hudSlot composition: subscribes to the ROUTER's search (`useRouterState` → `location.searchStr`) and
 feeds `useActiveSession(search)` — a bare `window.location` read is render-time-only and never updates on
 client-side pushState (the S3 Visual-Gate catch). M1 prod: hidden ⇒ the strip is unchanged. No per-unit

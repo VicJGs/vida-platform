@@ -8,6 +8,7 @@ mutates its 1:1 `focus_sessions` row. Pomodoro is NOT a separate service — a t
 (`pomodoro/contract.md:8,14`). New deps: none required beyond S1/S2 (reads `user_preferences` via a repo).
 
 ## §0 The S2-flag resolution (M1.1 focus completion) — doc-given, not a decision
+
 `intake/pomodoro.md:166,179` = "the hook exists; **stub the contract now, wire later**." So in M1.1 the timer's
 `complete` finalizes the **focus_sessions run** (status + duration); it does **NOT** auto-route to
 `completeSession`→`transition`→fire (that throws — `focus` declares `log_time`/`attach_pomodoro`, handlers
@@ -17,9 +18,10 @@ M1.1). The shipped `focus` def is **NOT edited** (`registry.test.ts` pins its `{
 envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:74,140,150; interpretation.md IR-1]`
 
 ## §1 Operations (signatures in `delivery/seam-contract.md`; return the `focus_sessions` row = `FocusTimer`)
+
 - `startFocus({ sessionId?, templateId?, attach? }): FocusTimer` — **no `sessionId`:**
   `createSession('focus', status:'in_progress', started_at:now, extension:{kind:'focus', type:'focus',
-  status:'running'})` (reuses S1; S2's `sub_type` gate passes — `focus` is shipped) + optional `attach`
+status:'running'})` (reuses S1; S2's `sub_type` gate passes — `focus` is shipped) + optional `attach`
   (S1/S2). **With `sessionId` (resume, B1):** load the mapped `focus_sessions` row via
   `findWhere(session_id == sessionId)`; absent or the session isn't `sub_type:'focus'` → `SessionMissing`; a
   `paused` row → resume it (`resumeFocus` semantics); a `running` row → no-op return (idempotent); a
@@ -37,9 +39,10 @@ envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:7
   `interruption_reason=reason ?? null` (PD-6).
 
 ## §2 Operation-flow & invariants
+
 - **Config (PD-3) — RECONCILED in S6 (§XXVIII).** The runtime resolves cadence from `user_preferences.pomodoro_*`
   (read via a `Repository`; row may be absent) → PD-3 hard defaults (`work 25 · short_break 5 · long_break 15 ·
-  sessions_before_long 4`). PD-3 = "config is Preferences-owned; the runtime only obeys it." A mid-run config
+sessions_before_long 4`). PD-3 = "config is Preferences-owned; the runtime only obeys it." A mid-run config
   change applies to the **next** interval, never the running one. **NOTE:** this spec originally wrote a
   `templateId → prefs → defaults` precedence; S6 found that dead — `focus_sessions` has no `template_id`, so the
   backend can't bind a timer to a template, and PD-3 makes config Preferences-owned. Templates are ②-applied
@@ -49,7 +52,7 @@ envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:7
   `InvalidFocusTransition(id, from, event)` (pause a non-running, resume a non-paused, complete/next a
   completed/cancelled), no write. Mirrors the InvalidTransition shape.
 - **Real focus = elapsed − paused (PD-5).** `duration_seconds` at `completeFocus` = `floor((now −
-  session.started_at)/1000) − total_pause_seconds` (reads the spine's `started_at`; clamp ≥ 0). If still
+session.started_at)/1000) − total_pause_seconds` (reads the spine's `started_at`; clamp ≥ 0). If still
   `paused` at complete, fold the open pause into `total_pause_seconds` first. **Semantics:** this is
   **run wall-time − pauses** (for a multi-interval run it includes break time); the pure per-interval focus-time
   cut is a derived analytic in **S7**, not a stored field.
@@ -61,10 +64,12 @@ envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:7
   stored aggregate.
 
 ## §3 Contract (delta)
+
 Adds the 6 runtime methods to `SessionsService`. New typed error `InvalidFocusTransition`. `FocusTimer` =
 `FocusSessionRow`. No new factory deps (config read via a `user_preferences` repo built inside the factory).
 
 ## §4 Acceptance criteria (Verification Gate — live unlocked vault)
+
 1. `startFocus({})` (no sessionId) → creates a `focus` session (`in_progress`, `started_at`) + a
    `focus_sessions` row (`type:'focus'`, `status:'running'`, `completed_count:0`); returns it.
 2. `pauseFocus`→`resumeFocus` accumulates `total_pause_seconds` (> 0 after a real gap); resume on a
@@ -83,6 +88,7 @@ Adds the 6 runtime methods to `SessionsService`. New typed error `InvalidFocusTr
 8. `tsc` clean; full `@vida/core` suite green.
 
 ## §5 Implementation prompt (order)
+
 1. `types.ts` — `StartFocusInput`, `FocusTimer` (= `FocusSessionRow`), `InvalidFocusTransition(id, from, event)`,
    `SessionMissing(id)`; config type `{ workMin, shortBreakMin, longBreakMin, sessionsBeforeLong }`.
 2. `service.ts` — a `userPrefsRepo` (read `user_preferences`) + a `resolveFocusConfig(templateId?)` closure
@@ -91,7 +97,8 @@ Adds the 6 runtime methods to `SessionsService`. New typed error `InvalidFocusTr
 4. `__tests__` — add AC1–AC6 (live vault; write a `user_preferences` row for AC3, omit it for AC6).
 
 ## §6 Out of scope (homed)
+
 Effect-firing on completion (session lifecycle) → S2 `completeSession` + #46 handlers (§0) · `session_templates`
-CRUD → S6 (S3 only READS a template if `templateId` given) · auto_start_* / notifications / sounds behavior →
+CRUD → S6 (S3 only READS a template if `templateId` given) · auto*start*\* / notifications / sounds behavior →
 these are Preferences flags the UI (`fe-sessions`) acts on, not the core runtime (PD-7) · Focus-Mode immersive
 UI + `/pomodoro` widget → `fe-sessions` / design-pass · analytics → S7.

@@ -36,7 +36,14 @@ import type {
   AddPlanStepInput,
 } from '../../validators/purpose'
 import type { ValueRow, ContributionRow, PurposeReviewRow, PlanStepRow } from '../../db/schema/foundation/purpose'
-import type { PurposeRow, TargetRow, DreamRow, PurposeMetricRow, PurposeMetricValueRow, TargetReviewRow } from '../../db/schema/purposes'
+import type {
+  PurposeRow,
+  TargetRow,
+  DreamRow,
+  PurposeMetricRow,
+  PurposeMetricValueRow,
+  TargetReviewRow,
+} from '../../db/schema/purposes'
 
 /** A plan step's polymorphic owner — a task or a target (PG-11). */
 export interface PlanStepOwnerRef {
@@ -156,7 +163,11 @@ export interface PurposesService {
 
   // ---- S4: contributions edge (weighted polymorphic goal-edge, PG-10) -------
   /** Link a contributor into a goal with a weight. Throws InvalidContributor if either end is out of vocabulary. */
-  linkContribution(goal: ContributionRef, contributor: ContributionRef, opts: LinkContributionInput): Promise<ContributionRow>
+  linkContribution(
+    goal: ContributionRef,
+    contributor: ContributionRef,
+    opts: LinkContributionInput,
+  ): Promise<ContributionRow>
   unlinkContribution(id: string): Promise<void>
   reweightContribution(id: string, weight: number): Promise<ContributionRow>
   /** Active contributions whose goal is the given (type,id). */

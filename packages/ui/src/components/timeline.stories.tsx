@@ -24,17 +24,40 @@ const EVENTS: Event[] = [
 
 // A now-aware journal fixture — past (written record) → now → future (intention).
 const JOURNAL: Event[] = [
-  { id: 'p1', when: '09:30', eyebrow: 'Today', title: 'Shipped the re-plan draft', detail: '2h40 of deep focus before noon.', temporal: 'past' },
-  { id: 'p2', when: '4', eyebrow: 'Yesterday', title: 'Reviewed finance import', detail: 'conciliation pass', temporal: 'past' },
+  {
+    id: 'p1',
+    when: '09:30',
+    eyebrow: 'Today',
+    title: 'Shipped the re-plan draft',
+    detail: '2h40 of deep focus before noon.',
+    temporal: 'past',
+  },
+  {
+    id: 'p2',
+    when: '4',
+    eyebrow: 'Yesterday',
+    title: 'Reviewed finance import',
+    detail: 'conciliation pass',
+    temporal: 'past',
+  },
   { id: 'f1', when: '2', eyebrow: 'Fri', title: '1:1 with Ana', detail: 'upcoming', temporal: 'future' },
   { id: 'f2', when: '5', eyebrow: 'Mon', title: 'Draft the Q3 review', detail: 'intention', temporal: 'future' },
 ]
 
 const row = (e: Event) => (
-  <Card interactive onPress={() => {}} padding="compact" header={
-    <Text fontFamily="$display" fontSize={14} fontWeight="600" color="$colorTextPrimary">{e.title}</Text>
-  }>
-    <Text fontSize={13} color="$colorTextMuted">{e.detail}</Text>
+  <Card
+    interactive
+    onPress={() => {}}
+    padding="compact"
+    header={
+      <Text fontFamily="$display" fontSize={14} fontWeight="600" color="$colorTextPrimary">
+        {e.title}
+      </Text>
+    }
+  >
+    <Text fontSize={13} color="$colorTextMuted">
+      {e.detail}
+    </Text>
   </Card>
 )
 const label = (e: Event) => e.when
@@ -43,7 +66,9 @@ const eyebrow = (e: Event) => e.eyebrow ?? null
 const Section = ({ label: l, children }: { label: string; children: React.ReactNode }) => (
   <View gap={8} marginBottom={24} width={420} maxWidth="100%">
     {/* solid muted token (AA-safe across presets) — NOT primary@opacity, which composites < 4.5 on warm-light surfaces */}
-    <Text fontSize={12} color="$colorTextMuted">{l}</Text>
+    <Text fontSize={12} color="$colorTextMuted">
+      {l}
+    </Text>
     {children}
   </View>
 )
@@ -160,7 +185,13 @@ export const TerminalStates: Story = {
 export const LoneItem: Story = {
   render: () => (
     <Section label="lone item — dot only, no line">
-      <Timeline<Event> items={[EVENTS[1]!]} getKey={(e) => e.id} renderItem={row} getLabel={label} aria-label="History" />
+      <Timeline<Event>
+        items={[EVENTS[1]!]}
+        getKey={(e) => e.id}
+        renderItem={row}
+        getLabel={label}
+        aria-label="History"
+      />
     </Section>
   ),
 }
@@ -170,7 +201,14 @@ export const Density: Story = {
     <View flexDirection="row" gap={32} flexWrap="wrap">
       {(['compact', 'default', 'spacious'] as const).map((d) => (
         <Section key={d} label={`density: ${d}`}>
-          <Timeline<Event> items={EVENTS.slice(0, 3)} getKey={(e) => e.id} renderItem={row} getLabel={label} density={d} aria-label="History" />
+          <Timeline<Event>
+            items={EVENTS.slice(0, 3)}
+            getKey={(e) => e.id}
+            renderItem={row}
+            getLabel={label}
+            density={d}
+            aria-label="History"
+          />
         </Section>
       ))}
     </View>

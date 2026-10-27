@@ -148,17 +148,29 @@ const coarseSteps = (anchor: string, from: string, freq: Frequency): number => {
   const days = Math.floor((Date.parse(from) - Date.parse(anchor)) / 86_400_000)
   if (days <= 0) return 0
   switch (freq) {
-    case 'daily': return days
-    case 'weekly': return Math.floor(days / 7)
-    case 'biweekly': return Math.floor(days / 14)
-    case 'monthly': return Math.floor(days / 31)
-    case 'quarterly': return Math.floor(days / 93)
-    case 'yearly': return Math.floor(days / 366)
+    case 'daily':
+      return days
+    case 'weekly':
+      return Math.floor(days / 7)
+    case 'biweekly':
+      return Math.floor(days / 14)
+    case 'monthly':
+      return Math.floor(days / 31)
+    case 'quarterly':
+      return Math.floor(days / 93)
+    case 'yearly':
+      return Math.floor(days / 366)
   }
 }
 const toAsset = (r: AssetRow): Asset => ({ ...r, _sync_status: r._sync_status as Asset['_sync_status'] })
-const toLiability = (r: LiabilityRow): Liability => ({ ...r, _sync_status: r._sync_status as Liability['_sync_status'] })
-const toInvestment = (r: InvestmentRow): Investment => ({ ...r, _sync_status: r._sync_status as Investment['_sync_status'] })
+const toLiability = (r: LiabilityRow): Liability => ({
+  ...r,
+  _sync_status: r._sync_status as Liability['_sync_status'],
+})
+const toInvestment = (r: InvestmentRow): Investment => ({
+  ...r,
+  _sync_status: r._sync_status as Investment['_sync_status'],
+})
 const toIncomeStream = (r: IncomeStreamRow): IncomeStream => ({
   ...r,
   _sync_status: r._sync_status as IncomeStream['_sync_status'],
@@ -315,11 +327,13 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
       if (t.transaction_type !== 'expense') continue
       byCat.set(t.category, (byCat.get(t.category) ?? 0) + t.amount)
     }
-    return [...byCat.entries()]
-      .map(([category, total]) => ({ category, total }))
-      // desc by total, then a STABLE category tiebreak — findWhere issues no ORDER BY, so equal totals would
-      // otherwise return in nondeterministic row order across devices (the S2 byNewest precedent, service.ts:88).
-      .sort((a, b) => b.total - a.total || (a.category ?? '').localeCompare(b.category ?? ''))
+    return (
+      [...byCat.entries()]
+        .map(([category, total]) => ({ category, total }))
+        // desc by total, then a STABLE category tiebreak — findWhere issues no ORDER BY, so equal totals would
+        // otherwise return in nondeterministic row order across devices (the S2 byNewest precedent, service.ts:88).
+        .sort((a, b) => b.total - a.total || (a.category ?? '').localeCompare(b.category ?? ''))
+    )
   }
 
   // FIN-22 — monthly income vs expense (net = income − expenses); transfers excluded (FN-12). No zero-fill (R3).
@@ -350,8 +364,16 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
     }
     const [assetRows, liabilityRows] = [await assetRepo.findAll(), await liabilityRepo.findAll()]
     return {
-      assets: group(assetRows, (a) => a.asset_type, (a) => a.current_value),
-      liabilities: group(liabilityRows, (l) => l.liability_type, (l) => l.current_balance),
+      assets: group(
+        assetRows,
+        (a) => a.asset_type,
+        (a) => a.current_value,
+      ),
+      liabilities: group(
+        liabilityRows,
+        (l) => l.liability_type,
+        (l) => l.current_balance,
+      ),
     }
   }
 
@@ -396,11 +418,7 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
       const p = UpdateTransactionSchema.parse(patch)
       // Re-validate FN-4 when ANY of its three legs changes (type · transfer_to · account_id) — an
       // account_id change alone can turn a transfer into a self-transfer (source == dest).
-      if (
-        p.transaction_type !== undefined ||
-        p.transfer_to_account_id !== undefined ||
-        p.account_id !== undefined
-      ) {
+      if (p.transaction_type !== undefined || p.transfer_to_account_id !== undefined || p.account_id !== undefined) {
         const existing = await txRepo.findById(id)
         if (existing == null) throw new Error(`Row not found: ${id}`)
         const type = p.transaction_type ?? existing.transaction_type
@@ -631,9 +649,11 @@ export function createFinanceService(deps: FinanceServiceDeps): FinanceService {
         parsed: r, // the ingestion normalization payload (XCU-14) — read back on commit
         status: 'unmatched' as const,
       }))
-      const existing: MatchCandidate[] = (
-        await txRepo.findWhere(isNull(transactions.deleted_at) as SQL)
-      ).map((t) => ({ id: t.id, date: t.date, amountCents: t.amount }))
+      const existing: MatchCandidate[] = (await txRepo.findWhere(isNull(transactions.deleted_at) as SQL)).map((t) => ({
+        id: t.id,
+        date: t.date,
+        amountCents: t.amount,
+      }))
       const matched = autoMatch(staged, existing, importTolerance)
       const batchId = uuidv7()
       await stagingPort.put(batchId, matched)

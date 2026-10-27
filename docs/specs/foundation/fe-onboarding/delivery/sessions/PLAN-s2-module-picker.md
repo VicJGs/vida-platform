@@ -20,7 +20,7 @@
 - **Group labels are chrome's, by design** [FACT: module-dock.ts:17-18 "the module-map holds the group KEY; the human
   label is chrome's"]. The picker (a 2nd chrome surface) owns a local `GROUP_LABELS` mirror (IA §3), NOT a module-map
   export — honoring the documented key-vs-label split. 6 stable IA entries; mirror-commented.
-- **Enable-set ≠ nav placement** (EC-4): the picker writes *which modules the user wants on*, not dock ordering. The live
+- **Enable-set ≠ nav placement** (EC-4): the picker writes _which modules the user wants on_, not dock ordering. The live
   backing is M1.1 `nav_preferences`/feature-flags [FACT: feature-flags.ts:4] — **deferred, stubbed no-op commit** (EC-7
   honesty: no "saved" claim at M1).
 - **Toggle semantics:** approved slice-map mandates `aria-pressed` toggles (§S2:46). Local `ModuleToggle` =
@@ -34,7 +34,7 @@
    `getDockModuleGroups()` (mirrors the dock filter+group) · `defaultModuleEnableSet()` (every visible-dock key → true).
    Local `GROUP_LABELS` mirror. No React.
 2. **`use-module-selection.ts`** — the in-memory selection + Seam A stub. `useModuleSelection()` → `{ enabled, toggle,
-   setEnabled, commit }`; init = `defaultModuleEnableSet()`; `commit` = `Promise.resolve()` no-op (honest stub, EC-7).
+setEnabled, commit }`; init = `defaultModuleEnableSet()`; `commit` = `Promise.resolve()` no-op (honest stub, EC-7).
    Implements `ModuleEnablementWrite` (seam-contract A).
 3. **`module-picker.tsx`** — `ModulePickerView` (PURE, state-as-prop: `{groups, enabled, onToggle}`) renders grouped
    headings + `ModuleToggle` rows; `ModulePicker` (thin hook shell wiring `useModuleSelection`) = what S1's

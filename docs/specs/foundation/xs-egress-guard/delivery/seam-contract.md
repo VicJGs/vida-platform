@@ -76,6 +76,7 @@ createEgressGuard(
 ```
 
 ## Contract invariants the consumer can rely on
+
 - **Necessary-but-not-sufficient boolean**: `external_out_ok=true` (decided by `#31`) is required first, then the
   strict per-target rails run on top. A blanket "allow external" never satisfies egress. `[FACT: ADR-014:64,66]`.
 - **Fail-closed**: any unknown/missing input (no grant, no target consent, no user-initiation, unresolved target) ⇒
@@ -94,6 +95,7 @@ createEgressGuard(
   audit trail retains prior sends. `[FACT: ADR-014:70]`.
 
 ## Seams this contract does NOT cross (delegated)
+
 `external_out` boolean + in/out union across action checks (`CapabilityEnforcer #31`) · external-in per-source
 **layer** (XS-ingestion `#44`) · **credential injection + provider call** (mediator/ingestion, XCU-09) · the
 **model call** (XS-ai `#45` / ADR-015) · the **durable audit + per-target consent STORE + real targets** (M2 port

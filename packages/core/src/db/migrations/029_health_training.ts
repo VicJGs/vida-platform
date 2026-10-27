@@ -85,9 +85,7 @@ export const migration029HealthTraining: Migration = {
         ${BASE}
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_exercise_plans_status ON exercise_plans (status) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_exercise_plans_status ON exercise_plans (status) WHERE deleted_at IS NULL`)
 
     // --- workout_templates: reusable session defs (no deleted_at) ---
     await driver.run(`

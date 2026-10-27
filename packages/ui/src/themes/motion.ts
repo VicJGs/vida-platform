@@ -2,6 +2,11 @@
 
 // Motion tokens as typed data — DS-4 feeds these to Tamagui createAnimations (motion ⊄ createTokens categories).
 export const motion = {
-  duration: { "fast": 150, "instant": 0, "moderate": 250, "slow": 400 },
-  easing: { "in": "cubic-bezier(0.7, 0, 1, 1)", "inOut": "cubic-bezier(0.4, 0, 0.6, 1)", "linear": "linear", "out": "cubic-bezier(0, 0, 0.3, 1)" },
+  duration: { fast: 150, instant: 0, moderate: 250, slow: 400 },
+  easing: {
+    in: 'cubic-bezier(0.7, 0, 1, 1)',
+    inOut: 'cubic-bezier(0.4, 0, 0.6, 1)',
+    linear: 'linear',
+    out: 'cubic-bezier(0, 0, 0.3, 1)',
+  },
 } as const

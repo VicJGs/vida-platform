@@ -40,7 +40,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -84,7 +87,7 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   it('the merged view carries no SyncableEntity metadata (config view only)', async () => {
-    const prefs = await h.svc.getMergedPreferences() as Record<string, unknown>
+    const prefs = (await h.svc.getMergedPreferences()) as Record<string, unknown>
     for (const k of ['id', 'created_at', 'updated_at', '_sync_id', '_sync_version', '_sync_hash']) {
       expect(prefs).not.toHaveProperty(k)
     }
@@ -235,8 +238,7 @@ describe('mod-preferences Slice 3 — command_bar_history service', () => {
     h = await setup()
   })
 
-  const cmdRepo = () =>
-    createRepository(h.db, commandBarHistory, { deviceId: 'test-device', encryptedFields: [] })
+  const cmdRepo = () => createRepository(h.db, commandBarHistory, { deviceId: 'test-device', encryptedFields: [] })
 
   // AC1 — recordCommand creates a row
   it('records a new command', async () => {

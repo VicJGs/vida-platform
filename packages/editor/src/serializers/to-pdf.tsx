@@ -14,7 +14,9 @@ import { styles, PDF_COLORS, PDF_FONTS, CALLOUT_ACCENT, CALLOUT_TINT, HEADING_SI
 // ── integration-block metadata (editor-local; the E1 command DATA, the to-markdown.ts:11 precedent) ────────────────────
 const INTEGRATION_LABEL = new Map(INTEGRATION_BLOCK_COMMANDS.map((c) => [c.block_type as string, c.label]))
 /** The 11 integration node names — anything here routes through `integration_block_handling`, not a block handler. */
-const INTEGRATION_NODE_NAMES: ReadonlySet<string> = new Set(INTEGRATION_BLOCK_COMMANDS.map((c) => c.block_type as string))
+const INTEGRATION_NODE_NAMES: ReadonlySet<string> = new Set(
+  INTEGRATION_BLOCK_COMMANDS.map((c) => c.block_type as string),
+)
 
 function normalizeVariant(value: unknown): CalloutVariant {
   return CALLOUT_VARIANT.includes(value as CalloutVariant) ? (value as CalloutVariant) : 'info'
@@ -147,7 +149,10 @@ function renderTable(node: EditorNode, key: number, options: PdfSerializeOptions
 function renderCallout(node: EditorNode, key: number, options: PdfSerializeOptions): ReactElement {
   const variant = normalizeVariant(node.attrs?.variant)
   return (
-    <View key={key} style={[styles.callout, { borderLeftColor: CALLOUT_ACCENT[variant], backgroundColor: CALLOUT_TINT[variant] }]}>
+    <View
+      key={key}
+      style={[styles.callout, { borderLeftColor: CALLOUT_ACCENT[variant], backgroundColor: CALLOUT_TINT[variant] }]}
+    >
       {renderChildren(node.content, options)}
     </View>
   )
@@ -189,7 +194,9 @@ function renderBlock(node: EditorNode, key: number, options: PdfSerializeOptions
       // matches clampLevel's defensive coercion).
       const rawStart = Number(node.attrs?.start)
       const start = Number.isFinite(rawStart) ? rawStart : 1
-      return <View key={key}>{(node.content ?? []).map((li, i) => renderListItem(li, `${start + i}.`, i, options))}</View>
+      return (
+        <View key={key}>{(node.content ?? []).map((li, i) => renderListItem(li, `${start + i}.`, i, options))}</View>
+      )
     }
     case 'taskList':
       return (

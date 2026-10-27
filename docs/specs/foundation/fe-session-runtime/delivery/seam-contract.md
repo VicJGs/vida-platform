@@ -4,23 +4,26 @@
 > SHIPPED; this contract fixes **Seam C** — the live `@vida/core` edge the `useFlowSession` hook (S1) binds.
 
 ## Seam A — the shell props (SHIPPED, `@vida/ui`)
+
 `FlowSessionViewProps` `[FACT: packages/ui/src/components/flow-session-view.tsx:52-89]` ·
 `FlowStage{id,label,title,status,state?,proof?}` `[:30-42]` · `FlowEffect` `[:44-50]`. Consumed via `toFlowProps`.
 
 ## Seam B — the intent wiring (SHIPPED, `apps/web/src/flow/adapter.ts`)
+
 `bindFlowIntents(port, sessionId, { attachTarget?, onProof? })` `[FACT: adapter.ts:113-122]` →
 `onMarkDone`→`port.transition(id,'complete')` · `onAttach`→`port.attach(...)` · `onRequireProof`→`opts.onProof`.
 `mapEffectLog(rows)` `[FACT: adapter.ts:93-95]` · `FlowSource` `[FACT: adapter.ts:29-47]`.
 
 ## Seam C — the live `@vida/core` edge (S1 BUILDS this; the deferred piece)
+
 The hook binds the real sessions service to the shipped **`SessionsPort`** `[FACT: adapter.ts:99-102]`:
 
 ```ts
 // apps/web/src/flow/use-flow-session.ts  (S1 — the first consumer, R3)
 function useFlowSession(sessionId: string): {
-  source: FlowSource          // title · stages (assembled) · effects (mapEffectLog) · context
-  port: SessionsPort          // { transition, attach } — bound to @vida/core
-  state: ViewState            // loading | empty | error | success
+  source: FlowSource // title · stages (assembled) · effects (mapEffectLog) · context
+  port: SessionsPort // { transition, attach } — bound to @vida/core
+  state: ViewState // loading | empty | error | success
 }
 ```
 
@@ -37,7 +40,7 @@ lifecycle state. Multi-stage structure is a driving module's concern (O7), not #
   `attach` `[FACT: services/sessions/service.ts:120,133,135,411-416 — LIF-139 S1]`, routing completion through the
   **built #32 transition engine** (validates the move, fires declared effects, records the `applied_effects` ledger,
   commits status last) `[FACT: foundation/sessions/lifecycle.ts:62-134, shipped 2026-09-17]`; the effect rail is built
-  `[FACT: foundation/effects/service.ts]`. Deferred here = only per-module effect HANDLERS + scheduler (#46/MOD-*),
+  `[FACT: foundation/effects/service.ts]`. Deferred here = only per-module effect HANDLERS + scheduler (#46/MOD-\*),
   which don't block #23 `[FACT: foundation/sessions/CLAUDE.md]`.
 
 - **`apps/web` layer = DATA LEG DEFERRED (the binding constraint for #23).** The web app **cannot call that service
@@ -56,6 +59,7 @@ signature change)" header]`
 `[FACT: foundation/sessions — `encryptedFields:[]` M1.0 vault-locked pass-through seam; ADR-017:20]`
 
 ## Non-negotiables inherited
+
 - `@vida/ui` stays Tamagui-only; the `@vida/core` import lives ONLY in the hook (IR-2).
 - Unknown effect types fall back to their key, never dropped (IR-4).
 - Degrade-never-crash per-stage/per-surface state (IR-5).

@@ -17,6 +17,7 @@
 > They describe the code as read for this plan.
 
 ## 1. Problem (as-built, after R4)
+
 - **The Modules pane doesn't persist (D11).**
   - Both cards read and write the transitional mirror `preferences-store`: the row switch + rename
     `[FACT: settings/modules-pane.tsx:44-47,60,104]` and the Surfaces switches `[FACT: modules-pane.tsx:113-114,152-153]`.
@@ -55,6 +56,7 @@
   `[FACT: command-bar.tsx:83-89]`. Once the list re-ranks under the user, the index points at a different command.
 
 ## 2. Business rules (after R5)
+
 - **R5-BR-1 · The Modules pane persists, on R3's path.**
   - **Read and write.** Both cards read `usePreferences().view.{moduleVisibility, moduleNames}` and write
     `useSettings().update({ moduleVisibility: { [key]: v } })` / `update({ moduleNames: { [key]: name } })`: an
@@ -139,7 +141,9 @@
   - The readers belong to fe-feature-atlas (LIF-215) and fe-sync-log, written as edges at R8.
 
 ### 2a. D-R5-1 — the pin affordance (Victor, Approval 1)
+
 **What the docs fix:**
+
 - The palette calls `pinCommand` (slice-map.md:45), and pins lead (PR-6).
 - The Envision record also shows a **Settings-side** "⌘K pinned commands · 3 pinned" row under ② Compose
   `[FACT: docs/specs/foundation/frontend-replan/p5-discover-own-specimen.html:189]`. That row is **not** among
@@ -152,6 +156,7 @@
 options.
 
 **Options:**
+
 - **(A) Recommended — a keyboard pin on the active option, plus the mark and an always-mounted live region (R5-BR-7).**
   - **Key:** `Alt+P`, matched by **`e.code === 'KeyP' && e.altKey && !e.ctrlKey && !e.metaKey`**. On mac, Option+P
     yields `e.key === 'π'` (and differs again on ABNT2), so matching on `e.key` would never fire. It calls
@@ -176,28 +181,32 @@ options.
   It can sit alongside A.
 
 ## 3. Design (file order)
-| # | File | Change |
-|---|---|---|
-| 1 | `nav/nav-prefs.ts` (+test) | `ALWAYS_REACHABLE_KEYS` · `isHideableModule` · `applyNavPrefs` (R5-BR-2/4, DEV flag of invalid keys) · `NavPrefs` type; `settings-model.ts` + the writer's `VISIBILITY_KEYS` re-derive from it |
-| 2 | `command-bar/nav-commands.ts` (+test) | `deriveNavCommands(map, surfaces, prefs?)` runs the map entries through `applyNavPrefs` before deriving; no-prefs = today's output (existing tests unchanged) |
-| 3 | `preferences/command-history.ts` (+test) | `toHistoryEntry(row)` (boolean → `0|1`) · `createCommandHistory({ getService, queryClient })` → `{ record, pin }` on one chain, own try/catch, invalidate on settle (R5-BR-6) · the app instance |
-| 4 | `preferences/preferences-keys.ts` · `preferences-queries.ts` (+test) | `COMMANDS_KEY` + `commandHistoryQuery()` (own stale/gc, `retryOnMount: false`, mapped rows) |
-| 5 | `command-bar/registry.ts` | prefs reach `navProvider` (a factory, or prefs passed at collect time); decided at IMPL-PLAN against the registry tests |
-| 6 | `shell/command-bar.tsx` (+test) | memo deps = view maps + history; `collect(history, now)`; `activeId` (R5-BR-8); `execute` → run → close → `record`; D-R5-1 wiring (mark, `e.code` key, live region, footer) |
-| 7 | `shell/module-dock.tsx` (+test) | `visibleDockGroups(prefs)` via `applyNavPrefs`; the dock reads `usePreferences().view` |
-| 8 | `settings/modules-pane.tsx` (+test) | rebind both cards (R5-BR-1): view + `useSettings().update`, `maxLength` 40, display-name a11y labels; header comment X5 refresh |
-| 9 | `stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` (+tests) | drop the two fields + setters; MIRRORED = 7 |
-| 10 | *(A1 only)* `packages/core/src/services/preferences/service.ts` (+test) | `pinCommand` creates the row when absent |
-| 11 | Docs (§XXIX) | `docs/modules/preferences/current-*` (R5 rules; D-S3 revised if A1) · `apps/web/src/{preferences,settings,shell,command-bar,nav}/CLAUDE.md` (incl. the amended raw-service rule) · `command-bar-and-search.md` §4 (history live; the pin key) · `web-client-runtime/current-business-rules.md` (the history chain) · slice-map R5 status · task file |
+
+| #   | File                                                                          | Change                                                                                                                                                                                                                                                                                                                                               |
+| --- | ----------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `nav/nav-prefs.ts` (+test)                                                    | `ALWAYS_REACHABLE_KEYS` · `isHideableModule` · `applyNavPrefs` (R5-BR-2/4, DEV flag of invalid keys) · `NavPrefs` type; `settings-model.ts` + the writer's `VISIBILITY_KEYS` re-derive from it                                                                                                                                                       |
+| 2   | `command-bar/nav-commands.ts` (+test)                                         | `deriveNavCommands(map, surfaces, prefs?)` runs the map entries through `applyNavPrefs` before deriving; no-prefs = today's output (existing tests unchanged)                                                                                                                                                                                        |
+| 3   | `preferences/command-history.ts` (+test)                                      | `toHistoryEntry(row)` (boolean → `0                                                                                                                                                                                                                                                                                                                  | 1`) · `createCommandHistory({ getService, queryClient })`→`{ record, pin }` on one chain, own try/catch, invalidate on settle (R5-BR-6) · the app instance |
+| 4   | `preferences/preferences-keys.ts` · `preferences-queries.ts` (+test)          | `COMMANDS_KEY` + `commandHistoryQuery()` (own stale/gc, `retryOnMount: false`, mapped rows)                                                                                                                                                                                                                                                          |
+| 5   | `command-bar/registry.ts`                                                     | prefs reach `navProvider` (a factory, or prefs passed at collect time); decided at IMPL-PLAN against the registry tests                                                                                                                                                                                                                              |
+| 6   | `shell/command-bar.tsx` (+test)                                               | memo deps = view maps + history; `collect(history, now)`; `activeId` (R5-BR-8); `execute` → run → close → `record`; D-R5-1 wiring (mark, `e.code` key, live region, footer)                                                                                                                                                                          |
+| 7   | `shell/module-dock.tsx` (+test)                                               | `visibleDockGroups(prefs)` via `applyNavPrefs`; the dock reads `usePreferences().view`                                                                                                                                                                                                                                                               |
+| 8   | `settings/modules-pane.tsx` (+test)                                           | rebind both cards (R5-BR-1): view + `useSettings().update`, `maxLength` 40, display-name a11y labels; header comment X5 refresh                                                                                                                                                                                                                      |
+| 9   | `stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` (+tests) | drop the two fields + setters; MIRRORED = 7                                                                                                                                                                                                                                                                                                          |
+| 10  | _(A1 only)_ `packages/core/src/services/preferences/service.ts` (+test)       | `pinCommand` creates the row when absent                                                                                                                                                                                                                                                                                                             |
+| 11  | Docs (§XXIX)                                                                  | `docs/modules/preferences/current-*` (R5 rules; D-S3 revised if A1) · `apps/web/src/{preferences,settings,shell,command-bar,nav}/CLAUDE.md` (incl. the amended raw-service rule) · `command-bar-and-search.md` §4 (history live; the pin key) · `web-client-runtime/current-business-rules.md` (the history chain) · slice-map R5 status · task file |
 
 Edges filed at R8 (not built here):
+
 - `shell-rescope`: R5 edits `command-bar.tsx` + `module-dock.tsx`, its mount.
 - fe-feature-atlas LIF-215 + fe-sync-log: the `features`/`sync` readers.
 - R7: the onboarding picker's flag-only lockstep + `moduleNames` labels (D12's onboarding clause, slice-map R7).
 - If D is not taken: a home for the Settings pinned-commands row.
 
 ## 4. Acceptance
+
 **Verification Gate (Vitest + live smoke)**
+
 1. **Filter:**
    - `applyNavPrefs` omits a hidden dock key and relabels a renamed one.
    - It ignores `false` and names on `preferences`/`journals`/every global surface.
@@ -259,22 +268,16 @@ Edges filed at R8 (not built here):
     - pane writes the mirror again
 12. `tsc` 0 · eslint 0 · the suite green (F008 timeouts re-run alone and recorded).
 
-**Visual Gate (real browser, dev server, real OPFS)**
-13. Hide Tasks → it's gone from the dock (sidebar, rail, drawer) and from ⌘K; `/tasks` still opens by URL. Reload →
-    still hidden, and no flash of Tasks on the first frame.
-14. Rename Habits → "Rituals" in the dock text, the rail's accessible name and ⌘K. Reload → persists. A 40-character
-    name at 375 drawer / 768 rail / 1440 sidebar truncates without overflow.
-15. EC-8: no Settings/Home switch exists, and with a forged `false` for `preferences`/`journals` in the row, Settings and
-    Home stay in ⌘K and the bar.
-16. ⌘K: run "Go to Projects" ×3 → it ranks first on reopen. Pin "Go to Finance" (never run; per A1/A2) → it leads with
-    the mark, the highlight stays on it, and the announcement is heard (VoiceOver spot-check). Reload → the order holds.
-17. EC-12 rename feel: pencil → inline Input with visible save/cancel, Enter/Esc, non-modal. EC-4: all Modules + Surfaces
-    controls present and persisting.
-18. Matrix: Modules pane + ⌘K open (with the footer hint) × light/dark × 375/768/1440 · axe 0 · text AA · ≥44 targets ·
-    0 page/region overflow · focus ring visible.
-19. Victor `visual-approved` (stage 4).
+**Visual Gate (real browser, dev server, real OPFS)** 13. Hide Tasks → it's gone from the dock (sidebar, rail, drawer) and from ⌘K; `/tasks` still opens by URL. Reload →
+still hidden, and no flash of Tasks on the first frame. 14. Rename Habits → "Rituals" in the dock text, the rail's accessible name and ⌘K. Reload → persists. A 40-character
+name at 375 drawer / 768 rail / 1440 sidebar truncates without overflow. 15. EC-8: no Settings/Home switch exists, and with a forged `false` for `preferences`/`journals` in the row, Settings and
+Home stay in ⌘K and the bar. 16. ⌘K: run "Go to Projects" ×3 → it ranks first on reopen. Pin "Go to Finance" (never run; per A1/A2) → it leads with
+the mark, the highlight stays on it, and the announcement is heard (VoiceOver spot-check). Reload → the order holds. 17. EC-12 rename feel: pencil → inline Input with visible save/cancel, Enter/Esc, non-modal. EC-4: all Modules + Surfaces
+controls present and persisting. 18. Matrix: Modules pane + ⌘K open (with the footer hint) × light/dark × 375/768/1440 · axe 0 · text AA · ≥44 targets ·
+0 page/region overflow · focus ring visible. 19. Victor `visual-approved` (stage 4).
 
 ## 5. Out of scope (owned elsewhere, unchanged)
+
 - The onboarding picker's seeding and labels (R7).
 - Locale/Notifications + deleting the store (R6).
 - The Atlas/Sync-log readers (their units).
@@ -286,6 +289,7 @@ Edges filed at R8 (not built here):
 - Resetting a custom name to the canonical one (no doc asks; renaming it back works).
 
 ## 6. Risks
+
 - **The dock now subscribes to preferences.** `ModuleDock` re-renders on any user-row change. The map is small, and the
   boot seed fills the cache before the first frame (R3), so a hidden module never flashes in (Visual Gate 13 checks it on
   reload).
@@ -297,6 +301,7 @@ Edges filed at R8 (not built here):
 - **F008.** Run targeted suites first and the full suite when the load allows; record timeouts that pass alone.
 
 ## 7. Gate record
+
 - **Approval 1 (Victor, 2026-10-27):** D-R5-1 = **A + A1**; option D not taken (edge at R8).
 - **Approval 2 (Victor, 2026-10-27):** IMPL-PLAN rev 2 incl. D-R5-2 (dock unit-proven) + D-R5-3 (`pinCommand` label params).
 - **Build + gates (2026-10-27):**
@@ -356,6 +361,7 @@ Edges filed at R8 (not built here):
       history today.
 
     After the fold: the touched suites pass 27 files / 260 tests, and App/integration/routes pass 18/18; tsc 0; eslint 0.
+
 - **rev 1 → rev 2 (2026-10-27):** independent critique REVISE, 4 blocking, all folded in:
   1. `pinCommand` is a no-op on a never-recorded key, so the announcement would lie → A1/A2 sub-choice + acceptance 7.
   2. Pin wasn't on the serial chain (it reads, then updates) → one chain for `record` + `pin` (R5-BR-6), mutation.

@@ -7,6 +7,7 @@
 > **No-Guessing:** each rule `[FACT: src]` (verified) · `[INTENT]` (documented, owed) · `[UNKNOWN]`.
 
 ## The state-plane boundary (the runtime's central invariant)
+
 1. **[INTENT] BR-RT-1 — React Query owns all DB-derived data; Zustand owns only ephemeral UI state. No overlap.**
    Entity data (tasks, notes, …) and persisted user preferences are read via React Query from local SQLite; they
    must NEVER live in Zustand. `[data-flow.md:383,463-466]`
@@ -24,6 +25,7 @@
    reactive 0s/5m. `[performance-strategy.md:238-301]`
 
 ## What Zustand may / may not hold
+
 6. **[INTENT] BR-RT-6 — Zustand holds ONLY:** view mode, active filters, selected IDs, sort preference,
    sidebar/panel open state, editor focus, modal/dialog open state. One store per feature, `stores/<feature>-ui-store.ts`.
    `[data-flow.md:454-461]`
@@ -34,12 +36,13 @@
    it needs a store. It has no setters for the persisted theme: one query-cache subscription (installed at module load over
    the `lib/query-client` singleton) re-derives `persisted`; the only writable field is the guided-setup `previewPreset`
    layer (cleared whenever guided setup closes). Besides it, **the theme hint** (`localStorage['vida.theme-hint.v1']` =
-   `{ scheme, bg, fg }`, `preferences/theme-hint.ts`) is a *device-local paint cache*: derived from SQLite, written only
+   `{ scheme, bg, fg }`, `preferences/theme-hint.ts`) is a _device-local paint cache_: derived from SQLite, written only
    from confirmed DB rows (the writer's `onConfirmed`), read only by the pre-React inline `<script id="vida-theme-hint">`
    in `index.html`, never by the app. It is the one cross-session value outside SQLite — stated here so it cannot become
    a precedent. `[FACT: stores/theme-store.ts; preferences/theme-hint.ts; index.html]`
 
 ## Routing & forms
+
 8. **[INTENT] BR-RT-8 — routing is code-based + type-safe with route-based lazy code-splitting.** A central
    `routes.tsx` tree lazy-imports `app/*` page components (`lazy(() => import('./app/habits'))`); the initial
    bundle (shell + router + core React) stays **< 80 KB gzipped**. `[performance-strategy.md:311,320-327]`
@@ -49,10 +52,11 @@
     logic can serve web + RN later. `[ADR-001:146-147]`
 
 ## Provider hierarchy & standards inheritance
+
 11. **[INTENT] BR-RT-11 — providers mount in `App.tsx`** (the "provider hierarchy"): `QueryClientProvider` wraps
     `RouterProvider`; `main.tsx` stays a bare root. `[platform-strategy.md:296; system-overview.md:269]`
     **As-built (preferences-rescope R2):** `UIProvider ⊃ QueryClientProvider ⊃ { PreferencesBridge · first-run
-    Onboarding | RouterProvider · guided-setup overlay · ToastProvider }` — hoisted so onboarding writes reach the same
+Onboarding | RouterProvider · guided-setup overlay · ToastProvider }` — hoisted so onboarding writes reach the same
     cache Settings reads. `[FACT: App.tsx]`
 12. **[FACT] BR-RT-12 — inherits engineering §XVI–XVII:** logic-bearing components extract a custom hook (component
     = pure UI); one Zustand store per domain, no giant global store; local UI state stays in `useState`.
@@ -60,6 +64,7 @@
     clauses of §XVI do NOT apply.) `[FACT: CLAUDE.md — apps/web = Vite + React SPA]`
 
 ## Rules established by AR-4 (IMPLEMENTED 2026-07-30 · LIF-75)
+
 - **[FACT] BR-RT-STORE-PLACEMENT — RESOLVED by [ADR-020](../../core/decisions/ADR-020-zustand-store-placement.md):**
   Zustand stores are per-app React hooks at `apps/web/src/stores/<feature>-ui-store.ts` (v5 curried `create<T>()`),
   NOT vanilla-in-`packages/core`. Revisit at M4 if a cross-platform store consumer appears. `[FACT: ADR-020; stores/app-shell-ui-store.ts]`
@@ -77,7 +82,7 @@
   DB-ready gate, exposed as a `getServices()` singleton (not a React provider; `seams/CLAUDE.md`
   sanctions the singleton). **Built during boot (R3):** the preferences seed (BR-RT-BOOT) calls `getServices()` inside the
   Loading window, so `initVault` + `resolveDeviceId` + the two preferences reads now run before first paint, not after it.
-  `getServices()` memoizes its build promise, so a failure *inside* `build()` is not recovered by a query refetch (a
+  `getServices()` memoizes its build promise, so a failure _inside_ `build()` is not recovered by a query refetch (a
   recorded edge, LIF-250's area). `deviceId` is read from / generated into `app_state['device_id']` (ADR-002 §5.0; `uuidv7()`).
   Each entity's closing slice (`register + flip`, golive-replan ELC-3/4) consumes it; adding a module appends its construction. `[FACT: db/composition-root.ts]`
   **fe-calendar #19 S7 (2026-10-22):** construction is the exported PURE `composeServices(db, deviceId)` (no boot/worker/I/O —
@@ -141,17 +146,19 @@
 - **[FACT] BR-RT-D5 enforced in the worker — opened once.** A repeated or concurrent `open` (the boot Retry while the first
   open still migrates) shares the in-flight/completed open; a failed open is not cached and releases any half-open
   connection; `close` resets it. The web adapter's module + VFS bootstrap is single-flight. `[FACT: db/worker.ts open();
-  db/web-adapter.ts ensureModule(); worker.test.ts]`
+db/web-adapter.ts ensureModule(); worker.test.ts]`
 - **[FACT] BR-RT-COMPROOT — a rejected build is not cached.** `getServices()` clears its memo on rejection (the `boot.ts`
   rule), so a failed boot/`initVault` recovers on the next call. `[FACT: db/composition-root.ts; composition-root.singleton.test.ts]`
 
 ## Boundary (what AR-4 does NOT do)
+
 - **[INTENT]** No per-module hooks/stores/forms — those land with each module's later wave (M1.1+). AR-4 ships the
   mechanism + one reference instance per plane. `[delivery-plan issue decomposition]`
 - **[INTENT]** No layout/IA — that is UX-3; AR-4's router renders a minimal shell, not the final app chrome (UI-4).
   `[delivery-plan §5 rows 253]`
 
 ## Rules established by UX-1 (IMPLEMENTED 2026-08-02 · LIF-90 · Information Architecture)
+
 - **[FACT] BR-NAV-1 — the nav model is CO-PRIMARY DUAL-AXIS:** module dock (content home) + Spaces bar
   (cross-cutting overlays). The dock owns canonical content homes; the Spaces bar overlays, never replacing a home.
   **Amends ADR-007:88** (nav placement → Preferences); ADR-006 §3.4 (nav-addressable) is the cover. The Spaces bar

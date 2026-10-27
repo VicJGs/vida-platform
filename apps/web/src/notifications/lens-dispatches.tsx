@@ -18,14 +18,33 @@ export interface DispatchesLensProps {
 
 function Eyebrow({ children }: { children: string }) {
   return (
-    <Text width={104} textAlign="right" fontSize={11} letterSpacing={1.3} textTransform="uppercase" color="$colorTextMuted">
+    <Text
+      width={104}
+      textAlign="right"
+      fontSize={11}
+      letterSpacing={1.3}
+      textTransform="uppercase"
+      color="$colorTextMuted"
+    >
       {children}
     </Text>
   )
 }
 
-function Line({ entry, onMarkRead, onArchive }: { entry: AttentionEntry; onMarkRead: (id: string) => void; onArchive: (id: string) => void }) {
-  const prose = entry.dangling ? `${entry.title} — no longer available.` : entry.voice ? `${entry.title} — ${entry.voice}.` : `${entry.title}.`
+function Line({
+  entry,
+  onMarkRead,
+  onArchive,
+}: {
+  entry: AttentionEntry
+  onMarkRead: (id: string) => void
+  onArchive: (id: string) => void
+}) {
+  const prose = entry.dangling
+    ? `${entry.title} — no longer available.`
+    : entry.voice
+      ? `${entry.title} — ${entry.voice}.`
+      : `${entry.title}.`
   return (
     <View flexDirection="row" gap="$24" alignItems="baseline">
       <Eyebrow>{entry.relTime}</Eyebrow>
@@ -50,7 +69,17 @@ function Line({ entry, onMarkRead, onArchive }: { entry: AttentionEntry; onMarkR
   )
 }
 
-function Section({ when, entries, onMarkRead, onArchive }: { when: string; entries: AttentionEntry[]; onMarkRead: (id: string) => void; onArchive: (id: string) => void }) {
+function Section({
+  when,
+  entries,
+  onMarkRead,
+  onArchive,
+}: {
+  when: string
+  entries: AttentionEntry[]
+  onMarkRead: (id: string) => void
+  onArchive: (id: string) => void
+}) {
   if (entries.length === 0) return null
   return (
     <View gap="$12">
@@ -68,7 +97,10 @@ export function DispatchesLens({ model, now, onMarkRead, onArchive }: Dispatches
   const today = model.settled.filter((e) => now - e.at < DAY)
   const earlier = model.settled.filter((e) => now - e.at >= DAY)
   const n = model.settled.length
-  const opener = n === 0 ? 'Nothing has asked for you yet.' : `${n === 1 ? 'One thing' : `${n} things`} ${n === 1 ? 'has' : 'have'} asked for you.`
+  const opener =
+    n === 0
+      ? 'Nothing has asked for you yet.'
+      : `${n === 1 ? 'One thing' : `${n} things`} ${n === 1 ? 'has' : 'have'} asked for you.`
 
   return (
     <View gap="$24" maxWidth={620}>

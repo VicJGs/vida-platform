@@ -56,7 +56,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -385,9 +388,9 @@ describe('mod-gamification S2 — rule engine', () => {
       condition: { kind: 'event_trigger', eventType: 'e' },
       consequences: [{ effectType: 'grant_currency', payload: { currencyId: 'XP', amount: 10 } }],
     })
-    expect(
-      await ok.svc.executeRule(r3.id, { subjectId: 'u1', event: { type: 'e', targetRef: 't' } }),
-    ).toMatchObject({ fired: true })
+    expect(await ok.svc.executeRule(r3.id, { subjectId: 'u1', event: { type: 'e', targetRef: 't' } })).toMatchObject({
+      fired: true,
+    })
   })
 
   it('evaluateRules sweeps enabled rules against the context', async () => {
@@ -416,7 +419,13 @@ describe('mod-gamification S3 — achievement engine', () => {
     const { svc } = await setupWithRail()
     await svc.seedAchievements([
       { key: 'first_steps', category: 'onboarding', title: 'First Steps', xpReward: 10 },
-      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+      {
+        key: 'centurion',
+        category: 'general',
+        title: 'Centurion',
+        xpReward: 50,
+        condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 },
+      },
     ])
     expect((await svc.listAchievements()).map((a) => a.key).sort()).toEqual(['centurion', 'first_steps'])
     await svc.seedAchievements([{ key: 'first_steps', category: 'onboarding', title: 'dup' }]) // idempotent
@@ -426,7 +435,13 @@ describe('mod-gamification S3 — achievement engine', () => {
   it('unlocks a currency-condition achievement and fires its XP reward through the rail', async () => {
     const { svc, db } = await setupWithRail()
     await svc.seedAchievements([
-      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+      {
+        key: 'centurion',
+        category: 'general',
+        title: 'Centurion',
+        xpReward: 50,
+        condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 },
+      },
     ])
     // Not yet met.
     expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(0)
@@ -434,7 +449,7 @@ describe('mod-gamification S3 — achievement engine', () => {
     await seedLedger(db, 'XP', 'earn', 100)
     const unlocked = await svc.evaluateAchievements({ subjectId: 'u1' })
     expect(unlocked).toHaveLength(1)
-    expect((await svc.getUserAchievements())).toHaveLength(1)
+    expect(await svc.getUserAchievements()).toHaveLength(1)
     // The reward (grant_currency 50) fired on the rail → XP earned is now 150.
     expect((await svc.getBalance('XP')).earned).toBe(150)
   })
@@ -442,7 +457,12 @@ describe('mod-gamification S3 — achievement engine', () => {
   it('unlocks a measure-condition achievement from the measurement seam', async () => {
     const { svc, measurement } = await setupWithRail()
     await svc.seedAchievements([
-      { key: 'streak7', category: 'habits', title: 'Week Warrior', condition: { kind: 'measure', measureKey: 'habit_streak', operator: 'gte', threshold: 7 } },
+      {
+        key: 'streak7',
+        category: 'habits',
+        title: 'Week Warrior',
+        condition: { kind: 'measure', measureKey: 'habit_streak', operator: 'gte', threshold: 7 },
+      },
     ])
     let streak = 3
     measurement.advertise('habit_streak', () => streak)
@@ -454,7 +474,13 @@ describe('mod-gamification S3 — achievement engine', () => {
   it('is idempotent — an already-earned achievement is not unlocked again', async () => {
     const { svc, db } = await setupWithRail()
     await svc.seedAchievements([
-      { key: 'centurion', category: 'general', title: 'Centurion', xpReward: 50, condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+      {
+        key: 'centurion',
+        category: 'general',
+        title: 'Centurion',
+        xpReward: 50,
+        condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 },
+      },
     ])
     await seedLedger(db, 'XP', 'earn', 100)
     expect(await svc.evaluateAchievements({ subjectId: 'u1' })).toHaveLength(1)
@@ -472,7 +498,12 @@ describe('mod-gamification S3 — achievement engine', () => {
     // setupWithRail registers economy handlers but NOT surface_notification → the notify emit is guarded off.
     const { svc, db } = await setupWithRail()
     await svc.seedAchievements([
-      { key: 'centurion', category: 'general', title: 'Centurion', condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 } },
+      {
+        key: 'centurion',
+        category: 'general',
+        title: 'Centurion',
+        condition: { kind: 'currency', currencyCode: 'XP', quantity: 'earned', operator: 'gte', threshold: 100 },
+      },
     ])
     await seedLedger(db, 'XP', 'earn', 100)
     // Must not throw NoEffectHandler for the missing surface_notification handler.

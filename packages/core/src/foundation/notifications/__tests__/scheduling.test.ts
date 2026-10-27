@@ -10,12 +10,7 @@
 // ============================================================================
 
 import { describe, it, expect } from 'vitest'
-import {
-  bakeQuietHours,
-  reschedulePlan,
-  dedupKey,
-  shouldMaterialize,
-} from '../scheduling'
+import { bakeQuietHours, reschedulePlan, dedupKey, shouldMaterialize } from '../scheduling'
 import type { DueOccurrence, QuietHours, RegisteredReminder } from '../types'
 
 const AT = 1_700_000_000_000 // a fixed Unix ms for determinism
@@ -99,9 +94,7 @@ describe('XS-notifications-delivery S2 — dedupKey (XCU-14 idempotency, N3 pass
   })
 
   it('namespaces so an event id and a due id never collide', () => {
-    expect(dedupKey({ kind: 'event', effectEventId: 'x' })).not.toBe(
-      dedupKey({ kind: 'due', occurrenceId: 'x' }),
-    )
+    expect(dedupKey({ kind: 'event', effectEventId: 'x' })).not.toBe(dedupKey({ kind: 'due', occurrenceId: 'x' }))
   })
 })
 

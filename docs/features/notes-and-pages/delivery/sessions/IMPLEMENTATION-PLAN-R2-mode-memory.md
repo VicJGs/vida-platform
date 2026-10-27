@@ -30,14 +30,16 @@
 ## 1. Build steps
 
 ### Step 1 — core accessor (test A1)
+
 - `packages/core/src/db/app-state.ts`:
   ```ts
   export const ENTITY_MODE_PREFIX = 'entity_mode:'
-  export const entityModeKey = (entityType: string, entityId: string) => `${ENTITY_MODE_PREFIX}${entityType}:${entityId}`
-  readAppState(driver, key)      // SELECT value FROM app_state WHERE key = ?  → rows[0]?.value ?? null
-  readAppStatePrefix(driver, p)  // SELECT key, value FROM app_state WHERE substr(key, 1, length(?)) = ?   [p, p]
-  writeAppState(driver, key, v)  // INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)
-  deleteAppState(driver, key)    // DELETE FROM app_state WHERE key = ?
+  export const entityModeKey = (entityType: string, entityId: string) =>
+    `${ENTITY_MODE_PREFIX}${entityType}:${entityId}`
+  readAppState(driver, key) // SELECT value FROM app_state WHERE key = ?  → rows[0]?.value ?? null
+  readAppStatePrefix(driver, p) // SELECT key, value FROM app_state WHERE substr(key, 1, length(?)) = ?   [p, p]
+  writeAppState(driver, key, v) // INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)
+  deleteAppState(driver, key) // DELETE FROM app_state WHERE key = ?
   ```
   Header in the `adapter.ts` KV idiom style; a comment states why the prefix query is not LIKE and that it binds the
   prefix twice.
@@ -49,6 +51,7 @@
 - `pnpm --filter @vida/core build` (apps/web consumes the core dist).
 
 ### Step 2 — per-type defaults + the app_state store (tests B2, B3)
+
 - `apps/web/src/notes/mode-defaults.ts`: `registerModeDefault(type: string, mode: FacetMode)`,
   `defaultModeFor(type): FacetMode` (fallback `'tabbed'`); registers `note` → `'tabbed'`; header names the RIDE owners.
 - `apps/web/src/entity/adapter.ts`:
@@ -66,24 +69,25 @@
   gets B3.
 
 ### Step 3 — the preload + the page (tests B4, B5)
+
 - `apps/web/src/notes/use-entity-modes.ts` → `useEntityModeStore(enabled: boolean): EntityModeStore`:
   - `useQuery({ queryKey: ['app_state','entity_mode'], queryFn: async () => Object.fromEntries((await
-    readAppStatePrefix((await ensureDbReady()).driver, ENTITY_MODE_PREFIX)).map(r => [r.key, r.value])), enabled,
-    staleTime: Infinity, retry: false, retryOnMount: false })`; on error, `console.error` once (an effect keyed on
+readAppStatePrefix((await ensureDbReady()).driver, ENTITY_MODE_PREFIX)).map(r => [r.key, r.value])), enabled,
+staleTime: Infinity, retry: false, retryOnMount: false })`; on error, `console.error` once (an effect keyed on
     `query.error`).
   - `persist(key, mode)`: `sessionWrites.set(key, mode)` (R-4); `qc.setQueryData(KEY, (old) => ({ ...(old ?? {}), [key]:
-    mode }))`; then `void ensureDbReady().then(c => writeAppState(c.driver, key, mode)).catch(e => notifyError('remember
-    this page’s layout', e))`.
+mode }))`; then `void ensureDbReady().then(c => writeAppState(c.driver, key, mode)).catch(e => notifyError('remember
+this page’s layout', e))`.
   - The `queryFn` merges `sessionWrites` over the rows it read, after its await (R-4).
   - `useMemo(() => { const persist = …; return createAppStateEntityModeStore(query.data, defaultModeFor, persist) },
-    [query.data, qc])`, with `persist` defined inside, so the deps are honest.
+[query.data, qc])`, with `persist` defined inside, so the deps are honest.
 - `notes/note-entity.tsx`:
   - `NoteEntity`: at the top, before any early return, `const sample = devFlagActive('sample')` (the existing helper,
     `note-entity.tsx:37`; `devSampleActive` in `use-note-entity.ts` is private) and `const modeStore =
-    useEntityModeStore(!sample)`; render `<NoteEntityView key={id} page={page} modeStore={sample ? undefined :
-    modeStore} />`. The loading ladder is unchanged (G4).
+useEntityModeStore(!sample)`; render `<NoteEntityView key={id} page={page} modeStore={sample ? undefined :
+modeStore} />`. The loading ladder is unchanged (G4).
   - `NoteEntityView({ page, modeStore = referenceStore })`: `override` state (R-3); `mode = override ??
-    modeStore.readMode(page.type, page.id)`; `onModeChange(next)` → `modeStore.persistMode(page.type, page.id, next)` then
+modeStore.readMode(page.type, page.id)`; `onModeChange(next)` → `modeStore.persistMode(page.type, page.id, next)` then
     `setOverride(next)` (in the handler, G7).
   - Header and comments updated (G13).
 - Tests in a new `notes/mode-memory.test.tsx` (B4 + B5), copying the `read-retry.test.tsx:28-41` scaffolding:
@@ -91,15 +95,16 @@
   - mock `@tanstack/react-router` `getRouteApi` with a **mutable id** (for "navigate → read count flat");
   - mock `../db/boot`: `ensureDbReady` → a fake driver whose `query` records calls and returns rows (or a deferred
     promise), and whose `run` records writes. The real `@vida/core` accessors run against it (dist; Step 1 builds).
-  The cases are PLAN §4 B4 (the write-failure case also asserts: navigate away and back → still Merged for the session),
-  **plus** (R-4): toggle while pending → rows without the key arrive → navigate to another note
-  and back → still Merged, and the cache holds `merged`.
+    The cases are PLAN §4 B4 (the write-failure case also asserts: navigate away and back → still Merged for the session),
+    **plus** (R-4): toggle while pending → rows without the key arrive → navigate to another note
+    and back → still Merged, and the cache holds `merged`.
 - `notes/read-retry.test.tsx`: add the same `../db/boot` mock (a driver returning no rows), so `NoteEntity` never reaches
   the real `ensureDbReady` → `new Worker` in jsdom.
 
 ### Step 4 — docs (G10, G12, G13; currency)
+
 - `docs/core/decisions/ADR-006-spaces-foundation-universal-tags.md`: an `**Amended:** 2026-10-27 (notes-rescope R2) —
-  §3.6 per-instance facet-mode memory …` line after `**Amends:**` (line 9), and **`**3.6 Per-instance facet-mode memory
+§3.6 per-instance facet-mode memory …` line after `**Amends:**` (line 9), and **`**3.6 Per-instance facet-mode memory
   (Amendment · 2026-10-27 · notes-rescope R2).**`** after 3.5, before "What this decision does NOT do". Content per
   PLAN G12, worded with "seeded default while loading".
 - `slice-map.md` R5 bullet: the transactional `entity_mode` delete (G10). `business-rules.md` NP-9 list: "+ its
@@ -108,6 +113,7 @@
 - Currency: `docs/modules/notes/current-*` BR-SUR-5 → app_state memory, plus a BR-R2-1…7 section.
 
 ### Step 5 — live leg + Visual Gate + gates
+
 - `apps/web/e2e/notes-mode-memory.spec.ts` (PLAN §4 C). Seed two notes through the harness; `bootAt(page, '/')`; open
   note 1 → Merged → wait 1 s → **`bootAt(page, '/notes/<id1>')`** (a hard navigation re-runs the first-run gate) →
   polling `expect`: the Merged button `aria-pressed="true"` and no `tablist` "Entity facets" (`entity-view.tsx:174-178,198`;
@@ -117,17 +123,20 @@
 - `pnpm typecheck` · `pnpm lint` · core `db/tests/app-state` + the web suite (alone) · `/critique`.
 
 ## 2. Files
+
 New: `core/src/db/app-state.ts` + `db/tests/app-state.test.ts` · `web/src/notes/{mode-defaults, use-entity-modes}.ts` +
 `mode-defaults.test.ts` + `mode-memory.test.tsx` · `e2e/notes-mode-memory.spec.ts`. Changed: `core/src/index.ts` ·
 `entity/adapter.ts` (+test, CLAUDE.md) · `notes/note-entity.tsx` · `notes/read-retry.test.tsx` (boot mock) · docs per
 Step 4. Untouched: `@vida/ui`, `@vida/types`, `@vida/editor`.
 
 ## 3. Risks
+
 - **A visible switch after load** is the slice's stated behaviour (seeded default while loading), not a defect. The page
   re-renders once when the rows arrive.
 - **Worker RPC:** one extra local read per session. Concurrent load is the known suite flake (run suites alone).
 
 ## 4. Change log
+
 - rev 1 (2026-10-27) — drafted after preflight PASSED.
 - rev 2 (2026-10-27) — gate-2 critique r1 **REVISE** (2 blocking, verified): (1) a toggle during the in-flight read was
   overwritten in the cache (`query.js:300` `setData`) → R-4 `sessionWrites` merged in the queryFn, plus a test; (2)
@@ -139,6 +148,7 @@ Step 4. Untouched: `@vida/ui`, `@vida/types`, `@vida/editor`.
 - **APPROVED by Victor (Approval 2) on 2026-10-27.**
 
 ## 5. Build record
+
 - Steps 1–4 tests-first, green: core `app-state` 4/4 (+ migrations-runner 10/10 total) · web 906/906 (122 files) · tsc 0 ·
   lint 0 errors. Live (Brave, real OPFS): `e2e/notes-mode-memory.spec.ts` ✓ (Merged survives a reload; the second note keeps
   Tabbed; read-back `merged`; a mere open writes nothing) + R0/R1 specs still green. Visual Gate `.playwright-mcp/r2-live/`

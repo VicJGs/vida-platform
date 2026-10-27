@@ -200,9 +200,7 @@ export const migration025Relationships: Migration = {
     await driver.run(
       `CREATE UNIQUE INDEX uq_reminder_group_contacts ON reminder_group_contacts(reminder_group_id, contact_id)`,
     )
-    await driver.run(
-      `CREATE INDEX idx_reminder_group_contacts_contact ON reminder_group_contacts(contact_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_reminder_group_contacts_contact ON reminder_group_contacts(contact_id)`)
 
     // --- network_groups: a network of people (net-new — G2) ---
     await driver.run(`
@@ -240,8 +238,6 @@ export const migration025Relationships: Migration = {
     await driver.run(
       `CREATE UNIQUE INDEX uq_network_group_contacts ON network_group_contacts(network_group_id, contact_id)`,
     )
-    await driver.run(
-      `CREATE INDEX idx_network_group_contacts_contact ON network_group_contacts(contact_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_network_group_contacts_contact ON network_group_contacts(contact_id)`)
   },
 }

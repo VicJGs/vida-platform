@@ -146,10 +146,7 @@ export const assignedExams = sqliteTable(
     logged_at: timestampMs('logged_at'), // nullable
     // NO deleted_at (ledger, floor L38)
   },
-  (t) => [
-    index('idx_assigned_exams_exam').on(t.exam_id),
-    index('idx_assigned_exams_due').on(t.due_date),
-  ],
+  (t) => [index('idx_assigned_exams_exam').on(t.exam_id), index('idx_assigned_exams_due').on(t.due_date)],
 )
 
 // --- health_goals: the pursuable (ADR-011 measure) — the ONLY soft-deleted table ---
@@ -195,9 +192,7 @@ export const physicalRoles = sqliteTable('physical_roles', {
   skill_id: text('skill_id'), // no-FK; nullable → Skills #2
   exercise_refs: json<string[]>('exercise_refs'), // JSON → linked/generated exercises
   session_sub_types: json<string[]>('session_sub_types'), // JSON
-  authoring_source: enumText('authoring_source', PHYSICAL_ROLE_AUTHORING_SOURCE)
-    .notNull()
-    .default('manual'), // FIXED → CHECK
+  authoring_source: enumText('authoring_source', PHYSICAL_ROLE_AUTHORING_SOURCE).notNull().default('manual'), // FIXED → CHECK
   locale_variant: text('locale_variant'), // nullable — geo/lang/culture (curated import)
   /** @encrypted [E] */
   approach: text('approach'),

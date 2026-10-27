@@ -14,12 +14,7 @@ import { and, eq } from 'drizzle-orm'
 import type { DrizzleDb } from '../../db/adapter'
 import { appliedEffects } from '../../db/schema/foundation/effects'
 import { deriveEffectEventId } from './event-id'
-import {
-  EFFECT_CLASS_OF,
-  type EffectEvent,
-  NoEffectHandler,
-  UnknownEffectType,
-} from './types'
+import { EFFECT_CLASS_OF, type EffectEvent, NoEffectHandler, UnknownEffectType } from './types'
 import type { EffectRegistry } from './registry'
 
 export interface EffectRail {

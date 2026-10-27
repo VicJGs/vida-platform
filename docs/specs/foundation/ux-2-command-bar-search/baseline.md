@@ -4,8 +4,9 @@
 > This is the ground truth the PLAN + both gates are measured against. Gathered 2026-08-09 from the live tree.
 
 ## 0. What UX-2 is, per the authoritative IA (UX-1)
+
 - `[FACT: docs/core/architecture/information-architecture.md:104]` The command bar is registered in the IA
-  surface table as **"Search (⌘K) | overlay | Preferences *(UX by UX-2)*"** — a **global overlay** surface,
+  surface table as **"Search (⌘K) | overlay | Preferences _(UX by UX-2)_"** — a **global overlay** surface,
   realm-owned by **Preferences**, keybind **`⌘K`**, its UX explicitly delegated to UX-2.
 - `[FACT: ia.md:154]` "UX-2 builds the command-bar + search UX for the `⌘K` global surface."
 - `[FACT: ia.md:16-18]` UX-1 explicitly scopes OUT "the command-bar + search UX (UX-2)" and "the shell
@@ -14,6 +15,7 @@
   **rendering** is UI-4's; the **backing data** is Preferences' (`command_bar_history`) + search's (FTS5/DB-8).
 
 ## 1. What EXISTS today (the substrate UX-2 sits on)
+
 - `[FACT: apps/web/src tree]` The web shell is thin: `App.tsx`, `main.tsx`, `routes.tsx`, `nav/module-map.ts`
   (UX-1), `stores/app-shell-ui-store.ts` (AR-4), `db/*`, `hooks/*`, `lib/*`. **`components/` is EMPTY** (`.gitkeep`).
 - `[FACT: apps/web/src/nav/module-map.ts:1-30]` UX-1's `module-map.ts` is the single source of truth for WHAT
@@ -33,6 +35,7 @@
   `packages/ui/src` — UX-2 is greenfield.
 
 ## 2. What does NOT exist yet — the three seams UX-2 must design AGAINST but NOT build
+
 1. **`command_bar_history` (the launcher's backing store)** — `[FACT: grep]` present ONLY in
    `packages/core/src/db/_legacy/schema.v1.ts:1291` (v1) + stale `packages/core/dist/*` (compiled). **NOT in the
    v2 source schema.** `[FACT: CLAUDE.md Data Domains]` it lives in the **Preferences** domain →
@@ -46,6 +49,7 @@
    not built. `[INTERP]` UX-2 defines the interaction model UI-4 will render.
 
 ## 3. Class determination (sets the §XXVI gate variant)
+
 - `[FACT: sibling UX-1 _index.md]` UX-1 was classed a **"design/spec issue that emits a declarative code
   artifact"** (`information-architecture.md` doc + `nav/module-map.ts` data) → **FULL** double-gate.
 - `[INTERP]` UX-2 is the **same class**: a design/interaction-model spec over three unbuilt seams. Its likely
@@ -55,14 +59,16 @@
   session or is a pure `docs/core/architecture/` doc (like the IA doc) — the PLAN decides; both are FULL-class.
 
 ## 4. UNKNOWNs resolved by this baseline
+
 - ✅ `command_bar_history` — resolved: exists in v1/dist only, **not v2**; Preferences/M1.1 unbuilt → seam, not dependency.
 - ✅ FTS5 seam — resolved: **DB-8 #60, M1.4, unbuilt** → design the result contract + seam, don't build against it.
 - ✅ Keybind + surface class — resolved: `⌘K`, **global overlay, Preferences-owned** `[FACT: ia.md:104,154]`.
 - ⏳ `[UNKNOWN: PLAN]` FULL-with-artifact vs pure-doc — decided at the PLAN step.
-- ⏳ `[UNKNOWN: PLAN]` scope line: does UX-2 define search *ranking/preview* UX (needing an eventual FTS5 shape),
-  or only the *launcher command* model + a search-seam stub? (Guard the DB-8 gap.)
+- ⏳ `[UNKNOWN: PLAN]` scope line: does UX-2 define search _ranking/preview_ UX (needing an eventual FTS5 shape),
+  or only the _launcher command_ model + a search-seam stub? (Guard the DB-8 gap.)
 
 ## 5. Contexts touched (Currency Rule §XXIX targets at close)
+
 - `apps/web/src` shell (nav model consumer) · possibly a new `apps/web/src` command-registry artifact.
 - `docs/core/architecture/` (IA doc — UX-2 promotes its interaction model here on completion, as UX-1 did).
 - No module/service code is written (the seams are unbuilt by design).

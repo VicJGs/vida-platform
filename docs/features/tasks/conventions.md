@@ -1,8 +1,9 @@
 <!-- Conventions — features/tasks · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · life-os tasks · intake -->
 
-# Conventions — Tasks  (level: Feature)
+# Conventions — Tasks (level: Feature)
 
 ## How to build here
+
 - **Aggregate through the parent FKs + the R7 read seam, never direct table reads.** To show a project's/course's/contact's tasks, query by FK and read the parent's data via its documented list/query API (the **R7** seam — the same one the aggregated `views` ride via V4) — never `SELECT` another module's tables (TK-9, §6). `[INTENT G2; FACT core §6; INTENT R7; ADR-007 V4]`
 - **Enforce ≤1 parent at write time.** A task sets at most one of `project_id`/`milestone_id`/`course_id`/`contact_id`; a milestone implies its project (TK-2). `[INTENT G2]`
 - **Sub-tasks are one level; the rollup is M4.** Do not allow a child to have children; show parent progress as the ADR-011 **M4** weighted rollup (default equal-weight), derived on read (M3 — no stored progress column); don't cascade completion (TK-3). `[INTENT G3; ADR-011 M3/M4]`
@@ -17,11 +18,13 @@
 - **Notes via `pages`.** A task's notes are a linked `pages` row (`entity_type='task'`), never an inline column. `[FACT: ADR-002 §5.2; CLAUDE.md Conventions]`
 
 ## Naming & layout
+
 - `kind` discriminator values are `standard` / `obligation` (⚠ INTENDED); the `obligation` class is the module's single recurrence exception. `[INTENT G8]`
 - Platform-wide conventions: UUIDv7 TEXT PKs, Unix-ms timestamps, booleans `0/1`, JSON as TEXT, dates `YYYY-MM-DD`, time in **minutes** (INTEGER), soft delete, `_sync_*`. `[FACT: CLAUDE.md Conventions; docs/core/conventions.md]`
 - Enums: string-literal unions in `@vida/types`, SQL CHECK + Zod in `@vida/core` (never TS `enum`). `[FACT: packages/types/src/CLAUDE.md]`
 
 ## Local landmines / "never do"
+
 - **Never** add behavior recurrence to standard tasks — that's Habits/Routines (TK-7). `[INTENT G8]`
 - **Never** hand-edit `actual_minutes` — it derives from the time-log ledger (TK-5). `[INTENT G4]`
 - **Never** set more than one parent FK (TK-2). `[INTENT G2]`
@@ -33,4 +36,5 @@
 - **Never** build a `task_views` table — a saved view is a `views` row (ADR-007 V1). `[INTENT; ADR-007 V1]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

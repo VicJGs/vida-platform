@@ -1,6 +1,6 @@
 <!-- Identity — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 + §5.11 planner L2743-2882 + pomodoro_sessions L1432-1440 · types learning.ts L194-211, knowledge.ts L222-250 · v1 studyPlanner.ts (409L) + entities.ts L1551,L1677-1711 · docs/intake/sessions-and-scheduling.md -->
 
-# Identity — Sessions & Scheduling  (level: Foundation / OWN MODULE — extracted + PROMOTED from Learning "Study Sessions & Planner")
+# Identity — Sessions & Scheduling (level: Foundation / OWN MODULE — extracted + PROMOTED from Learning "Study Sessions & Planner")
 
 **What it is.** The OS's **session foundation and scheduling engine** — the two-pillar module every timed,
 focused activity in Vida is built on. **Pillar 1, the Sessions framework:** a single polymorphic **Session**
@@ -13,11 +13,12 @@ blocks** that place work into time, aggregating every module's due-work through 
 **The desire behind it.** The OS already had **9+ session-shaped entities scattered across modules** (study,
 practice, daily, pomodoro in v2; workout in Wave-R Health; reading in Books) with **no shared spine** — and a
 per-course study planner that owned its own reschedule loop and couldn't see the rest of life. The intent is
-to make **"a session"** a real OS primitive: one place the user *does focused work* of any kind, one place it
-*plugs into everything it affects*, and one engine that *plans the user's time* across the whole platform —
+to make **"a session"** a real OS primitive: one place the user _does focused work_ of any kind, one place it
+_plugs into everything it affects_, and one engine that _plans the user's time_ across the whole platform —
 not a Learning-only tool. `[INTENT: Victor 2026-07-11/12]`
 
 **The two reframes that created this module.** `[INTENT: Victor 2026-07-10→12]`
+
 - **Extraction + promotion (G1).** No longer a Learning sub-context. It is a **foundational (Level-1)
   cross-cutting module**, sibling to Routines as an orchestration layer. Learning drops to Education +
   Flashcards. Documented modules (Books/Education/Knowledge/Language, Health when built) each gain a
@@ -34,15 +35,16 @@ does **not** set up the main ones (not viable). A user **may** edit a shipped ty
 never for wiring the defaults. (The OS is useful out of the box — anti-lost.)
 
 **The `scheduling_mode` axis.** `[INTENT: 2026-07-11]` Every session is **attended** (a real-world fixed event
-that *consumes* availability, e.g. a class), **planned** (the engine *places* it in a free window), or
+that _consumes_ availability, e.g. a class), **planned** (the engine _places_ it in a free window), or
 **ad-hoc** (started spontaneously). The engine treats them differently — attended sessions are constraints,
 planned ones fill the gaps.
 
 **What it is NOT.** `[INTENT — anti-scope-creep, constitution §1]`
+
 - **Not Learning-only.** It spans Habits, Tasks, Projects, Health, Purpose, Language — any module with timed
   focused work.
-- **Not the Global Calendar.** The Calendar *renders* placed blocks (read-only); this module *writes* them.
-  It decides *when*; the Calendar shows *what/where*. `[[../../intake/sessions-and-scheduling]]`
+- **Not the Global Calendar.** The Calendar _renders_ placed blocks (read-only); this module _writes_ them.
+  It decides _when_; the Calendar shows _what/where_. `[[../../intake/sessions-and-scheduling]]`
 - **Not the owner of any module's schedule.** Books/Flashcards/Knowledge own their own plans; this aggregates
   them (G2/BK-12).
 - **Not the owner of domain mastery.** It **emits** completion signals; Knowledge (KN-10) and Education own

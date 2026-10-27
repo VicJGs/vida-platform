@@ -5,10 +5,12 @@
 # PLAN S1 — Session HUD substrate
 
 ## §1 Context
+
 First slice of fe-session-hud (#16). Logic-only (renders nothing): the seam types, the M1 stub data hook,
 and the drift-free HUD clock. S2 (the pill) renders over these; S3 mounts. Verification Gate (no Visual Gate).
 
-## §2 Business rules (BR-HUD-S1-*)
+## §2 Business rules (BR-HUD-S1-\*)
+
 - **BR-HUD-S1-1** `HudRead` is tri-state (`hidden`/`idle`/`active`) — idle-visible is representable without a
   signature change (g1-B4); M1 prod resolves `hidden`.
 - **BR-HUD-S1-2** `HudTiming.countdown` carries `phase` (focus/short-break/long-break — EC-3d) +
@@ -22,7 +24,7 @@ and the drift-free HUD clock. S2 (the pill) renders over these; S3 mounts. Verif
   armed in an explicit `run()`/cleanup pair — NO `useEffect` deps on the countdown value (the V5
   `endAtRef`/`arm()` trap). Tick cadence ~1s (500ms acceptable); unmount clears.
 - **BR-HUD-S1-6** The stub hook is honest: default `{kind:'hidden'}`; DEV `?sample=idle|focus|break|elapsed|
-  paused|complete` seeds the six demo reads (idle + 5 active forms); non-DEV ignores `?sample`
+paused|complete` seeds the six demo reads (idle + 5 active forms); non-DEV ignores `?sample`
   (`import.meta.env.DEV` gate — the flow/notifications convention). The hook header documents the live
   two-source model (seam §A) verbatim enough to swap without re-derivation.
 - **BR-HUD-S1-6b** (g1 fold) **Resolution and failure both render as `hidden`** — the hook's return type is
@@ -39,18 +41,20 @@ and the drift-free HUD clock. S2 (the pill) renders over these; S3 mounts. Verif
   after complete (cheap, re-derives stably); a `timing` prop change re-derives on the next tick.
 
 ## §3 Files
+
 - `apps/web/src/session-hud/types.ts` — seam §A/§B types (mirror-by-value; no `@vida/core` import).
 - `apps/web/src/session-hud/use-active-session.ts` — `useActiveSession(): { read: HudRead, port: HudSessionsPort }`
   (stub + `?sample`; React Query NOT needed for a constant stub — plain memo; live swap = the documented hook body).
 - `apps/web/src/session-hud/use-hud-clock.ts` — `useHudClock(timing: HudTiming): HudClock` where
   `HudClock = { display: string; progress: number /*0..1, countdown only*/; complete: boolean; frozen: boolean }`
-  + exported pure helpers `deriveHudClock(timing, now)` and `formatHudTime(ms)` (the testable core; the hook
-  is a thin ticking wrapper).
+  - exported pure helpers `deriveHudClock(timing, now)` and `formatHudTime(ms)` (the testable core; the hook
+    is a thin ticking wrapper).
 - `apps/web/src/session-hud/*.test.ts` — co-located vitest (shell convention).
 - `apps/web/src/session-hud/CLAUDE.md` — D6 context docs birth (what/pattern/rules), with
-  `docs/modules`-tier current-* deferred to the unit close (§XXIX refresh covers it).
+  `docs/modules`-tier current-\* deferred to the unit close (§XXIX refresh covers it).
 
 ## §4 Acceptance
+
 1. tsc 0 · eslint 0.
 2. `deriveHudClock`: countdown remaining math · paused freeze (constant across advancing `now`, progress
    constant) · zero-cross hold (0 + complete, progress 1, never negative) · elapsed count-up (progress 0) ·
@@ -63,6 +67,7 @@ and the drift-free HUD clock. S2 (the pill) renders over these; S3 mounts. Verif
 6. Full run green under `TZ=Asia/Tokyo` (duration math TZ-neutral — the g2-mod-tasks-S5 lesson, proven not assumed).
 
 ## §4b Implementation notes (post-build)
+
 - **g2 F1 (blocking, fixed):** the stub rebuilt sample reads with a fresh `Date.now()` per render — a
   value-UNEQUAL timing per render would re-key the clock and pin the demo countdown. Fixed with a
   module-level per-form capture (once per page load; the demo now genuinely ticks and the focus sample
@@ -79,6 +84,8 @@ and the drift-free HUD clock. S2 (the pill) renders over these; S3 mounts. Verif
 - TZ-forced acceptance (6) proven: full suite green under `TZ=Asia/Tokyo` (vitest start-at shows Tokyo time).
 
 ## §5 Implementation prompt
+
 Build in the order: types → pure helpers (`deriveHudClock`/`formatHudTime`) + tests → `use-hud-clock` wrapper
-+ tests → `use-active-session` + tests → CLAUDE.md. Vitest only (no DOM render needed beyond hooks —
-`renderHook` from @testing-library/react, the repo's hook-test convention). No new deps.
+
+- tests → `use-active-session` + tests → CLAUDE.md. Vitest only (no DOM render needed beyond hooks —
+  `renderHook` from @testing-library/react, the repo's hook-test convention). No new deps.

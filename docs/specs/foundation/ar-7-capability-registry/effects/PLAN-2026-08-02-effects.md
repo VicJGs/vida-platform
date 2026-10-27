@@ -1,7 +1,7 @@
 # PLAN (§XXVI g1) — AR-7 Increment 1: the `effects` rail
 
 > Session-split PLAN (gate 1 = the SPEC). AR-7 ⊞4, increment 1 of 4 (`effects → capability → measurement →
-> economy`). Profile: Add Backend Component. Grounded via §2.1 Documentation-Gathering Protocol — every shape
+economy`). Profile: Add Backend Component. Grounded via §2.1 Documentation-Gathering Protocol — every shape
 > `[FACT: file:line]`; genuine gaps flagged, not derived. Shared substrate grounding: `../baseline.md`.
 
 ## §1. Scope + baseline (what the rail IS / is NOT)
@@ -11,14 +11,15 @@
 `db/schema/foundation/effects.ts` + `migrations/004_effects.ts` + `@vida/types`/`@vida/core` enum surface.
 
 **Is NOT (deferred, cited):**
+
 - Per-module **effect handlers** — measurement/economy increments + M1.1 modules register their own (ADR-004 §3.2.5-A "service methods in `packages/core/services/<module>`"). The registry ships **empty** (seam).
-- **`effect_event_id` columns on effect-*output* / *triggering* rows** — those are per-consumer tables (`consequence_ledger`, habit occurrences, …), authored at each consumer's build. [FACT: ADR-002 §5.20 :3793 — an AMEND on consumer rows, not this table]
+- **`effect_event_id` columns on effect-_output_ / _triggering_ rows** — those are per-consumer tables (`consequence_ledger`, habit occurrences, …), authored at each consumer's build. [FACT: ADR-002 §5.20 :3793 — an AMEND on consumer rows, not this table]
 - **Cross-device convergence merge** — sync layer, AR-9/M4. [FACT: ADR-004 §3.2.5-B.3]
-- **Repository tx-accepting variant** — a handler that needs the Repository's field-encryption *inside* the rail tx
+- **Repository tx-accepting variant** — a handler that needs the Repository's field-encryption _inside_ the rail tx
   needs a `tx`-scoped Repository write path. No handler exists yet (empty seam), so this is **owed to DB-6/Repository
   when the first encrypting handler is built** (M1.1+ consumer). The rail's `(event, tx)` contract already admits it —
   grounded downstream dependency, not an open gap here.
-- **Session-lifecycle → fires-effects wiring** (transition engine) — a *consumer* of the rail; deferred with the lifecycle engine (AR-5 note; not this increment).
+- **Session-lifecycle → fires-effects wiring** (transition engine) — a _consumer_ of the rail; deferred with the lifecycle engine (AR-5 note; not this increment).
 - **`derive()` hash algorithm** — build-phase per ADR-011 §3.8:76; the rail ships the deterministic canonical-string form now (§3.3, RESOLVED). The hash is a later representation-only compaction, not an open contract.
 
 **Baseline (live floor):** `foundation/effects/` = CLAUDE.md stub only; no `applied_effects` anywhere (grep clean);
@@ -49,6 +50,7 @@ local-only-table precedent (`sync-queue.ts` — no baseColumns/syncColumns, own 
 ## §3. Contract (shapes — every shape cited)
 
 ### 3.1 `applied_effects` table — `db/schema/foundation/effects.ts` (Drizzle query-mirror; DDL in migration)
+
 **Owning spec = F1** (`docs/specs/adr-revisions/f1-guarded-write-idempotency/PLAN.md §3B :61-71`) — its ratified DDL
 is a **composite PK, no surrogate `id`** (nothing FKs to this local-only ledger). Local-only like `sync_queue` (no
 baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue surrogate-id shape:
@@ -58,11 +60,13 @@ baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue sur
 | `effect_type` | TEXT NOT NULL | `enumText('effect_type', EFFECT_TYPE)` → SQL CHECK (BR-3); separates the N effects one event fans out to [FACT: F1 :60] |
 | `target_ref` | TEXT NOT NULL | producer-supplied target dim (which target this effect is directed at — an `EffectEvent` input, known at derive time) [FACT: F1 :60,71] |
 | `applied_at` | INTEGER NOT NULL | Unix ms |
+
 - **PRIMARY KEY `(effect_event_id, effect_type, target_ref)`** (BR-1) [FACT: F1 :68] · index on `effect_event_id`.
 - CHECK + composite PK live in `migrations/004_effects.ts` (hand-SQL, ADR-016 §3.2); the Drizzle mirror uses `primaryKey({ columns: […] })`.
 - Migration registration = two edits: `version: 4` on the migration object + append `migration004Effects` to `ALL_MIGRATIONS` in `runner.ts:24` (mirrors 002/003 — no "version constant" switch).
 
 ### 3.2 Effect taxonomy — `foundation/effects/types.ts`
+
 - `EFFECT_CLASS = ['keyed','additive','projection','intra_realm'] as const` (code-level; **not** a DB column, no CHECK — never stored).
 - `EFFECT_CLASS_OF: Record<EffectType, EffectClass>` — exhaustive (compile-time; BR-5). Mapping per §3.2.5 taxonomy:
   keyed = `complete_habit_occurrence·emit_measurement_signal·contribute_purpose_metric`; additive =
@@ -70,7 +74,9 @@ baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue sur
   `surface_journal·surface_calendar`; intra_realm = `attach_pomodoro`. [FACT: ADR-004 §3.2.5 :80-85; ADR-012 4 effects Additive :3803]
 
 ### 3.3 `effect_event_id` derivation — `foundation/effects/event-id.ts` (RESOLVED — Approval 1, 2026-08-02)
+
 `deriveEffectEventId(subjectNaturalKey: string, transition: string, effectType: EffectType): string`
+
 - **Inputs are doc-fixed, not chosen:** `derive(subject_natural_key ‖ transition ‖ effect_type)`. [FACT: F1 §3B :60; ADR-004 §3.2.5-B.1 :99-103; ADR-002 §5.20 :3793]
 - **Form = canonical string** `` `${subjectNaturalKey}|${transition}|${effectType}` ``. This is **not** an open
   decision: the ADRs place the **hashing of `derive()` at build-phase** [FACT: ADR-011 §3.8 :76 "the `derive()`
@@ -84,6 +90,7 @@ baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue sur
   pure representation change (same identity semantics) — it does not reopen this contract. Recorded in §6 (deferred).
 
 ### 3.4 Handler registry + dispatch — `foundation/effects/registry.ts` + `service.ts`
+
 - `EffectHandler = (event: EffectEvent, tx: EffectTx) => Promise<void>` — the handler receives the **active
   transaction** and MUST co-write through it (F1 §3B:71 "same transaction"); it must never open its own
   `db.transaction` (the sqlite-proxy emits a bare `BEGIN` → nested-BEGIN fails). Signature **locked now** to avoid a
@@ -94,14 +101,16 @@ baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue sur
   2. `projection` → **rail no-op**: return `{applied:true}`, **no handler invoked, no ledger row** (BR-6).
   3. else (keyed/additive/intra_realm): `resolve(effectType)` FIRST — absent → `NoEffectHandler` (BR-3, fail-loud,
      no ledger write); then `id = deriveEffectEventId(...)`; in ONE tx — insert `applied_effects(effect_event_id=id,
-     effect_type, target_ref, applied_at)` ON CONFLICT DO NOTHING; if inserted → call the resolved handler; if
+effect_type, target_ref, applied_at)` ON CONFLICT DO NOTHING; if inserted → call the resolved handler; if
      conflict → no-op `{applied:false}` (BR-1).
 - Typed errors in `types.ts`: `UnknownEffectType·DuplicateEffectHandler·NoEffectHandler`.
 
 ### 3.5 Barrels
+
 `foundation/effects/index.ts` exports registry/service/types/event-id; `db/schema/index.ts` += effects table; `@vida/core` barrel += effects. No `@vida/types` change (EFFECT_TYPE exists; EFFECT_CLASS is core-local).
 
 ## §4. Acceptance
+
 1. `applied_effects` table + migration 004 registered; `pnpm typecheck` 10/10.
 2. `EFFECT_CLASS_OF` exhaustive over all 12 EFFECT_TYPE (compile-time; a missing entry fails tsc).
 3. Tests (`__tests__/effects.test.ts`): dedup (same event twice → 1 ledger row, 2nd `{applied:false}`); projection writes no row; unknown-type + no-handler + duplicate-handler throw typed; one-handler-per-type.
@@ -110,6 +119,7 @@ baseColumns/syncColumns) but the exact columns follow F1, not the sync_queue sur
 6. Every shape traces to a cited line; the one flagged decision (§3.3) resolved at Approval 1.
 
 ## §5. Implementation Prompt (→ IMPL-PLAN at gate 2)
+
 Order: (1) `foundation/effects/types.ts` (EffectClass, EFFECT_CLASS_OF, EffectEvent/Handler, errors) → (2)
 `event-id.ts` → (3) `db/schema/foundation/effects.ts` (composite-PK mirror) + `schema/index.ts` → (4) `migrations/004_effects.ts`
 (`version: 4`) + append `migration004Effects` to `ALL_MIGRATIONS` in `runner.ts:24` → (5) `registry.ts` → (6) `service.ts` (applyEffect) → (7) `index.ts` barrels + `@vida/core`

@@ -6,46 +6,49 @@ showed the delivery-plan §5 column repeatedly lists downstream feeds/consumers;
 the build-order blockers. Derivation below; each edge cited to its contract. `[ARGUABLE]` = routed to the
 independent ADR-critique. FACT/UNKNOWN labeled per No-Guessing.
 
-| issue | DERIVED correct blockers | vs task+Linear | vs plan §5 | basis |
-|-------|--------------------------|----------------|------------|-------|
-| db-3 | db-1 (streaming) | ✓ | ✓ (plan adds stream note) | consolidates spine tables on db-1 primitives (ADR-002 §5.20) |
-| db-4 | db-1, db-3 (streaming) | ✓ | **fix plan** (cell omits edges) | per-domain schema consumes db-3 spine + db-1 (ADR-002; ADR-018 homes) |
-| db-8 | db-4, **db-7** (NOT db-6) | task+Linear WRONG (have db-6) | plan under-spec (has db-4) | CRITIQUE-CORRECTED: FTS5 tables = DDL via the runner (db-7); populate-on-unlock reads decrypted via db-6 but no vault-unlock exists in M1.0 (auth off ADR-017 §3.3; UX-5b→M3) → db-6 is an illegal M1.0←M3 edge, same class as ux-5←ar-3. Remove db-6, add db-7. |
-| db-10 | db-6, db-7, **db-9** | **add db-9** to task+Linear | ✓ (plan right) | seed writes through repo (db-6), needs tables (db-7) AND valid enum values (db-9 canonical Zod) |
-| ar-4 | ar-1 | ✓ | ✓ | app runtime on monorepo topology (ADR-001) |
-| ar-8 | ar-2, db-8; **ar-6 [ARGUABLE]** | ✓ (ar-2,db-8) | plan swaps ar-2→ar-6 | services run FTS5 queries → adapter ar-2 + tables db-8; does backlink/graph-prep need substrate ar-6? |
-| ds-1 | **root** (no blocker) | ✓ | **fix plan** (drops ar-1) | track-entry-point; plan treats ux-1 (sibling entry) as root (§5 L148) → consistency says ds-1 root too |
-| ds-2 | ds-1 | ✓ | ✓ | |
-| ds-3 | ds-1 | ✓ | ✓ | |
-| ds-4 | ds-2, **ds-3 [ARGUABLE]** | task+Linear omit ds-3 | ✓ (plan adds ds-3) | Tamagui `createTamagui` includes an `animations` config → motion foundation (ds-3) feeds it? or wired later? |
-| ds-5 | ds-4 | ✓ | ✓ | |
-| ui-1 | ds-5 | ✓ | ✓ | @vida/ui implements ds-5 contracts on the Tamagui theme |
-| ui-2 | ui-1; **ar-8 = runtime feed [ARGUABLE]** | ✓ (ui-1) | plan adds ar-8 | neural-graph/export views CONSUME ar-8 data-prep/export at runtime — buildable against a stub? |
-| ui-3 | ui-1, **ar-4** | ✓ (add ar-4) | plan omits ar-4 | editor integration blocks query data (React Query = ar-4); mounts in routes |
-| ui-4 | ui-1, ux-3 | ✓ | **plan stale** (says ar-4) | ui-4 IMPLEMENTS ux-3 spec — the UI-4←UX-3 inversion plan §5.1 already flagged |
-| ux-1 | root | ✓ | ✓ | IA entry point |
-| ux-2 | ux-1 | ✓ | **fix plan** (lists ui-4,ar-8 feeds) | interaction DESIGN → design-time blocker is ux-1; ui-4/ar-8 are impl feeds |
-| ux-3 | ux-1 | ✓ | **fix plan** (says ui-4 — inversion) | layout DESIGN spec; ui-4 implements it, not the reverse |
-| ux-4 | ux-1 | ✓ | **fix plan** (says ui-1) | interaction-state conventions = design → ux-1 |
-| ux-5 | ux-1 | **REMOVE ar-3** (illegal M3 edge) | **fix plan** (says ui-4) | flow DESIGN → ux-1; ar-3 (crypto) is M3 IMPL — an M1.0←M3 build-order edge is illegal (same class as DB-6←DB-5 in §5.1) |
-| ux-6 | ux-3 | ✓ | **fix plan** (lists ui-4,ar-5,ar-7 feeds) | Home/Journal screen DESIGN within the shell (ux-3); the rest are impl data-feeds |
-| qa-1 | ar-2 | ✓ | **add §5 row** (missing) | Playwright OPFS harness proving ar-2's deferred acceptance |
+| issue | DERIVED correct blockers                 | vs task+Linear                    | vs plan §5                                | basis                                                                                                                                                                                                                                                            |
+| ----- | ---------------------------------------- | --------------------------------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| db-3  | db-1 (streaming)                         | ✓                                 | ✓ (plan adds stream note)                 | consolidates spine tables on db-1 primitives (ADR-002 §5.20)                                                                                                                                                                                                     |
+| db-4  | db-1, db-3 (streaming)                   | ✓                                 | **fix plan** (cell omits edges)           | per-domain schema consumes db-3 spine + db-1 (ADR-002; ADR-018 homes)                                                                                                                                                                                            |
+| db-8  | db-4, **db-7** (NOT db-6)                | task+Linear WRONG (have db-6)     | plan under-spec (has db-4)                | CRITIQUE-CORRECTED: FTS5 tables = DDL via the runner (db-7); populate-on-unlock reads decrypted via db-6 but no vault-unlock exists in M1.0 (auth off ADR-017 §3.3; UX-5b→M3) → db-6 is an illegal M1.0←M3 edge, same class as ux-5←ar-3. Remove db-6, add db-7. |
+| db-10 | db-6, db-7, **db-9**                     | **add db-9** to task+Linear       | ✓ (plan right)                            | seed writes through repo (db-6), needs tables (db-7) AND valid enum values (db-9 canonical Zod)                                                                                                                                                                  |
+| ar-4  | ar-1                                     | ✓                                 | ✓                                         | app runtime on monorepo topology (ADR-001)                                                                                                                                                                                                                       |
+| ar-8  | ar-2, db-8; **ar-6 [ARGUABLE]**          | ✓ (ar-2,db-8)                     | plan swaps ar-2→ar-6                      | services run FTS5 queries → adapter ar-2 + tables db-8; does backlink/graph-prep need substrate ar-6?                                                                                                                                                            |
+| ds-1  | **root** (no blocker)                    | ✓                                 | **fix plan** (drops ar-1)                 | track-entry-point; plan treats ux-1 (sibling entry) as root (§5 L148) → consistency says ds-1 root too                                                                                                                                                           |
+| ds-2  | ds-1                                     | ✓                                 | ✓                                         |                                                                                                                                                                                                                                                                  |
+| ds-3  | ds-1                                     | ✓                                 | ✓                                         |                                                                                                                                                                                                                                                                  |
+| ds-4  | ds-2, **ds-3 [ARGUABLE]**                | task+Linear omit ds-3             | ✓ (plan adds ds-3)                        | Tamagui `createTamagui` includes an `animations` config → motion foundation (ds-3) feeds it? or wired later?                                                                                                                                                     |
+| ds-5  | ds-4                                     | ✓                                 | ✓                                         |                                                                                                                                                                                                                                                                  |
+| ui-1  | ds-5                                     | ✓                                 | ✓                                         | @vida/ui implements ds-5 contracts on the Tamagui theme                                                                                                                                                                                                          |
+| ui-2  | ui-1; **ar-8 = runtime feed [ARGUABLE]** | ✓ (ui-1)                          | plan adds ar-8                            | neural-graph/export views CONSUME ar-8 data-prep/export at runtime — buildable against a stub?                                                                                                                                                                   |
+| ui-3  | ui-1, **ar-4**                           | ✓ (add ar-4)                      | plan omits ar-4                           | editor integration blocks query data (React Query = ar-4); mounts in routes                                                                                                                                                                                      |
+| ui-4  | ui-1, ux-3                               | ✓                                 | **plan stale** (says ar-4)                | ui-4 IMPLEMENTS ux-3 spec — the UI-4←UX-3 inversion plan §5.1 already flagged                                                                                                                                                                                    |
+| ux-1  | root                                     | ✓                                 | ✓                                         | IA entry point                                                                                                                                                                                                                                                   |
+| ux-2  | ux-1                                     | ✓                                 | **fix plan** (lists ui-4,ar-8 feeds)      | interaction DESIGN → design-time blocker is ux-1; ui-4/ar-8 are impl feeds                                                                                                                                                                                       |
+| ux-3  | ux-1                                     | ✓                                 | **fix plan** (says ui-4 — inversion)      | layout DESIGN spec; ui-4 implements it, not the reverse                                                                                                                                                                                                          |
+| ux-4  | ux-1                                     | ✓                                 | **fix plan** (says ui-1)                  | interaction-state conventions = design → ux-1                                                                                                                                                                                                                    |
+| ux-5  | ux-1                                     | **REMOVE ar-3** (illegal M3 edge) | **fix plan** (says ui-4)                  | flow DESIGN → ux-1; ar-3 (crypto) is M3 IMPL — an M1.0←M3 build-order edge is illegal (same class as DB-6←DB-5 in §5.1)                                                                                                                                          |
+| ux-6  | ux-3                                     | ✓                                 | **fix plan** (lists ui-4,ar-5,ar-7 feeds) | Home/Journal screen DESIGN within the shell (ux-3); the rest are impl data-feeds                                                                                                                                                                                 |
+| qa-1  | ar-2                                     | ✓                                 | **add §5 row** (missing)                  | Playwright OPFS harness proving ar-2's deferred acceptance                                                                                                                                                                                                       |
 
 ## Two systemic findings
+
 1. **§5 conflates build-order with feeds/implements.** The UX track especially: every ux-* row lists the
-   *downstream* shell/services (ui-4, ar-5/7, ar-8) instead of the *upstream design* blocker (ux-1/ux-3). Fix:
+   *downstream* shell/services (ui-4, ar-5/7, ar-8) instead of the *upstream design\* blocker (ux-1/ux-3). Fix:
    §5 Depends-on = build-order blockers; relocate feeds to an "informs/consumes (runtime)" note per row.
 2. **ux-5 ← ar-3 is an illegal cross-milestone edge (M1.0 ← M3)** in BOTH task-file and Linear — the design
    (M1.0) must not be build-blocked by crypto impl (M3). This is the one place task+Linear are wrong, not the
-   plan. Remove the edge (ux-5 ← ux-1 only); ar-3 stays a documented *impl-time* dependency, not a graph edge.
+   plan. Remove the edge (ux-5 ← ux-1 only); ar-3 stays a documented _impl-time_ dependency, not a graph edge.
 
 ## Streaming loop model (Q1)
+
 db-3/db-4 are **streams**, not standalone ready-frontier heads (plan §5 L155-157). Their build = the schema
 slice of each consumer's gate: db-3's tables land per-substrate WITH ar-5/6/7; db-4's per-domain tables land
 per-module in M1.1+. **Loop unit = the schema slice is FOLDED INTO the consumer issue's build** (a sub-step of
 that gate), NOT tracked as its own loop step. So db-3/db-4 never appear as independent "ready" heads.
 
 ## Ready-frontier implication (pre-critique)
+
 Done = ar-1, db-1, ar-2. Genuine ready heads (all hard blockers satisfied): **db-7** (←ar-2), **db-9** (←db-1),
 **ar-4** (←ar-1), **ux-1** (root), **ds-1** (root, built/parked). db-6 (←ar-2) already a head from the -a
-reconcile. NOT ready until their chains land: db-8, db-10, ar-8, ds-2..5, ui-*, ux-2..6, qa-1.
+reconcile. NOT ready until their chains land: db-8, db-10, ar-8, ds-2..5, ui-\*, ux-2..6, qa-1.

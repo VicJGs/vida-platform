@@ -9,8 +9,9 @@ No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: nee
 ---
 
 ## 0. Baseline (code-as-is — verified this session)
+
 - **Build approach is settled by the shipped pattern — no fork.** U1–U3 shipped hand-built on `@tamagui/core`
-  (native element / `styled()` + injected CSS, **no new deps**, web-first). ADR-001 §9 names *Tamagui* as the
+  (native element / `styled()` + injected CSS, **no new deps**, web-first). ADR-001 §9 names _Tamagui_ as the
   component library and `@tamagui/core`'s `styled()` IS Tamagui; UI-1's reason to exist (DS-5 `_index.md:38-39`;
   task goal) is to **build** these primitives — so `@tamagui/select`/the kit is out of scope by definition. Select
   is hand-built on core against `select.md`. [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]
@@ -33,8 +34,9 @@ No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: nee
 - **Verify:** `pnpm --filter @vida/ui typecheck && build && test` (currently @vida/ui 68 tests). [FACT: session-log 2026-08-07]
 
 ## 1. Structure — trigger (button) + portalled listbox panel
+
 Select is the **first primitive that cannot be a pure-CSS-off-native-pseudo-class machine** — there is no native
-element that yields a *styled, portalled* listbox with `panelBackground`/roles/motion. So open/highlight are React
+element that yields a _styled, portalled_ listbox with `panelBackground`/roles/motion. So open/highlight are React
 state (contract perf budget is "virtualize >100 · portal · no trigger reflow" — NOT "zero re-render"; open-render
 is inherent and fine). [FACT: select.md Performance Budget]
 
@@ -42,7 +44,7 @@ is inherent and fine). [FACT: select.md Performance Budget]
 option + activedescendant, which IS the 1.2 select-only pattern]. **Button-vs-role resolution (was ambiguous):** the
 contract fixes the ref target as `HTMLButtonElement` (:22), so the trigger IS a real `<button>` (`render:'button'`)
 for focusability + form adjacency — but **keyboard is 100% hand-handled** (§2.1), so `role="combobox"` authoritatively
-overrides the button's implicit role and native Enter/Space activation is *not* relied on (the button buys focus, not
+overrides the button's implicit role and native Enter/Space activation is _not_ relied on (the button buys focus, not
 key semantics). ⚠ The APG notes `role=combobox` on a native `<button>` can mis-announce on some SRs; since the
 contract mandates the button ref, U4 ships it and **verifies SR announcement at impl** (Storybook `addon-a11y` + a
 manual NVDA/VO pass) — if it fails, that is a **DS defect** (button-ref vs combobox-role) to reconcile, not a silent
@@ -84,7 +86,7 @@ multiple Selects on a page): ``const uid = useId(); const listboxId = `${uid}-li
   precedent (verify ref→HTMLButtonElement at impl, per button.tsx). [FACT: button.tsx render:'button']
 - **Focus ring on the trigger directly** — unlike Input (focus on an inner input → `:has` lift), the trigger IS
   the focusable element, so `focusVisibleStyle={{ outlineWidth:2, outlineStyle:'solid', outlineColor:'$colorFocusRing',
-  outlineOffset:2 }}` fires on its own `:focus-visible`. [FACT: select.md focus row; §VIII:155 `:focus-visible`.]
+outlineOffset:2 }}` fires on its own `:focus-visible`. [FACT: select.md focus row; §VIII:155 `:focus-visible`.]
   **Verify at impl** Tamagui core `focusVisibleStyle` emits `:focus-visible` (reference button.tsx — U1 shipped a
   button focus ring); injected `.vida-select-trigger:focus-visible` is the documented fallback.
 - **Panel = `styled(View,{name:'Select'})` portalled to `document.body`** via react-dom `createPortal` (`react-dom`
@@ -98,8 +100,10 @@ multiple Selects on a page): ``const uid = useId(); const listboxId = `${uid}-li
   critique finding #7 — this is a known sub-theme×portal consequence, adopted as primary not deferred.]
 
 ### 1.1 Positioning (hand-rolled, no floating-ui dep)
+
 On open: `rect = triggerRef.current.getBoundingClientRect()`; panel is `position:fixed` (viewport coords, no
 scroll math) at `top: rect.bottom + 4`, `left: rect.left`, `minWidth: rect.width`.
+
 - **Vertical flip:** if `rect.bottom + panelH > innerHeight` and `rect.top >= panelH`, open upward
   (`bottom: innerHeight - rect.top + 4`).
 - **Horizontal clamp (finding #6):** `maxWidth: innerWidth - rect.left - 8`; and if `rect.left + panelW > innerWidth`,
@@ -116,18 +120,19 @@ Full scroll-**follow** / collision engine is a **Popover-era (#9) generalization
 Select panel is short-lived and closes on scroll). §9 DEFER-U4-c.
 
 ## 2. Interaction + state visuals
+
 State machine is React (`open`, `activeIndex`, and value controlled/uncontrolled) — the panel mounts/unmounts, so
 CSS-only won't do. Injected stylesheet `internal/select-styles.ts` (mirrors `input-styles.ts`: idempotent,
 browser-only, appended after Tamagui's sheet, real switching theme vars) carries what `styled()` can't express.
 
-| Visual | Mechanism | Token |
-|--------|-----------|-------|
+| Visual                                       | Mechanism                                                                                                                                                                                                                             | Token                |
+| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
 | trigger default/hover/focus/invalid/disabled | reuse Input frame: `hoverStyle` border-strengthen (`$colorTextMuted`), `focusVisibleStyle` ring, `invalid` **variant** → `$borderError` (Tamagui variant, NOT injected — U3 lesson), `disabled` variant opacity .5 + hover suppressed | `select.*` sub-theme |
-| chevron rotate on open | `transform: rotate(180deg)` on `.vida-select-trigger[aria-expanded=true] svg`, `duration.fast`/`easing.out` (B12: transform only) | motion vars |
-| option active (highlight) | `.vida-select-option.is-active` → `background:var(--colorSurfaceSecondary)` (instant swap, B12-legal — a fill state change, not animated) | surface.secondary |
-| option selected | `aria-selected=true` → a check glyph (inline SVG) + `font-weight` shift; not colour-only | — |
-| option disabled | `aria-disabled=true` → opacity .5, `pointer-events:none`, skipped in nav | — |
-| panel open motion | `opacity 0→1` + `transform: translateY(-4px)→0`, `duration.fast`/`easing.out` | motion vars |
+| chevron rotate on open                       | `transform: rotate(180deg)` on `.vida-select-trigger[aria-expanded=true] svg`, `duration.fast`/`easing.out` (B12: transform only)                                                                                                     | motion vars          |
+| option active (highlight)                    | `.vida-select-option.is-active` → `background:var(--colorSurfaceSecondary)` (instant swap, B12-legal — a fill state change, not animated)                                                                                             | surface.secondary    |
+| option selected                              | `aria-selected=true` → a check glyph (inline SVG) + `font-weight` shift; not colour-only                                                                                                                                              | —                    |
+| option disabled                              | `aria-disabled=true` → opacity .5, `pointer-events:none`, skipped in nav                                                                                                                                                              | —                    |
+| panel open motion                            | `opacity 0→1` + `transform: translateY(-4px)→0`, `duration.fast`/`easing.out`                                                                                                                                                         | motion vars          |
 
 - **Panel enter motion — primary = Tamagui `animation="fast"` + `enterStyle={{ opacity:0, y:-4 }}`** (consumes
   DS-4's `createAnimations`; `animation="fast"` maps to `easing.out` per tamagui.config.ts — the sanctioned motion
@@ -150,19 +155,20 @@ browser-only, appended after Tamagui's sheet, real switching theme vars) carries
   highlight changes are **instant state swaps**, never transitioned. [FACT: `_index.md §2` B12]
 
 ### 2.1 Keyboard + type-ahead (WAI-ARIA combobox + aria-activedescendant)
+
 Focus **stays on the trigger** the whole time; the highlighted option is tracked by `activeIndex` and surfaced via
 `aria-activedescendant` on the trigger → the active option's `id`. This makes "**focus returns to the trigger on
 close**" automatic (focus never left) and avoids a focus-trap/FocusScope. [FACT: select.md §A11y "Focus returns to
 the trigger on close"; INTERP: WAI-ARIA combobox+activedescendant pattern.]
 
-| Key | Closed | Open |
-|-----|--------|------|
-| Enter / Space / ↓ | open (↓ → first enabled active) | Enter/Space → commit active; ↓ → next enabled |
-| ↑ | open (last enabled) | previous enabled |
-| Esc | — | close (focus stays on trigger) |
-| Home / End | — | first / last enabled |
-| type char(s) | **type-ahead in place** — buffer chars (reset ~500ms), match option-label prefix (case-insensitive), **commit that value + fire `onValueChange` WITHOUT opening** (native `<select>` / APG behaviour, finding #3) | type-ahead: buffer chars (reset ~500ms), match prefix, set active (does not commit until Enter) |
-| Tab | native focus move | close, then native Tab (do not trap) |
+| Key               | Closed                                                                                                                                                                                                            | Open                                                                                            |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Enter / Space / ↓ | open (↓ → first enabled active)                                                                                                                                                                                   | Enter/Space → commit active; ↓ → next enabled                                                   |
+| ↑                 | open (last enabled)                                                                                                                                                                                               | previous enabled                                                                                |
+| Esc               | —                                                                                                                                                                                                                 | close (focus stays on trigger)                                                                  |
+| Home / End        | —                                                                                                                                                                                                                 | first / last enabled                                                                            |
+| type char(s)      | **type-ahead in place** — buffer chars (reset ~500ms), match option-label prefix (case-insensitive), **commit that value + fire `onValueChange` WITHOUT opening** (native `<select>` / APG behaviour, finding #3) | type-ahead: buffer chars (reset ~500ms), match prefix, set active (does not commit until Enter) |
+| Tab               | native focus move                                                                                                                                                                                                 | close, then native Tab (do not trap)                                                            |
 
 - **No wrap (finding #4):** ↓ at the last enabled option is a no-op; ↑ at the first enabled is a no-op (APG listbox
   convention). Home/End jump to first/last enabled. **PageUp/PageDown = out of scope** for a short closed list.
@@ -170,6 +176,7 @@ the trigger on close"; INTERP: WAI-ARIA combobox+activedescendant pattern.]
   call `onValueChange` (both modes), close (if open), keep focus on the trigger.
 
 ## 3. API (exported `SelectProps<T>` — verbatim from the contract, generic default `string`)
+
 [FACT: select.md:9-23 authors this interface FLAT + generic.] The contract is authoritative; ship it verbatim
 (deliverable = the doc — do not rewrite the authored surface).
 
@@ -183,7 +190,7 @@ export interface SelectProps<T extends string = string> {
   disabled?: boolean
   invalid?: boolean
   required?: boolean
-  size?: 'sm' | 'md' | 'lg'   // default 'md'
+  size?: 'sm' | 'md' | 'lg' // default 'md'
   name?: string
 }
 // + pass-through: aria-label / aria-labelledby / aria-describedby / id …
@@ -202,7 +209,7 @@ export interface SelectProps<T extends string = string> {
   `T=string`, export `SelectProps<T>`, and **cast the wrapped component to a generic-preserving call signature**
   intersected with the exotic type so it stays usable as a component AND narrows `T`:
   `Select as unknown as (ForwardRefExoticComponent<SelectProps & RefAttributes<HTMLButtonElement>> & <T extends
-  string = string>(p: SelectProps<T> & { ref?: Ref<HTMLButtonElement> }) => ReactElement)` — so `onValueChange:(v:T)`
+string = string>(p: SelectProps<T> & { ref?: Ref<HTMLButtonElement> }) => ReactElement)` — so `onValueChange:(v:T)`
   narrows to the `options` value union at the call site while `displayName`/exotic-assignability are preserved.
   Same **technique family** as the Input `NativeInputEl as unknown as ForwardRefExoticComponent<…>` cast
   (input.tsx:109-111) — but a distinct target (Input's is non-generic); no `any`, one commented `as unknown`.
@@ -214,6 +221,7 @@ export interface SelectProps<T extends string = string> {
   `aria-label`/`aria-labelledby`. Mirrors Input's warn. [FACT: select.md §A11y "Name: <label>/aria-label"]
 
 ## 4. 8 visual states (contract §Visual States — `loading` = slot-deferred)
+
 default (closed, value shown) · hover (trigger border strengthens) · focus (`:focus-visible` ring on the button) ·
 active (**open** — trigger focused + panel visible, `aria-expanded=true`) · disabled (muted, not focusable —
 `disabled` on the button removes it from tab order) · **loading** (async options → spinner in trigger + `aria-busy`
@@ -223,10 +231,11 @@ border + `aria-describedby` pass-through + `aria-invalid`) · empty (no value �
 `text.muted`). [FACT: select.md §Visual States]
 
 ## 5. Accessibility (contract §A11y — the gated core of this primitive)
+
 - **Roles:** trigger `role="combobox"` + `aria-haspopup="listbox"` + `aria-expanded` + `aria-controls`→listbox id
-  + `aria-activedescendant`→active option id (when open). Panel `role="listbox"` + **`aria-multiselectable="false"`**
-  (explicit single-select, APG). Each option `role="option"` + `aria-selected`. Per-instance ids via `useId()` (§1
-  — never index-only, finding #2). [FACT: select.md §A11y]
+  - `aria-activedescendant`→active option id (when open). Panel `role="listbox"` + **`aria-multiselectable="false"`**
+    (explicit single-select, APG). Each option `role="option"` + `aria-selected`. Per-instance ids via `useId()` (§1
+    — never index-only, finding #2). [FACT: select.md §A11y]
 - **Name:** external `<label htmlFor={id}>` or `aria-label`/`aria-labelledby` (warn if none). **The listbox MIRRORS
   the trigger's accessible name** (`aria-label`/`aria-labelledby`) so SR users hear the list's name on entry
   (finding #11). **State:** `invalid`→`aria-invalid` (+ `aria-describedby` pass-through for the error text);
@@ -236,6 +245,7 @@ border + `aria-describedby` pass-through + `aria-invalid`) · empty (no value �
 - Storybook `addon-a11y` must be clean on the trigger + open panel (axe: combobox/listbox/option wiring).
 
 ## 6. Files
+
 - `packages/ui/src/components/select.tsx` — the primitive (trigger + portalled panel + state/keyboard/type-ahead + positioning).
 - `packages/ui/src/components/select.stories.tsx` — Visual Gate surface: all 8 states × light｜dark; sizes sm/md/lg;
   empty (placeholder) / selected; open (panel visible) with active + selected + disabled options; invalid; disabled;
@@ -249,6 +259,7 @@ border + `aria-describedby` pass-through + `aria-invalid`) · empty (no value �
 - `packages/ui/src/index.ts` — barrel export `Select` + `SelectProps` (verify barrel is the export site at impl).
 
 ## 7. Decisions — with grounding label (FACT = in a doc · INTERP = derived · UNKNOWN = doc silent)
+
 - **D1 — hand-built on `@tamagui/core`, no new dep** (not `@tamagui/select`/the kit). [FACT: U1–U3 shipped pattern;
   ADR-001 §9 "Tamagui = the library" + core IS Tamagui; DS-5 `_index.md:38-39` UI-1 = the implementation.] The
   earlier "kit vs hand-build" framing was a drift Victor corrected; the pattern + task purpose already answer it.
@@ -277,6 +288,7 @@ border + `aria-describedby` pass-through + `aria-invalid`) · empty (no value �
   even though ADR-001 §9 lists lucide-react — it is not installed and U1–U3 used inline SVG. [FACT: checkbox.tsx SVG]
 
 ## 8. Definition of Done (U4)
+
 - [ ] `SelectProps<T>` = the contract interface verbatim (D6); controlled + uncontrolled both drive `onValueChange`.
 - [ ] Roles: trigger `combobox`+`aria-haspopup=listbox`+`aria-expanded`+`aria-controls`+`aria-activedescendant`;
       panel `listbox`+`aria-multiselectable=false` + name mirrored from trigger; options `option`+`aria-selected`;
@@ -299,6 +311,7 @@ border + `aria-describedby` pass-through + `aria-invalid`) · empty (no value �
       disabled option, invalid border, placeholder, flip-up, horizontal clamp, dark-mode panel elevation — Victor confirms.
 
 ## 8b. Build result + gates (2026-08-08) — IMPLEMENTED, Visual Gate PASS
+
 Files: `components/select.tsx` · `select.stories.tsx` · `select.test.tsx` (24 jsdom) · `internal/select-styles.ts` ·
 `tamagui.config.ts` (+`light_/dark_Select`, + the DEF-U4-e line-height fix) · `index.ts` barrel. typecheck 2/2 ·
 @vida/ui **92/92** · build + build-storybook ✓ · root 10/10.
@@ -309,6 +322,7 @@ selected Cherry → check · active/hover highlight `#F8FAFC`/`#1E293B` · inval
 `#64748B`/`#94A3B8` · flip-up (panelY 520 < triggerY 622) · 0 page errors.
 
 **Two things the Visual Gate caught that typecheck + 92 tests passed clean** (why the gate exists):
+
 - **Flip mixed top+bottom** → panel squished to 10px. Tamagui's `style` does NOT clear a stale inline `top` when a
   later render omits it → the fixed panel got both. Fixed: position with a **single `top`** (compute the flipped top
   from the measured height), never top+bottom together.
@@ -317,9 +331,10 @@ selected Cherry → check · active/hover highlight `#F8FAFC`/`#1E293B` · inval
   Latent on EVERY primitive (glyphs overflowed a too-short box). Fixed at the Tamagui boundary — **ratio→px**
   (`round(fontSize×lineHeight)`) in `tamagui.config.ts` — pipeline stays ratio-pure. [DEF-U4-e; verified Button +
   Checkbox unregressed.] [[tamagui-createfont-lineheight-ratio-is-px]]
-Deviations were corrective bug-fixes (not approach changes) — no §XXVIII re-gate needed.
+  Deviations were corrective bug-fixes (not approach changes) — no §XXVIII re-gate needed.
 
 ## 9. Deferrals + defects (bounded, not silent — flagged for DS / later units)
+
 - **DEFER-U4-a — option virtualization (contract "virtualized above ~100 items").** U4 renders all options.
   Justification: the contract's own Intent fences Select to a "known, **closed** list" and explicitly excludes
   large/async search ("NOT large async search → `Combobox`"), so a >100-option Select is out of the component's

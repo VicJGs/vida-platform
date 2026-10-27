@@ -7,6 +7,7 @@
 > `022_knowledge` + `008_knowledge_review`). Validators: `@vida/core/validators/knowledge.ts`.
 
 ## Persistence model
+
 - DB-6 `createRepository` per table, `encryptedFields:[]` (M1.0), `softDelete:true` on `knowledge_objects` +
   `object_kinds` + (S2) `knowledge_containers` + `references`. `create()` echoes the input row → serializers backfill
   notNull-defaults + coalesce nullables to null (faithful echo). `json<T>()` columns serialize/parse at the service
@@ -19,6 +20,7 @@
   `knowledge_object`/`knowledge_container`/`reference` are pre-seeded in `ENTITY_TYPES`.
 
 ## Exposed surface — S1
+
 ```ts
 createKnowledgeService({ db, deviceId }): KnowledgeService
 
@@ -34,10 +36,12 @@ getObject(id): Promise<KnowledgeObject | null>
 listObjects({ kindId?, parentObjectId?, status?, difficulty? }): Promise<KnowledgeObject[]>
 deleteObject(id): Promise<void>                 // soft delete
 ```
+
 Input schemas (`validators/knowledge.ts`): `CreateObjectKindSchema`/`UpdateObjectKindSchema`,
 `CreateKnowledgeObjectSchema`/`UpdateKnowledgeObjectSchema` (**`mastery_level` omitted** → unsettable, KN-9).
 
 ## Exposed surface — S2 (containers + references + link/tag cross-cut)
+
 ```ts
 // containers (KNO-12/14) — nesting rides entity_tags, never parent_id (KN-7)
 createContainer(input): Promise<KnowledgeContainer>        // {container_type, name}; faithful echo
@@ -59,15 +63,18 @@ tagMembership(containerId, memberRef, scopedTag): Promise<EntityTagRow>  // guar
 untagMembership(containerId, memberRef, scopedTag): Promise<void>        // guards container only (remove stays cleanable)
 listMemberships(scopedTag): Promise<EntityTagRow[]>       // list-by-tag; soft-del filtered
 ```
+
 `KnowledgeEntityRef = {entityType, entityId}` (local — not the spaces `TaggableRef`, to keep the dep surface
 `{SpacesService, BacklinkResolver}`). Input schemas: `CreateKnowledgeContainerSchema`, `AddReferenceSchema`.
 
 ## S3 surface — review engine ① (KNO-15..20), delegated to `foundation/review`
+
 `KnowledgeServiceDeps` adds the required `review: ReviewEngine`. The engine is a no-`this.` factory
 (`createReviewEngine(db, deviceId, { capability })`, home `foundation/review/`), composed at app-wiring as
 `createCapabilityRegistry → createReviewEngine → createKnowledgeService`. Cross-consumed (flashcards S7 + future).
 `KnowledgeService` re-exposes the verbs by bare method reference; `resolveDefaultMethod` is the one wrapper (kind
 lookup → delegate).
+
 ```
 listMethods(): Promise<CapabilityDefinition[]>                       // capability.list() filtered kind='study_method'
 registerMethod(input): Promise<CapabilityDefinition>                 // empty-envelope register → get; RegisterMethodSchema
@@ -79,6 +86,7 @@ listBindings(targetType, targetId): Promise<MethodBinding[]>        // by target
 unbindMethod(id): Promise<void>                                      // guard → MethodBindingNotFoundError
 resolveDefaultMethod(kindId): Promise<string | null>                // 2-tier: default_method_id else null; ObjectKindNotFoundError on miss
 ```
+
 Engine input schemas: `DefineCurveSchema`, `RegisterMethodSchema`, `BindMethodSchema`.
 
 Typed errors: `ObjectKindNotFoundError`, `InvalidParentRefError`, `HierarchyCycleError`,
@@ -89,10 +97,12 @@ errors `UnknownEntityType` (bad target type) / `TagNotFound` (bad scopedTag) / `
 Constant: `KNOWLEDGE_OBJECT_ENTITY_TYPE = 'knowledge_object'` (the tag/pages entity_type; consumed S2/S6).
 
 ## S4 surface — review engine ② (KNO-21..24), engine verbs delegated + `rollupMastery` knowledge-owned
+
 Engine (`foundation/review`) gains the generic verbs; `KnowledgeService` re-exposes them by bare reference;
 `rollupMastery` is the one knowledge wrapper (walks `knowledge_objects`, composes `measurement.rollup`, imported).
 Mastery is **derive-on-read** (never stored). S4 imports the pure `foundation/measurement` free functions
 (`normalize`/`rollup`) — the FIRST service consumer.
+
 ```
 recordReview({objectId, methodId, quality?}): Promise<ReviewEvent>   // append-only; reviewed_at=now; no mastery write
 getDue(range:{from,to}, {level?}): Promise<ReviewDueItem[]>          // due-queue; never-reviewed ⇒ due now (dueAt null)
@@ -100,20 +110,24 @@ dueIn(objectId, at?=now): Promise<boolean>                           // single-o
 deriveMastery(objectId): Promise<number | null>                      // 0–100 (latest-quality qualitative); null=unmeasured
 rollupMastery(objectId): Promise<number | null>                      // measurement.rollup up parent_object_id; visited-set; guards
 ```
+
 `ReviewDueItem = {targetType, targetId, methodId, dueAt: number|null}` (renamed from `DueItem` — sessions owns that
 name; barrel-collision rename). Input schema: `RecordReviewSchema`. Constants: `DAY_MS`, `DEFAULT_INTERVAL_DAYS=1`
 (M1.0 fallback), `QUALITY_SCALE_MAX=5`. No new `@vida/types` (`ReviewEvent` exists). Non-linear curves = build-phase.
 
 ## S5 surface — measurement source + Education seams (KNO-25/26/27/42)
+
 The KN-10 cross-module contract: Knowledge exposes a mastery SOURCE; Education owns the Program-level rollup + the
 syllabus-as-calendar entity. Composes S4's `rollupMastery` for the one measurable signal; **no new dep, no schema,
 no `@vida/types` change.** The scalar `measurement` source-registry is NOT bound (sync/scalar API can't carry
 async/per-subject/struct mastery, and no consumer exists) — the exposure is the service method.
+
 ```
 getMasterySource(subjectRef): Promise<MasterySource>   // subjectRef = Subject-level knowledge_object id (NOT the
                                                         // container_type='subject' container); trusted from caller
                                                         // (Subject/Unit/Topic are positional, no level attribute)
 ```
+
 `MasterySource = {objectMastery, assessmentResults, paceVsSyllabus: number|null}` (service-layer shape).
 `objectMastery` = `rollupMastery(subjectRef)`; `assessmentResults` (KNO-27) + `paceVsSyllabus` (KNO-26) are deny-safe
 `null` (Education entities unbuilt; No-Guessing). Unresolved ref → `KnowledgeObjectNotFoundError` (guard via
@@ -121,9 +135,11 @@ getMasterySource(subjectRef): Promise<MasterySource>   // subjectRef = Subject-l
 registry is not bound; KNO-26/27 stay ⏸ DEFERRED-SEAM; KNO-42 = BUILT (null discipline).
 
 ## S6 surface — pages-notes + compound sets + lab + AI/search/ingestion seams (KNO-28,31,32,33,34,35,36,37,43)
+
 `KnowledgeServiceDeps` adds `notes: NotesService` (REQUIRED — `openObjectNote`) + `ai?: AiService` / `ingestion?:
 IngestionGuard` (OPTIONAL deny-safe). **No schema, no new dep, no `@vida/types` change** — `compound_sets` +
 `knowledge_lab_entries` already ship in `022_knowledge`; `CompoundSet`/`KnowledgeLabEntry` interfaces authored at S1.
+
 ```
 openObjectNote(objectId): Promise<PageRow>                          // ensureEntityNote('note','knowledge_object',id,{title}); idempotent; guards object; seed.title→content (not title col)
 buildCompoundSet(consumerModule, spec?, name?): Promise<CompoundSet> // is_default:false; spec JSON-serialized (opaque, not re-parsed on read)
@@ -137,6 +153,7 @@ listLabEntries(): Promise<KnowledgeLabEntry[]>                      // soft-del 
 searchKnowledge(query): Promise<KnowledgeSearchResult>             // {status:'search-unavailable'} (DB-8 seam)
 autoPopulate(act): Promise<AutoPopulateResult>                     // optional ingestion; permitted→parser-unavailable, !permitted→refused, absent→ingestion-unavailable
 ```
+
 Service-layer result types (not `@vida/types` — the `MasterySource` precedent): `CompoundSetSpec` (opaque structured),
 `AiAssistResult` (`ready`/`ai-unavailable`), `KnowledgeSearchResult` (`search-unavailable`), `AutoPopulateResult`
 (`refused`/`parser-unavailable`/`ingestion-unavailable`). New errors: `LabEntryNotFoundError`,
@@ -146,6 +163,7 @@ Service-layer result types (not `@vida/types` — the `MasterySource` precedent)
 precedent). Idempotency: `openObjectNote` (via `ensureEntityNote`), `applyDefaultCompoundSet` (read-DB-first).
 
 ## Verification (S1 + S2 + S3 + S4 + S5 + S6)
+
 Live-store (Node 24, better-sqlite3), **67 tests** — S1 (22): seed idempotency + re-seed-when-cleared · kind CRUD ·
 object CRUD + faithful echo · `key_concepts` JSON round-trip · referential-integrity + cycle rejects · mastery-
 unsettable · listObjects filtering · soft-delete · sync_queue enqueue. S2 (+19): container CRUD + type-filter +
@@ -172,9 +190,11 @@ listLabEntries · searchKnowledge→search-unavailable · autoPopulate no-dep/pe
 (**1413**), typecheck 0, eslint 0, gitleaks clean (Node 24, better-sqlite3 ABI).
 
 ## S7 surface — Flashcards sub-service (`services/flashcards`, FC-01…12)
+
 The ADR-005 reference study-method service over Knowledge's generic engine. `createFlashcardsService({db, deviceId,
 review, spaces, backlinks, sessions, sessionRegistry})`. **No schema, no new dep, no `@vida/types` change** (the
 `flashcards` table + `Flashcard` interface ship from `022_knowledge`/S1).
+
 ```
 registerFlashcards(): Promise<void>            // FC-02 call-once: study_method capability (roles in config_schema) + 'review' sub-type (empty envelope); idempotent
 createCard/updateCard/getCard/listCards/deleteCard  // FC-01/05/12; card_type + cloze validated (InvalidCardType/MalformedCloze); media json boundary; soft-delete
@@ -184,6 +204,7 @@ startReview(cardIds): Session                  // FC-03 create a 'review' sessio
 completeReview(sessionId, [{cardId, objectId, quality}]): ReviewEvent[]  // FC-03/06 one review_event/card (direct recordReview, object-keyed) + complete; ReviewEmitFailed on failure
 dueCards([{cardId, objectId}], at?): Flashcard[]  // FC-07/09 excludes suspended + unbound-object (CardNotBound) cards; includes due (review.dueIn)
 ```
+
 Card→engine model (headline #1): a card reviews a `knowledge_object`; binding lives on the object (no card-level
 target); reviewed `objectId` supplied explicitly per card. Emit-only (FC-6). `CardNotBound` = an exclusion condition
 (not a thrown error, `contract.md:36`). Errors: `InvalidCardType`/`MalformedCloze`/`ReviewEmitFailed`/
@@ -193,6 +214,7 @@ target); reviewed `objectId` supplied explicitly per card. Emit-only (FC-6). `Ca
 read-source `generateCards` variant · FC-10 durable retry (ADR-003/M4).
 
 ## Verification (S7)
+
 Live-store (Node 24), **11 flashcards tests** (`services/flashcards/__tests__`): card CRUD + faithful echo + media JSON
 round-trip · InvalidCardType · cloze mask (MalformedCloze / ok) · listCards type+suspended filter + soft-delete +
 FlashcardNotFoundError · registration (study_method roles + idempotent) · startReview+completeReview one-event-per-card
@@ -202,16 +224,19 @@ generateCards + dangling source · sync_queue enqueue. Full `@vida/core` suite g
 gitleaks clean.
 
 ## S8 surface — event fan-out + Journal contribution (KNO-38/39/40)
+
 Knowledge becomes an **emit-only producer** via two mechanisms, **both dormant in M1** (no consumer handler
 registered). `KnowledgeServiceDeps` adds an OPTIONAL `effects?: { rail, registry }` (the checkins/habits port; SHAPE
 inlined — `checkins` already exports `EffectsPort` and this barrel is `export *`, so a second named export collides).
 **No schema, no new required dep, no `@vida/types` change.**
+
 ```ts
 recordReview(input): Promise<ReviewEvent>   // WRAPPED (was the bare engine ref): post-commit fan-out —
                                             //   review.recorded → [emit_measurement_signal, award_xp] (unconditional)
                                             //   mastery.changed → [emit_measurement_signal] (iff ev.quality != null)
 getDayKnowledgeDigest(date): Promise<{objectsCreated, reviewsRecorded}>  // UTC-day window; count() (soft-del auto)
 ```
+
 New file `services/knowledge/journal.ts` (barrel-exported): `createKnowledgeJournalContribution(svc)` +
 `registerKnowledgeJournal(registry, svc)` — a `module:'knowledge'`/`sectionKey:'summary'` contribution;
 `summary(date)` = the dated digest, empty-safe (`state:'empty'` on an idle day), `dataPoints` `objects_created`+
@@ -223,6 +248,7 @@ persisted event), dormant-guarded (`registry.resolve` before `applyEffect`). Fla
 `review.recordReview` deliberately fires nothing in M1 (BR-KN-S7-5).
 
 ## Verification (S8)
+
 Live-store (Node 24), **9 tests** (`__tests__/knowledge-s8-events.test.ts`): dormant no-op (no effects) · push fires
 review.recorded→[measurement,xp] + mastery.changed→[measurement] once each (non-null quality) · TWO distinct reviews
 each fire award_xp (grain proof) · same-event replay dedups (`applied:false`, handler once) · throwing-handler failure
@@ -232,4 +258,5 @@ contribution success/empty + registry placement. Full `@vida/core` suite green (
 gitleaks clean.
 
 ## ① COMPLETE
+
 All 8 slices shipped. Next: PR the `mod-knowledge-rebuild` branch. ② `fe-knowledge` (LIF-188) = separate P6.

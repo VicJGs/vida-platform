@@ -65,14 +65,36 @@ const Root = styled(View, {
   backgroundColor: '$colorSurfacePrimary',
 })
 // PhaseLabel = the editorial EYEBROW (caption · uppercase · wide tracking · muted) — the codec views-pass vocabulary.
-const PhaseLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', letterSpacing: '$wide', color: '$colorTextMuted', textTransform: 'uppercase' })
+const PhaseLabel = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$caption',
+  letterSpacing: '$wide',
+  color: '$colorTextMuted',
+  textTransform: 'uppercase',
+})
 const ContextLabel = styled(Text, { fontFamily: '$body', fontSize: '$caption', color: '$colorTextMuted' })
-const Time = styled(Text, { fontFamily: '$display', fontSize: '$display', fontWeight: '600', color: '$colorTextPrimary' })
+const Time = styled(Text, {
+  fontFamily: '$display',
+  fontSize: '$display',
+  fontWeight: '600',
+  color: '$colorTextPrimary',
+})
 // 6px hairline track (L1c; was 8). Progress fill steps per tick (no CSS transition, PW-5/B12-safe).
-const Track = styled(View, { width: '100%', height: 6, borderRadius: '$full', backgroundColor: '$colorSurfaceSecondary', overflow: 'hidden' })
+const Track = styled(View, {
+  width: '100%',
+  height: 6,
+  borderRadius: '$full',
+  backgroundColor: '$colorSurfaceSecondary',
+  overflow: 'hidden',
+})
 const Fill = styled(View, { height: '100%', borderRadius: '$full', backgroundColor: '$colorBrandPrimary' })
 const Controls = styled(View, { flexDirection: 'row', gap: '$8' })
-const Complete = styled(Text, { fontFamily: '$body', fontSize: '$small', fontWeight: '600', color: '$colorBrandPrimary' })
+const Complete = styled(Text, {
+  fontFamily: '$body',
+  fontSize: '$small',
+  fontWeight: '600',
+  color: '$colorBrandPrimary',
+})
 
 // ── ProgressRing (L2) — a circular progress indicator around the time. aria-hidden (role="timer" + mm:ss announce
 // progress). Colors via useTheme().get('web') — the Tamagui-documented SVG call [getThemeProxied.d.ts ThemeGettable.get];

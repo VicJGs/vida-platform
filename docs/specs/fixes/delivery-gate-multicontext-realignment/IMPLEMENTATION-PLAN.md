@@ -11,26 +11,28 @@ build-step increment per substrate**, each running the full per-issue flow, in d
 when the census aligns all its homes.
 
 **"Independent substrate" (objective test — all three):** (a) own owning ADR, (b) own `foundation/<x>`/service
-home, (c) **buildable against the others' *public interface*** — it rides a shared base or peer through that base's
-documented API, and does not need to read a peer's *internal/core tables* to be built or tested.
+home, (c) **buildable against the others' _public interface_** — it rides a shared base or peer through that base's
+documented API, and does not need to read a peer's _internal/core tables_ to be built or tested.
 
 **Fold (the objective exclusion, finding 3).** A sub-part is a **fold** — one increment with its host, not a peer —
 when it **reads the host's core tables/owning aggregate directly** and **cannot be built against a stable public
-interface without the host present.** Precedent, now *derived* not decreed: **Views (ADR-007) → AR-6** — the view
+interface without the host present.** Precedent, now _derived_ not decreed: **Views (ADR-007) → AR-6** — the view
 engine reads Spaces' `entity_links`/space rows directly (`reconstructed-structure:63` home `{spaces,views}`), so it
 is not independently buildable; it folds. A fold is always **declared** in the structure, never implicit.
+
 - Applying the test: **AR-7's four are NOT folds** — `capability/measurement/economy` each own distinct tables and
-  ride `effects` through the rail's *public* write-API/handler registry (and economy→measurement is a *dependency
-  edge* on the public binding, not a core-table read). So AR-7 = **⊞4**. **AR-6 = 1** (Views folds, derived above).
+  ride `effects` through the rail's _public_ write-API/handler registry (and economy→measurement is a _dependency
+  edge_ on the public binding, not a core-table read). So AR-7 = **⊞4**. **AR-6 = 1** (Views folds, derived above).
   **DB-9 = 1** (enums+validators = 2 homes, one deliverable across two layers — home-count, not substrate-count).
 
 **Not the trigger:** Home/census-count. The census counts declared Home paths (`tracker_sync.py:941-944`); that is
-the *detector* (a >1-home issue must be adjudicated) but not the *rule* (DB-9 is 2 homes, 1 gate).
+the _detector_ (a >1-home issue must be adjudicated) but not the _rule_ (DB-9 is 2 homes, 1 gate).
 
-**Integration-class exclusion:** an issue that *wires* already-built contexts rather than *authoring* substrates
+**Integration-class exclusion:** an issue that _wires_ already-built contexts rather than _authoring_ substrates
 (e.g. HARD-2 "rollups live" over AR-7's substrates) is **one gate**; reassess only if it authors new substrate structure.
 
 **Marking (Outcome-cell marker, orthogonal to Status — finding 2/5):** `⊞N` written **into the Outcome cell**.
+
 - **AR-7 = ⊞4** — `effects → capability → measurement → economy`.
 - **AR-8 = ⊞≥2 (pin at AR-8's turn)** — floor recorded; exact N set at AR-8's own `[B]` baseline (deferral visible in the artifact, finding 7).
 - **AR-6 / DB-9 / HARD-2 = unmarked (1 gate).**
@@ -38,21 +40,29 @@ the *detector* (a >1-home issue must be adjudicated) but not the *rule* (DB-9 is
 ## B. Exact edits
 
 ### Edit 1 — `docs/specs/foundation/delivery-structure-reconstruction/reconstructed-structure.md`
+
 **1a. §3 DF register — append after the EXISTING DF-10 (line 41) as `DF-11` (DF-10 is taken = the `#` order):**
+
 ```
 | **DF-11** *(this session)* | multi-substrate issue had no per-increment gating spec — the delivery-plan's per-issue flow (§2) assumed issue = one build-context (true only of the single-substrate issues it was written against, AR-5/AR-6) | per-substrate **increment rule** + **enforced gate precondition** written into `delivery-plan §2/§3`; issues authoring >1 independent substrate marked `⊞N` in Outcome (AR-7 ⊞4, AR-8 ⊞≥2); folds/coupled/integration stay 1 gate (Views→AR-6, DB-9, HARD-2) |
 ```
+
 **1b. §2 glossary — add a NEW bullet after line 27 (`⊕agg`), a sibling to `DF`/`⊕agg` (NOT inside the Status legend line 25):**
+
 ```
   - **`⊞N`** = an **Outcome-cell** marker (orthogonal to Status): the issue authors N independent substrates and is delivered in **N gated build-step increments** — one full §XXVI double-gate per substrate, in dependency order (the multi-substrate rule, `delivery-plan §2`; DF-11). Absent = single increment. Folds (Views→AR-6) and coupled multi-layer deliverables (DB-9) are NOT marked.
 ```
+
 **1c. Row Outcome cells (edit only the Outcome column; leave ID/Status/Home/edges untouched):**
+
 - Line 64 (AR-7) Outcome → `⊞4 · capability registry + measurability + effects`
 - Line 65 (AR-8) Outcome → `⊞≥2 (pin at AR-8's turn) · backlink/export/graph-prep (search sub-part → DB-8)`
 - Line 126 (HARD-2) Outcome → append ` (integration-class — 1 gate, DF-11)`
 
 ### Edit 2 — `docs/roadmap/m1.0-delivery-plan.md`
+
 **2a. §2 — insert after line 50 (Per-issue canonical flow):**
+
 ```
 **Multi-substrate issues (the increment rule · DF-11).** When an issue authors **more than one independent
 substrate** — each with its own owning ADR, its own `foundation/<x>`/service home, and buildable against the
@@ -66,19 +76,23 @@ that reads its host's core tables directly and cannot be built without the host 
 *declared* fold, precedented by Views (ADR-007) → AR-6 (`:164`), never implicit. Integration-class issues that wire
 already-built contexts (HARD-2) are one gate. `reconstructed-structure.md` marks each issue `⊞N` in its Outcome cell.
 ```
+
 **2b. §3 gate-policy table — extend the Substrate row (line 92) gate-policy cell:**
 `double-gate + quality-gate-engineering` → `double-gate + quality-gate-engineering (multi-substrate → one double-gate **per substrate**, §2 increment rule)`
 **2c. §3 — extend the "Gate precondition (all classes)" note (line 99-100) with an ENFORCED clause (finding 4):**
 Append: ` **Substrate-count precondition:** if an issue's Home resolves to >1 path, gate-1 does not open until its PLAN declares either \`⊞N\` (N independent substrates, per the §2 test) or an explicit fold for each extra home. An unmarked multi-home issue is rejected at gate-1 — the same failure class as an under-gathered [B] baseline.`
 **2d. §5 rows — mark the Status cell (inert to parsing, finding 6):**
+
 - Line 165 (AR-7): `⏳` → `⏳ ⊞4`
 - Line 166 (AR-8): `⏳` → `⏳ ⊞≥2`
 
 ## C. Out of scope (flagged, not fixed here)
-- **Toolkit follow-up (not this repo):** whether `tracker_sync --next` should emit per-increment **sub-heads** for a `⊞N` issue. ADR-015 / `~/dev-toolkit`. Record in the task; do not touch the toolkit. *(Critic: correct deferral — human runs N increments under one head today.)*
+
+- **Toolkit follow-up (not this repo):** whether `tracker_sync --next` should emit per-increment **sub-heads** for a `⊞N` issue. ADR-015 / `~/dev-toolkit`. Record in the task; do not touch the toolkit. _(Critic: correct deferral — human runs N increments under one head today.)_
 - **AR-8 exact N** — pinned at AR-8's `[B]` baseline (⊞≥2 floor recorded, visible in the row).
 
 ## D. Acceptance (§4)
+
 1. **DF-11** present (NOT DF-10); `⊞N` defined as its own §2 glossary bullet (not in the Status legend); AR-7/AR-8/HARD-2 Outcome cells marked.
 2. `delivery-plan §2` increment rule present with the objective fold test + DB-9/integration exclusions, each `[FACT]`-anchored.
 3. `§3` Substrate gate policy references per-substrate rule; **the enforced substrate-count precondition (2c) is present**; `§5` AR-7 `⏳ ⊞4`, AR-8 `⏳ ⊞≥2`.
@@ -88,6 +102,7 @@ Append: ` **Substrate-count precondition:** if an issue's Home resolves to >1 pa
 7. Docs commit alone (no code); AR-7 un-blocked afterward.
 
 ## E. Build Steps (ordered)
+
 1. Edit 1a (DF-11) → 1b (⊞N glossary bullet) → 1c (AR-7/AR-8/HARD-2 Outcome).
 2. Edit 2a (§2 rule) → 2b (§3 policy) → 2c (§3 enforced precondition) → 2d (§5 Status marks).
 3. Grep-verify acceptance #5; **run acceptance #6 live census regression**; fix any drift.

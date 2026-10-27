@@ -1,11 +1,12 @@
 <!-- Conventions — features/journals · /documentation Phase 2 · sources: journal-service.ts (0 lines) · note.ts · notes-and-pages/* · sessions-and-scheduling (dueIn) · CLAUDE.md conventions · docs/intake/journals.md -->
 
-# Conventions — Journals  (level: Feature / integration layer)
+# Conventions — Journals (level: Feature / integration layer)
 
 > INTENDED (`journal-service.ts` = 0 lines). Journals is the aggregation engine; build it as a **registry
 > consumer**, the same seam used for `dueIn`, Session effects, and study-methods.
 
 ## How to build here
+
 - **Aggregate via the registry; name no module.** `journal-service` iterates registered contributions
   (`summary(date)` + `dueIn(range)`). NEVER `import` a feature module to read its data — that re-creates the
   god-context + the dependency cycle JR-2 forbids. A new module appears by registering. `[FACT: JR-3; ADR-004 dueIn]`
@@ -22,6 +23,7 @@
 - **Degrade per section.** A failing provider blanks ITS section (explicit empty/error), never the journal. `[FACT: JR-1 fail-loud]`
 
 ## Naming & layout
+
 - The engine is `journal-service`; the frozen record is `journal_snapshots` (not "journal_history"); a
   module's hook is a **journal contribution** (`section_key` + `summary(date)`).
 - Reuse the `dueIn(range)` name for the agenda (shared with Sessions/Calendar) — do not invent a parallel.
@@ -29,6 +31,7 @@
   `-- [E]` on `sections_data` · `_sync_*` on `journal_snapshots` · JSON-as-TEXT for section data. `[FACT: CLAUDE.md Conventions]`
 
 ## Landmines / local "never do"
+
 - **The engine is a stub — never cite it as behaviour.** `journal-service.ts` = 0 lines; docs describe INTENDED. `[FACT: wc -l = 0]`
 - **Do NOT duplicate the Notes & Pages journal-page docs.** NP-2, the `/summary` block, the free-form entry,
   and `summary_config` live there — reference, never restate or contradict. `[FACT: notes-and-pages/*]`
@@ -42,5 +45,6 @@
   do not fabricate view behaviour. `[INTENT: J5]`
 
 ## Completion checklist
+
 - [x] patterns in use (INTENDED, marked; registry-consumer recipe) · [x] naming & layout · [x] landmines
-  (god-context, cycle, N&P duplication, live-past) · [x] [FACT]/[INTENT] on each claim
+      (god-context, cycle, N&P duplication, live-past) · [x] [FACT]/[INTENT] on each claim

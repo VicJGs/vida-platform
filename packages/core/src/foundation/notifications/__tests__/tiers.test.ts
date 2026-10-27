@@ -10,13 +10,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { selectTier, channelsFor } from '../tiers'
-import {
-  DELIVERY_TIERS,
-  DELIVERY_CHANNELS,
-  NOTIFICATION_NATURES,
-  PLATFORMS,
-  type Platform,
-} from '../types'
+import { DELIVERY_TIERS, DELIVERY_CHANNELS, NOTIFICATION_NATURES, PLATFORMS, type Platform } from '../types'
 
 const NATIVE: Platform[] = ['ios', 'android', 'desktop']
 

@@ -47,7 +47,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -90,9 +93,7 @@ describe('migration 005 wiring', () => {
         `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('capability_definitions','block_instances','capability_grants')`,
       )
     ).flat()
-    expect(names).toEqual(
-      expect.arrayContaining(['capability_definitions', 'block_instances', 'capability_grants']),
-    )
+    expect(names).toEqual(expect.arrayContaining(['capability_definitions', 'block_instances', 'capability_grants']))
     // >= 5 (not ==): the 3 tables above prove migration 005 ran; the exact latest
     // belongs to whichever migration is last (future increments add 006+).
     expect(await currentVersion(driver)).toBeGreaterThanOrEqual(5)
@@ -110,11 +111,7 @@ describe('CapabilityRegistry', () => {
     expect(resolved.id).toBe('my_streak_widget')
     expect(resolved.effects).toEqual(['award_xp'])
 
-    const queued = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.table_name, 'capability_definitions'))
-      .all()
+    const queued = await db.select().from(syncQueue).where(eq(syncQueue.table_name, 'capability_definitions')).all()
     expect(queued).toHaveLength(1) // db-6 co-transactional enqueue
   })
 
@@ -129,17 +126,17 @@ describe('CapabilityRegistry', () => {
   it('BR-2: an invalid render target → InvalidRenderTarget', async () => {
     const { db } = await harness()
     const reg = createCapabilityRegistry(db, 'device-1')
-    await expect(
-      reg.register(validUserDef({ render_targets: ['floating' as never] })),
-    ).rejects.toBeInstanceOf(InvalidRenderTarget)
+    await expect(reg.register(validUserDef({ render_targets: ['floating' as never] }))).rejects.toBeInstanceOf(
+      InvalidRenderTarget,
+    )
   })
 
   it('BR-3: an unknown declared effect → UnknownDeclaredEffect', async () => {
     const { db } = await harness()
     const reg = createCapabilityRegistry(db, 'device-1')
-    await expect(
-      reg.register(validUserDef({ effects: ['not_a_real_effect' as never] })),
-    ).rejects.toBeInstanceOf(UnknownDeclaredEffect)
+    await expect(reg.register(validUserDef({ effects: ['not_a_real_effect' as never] }))).rejects.toBeInstanceOf(
+      UnknownDeclaredEffect,
+    )
   })
 
   it('BR-4: a missing terminal state for a supported render target → MissingTerminalStates', async () => {
@@ -154,17 +151,15 @@ describe('CapabilityRegistry', () => {
     const { db } = await harness()
     const reg = createCapabilityRegistry(db, 'device-1')
     // 'log_time' is a real EFFECT_TYPE but NOT in the shipped envelope {complete_habit_occurrence, award_xp, habit}.
-    await expect(
-      reg.register(validUserDef({ effects: ['log_time'] })),
-    ).rejects.toBeInstanceOf(CapabilityPrivilegeExceeded)
+    await expect(reg.register(validUserDef({ effects: ['log_time'] }))).rejects.toBeInstanceOf(
+      CapabilityPrivilegeExceeded,
+    )
   })
 
   it('BR-6: a shipped id and a duplicate user id both → DuplicateCapabilityId', async () => {
     const { db } = await harness()
     const reg = createCapabilityRegistry(db, 'device-1')
-    await expect(
-      reg.register(validUserDef({ id: 'habit_logger' })),
-    ).rejects.toBeInstanceOf(DuplicateCapabilityId)
+    await expect(reg.register(validUserDef({ id: 'habit_logger' }))).rejects.toBeInstanceOf(DuplicateCapabilityId)
 
     await reg.register(validUserDef())
     await expect(reg.register(validUserDef())).rejects.toBeInstanceOf(DuplicateCapabilityId)

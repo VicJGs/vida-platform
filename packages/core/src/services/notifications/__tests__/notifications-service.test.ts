@@ -21,7 +21,11 @@ import { createRepository } from '../../../db/repository'
 import { notifications } from '../../../db/schema/notifications'
 import { syncQueue } from '../../../db/schema'
 import type { NotificationType, MergedPreferences } from '@vida/types'
-import { createNotificationDeliveryEngine, type WakePayload, type OsSchedulerPort } from '../../../foundation/notifications'
+import {
+  createNotificationDeliveryEngine,
+  type WakePayload,
+  type OsSchedulerPort,
+} from '../../../foundation/notifications'
 import { createEffectRegistry, createEffectRail } from '../../../foundation/effects'
 import type { DueItem, TimeRange } from '../../sessions'
 import { createJournalRegistry } from '../../journals'
@@ -55,7 +59,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -122,7 +129,9 @@ async function setup(opts?: {
     ...(opts?.osScheduler ? { osScheduler: opts.osScheduler } : {}), // S4: default deny-safe unless injected
   })
   const preferences = opts?.prefs
-    ? { getMergedPreferences: async (): Promise<MergedPreferences> => ({ ...USER_PREFERENCES_DEFAULTS, ...opts.prefs }) }
+    ? {
+        getMergedPreferences: async (): Promise<MergedPreferences> => ({ ...USER_PREFERENCES_DEFAULTS, ...opts.prefs }),
+      }
     : undefined
 
   // S4: the Sessions dueIn agenda source — a controllable stub (default empty = dormant lanes at M1).
@@ -259,7 +268,10 @@ describe('mod-notifications S1 — inbox reads + lifecycle', () => {
   it('co-transactionally enqueues a sync_queue row on a mutation', async () => {
     const id = await h.seed({ title: 'x' })
     await h.svc.markRead(id)
-    const q = await h.db.select().from(syncQueue).where(and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, id)))
+    const q = await h.db
+      .select()
+      .from(syncQueue)
+      .where(and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, id)))
     expect(q.length).toBeGreaterThan(0)
   })
 })
@@ -304,7 +316,12 @@ describe('mod-notifications S2 — Preferences gating + deliver + delivery-audit
 
   it('NF-6 — the wake payload carries ONLY routing, zero content/type/entity', async () => {
     const h = await setup()
-    const id = await h.seed({ type: 'reminder', effect_event_id: 'r|due|surface_notification', title: 'secret', entity_type: 'habit' })
+    const id = await h.seed({
+      type: 'reminder',
+      effect_event_id: 'r|due|surface_notification',
+      title: 'secret',
+      entity_type: 'habit',
+    })
     await h.svc.deliver(id, { routing: R })
     expect(h.pushCalls[0]).toEqual({ kind: 'wake', userId: 'u1' }) // no title/type/entity ever
   })
@@ -336,7 +353,9 @@ describe('mod-notifications S2 — Preferences gating + deliver + delivery-audit
   })
 
   it('quiet hours (spanning midnight) suppress ALL external; in-app records (NF-5)', async () => {
-    const h = await setup({ prefs: { quiet_hours_enabled: true, quiet_hours_start: '22:00', quiet_hours_end: '07:00' } })
+    const h = await setup({
+      prefs: { quiet_hours_enabled: true, quiet_hours_start: '22:00', quiet_hours_end: '07:00' },
+    })
     const id = await h.seed({ effect_event_id: 'e|t|surface_notification' })
     const result = await h.svc.deliver(id, { routing: R, nowMinuteOfDay: 23 * 60 }) // 23:00 — inside the window
     expect(h.pushCalls.length).toBe(0)
@@ -635,11 +654,7 @@ describe('mod-notifications S5 — Journal contribution + close-out', () => {
       .select()
       .from(syncQueue)
       .where(
-        and(
-          eq(syncQueue.table_name, 'notifications'),
-          eq(syncQueue.row_id, oldId),
-          eq(syncQueue.operation, 'delete'),
-        ),
+        and(eq(syncQueue.table_name, 'notifications'), eq(syncQueue.row_id, oldId), eq(syncQueue.operation, 'delete')),
       )
     expect(del.length).toBeGreaterThan(0)
   })

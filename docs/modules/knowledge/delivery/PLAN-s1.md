@@ -4,12 +4,14 @@
 > No-Guessing: every rule is `[FACT: src]` / `[INTENT: rule]` / `[UNKNOWN]`. Branch `mod-knowledge-rebuild`.
 
 ## §1. Context
+
 The `createKnowledgeService` spine: the user-extensible **kind registry** + the **knowledge-object hierarchy**
 below a Topic (`parent_object_id` self-ref). Baseline: schema shipped (`022_knowledge`), **zero service**, and
 `@vida/types/knowledge.ts` still carries the **pre-DB-4 stale shape** (`StudyTopic`/`FlashcardDeck`/…). S1 lays the
 persistence + validators + object/kind CRUD that every later slice composes.
 
 ## §2. Business rules (S1-scoped, cited)
+
 - **BR-S1-1 — One object entity, discriminated by `kind_id`.** All kinds are rows of `knowledge_objects`; no
   per-kind tables. `[FACT: conventions.md:12-13; schema/knowledge.ts:45-68]`
 - **BR-S1-2 — Kind registry is user-extensible + FLAT.** `object_kinds` seeds `topic`(realm=**null** — a spine
@@ -19,10 +21,10 @@ persistence + validators + object/kind CRUD that every later slice composes.
   resolved by schema). `[FACT: conventions.md:6-8; identity.md:8-9; schema/knowledge.ts:71-78 (no parent_kind_id, learning_realm nullable)]`
 - **BR-S1-3 — Hierarchy via `parent_object_id`.** The Subject›Unit›Topic spine + user kinds below Topic are all
   `knowledge_objects` chained by `parent_object_id` (self-ref, no FK). `[FACT: business-rules.md KN-3:18-25;
-  structure-data.md:56; schema/knowledge.ts:50]`
+structure-data.md:56; schema/knowledge.ts:50]`
 - **BR-S1-4 — Mastery is read-only (never hand-set).** `mastery_level` is derived (S4); S1 exposes NO setter —
   it is stripped from the create/update input schemas. `[FACT: business-rules.md KN-9:47-50; conventions.md:9-10;
-  KNO-05]` (schema: `mastery_level` nullable, no default — `schema/knowledge.ts:57`.)
+KNO-05]` (schema: `mastery_level` nullable, no default — `schema/knowledge.ts:57`.)
 - **BR-S1-5 — KN-2 boundary.** A knowledge object is NEVER the same row as an Education planning Topic — separate
   entities (the link is `entity_links`/compound-set, S2/S5). S1 writes no Education coupling; documented invariant.
   `[FACT: business-rules.md KN-2:15-17; identity.md:26-29]`
@@ -39,6 +41,7 @@ persistence + validators + object/kind CRUD that every later slice composes.
 ## §3. Scope
 
 ### In scope
+
 1. **`@vida/types/knowledge.ts` entity-interface reconcile (DB-11).** Edit-in-place, preserving/authoring
    provenance comments. Retire the 6 superseded interfaces (`StudyTopic`, `TopicReview`, `FlashcardDeck`,
    old `Flashcard`, `FlashcardReview`, `KnowledgeNote`); author the 10 schema-mirroring interfaces
@@ -74,11 +77,13 @@ persistence + validators + object/kind CRUD that every later slice composes.
      ([[repository-findwhere-skips-softdelete-filter]]).
 
 ### Out of scope (homed later — NOT built in S1)
+
 - Containers/references/link/tag (S2) · review engine (S3/S4) · mastery derivation+rollup (S4) · measurement
   source (S5) · pages-notes/compound/lab/search/ingestion (S6) · flashcards (S7) · events/journal (S8).
 - `entity_links`/`entity_tags`/mastery/education — no coupling written in S1.
 
 ## §4. Acceptance
+
 - [ ] `@vida/types` reconcile: 10 interfaces mirror the schema field-for-field (name, nullability, `@encrypted`
       tags per `[E]`); 6 stale interfaces retired; all enums + study-planner interfaces intact; provenance
       comments authored (NOT stripped); `pnpm --filter @vida/types typecheck` clean.
@@ -92,6 +97,7 @@ persistence + validators + object/kind CRUD that every later slice composes.
       typecheck 0, eslint 0, full suite green (no regression).
 
 ## §5. Implementation prompt (build order)
+
 1. Reconcile `@vida/types/knowledge.ts` (interfaces only; enums/study-planner untouched) → rebuild dist.
 2. `validators/knowledge.ts`: object/kind Zod schemas (+ wire into `validators/index.ts`).
 3. `services/knowledge/types.ts`: `KnowledgeServiceDeps`, input types (`z.infer`), `KnowledgeService` (S1 subset),
@@ -102,9 +108,10 @@ persistence + validators + object/kind CRUD that every later slice composes.
    harness from `services/habits/__tests__/habits-service.test.ts:32-64`; `migration022Knowledge` is in
    `ALL_MIGRATIONS` so a live store has the tables. **Coding note (M4):** don't shadow the Drizzle `references`
    table export with a local var named `references`.
-7. §XXIX: promote to `docs/modules/knowledge/current-{spec,business-rules}.md` (BR-S1-*).
+7. §XXIX: promote to `docs/modules/knowledge/current-{spec,business-rules}.md` (BR-S1-\*).
 
 ## Deviations ledger
+
 - **D-S1-b (code-review MINOR-A fold):** `createKind` initially omitted `deleted_at`, echoing `undefined` (the
   create-returns-input-row nullable-echo class). Fixed → `deleted_at: null` (parity with `createObject`);
   regression-asserted. Also folded 3 update-path integrity tests (MINOR-C/D + detach-to-root B). SHIP.

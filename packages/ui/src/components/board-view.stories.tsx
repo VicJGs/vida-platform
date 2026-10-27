@@ -15,20 +15,33 @@ import { Card } from './card'
 
 type Task = { id: string; title: string }
 const GROUPS: BoardGroup<Task>[] = [
-  { id: 'todo', title: 'To Do', items: [
-    { id: '1', title: 'Draft the proposal' },
-    { id: '2', title: 'Review PR #75' },
-    { id: '3', title: 'Ship the codec viewmodes' },
-  ] },
+  {
+    id: 'todo',
+    title: 'To Do',
+    items: [
+      { id: '1', title: 'Draft the proposal' },
+      { id: '2', title: 'Review PR #75' },
+      { id: '3', title: 'Ship the codec viewmodes' },
+    ],
+  },
   { id: 'doing', title: 'In Progress', items: [{ id: '4', title: 'Write the board-view spec' }] },
-  { id: 'done', title: 'Done', items: [{ id: '5', title: 'Archive old specs' }, { id: '6', title: 'Merge PR #74' }] },
+  {
+    id: 'done',
+    title: 'Done',
+    items: [
+      { id: '5', title: 'Archive old specs' },
+      { id: '6', title: 'Merge PR #74' },
+    ],
+  },
   { id: 'blocked', title: 'Blocked', items: [] },
 ]
 
 // renderCard composes an interactive Card (the LV-5 boundary — the renderer owns the listitem, not the card chrome).
 const renderCard = (t: Task) => (
   <Card interactive>
-    <Text color="$colorTextPrimary" fontSize="$small">{t.title}</Text>
+    <Text color="$colorTextPrimary" fontSize="$small">
+      {t.title}
+    </Text>
   </Card>
 )
 
@@ -67,7 +80,13 @@ export const TerminalStates: Story = {
           <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">
             {s === 'empty' ? 'board-empty (no groups = role="status")' : s}
           </Text>
-          <BoardView<Task> groups={[]} renderCard={renderCard} getKey={(t) => t.id} state={s} aria-label="Tasks board" />
+          <BoardView<Task>
+            groups={[]}
+            renderCard={renderCard}
+            getKey={(t) => t.id}
+            state={s}
+            aria-label="Tasks board"
+          />
         </View>
       ))}
     </View>
@@ -100,7 +119,13 @@ export const Density: Story = {
           <Text fontSize={12} opacity={0.6} color="$colorTextPrimary">
             {d}
           </Text>
-          <BoardView<Task> groups={GROUPS} renderCard={renderCard} getKey={(t) => t.id} density={d} aria-label="Tasks board" />
+          <BoardView<Task>
+            groups={GROUPS}
+            renderCard={renderCard}
+            getKey={(t) => t.id}
+            density={d}
+            aria-label="Tasks board"
+          />
         </View>
       ))}
     </View>

@@ -39,8 +39,16 @@ vi.mock('../db/boot', () => ({ ensureDbReady: () => Promise.resolve({ driver }) 
 
 // ── the page read + route + editor ───────────────────────────────────────────────────────────────────────────
 const row = (id: string) => ({
-  id, type: 'note', title: `Note ${id}`, content: null, is_favorite: false, is_archived: false,
-  updated_at: Date.now(), journal_date: null, icon: null, cover_image: null,
+  id,
+  type: 'note',
+  title: `Note ${id}`,
+  content: null,
+  is_favorite: false,
+  is_archived: false,
+  updated_at: Date.now(),
+  journal_date: null,
+  icon: null,
+  cover_image: null,
 })
 vi.mock('../db/composition-root', () => ({
   getServices: () =>
@@ -72,7 +80,8 @@ function ui(strict = false) {
   )
   return strict ? <StrictMode>{tree}</StrictMode> : tree
 }
-const merged = (r: ReturnType<typeof render>) => r.getByRole('button', { name: 'Merged' }).getAttribute('aria-pressed') === 'true'
+const merged = (r: ReturnType<typeof render>) =>
+  r.getByRole('button', { name: 'Merged' }).getAttribute('aria-pressed') === 'true'
 const settle = () => act(async () => new Promise((res) => setTimeout(res, 20)))
 async function go(r: ReturnType<typeof render>, id: string) {
   routeId = id
@@ -132,7 +141,9 @@ describe('NoteEntity — mode memory (R2)', () => {
     await go(r, 'n2')
     await go(r, 'n1')
     expect(merged(r)).toBe(true)
-    expect(qc.getQueryData<Record<string, string>>(['app_state', 'entity_mode'])?.['entity_mode:note:n1']).toBe('merged')
+    expect(qc.getQueryData<Record<string, string>>(['app_state', 'entity_mode'])?.['entity_mode:note:n1']).toBe(
+      'merged',
+    )
     expect(writes).toEqual([['entity_mode:note:n1', 'merged']])
   })
 

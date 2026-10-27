@@ -23,17 +23,17 @@ feature phase) · the boot path `apps/web/src/App.tsx` + `db/client.ts` · UX-4 
 ## 1. The M1.0 boundary — designed now vs deferred
 
 Auth is **off** in the feature phase — "no SRP/vault-unlock … a trivial local passphrase or none" (ADR-017 §Summary).
-The vault key (AR-3) and the unlock-on-every-launch UX (UX-5b) are **M3**. So UX-5 designs the *full* first-run flow
+The vault key (AR-3) and the unlock-on-every-launch UX (UX-5b) are **M3**. So UX-5 designs the _full_ first-run flow
 but marks every crypto/auth element as a deferred seam:
 
-| Designed now (UX-5, M1.0) | Deferred seam (owner) |
-|---|---|
-| Welcome · local-first expectation-setting · vault-readiness confirmation · completion → Home | — |
-| First-run detection + branch (boot) | per-name/multi-vault first-run → AR-4/auth |
-| Vault-creation **step** (present in the model, confirmation-only in M1.0) | real key creation (Argon2id/Account-Key) → AR-3/M3 |
-| — | passphrase capture → AR-3/UX-5b/M3 |
-| — | unlock-on-every-launch UX → UX-5b/M3 |
-| local-first copy (BR-4) | full ZK-crypto copy → UX-5b/M3 |
+| Designed now (UX-5, M1.0)                                                                    | Deferred seam (owner)                              |
+| -------------------------------------------------------------------------------------------- | -------------------------------------------------- |
+| Welcome · local-first expectation-setting · vault-readiness confirmation · completion → Home | —                                                  |
+| First-run detection + branch (boot)                                                          | per-name/multi-vault first-run → AR-4/auth         |
+| Vault-creation **step** (present in the model, confirmation-only in M1.0)                    | real key creation (Argon2id/Account-Key) → AR-3/M3 |
+| —                                                                                            | passphrase capture → AR-3/UX-5b/M3                 |
+| —                                                                                            | unlock-on-every-launch UX → UX-5b/M3               |
+| local-first copy (BR-4)                                                                      | full ZK-crypto copy → UX-5b/M3                     |
 
 ---
 
@@ -41,12 +41,12 @@ but marks every crypto/auth element as a deferred seam:
 
 Four steps (`ONBOARDING_STEPS`), advanced by explicit primary action (no Escape-skip — §4):
 
-| # | id | kind | Intent | M1.0 | Deferred |
-|---|-----|------|--------|------|----------|
-| 1 | `welcome` | `intro` | What Vida is + "Get started" | render | — |
-| 2 | `privacy` | `explain` | Local-first expectation-setting (the trust moment) | local-first copy | full ZK claim → M3 |
-| 3 | `vault` | `vault-create` | The reserved seat for account/vault creation | **confirmation only** ("your vault is ready") | key creation + passphrase → AR-3/UX-5b/M3 |
-| 4 | `ready` | `complete` | Set the marker + hand off to Home `/` | render + mark | — |
+| #   | id        | kind           | Intent                                             | M1.0                                          | Deferred                                  |
+| --- | --------- | -------------- | -------------------------------------------------- | --------------------------------------------- | ----------------------------------------- |
+| 1   | `welcome` | `intro`        | What Vida is + "Get started"                       | render                                        | —                                         |
+| 2   | `privacy` | `explain`      | Local-first expectation-setting (the trust moment) | local-first copy                              | full ZK claim → M3                        |
+| 3   | `vault`   | `vault-create` | The reserved seat for account/vault creation       | **confirmation only** ("your vault is ready") | key creation + passphrase → AR-3/UX-5b/M3 |
+| 4   | `ready`   | `complete`     | Set the marker + hand off to Home `/`              | render + mark                                 | —                                         |
 
 The step stays in the model so its index is stable for UX-5b/M3 (`vault` carries `deferredImpl: 'vault-key'`); only
 its M1.0 copy is confirmation-shaped. `complete` is terminal; no deferred step may be terminal (locked by test).
@@ -67,7 +67,7 @@ its M1.0 copy is confirmation-shaped. `complete` is terminal; no deferred step m
   migrates the DB, so `exists()` is already `true` while the marker is unset — they disagree by design. Keying the
   branch on `exists()` would make onboarding never show.
 - **Distinct from the synced user flag.** `first_run:completed` (device-local, never synced) is deliberately distinct
-  from the synced `UserProfile.onboarding_completed` (a cross-device *user* flag; its table lands with the
+  from the synced `UserProfile.onboarding_completed` (a cross-device _user_ flag; its table lands with the
   user_profile module, M1.1+). Reconciling the two is a UX-5b/M1.1 concern.
 
 ---
@@ -108,6 +108,7 @@ claim; `m3?` = the encryption-backed claim, gated behind an encryption-active si
 ---
 
 ## References
+
 - ADR-019 (Phase-1.0 resequence — the auth-coupled deferral split) · ADR-017 (features-first; encryption/auth off)
 - `information-architecture.md` (UX-1) · `shell-layout.md` (UX-3) · `state-conventions.md` (UX-4) — the surfaces this builds on
 - `apps/web/src/onboarding/{steps,first-run}.ts` — the code artifact (data/logic)

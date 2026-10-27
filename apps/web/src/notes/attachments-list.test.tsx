@@ -16,7 +16,9 @@ const noop = () => {}
 
 describe('AttachmentsView (S6 — EC-8)', () => {
   it('empty → honest message + Add affordance (no dead state)', () => {
-    const { getByText, getByRole } = renderUI(<AttachmentsView attachments={[]} state="empty" onAdd={noop} onRemove={noop} />)
+    const { getByText, getByRole } = renderUI(
+      <AttachmentsView attachments={[]} state="empty" onAdd={noop} onRemove={noop} />,
+    )
     expect(getByText('No attachments yet.')).not.toBeNull()
     expect(getByRole('button', { name: 'Add attachment' })).not.toBeNull()
   })
@@ -32,7 +34,9 @@ describe('AttachmentsView (S6 — EC-8)', () => {
   })
 
   it('populated → a list of rows with filename + human-readable size', () => {
-    const { getAllByRole, getByText } = renderUI(<AttachmentsView attachments={items} state="populated" onAdd={noop} onRemove={noop} />)
+    const { getAllByRole, getByText } = renderUI(
+      <AttachmentsView attachments={items} state="populated" onAdd={noop} onRemove={noop} />,
+    )
     expect(getAllByRole('listitem')).toHaveLength(2)
     expect(getByText('brief.pdf')).not.toBeNull()
     expect(getByText('242.2 KB')).not.toBeNull() // 248000 / 1024
@@ -42,7 +46,9 @@ describe('AttachmentsView (S6 — EC-8)', () => {
   it('Add fires onAdd; per-row Remove fires onRemove(id)', () => {
     const onAdd = vi.fn()
     const onRemove = vi.fn()
-    const { getByRole } = renderUI(<AttachmentsView attachments={items} state="populated" onAdd={onAdd} onRemove={onRemove} />)
+    const { getByRole } = renderUI(
+      <AttachmentsView attachments={items} state="populated" onAdd={onAdd} onRemove={onRemove} />,
+    )
     fireEvent.click(getByRole('button', { name: 'Add attachment' }))
     expect(onAdd).toHaveBeenCalledOnce()
     fireEvent.click(getByRole('button', { name: 'Remove shot.png' }))
@@ -50,7 +56,9 @@ describe('AttachmentsView (S6 — EC-8)', () => {
   })
 
   it('EC-22 — rows carry file-type Lucide icons (svg)', () => {
-    const { container } = renderUI(<AttachmentsView attachments={items} state="populated" onAdd={noop} onRemove={noop} />)
+    const { container } = renderUI(
+      <AttachmentsView attachments={items} state="populated" onAdd={noop} onRemove={noop} />,
+    )
     expect(container.querySelectorAll('svg').length).toBeGreaterThan(0)
   })
 })

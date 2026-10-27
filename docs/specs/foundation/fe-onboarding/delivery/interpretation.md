@@ -94,6 +94,7 @@ decomposition.** The RATIFY legs (existing render, copy contract) carry no greyb
 ---
 
 ## G. Resolution of the 6 BASELINE open questions
+
 1. Consumption fit → **IR1**: FlowSessionView presentationally, no session. ✅ doc-grounded.
 2. Persistence seams → **N6/IR3**: deferred ProviderRead/write stubs (modules=M1.1 feature-flags; theme=deferred switcher). ✅
 3. Reach paths → **N1**: completion-step branch + EmptyState.guidedSetup slot (≥2-path). ✅

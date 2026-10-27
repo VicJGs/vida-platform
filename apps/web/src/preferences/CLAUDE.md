@@ -6,8 +6,10 @@ runtime rules `docs/infrastructure/web-client-runtime/current-business-rules.md`
 BR-RT-7).
 
 ## What lives here
+
 The read/write seam for `user_preferences` + `nav_preferences` (the `@vida/core` preferences service). **React Query over
 SQLite is the source of truth**; Zustand stores are at most derived caches (gate A6).
+
 - `preferences-keys.ts` — `['preferences','user']` / `['preferences','nav']` (exact, non-overlapping) + the family prefix;
   cache category 5 min / 30 min.
 - `preferences-view.ts` — PURE: `toView` (two merged rows → one `PreferencesView`, never undefined; `system` → light;
@@ -37,7 +39,7 @@ SQLite is the source of truth**; Zustand stores are at most derived caches (gate
   `useUpdatePreferences()` (`update(viewPatch)` · `saveState` · `lastError`); `updateView(patch)` is the module-level write
   (no React state — the `SettingsContext` default). `retry()` refetches **only the errored key(s)**, fire-and-forget.
 - `command-history.ts` (R5) — **the ONE write path for `command_bar_history`**: `createCommandHistory` → `{ record, pin,
-  idle }` on ONE serial promise chain (both service ops read-then-write; the chain fixes the UNIQUE first-run race and
+idle }` on ONE serial promise chain (both service ops read-then-write; the chain fixes the UNIQUE first-run race and
   orders a pin after its record). `record` is best-effort (after `run()`, logged, never thrown); `pin` resolves
   true/false. The history query is invalidated after each op, **fire-and-forget** (`invalidateQueries` awaits the
   refetch). `toHistoryEntry` maps `is_pinned` → `0|1`. App instance `commandHistory` (+ `resetCommandHistoryForTests`).
@@ -47,6 +49,7 @@ SQLite is the source of truth**; Zustand stores are at most derived caches (gate
   once in `App.tsx`.
 
 ## Rules (do not violate)
+
 - **Every preferences writer in every unit uses `writer-instance.ts`** (`writePreferences` · `writeNavPreferences` ·
   `patchDashboardLayout` · `patchModuleNames` · `setModuleVisibilityMap` · `flushAll`) — never the raw service (it would
   bypass the queue → double-create + a stale cache). **`command_bar_history` goes through `command-history.ts`** (R5).

@@ -51,7 +51,14 @@ describe('EntityView — the Entity shell', () => {
   // ── BR-E-4/EC-2: tabbed = Tabs, only active panel mounts ───────────────────────────────────
   it('tabbed + editor: a tablist with two tabs; only the active (layout) panel mounts', () => {
     const { getByRole, getAllByRole, getByText, queryByText } = renderUI(
-      <EntityView title="Task" mode="tabbed" onModeChange={noop} layout={LAYOUT} editor={EDITOR} defaultFacet="layout" />,
+      <EntityView
+        title="Task"
+        mode="tabbed"
+        onModeChange={noop}
+        layout={LAYOUT}
+        editor={EDITOR}
+        defaultFacet="layout"
+      />,
     )
     expect(getByRole('tablist')).not.toBeNull()
     expect(getAllByRole('tab').length).toBe(2)
@@ -62,7 +69,14 @@ describe('EntityView — the Entity shell', () => {
   // ── B1: deep-link straight to the Editor facet ─────────────────────────────────────────────
   it('tabbed + defaultFacet="editor": opens on the Editor panel', () => {
     const { getByText, queryByText } = renderUI(
-      <EntityView title="Task" mode="tabbed" onModeChange={noop} layout={LAYOUT} editor={EDITOR} defaultFacet="editor" />,
+      <EntityView
+        title="Task"
+        mode="tabbed"
+        onModeChange={noop}
+        layout={LAYOUT}
+        editor={EDITOR}
+        defaultFacet="editor"
+      />,
     )
     expect(getByText('EDITOR BODY')).not.toBeNull()
     expect(queryByText('LAYOUT BODY')).toBeNull()
@@ -110,7 +124,14 @@ describe('EntityView — the Entity shell', () => {
 
   it('editorState="loading": an aria-busy skeleton (never the raw editor)', () => {
     const { container, queryByText } = renderUI(
-      <EntityView title="Task" mode="merged" onModeChange={noop} layout={LAYOUT} editor={EDITOR} editorState="loading" />,
+      <EntityView
+        title="Task"
+        mode="merged"
+        onModeChange={noop}
+        layout={LAYOUT}
+        editor={EDITOR}
+        editorState="loading"
+      />,
     )
     expect(container.querySelector('[aria-busy="true"]')).not.toBeNull()
     expect(queryByText('EDITOR BODY')).toBeNull()
@@ -126,9 +147,18 @@ describe('EntityView — the Entity shell', () => {
   it('DEV-R1-1 — the title pairs a display line-height with its display size (wrapped lines must not collide)', () => {
     const { container, getByText } = renderUI(
       <>
-        <EntityView title="A long entity title that wraps at 375" mode="merged" onModeChange={() => {}} layout={<div />} />
-        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">ref</Text>
-        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">ref</Text>
+        <EntityView
+          title="A long entity title that wraps at 375"
+          mode="merged"
+          onModeChange={() => {}}
+          layout={<div />}
+        />
+        <Text data-ref="display" fontFamily="$display" fontSize="$display" lineHeight="$display">
+          ref
+        </Text>
+        <Text data-ref="body" fontFamily="$display" fontSize="$display" lineHeight="$body">
+          ref
+        </Text>
       </>,
     )
     // jsdom resolves no CSS vars — assert the pairing STRUCTURALLY (the canvas-view precedent, packages/ui/src/CLAUDE.md):
@@ -231,4 +261,3 @@ describe('EntityView — the H1 + the inline rename seam (notes-rescope R3, PLAN
     expect(ref.current?.getAttribute('tabindex')).toBe('-1')
   })
 })
-

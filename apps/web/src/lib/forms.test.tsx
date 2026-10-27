@@ -18,11 +18,7 @@ function TestForm() {
     <form.Field name="name">
       {(field) => (
         <>
-          <input
-            aria-label="name"
-            value={field.state.value}
-            onChange={(e) => field.handleChange(e.target.value)}
-          />
+          <input aria-label="name" value={field.state.value} onChange={(e) => field.handleChange(e.target.value)} />
           <span data-testid="err">
             {field.state.meta.errors
               .map((e) => (e as unknown as { message?: string } | undefined)?.message ?? '')

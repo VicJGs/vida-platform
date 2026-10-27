@@ -11,11 +11,13 @@ INTENDED is listed under "What is DEFERRED". `[FACT: sections below; baseline 20
 ## What is BUILT (AR-5 · ADR-004 §3.1/§3.2)
 
 ### Enums (`packages/types/src/session.ts`)
+
 - `SESSION_SUB_TYPE` (9, OPEN), `SESSION_PURPOSE` (6, OPEN), `SCHEDULING_MODE` (3, FIXED), `SESSION_STATUS`
   (7, FIXED — the S5 lifecycle), `EFFECT_TYPE` (12 — ADR-004 §3.2.2 base 8 + ADR-012 amendment 4). C2
   tuple-as-source; validators `z.enum(...)` in `validators/session.ts`.
 
 ### Tables (`db/schema/foundation/sessions.ts` + migration `002_sessions.ts`)
+
 - **`sessions`** — the base spine (syncable). `sub_type`/`purpose` OPEN free-TEXT; `scheduling_mode`/`status`
   FIXED SQL-CHECK; `focus_rating`/`energy_level` CHECK 1..5; `key_learnings` `[E]`; `...baseColumns` + soft delete.
   Indexes: status, sub_type.
@@ -24,16 +26,19 @@ INTENDED is listed under "What is DEFERRED". `[FACT: sections below; baseline 20
 - NO cross-table FK (ADR-004 §3.4 — sync applies rows out of order; integrity is app/sync-layer).
 
 ### Contract types + thin registry (`foundation/sessions/{types,registry}.ts`)
+
 - `SessionTypeDef` + `CapabilityEnvelope` + `SessionTransition` + 4 typed errors.
 - `createSessionRegistry(db, deviceId)` → `register/get/list`. Shipped types in-memory (`SHIPPED_SESSION_TYPES`,
   seeded `focus`); user types persist via the db-6 `Repository` (co-transactional `sync_queue` enqueue) + sync.
 
 ## Contract (delivered surface)
+
 - `register(def)`: validates BR-3 (4 dims), BR-4 (effects ⊆ allowed_effects ⊆ shipped envelope), BR-1
   (unique across shipped + persisted); persists user types. `get(sub_type)` / `list()` merge shipped ∪ user.
 - Typed errors, fail-loud, no partial writes.
 
 ## What is BUILT (XS-effect-rail #32 · XCU-09/10 — `foundation/sessions/{attachments,lifecycle}.ts`)
+
 - **`resolveTargets(db, sessionId): ResolvedTarget[]`** (`attachments.ts`, XCU-10) — the read-side of dim1: all
   `session_attachments` rows for a session (`{entityType, entityId, level}`), `[]` when none. Direct select, no
   soft-delete filter (`session_attachments` has no `deleted_at`).
@@ -46,9 +51,11 @@ INTENDED is listed under "What is DEFERRED". `[FACT: sections below; baseline 20
   **sensitive-consent is handler-side** (ADR-004 §3.2.5-A3/BR-17), the S2 gate is the handler seam.
 
 ## What is BUILT (DB-4 #3 · schema substrate — migration `014_sessions_scheduling.ts` + `010_scheduling.ts`)
+
 DB-4 landed the full table substrate the service tier (MOD-sessions ①) will drive. All tables carry
 `...baseColumns` (syncable); DDL is hand-written SQL in the migrations, mirrored by the Drizzle schema. NO FK
 (ADR-004 §3.4). `[FACT: ALL_MIGRATIONS registers 010+014 — runner.ts:21,24,60]`
+
 - **1:1 sub-type extensions** (`schema/foundation/session-extensions.ts`) — own `id` UUIDv7 PK + `session_id`
   UNIQUE → `sessions.id` (the 1:1 key, plain TEXT no FK); spine fields never re-stored (BR-S1); zero-`[E]`:
   - **`study_sessions`** — `resource_type` (`STUDY_SESSION_RESOURCE_TYPE`, FIXED CHECK) · `resource_id` ·
@@ -67,13 +74,15 @@ DB-4 landed the full table substrate the service tier (MOD-sessions ①) will dr
     (`STUDY_PLAN_BATCH_STATUS`, FIXED, +`failed`) · `total_sessions` · `generated_at` · `approved_at`.
   - **`session_templates`** — focus presets: `name` `[E]` · work/break minutes · `intervals_before_long_break` ·
     auto-start flags · `is_default` · `focus_technique` · `description` `[E]` · `notifications`/`sounds` · usage stats.
-  `[FACT: scheduling.ts:19-113]`
+    `[FACT: scheduling.ts:19-113]`
 - **Validators** (`validators/session.ts`) — `PlannedBlockStatusSchema` present; the DB-4 enums
   (`POMODORO_*`, `STUDY_*`, `PRESET_BLOCK`) live in `@vida/types` (`session.ts`, `knowledge.ts`, `learning.ts`).
 
 ## What is BUILT (MOD-sessions ① · S1 — `services/sessions/`)
+
 The first real `services/*` build: `createSessionsService({ db, deviceId, registry, rail, entityRegistry })`
 (factory-object, mirrors `foundation/spaces/service.ts`). `[FACT: services/sessions/service.ts]`
+
 - **Session CRUD** — `createSession` (spine + optional 1:1 `focus`/`study` extension, written **atomically** via
   `Repository.createInTx` in one `db.transaction`) · `getSession` (spine + mapped extension, null if
   soft-deleted) · `updateSession` (spine + extension; `sub_type` immutable) · `softDeleteSession` (**spine only**
@@ -83,27 +92,31 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   create, **no revive** — no `deleted_at`); `detach` = **hard delete**; `resolveTargets` re-exports the #32 reader.
 - **`findOpenSessionForEntity(subType, entityType, entityId): SessionRow | null`** (added by mod-tasks #65 S4,
   2026-10-15) — the REVERSE of `resolveTargets`: the in_progress session of `subType` attached to `(entityType,
-  entityId)`, or null. Read-only (attachment read + spine `status`/`sub_type` filter, soft-delete-filtered via
+entityId)`, or null. Read-only (attachment read + spine `status`/`sub_type` filter, soft-delete-filtered via
   `findById`); the running-timer guard a consuming module needs when it can't read `session_attachments` directly (§6).
 - **Repos:** `sessions` `softDelete:true`; `focus_sessions`/`study_sessions`/`session_attachments`
   `softDelete:false` (no `deleted_at`). All `encryptedFields:[]` (M1.0 pass-through). Structural validation
   (`CreateSessionSchema`, fail-loud `InvalidSessionInput`).
 
 ### S2 — registry validation + completion wiring (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 16 tests green on a live unlocked vault]`
+
 - **`createSession` sub_type gate** — `await registry.get(sub_type)` before the tx; unregistered → `SessionTypeNotFound`,
   no write (SS-3). Roster stays **AR-5-shipped (`focus`) + the `register()` seam** (delivery-plan:239); owning
   modules register their own sub-types (SS-5) — S2 seeds nothing.
 - **`attach` entity_type gate** — `entityRegistry.isRegistered(entityType)` → `UnknownEntityType` (BR-6); mirrors
   the spaces `assertRegistered`. Factory gained `rail: EffectRail` + `entityRegistry: TaggableTypeRegistry` deps.
 - **`completeSession`/`transitionSession`** — delegate to the built #32 `transition({db, registry, rail, deviceId},
-  id, event)` (IR-1 — no second firing path). Completion fires declared effects through the rail, which is
+id, event)` (IR-1 — no second firing path). Completion fires declared effects through the rail, which is
   **fail-loud**: a non-`projection` effect with no handler throws `NoEffectHandler`. So `completeSession('focus')`
   throws in M1.1 (`log_time`/`attach_pomodoro` handlers deferred — focus handlers → sessions-rescope); a no-effect type completes `fired:0`.
   **⚠ focus-completion behavior in M1.1 → resolved in S3 (below).**
 
 ### S3 — Pomodoro focus runtime (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 23 sessions tests green on a live unlocked vault]`
+
 - **`startFocus`/`pauseFocus`/`resumeFocus`/`nextInterval`/`completeFocus`/`cancelFocus`** over the
   `focus_sessions` row (the timer id = `focus_sessions.id`). `startFocus({})` creates a fresh `focus` session
   (`in_progress`) + timer; `startFocus({sessionId})` resumes (paused→running / running→no-op / terminal→error).
@@ -115,15 +128,17 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   (25/5/15/4), read via a repo. PD-3 = "config is Preferences-owned; the runtime only obeys it." Named
   templates are **②-applied presets** (fe-sessions) — the M1.1 backend persists **no** timer↔template binding
   (no `template_id` on `focus_sessions`), so `nextInterval` does not resolve from a template. `startFocus.templateId`
-  is a ②-seam the backend does not consume. *(Reconciled in S6 — §XXVIII — from the S3 spec's original
-  "template → prefs → defaults" precedence, which contradicted PD-3 + the schema.)*
+  is a ②-seam the backend does not consume. _(Reconciled in S6 — §XXVIII — from the S3 spec's original
+  "template → prefs → defaults" precedence, which contradicted PD-3 + the schema.)_
 - **S2-flag RESOLVED (intake:166,179 "stub the contract, wire later"):** `completeFocus` finalizes the
   **focus_sessions run only** (status + duration + `completed_count`); it does **NOT** auto-fire session effects
   in M1.1 — the session stays `in_progress`, and session-completion-with-effects remains S2's single
   `completeSession` path (fired once the focus handlers register — sessions-rescope, which also closes the spine). The shipped `focus` def is untouched (registry.test-pinned).
 
 ### S4 — Availability (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 28 sessions tests green on a live unlocked vault]`
+
 - **`setAvailability`/`updateAvailability`/`removeAvailability`/`listAvailability`** over `study_availability` +
   **`addAvailabilityException`/`removeAvailabilityException`/`listAvailabilityExceptions`** over
   `availability_exceptions` (SS-9 — Planner-owned scheduling input).
@@ -135,7 +150,9 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   (deferred, G5) placement algorithm resolves. `[FACT: SS-9; intake:31-33; scheduling.ts no UNIQUE]`
 
 ### S6 — session_templates CRUD (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 32 sessions tests green on a live unlocked vault]`
+
 - **`createTemplate`/`updateTemplate`/`deleteTemplate`/`listTemplates`/`setDefaultTemplate`** over
   `session_templates` (focus presets, PD-3). Hard-delete (no `deleted_at`; syncs `operation:'delete'`).
   `name`/`description` `[E]` via the M1.0 seam.
@@ -147,7 +164,9 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   the backend does not auto-increment (doc-checked: no doc specifies backend bump timing).
 
 ### S5 — Plan-batch endpoints (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 36 sessions tests green on a live unlocked vault]`
+
 - **`generatePlan`/`approvePlan`/`activatePlan`/`recalcPlan`** — the `study_plan_batches` state machine
   (`pending_approval → approved → active`, `recalc` self-loops on `active`); illegal moves →
   `InvalidBatchTransition`, no write. `softDelete:false`; `name` `[E]`; `create` sets all fields explicitly
@@ -158,7 +177,9 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   transitions → **M1.2 study-planner design-pass**.
 
 ### Routines S6 (R1 first-consumer-pull) — owner-written planned blocks (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; validators/session.ts PlanBlockSchema/PlannedBlockPatchSchema; 4 tests]`
+
 - **`planBlock(input)`** — one block for a caller-given slot (`scheduled_end > scheduled_start` when given); `sub_type`
   registry-validated (`SessionTypeNotFound`), `target_type` a registered target (`UnknownEntityType`, BR-6), status `planned`.
   Malformed → `InvalidSessionInput`. No placement logic: the G5 algorithm stays M1.2.
@@ -168,7 +189,9 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
 - First consumer: routines `rescheduleStep` (an SS-8 intent block; the make-good links the session via `planned_block_id`).
 
 ### S7 — dueIn aggregator + analytics (`services/sessions/service.ts`)
+
 `[FACT: services/sessions/service.ts; 40 sessions tests green on a live unlocked vault]`
+
 - **`dueIn(range): DueItem[]`** — the shared platform primitive (IR-2; Journals + future Calendar consume it):
   own `planned_blocks` in range (`deleted_at`-filtered; **routines S6: only `planned|scheduled`**, fulfilled/skipped intent isn't due, SS-8) ∪ live provider reads. **SS-7 degrade:** a throwing
   provider lane is caught + skipped; `dueIn` never throws. Empty registry + no blocks (M1.1) → `[]`.
@@ -185,12 +208,15 @@ The first real `services/*` build: `createSessionsService({ db, deviceId, regist
   `@vida/types` promotion deferred until a non-core consumer needs it).
 
 ## ① BACKEND COMPLETE — all 7 slices built (S1–S7)
+
 `services/sessions/` is the full MOD-sessions ① service tier over the AR-5 spine + #32 rail + DB-4 schema:
 session CRUD+attach · registry-validation+completion-wiring · Pomodoro focus runtime · availability · plan-batch
 endpoints · templates · dueIn+analytics. `@vida/core` 879/879. Next: ② UI = `fe-sessions`.
 
 ## ② FRONTEND — Session runtime page (fe-session-runtime #23, LIF-218 · built 2026-10-15)
+
 The first frontend consumer of the Flow/Session codec seam — the `/sessions/$id` runtime page (deliverable-per-stage).
+
 - **S1 — data leg** (`apps/web/src/flow/`): `toFlowSource(session, deliverable?, attachments?, effects?)` assembles a
   single-stage `FlowSource` (EC-9; total `SESSION_STATUS→StageStatus` map; proof from `session_attachments`; effects via
   `mapEffectLog`); `useFlowSession(sessionId)` is the data hook. **The data leg is still a stub** — empty default + `?sample`
@@ -211,7 +237,9 @@ The first frontend consumer of the Flow/Session codec seam — the `/sessions/$i
   Spec: `docs/specs/foundation/fe-session-runtime/`.
 
 ## ② FRONTEND — Session HUD (fe-session-hud #16, LIF-217 · merged 2026-10-18, PR #144 `33278c1`)
+
 The persistent shell-strip indicator (region 6) for an active session (no single-active invariant exists on disk). `[FACT: apps/web/src/session-hud/*; its CLAUDE.md]`
+
 - **S1 — seam** (`types.ts`, `use-hud-clock.ts`, `use-active-session.ts`): tri-state `HudRead` (`hidden`/`idle`/`active`);
   `HudSource` derives paused from `timing.pausedAt`; `HudTiming` = `countdown` (phase · `endAt` · `durationSeconds` ·
   `pausedAt?`) | `elapsed` (`startedAt`); `HudSessionsPort` = `pauseFocus`/`resumeFocus`. `deriveHudClock(timing, now)` is a
@@ -223,12 +251,13 @@ The persistent shell-strip indicator (region 6) for an active session (no single
   port is a logging no-op (`use-active-session.ts`). Live swap = the two-source model: ① `findActiveSession()` (**does not
   exist** — the service has `getSession(id)` + entity-scoped `findOpenSessionForEntity`, S1 section above) + ② the shared focus-runtime
   client store (ships with the first live timer driver). Debt → `sessions-rescope`; findings `docs/specs/foundation/
-  fe-session-hud/delivery/findings.md` F-HUD-1.
+fe-session-hud/delivery/findings.md` F-HUD-1.
 
 ## What is DEFERRED (NOT built — homed beyond MOD-sessions ①)
+
 Effect-firing rail primitive built by AR-7; **lifecycle engine + fire step BUILT (#32); DB-4 schema substrate
 BUILT; S1–S7 the full ① service tier BUILT (above).** Still deferred (NOT ①'s scope):
-per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → the receiving MOD-* tracks (SES-13) ·
+per-module effect **handlers** (review→SM-2, class→attendance, workout→volume) + consent-threading → the receiving MOD-\* tracks (SES-13) ·
 non-completion firing + heterogeneous-attachment target disambiguation → with handlers · the plan **placement
 algorithm** + SS-8 bridge + `completed`/`failed` → M1.2 · live **`dueIn` provider lanes** (Books/Flashcards/
 Knowledge/Education/Language) → owning modules (the S7 registry is the seam) · richer analytics (per-module time,
@@ -237,5 +266,6 @@ planned-vs-actual, streaks) → later getters · **② UI** (session/planner hub
 view layer → G9 · shipped-type editing → later · `key_learnings` encryption (M1.0 pass-through seam, `encryptedFields:[]`).
 
 ## Verification (2026-07-28)
+
 typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:
 `docs/specs/foundation/ar-5-sessions-base/`.

@@ -61,7 +61,7 @@
 - **BR-GM-16 (achievements is a non-syncable static seed, IR-8).** `seedAchievements` writes via **direct
   drizzle** (`db.insert` + `uuidv7()` id + explicit `created_at` + `onConflictDoNothing` by `key`) — NOT the
   sync Repository (the table has no `_sync_*` columns; routing it through the Repository would break the insert
-  + wrongly enqueue sync). `listAchievements` reads via `db.select`. `[FACT: service.ts seedAchievements/listAchievements]`
+  - wrongly enqueue sync). `listAchievements` reads via `db.select`. `[FACT: service.ts seedAchievements/listAchievements]`
 - **BR-GM-17 (unlock = earned-join write + guarded reward + guarded notification, GM-13/GM-15).** On a met
   predicate, `evaluateAchievements` writes `user_achievements` (syncable; `UNIQUE(achievement_id)` converges a
   cross-device double-unlock) + fires `grant_currency` (XP reward) + `surface_notification` via the rail.
@@ -89,6 +89,7 @@
   `DuplicateEffectHandler`, the shared substrate contract). `[FACT: journal.ts registerGamificationEffects]`
 
 ## Deferred (homed, not dropped)
+
 - `total_xp`/`current_level` cache refresh → the effect-firing mutation path (currently derived live).
 - Journal per-day deltas (XP earned today · achievements unlocked today) → a dated ledger query + tz handling.
 - Rule `grant_id` → capability def-id resolution + the authoring surface → #85 CAP-authoring (⚠ INTENDED).

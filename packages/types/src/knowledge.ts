@@ -61,13 +61,7 @@ export type StudyPlanBatchStatus = (typeof STUDY_PLAN_BATCH_STATUS)[number]
 export const SCHEDULED_SESSION_TYPE = ['study', 'review', 'practice', 'exam_prep', 'homework'] as const
 export type ScheduledSessionType = (typeof SCHEDULED_SESSION_TYPE)[number]
 
-export const SCHEDULED_SESSION_STATUS = [
-  'scheduled',
-  'in_progress',
-  'completed',
-  'skipped',
-  'rescheduled',
-] as const
+export const SCHEDULED_SESSION_STATUS = ['scheduled', 'in_progress', 'completed', 'skipped', 'rescheduled'] as const
 export type ScheduledSessionStatus = (typeof SCHEDULED_SESSION_STATUS)[number]
 
 export const SCHEDULED_RESOURCE_TYPE = ['topic', 'flashcard_deck', 'book', 'course', 'homework'] as const

@@ -8,13 +8,14 @@
 
 ---
 
-## U2 — Rewrite `docs/roadmap.md` features-first  *(one commit)*
+## U2 — Rewrite `docs/roadmap.md` features-first _(one commit)_
 
 Rewrite in place, preserving the document's role (deliverables map, mirrors to Linear). Section-by-section:
 
-**S1. Header / provenance** — refresh the stale counts: *"15 ADRs + 21 documented contexts"* → **"19 ADRs (001–019) + 24 documented contexts"**; add the ADR-018 structure + ADR-019 sequencing to the "Provenance" note. Keep the source-of-truth precedence line.
+**S1. Header / provenance** — refresh the stale counts: _"15 ADRs + 21 documented contexts"_ → **"19 ADRs (001–019) + 24 documented contexts"**; add the ADR-018 structure + ADR-019 sequencing to the "Provenance" note. Keep the source-of-truth precedence line.
 
-**S2. The spine** — replace the 3-phase table's *internal ordering* with the **M1→M4 milestone spine** (`_index.md §1`), keeping the human "state reached" phrasing:
+**S2. The spine** — replace the 3-phase table's _internal ordering_ with the **M1→M4 milestone spine** (`_index.md §1`), keeping the human "state reached" phrasing:
+
 - M1 = "I open Vida daily on localhost and run my life in it — manually." (whole OS, internally integrated, unencrypted)
 - M2 = "External data flows in — I stop doing everything by hand." (integrations + boundary)
 - M3 = "It's encrypted end-to-end; safe to share." (whole-OS encryption → release gate)
@@ -23,7 +24,7 @@ Rewrite in place, preserving the document's role (deliverables map, mirrors to L
 
 **S2b. Rewrite the "Cross-cutting principle — 5-layer Structural Foundation" block** (roadmap §34-47) — it currently reasserts substrate-first "built once at the head of Phase 1." Reframe to features-first: substrates land by first-consumer pull (the hubs pull them early), not a monolithic upfront layer. Also fold the tiered "Dependency map" table (roadmap §49-57) into the `_index.md §4` edges.
 
-**S3. Replace "Phase 1.0 Structural Foundation" (substrate-first)** with **M1** organized features-first per `_index.md §3`: M1.0 boot & connective base → M1.1 hub + foundation modules → M1.2 feature modules → M1.3 depth → M1.4 internal-integration hardening. Each deliverable keeps its ID (DB-*/AR-*/DS-*/UI-*/UX-*/modules) but is placed per the **§2.1 ledger** — including the splits: **DB-8b blind-index → M3**, **DB-10 seed → M1**, **UX-5b vault-unlock → M3/M4**, crypto (AR-3/DB-5) → M3, sync-activate (AR-9) → M4. State the AR-8 boundary (module-owned engines stay in their module). **Pomodoro** (roadmap §123) folds into **Sessions & Scheduling** as a `sessions` sub-type (ADR-004), not a standalone module.
+**S3. Replace "Phase 1.0 Structural Foundation" (substrate-first)** with **M1** organized features-first per `_index.md §3`: M1.0 boot & connective base → M1.1 hub + foundation modules → M1.2 feature modules → M1.3 depth → M1.4 internal-integration hardening. Each deliverable keeps its ID (DB-_/AR-_/DS-_/UI-_/UX-\*/modules) but is placed per the **§2.1 ledger** — including the splits: **DB-8b blind-index → M3**, **DB-10 seed → M1**, **UX-5b vault-unlock → M3/M4**, crypto (AR-3/DB-5) → M3, sync-activate (AR-9) → M4. State the AR-8 boundary (module-owned engines stay in their module). **Pomodoro** (roadmap §123) folds into **Sessions & Scheduling** as a `sessions` sub-type (ADR-004), not a standalone module.
 
 **S4. New M2 section** — external integrations + security boundary, provider-selection as head; carry the integration register (6 DEFINED / 16 UNDEFINED) here; ICS module-surface(M1) vs live-feed(M2) split.
 
@@ -38,6 +39,7 @@ Rewrite in place, preserving the document's role (deliverables map, mirrors to L
 **S8. Linear mapping section** — update to the new clusters (M1 waves · M2 integration families · M3 encryption · M4 venues); note the LIF-61…95 re-scope is U3.
 
 **S9. Verify + commit.**
+
 - Ledger check: every ID in `_index.md §2.1` appears in the rewritten roadmap at its M-home (grep each ID).
 - No residual "RP" `[UNKNOWN]`; provenance counts correct (19/24).
 - No substrate-first language survives; crypto is in M3, integrations in M2.
@@ -45,7 +47,7 @@ Rewrite in place, preserving the document's role (deliverables map, mirrors to L
 
 ---
 
-## U3 — Re-projectize Linear  *(GATED — per-cluster, not run until approved)*
+## U3 — Re-projectize Linear _(GATED — per-cluster, not run until approved)_
 
 **S10. Build the re-scope mapping** (old LIF-61…95 → new M-clusters) as a table in the roadmap's Linear section — **doc only**, no push. Every old issue → its new cluster/milestone, or explicitly "re-scoped / merged / deferred." Record; do not duplicate.
 
@@ -57,25 +59,27 @@ Rewrite in place, preserving the document's role (deliverables map, mirrors to L
 
 ## §4 Acceptance (from `_index.md §8`)
 
-| Criterion | Check |
-|-----------|-------|
-| roadmap rewritten M1→M4 | section structure = M1/M2/M3/M4; no "Phase 1.0 substrate-first" |
-| every old deliverable re-mapped (§2.1) | grep each ID present at its M-home; none dropped |
+| Criterion                                        | Check                                                               |
+| ------------------------------------------------ | ------------------------------------------------------------------- |
+| roadmap rewritten M1→M4                          | section structure = M1/M2/M3/M4; no "Phase 1.0 substrate-first"     |
+| every old deliverable re-mapped (§2.1)           | grep each ID present at its M-home; none dropped                    |
 | schema per-feature · crypto M3 · integrations M2 | grep: DB-5/AR-3 in M3, P3-integrations in M2, DB-4 per-module in M1 |
-| provenance refreshed | "19 ADRs … 24 contexts"; ADR-018/019 cited |
-| ADR-019 accepted; tradeoff + release gate stated | roadmap M3 cites ADR-019 §3.4 |
-| Linear re-scope mapping recorded (U3) | old→new table present; push gated per-cluster |
-| no residual `[UNKNOWN]` | "RP"=Real Product everywhere |
+| provenance refreshed                             | "19 ADRs … 24 contexts"; ADR-018/019 cited                          |
+| ADR-019 accepted; tradeoff + release gate stated | roadmap M3 cites ADR-019 §3.4                                       |
+| Linear re-scope mapping recorded (U3)            | old→new table present; push gated per-cluster                       |
+| no residual `[UNKNOWN]`                          | "RP"=Real Product everywhere                                        |
 
 ---
 
 ## On divergence (§XXVIII)
+
 Any step that can't run as written (a deliverable with no clean M-home, a Linear conflict) → STOP, `victor:triage`, critique the revised step, re-approve. Update this file + task Build Steps + Route History. No silent drift.
 
 ---
 
 ## Change Log
-| Date | Change |
-|------|--------|
-| 2026-07-25 | Initial gate-2 DRAFT — U2 roadmap-rewrite steps (S1–S9) + U3 gated projectize (S10–S11, deferrable). |
+
+| Date       | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-25 | Initial gate-2 DRAFT — U2 roadmap-rewrite steps (S1–S9) + U3 gated projectize (S10–S11, deferrable).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2026-07-25 | **Gate-2 critique (REVISE) + preflight (BLOCKED) → folded.** Critique VERIFIED the ZK-safety + amendment scope of ADR-019 (ZK-1=server-blindness=L3/sync=M4; deferring L1/L2 at-rest touches no ADR-014/015 invariant). Both caught: **count 19≠18** ("18 ADRs (001–019)" was off-by-one → fixed to 19 everywhere, incl S9 grep target). Preflight caught 2 silent drops: **doc-hygiene backlog** (roadmap §182-186 → S6b + ledger row: dep-graph done in Part 1.3, app-specs→M4, serialization→M1) and **Pomodoro** (no line-item home → folds into Sessions & Scheduling as an ADR-004 sub-type, S3 + ledger). Non-blockers: ADR-019 §6(b) overreach recharacterized + EN-1 clause added; S2b added for the cross-cutting-principle block + dependency-map table. Awaiting Approval 2. |

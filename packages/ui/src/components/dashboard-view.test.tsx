@@ -91,7 +91,11 @@ describe('DashboardView — shell', () => {
     const { getByText } = renderUI(
       <DashboardView
         title="Home"
-        blocks={[B({ id: 'load', state: 'loading' }), B({ id: 'empty', state: 'empty' }), B({ id: 'err', state: 'error' })]}
+        blocks={[
+          B({ id: 'load', state: 'loading' }),
+          B({ id: 'empty', state: 'empty' }),
+          B({ id: 'err', state: 'error' }),
+        ]}
         renderBlock={fn}
         blockLoading={() => <div>custom-skeleton</div>}
         blockEmpty={() => <div>custom-empty</div>}
@@ -119,12 +123,7 @@ describe('DashboardView — shell', () => {
   it('shows a teaching empty-dashboard state (not a blank) when there are no blocks (EC-5)', () => {
     const { fn, calls } = spyRenderBlock()
     const { getByText } = renderUI(
-      <DashboardView
-        title="Projects"
-        blocks={[]}
-        renderBlock={fn}
-        emptyAction={<button>Add a block</button>}
-      />,
+      <DashboardView title="Projects" blocks={[]} renderBlock={fn} emptyAction={<button>Add a block</button>} />,
     )
     expect(getByText('Your dashboard is empty')).not.toBeNull()
     expect(getByText('Add a block')).not.toBeNull()

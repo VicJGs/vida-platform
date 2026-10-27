@@ -11,9 +11,10 @@ Rev 2 (2026-08-08): revised after the independent plan critique — B1 shadow-va
 ---
 
 ## 0. Baseline (code-as-is — verified this session)
+
 - **Build approach settled by the shipped pattern — no fork.** U1–U4 are hand-built on `@tamagui/core`
   (`styled()` + native render element + injected CSS for what `styled()` can't see; **no new deps**, web-first).
-  ADR-001 §9 names *Tamagui* and core IS Tamagui; UI-1's reason to exist is to **build** these primitives, so a
+  ADR-001 §9 names _Tamagui_ and core IS Tamagui; UI-1's reason to exist is to **build** these primitives, so a
   card kit is out of scope by definition. [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]
 - **Sub-theme already generated, not yet registered.** `light_Card`/`dark_Card` exist in `themes/themes.ts`
   (keys from `component.json.card`: `background`, `border`, `padding`, `radius`) but `tamagui.config.ts` wires only
@@ -28,7 +29,7 @@ Rev 2 (2026-08-08): revised after the independent plan critique — B1 shadow-va
   skips shadow from `createTokens`.] The three values (`shadow.resting` `0 1px 2px 0 rgba(15,23,42,.06)` = Level 1 ·
   `shadow.raised` `0 4px 12px -2px rgba(15,23,42,.10)` = Level 2 · `shadow.overlay` = Level 3, primitive.json:117-120)
   are emitted **only** into `themes/variables.css` (:127-129), which **is not imported anywhere** — `packages/ui/src/
-  CLAUDE.md` states `variables.css` is "a parallel documentation / Figma-projection artifact, not wired into the app."
+CLAUDE.md` states `variables.css` is "a parallel documentation / Figma-projection artifact, not wired into the app."
   **So `var(--shadow-*)` does NOT resolve at runtime.** [This corrects a Rev-1 overclaim that equated `--shadow-*`
   with the Tamagui-emitted `--placeholder`/`--colorFocusRing` switching vars — those two are runtime theme vars;
   `--shadow-*` is not. See §11 B1.] → U5 adds a typed `shadow.ts` export (§1.2, DEF-U5-e), the exact `motion.ts`
@@ -50,6 +51,7 @@ Rev 2 (2026-08-08): revised after the independent plan critique — B1 shadow-va
 - **Verify:** `pnpm --filter @vida/ui typecheck && build && test` (currently @vida/ui 92 tests). [FACT: CLAUDE.md]
 
 ## 1. Structure — one styled host, three slot regions, an elevation overlay
+
 Card is a **pure container** — no floating layer, no portal, no ARIA widget state machine (its whole difficulty is
 **slot composition** + **elevation**, not interaction). It renders a single styled `<div>` with, in order: an
 optional **header bar** (`<header>` on the left + `actions` top-right), the **body** (`children`), an optional
@@ -100,6 +102,7 @@ optional **header bar** (`<header>` on the left + `actions` top-right), the **bo
   keeps its button role but gains no hover affordance. [INTERP: card.md disabled row "muted, not focusable".]
 
 ### 1.1 Padding — space scale, not the `card.padding` sub-theme token (DEF-U5-b)
+
 `padding: 'compact' | 'default' | 'spacious'` needs **three** values, but `card.padding` is a **single** sub-theme
 token. Same constraint Button hit: Tamagui resolves space props against the **space token scale**, not a theme
 sub-theme (`$padding` rendered 0px — button.tsx:54-56). So padding is a `variant` over the space scale, matching the
@@ -108,6 +111,7 @@ semantic `space.inset.*` values the token references: `compact → $8` (inset.co
 padding lesson] → **DEF-U5-b flagged for DS** (§9).
 
 ### 1.2 Elevation — overlay opacity (B12), no theme detection, no unresolved var
+
 `themes/shadow.ts` (**new GENERATED export**, mirrors `motion.ts`): `export const shadow = { resting, raised, overlay
 } as const` — the 3 primitive.json box-shadow literals, emitted by a new `vida/shadow` format in `build-tokens.mjs`
 (the AUX-namespace-gets-a-typed-export-when-a-consumer-needs-it precedent set by `motion.ts`; updates the line-31
@@ -116,21 +120,22 @@ padding lesson] → **DEF-U5-b flagged for DS** (§9).
 
 `internal/card-styles.ts` (new; mirrors `interaction-styles.ts`): idempotent, browser-only injected stylesheet built
 from `shadow` + `motion` imports:
+
 - **Resting (both themes):** `.vida-card { box-shadow: <shadow.resting> }`. **In DARK this is invisible by
   construction** — `shadow.resting`'s color is `rgba(15,23,42,.06)`, and `15,23,42` = `neutral900` = the dark surface
   `#0F172A`; a near-transparent dark shadow on a dark surface renders nothing, so the card's **1px `$border` carries
   dark elevation** (design.md §V "dark = border-based"). **No theme class, no hook, no runtime branch needed.**
   [FACT: primitive.json shadow.resting; themes.ts dark.colorSurfacePrimary = neutral900; design.md §V.]
 - **Hover raise (interactive) — two coordinated cues, both B12-legal:**
-  - *Light-effective (opacity):* `.vida-card-elevation { box-shadow: <shadow.raised>; opacity: 0; transition: opacity
-    <fast> <out> }` + `.vida-card-interactive:hover > .vida-card-elevation { opacity: 1 }`. **Only opacity animates**;
+  - _Light-effective (opacity):_ `.vida-card-elevation { box-shadow: <shadow.raised>; opacity: 0; transition: opacity
+<fast> <out> }` + `.vida-card-interactive:hover > .vida-card-elevation { opacity: 1 }`. **Only opacity animates**;
     the shadow is static on the overlay → B12 (never animate box-shadow). [FACT: card.md Motion row.]
-  - *Dark-effective (instant border):* the CardFrame `interactive` variant carries `hoverStyle: { borderColor:
-    '$colorTextMuted' }` — an **instant** border-color swap (the frame has **no `animation` prop**, so Tamagui applies
+  - _Dark-effective (instant border):_ the CardFrame `interactive` variant carries `hoverStyle: { borderColor:
+'$colorTextMuted' }` — an **instant** border-color swap (the frame has **no `animation` prop**, so Tamagui applies
     hoverStyle as a plain CSS `:hover` with no transition → a state change, not an animation → B12-legal; it does NOT
     animate `border`). Visible in dark where the raised shadow (also dark-on-dark) isn't; a subtle reinforce in light.
     A Tamagui **variant** (not injected CSS) so it wins the specificity race. [FACT: select.tsx hover→$colorTextMuted;
-    [[injected-css-loses-to-tamagui-variants]]; B12 forbids *animating* border, permits an instant swap.]
+    [[injected-css-loses-to-tamagui-variants]]; B12 forbids _animating_ border, permits an instant swap.]
 - **Active/press (interactive):** `.vida-card-interactive:active > .vida-card-elevation { opacity: 1 }` held (same
   raised overlay). **No separate press tint** (a tint = a background change; opacity-of-the-existing-overlay keeps it
   strictly B12). [FACT: card.md active row "pressed overlay"; §11 M-nit / V4.]
@@ -141,25 +146,27 @@ from `shadow` + `motion` imports:
   raise appears instantly. [FACT: card.md "Reduced-motion: elevation appears instantly"; motion §IX.]
 
 ## 2. Interaction + state visuals
+
 Non-interactive Card has **no interactive state** — a `role="group"` surface; hover/focus/active/disabled read "N/A"
 and the elevation overlay never fires (only `.vida-card-interactive` triggers it). All interactive visuals gate on
 `interactive && !disabled`.
 
-| Visual | Mechanism | Token |
-|--------|-----------|-------|
-| resting surface / border / radius | `styled` `name:'Card'` → `$background`/`$border`/`borderWidth:1`/`$radius` | `card.*` sub-theme |
-| resting elevation | injected `.vida-card` box-shadow = `shadow.resting` (self-cancels in dark → border carries it) | shadow.resting |
-| hover raise (interactive), light | elevation overlay opacity 0→1, `duration.fast`/`easing.out` (B12: opacity only) | shadow.raised / motion |
-| hover raise (interactive), dark | `hoverStyle` **variant** `borderColor:$colorTextMuted`, **instant** (no transition, B12) | color.text.muted |
-| focus (interactive) | `focusVisibleStyle` 2px ring on the frame (`:focus-visible` only, pointer-suppressed) | `color.focus.ring` |
-| active/press (interactive) | overlay held raised (opacity only, no tint) | shadow.raised |
-| disabled (interactive) | `opacity .5`; interactive class + visual variant dropped → no hover/active; `tabIndex=-1` | reduced opacity |
-| loading | static `<Skeleton/>` in body reserving layout + `aria-busy`; no shimmer (B12/reduced-motion safe) | surface.secondary |
+| Visual                            | Mechanism                                                                                         | Token                  |
+| --------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------- |
+| resting surface / border / radius | `styled` `name:'Card'` → `$background`/`$border`/`borderWidth:1`/`$radius`                        | `card.*` sub-theme     |
+| resting elevation                 | injected `.vida-card` box-shadow = `shadow.resting` (self-cancels in dark → border carries it)    | shadow.resting         |
+| hover raise (interactive), light  | elevation overlay opacity 0→1, `duration.fast`/`easing.out` (B12: opacity only)                   | shadow.raised / motion |
+| hover raise (interactive), dark   | `hoverStyle` **variant** `borderColor:$colorTextMuted`, **instant** (no transition, B12)          | color.text.muted       |
+| focus (interactive)               | `focusVisibleStyle` 2px ring on the frame (`:focus-visible` only, pointer-suppressed)             | `color.focus.ring`     |
+| active/press (interactive)        | overlay held raised (opacity only, no tint)                                                       | shadow.raised          |
+| disabled (interactive)            | `opacity .5`; interactive class + visual variant dropped → no hover/active; `tabIndex=-1`         | reduced opacity        |
+| loading                           | static `<Skeleton/>` in body reserving layout + `aria-busy`; no shimmer (B12/reduced-motion safe) | surface.secondary      |
 
 - **B12 compliance:** only the elevation overlay's **opacity** animates. Resting/raised shadow, the dark hover border,
   the skeleton — all instant state swaps, never transitioned. [FACT: `_index.md §2` B12.]
 
 ### 2.1 Interactive event handling
+
 - **Pointer = native `onClick`** on the frame (the `onPress` prop wired to `onClick`; Select-option precedent —
   Tamagui `onPress` has no shipped precedent on a non-button div, so we don't rely on it). Suppressed when
   `disabled`/non-interactive. [FACT: select.tsx onClick on styled View; §11 B2.]
@@ -175,6 +182,7 @@ and the elevation overlay never fires (only `.vida-card-interactive` triggers it
   (DEF-U5-d), not a silent UI-1 rewrite. [[deliverable-is-the-doc-not-my-discretion]]
 
 ### 2.2 Empty + error
+
 - **empty** = **consumer composition, not a Card prop.** The contract's empty row is "consumer's empty-state slot
   rendered in the content area" — Card owns no `empty` prop; it renders whatever `children` are passed. The story
   demonstrates a consumer empty-state inside a Card. [FACT: card.md Visual States empty row.]
@@ -182,30 +190,32 @@ and the elevation overlay never fires (only `.vida-card-interactive` triggers it
   error state in `children`." [FACT: card.md Visual States error row — the N/A is the contract's position, not ours.]
 
 ### 2.3 Loading skeleton (DEF-U5-a)
+
 No `Skeleton` primitive exists yet. U5 ships a **minimal built-in static skeleton** — a few placeholder bars
 (`$colorSurfaceSecondary`, fixed heights) reserving the final layout to avoid shift — rendered in the body when
 `loading`, plus `aria-busy` on the frame. **Static, no shimmer** (a shimmer animates `background-position` → violates
 B12 + fights reduced-motion). A richer standalone `Skeleton` primitive is future work → **DEF-U5-a** (§9).
 
 ## 3. API (exported `CardProps` — verbatim from the contract, FLAT)
+
 [FACT: card.md:10-22 authors this interface FLAT, with a prose "Discriminated-union note".] Per
 [[deliverable-is-the-doc-not-my-discretion]] (the U3 lesson), the authored FLAT surface ships **verbatim**; the
 "`onPress`/`disabled` only valid when `interactive`" invariant is enforced at **runtime (dev-warn)**, not by
 re-shaping the authored interface into a compile-time discriminated union — that would be my discretion over the doc.
-Whether to tighten to a union is a **DS decision → DEF-U5-c** (§9); note components §VII *actively mandates* the union
+Whether to tighten to a union is a **DS decision → DEF-U5-c** (§9); note components §VII _actively mandates_ the union
 (its worked example `intent:'danger'`/`confirmLabel` is structurally identical), so this is a true contract-vs-standard
 conflict for DS, not a silent gap.
 
 ```ts
 export interface CardProps {
-  header?: React.ReactNode    // slot
-  footer?: React.ReactNode    // slot
-  actions?: React.ReactNode   // slot (top-right controls)
+  header?: React.ReactNode // slot
+  footer?: React.ReactNode // slot
+  actions?: React.ReactNode // slot (top-right controls)
   /** makes the whole card a single pressable target (adds role=button + keyboard). */
   interactive?: boolean
-  onPress?: () => void        // only meaningful with interactive; wired internally to onClick + keyboard
-  disabled?: boolean          // only meaningful with interactive
-  padding?: 'compact' | 'default' | 'spacious'   // default 'default'
+  onPress?: () => void // only meaningful with interactive; wired internally to onClick + keyboard
+  disabled?: boolean // only meaningful with interactive
+  padding?: 'compact' | 'default' | 'spacious' // default 'default'
   children: React.ReactNode
 }
 // + pass-through: aria-label / aria-labelledby / id … onto the frame ({...rest} spread FIRST → N1).
@@ -219,6 +229,7 @@ export interface CardProps {
      icon-only warn. [FACT: card.md §A11y interactive needs a name; button.tsx:169 precedent.]
 
 ## 4. Visual states (contract §Visual States — interactive states apply ONLY when `interactive`)
+
 default (resting surface + border + radius + padding + resting shadow) · hover (**interactive** — elevation raise:
 opacity overlay in light, instant border in dark) · focus (**interactive** — `:focus-visible` ring on the frame) ·
 active (**interactive** — press held raise) · disabled (**interactive** — muted, `tabIndex=-1`, `aria-disabled`, not
@@ -226,6 +237,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
 = consumer slot** (§2.2). [FACT: card.md §Visual States.]
 
 ## 5. Accessibility (contract §A11y)
+
 - **Non-interactive:** `role="group"` by default; a consumer may pass `aria-label`/`aria-labelledby` (e.g. labelling
   by the header) to opt into a `region` landmark. Header/footer are `<header>`/`<footer>` regions inside. [FACT:
   card.md §A11y.]
@@ -237,6 +249,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
   nested-focusable tension, §2.1 / DEF-U5-d).
 
 ## 6. Files
+
 - `packages/ui/src/components/card.tsx` — the primitive (frame + header/body/footer slots + actions + elevation
   overlay + interactive onClick/keyboard + skeleton + dev-warns).
 - `packages/ui/src/components/card.stories.tsx` — Visual-Gate surface, all applicable states × light｜dark: default
@@ -244,10 +257,10 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
   loading (skeleton); a consumer empty-state; padding compact/default/spacious; a nested-actions interactive case.
 - `packages/ui/src/components/card.test.tsx` — jsdom: `role=group` vs `role=button` per `interactive`; header/footer
   render as `<header>`/`<footer>`; actions render + click `stopPropagation` (card `onPress` not fired); Enter(keydown)
-  + Space(keyup) activate, Space keydown `preventDefault`, `e.repeat` guarded; disabled → `tabIndex=-1` +
-  `aria-disabled` + `onPress` suppressed + no `vida-card-interactive` class; `aria-busy` + skeleton + children hidden
-  when loading; padding variant → padding value; dev-warns (onPress-without-interactive; interactive no-name);
-  `{...rest}` spread-first.
+  - Space(keyup) activate, Space keydown `preventDefault`, `e.repeat` guarded; disabled → `tabIndex=-1` +
+    `aria-disabled` + `onPress` suppressed + no `vida-card-interactive` class; `aria-busy` + skeleton + children hidden
+    when loading; padding variant → padding value; dev-warns (onPress-without-interactive; interactive no-name);
+    `{...rest}` spread-first.
 - `packages/ui/src/internal/card-styles.ts` — **new** injected elevation stylesheet (resting shadow, raised overlay
   opacity transition, reduced-motion), built from `shadow` + `motion` imports (§1.2).
 - `packages/ui/src/themes/shadow.ts` — **new GENERATED** typed shadow export (mirrors `motion.ts`); see build-tokens.
@@ -264,6 +277,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
 - `packages/ui/src/tamagui.config.ts` — import + register `light_/dark_Card` in `themes:`.
 
 ## 7. Decisions — with grounding label (FACT = in a doc · INTERP = derived · UNKNOWN = doc silent → §10)
+
 - **D1 — hand-built on `@tamagui/core`, no new dep.** [FACT: U1–U4 pattern; ADR-001 §9; DS-5 UI-1 = the impl.]
   [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]]
 - **D2 — host = `<div>` (default render), `role="group"`|`"button"`; NEVER a native `<button>`; pointer via
@@ -287,6 +301,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
 - **D8 — `error` justified N/A · `empty` = consumer children slot** (Card owns no `empty` prop). [FACT: card.md.]
 
 ## 8. Definition of Done (U5)
+
 - [ ] `CardProps` = the contract interface **verbatim** (flat, D7); `header`/`footer`/`actions`/`children` slots
       compose; `padding` variant drives the space value.
 - [ ] `role="group"` (non-interactive) vs `role="button"` (interactive) — jsdom-asserted; header/footer render as
@@ -309,6 +324,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
       **dark-mode elevation reads via border, not a visible shadow** — Victor confirms.
 
 ## 9. Deferrals + defects (bounded, not silent — flagged for DS / later units)
+
 - **DEF-U5-a — minimal built-in loading skeleton; no standalone `Skeleton` primitive.** U5 ships static placeholder
   bars + `aria-busy` (the contract's "skeleton placeholders" behavior). A reusable `Skeleton` primitive is future work.
 - **DEF-U5-b (for DS) — `card.padding` is a single token but the API has 3 `padding` options.** U5 drives padding from
@@ -328,6 +344,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
   `variables.css`'s `--shadow-*` for CSS-side consumers; not needed by U5.
 
 ## 10. Verify-at-impl (measure/confirm in-browser or against installed types — not deferrable design work)
+
 - **[V1] `onClick` fires on the styled `<div>` frame** and the keyboard path activates — jsdom-assert + a real hover/
   click in Storybook. (Grounded on select.tsx onClick, but confirm on the Card frame.)
 - **[V2] `hoverStyle` border swap is instant (no transition)** given the frame has no `animation` prop — confirm in
@@ -339,6 +356,7 @@ focusable, no hover) · loading (skeleton + `aria-busy`) · **error = N/A** (con
 - **[V5] axe/SR** on the interactive role=button with nested focusable actions (DEF-U5-d).
 
 ## 8b. Build result + gates (2026-08-08) — IMPLEMENTED, pending Visual Gate
+
 Files: `themes/shadow.ts` (**new GENERATED** — `vida/shadow` format in `build-tokens.mjs`) · `internal/card-styles.ts`
 · `components/card.tsx` · `card.stories.tsx` · `card.test.tsx` (**16 jsdom**) · `tamagui.config.ts` (+`light_/dark_Card`)
 · `index.ts` (barrel + `shadow` re-export) · `build-tokens.test.ts` (+5 shadow-emit fixtures) · §XXIX currency
@@ -353,6 +371,7 @@ both themes) — the gate that caught real bugs on U1/U3/U4; measure §10 V1–V
 visible shadow).
 
 ## 9b. DEF-U5-f (surfaced at impl — for DS)
+
 **The §VIII `loading` visual state has no API trigger.** `card.md`'s Visual-States matrix lists `loading` (skeleton +
 `aria-busy`), but the authored `CardProps` (card.md:10-20) has **no `loading` prop** — the state can't be set through
 the documented API. Per [[deliverable-is-the-doc-not-my-discretion]], U5 ships the flat API verbatim (no `loading`
@@ -362,7 +381,9 @@ principle (a container can't render a content-shaped skeleton). **Supersedes DEF
 built-in skeleton). DS decides: add `loading?: boolean` + a `Skeleton` primitive, or record loading as consumer-composed.
 
 ## 11. Critique resolutions (Rev 1 → Rev 2)
+
 Independent plan critique verdict REVISE. All addressed:
+
 - **B1 (shadow var non-existent)** → §0, §1.2, §6, DEF-U5-e: `var(--shadow-*)` never resolves (AUX, CSS-only, unwired);
   U5 adds a typed `shadow.ts` (motion.ts precedent) and injects the literal values. The Rev-1 "like `--placeholder`"
   equivalence (O1/O2) is removed — those are runtime theme vars, shadow was not.

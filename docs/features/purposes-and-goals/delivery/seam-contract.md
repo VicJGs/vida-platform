@@ -42,18 +42,18 @@ export interface PurposesServiceDeps {
 
 ## Repositories (S1)
 
-| Table | softDelete | encryptedFields (M1.0) | Note |
-|-------|:---:|:---:|------|
-| `purposes` | `true` | `[]` | has `deleted_at` |
-| `targets` | `true` | `[]` | has `deleted_at` |
-| `dreams` | `true` | `[]` | has `deleted_at` |
-| `values` | `true` | `[]` | has `deleted_at` (DB-3) |
-| `contributions` | `true` | `[]` | has `deleted_at` (DB-3) |
-| `purpose_reviews` | `true` | `[]` | has `deleted_at` (DB-3) |
-| `plan_steps` | `true` | `[]` | has `deleted_at` (DB-3) |
-| `purpose_metrics` | **`false`** | `[]` | **no `deleted_at`** `purposes.ts:106` |
-| `purpose_metric_values` | **`false`** | `[]` | ledger, no `deleted_at` `:124` |
-| `target_reviews` | **`false`** | `[]` | ledger, no `deleted_at` `:141` |
+| Table                   | softDelete  | encryptedFields (M1.0) | Note                                  |
+| ----------------------- | :---------: | :--------------------: | ------------------------------------- |
+| `purposes`              |   `true`    |          `[]`          | has `deleted_at`                      |
+| `targets`               |   `true`    |          `[]`          | has `deleted_at`                      |
+| `dreams`                |   `true`    |          `[]`          | has `deleted_at`                      |
+| `values`                |   `true`    |          `[]`          | has `deleted_at` (DB-3)               |
+| `contributions`         |   `true`    |          `[]`          | has `deleted_at` (DB-3)               |
+| `purpose_reviews`       |   `true`    |          `[]`          | has `deleted_at` (DB-3)               |
+| `plan_steps`            |   `true`    |          `[]`          | has `deleted_at` (DB-3)               |
+| `purpose_metrics`       | **`false`** |          `[]`          | **no `deleted_at`** `purposes.ts:106` |
+| `purpose_metric_values` | **`false`** |          `[]`          | ledger, no `deleted_at` `:124`        |
+| `target_reviews`        | **`false`** |          `[]`          | ledger, no `deleted_at` `:141`        |
 
 ## Service surface (by slice)
 
@@ -135,15 +135,15 @@ export interface ProgressView { value: number | null; derived: boolean; partial:
 
 ## Typed errors (contract.md:49-57)
 
-| Error | When | Throw vs record |
-|-------|------|-----------------|
-| `PurposeNotFound` / `TargetNotFound` / … | id miss on update/get | throw (async, after findById) |
-| `CyclicBinding` | `bind` would create a cycle | **throw** at author time (PG-8) |
-| `InvalidContributor` | contribution to a non-pursuable / out-of-vocabulary type | **throw** (PG-10) |
-| `UnmeasuredQualitative` | qualitative with no scale/rating | **record** — surface `unmeasured:true`, never `0` (PG-3) |
-| `SourceUnavailable` | `derived-pull` source outage | **record** — last-known + flag, never fabricated (PG-6) |
-| `EffectApplyFailed` | `event-trigger` write fails | **record** — measurable unchanged + flagged; idempotent key guards double-apply (PG-7) |
-| `ProviderEmitFailed` | `summary`/`dueIn` throws | **isolate** — other providers + goal unaffected (PG-14) |
+| Error                                    | When                                                     | Throw vs record                                                                        |
+| ---------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------- |
+| `PurposeNotFound` / `TargetNotFound` / … | id miss on update/get                                    | throw (async, after findById)                                                          |
+| `CyclicBinding`                          | `bind` would create a cycle                              | **throw** at author time (PG-8)                                                        |
+| `InvalidContributor`                     | contribution to a non-pursuable / out-of-vocabulary type | **throw** (PG-10)                                                                      |
+| `UnmeasuredQualitative`                  | qualitative with no scale/rating                         | **record** — surface `unmeasured:true`, never `0` (PG-3)                               |
+| `SourceUnavailable`                      | `derived-pull` source outage                             | **record** — last-known + flag, never fabricated (PG-6)                                |
+| `EffectApplyFailed`                      | `event-trigger` write fails                              | **record** — measurable unchanged + flagged; idempotent key guards double-apply (PG-7) |
+| `ProviderEmitFailed`                     | `summary`/`dueIn` throws                                 | **isolate** — other providers + goal unaffected (PG-14)                                |
 
 ## DB-11 reconcile (S1)
 

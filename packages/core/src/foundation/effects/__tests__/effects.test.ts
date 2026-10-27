@@ -45,7 +45,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -79,9 +82,7 @@ describe('migration 004 wiring', () => {
   it('creates applied_effects (local-only) and advances version to 4', async () => {
     const { driver } = await harness()
     const names = (
-      await driver.values(
-        `SELECT name FROM sqlite_master WHERE type='table' AND name='applied_effects'`,
-      )
+      await driver.values(`SELECT name FROM sqlite_master WHERE type='table' AND name='applied_effects'`)
     ).flat()
     expect(names).toContain('applied_effects')
     // local-only: no _sync_* columns (like sync_queue) — inspect the DDL.

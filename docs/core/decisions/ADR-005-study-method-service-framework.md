@@ -30,6 +30,7 @@ welded to one feature — and it means the **next** study method (an assessment,
 whole table set** to re-solve the same problem.
 
 This contradicts the OS's own logic, already established when Knowledge was documented:
+
 - **KN-5/KN-8:** study methods and review curves are **pluggable and user-organized**; SM-2 is one preset;
   mastery is **derived**; the engine is generic (`study_methods` · `review_curves` · `method_bindings` ·
   `review_events`). `[FACT: docs/features/knowledge/business-rules.md KN-8; structure-data.md]`
@@ -42,15 +43,16 @@ The v2 flashcard code is schema-only (0 logic), so this is a structural decision
 ## 3. Decision
 
 **3.1 A study-method service is a plugin, defined by a 6-part anatomy.**
-1. **Content unit** — the *only* data the service owns (Flashcards: the card; Assessment: the item; Feynman:
+
+1. **Content unit** — the _only_ data the service owns (Flashcards: the card; Assessment: the item; Feynman:
    the prompt). Registered as a **reviewable**. The content unit is **data the capability owns, not itself a
-   capability**: the study-*method* is the capability (`kind=study_method`); a card is not (F2/D2).
+   capability**: the study-_method_ is the capability (`kind=study_method`); a card is not (F2/D2).
 2. **Run surface** — a **Session sub-type** (ADR-004): a drill, a test. Every run is a first-class Session.
 3. **Registration** — the service registers as a **capability of `kind=study_method` in the OS capability registry**
    (ADR-008 — the one composability registry; **`study_methods` is a typed specialization of it, not a parallel
    registry**, F2/D2). The user then **binds** it (`method_bindings`) to any knowledge object/container, choosing a
    curve (KN-8) — the **review-engine specialization** of the `study_method` kind, which stays Knowledge's.
-4. **Gather capability (optional)** — how it *creates* content units from OS sources (Knowledge objects, book
+4. **Gather capability (optional)** — how it _creates_ content units from OS sources (Knowledge objects, book
    quotes, notes) — the "gathering" role, first-class alongside retention.
 5. **Emitted signals** — outcomes recorded as generic **`review_events`**; Knowledge **derives** mastery
    (KN-10). The service never computes mastery.
@@ -59,6 +61,7 @@ The v2 flashcard code is schema-only (0 logic), so this is a structural decision
 
 **3.2 The generic engine owns everything except content + interaction.** Scheduling, curves, the review log,
 mastery, and grouping are Knowledge's — never re-implemented per service. Consequently, for Flashcards:
+
 - **RETIRE `flashcard_decks`** — grouping is a **user-defined Knowledge object/container** below a Topic
   (`parent_object_id`); daily caps move to the `method_binding`; the resource link is `entity_links`.
 - **RETIRE the SM-2 columns on `flashcards`** — scheduling state lives in the generic `method_binding` +
@@ -78,39 +81,46 @@ not now) and does not design the service view surfaces (build-time views pass).
 ## 4. Options Considered
 
 ### Option A — Pluggable services on the generic engine (CHOSEN)
-- **Rationale:** a new method defines only its *content unit + role*; body (Session), schedule (curve), review
+
+- **Rationale:** a new method defines only its _content unit + role_; body (Session), schedule (curve), review
   log, mastery, grouping, and universal properties come free. Matches KN-8, ADR-004, and the foundation-first
   principle. Extensible by design.
 - **Tradeoffs accepted:** more indirection (a service is spread across Knowledge's engine + Sessions + its own
   content table); the generic engine must be robust enough to serve every service.
 
 ### Option B — Self-contained feature per method (v1/v2) (REJECTED)
+
 - **Why rejected:** every method re-implements scheduling/review/grouping in its own tables; adding a service
   means a new table set; "spaced repetition" is welded to flashcards. This is the rigidity that triggered the ADR.
 
 ### Option C — One monolithic "study" table for all methods (REJECTED)
+
 - **Why rejected:** methods have genuinely different content units (card vs assessment item vs prompt);
   collapsing them yields nullable sprawl / opaque JSON and a god-table — the same failure ADR-004 rejected.
 
 ## 5. Consequences
 
 **Easier:**
+
 - A new study-method service is small: define its content unit + role; everything else is inherited.
 - One review engine, one mastery derivation, one grouping model — consistent across all services.
 - Services are automatically taggable, note-linkable, schedulable, and Journal-visible.
 
 **Harder:**
+
 - Logic for one service spans several owners (its content table + Knowledge's engine + Sessions); no single
   table tells the whole story.
 - Knowledge's generic engine carries more responsibility and must not leak method-specific assumptions.
 
 **Explicitly accepted tradeoffs:**
+
 - Indirection + a heavier generic engine, in exchange for extensibility and the end of per-method table sprawl.
 - Retiring three shipped v2 tables (they were schema-only) to honor the foundation.
 
 ## 6. Review Date / trigger
+
 Reconsider when the **second** study-method service (assessments) is documented — it is the real test of the
 seam; if it cannot be expressed as (content unit + role + bindings) without engine changes, revisit the anatomy.
-Assessments is now *also* the test of the F2/D2 is-a: if it cannot be expressed as a `kind=study_method`
+Assessments is now _also_ the test of the F2/D2 is-a: if it cannot be expressed as a `kind=study_method`
 capability (ADR-008 §3.3a crosswalk) without forcing review-engine assumptions into the generic registry, revisit
 the specialization.

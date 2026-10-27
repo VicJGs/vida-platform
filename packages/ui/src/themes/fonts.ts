@@ -2,9 +2,22 @@
 
 // Typography tokens as typed data — DS-4 feeds these to Tamagui createFont (fonts ⊄ createTokens categories).
 export const fonts = {
-  fontFamily: { "body": "'Spectral', Georgia, serif", "chrome": "'Inter', system-ui, sans-serif", "display": "'Spectral', Georgia, serif", "gameBody": "'Inter', system-ui, sans-serif", "gameChrome": "'Inter', system-ui, sans-serif", "gameDisplay": "'Inter', system-ui, sans-serif", "quietDeskBody": "'Source Serif 4', Georgia, serif", "quietDeskChrome": "'IBM Plex Sans', system-ui, sans-serif", "quietDeskDisplay": "'Source Serif 4', Georgia, serif", "readerBody": "'Newsreader', Georgia, serif", "readerChrome": "'Inter', system-ui, sans-serif", "readerDisplay": "'Fraunces', Georgia, serif" },
-  fontSize: { "body": 16, "caption": 12, "display": 36, "displayLarge": 60, "heading": 24, "small": 14, "subheading": 18 },
-  fontWeight: { "bold": 700, "medium": 500, "regular": 400, "semibold": 600 },
-  letterSpacing: { "normal": 0, "tight": -0.02, "wide": 0.02 },
-  lineHeight: { "body": 1.5, "caption": 1.4, "display": 1.15, "displayLarge": 1.05, "heading": 1.3, "small": 1.5, "subheading": 1.4 },
+  fontFamily: {
+    body: "'Spectral', Georgia, serif",
+    chrome: "'Inter', system-ui, sans-serif",
+    display: "'Spectral', Georgia, serif",
+    gameBody: "'Inter', system-ui, sans-serif",
+    gameChrome: "'Inter', system-ui, sans-serif",
+    gameDisplay: "'Inter', system-ui, sans-serif",
+    quietDeskBody: "'Source Serif 4', Georgia, serif",
+    quietDeskChrome: "'IBM Plex Sans', system-ui, sans-serif",
+    quietDeskDisplay: "'Source Serif 4', Georgia, serif",
+    readerBody: "'Newsreader', Georgia, serif",
+    readerChrome: "'Inter', system-ui, sans-serif",
+    readerDisplay: "'Fraunces', Georgia, serif",
+  },
+  fontSize: { body: 16, caption: 12, display: 36, displayLarge: 60, heading: 24, small: 14, subheading: 18 },
+  fontWeight: { bold: 700, medium: 500, regular: 400, semibold: 600 },
+  letterSpacing: { normal: 0, tight: -0.02, wide: 0.02 },
+  lineHeight: { body: 1.5, caption: 1.4, display: 1.15, displayLarge: 1.05, heading: 1.3, small: 1.5, subheading: 1.4 },
 } as const

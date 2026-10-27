@@ -43,7 +43,6 @@ const migration: Migration = {
 
   up(db) {
     db.batch([
-
       // ==================== INFRASTRUCTURE ===================================
 
       sql(`CREATE TABLE app_state (
@@ -1273,7 +1272,6 @@ const migration: Migration = {
       sql(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_tasks USING fts5(id UNINDEXED, title, description)`),
       sql(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_contacts USING fts5(id UNINDEXED, first_name, last_name, company)`),
       sql(`CREATE VIRTUAL TABLE IF NOT EXISTS fts_courses USING fts5(id UNINDEXED, title, description, provider)`),
-
     ])
   },
 }

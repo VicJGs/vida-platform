@@ -21,12 +21,7 @@ import { z } from 'zod'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import { transactions } from '../../db/schema/finance'
-import {
-  type EffectEvent,
-  type EffectHandler,
-  type EffectTx,
-  type EffectRegistry,
-} from '../../foundation/effects'
+import { type EffectEvent, type EffectHandler, type EffectTx, type EffectRegistry } from '../../foundation/effects'
 import { InvalidTransferError } from './types'
 
 // The move_money payload (typed — no untyped payload reads; the economy precedent). `amount` is a positive

@@ -1,6 +1,6 @@
 <!-- Identity — features/learning/education · /documentation Phase 2 · sources: ADR-002 §5.10 (courses) + §5.18 (ICS) · @vida/types/learning.ts · CLAUDE.md §7 · docs/intake/learning-education.md -->
 
-# Identity — Learning: Education  (level: Feature / Learning sub-context 1 of 5)
+# Identity — Learning: Education (level: Feature / Learning sub-context 1 of 5)
 
 **What it is.** The platform's **academic structure**: an 8-level hierarchy — **Institution/Self-taught →
 Program → Curriculum → Degree → Term → Subject → Module → Topic** — through which the user organizes everything
@@ -13,17 +13,18 @@ nullable-derives, M3). `[FACT: CLAUDE.md §7; ADR-002 §5.10/§5.18; INTENT: int
 **The desire behind it.** The user wants his education to be **structured the way education actually is** — not
 a flat course list. He studies in two modes (formal + self-taught) and wants both to share one spine: pick a
 Program, shape its Curriculum (bounded by an institution, or freely — even "messy but purposeful"), and see
-real progress — grades against the *actual* grading system his professor uses, deliverables, goals — while the
+real progress — grades against the _actual_ grading system his professor uses, deliverables, goals — while the
 OS keeps his week organized. `[INTENT: Victor 2026-07-01→03]`
 
 **Scope — a deliberate v2 reframe (the flat model was wrong).** `[INTENT: reframe + H1–H12 + A1–A4]`
+
 - **FACT base (3 tables today):** `courses` (reinterpreted as **subjects**), `ics_feed_configs`,
   `ics_synced_events`. `[FACT: ADR-002 §5.10 L2372-2403, §5.18 L3581-3630]`
 - **⚠ INTENDED hierarchy (largest expansion yet):** `institutions` + `self_taught` (separate tables) →
   `programs` → `curricula` (forkable, lineage) → degree tier (field) → `terms` (hierarchical: year ⊃ semester ⊃
   term) → subjects (properly routed, never orphaned) → modules → topics.
 - **Optional depth (A1):** every intermediate level is skippable — the hierarchy is the maximum shape.
-- **Class sessions (H5):** a *class* is a **session of a Subject** (one meeting); the weekly schedule is made of
+- **Class sessions (H5):** a _class_ is a **session of a Subject** (one meeting); the weekly schedule is made of
   sessions; ICS events map to them, per subject.
 - **Grading systems (H3):** a builder — weighted components (homework/tasks/exams/quizzes/tests/presentations/
   works, each with own weight + points, per professor), any scale (A–F, 0–10, pass/fail, custom), assessment
@@ -35,6 +36,7 @@ OS keeps his week organized. `[INTENT: Victor 2026-07-01→03]`
   Subject · per-assessment-type pages. Defaults always shipped ("don't get lost personalizing").
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules]`
+
 - **Not the whole Learning domain.** Books, Knowledge (topics' content), Study Sessions & Planner, and Flashcards
   are sibling sub-contexts that attach to this hub; **Skills** and **Language** are separate modules.
 - **Not the owner of homework.** Homework is a **dedicated education-task entity inside the Tasks Universe**,
@@ -50,4 +52,5 @@ OS keeps his week organized. `[INTENT: Victor 2026-07-01→03]`
   gracefully with partial data and invite increments. `[INTENT H9.8]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

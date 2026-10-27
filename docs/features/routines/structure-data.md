@@ -3,11 +3,12 @@
 > ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
 > [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
 
-# Structure & Data — Routines  (level: Feature)
+# Structure & Data — Routines (level: Feature)
 
 ## Data model
 
 ### As-is (v2 — FACT, the floor) `[FACT: ADR-002 §5.6 L1705-1763; routine.ts]`
+
 - **`routine_actions`** — `title[E]`, `description[E]`, `action_type`{habit,task,focus}, `time_of_day`{morning,
   afternoon,evening}, `duration_minutes`, `is_active`, `sort_order`, **`linked_habit_id`** (SET NULL),
   **`linked_task_id`** (SET NULL), `recurrence_frequency`{daily,weekdays,weekends,custom}, `recurrence_days`
@@ -23,6 +24,7 @@
 `action_type` + two hard FKs — **no group/sequence table, no policy, no provider.**
 
 ### Intended (the reframe — ⚠ INTENDED → ADR-002 amendment + Routines design-pass) `[INTENT §E]`
+
 - **`routines`** (NEW) — the named ordered sequence: `name[E]`, broad `schedule` (day / week+timeframe /
   month / year), `lifecycle`{active,paused,off}, `completion_policy`{all-or-nothing,required-node,threshold} +
   params, `miss_policy` + `acceptance_window`, `sort_order`, soft-delete. **As a pursuable (ADR-011):
@@ -39,6 +41,7 @@
   completion is **computed** by policy, not stored.
 
 ## Dependencies / graph (within the coupling budget — constitution §6)
+
 - **Depends on (consumes):** Sessions & Scheduling (ADR-004: registry + scheduler + `dueIn`) · Tasks (task/duty/
   obligation steps + recurrence) · Habits · Health (workout) · Knowledge/Education (study) · Journals (provider
   registry) · Purpose (`contributions` — retires the As-is `purpose_routines`, M7) · Spaces (tags/views/types/templates) · Preferences (policy settings) ·
@@ -49,6 +52,7 @@
   read-everything contexts (Journals/Purpose/Gamification) — consistent with the fill order.
 
 ## ADRs / structural decisions
+
 - **ADR-004 (Session Framework)** — the sub-type registry + scheduler Routines' steps compose (the step "modes").
   `[FACT: docs/core/decisions/ADR-004]`
 - **ADR-011 (Measurability) / ADR-012 (Economy) / ADR-006 (Spaces & Tags)** — the routine is a **pursuable**
@@ -63,6 +67,7 @@
   (completion/miss/acceptance-window). `[INTENT §E]`
 
 ## Single source of truth (constitution §3)
+
 - **Completion of a step lives on the DRIVEN ENTITY**, never a parallel routine record (RT-3). The routine reflects.
 - **Routine-level "done" is DERIVED** (policy over the ledger via `progress()` on-read — ADR-011 M3), never a
   stored/denormalized flag (RT-5, RT-14).
@@ -71,4 +76,5 @@
 - **Scheduling/recurrence** = the **Scheduler**, not a Routines-local scheduler (RT-11).
 
 ## Completion checklist
+
 - [x] data model (as-is FACT vs INTENDED) · [x] dep graph within budget (no cycle) · [x] ADRs · [x] single source per cross-cutting concern · [x] [FACT/INTENT]

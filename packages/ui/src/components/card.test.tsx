@@ -184,7 +184,15 @@ describe('Card', () => {
     const cardPress = vi.fn()
     const actionClick = vi.fn()
     const { getByText } = renderCard(
-      <Card interactive onPress={cardPress} actions={<button type="button" onClick={actionClick}>Edit</button>}>
+      <Card
+        interactive
+        onPress={cardPress}
+        actions={
+          <button type="button" onClick={actionClick}>
+            Edit
+          </button>
+        }
+      >
         Body
       </Card>,
     )

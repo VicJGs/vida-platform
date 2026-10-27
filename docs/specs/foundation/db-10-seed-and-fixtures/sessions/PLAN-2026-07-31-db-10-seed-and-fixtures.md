@@ -1,4 +1,5 @@
-# PLAN — DB-10 · Dogfood seed vault + fixtures   (session: 2026-07-31-db-10-seed-and-fixtures · language: TypeScript/English)
+# PLAN — DB-10 · Dogfood seed vault + fixtures (session: 2026-07-31-db-10-seed-and-fixtures · language: TypeScript/English)
+
 > ⏸ **PARKED 2026-07-31 — DOGFOOD INPUT, not an active plan.** The db-10 triage escalated STRUCTURAL: db-10 was
 > mis-homed to M1.0 and is a symptom of a malformed Project>Milestone>Issue delivery structure. This PLAN is kept
 > as rich input to `delivery-structure-reconstruction` (its scope recommendations were corrected there). Do not
@@ -7,6 +8,7 @@
 > detail (that is the IMPLEMENTATION-PLAN, authored after Approval 1). No-Guessing: every claim [FACT]/[INTERP]/[UNKNOWN].
 
 ## 1. Contexto & demanda
+
 DB-10 is the **dogfood seed vault** — the DB-spine head computed off db-7 (blockers **DB-6 ✅ DB-7 ✅ DB-9 ✅**
 all done). Home `core/src/db/` (seed); DOC spine **B·F·C·L**. `[FACT: docs/roadmap/m1.0-delivery-plan.md:156,249]`
 Goal: a realistic single-user vault so downstream surfaces have something to render against, and so tests have
@@ -32,11 +34,13 @@ Seedable surface today:
 dogfood/tester vehicle) real data to render the moment the app shell lands. `[FACT: delivery-plan:249; ADR-017:25]`
 
 ## 2. O que muda e por quê
+
 The seed is a new `packages/core/src/db/seed/` module that **composes the existing foundation services** to write a
 coherent foundation vault. It does **not** touch the repository, adapter, schema, or migrations — it is a pure
 consumer of the already-built substrate.
 
 **IN:**
+
 - **`seedVault(deps)` runner** (`db/seed/seed.ts`) — takes a `DrizzleDb` + `deviceId` (+ the TaggableTypeRegistry the
   SpacesService needs), instantiates the foundation services, and writes the vault by **calling their methods**
   (`createSpace`/`createTag`/`tagEntity`/`createLink`/`createView`/`register`…), plus a **direct**
@@ -45,7 +49,7 @@ consumer of the already-built substrate.
   already routes through the DB-6 repository → **co-transactional `sync_queue` enqueue**, every seeded row is
   sync-queued and passes the M1.0 empty-`[E]` pass-through seam for free — the task's "like real writes" is satisfied by
   construction, with **zero new persistence code**. `[FACT: spaces/service.ts:69-74 createRepository per table;
-  repository.ts:331-336 enqueue; no SessionsService in foundation/sessions/]`
+repository.ts:331-336 enqueue; no SessionsService in foundation/sessions/]`
 - **Seed data as code constants** (`db/seed/seed-data.ts`) — the vault's content described as plain data, the
   established `SHIPPED_SESSION_TYPES` idiom (SS-4 "seed from code"). `[FACT: sessions/registry.ts:26]` Content =
   Victor's real data shapes: a small set of Spaces (e.g. Health · Learning · Work), each with a root tag + a few nested
@@ -55,15 +59,15 @@ consumer of the already-built substrate.
   child (a View's `space_id`, a `entity_tag`'s `tag_id`) is wired from the parent's returned handle. The seed is
   therefore **structurally deterministic** (same entities/relationships/counts every run) even though `id`/timestamps
   are runtime-generated — those are **repository-managed fields** the caller cannot and must not supply. `[FACT:
-  repository.ts:37-52 ManagedFields; services return RowOf<T>]`
+repository.ts:37-52 ManagedFields; services return RowOf<T>]`
 - **Idempotency guard** — a `seed_version` key written **last** to the device-local **`app_state`** k/v store (DB-7's
   infra table); `seedVault` no-ops if the marker is already present. `app_state` carries no sync columns, so the marker
   is a **raw kv write** (a tiny `getAppState/setAppState` helper, or `INSERT OR REPLACE`), NOT a repository write —
   device-local infra sits outside the sync path by design (the `setSchemaVersion` precedent). **Honest limit:** only
   junction writes are service-idempotent (BR-14); top-level `createSpace`/`createTag`/`createView` are unconditional
-  creates, so a crash *before the marker* leaves a partial vault a re-run would duplicate — acceptable in M1.0
+  creates, so a crash _before the marker_ leaves a partial vault a re-run would duplicate — acceptable in M1.0
   (dev/first-run-only call site; `resetDev` is recovery). See BR-DB10-3. `[FACT: app-state.ts:18-21 no sync cols;
-  spaces/service.ts:195-203 unconditional createSpace; runner.ts:90 resetDev]`
+spaces/service.ts:195-203 unconditional createSpace; runner.ts:90 resetDev]`
 - **Fixtures = the seed applied to a `:memory:` DB in tests** — `db/seed/tests/seed.test.ts` runs the same harness the
   repository tests use (`better-sqlite3` `:memory:` → `createDrizzleProxy` → `migrate(driver)` → `seedVault`) and
   asserts on **structure** (entity counts, relationships, enum validity, one `sync_queue` `create` row per entity) — not
@@ -75,16 +79,19 @@ consumer of the already-built substrate.
   `current-business-rules.md`); the database-layer docs are already current (no change owed there).
 
 **OUT** — boundary discipline:
+
 - **Domain-module seed content** (tasks/finance/habits/contacts/learning/…) → **deferred to each module's own gate**
   (streaming; the tables don't exist). DB-10 ships the foundation slice only. `[FACT: ADR-016 §3.5; roadmap.md:85]`
-- **A per-feature seed *registry*** (a plug-in system so domains self-register their seed slice) → **NOT built now**
+- **A per-feature seed _registry_** (a plug-in system so domains self-register their seed slice) → **NOT built now**
   (§5-E). One contributor (foundation) needs no registry; introduce it when the second (first domain) lands — YAGNI.
 - **Field encryption of seeded content** → M1.0 pass-through (empty `[E]`); flips at M3. `[FACT: ADR-017:20]`
 - **The sync reader/flush** that consumes the seeded `sync_queue` rows → AR-9 / M4. DB-10 is a producer only. `[FACT: db-6 current-business-rules BR-DB6 note]`
 - **Literal-id / snapshot determinism** → not a requirement; managed fields are runtime-generated by design (§5-B).
 
 ## 3. Regras de negócio relevantes (funcional)
+
 Keep (do not regress):
+
 - **[FACT]** Every persisted mutation flows through the repository → one co-transactional `sync_queue` row; both commit
   or both roll back. `[FACT: repository.ts:331-336; db-6 current-business-rules BR-DB6-1]`
 - **[FACT]** M1.0 pass-through: empty `[E]` set, vault key fetched lazily, so a **locked vault** (the M1.0 default) never
@@ -96,13 +103,14 @@ Keep (do not regress):
   user type must pass the envelope check (declared effects ⊆ own permission envelope ⊆ shipped envelope). `[FACT: sessions/registry.ts:84-105]`
 
 Owed by DB-10 (this unit establishes):
+
 - **[OWED] BR-DB10-1 — compose services where a service exists; otherwise the sanctioned through-repo path.** The seed
   is a consumer, not a persistence author. Three tiers, in priority order: **(a)** where a foundation service exists
   (`SpacesService`, `ViewsService`, `SessionRegistry`) the seed calls its methods — inheriting idempotency (BR-14),
   resolve-then-soft-delete (BR-15), cycle guards, and the co-transactional `sync_queue` enqueue automatically; **(b)**
   the `sessions` base table has **no writer** (AR-5 shipped only the registry, not a sessions-row service — `[FACT: no
-  SessionsService in foundation/sessions/; only registry.ts]`), so the seed calls `createRepository(db, sessions,
-  {deviceId, encryptedFields: [], softDelete: true})` directly — this is **still** the through-repo → sync_queue path,
+SessionsService in foundation/sessions/; only registry.ts]`), so the seed calls `createRepository(db, sessions,
+{deviceId, encryptedFields: [], softDelete: true})` directly — this is **still** the through-repo → sync_queue path,
   not an ad-hoc insert; **(c)** the `app_state` seed marker is **device-local infra outside the sync/repository path by
   design** (no `baseColumns`/`syncColumns`, so the generic repository cannot manage it — mirrors `setSchemaVersion`'s
   raw write, adapter.ts) → written via a small `getAppState/setAppState(key)` helper (or raw `INSERT OR REPLACE`). The
@@ -113,7 +121,7 @@ Owed by DB-10 (this unit establishes):
 - **[OWED] BR-DB10-3 — idempotent on clean re-run; crash-window disclosed.** A second `seedVault` on a cleanly-seeded
   DB is a no-op (the `app_state` `seed_version` marker, written **last**). **Honest limit:** top-level entities are NOT
   idempotent in the services (only junctions are — `[FACT: spaces/service.ts createSpace/createTag unconditional
-  create]`), so a crash *mid-seed, before the marker* leaves a partial vault that a re-run would duplicate. This is
+create]`), so a crash _mid-seed, before the marker_ leaves a partial vault that a re-run would duplicate. This is
   **acceptable in M1.0** because the call site is dev/first-run-only and `resetDev` (rebuild-from-zero) is the recovery
   path. Gate-2 MAY harden to fully-atomic by wrapping the seed in one outer `db.transaction` — **iff** the async
   sqlite-proxy supports the nested `db.transaction` the repository already opens per write (verify at gate 2; do not
@@ -124,6 +132,7 @@ Owed by DB-10 (this unit establishes):
   repository change; `pnpm typecheck` stays green with zero edits to the foundation layer.
 
 ## 4. Aceitação (funcional)
+
 - [ ] `seedVault(db, deviceId, registry)` populates the foundation vault: ≥2 Spaces (each with a root `tag` + ≥1 nested
       tag + ≥1 `entity_tag`), ≥1 `entity_link` **between real seeded entities** (`entity_type: 'space'|'tag'` — the only
       non-dangling foundation targets; `page_id` is a synthetic placeholder since `pages` is M1.1), ≥2 `views` spanning
@@ -141,35 +150,38 @@ Owed by DB-10 (this unit establishes):
 - [ ] §XXIX Currency: new `seed` context docs born (D6); database-layer docs confirmed current; committed WITH the code.
 
 ## 5. Questões em aberto / decisões pendentes
+
 - **[DECISION — Approval 1] (A) Seed content depth.** **Recommend: a coherent, minimal-realistic slice** — ~3 Spaces
   mirroring real use (e.g. Health · Learning · Work), each with a root tag + 2–3 nested tags, 1–2 views, and one seeded
   `sessions`/user-type pair. Enough to render every foundation surface, not an exhaustive catalogue. Alternative: a
   richer vault — deferred; more data now buys nothing until domain modules render it. `[INTERP: over-engineering guard —
-  global CLAUDE.md "simplest solution for the stage"]`
+global CLAUDE.md "simplest solution for the stage"]`
 - **[DECISION — Approval 1] (B) Determinism model.** **Recommend: structural determinism** (fixed constants; runtime
   managed ids/timestamps; fixtures assert on structure). Literal-id/snapshot determinism is **not** pursued — it would
   require overriding repository-managed fields, violating BR (repository.ts:37-52). Confirm no snapshot-id requirement exists.
 - **[DECISION — Approval 1] (C) Idempotency + guard mechanism.** **Recommend: `app_state` `seed_version` marker + a
   dev/first-run-guarded call site** (mirrors `resetDev`'s dev-only posture — `import.meta.env.DEV` at the app boundary).
-  The seed *function* is barrel-exported (harmless — writes only well-formed data); the *decision to run it* is guarded.
+  The seed _function_ is barrel-exported (harmless — writes only well-formed data); the _decision to run it_ is guarded.
   Alternative: not barrel-exported, path-import only (stricter, but tests already path-import). `[FACT: runner.ts:90-104 resetDev posture]`
 - **[DECISION — Approval 1] (E) Extensibility now vs later.** **Recommend: a flat, well-factored `foundationSeed` now;
   NO plug-in registry yet.** A registry with one contributor is speculative generality; introduce it when the first
   domain seed lands (it will be an additive refactor, not a rewrite). Alternative: build the registry now — rejected as
   over-engineering for the current stage. `[INTERP: streaming model does not require the registry to pre-exist]`
 - **[RESOLVED by the critique — no longer open] (D) Service surfaces.** The critique confirmed `ViewsService.createView(input:
-  CreateViewInput): Promise<ViewRow>` exists with a known signature (`{space_id?, name, layout, filter?, grouping?, sort?}`),
+CreateViewInput): Promise<ViewRow>` exists with a known signature (`{space_id?, name, layout, filter?, grouping?, sort?}`),
   and that **no** `sessions`-row service exists → the seed uses the tier-(b) direct-repo path (BR-DB10-1). Nothing left to
   defer here except the trivial file split (`seed.ts` / `seed-data.ts` / `tests/seed.test.ts`), a gate-2 build detail.
   `[FACT: views/service.ts:16-30; no SessionsService in foundation/sessions/]`
 
 ## 6. Aprovação 1 (direção) — ⏳ PENDING
+
 Awaiting Victor. Recommended locked decisions: **(A) minimal-realistic slice · (B) structural determinism · (C)
 app_state marker + dev-guarded call site, barrel-exported fn · (E) flat foundationSeed, no registry yet.** On approval:
 author the IMPLEMENTATION-PLAN → `/preflight` → 2nd `/critique` → Approval 2 → implement.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-07-31 | 2026-07-31-db-10-seed-and-fixtures | initial PLAN (gate 1) — direction + §5 decisions for Approval 1 |
+
+| Date       | Session                            | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | ---------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-31 | 2026-07-31-db-10-seed-and-fixtures | initial PLAN (gate 1) — direction + §5 decisions for Approval 1                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-07-31 | 2026-07-31-db-10-seed-and-fixtures | REVISE after independent /critique (3 MUST-FIX): BR-DB10-1 reworded to a 3-tier rule (service → direct-repo for `sessions` (no writer) → raw kv for `app_state` marker), resolving the "never raw inserts" contradiction; BR-DB10-3 crash-window disclosed honestly (was overclaimed as unconditional no-duplication); app_state marker corrected to a raw non-repository write. SHOULD-FIX: §5-D collapsed (Views signature IS known); acceptance gained a relational/topology assertion + real-entity link target. |

@@ -1,11 +1,12 @@
 <!-- Conventions — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · CLAUDE.md conventions · docs/intake/flashcards.md -->
 
-# Conventions — Flashcards  (level: Feature / Knowledge sub-context)
+# Conventions — Flashcards (level: Feature / Knowledge sub-context)
 
 > INTENDED (v2 = schema-only, 0 logic). Flashcards is the **reference implementation** of the Study-Method
 > Service framework (ADR-005) — build the next service (assessments, self-test) by copying this shape.
 
 ## How to build here (= how to build any study-method service, ADR-005)
+
 - **Own content + interaction, nothing else.** Define one **content unit** (the card) + a **run surface**
   (a Session sub-type). Do NOT add scheduling, curve, review-log, deck, or mastery tables — those are the
   generic engine's. If you feel the urge to add a `*_reviews` or `*_decks` table, that is the v1/v2 trap. `[FACT: ADR-005 §3.2]`
@@ -21,6 +22,7 @@
   comes for free. `[FACT: ADR-004]`
 
 ## Naming & layout
+
 - The content entity stays `flashcards` (content-only); a review is a generic `review_event` (not
   `flashcard_review`); grouping has **no** table (a user Knowledge object).
 - `card_type ∈ {basic, reversed, cloze, image_occlusion}`; media as encrypted attachment refs.
@@ -28,6 +30,7 @@
   on the syncable entity · soft-delete `deleted_at` · tags via the shared `entity_tags` primitive (SP1). `[FACT: CLAUDE.md Conventions; ADR-006 SP1]`
 
 ## Landmines / local "never do"
+
 - **The v2 surface is a schema stub — never cite it as behaviour.** `models/learning.ts` is 0 lines. `[FACT: wc -l = 0]`
 - **Do NOT preserve the v2 tables.** `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns are
   **retired** — building them back re-creates the rigid model ADR-005 exists to kill. `[FACT: ADR-005 §3.2]`
@@ -41,5 +44,6 @@
   intent level; detail is the standing build-time per-module VIEWS pass. Do not fabricate view behaviour. `[INTENT]`
 
 ## Completion checklist
+
 - [x] patterns in use (INTENDED, marked; = the ADR-005 service recipe) · [x] naming & layout ·
-  [x] landmines (v1/v2 traps) · [x] [FACT]/[INTENT] on each claim
+      [x] landmines (v1/v2 traps) · [x] [FACT]/[INTENT] on each claim

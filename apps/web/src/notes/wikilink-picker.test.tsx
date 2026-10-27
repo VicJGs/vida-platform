@@ -39,7 +39,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
 
   it('EC-10 — populated: a listbox of candidate options + a DISTINCT "Create" row', () => {
     const { getByRole, getAllByRole, getByText } = renderUI(
-      <PickerView query="la" candidates={candidates} createRow={{ query: 'la' }} state="populated" onPick={noop} onCreate={noop} />,
+      <PickerView
+        query="la"
+        candidates={candidates}
+        createRow={{ query: 'la' }}
+        state="populated"
+        onPick={noop}
+        onCreate={noop}
+      />,
     )
     expect(getByRole('listbox', { name: 'Link to page' })).not.toBeNull()
     // 2 candidates + 1 create row = 3 options
@@ -50,7 +57,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
 
   it('EC-10 — empty candidates but non-blank query still offers the Create row (create-on-miss)', () => {
     const { getAllByRole, getByText } = renderUI(
-      <PickerView query="novel" candidates={[]} createRow={{ query: 'novel' }} state="empty" onPick={noop} onCreate={noop} />,
+      <PickerView
+        query="novel"
+        candidates={[]}
+        createRow={{ query: 'novel' }}
+        state="empty"
+        onPick={noop}
+        onCreate={noop}
+      />,
     )
     expect(getAllByRole('option')).toHaveLength(1)
     expect(getByText('Create “novel”')).not.toBeNull()
@@ -60,7 +74,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
     const onPick = vi.fn()
     const onCreate = vi.fn()
     const { getByText } = renderUI(
-      <PickerView query="la" candidates={candidates} createRow={{ query: 'la' }} state="populated" onPick={onPick} onCreate={onCreate} />,
+      <PickerView
+        query="la"
+        candidates={candidates}
+        createRow={{ query: 'la' }}
+        state="populated"
+        onPick={onPick}
+        onCreate={onCreate}
+      />,
     )
     fireEvent.click(getByText('Launch milestone'))
     expect(onPick).toHaveBeenCalledWith('b')
@@ -71,7 +92,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
     const onPick = vi.fn()
     const onCreate = vi.fn()
     const { getByText } = renderUI(
-      <PickerView query="la" candidates={candidates} createRow={{ query: 'la' }} state="populated" onPick={onPick} onCreate={onCreate} />,
+      <PickerView
+        query="la"
+        candidates={candidates}
+        createRow={{ query: 'la' }}
+        state="populated"
+        onPick={onPick}
+        onCreate={onCreate}
+      />,
     )
     fireEvent.click(getByText('Create “la”'))
     expect(onCreate).toHaveBeenCalledWith('la')
@@ -81,7 +109,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
   it('keyboard: ArrowDown + Enter activates the next option', () => {
     const onPick = vi.fn()
     const { getByRole } = renderUI(
-      <PickerView query="la" candidates={candidates} createRow={null} state="populated" onPick={onPick} onCreate={noop} />,
+      <PickerView
+        query="la"
+        candidates={candidates}
+        createRow={null}
+        state="populated"
+        onPick={onPick}
+        onCreate={noop}
+      />,
     )
     const listbox = getByRole('listbox')
     fireEvent.keyDown(listbox, { key: 'ArrowDown' }) // 0 → 1
@@ -91,7 +126,14 @@ describe('PickerView (S4 — the [[ picker)', () => {
 
   it('EC-22 — options carry Lucide icons (svg)', () => {
     const { container } = renderUI(
-      <PickerView query="la" candidates={candidates} createRow={{ query: 'la' }} state="populated" onPick={noop} onCreate={noop} />,
+      <PickerView
+        query="la"
+        candidates={candidates}
+        createRow={{ query: 'la' }}
+        state="populated"
+        onPick={noop}
+        onCreate={noop}
+      />,
     )
     expect(container.querySelectorAll('svg').length).toBeGreaterThan(0)
   })

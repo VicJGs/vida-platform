@@ -15,10 +15,11 @@ palette anywhere** and **swappable token families incl. font-family** [FACT: dec
 It ships the **engine + presets + state contract** — not the switcher UI (that is Settings, a later unit).
 
 Captured P1 intent (the feel, ✓ locked) [FACT: p1-identity-specimen.html:297-300]:
+
 - Metaphor = book / living journal · Voice = **editorial** · **Light primary** · **Density adaptive**.
 - **Three user-chosen presets**, default **The Editorial + calm density** [FACT: frontend-quality-bar/_index.md:63-66 P1]:
   - **A — The Reader** — Fraunces + Newsreader · warm ivory · oxblood accent · most book-like [FACT: p1-identity-specimen.html:174-175].
-  - **B — The Editorial** *(default)* — Spectral headlines + Inter chrome · cool paper · ink-blue accent [FACT: p1-identity-specimen.html:201-202].
+  - **B — The Editorial** _(default)_ — Spectral headlines + Inter chrome · cool paper · ink-blue accent [FACT: p1-identity-specimen.html:201-202].
   - **C — The Quiet Desk** — Source Serif 4 + IBM Plex Sans · warm gray · olive accent · most calm [FACT: p1-identity-specimen.html:237-238].
 
 ---
@@ -83,6 +84,7 @@ tokens/*.json (per-preset families + density scale)   ← ds-2, the editable inp
 ## 5. THE 3-LENS AUDIT
 
 ### WRONG — contradicts the P1 decision this codec exists to implement
+
 - **W1** `ThemeName = 'light' | 'dark'` + single-family `createTamagui` **cannot express preset × density** — the core P1
   requirement (3 swappable families incl. font-family) has no representation [provider.tsx:13; tamagui.config.ts:93-124 vs quality-bar P1].
 - **W2** `apps/web` hardcodes `theme="light"` with **no user-control path** — contradicts "the user controls their own
@@ -91,6 +93,7 @@ tokens/*.json (per-preset families + density scale)   ← ds-2, the editable inp
   Source Serif 4…) — provisional by design, this unit is where the N-family arch lands [themes/CLAUDE.md:50 vs specimen:174-238].
 
 ### MISSING — the bar requires it, nothing exists
+
 - **M1** **No density axis** — `space.inset` exists but is not wired to a calm/dense mode; no type-ramp density [semantic.json:24-31 vs quality-bar P1 "density user-controlled"].
 - **M2** **No theme STATE API / persistence** — the provider promises "app owns state (Zustand)" but it does not exist; the codec needs a typed contract even if the UI is later [provider.tsx:1-4].
 - **M3** **No font-loading strategy** — no @font-face/self-host/swap/budget for the N-family system [quality-bar/_index.md:56 §2.8].
@@ -98,6 +101,7 @@ tokens/*.json (per-preset families + density scale)   ← ds-2, the editable inp
 - **M5** **No `user_preferences` reconcile** — theme_preset (net-new) / density (extend `compact_mode`/`font_size`) not wired [quality-bar/_index.md:87-90 P5].
 
 ### OVERFLOWING — past this unit's job
+
 - **O1** The theme/density **switcher UI** → Settings (later unit), not this codec [decomposition.md:71 §3; task Goal].
 - **O2** **"Adaptive density" (auto-by-context / per-view)** is a P2/P3 vision explicitly flagged open — ship the
   **user-controlled** density mechanism only; defer adaptive-by-context [specimen:288-290].
@@ -109,6 +113,7 @@ tokens/*.json (per-preset families + density scale)   ← ds-2, the editable inp
 ## 6. RESOLVED BY DOCS (stated as FACT — no decision owed to Victor)
 
 **Preset / feel:**
+
 - **R1 Preset token boundary** = color (palette + paper warmth + accent) + type (display/body family) **only** — NOT
   radius/shadow/density ("differ **only** in type pairing, paper warmth, and accent") [FACT: specimen:162].
 - **R2 Default** = The Editorial + calm density + light [FACT: quality-bar/_index.md:64-66].
@@ -116,19 +121,20 @@ tokens/*.json (per-preset families + density scale)   ← ds-2, the editable inp
 - **R4 Switcher UI is out** (Settings) [FACT: decomposition.md:71].
 
 **Architecture (the four I wrongly raised as gaps — all doc-fixed):**
+
 - **R5 State scope** — the codec ships the **provider MECHANISM + typed contract only**. **Theme state = app Zustand
   (AR-4)**; its **persistence** (theme-preset = net-new `user_preferences` field) + the **toggle UI** are the app's
   (Settings/UX-3/UI-4), not this codec. The provider takes the resolved `{preset, mode, density}` as props, exactly as
   it takes `theme` today [FACT: docs/ui/token-pipeline/current-spec.md:89 "[RESOLVED — DS-4]… state = app Zustand";
-  current-business-rules.md:76; packages/ui/src/provider.tsx:1-4; quality-bar/_index.md:87 P5].
-  → So **W2's fix** (the hardcoded `theme="light"`) is: the codec makes the provider *capable*; App feeds the resolved
+  current-business-rules.md:76; packages/ui/src/provider.tsx:1-4; quality-bar/\_index.md:87 P5].
+  → So **W2's fix** (the hardcoded `theme="light"`) is: the codec makes the provider _capable_; App feeds the resolved
   default (Editorial/calm/light) through the new contract; the live store + switch arrive with Settings. Not a #1 gap.
 - **R6 Fonts** — **real fonts, self-hosted, with a font-loading budget** (N swappable families incl. font-family; the
   six named faces: Fraunces/Newsreader · Spectral/Inter · Source Serif 4/IBM Plex Sans) [FACT: quality-bar/_index.md:56
-  §2.8, 63 P1; specimen:175,202,238]. *(Victor-confirmed.)*
+  §2.8, 63 P1; specimen:175,202,238]. _(Victor-confirmed.)_
 - **R7 Dark matrix** = **preset × {light, dark}** for all three — dark is a first-class switchable theme (B14) and
   presets are families; light is primary [FACT: tamagui.config.ts:6 B14; themes/CLAUDE.md:11 dark overlay;
-  quality-bar/_index.md:63 P1]. *(Victor-confirmed.)*
+  quality-bar/_index.md:63 P1]. _(Victor-confirmed.)_
 - **R8 Density levels** = **2 (calm / dense)**, the `compact_mode` boolean; type size via `font_size` (OPEN vocab,
   app-validated, no CHECK); adaptive-by-context deferred (O2) [FACT: ADR-002:3524-3525; specimen:268,288 "two airs";
   db-4-preferences PLAN:23].
@@ -140,11 +146,12 @@ All architecture is doc-fixed (§6); the feel is already gated (§8). Nothing is
 ## 8. Envision Gate (Step 1.5) — SATISFIED by the gated P1 record (no re-run)
 
 The design-led feel for this codec was **already captured and gated** at the frontend-replan G1:
+
 - **The greybox equivalent exists** = `frontend-replan/p1-identity-specimen.html` (the P1 identity specimen, "the visual
   record of the bar") [FACT: quality-bar/_index.md header; frontend-replan.md:47-51].
 - **Victor approved it** = P1 RESOLVED 2026-10-01 + G1 SHIP [FACT: frontend-replan.md:47-55, 207-208].
 - **Dark is not a feel decision** — it is the mechanical B7 `semantic.dark.json` overlay applied per preset; "dark now
   inherits the overlay by construction" [FACT: decisions.md:240,287; semantic.dark.json; frontend-replan.md:51 "light primary (all presets daylight/paper)"].
 
-→ Re-greyboxing would redo gated work. The per-slice **Visual Gate (Step 8/§6.4)** still verifies the *rendered* result
+→ Re-greyboxing would redo gated work. The per-slice **Visual Gate (Step 8/§6.4)** still verifies the _rendered_ result
 (presets × modes × densities) against the P1 specimen — that is verification, not a new feel gate.

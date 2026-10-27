@@ -29,10 +29,7 @@ export const plannedBlocks = sqliteTable(
     source: text('source'), // aggregator provenance
     deleted_at: integer('deleted_at'),
   },
-  (t) => [
-    index('idx_planned_blocks_start').on(t.scheduled_start),
-    index('idx_planned_blocks_status').on(t.status),
-  ],
+  (t) => [index('idx_planned_blocks_start').on(t.scheduled_start), index('idx_planned_blocks_status').on(t.status)],
 )
 
 export type PlannedBlockRow = typeof plannedBlocks.$inferSelect

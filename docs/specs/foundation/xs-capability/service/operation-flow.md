@@ -3,6 +3,7 @@
 > Full lifecycle + data-flow + txn boundaries + the per-action decision rule. ADR-010 §3.2-3.5 grounded.
 
 ## Decision flow — `checkAction(defId, action)` (S1)
+
 ```
 resolve def (registry.get)
   ├─ not found                      → deny? NO — throw CapabilityNotFound (a real programming error, not a policy deny)
@@ -24,12 +25,15 @@ resolve def (registry.get)
                                require the UNION: BOTH the sensitive consent AND the external consent present,
                                else 'compositional_exfiltration'          ← IR-1 / XCU-08 (grant-enforcement half)
 ```
+
 > #31 gates the grant BOOLEAN + the compositional union only. Per-source/layer (#44) and per-target/audit (#43)
 > are delegated seams the caller composes with — no per-source/target storage here `[FACT: xcut-ingestion-ai.md:14,19,21]`.
+
 - `assertPermitted` = `checkAction` then `throw CapabilityDenied` on `!allowed`.
 - **Read-only, no txn** — point lookups; no write on the enforcement path.
 
 ## Grant lifecycle flow (S2)
+
 - **`grant(defId, envelope)`** — resolve def → assert `envelope ⊆ def.declaration` (else `GrantExceedsDeclaration`)
   → `hash = canonicalEnvelopeHash(def)` (the def's declared `{bindings, effects}`, ADR-008:119-121; symmetric with the
   drift check) → `Repository.create(capability_grants, {…envelope, granted_envelope_hash: hash})`. Grants repo wired
@@ -44,11 +48,13 @@ resolve def (registry.get)
   single-user local-first; not a data-loss path (no user content, only a policy record).
 
 ## Offered-set flow (S3)
+
 - **`resolveOfferedSet(spaceId, 'inline')`** — `registry.list()` → filter `render_targets.includes('inline')`. Union;
   no Space read (a page may belong to many Spaces → inline is non-restrictive) `[FACT: xcut-spaces.md:49]`.
 - **`resolveOfferedSet(spaceId, 'standalone')`** — read `space_enabled_blocks WHERE space_id=? AND deleted_at IS NULL`
   → resolve each `capability_def_id` via registry → filter `render_targets.includes('standalone')`. Restrict.
 
 ## Data-flow summary
+
 `validate → (read registry + grant/palette) → decide/persist → return`. Encryption seam touched only on `grant`
 (Repository write); enforcement + resolver are read-only. No vault key on any path (INV-4).

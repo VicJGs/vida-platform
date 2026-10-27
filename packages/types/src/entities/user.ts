@@ -10,14 +10,7 @@ import type { SyncableEntity, SyncMetadata } from '../sync'
 // Gamification enums
 // ---------------------------------------------------------------------------
 
-export const PERSONA = [
-  'student',
-  'professional',
-  'entrepreneur',
-  'creative',
-  'parent',
-  'retiree',
-] as const
+export const PERSONA = ['student', 'professional', 'entrepreneur', 'creative', 'parent', 'retiree'] as const
 export type Persona = (typeof PERSONA)[number]
 
 export const ACHIEVEMENT_CATEGORY = [
