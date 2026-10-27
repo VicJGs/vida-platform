@@ -1,7 +1,7 @@
 <!-- Interpretation Layer — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248 · #63) · BOTH planes.
      Entity Delivery Flow §3 + §6 (recovery). Supersedes the MOD-sessions ① build's interpretation (kept in git at
      5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line.
-     REVISION: rev 8 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
+     REVISION: rev 8.2 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
      @3e48e6b/31d768b/d0b9238 + rev 8 delta-gate fixes → delta Interpretation Gate). Input corpus gated by the
      Documentation Gate (rounds 1–2, 2026-10-27 — `.claude/tasks/sessions-rescope.md` Route History). -->
 
@@ -195,7 +195,16 @@
   (`lifecycle.ts:121-126`) and become immutable once the spine leaves `scheduled|planned` — a PATCH → `InvalidSessionInput`; a caller-supplied
   `started_at` at CREATION stays allowed (`createSession`, `service.ts:473`; fe-calendar R12 seeds past focus that way).
   BREAKS: `tasks/__tests__/service.test.ts:556,582,585` backdate an already-started timer via `updateSession({started_at})`
-  → reworked in L18 (fake timers, or create with `started_at` before start)
+  → reworked in L18 (fake timers, or create with `started_at` before start); (e) `createSession` is the
+  other door: it accepts ANY status (`validators/session.ts:31` full `SessionStatusSchema`; written as given,
+  `service.ts:312`) and a focus extension in any run state (`:321-330`) — a session born `completed`/`skipped` never
+  passes `transition()` (no effects, no preflight), and a focus spine born `completed` with a `running` run is the exact
+  IR-S18 split. Rule (ADR-004 §3.2.3:65 `scheduled|planned → in_progress → terminal`; contract.md:27-28): the initial
+  status ∈ the ENTRY states `scheduled|planned|in_progress` → a terminal one → `InvalidSessionInput('status')`; a focus
+  extension at creation only with an `in_progress` spine and a `running` run (the `startFocus` fresh path, `:469`).
+  Callers: no prod caller passes a terminal status (learning-education `:788` forwards the caller's, default
+  `scheduled`; its tests pass none) → SAFE, LE current-BR currency notes the narrowing; BREAKS sessions-service test
+  fixtures `:229,:636,:637` (seed terminal rows for analytics) → reworked via `transition` in L18
   (`service.ts:368-369` today allows it): per-occurrence ids key on the STABLE `utcDate(started_at)` (BR-S3-5,
   `lifecycle.ts:51-53,68`), IR-S5's payload and IR-S11's re-derived ids read it — an edit after the fact would re-key a
   replay (double-count), orphan the EC-4 rows and change a replayed `log_time`. Callers: none pass `status`/`extension` → SAFE for (b)/(c)
