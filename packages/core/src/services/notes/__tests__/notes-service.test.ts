@@ -18,7 +18,9 @@ import { createSpacesService } from '../../../foundation/spaces/service'
 import { createBacklinkResolver } from '../../search/backlink-resolver'
 import { createNotesService } from '../service'
 import {
+  InvalidPageContentError,
   JournalExistsError,
+  PageNotFoundError,
   UnregisteredEntityTypeError,
   type NotesService,
   type UpdatePageInput,
@@ -376,5 +378,95 @@ describe('mod-notes-and-pages S1 — pages-core service (live store)', () => {
     const entities = await h.svc.getEntitiesByTag(tag.id)
     expect(entities).toHaveLength(1)
     expect(entities[0]!.entity_id).toBe('t3')
+  })
+})
+
+// ── notes-rescope R0 · data safety (PLAN-R0 §4 A, tests 1–4) ─────────────────
+describe('notes-rescope R0 — data safety (live store)', () => {
+  let h: Harness
+  beforeEach(async () => {
+    h = await setup()
+  })
+  const doc = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'hi' }] }] }
+  type Doc = Parameters<NotesService['writePageContent']>[1]
+  const bytes = { filename: 'a.bin', mimeType: 'application/octet-stream', encryptedBlob: new Uint8Array([1]), sizeBytes: 1 }
+
+  async function deletedPage() {
+    const p = await h.svc.createPage({ type: 'note', title: 'gone' })
+    await h.svc.softDeletePage(p.id)
+    return p
+  }
+
+  it('writePageContent / updatePage reject a soft-deleted page with PageNotFoundError (BR-R0-5)', async () => {
+    const p = await deletedPage()
+    await expect(h.svc.writePageContent(p.id, doc as unknown as Doc)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.updatePage(p.id, { title: 'x' })).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('writePageContent / updatePage reject an unknown id with PageNotFoundError (BR-R0-5)', async () => {
+    await expect(h.svc.writePageContent('nope', doc as unknown as Doc)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.updatePage('nope', { title: 'x' })).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('addAttachment · createPageLink (either end) · createEntityLink reject a deleted page (BR-R0-5)', async () => {
+    h.registry.register('task')
+    const live = await h.svc.createPage({ type: 'note', title: 'live' })
+    const gone = await deletedPage()
+    await expect(h.svc.addAttachment(gone.id, bytes)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createPageLink(gone.id, live.id)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createPageLink(live.id, gone.id)).rejects.toBeInstanceOf(PageNotFoundError)
+    await expect(h.svc.createEntityLink(gone.id, 'task', 't1')).rejects.toBeInstanceOf(PageNotFoundError)
+  })
+
+  it('createEntityLink keeps the BR-S4-1 order: an unregistered type fails before the page check', async () => {
+    const gone = await deletedPage()
+    await expect(h.svc.createEntityLink(gone.id, 'nope_type', 'x')).rejects.toBeInstanceOf(
+      UnregisteredEntityTypeError,
+    )
+  })
+
+  it('typed errors carry a stable .name + the page id (BR-S1-6 convention)', async () => {
+    const err = await h.svc.writePageContent('nope', doc as unknown as Doc).catch((e: unknown) => e)
+    expect(err).toMatchObject({ name: 'PageNotFoundError', pageId: 'nope' })
+  })
+
+  it.each([
+    ['non-doc root', { type: 'paragraph' }],
+    ['doc without content', { type: 'doc' }],
+    ['child without a type', { type: 'doc', content: [{ text: 'x' }] }],
+  ])('writePageContent rejects a %s with InvalidPageContentError; the row is unchanged (BR-R0-6)', async (_l, bad) => {
+    const p = await h.svc.createPage({ type: 'note', title: 'keep' })
+    await h.svc.writePageContent(p.id, doc as unknown as Doc)
+    const err = await h.svc.writePageContent(p.id, bad as unknown as Doc).catch((e: unknown) => e)
+    expect(err).toBeInstanceOf(InvalidPageContentError)
+    expect(err).toMatchObject({ name: 'InvalidPageContentError', pageId: p.id })
+    expect((await h.svc.getPage(p.id))?.content).toBe(JSON.stringify(doc))
+  })
+
+  it('createPage rejects non-JSON and non-doc content (BR-R0-6 on the create path)', async () => {
+    await expect(h.svc.createPage({ type: 'note', content: 'not json' })).rejects.toBeTruthy()
+    await expect(h.svc.createPage({ type: 'note', content: '{"type":"paragraph"}' })).rejects.toBeTruthy()
+    await expect(h.svc.createPage({ type: 'note', content: JSON.stringify(doc) })).resolves.toBeTruthy()
+  })
+
+  // G16 / BR-R0-4b: seeds must pass the EDITOR's schema check — ≥1 block, no empty text node.
+  function hasEmptyText(n: unknown): boolean {
+    const node = n as { type?: string; text?: string; content?: unknown[] }
+    if (node.type === 'text' && node.text === '') return true
+    return (node.content ?? []).some(hasEmptyText)
+  }
+
+  it.each([
+    ['empty seed', {}],
+    ['empty title', { title: '' }],
+    ['title only', { title: 'Chapter 1' }],
+    ['full seed', { title: 'T', type: 'feature', status: 'open', priority: 2 }],
+  ])('ensureEntityNote with a %s stores an editor-valid doc (BR-R0-4b)', async (_l, seed) => {
+    h.registry.register('book_bookmark')
+    const page = await h.svc.ensureEntityNote('note', 'book_bookmark', `e-${_l}`, seed)
+    const stored = JSON.parse(page.content ?? 'null') as { type: string; content: unknown[] }
+    expect(stored.type).toBe('doc')
+    expect(stored.content.length).toBeGreaterThanOrEqual(1)
+    expect(hasEmptyText(stored)).toBe(false)
   })
 })

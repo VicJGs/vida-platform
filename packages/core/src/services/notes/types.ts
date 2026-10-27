@@ -119,3 +119,19 @@ export class UnregisteredEntityTypeError extends Error {
     this.name = 'UnregisteredEntityTypeError'
   }
 }
+
+/** BR-R0-5 — a write/create against a deleted or unknown page (deleted ⇒ unreachable by id, IR-R3). */
+export class PageNotFoundError extends Error {
+  constructor(public readonly pageId: string) {
+    super(`Page not found: ${pageId}`)
+    this.name = 'PageNotFoundError'
+  }
+}
+
+/** BR-R0-6 — a body that is not a shape-valid EditorDocument; nothing is written. */
+export class InvalidPageContentError extends Error {
+  constructor(public readonly pageId: string) {
+    super(`Invalid page content for ${pageId}: not an EditorDocument`)
+    this.name = 'InvalidPageContentError'
+  }
+}

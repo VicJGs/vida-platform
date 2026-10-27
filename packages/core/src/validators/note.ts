@@ -1,5 +1,6 @@
 import { z } from 'zod'
 import { PAGE_TYPE } from '@vida/types'
+import { isEditorDocumentJson } from './editor'
 
 // ============================================================================
 // Notes & Pages validators (DB-9) — REBUILT in P2 (backend-replan).
@@ -25,7 +26,14 @@ export const createPageSchema = z
   .object({
     type: PageTypeSchema,
     title: z.string().nullish(),
-    content: z.string().nullish(),
+    // BR-R0-6 (notes-rescope R0): a body, when given, must be a serialized EditorDocument — the create path gets the
+    // same shape guard as writePageContent, so no writer can store a body the editor would blank and overwrite.
+    content: z
+      .string()
+      .nullish()
+      .refine((c) => c == null || isEditorDocumentJson(c), {
+        message: 'content must be a serialized EditorDocument',
+      }),
     parent_id: z.string().nullish(),
     entity_type: z.string().nullish(),
     entity_id: z.string().nullish(),
