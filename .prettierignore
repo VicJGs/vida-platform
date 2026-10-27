@@ -7,3 +7,8 @@ apps/desktop/src-tauri/target
 apps/mobile/.expo
 apps/mobile/android
 apps/mobile/ios
+
+# Archive and agent tool state — not live files (doc 3, Executable truth: "Prettier on live files only")
+docs/_legacy
+.claude
+Old
