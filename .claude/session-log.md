@@ -6861,3 +6861,29 @@ Decisions:
 Next session:
   - R1 page frame — §XXVI gate 1. Branch not pushed; Linear not synced (ask Victor).
 ---
+
+---
+Date: 2026-10-27 (session opened 2026-10-26)
+Task: notes-rescope (LIF-245) — Step 6 · R0 data safety, closed out
+Goal: build R0 (the slice-map's first slice) through the §XXVI double gate and close it on its live + visual gates.
+Completed:
+  - R0 shipped on `origin/notes-rescope` @ `2d77cec`: core guards/typed errors/editor-valid seeds (853570e) · editor
+    always-on content check (84b7f58) · web EC-33 notice, tagged parse, seed-point handover, barrier (a6bd158) · docs (f2c35cc).
+    Plans: docs/features/notes-and-pages/delivery/sessions/{PLAN,IMPLEMENTATION-PLAN}-R0-data-safety.md.
+  - Gates: live OPFS (Brave, `.playwright-mcp/r0-live/r0-live.mjs`) 18/18 · Visual Gate 18/18 accepted by Victor · core
+    2049 · web 832 · tsc/lint clean · post-impl /critique r2 SHIP.
+  - Linear: LIF-245 Backlog → In Progress + R0 comment (surgical GraphQL, read back). Task header made tracker-mappable.
+In progress:
+  - Nothing mid-flight. R1–R10 not started.
+Decisions:
+  - DEV-R0-1 (seed-point latest-body overlay + ownership re-save) and DEV-R0-2 (undo-to-stored never writes) — Victor-approved.
+  - VoiceOver manual trace not done — Victor accepted on automated a11y.
+  - Skipped the full `tracker_sync --sync`: unsafe from the worktree (empty map), and from main it would revert LIF-245
+    to Backlog (main's header says `planned` until the branch merges).
+Next session:
+  - Fresh session: /begin → notes-rescope → Step 6 R1 page frame — §XXVI gate 1 (`/document-context` → `victor:planning` →
+    `/documentation-component` → PLAN-R1), in `.claude/worktrees/notes-rescope` (`nvm use 24` in EVERY command; `git fetch`).
+  - Context: `.claude/tasks/notes-rescope.md` (Active Tasks + forward obligations) · slice-map R1 · reconciliation rows
+    B-24/B-27/B-45/B-46/B-49/B-60/B-63/B-65/E-2/E-3/F-7/B-15 · `.claude/sessions/2026-10-26-notes-rescope-2.md`.
+  - Watch: a parallel preferences-rescope session loads the machine (run suites alone) · CI dark · stray 5-day automation Brave.
+---
