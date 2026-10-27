@@ -93,7 +93,7 @@ fe-sessions' ENTITY CLOSE).
 ## X6 — Runtime page live · **F** · `apps/web/src/{flow,session-runtime}`
 - **Ledger:** R-28 (`useFlowSession` live) · R-29 (mark-done live; focus → `completeFocus`) · R-30/R-31 (attach only with
   a `deliverable_note` target; proof hidden) · R-46 (EC-5: subject title, `SyncStatus` from write outcome, `⋯` hidden) ·
-  R-45 (**per Victor's EC-4 ruling**) · R-47 part (mark-done invalidates `['active-session']`) · R-49 part · R-35/R-48 part.
+  R-45 (EC-4 re-pin: unapplied rows muted in the same list via additive `FlowEffect.status?` — §XXVIII #10 — + aria-label "Session effects") · R-47 part (mark-done invalidates `['active-session']`) · R-49 part · R-35/R-48 part.
 - **IR:** S8 · S11 · S13 · S14 · S15.
 - **ECs (MUST):** Flow EC-2 (mark-done; attach-when-target) · EC-4 · EC-5 (minus `⋯`) · EC-6…9 · EC-10 · EC-11.
 - **Gate:** Visual — every terminal state × light/dark × 375/768/1440 + a11y.
@@ -108,6 +108,10 @@ fe-sessions' ENTITY CLOSE).
 
 ---
 
-## Victor items at this gate
-1. **Approve this slice plan** (X1…X7, order, planes, gates).
-2. **R-45 — EC-4 re-pin:** where a session's unapplied/failed effect shows (see the options presented with this map).
+## Re-scope Gate — APPROVED (Victor, 2026-10-27)
+1. **Slice plan X1…X7 approved** — "approve all if they are grounded in the documentation": every slice item traces to a
+   ledger row with its governing cite (reconciliation.md; Doc/Interpretation Gates + 10 sweep passes); the only doc-silent
+   placements were R-45 (ruled below) and EC-5 `⋯` (routed to fe-sessions).
+2. **R-45 — EC-4 re-pinned:** unapplied effects in the SAME list, calm muted ("Not applied … retry pending"); additive
+   `FlowEffect.status?` (§XXVIII #10, shipped-CODEC change) + aria-label "Session effects". Recorded in
+   `docs/specs/foundation/fe-codec-flow-session/delivery/envision.md` § Re-pins.

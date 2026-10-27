@@ -1,5 +1,5 @@
 # Task: sessions-rescope
-# Status: in-progress
+# Status: in-progress — Step 6: X1 next (Re-scope Gate approved 2026-10-27)
 # Linear: LIF-248
 # Profile: Add Frontend Component
 # Scenario: entity-rescope
@@ -127,3 +127,6 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
 - 2026-10-27 (Step 5 — Re-scope Gate, slice-map drafted) — `delivery/slice-map.md` X1 engine → X2 focus lifecycle +
   routines → X3 reads ∥ X4 composition root → X5 HUD live ∥ X6 runtime live → X7 live close. Awaiting Victor: plan
   approval + R-45.
+- 2026-10-27 (Step 5 — Re-scope Gate APPROVED) — Victor: "Approve all if they are grounded in the documentation" (they
+  are — every slice item traces to a cited ledger row) + R-45 EC-4 re-pinned ("In the list, muted"), recorded in
+  fe-codec-flow-session envision § Re-pins; §XXVIII register +#10 (FlowEffect.status?). Next: Step 6 X1 — §XXVI gate 1.

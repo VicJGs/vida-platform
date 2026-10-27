@@ -313,8 +313,10 @@ canTouch's (IR-S4(1)), handlers throw (A.3).
    BR-TK-S4-6 (`docs/modules/tasks/current-business-rules.md:102-107`, "revisited when the pomodoro lens lands" — it
    lands here); pinned by tasks test 13 (`tasks/__tests__/service.test.ts:648-662`).
 
-*Victor items — at the Re-scope Gate:*
-- **R-45** — EC-4 re-pin: where the unapplied/error effect state renders (the rail is pinned to "fired").
+10. R-45 — additive `FlowEffect.status?` on the shipped `@vida/ui` shell + aria-label "Session effects" (X6).
+
+*Victor items — RULED at the Re-scope Gate (2026-10-27):*
+- **R-45** — EC-4 re-pinned: unapplied effects in the same list, calm muted (fe-codec-flow-session envision § Re-pins).
 
 *Divergences routed (recorded, not waived — §2.5 rule 3):*
 - EC-5 `⋯` hidden → fe-sessions' ENTITY CLOSE, must be BUILT or RE-PINNED by Victor there.
