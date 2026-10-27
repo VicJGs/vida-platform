@@ -1,5 +1,5 @@
 # Task: mod-routines
-# Status: in-progress — ① TRACK CLOSED (S1–S9 + S2c/S5c, local commits); next = PR → merge + LIF-138 status (on Victor's go)
+# Status: done — ① track closed (S1–S9 + S2c/S5c), merged #162 (d2bc57a) 2026-10-27; next = fe-routines (entity close, N5 wiring)
 # Scenario: Entity Re-scope (Entity Delivery Flow ① recovery variant — re-run from the flow, Victor 2026-10-21)
 # Profile: Add Backend Component
 # Linear: LIF-138
