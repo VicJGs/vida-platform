@@ -96,7 +96,7 @@
   - `runStep` starts `startFocus({})` + an instance attachment to the `routine_step`, or re-enters a running one.
   - `completeStep` completes via `completeFocus` and stamps `round(duration_seconds/60)`, which overrides a caller's duration.
   - After completion the attachment is **detached**, best-effort. This is the workaround for the spine staying `in_progress`, a Sessions gap
-    owned by sessions-rescope #62.
+    owned by sessions-rescope #63.
   - A completed attached focus is stamped only for the UTC day it completed (the stamp-retry path).
   - A cancel is never a done.
   - A running focus belongs to the UTC day it **started**: completing it stamps that day (a session crossing UTC midnight, 21:00 in

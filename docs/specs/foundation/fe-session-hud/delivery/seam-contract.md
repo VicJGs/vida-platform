@@ -98,8 +98,8 @@ export interface HudSessionsPort {
   on a running countdown the display HOLDS `00:00` (ring full) and the eyebrow flips to the completion cue
   (`<PHASE> · DONE` — the widget's held "${phase} complete" announcement `[FACT:
   v5-pomodoro-widget.md:67,75-76]`). Interval-boundary behaviour (auto-start next / notify / sound) is
-  PD-7 preference-owned and ENGINE-driven — the HUD owns no advance intent (`nextInterval` lives on
-  `/sessions/$id`) and never invents overtime: intervals are fixed-length (PD-4) and overrun is not focus
+  PD-7 preference-owned and ENGINE-driven — the HUD owns no advance intent (`nextInterval` belongs to the timer driver — **corrected 2026-10-27:** NOT
+  `/sessions/$id`, which ships only mark-done/attach/proof (`session-runtime-surface.tsx:76-79`); the driver = fe-sessions' Pomodoro runtime) and never invents overtime: intervals are fixed-length (PD-4) and overrun is not focus
   credit (PD-5). Never negative time.
 - **DEV sample deep-link (g1-B5):** in `?sample` mode the pill's link PRESERVES the `sample` search param so
   `/sessions/$id` lands on the sampled runtime page (`useFlowSession` seeds under its own `?sample`
@@ -121,7 +121,8 @@ export interface HudSessionsPort {
 - Session START flow (the idle "Begin" target) — `fe-sessions` #34 (per Envision answer 1, idle stays
   hidden until a start-capable flow exists). The widget-lens idle "anti-lost prompt" doctrine
   `[FACT: pomodoro/business-rules.md:73]` supports the post-#34 idle-visible form.
-- Rich runtime controls (skip/complete/next-interval) — the `/sessions/$id` page (#23, shipped).
+- Rich runtime controls (skip/complete/next-interval) — ~~the `/sessions/$id` page (#23, shipped)~~ **corrected 2026-10-27:**
+  #23 ships mark-done/attach/proof only; the timer controls are fe-sessions' Pomodoro runtime (LIF-198, "#34 … Pomodoro").
 - **Focus Mode** (the runtime's immersive per-type face, `[INTENT: pomodoro/identity.md:32-38]`) — a
   separate INTENDED surface; the HUD deep-links to the session, it is not and never becomes Focus Mode.
 - The shared focus-runtime client store (§A.2) — ships with the first live timer driver, not here.
