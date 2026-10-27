@@ -147,3 +147,4 @@ Step 4. Untouched: `@vida/ui`, `@vida/types`, `@vida/editor`.
   `role="tablist"` carries no accessible name in the a11y tree — a pre-existing `@vida/ui` Tabs labelling gap (the e2e
   asserts through the Merged/Tabbed `aria-pressed` instead). Sibling fix for `@vida/ui` Tabs; not in R2's file list.
 - Test-only timeout: `mode-memory.test.tsx` 20 s (full-page renders with navigations; the R1 read-retry precedent).
+- **Visual Gate ACCEPTED by Victor on 2026-10-27.** R2 done.
