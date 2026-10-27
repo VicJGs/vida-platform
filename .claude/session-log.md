@@ -7007,3 +7007,74 @@ Watch:
 Next session:
   - **R5 Modules + ⌘K** (slice-map R5) — fresh PLAN-R5 in this worktree.
 ---
+
+---
+Date: 2026-10-27
+Task: preferences-rescope (LIF-247) — R5 Modules + ⌘K · worktree `.claude/worktrees/preferences-rescope` (Node 24)
+Goal: Sync origin/main, then build slice R5 through the full §XXVI loop to a committed, Victor-approved slice.
+Completed:
+  - **Merge** origin/main `879d8a6` (mod-routines #162/#163) → `5769ab1`. The `known-failures.md` conflict kept both
+    sides (F008 variant + F009). tsc 0 for core/ui/web.
+  - **PLAN-R5** (`docs/features/preferences/delivery/sessions/PLAN-R5-modules-cmdk.md`): critique REVISE (4 blocking, all
+    on the pin path) folded → **Approval 1: D-R5-1 = A + A1**, option D not taken. Commit `d3a1880`.
+  - **IMPL-PLAN-R5**: /preflight run 1 BLOCKED (R3-BR-10 copy module) → folded → PASSED. gate-2 critique REVISE
+    (3 blocking: awaited invalidate · screen readers can't learn Alt+P · nav→settings cycle) folded → **Approval 2:
+    D-R5-2 + D-R5-3**. Commit `b6a9cfa`.
+  - **Build `a5edcba`:**
+    - `apps/web/src/nav/nav-prefs.ts` (one nav filter, the hideable rule)
+    - `preferences/command-history.ts` (the serial write chain for ⌘K history)
+    - `commandHistoryQuery` + `COMMANDS_KEY`
+    - `shell/command-bar.tsx` (reactive prefs + history ranking, Alt+P pin by `e.code`, id-tracked active option,
+      always-mounted announcer, hint under the input)
+    - `shell/module-dock.tsx` (the reader)
+    - `settings/modules-pane.tsx` (persisted, `lg` targets, display-name a11y labels)
+    - the mirror store/bridge down to 7 fields
+    - core `pinCommand(key, pinned, label?, category?)`
+  - **Gates:**
+    - mutations 14/14 killed
+    - apps/web 126 files · 966/966
+    - core preferences 27/27
+    - tsc 0 · eslint 0 errors
+    - live smoke on real OPFS ✓
+    - Visual Gate: 12 cells, axe 0, AA 4.86–5.76, 0 overflow → **Victor visual-approved**
+    - pre-ship /critique REVISE (doc currency + 2 code nits) folded
+  - **Docs (§XXIX):**
+    - preferences current-spec + current-business-rules
+    - layer CLAUDE.md files: preferences · settings · shell · command-bar · nav · core preferences
+    - `command-bar-and-search.md` §4 · BR-RT-PREFS · slice-map R5 SHIPPED
+    - decisions.md R5 rows
+    - sibling records items 5–6 in `docs/specs/fixes/ds-type-lineheight-unpaired/_index.md`
+  - **Memory:** `async-side-effect-chain-test-traps`.
+In progress:
+  - Nothing mid-flight. Clean tree at the close-out commit; pushed to origin/preferences-rescope at session end.
+Decisions:
+  - **D-R5-1 (Victor):** Alt+P on the active option, matched by `e.code` (mac Option gives "π"). **A1:** pinning a
+    never-run command creates the row. **D:** the Settings "⌘K pinned commands" list → an fe-settings follow-up edge.
+  - **D-R5-2 (Victor):** `ModuleDock` has no production mount (that's shell-rescope's job), so the dock reader is
+    unit-proven only.
+  - **D-R5-3 (Victor):** `pinCommand` takes `label?`/`category?`; it creates a row only when absent + pinned + the label
+    is non-empty.
+  - **In-gate (Victor-approved at the Visual Gate):**
+    - Modules-pane Switch/Buttons → `lg`. The doc-decided rule applies: a unit's own gate on its own surface means the fix
+      lands in that unit; latent ones become siblings.
+    - The pin hint moved under the input (a footer below the scrolling list was never seen).
+  - **Doc-fixed, not asked:**
+    - The history write path is an app-side serial chain (reconciliation F9 offered a queue or an upsert).
+    - The invalidate is fire-and-forget: `invalidateQueries` awaits the refetch (query-core 5.101.4
+      `queryClient.js:148-179`).
+Next session:
+  - **Start R6 — Locale + Notifications** (slice-map R6: date/time/week + channels + quiet-hours persist ·
+    `CalendarView weekStartsOn` · activity `hourCycle` · scalar read-degrade · fields rebound · **delete
+    `preferences-store` + its test**). Ledger rows D16 · D17 · D19 · C3 (dissolve). ECs: fe-settings EC-4
+    (Locale/Notifications).
+  - **First actions:**
+    - `cd .claude/worktrees/preferences-rescope` · `nvm use 24`
+    - `git fetch` + check ahead/behind vs origin/main; merge if behind
+    - §XXVI: PLAN-R6 (ground first: slice-map R6 row, reconciliation D16/D17/D19/C3, the R3/R5 rebind pattern —
+      `usePreferences().view` + `useSettings().update`)
+  - **Fold into R6:**
+    - Size the Locale/Notifications switches `lg` (sibling item 6).
+    - Use the R5 harness `r5-gate.mjs` as the Visual Gate template.
+  - **Owed at R8:** cross-unit edges (shell-rescope mount + readers note · fe-settings pinned-commands list + name reset ·
+    fe-feature-atlas/fe-sync-log readers) · mint the i18n unit · tracker `--sync` from the MAIN checkout (worktree-unsafe).
+---

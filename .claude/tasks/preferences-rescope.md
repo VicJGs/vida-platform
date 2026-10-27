@@ -60,6 +60,15 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 | R4 Visual Gate | 3 timed-out runs: /tmp/vg empty · guided-setup overlay · ambiguous "Modules" + no cleanup on error | harness drift | ✅ repo playwright-core · Skip for now · scoped locator · finally-close (playbook memory) |
 | R4 /critique | pre-ship REVISE: stale doc statuses + D9 row's superseded design + PLAN lines contradicting D-R4-2/3 | doc currency | ✅ folded → SHIP |
 
+| R5 merge | origin/main `879d8a6` → known-failures.md conflict (both appended) | parallel units | ✅ kept both (F008 variant + F009), `5769ab1` |
+| R5 PLAN g1 | critique REVISE: pin no-op on an absent key · pin off-chain · index-tracked active option · `e.key` on mac · Settings pin list unmentioned | the pin path was under-specified | ✅ rev 2 · D-R5-1 A+A1 (Victor) · option D → edge |
+| R5 preflight | BLOCKED: new ⌘K copy not in `SETTINGS_COPY` (R3-BR-10/F17) | missed a documented rule | ✅ file 8b → PASSED |
+| R5 IMPL g2 | critique REVISE: awaited invalidate stalls writes · SR can't learn Alt+P · nav→settings import cycle | premise errors | ✅ rev 2 · D-R5-2/3 (Victor) |
+| R5 build | dock has no prod mount | fe-shell reshape; shell-rescope owns mount | ✅ D-R5-2 (unit-proven reader) |
+| R5 mutations | #8 record-before-run SURVIVED | async enqueue hides call order | ✅ state-at-call probe → killed (memory) |
+| R5 Visual Gate | Modules pane 36×20 / 40×32 targets · footer hint invisible below scroll | S5 sizes · plan placement | ✅ `lg` controls · hint under input (Victor visual-approved) |
+| R5 /critique | pre-ship REVISE: doc currency ×5 + pending-pin settle race + announce-after-close | — | ✅ folded (tests red→green) |
+
 ## Knowledge Loaded
 - `docs/features/preferences/delivery/{slice-map,reconciliation,interpretation}.md` · `sessions/PLAN-R2-live-seam.md` — R3 PLAN
 - fe-settings / fe-home / fe-gamification `envision.md` ECs · `docs/core/architecture/state-conventions.md` §3.1 — R3 PLAN
@@ -70,6 +79,8 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - 2026-10-26: memory `visual-gate-playbook` — Step 22 live gate
 - 2026-10-26/27 (R4): `slice-map.md` R4 · `reconciliation.md` D8/D9 + §H · `interpretation.md:148-156` · fe-codec-theme `seam-contract.md` · `docs/ui/token-pipeline/current-business-rules.md` B12 · `standards/motion.md` §Reduced Motion · `packages/ui/src/{provider.tsx,hooks/use-reduced-motion.ts,internal/*-styles.ts}` · `apps/web/src/stores/theme-store.ts` · React 19.2.4 `react-dom-client.development.js:8144` (uSES passive subscribe) · sigma 3.0.3 `settings.d.ts:42-48` + `sigma.esm.js:199,425,595` · query-core 5.101.4 types — PLAN/IMPL-R4
 
+- 2026-10-27 (R5): `slice-map.md:45,85` · `reconciliation.md` D11/D12/D13b/F9/C4/C9/E2 · fe-settings `envision.md:35-49` · `.claude/docs/decisions.md:71,80` · `command-bar-and-search.md` §3/§4 · `business-rules.md:15,27,34,36` · `docs/modules/preferences/current-*` · `frontend-replan/p5-discover-own-specimen.html:189` · `fe-settings/delivery/s1-switch.md` · `packages/core/src/services/preferences/service.ts` · `schema/preferences.ts:104-112` · `013_preferences.ts` · query-core 5.101.4 `queryClient.js:148-179` · `@vida/ui` `input.tsx:114-118,194` · `shell-rescope.md:9,17` — PLAN/IMPL-R5
+
 ## Failures This Session
 - F008 — cold first-test timeouts + calendar dense-day fail even alone at load 300–400 — environmental (reproduced on `main`), recorded
 - (new, unnumbered) — first-read-error refetch loop — **resolved** 2026-10-26: PLAN-R3 rev 2.2 (`retryOnMount: false` + §3 Retry), mutation #4
@@ -78,3 +89,7 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - F008 (2026-10-26 R4 merge) — targeted run 8 fails at load ~270 → 1 fail (`App.integration` ⌘K→/notes, cold lazy-chunk 5 s timeout) → passes alone ×2 (1.9 s) — environmental, recorded
 - R4 Visual-Gate harness (not product): 3 timed-out runs — /tmp/vg deps gone · guided-setup overlay intercepted clicks · strict-mode "Modules" + no ctx cleanup → node hung — resolved (playbook memory)
 - R4 F008 variants — `tabs.test` first test 5.9 s cold (23/23 alone) · full apps/web run killed at the 2 h limit with sed-buffered output (32 KB) → chunked 999/999 — environmental, recorded
+- R5 harness (test-only): an in-flight `record` leaked into the next test (mock resolves the fake at call time) → drain the chain in `afterEach` — resolved
+- R5 harness (test-only): the always-mounted announcer made `getByRole('status')` ambiguous in 2 search-mode tests → find by text — resolved
+- R5 F008 — `module-dock` cold first test failed at load ~60 → 5/5 alone — environmental, recorded
+- R5 Visual-Gate harness: `Mode` not found (Settings remembers the last category) · reopened-profile probe timeout · 1 console 404 not reproducible on a fresh profile (likely a worker request) — resolved / recorded unattributed
