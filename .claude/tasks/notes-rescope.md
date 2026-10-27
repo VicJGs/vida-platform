@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R3 built — final /critique next, then Visual Gate review (2026-10-27)
+# Status: in-progress — Step 6: R3 built + final critique SHIP (r2) — awaiting Victor: Visual Gate acceptance (2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -29,7 +29,7 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - [x] R0 — data safety (2026-10-26 · 853570e · 84b7f58 · a6bd158 · f2c35cc)
 - [x] R1 — page frame (2026-10-27 · 532e5ce · 82b0a0d · 6e54402 · 1e8105b)
 - [x] R2 — mode memory (2026-10-27 · 5f80e5a · 94bb5d8)
-- [ ] R3 — metadata + rename  ← NEXT (§XXVI gate 1)
+- [~] R3 — metadata + rename (5a36b7a · ebcb1ef · 9d7e1ee · d2c9a6f) — awaiting Visual Gate acceptance
 - [ ] R4 — attachments
 - [ ] R5 — delete, undo, OS-wide Trash (must call `useNoteContent.cancel()` before the soft delete — R0 forward obligation)
 - [ ] R6 — collection + saved views
@@ -118,3 +118,5 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   Victor: Approval 2.
 - 2026-10-27 (Step 6 · R3 build) — Steps 1–8: core 69/69 · ui 699/699 · web 1002/1002 · e2e 5/5 · Visual Gate 28/28 · bundle
   +6.9 KB gz. DEV-R3-1 (Victor: root fix) Input font host; DEV-R3-2 (contract-mandated) Dialog focus return after un-inert.
+- 2026-10-27 (Step 6 · R3 close) — final /critique r1 REVISE (B1 failed cover sticks, B2–B4 docs, I1–I3) → fixed d2c9a6f → r2
+  SHIP; component audit 8.5/10 (P2/P4/P6 polish left). Awaiting Victor: Visual Gate acceptance.
