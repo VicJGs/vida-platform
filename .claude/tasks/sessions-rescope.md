@@ -111,3 +111,9 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   preflight handlers → finalize run → spine transition; a completed run under an `in_progress` spine resumes the close ·
   N3 "unapplied" read excludes projection effects + vanished targets. Nits: harness-driven store labeled INTERP
   (G18 raised), reload leg asserts the elapsed degrade; L-rows reordered; self-target denial = no row, no error.
+- 2026-10-27 (Step 3 — Interpretation Gate PASS) — round 3 SHIP (N1–N3 fixed; ended_at derivation holds incl. paused-at-
+  completion; preflight consistent with BR-S3-8). Nits folded: preflight moved INSIDE `transition()` (all completion paths
+  fail closed before the first effect) · BR-21 resume-close exception → §XXVIII at PLAN, legacy rows close late
+  (INTENDED, PD-9; no backfill) · payload resolver labeled DERIVATION · "exact" → "to the second".
+  PLAN-time §XXVIII register: IR-S2 (focus def transition) · IR-S9 (HUD derivation) · IR-S16 (BR-S3-5 narrowing) ·
+  IR-S17 (BR-21 exception). Step 3.5 Envision → SKIP (critic-confirmed). Next: Step 4 reconciliation ledger.

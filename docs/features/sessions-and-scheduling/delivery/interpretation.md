@@ -117,7 +117,8 @@
   **`PermissionDenied(type, effect, target)`: rejected, logged, completion continues** (contract.md:64);
   (2) **target vanished** (soft-deleted subject) → **no-op loudly, logged; not a failure, not retried** (sessions
   BR:79-80); (3) **no handler registered** → `NoEffectHandler`, fail-loud, nothing written (ADR-004:91-92 "fails
-  closed") — a wiring defect, so the transition aborts before commit; (4) **handler throws** (A.3 validation or a write
+  closed") — a wiring defect; caught by the IR-S17 preflight inside `transition()` before the FIRST effect (without it, a
+  mid-loop throw would leave earlier effects applied — replay would dedupe them, but the preflight removes the case); (4) **handler throws** (A.3 validation or a write
   error) → that effect's tx rolls back (ledger + write) → **`EffectFailed(effect, target)`** (pomodoro contract:59),
   logged, the remaining effects still fire and the status still commits (pomodoro BR:78-79 "completion still records").
   `TransitionResult` gains `denied[]` + `failed[]` of those typed errors (additive).
@@ -132,9 +133,11 @@
 - **IR-S5 · `log_time` from a focus run.** The payload is the run's REAL focus time (PD-5, pomodoro BR:32-34; BR-22),
   DERIVED BY THE ENGINE FROM PERSISTED ROWS — never passed in by a caller — so first fire and replay (IR-S4) compute the
   identical payload: `started_at` = spine `started_at`; `duration_seconds` = the finalized run's `duration_seconds`;
-  `ended_at` = `started_at + (duration_seconds + total_pause_seconds)·1000` (exact: `completeFocus` computes
+  `ended_at` = `started_at + (duration_seconds + total_pause_seconds)·1000` (to the second — `duration` is floored and
+  clamped `Math.max(0,…)`, so under clock skew it can precede `now`: `completeFocus` computes
   `duration = (now − startedAt) − totalPause`, `service.ts:528-536`). This needs the run row finalized BEFORE the fire
-  (IR-S17 order). The engine resolves it through a per-sub-type payload resolver keyed on the extension (focus → its
+  (IR-S17 order). The engine resolves it through a per-sub-type payload resolver keyed on the extension (a NEW engine seam —
+  DERIVATION from IR-S5's persisted-rows requirement) (focus → its
   `focus_sessions` row); other sub-types fire payload-less as today. The Tasks handler logs `duration_seconds` (not
   `ended − started`, which counts pauses) and, per A.3, **throws** on an invalid payload or binding instead of returning
   (a bare return leaves a ledger row — `effects/service.ts:58-68`). Target typing is canTouch's job (IR-S4): a
@@ -151,11 +154,18 @@
   per-run for consistency). This narrows BR-S3-5 → a **§XXVIII deviation** recorded at the PLAN; currency: sessions
   current-BR BR-9 + effects current-BR.
 - **IR-S17 · Close ordering + soft delete.** `completeFocus(timerId)`: (0) PREFLIGHT — every non-projection effect the
-  def declares has a registered handler, else `NoEffectHandler` before ANY write (ADR-004:91-92 fails closed; IR-S4(3));
+  def declares has a registered handler, else `NoEffectHandler` before ANY write (ADR-004:91-92 fails closed; IR-S4(3)).
+  The preflight lives INSIDE `transition()` (before firing), so every completion path — focus AND generic mark-done —
+  fails closed before its first effect; `completeFocus` calls the same check before step (1);
   (1) finalize the run row (status, `duration_seconds`, `total_pause_seconds` — as built); (2) spine
   `transition(sessionId,'complete')` → fire (payload from the persisted rows, IR-S5) → commit status LAST (crash-replay,
   B.4). Crash/DB failure between (1) and (2) leaves `completed` run + `in_progress` spine: `completeFocus` on a completed
-  run whose spine is still `in_progress` RESUMES step (2) (idempotent close) instead of throwing `InvalidFocusTransition`;
+  run whose spine is still `in_progress` RESUMES step (2) (idempotent close) instead of throwing `InvalidFocusTransition` —
+  a narrowing of the shipped BR-21 (current-BR:87-89 "complete a terminal run → InvalidFocusTransition, no write") →
+  **§XXVIII at the PLAN** + BR-21 currency; a terminal SPINE still throws. Legacy pre-L3 rows (completed run +
+  `in_progress` spine) become closable through this path and fire their effects late — INTENDED: PD-9 says a completed
+  run's time flows to the task, and they were never credited; no backfill sweep is built (none documented) — they close
+  only when re-invoked (e.g. L17's retry);
   IR-S7 excludes it from the HUD meanwhile; routines' `isRunning` treats a terminal run as not running and L17's retry
   finds it via L9. `cancelFocus` = (1) finalize as built, (2) spine `skip` (no effects, so no preflight). `transition()`
   treats a soft-deleted spine as missing (pomodoro BR:63-64 "no-ops its pending effects loudly", never resurrects) →
@@ -227,6 +237,7 @@ binding precedent) · `award_xp` → Gamification (FACT) · handler registration
 1. ~~IR-S5 ordering~~ — RESOLVED from code (`effects/service.ts:58-68`: ledger first) → applicability is canTouch's (IR-S4(1)), handlers throw (A.3).
 2. IR-S9 — a §XXVIII deviation from the HUD seam's zero-signature claim (state derivation changes); recorded for the PLAN.
 3. IR-S16 — narrows the shipped BR-S3-5 keying for `log_time`/`attach_pomodoro` → §XXVIII at the PLAN.
+5. IR-S17 — the BR-21 resume-close exception → §XXVIII at the PLAN.
 4. IR-S2 — the focus def gains a transition (`registry.test.ts` pin) — §XXVIII note at the PLAN (S3-focus-runtime.md:16).
 
 ## 6. Inherited EC set — leg → where verified (ELC-9 is fe-sessions')
