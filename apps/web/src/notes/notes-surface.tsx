@@ -15,6 +15,7 @@ import { Button, CollectionView } from '@vida/ui'
 import { useCollection } from '../collection/use-collection'
 import { NotesSearch } from './notes-search'
 import { renderNotesView } from './note-renderers'
+import { ReadErrorMessage } from './read-error-message'
 import { useNotesRows } from './use-notes-rows'
 import { useCreateNote } from './use-create-note'
 
@@ -22,7 +23,7 @@ const NOTES_LAYOUTS: readonly ViewLayout[] = ['list', 'gallery', 'calendar', 'gr
 
 export function NotesSurface() {
   const col = useCollection('notes-default', NOTES_LAYOUTS)
-  const { rows, state } = useNotesRows()
+  const { rows, state, retry, retrying } = useNotesRows()
   const { createNote, isPending } = useCreateNote()
   const navigate = useNavigate()
   // BR-NEU-1: a collection row/tile opens its entity page.
@@ -46,6 +47,8 @@ export function NotesSurface() {
           title="Notes"
           aria-label="Notes collection"
           {...col.chromeFor(resolved)}
+          // E-2 / BR-R1-8: the collection's read error, recoverable in place (CollectionView's error override).
+          error={<ReadErrorMessage message="Couldn’t load your notes." retry={retry} retrying={retrying} />}
           onLayoutChange={col.onLayoutChange}
           onFilter={col.onFilter}
           onSort={col.onSort}

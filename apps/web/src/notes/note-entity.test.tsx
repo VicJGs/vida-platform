@@ -1,11 +1,12 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { StrictMode } from 'react'
+import { StrictMode, useState } from 'react'
 import { act, cleanup, fireEvent, render } from '@testing-library/react'
 import type { EditorDocument } from '@vida/types'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import { NoteEntityView } from './note-entity'
+import { registerOverview } from './overview-registry'
 import type { NoteEntityData } from './use-note-entity'
 
 // The editor body persists content via the composition root (useNoteContent); mock it (no write in these tests).
@@ -15,11 +16,20 @@ vi.mock('../db/composition-root', () => ({
 }))
 
 // The editor is a probe that records each mount's seed (DEV-R0-1 facet-switch tests); it renders a marker.
-const seeds: Array<{ seed: EditorDocument | undefined; onChange?: (d: EditorDocument) => void }> = []
+const seeds: Array<{
+  seed: EditorDocument | undefined
+  onChange?: (d: EditorDocument) => void
+  onInvalidContent?: (e: Error) => void
+}> = []
 vi.mock('@vida/editor', () => ({
-  VidaEditor: (p: { defaultValue?: EditorDocument; onChange?: (d: EditorDocument) => void }) => {
-    seeds.push({ seed: p.defaultValue, onChange: p.onChange })
-    return <div data-testid="editor-probe" />
+  VidaEditor: (p: {
+    defaultValue?: EditorDocument
+    onChange?: (d: EditorDocument) => void
+    onInvalidContent?: (e: Error) => void
+    'aria-label'?: string
+  }) => {
+    seeds.push({ seed: p.defaultValue, onChange: p.onChange, onInvalidContent: p.onInvalidContent })
+    return <div data-testid="editor-probe" aria-label={p['aria-label']} />
   },
   toMarkdown: () => '',
 }))
@@ -65,6 +75,75 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
   it('EC-4 — leads with the Editor facet (Note tab selected by default)', () => {
     const { getByRole } = renderUI(<NoteEntityView page={notePage} />)
     expect(getByRole('tab', { name: 'Note' }).getAttribute('aria-selected')).toBe('true')
+  })
+  it.each(['task_note', 'task_group_note', 'milestone_note', 'deliverable_note'] as const)(
+    'EC-15 / EC-4 — a %s page offers the editor and leads with the Note tab (page gate, NP-10)',
+    (type) => {
+      const { getByRole, getByTestId } = renderUI(<NoteEntityView page={{ ...notePage, id: `p-${type}`, type }} />)
+      expect(getByRole('tab', { name: 'Note' }).getAttribute('aria-selected')).toBe('true')
+      expect(getByTestId('editor-probe')).not.toBeNull()
+    },
+  )
+
+  it('E-3 — an untitled task_note is named "Task note" (H1 + editor accname), never empty', () => {
+    const { getByText, getByTestId } = renderUI(<NoteEntityView page={{ ...notePage, id: 't9', type: 'task_note', title: '' }} />)
+    expect(getByText('Task note')).not.toBeNull()
+    expect(getByTestId('editor-probe').getAttribute('aria-label')).toBe('Task note editor')
+  })
+
+  it('EC-19 — merged mode on a task_note renders the Overview sections above the editor', () => {
+    const { getByRole, getByText, getByTestId } = renderUI(<NoteEntityView page={{ ...notePage, id: 't8', type: 'task_note' }} />)
+    fireEvent.click(getByRole('button', { name: 'Merged' }))
+    const attachments = getByText('Attachments')
+    const editor = getByTestId('editor-probe')
+    expect(attachments.compareDocumentPosition(editor) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
+  it('EC-34 / BR-R1-5 — ONE save status ("Saved on this device") in the title row, tabbed AND merged; it survives Overview', () => {
+    const { getAllByText, getByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 's1' }} />)
+    expect(getAllByText('Saved on this device')).toHaveLength(1)
+    fireEvent.click(getByRole('tab', { name: 'Overview' })) // the editor body unmounts; the chip stays
+    expect(getAllByText('Saved on this device')).toHaveLength(1)
+    fireEvent.click(getByRole('button', { name: 'Merged' }))
+    expect(getAllByText('Saved on this device')).toHaveLength(1)
+  })
+
+  it('BR-R1-6 — no ⋯ in R1 (no items yet → no dead affordance)', () => {
+    const { queryByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 's2' }} />)
+    expect(queryByRole('button', { name: 'Page actions' })).toBeNull()
+  })
+
+  it('EC-33 + BR-R1-5 — a malformed page shows the notice and NO save chip', () => {
+    const { queryByText, getByText } = renderUI(
+      <NoteEntityView page={{ ...notePage, id: 's3', contentStatus: 'malformed', rawContent: '{"type":"doc"}' }} />,
+    )
+    expect(getByText('This page can’t be opened for editing')).not.toBeNull()
+    expect(queryByText('Saved on this device')).toBeNull()
+  })
+
+  it('EC-33 + BR-R1-5 — the editor rejecting the doc after mount hides the chip', () => {
+    seeds.length = 0
+    const { queryByText, getByText } = renderUI(<NoteEntityView page={{ ...notePage, id: 's4' }} />)
+    expect(getByText('Saved on this device')).not.toBeNull()
+    act(() => seeds.at(-1)?.onInvalidContent?.(new Error('unknown node')))
+    expect(queryByText('Saved on this device')).toBeNull()
+  })
+
+  it('IR-R13 / BR-R1-3 — a registered Overview with hooks is mounted as a component (stable across merged ⇄ tabbed)', () => {
+    function HookedOverview({ page }: { page: NoteEntityData; mode: 'merged' | 'tabbed' }) {
+      const [n] = useState(() => 1)
+      return <div data-testid="hooked-overview">{`${page.id}:${n}`}</div>
+    }
+    registerOverview('task_group_note', HookedOverview)
+    const errors = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const page: NoteEntityData = { ...notePage, id: 'g1', type: 'task_group_note' }
+    const { getByRole, getByTestId } = renderUI(<NoteEntityView page={page} />)
+    fireEvent.click(getByRole('tab', { name: 'Overview' }))
+    expect(getByTestId('hooked-overview').textContent).toBe('g1:1')
+    fireEvent.click(getByRole('button', { name: 'Merged' }))
+    expect(getByTestId('hooked-overview').textContent).toBe('g1:1')
+    expect(errors.mock.calls.filter((c) => /hook/i.test(String(c[0])))).toEqual([])
+    errors.mockRestore()
   })
 })
 

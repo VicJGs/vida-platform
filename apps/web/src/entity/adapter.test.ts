@@ -7,8 +7,10 @@ import {
   createInMemoryEntityModeStore,
   type EntitySource,
   offersEditor,
+  offersPageEditor,
   toEntityProps,
 } from './adapter'
+import { PAGE_TYPE } from '@vida/types'
 
 const base: EntitySource = {
   title: 'Redesign the onboarding',
@@ -72,5 +74,24 @@ describe('EntityModeStore — the merged/tabbed memory convention', () => {
     expect(a.offersEditor).toBe(offersEditor)
     expect(a.toEntityProps).toBe(toEntityProps)
     expect(a.mode.readMode('habit', 'h1')).toBe('tabbed')
+  })
+})
+
+describe('offersPageEditor — the page-surface gate (notes-rescope R1, NP-10 / EC-15)', () => {
+  it('opens for every PAGE_TYPE member', () => {
+    for (const t of PAGE_TYPE) expect(offersPageEditor(t)).toBe(true)
+  })
+  it('stays closed for anything that is not a page type', () => {
+    expect(offersPageEditor('task')).toBe(false)
+    expect(offersPageEditor('')).toBe(false)
+    expect(offersPageEditor('not_a_page_type')).toBe(false)
+  })
+  it("toEntityProps gate:'page' passes the editor for a *_note the entity gate rejects", () => {
+    const src: EntitySource = { ...base, entityType: 'task_note' }
+    expect(toEntityProps({ ...src, gate: 'page' }).editor).toBe('EDITOR_NODE')
+    expect(toEntityProps(src).editor).toBeUndefined() // default gate = the entity gate, unchanged
+  })
+  it('passes the action slot through', () => {
+    expect(toEntityProps({ ...base, action: 'ACTION_NODE' }).action).toBe('ACTION_NODE')
   })
 })

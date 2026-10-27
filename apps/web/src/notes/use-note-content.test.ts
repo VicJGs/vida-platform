@@ -7,10 +7,15 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { EditorDocument } from '@vida/types'
 import { useNoteContent, type NoteContentPage } from './use-note-content'
 import { __resetBodyWrites, latestBody, readAfterWrites } from './body-writes'
+import { __resetSaveStatus, getSaveStatus, setSaveStatus, useSaveStatus } from './save-status'
+
+// R1 (G7): a write failure no chip observes raises the shared error toast — spied here.
+const notifySpy = vi.fn<(action: string, e: unknown) => void>()
+vi.mock('../lib/notify-error', () => ({ notifyError: (a: string, e: unknown) => notifySpy(a, e) }))
 
 /** A loaded page for the hook (R0 signature): content = the dedupe baseline. */
 function pg(id: string, content: EditorDocument | null = null, journalDate: string | null = null): NoteContentPage {
-  return { id, content, journalDate, contentStatus: content ? 'ok' : 'absent' }
+  return { id, title: 'T', type: 'note', content, journalDate, contentStatus: content ? 'ok' : 'absent' }
 }
 
 const writeSpy = vi.fn<(id: string, doc: EditorDocument) => Promise<unknown>>()
@@ -37,6 +42,8 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     writeSpy.mockResolvedValue(undefined)
     vi.useFakeTimers()
@@ -104,7 +111,7 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
     expect(writeSpy).toHaveBeenCalledTimes(1)
   })
 
-  it('surfaces a failed write as saveState="error" (BR-NEU-5)', async () => {
+  it('surfaces a failed write as the page save status "error" (BR-NEU-5 → BR-R1-5)', async () => {
     writeSpy.mockRejectedValue(new Error('boom'))
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { result } = renderHook(() => useNoteContent(pg('p3', loaded)), { wrapper })
@@ -117,8 +124,8 @@ describe('useNoteContent (S2 — debounced content write, IR-7)', () => {
       await Promise.resolve()
       await Promise.resolve()
     })
-    expect(result.current.saveState).toBe('error')
-    expect(errSpy).toHaveBeenCalled()
+    expect(getSaveStatus('p3')).toBe('error')
+    expect(notifySpy).toHaveBeenCalledWith('save “T”', expect.any(Error)) // no chip observes p3 here → the toast (G7)
     errSpy.mockRestore()
   })
 })
@@ -135,6 +142,8 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     writeSpy.mockResolvedValue(undefined)
     vi.useFakeTimers()
@@ -172,7 +181,7 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
   })
 
   it('a malformed page starts locked — nothing is ever written (BR-R0-1)', async () => {
-    const page: NoteContentPage = { id: 'm', content: null, journalDate: null, contentStatus: 'malformed' }
+    const page: NoteContentPage = { id: 'm', title: 'T', type: 'note', content: null, journalDate: null, contentStatus: 'malformed' }
     const { result, unmount } = renderHook(() => useNoteContent(page), { wrapper })
     act(() => {
       result.current.save(loaded)
@@ -207,7 +216,7 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
     act(() => result.current.save(edited))
     act(() => result.current.flush())
     await flushAll()
-    expect(result.current.saveState).toBe('error')
+    expect(getSaveStatus('d')).toBe('error')
     act(() => result.current.flush())
     await flushAll()
     expect(writeSpy).toHaveBeenCalledTimes(2)
@@ -325,6 +334,8 @@ describe('useNoteContent — latest-body overlay (DEV-R0-1)', () => {
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     writeSpy.mockResolvedValue(undefined)
     vi.useFakeTimers()
@@ -472,6 +483,8 @@ describe('useNoteContent — revert within the debounce (DEV-R0-2)', () => {
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     writeSpy.mockResolvedValue(undefined)
     vi.useFakeTimers()
@@ -491,7 +504,7 @@ describe('useNoteContent — revert within the debounce (DEV-R0-2)', () => {
     })
     expect(writeSpy).not.toHaveBeenCalled()
     expect(latestBody('r')).toBeUndefined()
-    expect(result.current.saveState).toBe('saved')
+    expect(getSaveStatus('r')).toBe('saved')
   })
 })
 
@@ -510,6 +523,8 @@ describe('useNoteContent — undo while a write is in flight (DEV-R0-2)', () => 
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     vi.useFakeTimers()
   })
@@ -553,7 +568,7 @@ describe('useNoteContent — undo while a write is in flight (DEV-R0-2)', () => 
     const a = renderHook(() => useNoteContent(pg('x', OLD)), { wrapper })
     act(() => a.result.current.save(NEW))
     a.unmount()
-    const malformed: NoteContentPage = { id: 'x', content: null, journalDate: null, contentStatus: 'malformed' }
+    const malformed: NoteContentPage = { id: 'x', title: 'T', type: 'note', content: null, journalDate: null, contentStatus: 'malformed' }
     const b = renderHook(() => useNoteContent(malformed), { wrapper })
     expect(b.result.current.seed.status).toBe('malformed')
   })
@@ -567,6 +582,8 @@ describe('useNoteContent — inherited handover is sticky (DEV-R0-1, critique r2
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
     writeSpy.mockReset()
     vi.useFakeTimers()
   })
@@ -595,5 +612,72 @@ describe('useNoteContent — inherited handover is sticky (DEV-R0-1, critique r2
     expect(writeSpy).toHaveBeenLastCalledWith('z', NEW)
     expect(writeSpy).toHaveBeenCalledTimes(2) // the failed outgoing + this mount's re-save
     errSpy.mockRestore()
+  })
+})
+
+// notes-rescope R1 · G6/G7 · BR-R1-5/7 — the writer reports to the per-page store; a failure no chip observes toasts.
+describe('useNoteContent → save-status store (R1)', () => {
+  const flushAll = async () => {
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(0)
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+  }
+  beforeEach(() => {
+    qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
+    __resetBodyWrites()
+    __resetSaveStatus()
+    notifySpy.mockReset()
+    writeSpy.mockReset()
+    writeSpy.mockResolvedValue(undefined)
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.useRealTimers()
+    cleanup()
+  })
+
+  it('a rejected write while a chip observes the page → status error, NO toast; the next success → saved', async () => {
+    const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+    const chip = renderHook(() => useSaveStatus('o1'))
+    writeSpy.mockRejectedValueOnce(new Error('disk busy'))
+    const { result } = renderHook(() => useNoteContent(pg('o1', loaded)), { wrapper })
+    act(() => result.current.save(edited))
+    act(() => result.current.flush())
+    await flushAll()
+    expect(chip.result.current).toBe('error')
+    expect(notifySpy).not.toHaveBeenCalled()
+    act(() => result.current.flush()) // the re-queued doc retries
+    await flushAll()
+    expect(chip.result.current).toBe('saved')
+    errSpy.mockRestore()
+  })
+
+  it('a rejection landing AFTER the body unmounted (no chip) → exactly one toast naming the page', async () => {
+    let reject: (e: Error) => void = () => {}
+    writeSpy.mockImplementationOnce(() => new Promise((_r, j) => (reject = j)))
+    const { result, unmount } = renderHook(() => useNoteContent({ ...pg('u1', loaded), title: '' }), { wrapper })
+    act(() => result.current.save(edited))
+    act(() => result.current.flush())
+    await flushAll() // the write starts (getServices resolves) — reject is now bound
+    expect(writeSpy).toHaveBeenCalledTimes(1)
+    unmount()
+    await act(async () => {
+      reject(new Error('disk busy'))
+      await Promise.resolve()
+      await Promise.resolve()
+    })
+    expect(getSaveStatus('u1')).toBe('error')
+    expect(notifySpy).toHaveBeenCalledTimes(1)
+    expect(notifySpy).toHaveBeenCalledWith('save “Untitled note”', expect.any(Error))
+  })
+
+  it("lock() marks the page 'locked' (the chip hides; sticky against a late write)", async () => {
+    const { result } = renderHook(() => useNoteContent(pg('l1', loaded)), { wrapper })
+    act(() => result.current.lock())
+    expect(getSaveStatus('l1')).toBe('locked')
+    setSaveStatus('l1', 'saved')
+    expect(getSaveStatus('l1')).toBe('locked')
   })
 })

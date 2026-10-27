@@ -49,3 +49,20 @@ const TYPE_LABEL: Record<string, string> = {
   deliverable_note: 'Deliverable',
 }
 export const typeLabel = (t: string): string => TYPE_LABEL[t] ?? t
+
+/**
+ * The ONE page name projection (notes-rescope R1, E-3 / BR-R1-2) — the H1, the editor accname, collection rows and card
+ * names never show an empty title. A titled page shows its title. An untitled `*_note` is named by its type ("Task note"):
+ * `ensureEntityNote` leaves `pages.title` null but seeds the parent's title as the body's first heading, so "Untitled …"
+ * above it would be false. `parentName` names it once R7's label seam (A-33) feeds it — R1 forward obligation. Anything
+ * else untitled (a freeform `note`; `journal` is always titled with its date) is "Untitled note".
+ */
+export function pageLabel(page: { type: string; title: string | null }, parentName?: string | null): string {
+  const title = page.title?.trim()
+  if (title) return title
+  if (page.type.endsWith('_note')) {
+    const parent = parentName?.trim()
+    return parent ? `${typeLabel(page.type)} · ${parent}` : `${typeLabel(page.type)} note`
+  }
+  return 'Untitled note'
+}

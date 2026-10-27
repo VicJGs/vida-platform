@@ -127,3 +127,11 @@ describe('NoteEditorBody — EC-33 unreadable content (notes-rescope R0)', () =>
     expect(writeSpy).toHaveBeenCalledWith('p1', edited)
   })
 })
+
+describe('NoteEditorBody — no save label of its own (notes-rescope R1, IR-R15 / BR-R1-5)', () => {
+  it('a readable page renders the editor and NO role="status" (the host renders the one chip)', () => {
+    const { getByTestId, queryByRole } = renderBody(page({}))
+    expect(getByTestId('editor')).not.toBeNull()
+    expect(queryByRole('status')).toBeNull()
+  })
+})

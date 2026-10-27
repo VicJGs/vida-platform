@@ -9,6 +9,7 @@ import type { EditorDocument, EditorNode } from '@vida/types'
 
 /** The `pages` row shape the service returns (PageRow is not re-exported from @vida/core's barrel). */
 type PageRow = Awaited<ReturnType<NotesService['listPages']>>[number]
+import { pageLabel } from './note-chrome'
 import type { NotesRow } from './use-notes-rows'
 import type { NoteEntityData } from './use-note-entity'
 
@@ -72,7 +73,8 @@ export function parseContent(raw: string | null): EditorDocument | null {
 export function toNotesRow(p: PageRow): NotesRow {
   return {
     id: p.id,
-    title: p.title ?? '(untitled)',
+    title: pageLabel({ type: p.type, title: p.title }), // never empty (E-3)
+    labelFromType: !p.title?.trim(),
     type: p.type,
     excerpt: '',
     updated: relLabel(p.updated_at),

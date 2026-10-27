@@ -7,6 +7,9 @@
 // Tamagui-only boundary forbids this in @vida/ui (BR-2; the collection/dashboard
 // adapter precedent).
 //
+// notes-rescope R1 (NP-10 / EC-15): a PAGE surface gates on page type instead — `offersPageEditor` (every
+// `PAGE_TYPE` member is editor-capable), chosen per source by `gate: 'page'`. The entity gate below is unchanged.
+//
 // SHIPS (buildable + tested NOW): the pure `offersEditor` gate (the "registry-
 // gated editor": the Editor facet is offered iff the entity type is page-able AND
 // a page exists) + `toEntityProps` (which PASSES the editor slot only when the
@@ -19,6 +22,7 @@
 // ============================================================================
 import type { ReactNode } from 'react'
 import { schema } from '@vida/core'
+import { PAGE_TYPE } from '@vida/types'
 import type { EntityViewProps, Facet, FacetMode } from '@vida/ui'
 
 /** The per-block/page terminal state the shell threads (the @vida/ui `ViewState` canon, carried by EntityViewProps). */
@@ -34,6 +38,15 @@ export function offersEditor(entityType: string, hasPage: boolean): boolean {
   return schema.isEntityType(entityType) && hasPage
 }
 
+/**
+ * THE page-surface gate (NP-10, notes-rescope R1): every page type is editor-capable. A page surface keys on `PAGE_TYPE`,
+ * not on the `ENTITY_TYPES` polymorphic-reference registry (which governs module-entity surfaces) — the four `*_note`
+ * types are page types but not registered entity types.
+ */
+export function offersPageEditor(pageType: string): boolean {
+  return (PAGE_TYPE as readonly string[]).includes(pageType)
+}
+
 /** The module-fed source for one entity page. `editorNode` is the COMPOSED Editor body (the entity's linked page =
  *  Canvas: Editor #7) — it is passed through to the shell ONLY when `offersEditor` is open. */
 export interface EntitySource {
@@ -41,6 +54,11 @@ export interface EntitySource {
   subtitle?: ReactNode
   entityType: string
   hasPage: boolean
+  /** Which gate opens the editor: `'entity'` (default — `offersEditor`, the registry gate) or `'page'` (a page surface —
+   *  `offersPageEditor`; `hasPage` is ignored, since a page surface IS the page). */
+  gate?: 'entity' | 'page'
+  /** The ⋯ entity-action slot (save status + menu) — passed through to `EntityView.action`. */
+  action?: ReactNode
   /** The composed Editor facet body — gated: only reaches EntityView when the entity is page-able. */
   editorNode?: ReactNode
   editorState?: EditorState
@@ -61,10 +79,12 @@ export interface EntitySource {
  * that is the registry gate in action (a non-page-able entity gets NO editor, so the shell shows no Content tab/section).
  */
 export function toEntityProps(src: EntitySource): EntityViewProps {
-  const editor = offersEditor(src.entityType, src.hasPage) ? src.editorNode : undefined
+  const open = src.gate === 'page' ? offersPageEditor(src.entityType) : offersEditor(src.entityType, src.hasPage)
+  const editor = open ? src.editorNode : undefined
   return {
     title: src.title,
     subtitle: src.subtitle,
+    action: src.action,
     mode: src.mode,
     onModeChange: src.onModeChange,
     defaultFacet: src.defaultFacet,

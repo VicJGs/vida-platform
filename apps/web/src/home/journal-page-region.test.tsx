@@ -8,8 +8,8 @@ import type { JournalEntryResult } from './use-journal-entry'
 // The region calls useJournalEntry() unconditionally (Rules of Hooks). Mock it to drive the state;
 // mock NoteEditorBody to a sentinel so a success render asserts "the live editor mounts" without
 // pulling TipTap/ProseMirror into jsdom.
-const mockEntry = vi.fn<() => JournalEntryResult>()
-vi.mock('./use-journal-entry', () => ({ useJournalEntry: () => mockEntry() }))
+const mockEntry = vi.fn<() => Pick<JournalEntryResult, 'page' | 'state'>>()
+vi.mock('./use-journal-entry', () => ({ useJournalEntry: () => ({ retry: () => {}, retrying: false, ...mockEntry() }) }))
 vi.mock('../notes/note-editor-body', () => ({
   NoteEditorBody: ({ page }: { page: NoteEntityData }) => (
     <div data-testid="editor-body">editor:{page.title}</div>
@@ -34,6 +34,17 @@ describe('JournalPageRegion (home-journal-go-live S1)', () => {
     mockEntry.mockReturnValue({ page, state: 'success' })
     const { getByTestId } = renderUI(<JournalPageRegion />)
     expect(getByTestId('editor-body').textContent).toContain('2026-10-21')
+  })
+
+  it('EC-34 / BR-R1-5 — success shows ONE save chip inside the journal region; a malformed page shows none', () => {
+    mockEntry.mockReturnValue({ page, state: 'success' })
+    const { getByRole, getAllByText, queryByText, rerender } = renderUI(<JournalPageRegion />)
+    const region = getByRole('region', { name: 'Journal entry' })
+    expect(getAllByText('Saved on this device')).toHaveLength(1)
+    expect(region.textContent).toContain('Saved on this device')
+    mockEntry.mockReturnValue({ page: { ...page, id: 'j2', contentStatus: 'malformed' }, state: 'success' })
+    rerender(<UIProvider><JournalPageRegion /></UIProvider>)
+    expect(queryByText('Saved on this device')).toBeNull()
   })
 
   it('reflects the live loading/error frames (shell owns terminal states)', () => {

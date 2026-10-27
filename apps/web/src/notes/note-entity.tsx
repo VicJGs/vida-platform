@@ -19,6 +19,9 @@ import { EmptyState, EntityView, type FacetMode } from '@vida/ui'
 import { createInMemoryEntityModeStore, toEntityProps } from '../entity/adapter'
 import { NoteEditorBody } from './note-editor-body'
 import { overviewFor } from './overview-registry'
+import { pageLabel } from './note-chrome'
+import { PageActions } from './page-actions'
+import { ReadErrorMessage } from './read-error-message'
 import { useNoteEntity, type NoteEntityData } from './use-note-entity'
 import { WikiLinkPicker } from './wikilink-picker'
 import { PreviewCard } from './link-preview-card'
@@ -41,6 +44,9 @@ function devFlagActive(flag: string): boolean {
 // Default 'tabbed' so `defaultFacet='editor'` opens the note on its Note (editor) tab (EC-4/EC-5).
 const modeStore = createInMemoryEntityModeStore('tabbed')
 
+// The ⋯ items arrive with their legs (R3 Rename · R5 Move to Trash · R9 Save as template); none yet → no ⋯ (BR-R1-6).
+const NO_ACTIONS = [] as const
+
 /** A centered page-level state host (the surface owns loading/empty/error before the frame mounts). */
 function Centered({ children, role, busy }: { children: React.ReactNode; role?: 'status'; busy?: boolean }) {
   return (
@@ -60,7 +66,7 @@ function Centered({ children, role, busy }: { children: React.ReactNode; role?: 
 
 export function NoteEntity() {
   const { id } = routeApi.useParams()
-  const { page, state } = useNoteEntity(id)
+  const { page, state, retry, retrying } = useNoteEntity(id)
 
   // Explicit per-state ladder (g2 N1) — covers the live-swap's future loading+null; aria-busy on the region HOST (g2 B1).
   if (state === 'loading') {
@@ -74,10 +80,8 @@ export function NoteEntity() {
   }
   if (state === 'error') {
     return (
-      <Centered role="status">
-        <Text fontSize="$small" color="$colorTextMuted">
-          Couldn’t load this page.
-        </Text>
+      <Centered>
+        <ReadErrorMessage message="Couldn’t load this page." retry={retry} retrying={retrying} />
       </Centered>
     )
   }
@@ -107,12 +111,16 @@ export function NoteEntityView({ page }: { page: NoteEntityData }) {
     setMode(next)
   }
 
-  const layout = overviewFor(page.type)({ page, mode })
+  const Overview = overviewFor(page.type)
+  const layout = <Overview page={page} mode={mode} /> // a component (IR-R13): its hooks bind to it, not to this page
   const props = toEntityProps({
-    title: page.title,
+    title: pageLabel(page), // never empty (E-3 / BR-R1-2)
     entityType: page.type,
     hasPage: true,
-    editorNode: <NoteEditorBody page={page} />, // gated by offersEditor inside toEntityProps
+    gate: 'page', // NP-10 / EC-15: every page type is editor-capable on the page surface
+    // The title-row slot: the ONE save chip (EC-34) + the ⋯ menu — no items until R3 (Rename) · R5 (Trash) · R9 (template).
+    action: <PageActions pageId={page.id} locked={page.contentStatus === 'malformed'} items={NO_ACTIONS} />,
+    editorNode: <NoteEditorBody page={page} />, // gated by offersPageEditor inside toEntityProps
     editorState: 'success',
     layout,
     mode,

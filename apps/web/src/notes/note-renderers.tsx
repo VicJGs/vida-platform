@@ -2,7 +2,8 @@
 // renderNotesView — the Notes module's per-layout renderers (fe-notes-and-pages S1).
 // COMPOSES the shipped @vida/ui view-mode renderers (never rebuilt) with notes' real
 // row data + props. state-as-prop (BR-2). Legs NOT-48 (List·Gallery·Calendar) + NOT-49
-// (Neural → empty terminal, AR-8 data-prep deferred). Icons = Lucide, tinted by token (EC-22).
+// (Neural → empty terminal, AR-8 data-prep deferred). Icons = Lucide, tinted by token (EC-22); icons + type labels come
+// from note-chrome (one set — notes-rescope R1, B-60).
 // ============================================================================
 import type { ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
@@ -10,23 +11,16 @@ import {
   ListView, GalleryView, CalendarView, NeuralGraph, EmptyState, Card,
   type ViewLayout, type ViewState,
 } from '@vida/ui'
-import { StickyNote, CalendarClock, ListChecks, FolderKanban, Flag, Package, Star, type LucideIcon } from 'lucide-react'
+import { Star } from 'lucide-react'
+import { Icon, typeIcon, typeLabel } from './note-chrome'
 import type { NotesRow } from './use-notes-rows'
 
-const TYPE_ICON: Record<string, LucideIcon> = {
-  note: StickyNote, journal: CalendarClock, task_note: ListChecks,
-  task_group_note: FolderKanban, milestone_note: Flag, deliverable_note: Package,
-}
-const typeIcon = (t: string): LucideIcon => TYPE_ICON[t] ?? StickyNote
-const TYPE_LABEL: Record<string, string> = {
-  note: 'Note', journal: 'Journal', task_note: 'Task note',
-  task_group_note: 'Group note', milestone_note: 'Milestone note', deliverable_note: 'Deliverable note',
-}
-const typeLabel = (t: string): string => TYPE_LABEL[t] ?? t
-
-function Icon({ icon: Ico, size = 16, tone = 'muted' }: { icon: LucideIcon; size?: number; tone?: 'muted' | 'primary' | 'accent' }) {
-  const color = tone === 'accent' ? 'var(--colorBrandEmphasis)' : tone === 'primary' ? 'var(--colorTextPrimary)' : 'var(--colorTextMuted)'
-  return <Ico size={size} color={color} strokeWidth={2} />
+/** The card's full accessible name (B-63): title · type · edited · favorite — the type is dropped when the title IS the
+ *  type label (an untitled page, `pageLabel`). One shared helper for list rows and gallery tiles. */
+function cardName(r: NotesRow): string {
+  return [r.title, r.labelFromType ? null : typeLabel(r.type), `edited ${r.updated}`, r.favorite ? 'favorite' : null]
+    .filter(Boolean)
+    .join(', ')
 }
 
 const Row = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8', flexWrap: 'wrap' })
@@ -34,7 +28,7 @@ const Col = styled(View, { flexDirection: 'column', gap: '$4' })
 
 function NoteRowCard({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
-    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}
+    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={cardName(r)}
       header={<Row><Icon icon={typeIcon(r.type)} tone="primary" /><Text fontFamily="$display" fontSize="$body" color="$colorTextPrimary">{r.title}</Text></Row>}
       actions={r.favorite ? <Icon icon={Star} tone="accent" /> : undefined}>
       <Col>
@@ -47,7 +41,7 @@ function NoteRowCard({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void 
 
 function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) {
   return (
-    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={r.title}>
+    <Card interactive onPress={() => onOpen(r.id)} status={r.favorite ? 'warm' : 'neutral'} aria-label={cardName(r)}>
       <Col>
         <View height={72} borderRadius="$sm" backgroundColor="$colorSurfaceSecondary" alignItems="center" justifyContent="center">
           <Icon icon={typeIcon(r.type)} size={24} />

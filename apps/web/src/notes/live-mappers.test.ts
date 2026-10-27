@@ -3,7 +3,7 @@
 // `parseContentResult` is the ONE parser; `parseContent` keeps its `EditorDocument | null` contract (fe-calendar).
 // ============================================================================
 import { describe, expect, it } from 'vitest'
-import { parseContent, parseContentResult, toNoteEntity } from './live-mappers'
+import { parseContent, parseContentResult, toNoteEntity, toNotesRow } from './live-mappers'
 
 const para = (text: string) => ({ type: 'paragraph', content: [{ type: 'text', text }] })
 const doc = { type: 'doc', content: [para('hi')] }
@@ -81,5 +81,21 @@ describe('toNoteEntity — contentStatus + rawContent (test 11)', () => {
       contentStatus: 'malformed',
       rawContent: '{not json',
     })
+  })
+})
+
+describe('toNotesRow — labels (notes-rescope R1, E-3 / BR-R1-2)', () => {
+  const row = (type: string, title: string | null) =>
+    ({
+      id: 'p1', type, title, content: null, is_favorite: false, is_archived: false,
+      updated_at: Date.now(), journal_date: null,
+    }) as unknown as Parameters<typeof toNotesRow>[0]
+
+  it('a titled page keeps its title; labelFromType false', () => {
+    expect(toNotesRow(row('note', 'Kickoff'))).toMatchObject({ title: 'Kickoff', labelFromType: false })
+  })
+  it('an untitled page gets the type label, never "(untitled)"', () => {
+    expect(toNotesRow(row('note', null))).toMatchObject({ title: 'Untitled note', labelFromType: true })
+    expect(toNotesRow(row('task_note', null))).toMatchObject({ title: 'Task note', labelFromType: true })
   })
 })

@@ -12,11 +12,14 @@
 // - the write is a direct promise, not a React Query mutation: registration must be synchronous, and a v5
 //   mutation awaits before its fn and drops per-call callbacks after unmount (exactly the unmount-flush case);
 // - a failed write re-queues (retryable errors only) so the next hide/unmount/edit retries;
+// - the outcome goes to the per-page save-status store (notes-rescope R1, G6): success → `saved`, failure → `error`,
+//   `lock()` → `locked`. The HOST renders the one chip (EC-34 / BR-R1-5). A failure no chip observes (the user left the
+//   page) raises the shared error toast naming the page (G7 / BR-R1-7) — R0's "failure after unmount is lost" closed;
 // - every real edit is recorded in the latest-body overlay (DEV-R0-1), and a mounting body SEEDS from it: a route
 //   swap or facet/tab switch renders the incoming body before the outgoing flush, so the cache can't hand it over.
 //   The dedupe baseline stays the STORED body, so an overlay-seeded mount re-saves the overlay once (ownership: it
 //   retries an outgoing write that may still fail after unmount). Cost: usually one redundant identical write.
-// Save-state stays honest (saving | saved | error) — no fake "synced" (BR-NEU-5).
+// Save status stays honest (saved | error | locked) — no "Saving…", no fake "synced" (BR-NEU-5 → BR-R1-5).
 // ============================================================================
 import { useEffect, useRef, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
@@ -24,12 +27,12 @@ import type { EditorDocument } from '@vida/types'
 import { getServices } from '../db/composition-root'
 import { bodyWriteKeys, clearLatestBody, latestBody, setLatestBody, trackBodyWrite } from './body-writes'
 import type { NoteEntityData } from './use-note-entity'
-
-export type SaveState = 'idle' | 'saving' | 'saved' | 'error'
+import { notifyError } from '../lib/notify-error'
+import { pageLabel } from './note-chrome'
+import { observed, setSaveStatus } from './save-status'
 
 export interface NoteContentResult {
   save: (doc: EditorDocument) => void
-  saveState: SaveState
   /** Write the pending edit now (no-op when nothing is pending). */
   flush: () => void
   /** Drop the pending edit without writing it. */
@@ -45,7 +48,7 @@ export interface NoteContentSeed {
   status: NoteEntityData['contentStatus']
 }
 
-export type NoteContentPage = Pick<NoteEntityData, 'id' | 'content' | 'journalDate' | 'contentStatus'>
+export type NoteContentPage = Pick<NoteEntityData, 'id' | 'title' | 'type' | 'content' | 'journalDate' | 'contentStatus'>
 
 const DEBOUNCE_MS = 500
 
@@ -60,10 +63,11 @@ const TERMINAL_ERRORS = new Set(['PageNotFoundError', 'InvalidPageContentError']
 export function useNoteContent(page: NoteContentPage): NoteContentResult {
   const { id, journalDate } = page
   const qc = useQueryClient()
-  const [saveState, setSaveState] = useState<SaveState>('idle')
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null)
   const pending = useRef<{ doc: EditorDocument; serialized: string; gen: number } | null>(null)
-  const mounted = useRef(true)
+  // The page's name for the post-unmount toast — the latest render's title/type (a rename is reflected).
+  const labelSource = useRef({ title: page.title, type: page.type })
+  labelSource.current = { title: page.title, type: page.type }
   const owner = useRef(Symbol('note-content-writer'))
   // DEV-R0-1: read ONCE, at first render — the incoming body renders before the outgoing flush, so the overlay (set
   // synchronously by the outgoing `save()`) is the only place the unsaved edit can come from. Pure read: StrictMode's
@@ -124,7 +128,7 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
         clearLatestBody(id, { gen: p.gen }) // never clears a newer edit's overlay
         lastSaved.current = p.serialized
         inheritsHandover.current = false // this mount's own body is now in the DB — the inherited edit is owned
-        if (mounted.current) setSaveState(pending.current ? 'saving' : 'saved')
+        setSaveStatus(id, 'saved')
         void qc.invalidateQueries({ queryKey: ['pages', id] })
         void qc.invalidateQueries({ queryKey: ['notes', 'pages'] }) // the list sorts by updated_at
         if (journalDate) {
@@ -133,9 +137,10 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
         }
       },
       (e: unknown) => {
-        // M1 has no toast wired (the shared error toast is R1, F-7) — console + the honest save-state.
-        console.error('[writeNoteContent failed]', e)
-        if (mounted.current) setSaveState('error')
+        setSaveStatus(id, 'error')
+        // A chip showing this page carries the failure (one announcement); with none (the user left), the toast does.
+        if (observed(id)) console.error('[writeNoteContent failed]', e)
+        else notifyError(`save “${pageLabel(labelSource.current)}”`, e)
         // The DB never got it. Stated limit (critique r2 A2): if an EARLIER write is still in flight, this falls back past
         // it; writes run in order through the one worker, so an earlier write can't still be pending behind a later one.
         if (expected.current === p.serialized) expected.current = lastSaved.current
@@ -144,8 +149,9 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
           // The page is gone → nothing to hand over. A bad body → drop only that generation (a newer edit stays).
           clearLatestBody(id, e.name === 'PageNotFoundError' ? 'all' : { gen: p.gen })
         }
-        // Re-queue unless a newer edit already replaced it, so the next hide/unmount/edit retries. Stated limit: a
-        // failure that lands after unmount re-queues into a dead hook — that edit is lost (R1's toast will show it).
+        // Re-queue unless a newer edit already replaced it, so the next hide/unmount/edit retries. A failure that lands
+        // after unmount re-queues into a dead hook; its edit stays in the overlay (a reopen re-seeds + re-saves it), and
+        // the toast above told the user.
         if (!terminal && pending.current == null && !locked.current) pending.current = p
       },
     )
@@ -173,13 +179,12 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
         clearTimer()
         pending.current = null
         clearLatestBody(id, { owner: owner.current })
-        if (mounted.current) setSaveState('saved')
+        setSaveStatus(id, 'saved')
       }
       return
     }
     const gen = setLatestBody(id, doc, serialized, owner.current) // synchronous: the next mount seeds from it
     pending.current = { doc, serialized, gen }
-    if (mounted.current) setSaveState('saving')
     clearTimer()
     timer.current = setTimeout(() => flushRef.current(), DEBOUNCE_MS)
   }
@@ -193,10 +198,10 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
   const lock = () => {
     locked.current = true
     cancel()
+    setSaveStatus(id, 'locked') // the chip hides — the EC-33 notice is the only status (called from a callback, never render)
   }
 
   useEffect(() => {
-    mounted.current = true
     const onHidden = () => {
       if (document.visibilityState === 'hidden') flushRef.current()
     }
@@ -206,14 +211,12 @@ export function useNoteContent(page: NoteContentPage): NoteContentResult {
     return () => {
       document.removeEventListener('visibilitychange', onHidden)
       window.removeEventListener('pagehide', onPageHide)
-      mounted.current = false
       flushRef.current() // never drop the last edit on navigate-away/unmount
     }
   }, [])
 
   return {
     save,
-    saveState,
     flush: () => flushRef.current(),
     cancel,
     lock,

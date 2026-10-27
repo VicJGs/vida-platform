@@ -6,6 +6,8 @@
 //
 // Persistence is LIVE: the uncontrolled `doc` seeds the editor; `onChange` persists via `useNoteContent` →
 // `NotesService.writePageContent` (content's own path, debounced, NOT the updatePage LWW patch — IR-7).
+// The body renders NO save status of its own (notes-rescope R1, IR-R15): the save state lives in the per-page store
+// (`save-status.ts`) and each HOST renders the one chip — the note page's title row, Home's journal frame (EC-34).
 //
 // Data safety (notes-rescope R0, EC-33 / BR-R0-1): a body we can't read is NEVER edited or written. `malformed`
 // at load (bad JSON / not a doc) never mounts the editor; a doc the editor's schema rejects (an unknown node/mark)
@@ -19,18 +21,12 @@ import { VidaEditor, toMarkdown } from '@vida/editor'
 import { isEditorDocument } from '@vida/core'
 import { ensureCanvasEditorStyles } from '../canvas-editor/canvas-editor-styles'
 import type { NoteEntityData } from './use-note-entity'
-import { useNoteContent, type SaveState } from './use-note-content'
+import { useNoteContent } from './use-note-content'
 import { copyFilename, downloadText } from './export-copy'
+import { pageLabel } from './note-chrome'
 
 export interface NoteEditorBodyProps {
   page: NoteEntityData
-}
-
-/** Honest save-state only (BR-NEU-5) — no fake "synced". Idle renders nothing. */
-const SAVE_LABEL: Partial<Record<SaveState, string>> = {
-  saving: 'Saving…',
-  saved: 'Saved',
-  error: 'Couldn’t save',
 }
 
 /** Markdown of the stored bytes when they parse to a doc; `null` when they don't or the conversion throws (G8). */
@@ -88,38 +84,24 @@ function UnreadableNotice({ page }: NoteEditorBodyProps) {
 export function NoteEditorBody({ page }: NoteEditorBodyProps) {
   // Idempotent, browser-only — the canvas-editor.tsx render-body precedent. Scopes to `.vida-canvas-editor-page`.
   ensureCanvasEditorStyles()
-  const { save, saveState, lock, seed } = useNoteContent(page)
+  const { save, lock, seed } = useNoteContent(page)
   // One source for the editor seed and the read-only state (DEV-R0-1): the overlay wins over the (possibly stale) prop.
   const [invalid, setInvalid] = useState(seed.status === 'malformed')
-  const label = SAVE_LABEL[saveState]
   return (
     <View className="vida-canvas-editor-page" width="100%" maxWidth={740} marginHorizontal="auto" gap="$8">
       {invalid ? (
         <UnreadableNotice page={page} />
       ) : (
-        <>
-          <View height={18} alignItems="flex-end" justifyContent="center">
-            {label ? (
-              <Text
-                role="status"
-                fontSize="$small"
-                color={saveState === 'error' ? '$colorTextPrimary' : '$colorTextMuted'}
-              >
-                {label}
-              </Text>
-            ) : null}
-          </View>
-          <VidaEditor
-            chrome="bare"
-            defaultValue={seed.doc ?? undefined}
-            onChange={save}
-            onInvalidContent={() => {
-              lock() // synchronously, in the callback — no render window where a save could be armed (BR-R0-7)
-              setInvalid(true)
-            }}
-            aria-label={`${page.title} editor`}
-          />
-        </>
+      <VidaEditor
+          chrome="bare"
+          defaultValue={seed.doc ?? undefined}
+          onChange={save}
+          onInvalidContent={() => {
+            lock() // synchronously, in the callback — no render window where a save could be armed (BR-R0-7)
+            setInvalid(true)
+          }}
+          aria-label={`${pageLabel(page)} editor`}
+        />
       )}
     </View>
   )

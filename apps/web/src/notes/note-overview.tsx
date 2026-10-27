@@ -1,11 +1,12 @@
 // ============================================================================
-// note-overview — the per-entity-type Layout-facet renderers (fe-notes-and-pages
-// #27, S2). Each renderer feeds BOTH modes from one set of sections (envision
-// round-2d): MERGED = a continuous Notion page (NotionHeader → inline Eyebrow
-// sections, no boxes — EC-19); TABBED = a DashboardView Card grid (EC-18f).
+// note-overview — the `note` Layout-facet component (fe-notes-and-pages #27, S2;
+// a component since notes-rescope R1, IR-R13). It feeds BOTH modes from one set of
+// sections (envision round-2d): MERGED = a continuous Notion page (NotionHeader →
+// inline Eyebrow sections, no boxes — EC-19); TABBED = a DashboardView Card grid (EC-18f).
 //
-// S2 ships `note` (full) + `journal` (stub); task/milestone/deliverable Overviews
-// RIDE in from fe-tasks/fe-projects via `registerOverview` (overview-registry).
+// Notes ships only the `note` Overview (also the fallback for unregistered types). The
+// journal Overview is journals-rescope's (EC-18a re-pin); task/milestone/deliverable
+// Overviews RIDE in from fe-tasks/fe-projects via `registerOverview` (overview-registry).
 // Backlinks is LIVE (S3 — BacklinksPanel). Attachments + metadata are LIVE (S6 —
 // AttachmentsPanel + MetadataControls/CoverBanner via NotionHeader).
 // ============================================================================
@@ -17,9 +18,8 @@ import { BacklinksPanel } from './backlinks-panel'
 import { Eyebrow } from './note-chrome'
 import { NotionHeader, PropertyRows } from './notion-header'
 import { MetadataControls } from './page-metadata'
-import { SummaryBlock } from './summary-block'
 // Type-only (erased at build) → no runtime import cycle with overview-registry.
-import type { OverviewContext, OverviewRenderer } from './overview-registry'
+import type { OverviewContext } from './overview-registry'
 
 /** An inline merged section — eyebrow label + body, no box (EC-19). */
 function Section({ title, children }: { title: string; children: ReactNode }) {
@@ -33,7 +33,7 @@ function Section({ title, children }: { title: string; children: ReactNode }) {
 
 /** The `note` Overview: Properties · Attachments · Backlinks (EC-18f). Metadata controls ride in via NotionHeader
  *  (merged) + the Properties block (tabbed); the cover banner is merged-only (S6). */
-export const noteOverview: OverviewRenderer = ({ page, mode }: OverviewContext) => {
+export function NoteOverview({ page, mode }: OverviewContext) {
   if (mode === 'merged') {
     return (
       <View gap="$24">
@@ -69,41 +69,6 @@ export const noteOverview: OverviewRenderer = ({ page, mode }: OverviewContext) 
           )
         if (b.id === 'attachments') return <AttachmentsPanel pageId={page.id} />
         if (b.id === 'backlinks') return <BacklinksPanel entityType={page.type} entityId={page.id} />
-        return null
-      }}
-    />
-  )
-}
-
-/** The `journal` Overview STUB (EC-15/EC-18a): the daily OS dashboard arrives with fe-journals; S2 ships the
- *  /summary seam (filled S5) + properties, honest-empty elsewhere. */
-export const journalOverviewStub: OverviewRenderer = ({ page, mode }: OverviewContext) => {
-  if (mode === 'merged') {
-    return (
-      <View gap="$24">
-        <NotionHeader page={page} />
-        <Section title="Summary">
-          <SummaryBlock date={page.journalDate} />
-        </Section>
-        <Section title="Backlinks">
-          <BacklinksPanel entityType={page.type} entityId={page.id} />
-        </Section>
-      </View>
-    )
-  }
-  const blocks: readonly DashboardBlock[] = [
-    // 'success' so SummaryBlock (which owns its own loading/error/empty/populated ladder) renders in both modes (D-S5-8).
-    { id: 'summary', title: 'Summary', size: 'full', state: 'success' },
-    { id: 'properties', title: 'Properties', size: 'md', state: 'success' },
-  ]
-  return (
-    <DashboardView
-      title="Overview"
-      aria-label="Journal overview"
-      blocks={blocks}
-      renderBlock={(b) => {
-        if (b.id === 'summary') return <SummaryBlock date={page.journalDate} />
-        if (b.id === 'properties') return <PropertyRows page={page} />
         return null
       }}
     />

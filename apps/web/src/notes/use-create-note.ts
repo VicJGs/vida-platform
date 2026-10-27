@@ -1,12 +1,14 @@
 // ============================================================================
 // useCreateNote — notes go-live create path (2026-10-20). The write side of the
 // live swap: `NotesService.createPage` + invalidate the list key (BR-RT-2/4 —
-// invalidate + re-read, NO optimistic; local reads are <10ms).
+// invalidate + re-read, NO optimistic; local reads are <10ms). A failure raises the shared error toast (notes-rescope
+// R1, F-7 / BR-R1-7).
 // ============================================================================
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from '@tanstack/react-router'
 import type { PageType } from '@vida/types'
 import { getServices } from '../db/composition-root'
+import { notifyError } from '../lib/notify-error'
 
 export interface CreateNoteInput {
   type?: PageType
@@ -30,10 +32,7 @@ export function useCreateNote(): CreateNoteResult {
       void qc.invalidateQueries({ queryKey: ['notes', 'pages'] }) // BR-RT-2: re-read the list
       void navigate({ to: '/notes/$id', params: { id: page.id } }) // BR-NEU-2: create-and-open (in place)
     },
-    onError: (e) => {
-      // Surface create failures (they were silently captured before) — M1 has no toast wired yet.
-      console.error('[createNote failed]', e)
-    },
+    onError: (e) => notifyError('create the note', e), // one danger toast naming the action (F-7 / B-15, R1)
   })
   return { createNote: (input = {}) => mutation.mutate(input), isPending: mutation.isPending }
 }
