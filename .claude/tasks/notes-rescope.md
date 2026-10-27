@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R1 page frame DONE (Visual Gate ACCEPTED by Victor 2026-10-27); next R2 mode memory (§XXVI gate 1)
+# Status: in-progress — Step 6: R2 mode memory PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -96,3 +96,9 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   (mutation-killed), lineheight-unpaired entry closed, citation/header nits, formatting; follow-ups homed: R3 focus-after-
   Retry + ⋯ panel labelledby, R5 notifyError/toast bound, M4 save-status clear(id).
 - 2026-10-27 (Step 6 · R1 — DONE) — Visual Gate ACCEPTED by Victor (re-shoot after DEV-R1-1). Next: R2 mode memory.
+- 2026-10-27 (Step 6 · R2 gate 1) — branch pushed (bb8e42b). PLAN-R2-mode-memory.md: critique r1 REVISE (3 blocking: a failed read
+  would block under retry:1 + retryOnMount → retry:false/retryOnMount:false/one observer; G4 relabelled the slice text →
+  stated refinement + slice-map amendment; ADR append precedent wrong → Amended: line + §3.6) → rev 2 → r2 SHIP → rev 3.
+  Awaiting Victor: Approval 1.
+  → Victor: "You should follow the documentation, don't try to change that, it is there for a reason." G4 refinement
+  withdrawn → rev 4 delivers "seeded per-type default while loading" verbatim. Memory deliverable-is-the-doc… 3rd case.
