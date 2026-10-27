@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R1 page frame PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
+# Status: in-progress — Step 6: R1 building (Approval 2, 2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -82,3 +82,6 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   (non-blocking folded). Grounded, not asked: page gate = new fn + `gate` field (entity gate unchanged); ⋯ hidden until R3
   (no dead affordance), EC-34 "beside ⋯" closes at R3; journal Overview stub removed (EC-18a + journal /summary → journals-
   rescope); parentName fed by R7's A-33 label seam (forward obligation); DEV `?readerror` flag. Victor: APPROVED (Approval 1).
+- 2026-10-27 (Step 6 · R1 gate 2) — /preflight PASSED (5 assumptions resolved). IMPLEMENTATION-PLAN-R1: critique r1 REVISE (2
+  blocking: v5 resets a no-data query to pending on refetch → R-6 errorUpdateCount-based `retrying`; Home chip 34 px +
+  self-aligns left → R-3) → rev 2 → r2 one leftover (Step 5 Home bullet) → rev 3 = SHIP. Victor: APPROVED (Approval 2).
