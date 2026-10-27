@@ -6846,3 +6846,18 @@ Decisions:
 Next session:
   - R0 data safety (§XXVI PLAN first) in the notes-rescope worktree. Data-loss paths B-50/C-46 + E-1 are R0; EC-15 live bug is R1.
 ---
+
+---
+Date: 2026-10-26
+Task: notes-rescope (LIF-245) — Step 6 R0 data safety · worktree `.claude/worktrees/notes-rescope` (Node 24)
+Completed:
+  - **R0 done** — commits 853570e (core) · 84b7f58 (editor) · a6bd158 (web+e2e) · f2c35cc (docs). Live OPFS 18/18 ·
+    Visual Gate 18/18 accepted · core 2049 · web 832 · tsc/lint clean · post-impl /critique SHIP.
+  - §XXVIII DEV-R0-1 (B-53 still open for warm caches → seed-point latest-body overlay) + DEV-R0-2 (undo-to-stored wrote
+    the undone doc) — both Victor-approved.
+Decisions:
+  - Overlay at the seed point + ownership re-save; no cancelQueries; direct promise write; Brave/playwright-core venue.
+  - VoiceOver trace: accepted on automated a11y (Victor).
+Next session:
+  - R1 page frame — §XXVI gate 1. Branch not pushed; Linear not synced (ask Victor).
+---

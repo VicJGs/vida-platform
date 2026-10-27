@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in_progress — Step 6 R0: PLAN approved (Approval 1, 2026-10-26); gate 2 in progress
+# Status: in_progress — Step 6: R0 DONE (853570e…f2c35cc, 2026-10-26); next R1 page frame (§XXVI gate 1)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -36,3 +36,14 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-26 (Step 5 — Re-scope Gate, slice-map drafted) — delivery/slice-map.md: R0 data safety → R1 page frame → R2 mode memory → R3 metadata+rename → R4 attachments → R5 delete+OS-wide Trash → R6 collection+views → R7 editor seams+[[ → R8 blocks as widgets+capability → R9 entity templates → R10 live close; every ledger row + every structural EC mapped. Awaiting Victor: plan approval + fe-shell-scope EC-4 re-pin (Trash in the System list).
 - 2026-10-26 (Step 5 — Re-scope Gate APPROVED) — Victor approved slice-map R0…R10; fe-shell-scope EC-4 re-pinned (Trash in the System panel; EC-3 strip unchanged), recorded in fe-shell-scope envision.md. Next: Step 6 R0 data safety — §XXVI PLAN (gate 1).
 - 2026-10-26 (Step 6 · R0 gate 1 — APPROVAL 1) — 1a: docs/editor/current-* refreshed (#7 S1 drift: `chrome`, EC-7 text colour, blockquote/taskList; BR-E1-6). PLAN-R0-data-safety.md rev 3: independent critique r1 REVISE (4 blocking: B-53 needs write-through · always-on check rejects our own seeds `{doc,content:[]}`/empty text — reproduced on 3.30.0 · no-write mechanism (setEditable emits update) · headers+journals currency) → r2 REVISE (B-53 cold cache → read-after-write barrier) → r3 SHIP (+3 impl conditions = BR-R0-8b). Victor approved.
+- 2026-10-26 (Step 6 · R0 data safety — DONE) — Gate 2: IMPLEMENTATION-PLAN (preflight PASSED; critique r1 REVISE → r2
+  SHIP) → Approval 2. Build steps 1–6 green; step 7 live leg (Brave + playwright-core, real OPFS — macOS 12 can't run
+  Playwright Chromium) caught B-53 STILL OPEN for warm caches (route swap renders the incoming body before the outgoing
+  unmount flush) → §XXVIII **DEV-R0-1** (seed-point latest-body overlay + ownership re-save; deviation critique r1 REVISE
+  → r2 SHIP) → Victor approved. Found + Victor-approved **DEV-R0-2** (undo-to-stored within the debounce wrote the undone
+  doc — pre-existing). Post-impl /critique r1 REVISE (in-flight undo window → `expected` dedupe; a11y live region narrowed;
+  setContent measured + pinned) → r2 SHIP (+ sticky inherited handover). Live OPFS 18/18 · Visual Gate 18/18 + ACCEPTED by
+  Victor (VoiceOver trace not done — accepted on automated a11y) · core 2049/2049 · editor 237+ · web 832/832 · tsc/lint
+  clean. Commits 853570e (core) · 84b7f58 (editor) · a6bd158 (web+e2e) · f2c35cc (docs). Forward obligations: R5 delete
+  calls `cancel()`; R9/import/M4 body writers clear `latestBody(id)` first. Noted out of scope: `/favicon.ico` 404 (main too).
+  Next: R1 page frame — §XXVI gate 1.
