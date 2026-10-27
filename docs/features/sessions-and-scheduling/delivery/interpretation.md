@@ -1,8 +1,8 @@
 <!-- Interpretation Layer — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248 · #63) · BOTH planes.
      Entity Delivery Flow §3 + §6 (recovery). Supersedes the MOD-sessions ① build's interpretation (kept in git at
      5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line.
-     REVISION: rev 7 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
-     @3e48e6b/31d768b/d0b9238 → delta Interpretation Gate). Input corpus gated by the
+     REVISION: rev 8 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
+     @3e48e6b/31d768b/d0b9238 + rev 8 delta-gate fixes → delta Interpretation Gate). Input corpus gated by the
      Documentation Gate (rounds 1–2, 2026-10-27 — `.claude/tasks/sessions-rescope.md` Route History). -->
 
 # Interpretation — Sessions & Scheduling · RESCOPE (sessions-rescope) · ① service + ② surface
@@ -126,9 +126,12 @@
   `TransitionResult` gains `denied[]` + `missing[]` + `failed[]` of those typed errors (additive); `fired` counts only
   ledger-applied (non-projection) effects — today projections count (`effects/service.ts:35-36` → `lifecycle.ts:83-84`),
   contradicting `lifecycle.ts:47` (R-42).
-  The EC-4 rail shows an unapplied effect as a calm muted per-item status (EC-6's "errored = calm muted message"),
-  never by flipping the whole log to `error` (`flow-session-view.tsx:270-272`) — an additive `status?` on `FlowEffect`
-  in `@vida/ui` (R-45).
+  **WHERE the unapplied/error state renders is NOT doc-fixed** — sessions BR:84-85 requires the typed error state to
+  exist and be honest (ELC-6), but EC-4 pins the rail as "the effects a session FIRED" (flow-session envision:52; the
+  log's aria-label "Effects fired this session"). Listing unapplied effects on the rail diverges from EC-4 and needs a
+  shipped-CODEC change (`FlowEffect` has no status, `flow-session-view.tsx:44-50`; not a CODEC defect, so not
+  process.md §5) → **an EC-4 re-pin for Victor at the Re-scope Gate** (R-45), never decided here. Never flip the whole
+  log to `error` (`flow-session-view.tsx:270-272`).
   **"Flagged / retried"** without new storage (PD-11 derived-on-read): a session's UNAPPLIED effects =
   declared NON-PROJECTION effects (`def.effects` minus projection-class — they never write a row, ADR-004:84) ×
   canTouch-allowed targets that still EXIST (a vanished target is a loud no-op, not a failure — IR-S4(2)) minus ledger rows — derived by the L7 read and shown on the EC-4
@@ -181,11 +184,18 @@
 - **IR-S18 · The lifecycle has one door (reconciliation R-41).** contract.md:27-28: lifecycle = `transition(session_id,
   event)`. So (a) on a `focus` spine, `completeSession`/`transitionSession(…,'complete'|'skip')` delegate to
   `completeFocus`/`cancelFocus` on its run (a focus spine must never close with a `running` run — IR-S5 would read
-  `duration_seconds = null`); (b) `updateSession` stops accepting `status` (it bypasses the engine, `service.ts:366`) —
+  `duration_seconds = null`); (a′) `start` on a focus spine (`registry.ts:34`) delegates to
+  starting its run — pomodoro contract:16-18 "runs the timer against that `session_id`" — so `startFocus({sessionId})`
+  creates the run row for an existing scheduled/planned focus spine (today it throws `SessionMissing`, `service.ts:461-463`)
+  and the spine transitions `start` through the engine; (b) `updateSession` stops accepting `status` (it bypasses the engine, `service.ts:366`) —
   a status patch → `InvalidSessionInput('status')`; (c) likewise the focus RUN state in `SessionPatch.extension`
   (`status`, `duration_seconds`, `total_pause_seconds`, `paused_at`, `completed_count`, interval `type` —
   `types.ts:44-54,96-98`, written at `service.ts:378-384`) is rejected: run state moves only through the focus runtime
-  (BR-21 state machine; IR-S5 derives the payload from those rows). Callers: none pass `status`/`extension`
+  (BR-21 state machine; IR-S5 derives the payload from those rows); (d) `started_at`/`ended_at` are engine-stamped
+  (`lifecycle.ts:121-126`) and become immutable once the spine leaves `scheduled|planned` — a patch → `InvalidSessionInput`
+  (`service.ts:368-369` today allows it): per-occurrence ids key on the STABLE `utcDate(started_at)` (BR-S3-5,
+  `lifecycle.ts:51-53,68`), IR-S5's payload and IR-S11's re-derived ids read it — an edit after the fact would re-key a
+  replay (double-count), orphan the EC-4 rows and change a replayed `log_time`. Callers: none pass `status`/`extension`
   (`routines/service.ts:502` · `tasks/__tests__/service.test.ts:556,582,585` pass other fields) → SAFE.
 - **IR-S19 · Subject reads go through the ONE shared `ViewProviderRegistry` (R-43).** ADR-007 §3.4 (:78-82): cross-module
   reads fan out to each entity's documented read API via the provider pattern (`foundation/views/provider-registry.ts:12`)
@@ -200,7 +210,10 @@
   `flow-source.ts:64-67,99`; pinned by fe-session-runtime `PLAN-2026-10-15-s1-use-flow-session.md:75-77` "never blank") —
   NOT the bare kind label, which would duplicate the eyebrow (FOCUS · Focus; aria "Focus — Focus", `session-hud.tsx:151`)
   — existence UNKNOWN ⇒ treated as
-  existing (fail-open, never a false `AttachmentTargetMissing`) — stated, not implied.
+  existing (fail-open, never a false `AttachmentTargetMissing`) — stated, not implied. Consequence: in M1 the L19 live
+  gate can exercise `AttachmentTargetMissing` only with a TASK subject. Title extraction: `ReadProvider.list` rows are
+  `unknown[]` (`views/types.ts:24-27`) — the sessions-side title reader maps by `entity_type` to the row's documented
+  title field (tasks `title`), and each owning module's provider edge names its own field at its build.
 - **IR-S6 · HUD port ids.** The service's pause takes the `focus_sessions.id` (`service.ts:151`; HUD interpretation:30);
   the HUD emits the spine id (`session-hud.tsx:205`). The binding resolves it: pause = `getSession(id).extension.id →
   pauseFocus` (`service.ts:151`); resume = `startFocus({sessionId})` (resumes a paused run by spine id,
@@ -285,7 +298,9 @@ binding precedent) · `award_xp` → Gamification (FACT) · handler registration
 | Flow EC-1, EC-3 (multi-stage) | — | single-stage only (O7, driving modules) | per driving module |
 | Flow EC-2 (attach / mark-done / proof) | L14 | mark-done ✅ live; attach when a `deliverable_note` target exists; **proof + target-less attach = recorded DIVERGENCE pending the fe-sessions close** (§2.5 rule 3; IR-S14) | ✅ with the borrowed capture flow |
 | Flow EC-4 (effect rail) | L7/L13 | ✅ live (completed session with effects) | ✅ |
-| Flow EC-5 (title-hero + `SyncStatus` + `⋯`) | L13 + R-46 | title-hero + subject title + `SyncStatus` (canvas-editor precedent) ✅ live; **`⋯` hidden** (no documented session action set; a contentless ⋯ = dead affordance, IR-S14) → recorded DIVERGENCE pending fe-sessions' close (session hub owns session actions) | ✅ incl. `⋯` |
+| Flow EC-5 (title-hero + `SyncStatus` + `⋯`) | L13 + R-46 | title-hero + subject title + `SyncStatus` (canvas-editor precedent) ✅ live; **`⋯` hidden** (no documented session action set; a contentless ⋯ = dead affordance, IR-S14) → recorded DIVERGENCE pending fe-sessions' close (session hub owns session actions). Origin: the narrowed EC-5 already
+  gated at fe-session-runtime `slice-map.md:74` (no `SyncStatus`, no `⋯`) — never re-pinned by Victor | **must be BUILT
+  or RE-PINNED by Victor** at that close — no further deferral (§2.5 rule 3) |
 | Flow EC-6…9, EC-11 | L13 | ✅ live | ✅ |
 | Flow EC-10 (advance feel) | L14 | mark-done feel ✅ live | ✅ |
 
