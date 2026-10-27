@@ -196,3 +196,19 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   size (all `Input` consumers change from the browser default to their intended token font — a visible change, checked at
   a Visual Gate over the input surfaces); (B) **scoped** — only the `display` size gets its font via an injected CSS rule
   (`.vida-input-display`), the other sizes stay as they render today (the defect remains, recorded for `@vida/ui`).
+
+### DEV-R3-2 · `@vida/ui` Dialog never returned focus on close (found at the Visual Gate, 2026-10-27) — fixed per the contract
+- **Found:** the live Visual Gate — Esc on the icon picker and on the Rename dialog left focus off the trigger. Root cause:
+  the Dialog restored focus in a **layout-effect** cleanup, but un-inerted the background in a **passive-effect** cleanup,
+  which React runs AFTER; a browser ignores `focus()` inside an `inert` subtree, so focus never returned (jsdom doesn't
+  implement `inert`, so no unit test saw it). Pre-existing; every Dialog (incl. ⌘K) was affected.
+- **Delivered as documented:** the Dialog contract says "On close: focus returns to the element that triggered it"
+  (`ds-5-primitive-contracts/dialog.md:47,56`) — the fix makes the primitive meet its own contract (no behaviour beyond it):
+  focus is restored from the inert cleanup, after un-inerting. Test: `focus()` on the trigger is called with no `inert`
+  ancestor. Visual Gate re-run 28/28 (both focus returns pass).
+
+## 6. Build record
+- Steps 1–8 tests-first: core notes 69/69 · ui 699/699 · web 1002/1002 (129 files) · tsc 0 · lint 0 errors. Live (Brave,
+  real OPFS): `e2e/notes-metadata-rename.spec.ts` ✓ + R0/R1/R2 specs ✓ (5/5). Visual Gate `.playwright-mcp/r3-live/` 28/28
+  (axe 0 light/dark; greybox order; H1; cover both modes; focus returns; DEV-R3-1 token font on the input surfaces).
+  Bundle: eager JS +6.9 KB gzip (≤ 10 KB, G6); the lazy pickers +1.8 KB on open.

@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R3 building (Approval 2, 2026-10-27)
+# Status: in-progress — Step 6: R3 built — final /critique next, then Visual Gate review (2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -116,3 +116,5 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-27 (Step 6 · R3 gate 2) — /preflight PASSED. IMPL-PLAN-R3: critique r1 REVISE (6: region name, blur race, Input
   display, full-blob thumbnail read, jsdom IO, recovery→empty) → r2 REVISE (stale sketch, R-10 focus) → r3 SHIP. Awaiting
   Victor: Approval 2.
+- 2026-10-27 (Step 6 · R3 build) — Steps 1–8: core 69/69 · ui 699/699 · web 1002/1002 · e2e 5/5 · Visual Gate 28/28 · bundle
+  +6.9 KB gz. DEV-R3-1 (Victor: root fix) Input font host; DEV-R3-2 (contract-mandated) Dialog focus return after un-inert.

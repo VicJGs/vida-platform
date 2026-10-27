@@ -256,6 +256,8 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata
   (`useFocusOnRecovery`). Controls are `aria-disabled` (still focusable) while a write is pending.
 - **Controls** — icon + visible label in the greybox order (Change icon · Change cover · Favorite · Archive).
 - **DEV-R3-1** — `@vida/ui` `Input`'s native element is a Text host (font tokens now apply to every size).
+- **DEV-R3-2** — `@vida/ui` `Dialog` restores focus to its trigger AFTER un-inerting the background (its contract,
+  `dialog.md:47`; before, focus never returned in a real browser).
 - Forward obligations (R4): the live attachments list; a thumbnail for every image attachment.
 
 ## Deferred (documented)
