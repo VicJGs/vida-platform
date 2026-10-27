@@ -6871,3 +6871,97 @@ Next session:
   - **fe-routines (LIF-197)** — ② surface + the composition-root wiring (service deps + `registerRoutinesJournal` / `registerRoutinesDueProvider` + effects).
   - Watch: CI dark (billing) · the journals→Sessions agenda bridge (routines absent from the Journal agenda until it lands) · the mod-routines worktree can be removed.
 ---
+
+---
+Date: 2026-10-26
+Task: notes-rescope (LIF-245) — Add Frontend Component / entity-rescope · worktree `.claude/worktrees/notes-rescope` (branch pushed)
+Completed:
+  - Worktree close-out (PR #161). Steps 0–5 of entity-rescope: baseline both planes · Documentation Gate (restored the 5 aspect docs + intake deleted by `eaf64f8`) · interpretation + gate · Envision APPROVED (EC-25…36, EC-13 re-pin) · reconciliation 184 rows DRY · slice-map R0…R10 APPROVED + fe-shell-scope EC-4 re-pin. Docs only; no code changed.
+Decisions:
+  - Victor: Journals is its own module (EC-18a + journal views → journals-rescope); `[[` = every page-able entity; templates entity-based; blocks are widgets, `/task` create-or-bind; one OS-wide Trash (System panel); graph lands with HARD-3 (M1.4).
+  - "Check the documentation" ×2 on Q1/Q2 → memory 9th repeat (read the owning module's identity + the pinned ECs before asking).
+Next session:
+  - R0 data safety (§XXVI PLAN first) in the notes-rescope worktree. Data-loss paths B-50/C-46 + E-1 are R0; EC-15 live bug is R1.
+---
+
+---
+Date: 2026-10-26
+Task: notes-rescope (LIF-245) — Step 6 R0 data safety · worktree `.claude/worktrees/notes-rescope` (Node 24)
+Completed:
+  - **R0 done** — commits 853570e (core) · 84b7f58 (editor) · a6bd158 (web+e2e) · f2c35cc (docs). Live OPFS 18/18 ·
+    Visual Gate 18/18 accepted · core 2049 · web 832 · tsc/lint clean · post-impl /critique SHIP.
+  - §XXVIII DEV-R0-1 (B-53 still open for warm caches → seed-point latest-body overlay) + DEV-R0-2 (undo-to-stored wrote
+    the undone doc) — both Victor-approved.
+Decisions:
+  - Overlay at the seed point + ownership re-save; no cancelQueries; direct promise write; Brave/playwright-core venue.
+  - VoiceOver trace: accepted on automated a11y (Victor).
+Next session:
+  - R1 page frame — §XXVI gate 1. Branch not pushed; Linear not synced (ask Victor).
+---
+
+---
+Date: 2026-10-27 (session opened 2026-10-26)
+Task: notes-rescope (LIF-245) — Step 6 · R0 data safety, closed out
+Goal: build R0 (the slice-map's first slice) through the §XXVI double gate and close it on its live + visual gates.
+Completed:
+  - R0 shipped on `origin/notes-rescope` @ `2d77cec`: core guards/typed errors/editor-valid seeds (853570e) · editor
+    always-on content check (84b7f58) · web EC-33 notice, tagged parse, seed-point handover, barrier (a6bd158) · docs (f2c35cc).
+    Plans: docs/features/notes-and-pages/delivery/sessions/{PLAN,IMPLEMENTATION-PLAN}-R0-data-safety.md.
+  - Gates: live OPFS (Brave, `.playwright-mcp/r0-live/r0-live.mjs`) 18/18 · Visual Gate 18/18 accepted by Victor · core
+    2049 · web 832 · tsc/lint clean · post-impl /critique r2 SHIP.
+  - Linear: LIF-245 Backlog → In Progress + R0 comment (surgical GraphQL, read back). Task header made tracker-mappable.
+In progress:
+  - Nothing mid-flight. R1–R10 not started.
+Decisions:
+  - DEV-R0-1 (seed-point latest-body overlay + ownership re-save) and DEV-R0-2 (undo-to-stored never writes) — Victor-approved.
+  - VoiceOver manual trace not done — Victor accepted on automated a11y.
+  - Skipped the full `tracker_sync --sync`: unsafe from the worktree (empty map), and from main it would revert LIF-245
+    to Backlog (main's header says `planned` until the branch merges).
+Next session:
+  - Fresh session: /begin → notes-rescope → Step 6 R1 page frame — §XXVI gate 1 (`/document-context` → `victor:planning` →
+    `/documentation-component` → PLAN-R1), in `.claude/worktrees/notes-rescope` (`nvm use 24` in EVERY command; `git fetch`).
+  - Context: `.claude/tasks/notes-rescope.md` (Active Tasks + forward obligations) · slice-map R1 · reconciliation rows
+    B-24/B-27/B-45/B-46/B-49/B-60/B-63/B-65/E-2/E-3/F-7/B-15 · `.claude/sessions/2026-10-26-notes-rescope-2.md`.
+  - Watch: a parallel preferences-rescope session loads the machine (run suites alone) · CI dark · stray 5-day automation Brave.
+---
+
+---
+Date: 2026-10-27
+Task: notes-rescope (LIF-245) — Step 6, slices R1 · R2 · R3 · worktree `.claude/worktrees/notes-rescope` (Node 24)
+Goal: build R1 page frame, R2 mode memory and R3 metadata + rename through the full §XXVI gates.
+Completed:
+  - **R1 page frame — DONE (Visual Gate accepted).** 532e5ce · 82b0a0d · 6e54402 · 1e8105b · bb8e42b. Page-type editor gate
+    (all 6 types), `pageLabel` ("Task note"/"Untitled note"), Overviews as components (journal stub out → journals-rescope),
+    one `SyncStatus` per host (`notes/save-status.ts`, `PageActions`), `notifyError` toast, read Retry (+ DEV `?readerror`,
+    R-6 errorUpdateCount). DEV-R1-1 (Victor: fix now): EntityView title row wraps + `$display` line-height.
+  - **R2 mode memory — DONE (Visual Gate accepted), pushed.** 5f80e5a · 94bb5d8 · 3b93ad8. core `db/app-state.ts` accessor;
+    `useEntityModeStore` = async read, **seeded per-type default while loading** (slice text verbatim), toggle wins,
+    `sessionWrites` overlay; ADR-006 §3.6 amendment; R5 purge obligation.
+  - **R3 metadata + rename — BUILT, final /critique SHIP r2, NOT yet Visual-Gate-accepted, NOT pushed.** 5a36b7a · ebcb1ef ·
+    9d7e1ee · d2c9a6f · e6bd546. Live favorite/archive/icon/cover (`use-page-metadata.ts`), curated Lucide `page-icons.ts`,
+    icon picker (radiogroup) + cover picker (lazy), `CoverImage` (URL no-referrer | attachment thumbnail via core
+    `getAttachmentThumbnail` projected read), cover in both Overview modes, labelled controls (greybox order), rename both ways
+    (EntityView H1 + `onTitleCommit` seam; ⋯ → Rename dialog), `useFocusOnRecovery`. DEV-R3-1 (Victor: root fix) `@vida/ui`
+    Input native = Text host (fonts applied); DEV-R3-2 (contract dialog.md:47) Dialog focus return after un-inert.
+  - Gates: core 69/69 notes · ui 699/699 · web 1002/1002 · e2e 5/5 (R0–R3, Brave real OPFS) · R3 Visual Gate 28/28 axe 0 ·
+    bundle +6.9 KB gz.
+In progress:
+  - R3 Visual Gate review by Victor — screenshots `.playwright-mcp/r3-live/vg-shots/` (merged-meta · tabbed-overview ·
+    icon-picker · cover-picker-error · inline-rename · page-actions-menu · rename-dialog · input-notes-search · input-settings).
+Decisions:
+  - **Victor: "You should follow the documentation, don't try to change that, it is there for a reason."** — R2's "no flash"
+    refinement withdrawn; slice line delivered verbatim. Memory `deliverable-is-the-doc…` 3rd case.
+  - DEV-R1-1 fix now · DEV-R3-1 root fix (Input font host) — both Victor. DEV-R3-2 applied as contract-mandated.
+  - R3 [INTERP]s: ~48 curated icons, ≤10 KB budget, "Cover unavailable", empty title → null, no-referrer covers, R4 must thumbnail
+    image attachments.
+Next session:
+  - Ask Victor to accept the R3 Visual Gate (or apply changes) → on accept: mark R3 [x] in the task file + IMPL plan, commit,
+    `git push origin notes-rescope`.
+  - Then R4 attachments — §XXVI gate 1. Carries from R3 (slice-map R4 "From R3"): the live `['attachments',pageId]` read
+    feeds the cover picker list; **every image attachment gets a thumbnail on add**.
+  - First actions: `cd .claude/worktrees/notes-rescope` · `nvm use 24` · `git fetch` + ahead/behind · `git log -1` = e6bd546
+    (+ this log commit). Linear NOT synced this session (worktree-unsafe; do it from main at task close).
+  - Watch: suites under machine load (run alone; heavy page tests carry 20 s timeouts) · polish left from R3 audit (P2
+    `:focus` vs `:focus-visible`, P4 `as never` ref casts, P6 raw CSS-var colours) · pre-existing @vida/ui Tabs tablist has
+    no accessible name (recorded, R2).
+---
