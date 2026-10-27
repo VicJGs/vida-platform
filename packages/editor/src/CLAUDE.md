@@ -5,6 +5,12 @@ Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-st
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (notes-rescope R0 — always-on content check, LIF-245)
+- `enableContentCheck: true` + `onContentError` in `useEditor`. A schema-rejected doc → read-only, toolbar hidden, zero
+  `onChange` (ref-guarded `onUpdate`; `setEditable(false, false)`). New optional prop `onInvalidContent?(error)`. The
+  valid path keeps the one mount echo. `setContent(invalid)` throws and leaves the mount intact (pinned test). Docs: `docs/editor/current-*`
+  (BR-E1-7). Tests: `editor.test.tsx` "content check" + the 6b schema table.
+
 ## Shipped (fe-codec-canvas-editor #7 · S1 — `chrome` prop + dark-text bind)
 Minimal extension so a host can present `<VidaEditor>` as a page surface + the content is readable in dark:
 - **`chrome?: 'framed' | 'bare'`** on `VidaEditorProps` (default `'framed'` = back-compat). An `EditorFrame`

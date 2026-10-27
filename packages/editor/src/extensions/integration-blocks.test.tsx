@@ -89,8 +89,9 @@ describe('never-crash boundary — out-of-schema attrs DEGRADE, they do not thro
     expect(() => {
       e = headless(bad)
     }).not.toThrow()
-    // TipTap's lenient content-load (neither enableContentCheck nor errorOnInvalidContent set) catches the PM
-    // `Unsupported attribute` throw and degrades — the out-of-schema key never round-trips.
+    // ProseMirror's `computeAttrs` builds attrs from the node type's DECLARED set only, so an undeclared key is
+    // silently DROPPED on load (nothing throws — this headless editor has no content check; VidaEditor's always-on
+    // check, notes-rescope R0, doesn't flag it either: a known limit, PLAN-R0 G15). The key never round-trips.
     const json = e.getJSON() as EditorDocument
     expect(json.content.find((n) => n.type === 'dailySummary')?.attrs?.bogus).toBeUndefined()
   })
