@@ -1,4 +1,18 @@
 {
+  "permissions": {
+    "deny": [
+      "Edit(~/dev-toolkit/**)",
+      "Write(~/dev-toolkit/**)",
+      "Read(.env)",
+      "Read(.env.*)",
+      "Bash(git push --force *)",
+      "Bash(git push -f *)",
+      "Bash(git push * --force*)",
+      "Bash(git push * -f)",
+      "Bash(git reset --hard *)",
+      "Bash(rm -rf *)"
+    ]
+  },
   "hooks": {
     "PostToolUse": [
       {
