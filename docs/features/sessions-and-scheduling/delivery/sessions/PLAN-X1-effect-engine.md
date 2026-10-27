@@ -101,8 +101,10 @@ Then: `tsc` 0 (core + web) · eslint 0 · full `@vida/core` suite · live smoke:
 7. Flip/extend tests; fix stale comments; currency (§8).
 
 **Impact (reconciliation §2) — covered:** `transition()` 2 prod callers (`service.ts:449,453`) · `completeSession` prod
-callers tasks:565 · flashcards:260 · books:804 · routines:864,905,926 — all `effects: []` sub-types → behaviour unchanged
-(SAFE) · `fireCompletionEffects` (lifecycle:113 + test A4) · the rail's other consumer `foundation/economy/handlers.ts:74-76`
+callers tasks:565 · flashcards:260 · books:804 · routines:864,926 — `effects: []` sub-types → behaviour unchanged (SAFE);
+routines:905 completes a step's ARBITRARY registered sub-type (`routines/service.ts:893-905`, could declare `log_time`) →
+still SAFE: a missing handler throws via the preflight exactly as today, and a `routine_step` target now gets
+`PermissionDenied` with completion continuing (more lenient than today's throw) · `fireCompletionEffects` (lifecycle:113 + test A4) · the rail's other consumer `foundation/economy/handlers.ts:74-76`
 (`applyEffect` only) unaffected by the additive `hasHandler`; no hand-written `EffectRail` fakes exist (grep) · factory
 `providers?` (10 construction files, optional → SAFE).
 
@@ -124,3 +126,4 @@ current-{spec,business-rules}.md` (BR-9 keying, BR-10 replay/self-heal + handled
 - 2026-10-27 — drafted (gate 1).
 - 2026-10-27 — g1 /critique REVISE (3 blocking: per-run id lacked the target · no core logging convention · existence
   must use the documented `row.id === id` match) → rev 2.
+- 2026-10-27 — g1 /critique rev 2: **SHIP** (routines:905 justification reworded).
