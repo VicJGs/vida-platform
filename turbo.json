@@ -20,7 +20,8 @@
     },
     "e2e": {
       "dependsOn": ["^build"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": ["PW_EXECUTABLE_PATH"]
     },
     "clean": {
       "cache": false
