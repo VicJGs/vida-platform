@@ -9,7 +9,7 @@
 > Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
 > Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
 > ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).
-> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R1 page frame (② surface; ① unchanged). Source of truth = the code.
+> Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R2 mode memory (② surface + the core app_state accessor). Source of truth = the code.
 
 ## Status
 - **① BACKEND COMPLETE** — S1 pages core · S2 entity notes + attachments · S3 page-links + wiki resolution · S4
@@ -144,7 +144,8 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
   R1 BR-R1-8) · empty ("Note not found") · success → `NoteEntityView` [FACT: note-entity.tsx].
 - **NoteEntityView** — `toEntityProps({title: pageLabel(page), entityType: page.type, hasPage:true, gate:'page',
   action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
-  from a module-level in-memory store, default `tabbed` (R2 makes it durable) [FACT: note-entity.tsx]. **No rename /
+  from `NoteEntity`'s `useEntityModeStore` (app_state, seeded per-type default while loading; R2) as
+  `override ?? modeStore.readMode` [FACT: note-entity.tsx; use-entity-modes.ts]. **No rename /
   delete affordance yet** — the ⋯ slot exists with no items (R3/R5/R9).
 - **Editor gate** — the page surface uses `offersPageEditor(pageType)` (`PAGE_TYPE` membership — all 6 types, R1 EC-15);
   module-entity surfaces keep `offersEditor(entityType, hasPage) = schema.isEntityType(entityType) && hasPage`

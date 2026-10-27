@@ -11,19 +11,21 @@
 // `?sample` is the DEV fixture. The title row carries the one save chip + the ⋯ slot
 // (PageActions); a read error offers Retry in place.
 //
-// Memory: the merged/tabbed choice rides the `EntityModeStore` CONVENTION on the
-// in-memory reference store until R2 (the durable `app_state` store).
+// Memory (notes-rescope R2, EC-5): the merged/tabbed choice is remembered per page on this device (`app_state`,
+// `useEntityModeStore`) — seeded with the type's default while the read loads; the DEV `?sample` page uses the
+// in-memory reference store.
 // ============================================================================
 import { useState } from 'react'
 import { getRouteApi } from '@tanstack/react-router'
 import { Text, View } from '@tamagui/core'
 import { EmptyState, EntityView, type FacetMode } from '@vida/ui'
-import { createInMemoryEntityModeStore, toEntityProps } from '../entity/adapter'
+import { createInMemoryEntityModeStore, toEntityProps, type EntityModeStore } from '../entity/adapter'
 import { NoteEditorBody } from './note-editor-body'
 import { overviewFor } from './overview-registry'
 import { pageLabel } from './note-chrome'
 import { PageActions } from './page-actions'
 import { ReadErrorMessage } from './read-error-message'
+import { useEntityModeStore } from './use-entity-modes'
 import { useNoteEntity, type NoteEntityData } from './use-note-entity'
 import { WikiLinkPicker } from './wikilink-picker'
 import { PreviewCard } from './link-preview-card'
@@ -42,9 +44,8 @@ function devFlagActive(flag: string): boolean {
   )
 }
 
-// The merged/tabbed memory store (O4 CONVENTION on the in-memory reference impl; durable schema deferred).
-// Default 'tabbed' so `defaultFacet='editor'` opens the note on its Note (editor) tab (EC-4/EC-5).
-const modeStore = createInMemoryEntityModeStore('tabbed')
+// The in-memory reference store — the DEV `?sample` page and tests (the live page passes the app_state store, R2).
+const referenceModeStore = createInMemoryEntityModeStore('tabbed')
 
 // The ⋯ items arrive with their legs (R3 Rename · R5 Move to Trash · R9 Save as template); none yet → no ⋯ (BR-R1-6).
 const NO_ACTIONS = [] as const
@@ -68,7 +69,10 @@ function Centered({ children, role, busy }: { children: React.ReactNode; role?: 
 
 export function NoteEntity() {
   const { id } = routeApi.useParams()
+  const sample = devFlagActive('sample')
   const { page, state, retry, retrying } = useNoteEntity(id)
+  // Called before any early return (hook order). The page never waits on it: seeded default while loading (R2 G4).
+  const modeStore = useEntityModeStore(!sample)
 
   // Explicit per-state ladder (g2 N1) — covers the live-swap's future loading+null; aria-busy on the region HOST (g2 B1).
   if (state === 'loading') {
@@ -101,16 +105,24 @@ export function NoteEntity() {
     )
   }
 
-  // key={id} resets the per-instance mode state on navigation between note pages.
-  return <NoteEntityView key={id} page={page} />
+  // key={id} resets the per-page toggle override on navigation between note pages.
+  return <NoteEntityView key={id} page={page} modeStore={sample ? undefined : modeStore} />
 }
 
 /** The success body — page is guaranteed, so the mode hook sits here (clean hook order). */
-export function NoteEntityView({ page }: { page: NoteEntityData }) {
-  const [mode, setMode] = useState<FacetMode>(() => modeStore.readMode(page.type, page.id))
+export function NoteEntityView({
+  page,
+  modeStore = referenceModeStore,
+}: {
+  page: NoteEntityData
+  modeStore?: EntityModeStore
+}) {
+  // The user's toggle for this mount wins; otherwise the store (remembered, or the per-type default while loading).
+  const [override, setOverride] = useState<FacetMode | null>(null)
+  const mode = override ?? modeStore.readMode(page.type, page.id)
   const onModeChange = (next: FacetMode) => {
-    modeStore.persistMode(page.type, page.id, next)
-    setMode(next)
+    modeStore.persistMode(page.type, page.id, next) // in the handler — never in a state updater (StrictMode)
+    setOverride(next)
   }
 
   const Overview = overviewFor(page.type)

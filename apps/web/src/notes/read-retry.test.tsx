@@ -42,6 +42,8 @@ vi.mock('@tanstack/react-router', () => ({
   useNavigate: () => vi.fn(),
   getRouteApi: () => ({ useParams: () => ({ id: 'p1' }) }),
 }))
+// R2: NoteEntity also reads the remembered modes (app_state) — never reach the real ensureDbReady → new Worker in jsdom.
+vi.mock('../db/boot', () => ({ ensureDbReady: () => Promise.resolve({ driver: { query: async () => [], run: async () => {} } }) }))
 vi.mock('@vida/editor', () => ({ VidaEditor: () => <div data-testid="editor" />, toMarkdown: () => '' }))
 
 import { useNoteEntity } from './use-note-entity'

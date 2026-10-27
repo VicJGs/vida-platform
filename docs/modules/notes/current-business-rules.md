@@ -114,8 +114,9 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 - **BR-SUR-4 (editor gate):** the note PAGE surface gates on page type — `offersPageEditor` (every `PAGE_TYPE` member),
   selected by `EntitySource.gate:'page'`; module-entity surfaces keep `offersEditor` (`isEntityType && hasPage`).
   [FACT: entity/adapter.ts (offersPageEditor, toEntityProps); notes/note-entity.tsx]
-- **BR-SUR-5 (mode default):** merged/tabbed defaults to `tabbed`, opens on the editor facet; remembered per `type:id`
-  in memory only (lost on reload). [FACT: notes/note-entity.tsx:42,120; entity/adapter.ts:93-102]
+- **BR-SUR-5 (mode memory):** merged/tabbed is remembered per page on this device — `app_state`
+  `entity_mode:<type>:<id>` (R2, BR-R2-*); unremembered → the type's default (`note` = tabbed; the Note tab leads).
+  [FACT: notes/use-entity-modes.ts; notes/mode-defaults.ts; entity/adapter.ts (createAppStateEntityModeStore)]
 - **BR-SUR-6 (row date):** `NotesRow.date = journal_date ?? ymd(updated_at)` where `ymd` slices `toISOString()` — a
   **UTC** calendar date, not the user's local day. [FACT: notes/live-mappers.ts:25-27,46] (census "TZ date bug")
 
@@ -213,6 +214,26 @@ R-1…R-6, DEV-R1-1).
   from their mutations; R3 moves focus to the surface heading after a successful Retry; R10 re-checks `SummaryBlock`;
   `locked` is sticky for the session — when a content-repair path or M4 sync can change a page's bytes, the store needs
   a `clear(id)`.
+
+## notes-rescope R2 — mode memory (both planes · 2026-10-27)
+Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-memory.md` (rev 4) + IMPLEMENTATION-PLAN
+(rev 3, R-1…R-5). ADR-006 §3.6.
+- **BR-R2-1 · Remembered per page, per device.** A toggle writes `entity_mode:<type>:<id>` (`writeAppState`); a reload
+  opens the page in it. Same-device multi-tab: last write wins, another tab sees it after reload; cross-device = M4.
+  [FACT: notes/use-entity-modes.ts; packages/core/src/db/app-state.ts]
+- **BR-R2-2 · Per-type default** — `defaultModeFor(type)` (`note` = tabbed; owners register theirs; else tabbed).
+  [FACT: notes/mode-defaults.ts]
+- **BR-R2-3 · Seeded default while loading.** One React Query read of every `entity_mode:` row (`staleTime: Infinity`);
+  until it lands every page reads its default, then the remembered mode applies; a toggle made meanwhile wins
+  (`override ?? readMode`), and toggles are kept in a per-tab `sessionWrites` overlay merged into every read.
+  [FACT: notes/use-entity-modes.ts; notes/note-entity.tsx (NoteEntityView)]
+- **BR-R2-4 · A failed read keeps the default** (`retry:false`, `retryOnMount:false`, one observer — read once, console
+  only); **a failed write** → one toast "Couldn’t remember this page’s layout", the mode stays for the session.
+- **BR-R2-5 · Only `merged`/`tabbed` count**; anything else → the default, never written back. [FACT: entity/adapter.ts]
+- **BR-R2-6 · A mere open never writes** — only the toggle handler persists. **BR-R2-7** · the hard delete (R5) removes
+  the row in its purge transaction; soft delete keeps it.
+- Core: `@vida/core` `readAppState` · `readAppStatePrefix` (`substr`, not LIKE) · `writeAppState` · `deleteAppState` ·
+  `entityModeKey` · `ENTITY_MODE_PREFIX`. DEV `?sample` uses the in-memory reference store (no app_state I/O).
 
 ## Deferred (documented)
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`

@@ -83,6 +83,8 @@ R8 before R9 (templates carry live blocks). R6 before R9 (the "New from template
 ## R5 — Delete, undo, OS-wide Trash  ·  SHARED
 - **From R1:** Trash adds mutations → each calls `notifyError`; bound the toast volume (one toast per failed write after
   unmount, IMPLEMENTATION-PLAN-R1 §3).
+- **From R2:** `deletePageForever` / `emptyTrash` delete the page's `entityModeKey(type, id)` row **inside the purge
+  transaction, through the Drizzle `appState` mirror** (a driver-level call can't join it). Soft delete keeps it (ADR-006 §3.6).
 - ① `restorePage` (collision check → `JournalExistsError` / typed `*_note` conflict) · `listDeletedPages` · `deletePageForever`
   (NP-9 cascade, one tx; spaces rows via AR-6) · `emptyTrash`; re-delete is a no-op (A-10…A-16 · IR-R10/R11 · impact A).
 - Cross-module **Trash provider registry** `{entityType, listDeleted, restore, purge}`; notes registers first; composed (A-14).

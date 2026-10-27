@@ -83,7 +83,8 @@ interface EntityAdapter {
     mode: FacetMode
   }): EntityViewProps
 
-  // the merged/tabbed per-instance MEMORY (O4 — storage design-pass-open; CONVENTION only, not a schema).
+  // the merged/tabbed per-instance MEMORY (CONVENTION). Storage resolved by notes-rescope R2 (ADR-006 §3.6): app_state
+  // `entity_mode:<type>:<id>`, seeded per-type default while loading.
   readMode(entityType: string, entityId: string): FacetMode    // default = the per-type default (quality-bar:127)
   persistMode(entityType: string, entityId: string, mode: FacetMode): void
 }

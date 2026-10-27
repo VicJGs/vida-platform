@@ -1,8 +1,9 @@
 // Pure — env `node` (no jsdom). Locks the entity↔EntityView adapter (S2): the registry-gated `offersEditor`, the
 // editor-slot gating in `toEntityProps`, and the merged/tabbed memory convention. The live useEntity hook is deferred
 // (see ./CLAUDE.md).
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
+  createAppStateEntityModeStore,
   createEntityAdapter,
   createInMemoryEntityModeStore,
   type EntitySource,
@@ -93,5 +94,30 @@ describe('offersPageEditor — the page-surface gate (notes-rescope R1, NP-10 / 
   })
   it('passes the action slot through', () => {
     expect(toEntityProps({ ...base, action: 'ACTION_NODE' }).action).toBe('ACTION_NODE')
+  })
+})
+
+describe('createAppStateEntityModeStore — app_state-backed memory (notes-rescope R2, B2)', () => {
+  const defaultFor = (t: string) => (t === 'habit' ? 'merged' : 'tabbed') as 'merged' | 'tabbed'
+  it('reads the stored value by the full key; missing → the per-type default', () => {
+    const s = createAppStateEntityModeStore({ 'entity_mode:note:n1': 'merged' }, defaultFor, () => {})
+    expect(s.readMode('note', 'n1')).toBe('merged')
+    expect(s.readMode('note', 'n2')).toBe('tabbed')
+    expect(s.readMode('habit', 'h1')).toBe('merged')
+  })
+  it('while loading (no rows yet) every read is the seeded per-type default', () => {
+    const s = createAppStateEntityModeStore(undefined, defaultFor, () => {})
+    expect(s.readMode('note', 'n1')).toBe('tabbed')
+  })
+  it('an unknown stored value → the default (BR-R2-5)', () => {
+    const s = createAppStateEntityModeStore({ 'entity_mode:note:n1': 'sideways' }, defaultFor, () => {})
+    expect(s.readMode('note', 'n1')).toBe('tabbed')
+  })
+  it('persistMode hands the full key + mode to the writer, once', () => {
+    const persist = vi.fn()
+    const s = createAppStateEntityModeStore({}, defaultFor, persist)
+    s.persistMode('task_note', 't1', 'merged')
+    expect(persist).toHaveBeenCalledTimes(1)
+    expect(persist).toHaveBeenCalledWith('entity_mode:task_note:t1', 'merged')
   })
 })

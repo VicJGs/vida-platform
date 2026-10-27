@@ -14,10 +14,11 @@ boundary forbids this in `@vida/ui` (BR-2). The collection/dashboard adapter pre
 - **`action`** — the ⋯ slot (save status + menu) passed straight through to `EntityView.action`.
 - **`toEntityProps(src)`** — the pure mapping entity → `EntityViewProps`; passes the `editor` slot **only when the gate is
   open** (a non-page-able entity gets no editor → the shell shows no Content tab/section).
-- **`EntityModeStore`** — the merged/tabbed per-instance memory CONVENTION (storage is design-pass-open, O4;
-  `createInMemoryEntityModeStore` is the testable reference impl, NOT the durable storage).
-- **Deferred:** the live `useEntity(entityType, entityId)` hook (React Query → the entity + its `pages` row + the mode
-  preference) is built at the FIRST consumer — no entity-page is built yet (R3).
+- **`EntityModeStore`** — the merged/tabbed per-instance memory CONVENTION. Durable store (notes-rescope R2, ADR-006 §3.6):
+  `createAppStateEntityModeStore(rows, defaultFor, persist)` — preloaded `app_state` rows (`entity_mode:<type>:<id>`),
+  `undefined` while loading → the per-type default; unknown values → default. The notes page binds it
+  (`notes/use-entity-modes.ts`). `createInMemoryEntityModeStore` stays the testable reference (DEV `?sample`).
+- **Deferred:** a generic `useEntity(entityType, entityId)` hook for MODULE entity pages is built at their first consumer.
 
 ## Imports
 - `schema` (namespace) from `@vida/core` — `@vida/core` exposes the schema/registry as `export * as schema` (barrel), so

@@ -137,3 +137,13 @@ Step 4. Untouched: `@vida/ui`, `@vida/types`, `@vida/editor`.
 - rev 3 (2026-10-27) — critique r2 **SHIP**; folded: `__resetEntityModes` in `afterEach`, the write-failure navigate-back
   assertion, the G11 per-tab/per-load sentence.
 - **APPROVED by Victor (Approval 2) on 2026-10-27.**
+
+## 5. Build record
+- Steps 1–4 tests-first, green: core `app-state` 4/4 (+ migrations-runner 10/10 total) · web 906/906 (122 files) · tsc 0 ·
+  lint 0 errors. Live (Brave, real OPFS): `e2e/notes-mode-memory.spec.ts` ✓ (Merged survives a reload; the second note keeps
+  Tabbed; read-back `merged`; a mere open writes nothing) + R0/R1 specs still green. Visual Gate `.playwright-mcp/r2-live/`
+  7/7 (axe 0 light/dark; one chip; no overflow/overlap), identical to R1.
+- **Observed, not R2's (recorded):** the EntityView facet `Tabs` receives `aria-label="Entity facets"` but the rendered
+  `role="tablist"` carries no accessible name in the a11y tree — a pre-existing `@vida/ui` Tabs labelling gap (the e2e
+  asserts through the Merged/Tabbed `aria-pressed` instead). Sibling fix for `@vida/ui` Tabs; not in R2's file list.
+- Test-only timeout: `mode-memory.test.tsx` 20 s (full-page renders with navigations; the R1 read-retry precedent).
