@@ -104,3 +104,10 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   state-derivation change (§XXVIII) · IR-S10 store authority: the HUD homing was an ORPHAN, re-homed here by the
   approved debt-plan rev 3 → countdown ECs verified LIVE via the real store API (G18 harness precedent), not `?sample`
   · NEW L17 routines stamp-retry via L9 · L18 test-harness handler registration · L19 ELC-7 live seed path (G18).
+- 2026-10-27 (Step 3 — Interpretation Gate, round 2) — REVISE: 8/9 round-1 items fixed (store-authority supersession
+  confirmed); 3 new blockers → rev 3: N1 per-run keying narrowed to `log_time`/`attach_pomodoro` (award_xp + keyed stay
+  per occurrence — BR-S3-5 / ADR-004:100 / SS-6; §XXVIII at PLAN) · N2 `log_time` payload derived by the ENGINE from
+  persisted rows (run `duration_seconds` + `total_pause_seconds`, spine `started_at`) → replay-safe; completeFocus order =
+  preflight handlers → finalize run → spine transition; a completed run under an `in_progress` spine resumes the close ·
+  N3 "unapplied" read excludes projection effects + vanished targets. Nits: harness-driven store labeled INTERP
+  (G18 raised), reload leg asserts the elapsed degrade; L-rows reordered; self-target denial = no row, no error.

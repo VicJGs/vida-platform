@@ -73,10 +73,10 @@
 | L13 | `useFlowSession` live flip (getSession + resolveTargets + L7 read) | ② | ❌ | use-flow-session.ts:10-18 · ELC-4 |
 | L14 | Runtime intents live: mark-done · attach port · proof port; X12 fix | ② | ❌ | `bindFlowIntents` (adapter.ts:113-122) · X12 (census b:349) · EC-2 · decisions.md:65,1177 |
 | L15 | Drop routines' N9 detach workaround once the spine closes | ① (routines) | ❌ | routines service.ts:979-984 + current-BR:97-99 ("workaround for … a Sessions gap owned by sessions-rescope"); attach_pomodoro binding (IR-S3) |
+| L16 | Currency of stale code comments ("no composition root / values throws") | ② | ❌ | use-active-session.ts:4-5 · use-flow-session.ts:4-6 · session-runtime/CLAUDE.md:21 |
 | L17 | Routines stamp-retry + focus re-entry once the spine closes: retry finds a completed-unstamped run via L9, not the open spine | ① (routines) | ❌ | BR-RT-S3d-5 (routines current-BR:95-103) · `routines/service.ts:990-1003,1084-1085` · `sessions/service.ts:442` (`findOpenSessionForEntity` = `in_progress` only) |
 | L18 | Every composition that completes a focus session registers its handlers — web root (L2) + the routines/tasks/sessions test harnesses | ⛳ + tests | ❌ | IR-S4 (NoEffectHandler fail-loud) · ADR-004:91-92 |
 | L19 | ELC-7 live seed path — real sessions on real OPFS via a dev-server import of `db/composition-root` (a focus session attached to a task: started · paused · completed with L2's handlers; a generic `work` session) + the focus store driven through its real API | gate | ❌ | fe-calendar `PLAN-S7-entity-close.md:44` (G18 precedent: seed through the live services) · ELC-7 (process.md:41) |
-| L16 | Currency of stale code comments ("no composition root / values throws") | ② | ❌ | use-active-session.ts:4-5 · use-flow-session.ts:4-6 · session-runtime/CLAUDE.md:21 |
 
 ## 3. ORGANIZATION
 
@@ -122,33 +122,45 @@
   logged, the remaining effects still fire and the status still commits (pomodoro BR:78-79 "completion still records").
   `TransitionResult` gains `denied[]` + `failed[]` of those typed errors (additive).
   **"Flagged / retried"** without new storage (PD-11 derived-on-read): a session's UNAPPLIED effects =
-  declared (`def.effects × canTouch-allowed targets`) minus ledger rows — derived by the L7 read and shown on the EC-4
+  declared NON-PROJECTION effects (`def.effects` minus projection-class — they never write a row, ADR-004:84) ×
+  canTouch-allowed targets that still EXIST (a vanished target is a loud no-op, not a failure — IR-S4(2)) minus ledger rows — derived by the L7 read and shown on the EC-4
   rail as the session's typed **error** terminal state (sessions BR:84-85 "error (failed effect, typed)"). Retry =
   `replayCompletionEffects(sessionId)` re-running the fire step for a COMPLETED session (B.2: the ledger dedupes what
-  applied; a failed effect left no row, so it re-applies) — a service method; no UI retry affordance exists in any EC
+  applied; a failed effect left no row, so it re-applies — with the SAME payload, derived from persisted rows, IR-S5) — a service method; no UI retry affordance exists in any EC
   (none built here). Crash-replay (B.4) is unchanged: fire-first/commit-last stays.
   Currency: BR-10 (current-BR:44-45 "self-heals on replay") gains the handled-failure case.
-- **IR-S5 · `log_time` from a focus run.** The payload is the run's REAL focus time (PD-5, pomodoro BR:32-34; BR-22):
-  `{ started_at, ended_at: now, duration_seconds: focus_sessions.duration_seconds }` supplied by the focus runtime —
-  `transition()` takes an optional per-event payload from its caller (`completeFocus`), because the spine's `ended_at`
-  is only stamped at the commit, AFTER firing (`lifecycle.ts:112-131`). The Tasks handler logs `duration_seconds`
-  (not `ended − started`, which counts pauses) and, per A.3, **throws** on an invalid payload or binding instead of
-  returning (a bare return leaves a ledger row — `effects/service.ts:58-68`). Target typing is canTouch's job (IR-S4):
-  a `routine_step` target never reaches the handler. A `project` target is catalogue-legal (`log_time(task|project)`)
-  but no Projects time handler exists and the one-handler-per-type slot is Tasks' (`effects/registry.ts:14`): the
-  Tasks handler rejects a non-task binding → `EffectFailed`, logged — the Projects time API is MOD-projects' (edge).
-- **IR-S16 · Event identity follows the effect class.** ADR-004 B.1 (:99): the id derives from "the semantic event's
-  stable identity". KEYED effects (habit occurrence, metric) are per occurrence → `(target ‖ utcDate ‖ type)` (as built).
-  ADDITIVE effects (`log_time`, `award_xp`; ADR-004:83 — the id is "its only convergence key") are per RUN →
-  `(session.id ‖ target ‖ type)`: a second focus run on the same task the same day logs its own time (TAS-17 "feeds the
-  SAME ledger"; PD-12 one time-log per event). INTRA_REALM (`attach_pomodoro`) → per run, same as additive. The class
-  map is `effects/types.ts:15-32`. Currency: sessions current-BR (BR-S3-6 keying) + effects current-BR.
-- **IR-S17 · Close ordering + soft delete.** `transition()` treats a soft-deleted spine as missing (pomodoro BR:63-64
-  "no-ops its pending effects loudly", never resurrects) → `completeFocus`/`cancelFocus` on a run whose spine is
-  deleted finalize the run only and log the no-op. Order: the spine transition runs FIRST (fire + commit), then the run
-  row is finalized — a `NoEffectHandler` abort leaves both untouched (no split); only a raw DB failure between the two
-  writes can split, and IR-S7's terminal-run exclusion covers that reader-side. `restoreSession` restores `deleted_at`
-  only — status is unchanged (`service.ts:395-400`); a restored completed/skipped spine stays terminal.
+- **IR-S5 · `log_time` from a focus run.** The payload is the run's REAL focus time (PD-5, pomodoro BR:32-34; BR-22),
+  DERIVED BY THE ENGINE FROM PERSISTED ROWS — never passed in by a caller — so first fire and replay (IR-S4) compute the
+  identical payload: `started_at` = spine `started_at`; `duration_seconds` = the finalized run's `duration_seconds`;
+  `ended_at` = `started_at + (duration_seconds + total_pause_seconds)·1000` (exact: `completeFocus` computes
+  `duration = (now − startedAt) − totalPause`, `service.ts:528-536`). This needs the run row finalized BEFORE the fire
+  (IR-S17 order). The engine resolves it through a per-sub-type payload resolver keyed on the extension (focus → its
+  `focus_sessions` row); other sub-types fire payload-less as today. The Tasks handler logs `duration_seconds` (not
+  `ended − started`, which counts pauses) and, per A.3, **throws** on an invalid payload or binding instead of returning
+  (a bare return leaves a ledger row — `effects/service.ts:58-68`). Target typing is canTouch's job (IR-S4): a
+  `routine_step` target never reaches the handler. A `project` target is catalogue-legal (`log_time(task|project)`) but
+  no Projects time handler exists and the one-handler-per-type slot is Tasks' (`effects/registry.ts:14`): the Tasks
+  handler rejects a non-task binding → `EffectFailed`, logged — the Projects time API is MOD-projects' (edge).
+- **IR-S16 · Per-run identity for the run's own effects ONLY.** The shipped rule keys every effect per occurrence
+  `(target ‖ utcDate ‖ type)` — xs-effect-rail BR-S3-5 (`xs-effect-rail/sessions/PLAN-2026-09-17-s3-lifecycle-engine.md:36-40`;
+  sessions current-BR BR-9 :40-42), grounded on ADR-004 B.1's own example `derive(habit_id ‖ date ‖ "award_xp")` (:100)
+  + SS-6 (business-rules:32-34, one XP per event). That STAYS for keyed effects and `award_xp` (two focus sessions on one
+  habit/day must not both grant XP). Only `log_time` and `attach_pomodoro` key per RUN `(session.id ‖ target ‖ type)`:
+  TAS-17 "the bound pomodoro's `log_time` feeds the SAME ledger" + PD-12 "one time-log per event" make the run the event
+  (a 2nd focus run on the same task/day must log its own time); `attach_pomodoro` binds one run (harmless either way,
+  per-run for consistency). This narrows BR-S3-5 → a **§XXVIII deviation** recorded at the PLAN; currency: sessions
+  current-BR BR-9 + effects current-BR.
+- **IR-S17 · Close ordering + soft delete.** `completeFocus(timerId)`: (0) PREFLIGHT — every non-projection effect the
+  def declares has a registered handler, else `NoEffectHandler` before ANY write (ADR-004:91-92 fails closed; IR-S4(3));
+  (1) finalize the run row (status, `duration_seconds`, `total_pause_seconds` — as built); (2) spine
+  `transition(sessionId,'complete')` → fire (payload from the persisted rows, IR-S5) → commit status LAST (crash-replay,
+  B.4). Crash/DB failure between (1) and (2) leaves `completed` run + `in_progress` spine: `completeFocus` on a completed
+  run whose spine is still `in_progress` RESUMES step (2) (idempotent close) instead of throwing `InvalidFocusTransition`;
+  IR-S7 excludes it from the HUD meanwhile; routines' `isRunning` treats a terminal run as not running and L17's retry
+  finds it via L9. `cancelFocus` = (1) finalize as built, (2) spine `skip` (no effects, so no preflight). `transition()`
+  treats a soft-deleted spine as missing (pomodoro BR:63-64 "no-ops its pending effects loudly", never resurrects) →
+  the run is finalized and the no-op logged. `restoreSession` restores `deleted_at` only — status unchanged
+  (`service.ts:395-400`); a restored completed/skipped spine stays terminal.
 - **IR-S6 · HUD port ids.** The service's pause takes the `focus_sessions.id` (`service.ts:151`; HUD interpretation:30);
   the HUD emits the spine id (`session-hud.tsx:205`). The binding resolves it: pause = `getSession(id).extension.id →
   pauseFocus` (`service.ts:151`); resume = `startFocus({sessionId})` (resumes a paused run by spine id,
@@ -178,13 +190,16 @@
   ephemeral interval truth (`endAt`, `phase`, `durationSeconds`, `pausedAt?`) keyed by spine id, with a write API the
   driver will call. ELC-7 forbids `?sample` as the live leg (process.md:41,172), so the countdown ECs (EC-3, 3c, 3d) are
   verified live HERE by driving the REAL store API from the gate harness over a REAL running focus session (L19) — the
-  G18 precedent (a harness stands in for an absent writer, real services + real OPFS). fe-sessions' timer driver becomes
+  G18 precedent RAISED (G18 seeds PERSISTED data; driving a client-ephemeral store from the harness is an
+  INTERP-grounded extension, labeled). The reload leg asserts the honest degrade: after reload the store is empty and the
+  HUD serves `elapsed` (HUD seam-contract:65-66) — 'persists' applies to the session rows, not the ephemeral clock.
+  fe-sessions' timer driver becomes
   the store's production writer and its ENTITY CLOSE re-verifies them (ELC-9).
 - **IR-S11 · Applied-effects read re-derives the engine's ids.** Extract the event-id builder from `lifecycle.ts:68-81`
-  into one shared function; the read computes the ids for `def.effects × resolveTargets(session)` (or the
-  self-target fallback) and selects `applied_effects` by id, ordered `applied_at` ASC (EC-4 "chronological").
+  into one shared function; the read computes the ids for `def.effects × resolveTargets(session)` with each
+  effect's class keying (IR-S16); a canTouch-denied self-target fallback has no row and is NOT an error and selects `applied_effects` by id, ordered `applied_at` ASC (EC-4 "chronological").
   `detail` = the resolved target title (+ applied time). Projection effects never appear (no row, by design,
-  ADR-004:84); the device-local ledger is moot in M1 (no sync, ADR-017). With IR-S16 the additive/intra-realm ids are
+  ADR-004:84); the device-local ledger is moot in M1 (no sync, ADR-017). With IR-S16 the `log_time`/`attach_pomodoro` ids are
   per run; keyed ones stay per occurrence (two sessions on one target/day share that row — both show it). Limit:
   ids re-derive from the CURRENT attachments — a target detached after completion drops off the rail (detach is legal;
   L15 removes routines' post-completion detach). Recorded, not mitigated.
@@ -209,9 +224,10 @@ Resolved (each in the task Route History with cites): cancel → `skipped` (ELIM
 binding precedent) · `award_xp` → Gamification (FACT) · handler registration here (FACT) · "#46" misread corrected.
 
 **Remains for the Interpretation Gate (no UNKNOWN is guessed):**
-1. ~~IR-S5 ordering~~ — RESOLVED from code (`effects/service.ts:58-68`: ledger first) → declared-target filtering.
+1. ~~IR-S5 ordering~~ — RESOLVED from code (`effects/service.ts:58-68`: ledger first) → applicability is canTouch's (IR-S4(1)), handlers throw (A.3).
 2. IR-S9 — a §XXVIII deviation from the HUD seam's zero-signature claim (state derivation changes); recorded for the PLAN.
-3. IR-S2 — the focus def gains a transition (`registry.test.ts` pin) — §XXVIII note at the PLAN (S3-focus-runtime.md:16).
+3. IR-S16 — narrows the shipped BR-S3-5 keying for `log_time`/`attach_pomodoro` → §XXVIII at the PLAN.
+4. IR-S2 — the focus def gains a transition (`registry.test.ts` pin) — §XXVIII note at the PLAN (S3-focus-runtime.md:16).
 
 ## 6. Inherited EC set — leg → where verified (ELC-9 is fe-sessions')
 
