@@ -6887,3 +6887,44 @@ Next session:
     B-24/B-27/B-45/B-46/B-49/B-60/B-63/B-65/E-2/E-3/F-7/B-15 · `.claude/sessions/2026-10-26-notes-rescope-2.md`.
   - Watch: a parallel preferences-rescope session loads the machine (run suites alone) · CI dark · stray 5-day automation Brave.
 ---
+
+---
+Date: 2026-10-27
+Task: notes-rescope (LIF-245) — Step 6, slices R1 · R2 · R3 · worktree `.claude/worktrees/notes-rescope` (Node 24)
+Goal: build R1 page frame, R2 mode memory and R3 metadata + rename through the full §XXVI gates.
+Completed:
+  - **R1 page frame — DONE (Visual Gate accepted).** 532e5ce · 82b0a0d · 6e54402 · 1e8105b · bb8e42b. Page-type editor gate
+    (all 6 types), `pageLabel` ("Task note"/"Untitled note"), Overviews as components (journal stub out → journals-rescope),
+    one `SyncStatus` per host (`notes/save-status.ts`, `PageActions`), `notifyError` toast, read Retry (+ DEV `?readerror`,
+    R-6 errorUpdateCount). DEV-R1-1 (Victor: fix now): EntityView title row wraps + `$display` line-height.
+  - **R2 mode memory — DONE (Visual Gate accepted), pushed.** 5f80e5a · 94bb5d8 · 3b93ad8. core `db/app-state.ts` accessor;
+    `useEntityModeStore` = async read, **seeded per-type default while loading** (slice text verbatim), toggle wins,
+    `sessionWrites` overlay; ADR-006 §3.6 amendment; R5 purge obligation.
+  - **R3 metadata + rename — BUILT, final /critique SHIP r2, NOT yet Visual-Gate-accepted, NOT pushed.** 5a36b7a · ebcb1ef ·
+    9d7e1ee · d2c9a6f · e6bd546. Live favorite/archive/icon/cover (`use-page-metadata.ts`), curated Lucide `page-icons.ts`,
+    icon picker (radiogroup) + cover picker (lazy), `CoverImage` (URL no-referrer | attachment thumbnail via core
+    `getAttachmentThumbnail` projected read), cover in both Overview modes, labelled controls (greybox order), rename both ways
+    (EntityView H1 + `onTitleCommit` seam; ⋯ → Rename dialog), `useFocusOnRecovery`. DEV-R3-1 (Victor: root fix) `@vida/ui`
+    Input native = Text host (fonts applied); DEV-R3-2 (contract dialog.md:47) Dialog focus return after un-inert.
+  - Gates: core 69/69 notes · ui 699/699 · web 1002/1002 · e2e 5/5 (R0–R3, Brave real OPFS) · R3 Visual Gate 28/28 axe 0 ·
+    bundle +6.9 KB gz.
+In progress:
+  - R3 Visual Gate review by Victor — screenshots `.playwright-mcp/r3-live/vg-shots/` (merged-meta · tabbed-overview ·
+    icon-picker · cover-picker-error · inline-rename · page-actions-menu · rename-dialog · input-notes-search · input-settings).
+Decisions:
+  - **Victor: "You should follow the documentation, don't try to change that, it is there for a reason."** — R2's "no flash"
+    refinement withdrawn; slice line delivered verbatim. Memory `deliverable-is-the-doc…` 3rd case.
+  - DEV-R1-1 fix now · DEV-R3-1 root fix (Input font host) — both Victor. DEV-R3-2 applied as contract-mandated.
+  - R3 [INTERP]s: ~48 curated icons, ≤10 KB budget, "Cover unavailable", empty title → null, no-referrer covers, R4 must thumbnail
+    image attachments.
+Next session:
+  - Ask Victor to accept the R3 Visual Gate (or apply changes) → on accept: mark R3 [x] in the task file + IMPL plan, commit,
+    `git push origin notes-rescope`.
+  - Then R4 attachments — §XXVI gate 1. Carries from R3 (slice-map R4 "From R3"): the live `['attachments',pageId]` read
+    feeds the cover picker list; **every image attachment gets a thumbnail on add**.
+  - First actions: `cd .claude/worktrees/notes-rescope` · `nvm use 24` · `git fetch` + ahead/behind · `git log -1` = e6bd546
+    (+ this log commit). Linear NOT synced this session (worktree-unsafe; do it from main at task close).
+  - Watch: suites under machine load (run alone; heavy page tests carry 20 s timeouts) · polish left from R3 audit (P2
+    `:focus` vs `:focus-visible`, P4 `as never` ref casts, P6 raw CSS-var colours) · pre-existing @vida/ui Tabs tablist has
+    no accessible name (recorded, R2).
+---

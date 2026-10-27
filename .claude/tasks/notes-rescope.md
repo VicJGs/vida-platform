@@ -29,7 +29,7 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - [x] R0 — data safety (2026-10-26 · 853570e · 84b7f58 · a6bd158 · f2c35cc)
 - [x] R1 — page frame (2026-10-27 · 532e5ce · 82b0a0d · 6e54402 · 1e8105b)
 - [x] R2 — mode memory (2026-10-27 · 5f80e5a · 94bb5d8)
-- [~] R3 — metadata + rename (5a36b7a · ebcb1ef · 9d7e1ee · d2c9a6f) — awaiting Visual Gate acceptance
+- [~] R3 — metadata + rename (5a36b7a · ebcb1ef · 9d7e1ee · d2c9a6f · e6bd546) — built, critique SHIP; awaiting Visual Gate acceptance
 - [ ] R4 — attachments
 - [ ] R5 — delete, undo, OS-wide Trash (must call `useNoteContent.cancel()` before the soft delete — R0 forward obligation)
 - [ ] R6 — collection + saved views
@@ -52,6 +52,24 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - F005 — `/tmp/vg` playwright-core gone; scratchpad removed mid-session — resolved: repo pnpm-store playwright-core, `.playwright-mcp/` (ignored)
 - F006 — `@testing-library/user-event` not an apps/web dep — resolved: `fireEvent`
 - F007 — status header `in_progress … DONE` would sync LIF-245 as Done (substring match) — resolved: `in-progress … shipped`
+
+## Knowledge Loaded (session 3 — 2026-10-27)
+- standards/process.md §XXVI/§XXVIII/§XXIX — Step 6 (R1·R2·R3 gates); slice-map R1–R5 · reconciliation rows · interpretation
+  IR-R5/R13/R15/R16 §5#3 · envision EC-4/5/15/18/19/22/25/29/34 + greybox g-1440/g-375/g-overview-dark — R1–R3 PLANs
+- ADR-002 §5.0 · ADR-006 · ADR-003 §17 + ADR-001/004/012 amendment convention — R2 · performance-strategy §6 + Lazy Loading ·
+  security-model.md:465 · contract.md:70-73 · ds-5 dialog.md/input.md · entity-view.md · collection-view.md — R3
+- memory: deliverable-is-the-doc (updated) · react-query-retryonmount-loop · visual-gate-playbook · worktree-ui-symlink ·
+  heavy-tamagui-shell-tests-flake · r7-read-seam — R1–R3
+
+## Failures This Session (session 3)
+- F008 — R1 375 px title squeeze + pre-existing title line collision — resolved: DEV-R1-1 (Victor)
+- F009 — R2 "no flash" refinement of approved slice text — resolved: withdrawn on Victor's correction (rev 4)
+- F010 — e2e locators: `getByLabel` substring match; nameless facet tablist — resolved: exact role queries (tablist gap recorded)
+- F011 — v5 refetch resets a no-data query to pending (Retry branch unmount) — resolved: R1 R-6 errorUpdateCount
+- F012 — `@vida/ui` Input fonts never applied (View drops font props) — resolved: DEV-R3-1 (Victor: root fix)
+- F013 — `@vida/ui` Dialog focus return silently failed (inert ordering) — resolved: DEV-R3-2
+- F014 — full-suite timeouts under machine load (avg 52–89) — resolved: files pass alone; heavy page tests 20 s timeout
+- F015 — Vite reload during a Visual Gate run (after a dist rebuild) — resolved: re-run on a warm server
 
 ## Route History
 - 2026-10-26 (Step 0 — baseline) — Worktree `.claude/worktrees/notes-rescope` off origin/main @ 78d02d8. document-context BASELINE over BOTH planes (① services/notes full; ② apps/web/src/notes 31/31 non-test full). Refreshed `docs/modules/notes/current-{spec,business-rules}.md`: ① citations re-anchored, `ensureJournal` + BR-7b (listPages includes archived) + BR-7c (writes ignore deleted_at) added, BR-10 wording corrected; ② surface plane documented (hooks LIVE/STUB table, components, editor gate, BR-SUR-1…9). Baseline findings feeding reconciliation: `offersEditor` excludes the 4 `*_note` types (EC-15) · UTC `ymd` row date (TZ bug) · empty excerpt · `degraded:[]` + no SyncStatus · no `[[` input rule · 8 stale "no composition root" headers · journals registry empty in apps/web.
@@ -120,3 +138,4 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   +6.9 KB gz. DEV-R3-1 (Victor: root fix) Input font host; DEV-R3-2 (contract-mandated) Dialog focus return after un-inert.
 - 2026-10-27 (Step 6 · R3 close) — final /critique r1 REVISE (B1 failed cover sticks, B2–B4 docs, I1–I3) → fixed d2c9a6f → r2
   SHIP; component audit 8.5/10 (P2/P4/P6 polish left). Awaiting Victor: Visual Gate acceptance.
+- 2026-10-27 (session close) — session-log written; R3 awaiting Victor's Visual Gate acceptance; branch not pushed since 3b93ad8.
