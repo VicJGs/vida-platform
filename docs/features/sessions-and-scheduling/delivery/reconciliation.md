@@ -106,4 +106,4 @@ Verdict:    CLEAR to proceed (re-run per slice at PLAN gate 2)
 - **Pass 7** (independent): NOT DRY — 3 doc-consistency items (§5 register incomplete → ONE register of 8 §XXVIII + 1 Victor item + 2 routed divergences · `:229` misdescribed · header rev) → rev 8.3.
 - **Pass 8** (independent): NOT DRY — 1 item: tasks BR-TK-S4-6 narrowing missing from the register → §XXVIII #9 + R-36 (rev 8.4).
 - **Pass 9** (independent, incl. slice-map mapping): NOT DRY — X3→X5/X6 deps missing · X2 left routines red (routines adaptation + `listSessionsForEntity` folded into X2; slices renumbered X1–X7) · ✅/edge/routed rows listed · backend R-48 + factory `providers?` → X1.
-- **Pass 10:** pending — must be DRY.
+- **Pass 10** (independent): **DRY** — every row placed once (slice · ✅ · edge · routed), all 9 §XXVIII + R-45 + 2 divergences mapped, deps consistent, no red window. **Step 4 CLOSED.**

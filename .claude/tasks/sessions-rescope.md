@@ -122,3 +122,8 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   shared ViewProviderRegistry, title fallback = humanizeSubType). Edges written: fe-sessions (EC-5 ⋯ · EC-2 proof/attach ·
   countdown re-verify · idle form) · fe-habits + fe-routines (ReadProvider). **Close-time actions:** notes-rescope page
   `ReadProvider` edge (its task file is in flight in another session — write at this unit's merge) + Linear relations.
+- 2026-10-27 (Step 4 — Reconciliation DRY) — 10 passes (pass 2–9 each found items; pass 10 DRY @8befdb5). Interp rev
+  8.4 (delta-gated: IR-S18 a′/d/e). Register: 9 §XXVIII · R-45 EC-4 re-pin (Victor) · 2 divergences → fe-sessions.
+- 2026-10-27 (Step 5 — Re-scope Gate, slice-map drafted) — `delivery/slice-map.md` X1 engine → X2 focus lifecycle +
+  routines → X3 reads ∥ X4 composition root → X5 HUD live ∥ X6 runtime live → X7 live close. Awaiting Victor: plan
+  approval + R-45.
