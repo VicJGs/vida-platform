@@ -8,8 +8,10 @@
 // page via `useJournalEntry` (NotesService.ensureJournal — NP-8 get-or-create) and, on
 // success, mounts the live `<VidaEditor chrome='bare'>` via the reused `NoteEditorBody`
 // (persistence through `useNoteContent` → `writePageContent`, debounced, mount-echo
-// deduped). Inline integration-block node-views (/dailySummary, …) remain the deferred
-// #31 seam INSIDE the editor; multi-device CRDT merge of `pages.content` stays M4.
+// deduped, flushed on hide, written through the cached bodies + the read-after-write
+// barrier — notes-rescope R0). An unreadable body shows the EC-33 read-only notice
+// instead of the editor (never overwritten). Inline integration-block node-views are
+// R8's (notes-rescope); multi-device CRDT merge of `pages.content` stays M4.
 //
 // The shell owns the page terminal states; the editor body renders only for 'success'.
 //

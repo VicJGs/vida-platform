@@ -25,7 +25,7 @@ afterEach(() => {
 
 const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
 const page: NoteEntityData = {
-  id: 'j1', type: 'journal', title: '2026-10-21', content: null,
+  id: 'j1', type: 'journal', title: '2026-10-21', content: null, contentStatus: 'absent', rawContent: null,
   favorite: false, archived: false, updated: 'now', journalDate: '2026-10-21', icon: null, cover: null,
 }
 

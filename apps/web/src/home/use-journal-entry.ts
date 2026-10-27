@@ -12,6 +12,7 @@
 // ============================================================================
 import { useQuery } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
+import { readAfterWrites } from '../notes/body-writes'
 import { toNoteEntity } from '../notes/live-mappers'
 import type { NoteEntityData, NoteEntityState } from '../notes/use-note-entity'
 
@@ -50,6 +51,8 @@ function sampleJournal(date: string): NoteEntityData {
       type: 'doc',
       content: [{ type: 'paragraph', content: [{ type: 'text', text: 'Today’s entry — start writing.' }] }],
     },
+    contentStatus: 'ok',
+    rawContent: null,
     favorite: false,
     archived: false,
     updated: 'just now',
@@ -65,7 +68,12 @@ export function useJournalEntry(): JournalEntryResult {
   const date = todayLocalYmd()
   const { data, isLoading, isError } = useQuery({
     queryKey: ['journal', date],
-    queryFn: async () => toNoteEntity(await (await getServices()).notes.ensureJournal(date)),
+    // Waits for any in-flight write of today's journal body (notes-rescope R0 barrier) — a mount right after the note
+    // page saved it must not seed the editor from the pre-write row (B-53).
+    queryFn: () =>
+      readAfterWrites([`journal:${date}`], async () =>
+        toNoteEntity(await (await getServices()).notes.ensureJournal(date)),
+      ),
     enabled: !sample,
   })
   if (sample) return { page: sampleJournal(date), state: 'success' }

@@ -1,12 +1,8 @@
 // ============================================================================
-// useNoteEntity — the note-ENTITY-page DATA seam (fe-notes-and-pages #27, S2).
-// The sibling of `useNotesRows` (S1), same stub discipline: M1 DEFAULT = empty
-// (honest — no live `NotesService` composition root for apps/web yet; a live
-// `getPage(id)` would throw on the worker-RPC Drizzle `values` seam — S1 D2 / F3).
-//
-// Live swap (zero signature change):
-//   const { data } = useQuery({ queryKey: ['pages', id], queryFn: () => notes.getPage(id) })
-//   return data ? { page: toNoteEntity(data), state: 'success' } : { page: null, state: 'loading' }
+// useNoteEntity — the note-ENTITY-page DATA seam (fe-notes-and-pages #27, S2; live since the notes go-live).
+// React Query over `NotesService.getPage(id)` → `toNoteEntity`. The read waits for any in-flight body write of
+// this page (notes-rescope R0 — the read-after-write barrier, `body-writes.ts`), so a fresh mount never seeds the
+// editor from a pre-write row.
 //
 // A DEV-ONLY sample (NOT shipped live data) renders a populated page for the blocking
 // Visual Gate — gated behind `?sample` in DEV only, off in prod.
@@ -14,6 +10,7 @@
 import type { EditorDocument, PageType } from '@vida/types'
 import { useQuery } from '@tanstack/react-query'
 import { getServices } from '../db/composition-root'
+import { readAfterWrites } from './body-writes'
 import { toNoteEntity } from './live-mappers'
 
 /** The fields the note-entity page needs (a `pages`-row projection; live mapping at the data-plane slice). */
@@ -23,6 +20,10 @@ export interface NoteEntityData {
   title: string
   /** The stored editor document; `null` = an untouched/blank page. Written via the Yjs/editor binding, never patched (IR-7). */
   content: EditorDocument | null
+  /** notes-rescope R0 (BR-R0-4): how the stored body parsed. `malformed` ⇒ never edited, never written (EC-33). */
+  contentStatus: 'ok' | 'absent' | 'malformed'
+  /** The stored `pages.content` string as-is — the lossless source for "Export a copy" (EC-33). */
+  rawContent: string | null
   favorite: boolean
   archived: boolean
   /** A relative "edited" label (live: formatted from `updated_at`). */
@@ -107,6 +108,8 @@ function sampleFor(id: string): NoteEntityData {
     type,
     title,
     content: sampleDoc(title),
+    contentStatus: 'ok',
+    rawContent: JSON.stringify(sampleDoc(title)),
     favorite: id === '1',
     archived: false,
     updated: '2h ago',
@@ -130,7 +133,7 @@ export function useNoteEntity(id: string): NoteEntityResult {
   const sample = devSampleActive()
   const { data, isLoading, isError } = useQuery({
     queryKey: ['pages', id],
-    queryFn: async () => (await getServices()).notes.getPage(id),
+    queryFn: () => readAfterWrites([`page:${id}`], async () => (await getServices()).notes.getPage(id)),
     enabled: !sample && Boolean(id),
   })
   if (sample) return { page: sampleFor(id), state: 'success' }
