@@ -69,12 +69,13 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   `../preferences/CLAUDE.md`.
 
 ## Stores (app-owned theme/pref state — AR-4)
-- `../stores/theme-store.ts` (S2; **derived since R3**) — `{ persisted, previewPreset, selection }` → `<UIProvider
-  selection>`; the EC-5 keystone. `persisted` follows the `['preferences','user']` cache through one query-cache
+- `../stores/theme-store.ts` (S2; **derived since R3**) — `{ persisted, previewPreset, selection, reduceMotion }` →
+  `<UIProvider selection reduceMotion>` (R4: `reduceMotion` follows the `['preferences','nav']` entry in the same subscription); the EC-5 keystone. `persisted` follows the `['preferences','user']` cache through one query-cache
   subscription (no theme setters — Settings writes go through the writer); `setPreview` is the guided-setup preview layer.
-- `../stores/preferences-store.ts` (S3 + S5 + S6) — TRANSITIONAL mirror (hydrated by `PreferencesBridge`): `reduceMotion` +
+- `../stores/preferences-store.ts` (S3 + S5 + S6) — TRANSITIONAL mirror (hydrated by `PreferencesBridge`):
   `moduleVisibility`/`moduleNames` (S5) + `dateFormat`/`timeFormat`/`weekStartsOn` + `notifInApp`/`notifPush`/`notifEmail`/
-  `quietHours` (S6). `arrangement` left it in R3. Persist per slice (R4/R5/R6); R6 deletes it.
+  `quietHours` (S6). `arrangement` left it in R3, `reduceMotion` in R4 (the Appearance switch writes `update({ reduceMotion })`). Persist per
+  slice (R5/R6); R6 deletes it.
 
 ## Live data (preferences-rescope — supersedes the 2026-10-12 "deferred seam")
 The worker data plane is live (data-plane-wiring) and the Preferences seam is wired (R2): reads come from React Query over

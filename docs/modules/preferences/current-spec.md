@@ -16,8 +16,8 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
 - **② frontend** — shipped as **fe-settings** (LIF-193; renamed from `fe-preferences` LIF-134, decisions.md:302) +
   **fe-onboarding** guided setup (LIF-216), originally in-session only. The live close is **preferences-rescope**
   (LIF-247, M1.2.4): R2 made the seam live; **R3 persists Appearance** (theme · persona · Home arrangement) and seeds it
-  at boot; reduce motion (R4), Modules (R5), Locale/Notifications (R6) and the onboarding commit (R7) are still
-  in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
+  at boot; **R4 persists reduce motion and makes it gate all motion app-wide**; Modules (R5), Locale/Notifications (R6)
+  and the onboarding commit (R7) are still in-session. See "② Live seam" / "② Surface — R3" below and the as-built baseline.
 
 ## Exposed surface (SHIPPED — Slice 1)
 `createPreferencesService(opts: { db: DrizzleDb; deviceId: string }): PreferencesService` — factory-object, single
@@ -73,12 +73,15 @@ options arg (house convention). Rides the DB-6 Repository (`encryptedFields: []`
 - **Appearance persists.** The pane reads `usePreferences().view` and writes `update(viewPatch)`: preset →
   `dashboard_layout.theme` · mode → `theme` (light|dark) · density → `compact_mode` · arrangement →
   `dashboard_layout.arrangement` · persona → `persona` (`Not set` ↔ `null`). The persona row sits directly under the three
-  theme rows (+ a `persona` search entry). **Reduce motion still binds `preferences-store`** (R4).
+  theme rows (+ a `persona` search entry). **R4:** the Reduce motion switch reads `view.reduceMotion` and writes
+  `update({ reduceMotion })` → `nav_preferences.reduce_motion`; `theme-store.reduceMotion` follows the
+  `['preferences','nav']` entry → `<UIProvider reduceMotion>` → `<html data-vida-motion>` (the 13 CSS gates) +
+  `ReducedMotionContext` (`useReducedMotion()` = context OR OS). The mirror store no longer holds it (9 fields).
 - **Theme = derived.** `theme-store` follows the `['preferences','user']` cache (optimistic re-theme, reverts on a failed
   save) + a guided-setup preview layer cleared on every exit. The theme hint (`localStorage`, confirmed rows only) paints
   `<html>` pre-React (BR-RT-7 amendment).
 - **Home.** `useHomeArrangement` reads `usePreferences().view.arrangement`; `arrangement` left `preferences-store` and the
-  bridge (10 mirrored fields remain).
+  bridge (9 mirrored fields remain — R3 `arrangement`, R4 `reduceMotion` left).
 - **Settings honest states (EC-7).** loading → static §3.1 skeleton (`aria-busy`) · error → every pane read-only + a calm
   `role="status"` line (first-read: "showing defaults"; later: "showing what was last loaded") + a `Retry` button
   (`usePreferences().retry` re-reads only the errored key(s)) · success → editable. One `SyncStatus` ("Saved on this

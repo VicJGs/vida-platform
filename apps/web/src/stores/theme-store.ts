@@ -2,9 +2,9 @@ import { create } from 'zustand'
 import { hashKey } from '@tanstack/react-query'
 import { THEME_DEFAULT, type ThemePreset, type ThemeSelection } from '@vida/ui'
 import { NAV_PREFERENCES_DEFAULTS } from '@vida/core'
-import type { MergedPreferences } from '@vida/types'
+import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { queryClient } from '../lib/query-client'
-import { USER_PREFS_KEY } from '../preferences/preferences-keys'
+import { NAV_PREFS_KEY, USER_PREFS_KEY } from '../preferences/preferences-keys'
 import { toView } from '../preferences/preferences-view'
 
 // The app-owned theme SELECTION that feeds `<UIProvider selection>` (AR-4: @vida/ui holds no theme state).
@@ -27,6 +27,9 @@ interface ThemeStoreState {
   /** What `UIProvider` renders: the persisted selection with the preview's preset over it. */
   selection: ThemeSelection
   setPreview: (preset: ThemePreset | null) => void
+  /** preferences-rescope R4 (R4-BR-2): `nav_preferences.reduce_motion`, derived from the nav entry by the SAME cache
+   *  subscription (no second exemption). Feeds `<UIProvider reduceMotion>`; false = OS query only. */
+  reduceMotion: boolean
 }
 
 function compose(persisted: ThemeSelection, previewPreset: ThemePreset | null): ThemeSelection {
@@ -40,6 +43,7 @@ export const useThemeStore = create<ThemeStoreState>()((set, get) => ({
   persisted: THEME_DEFAULT,
   previewPreset: null,
   selection: THEME_DEFAULT,
+  reduceMotion: false,
   setPreview: (previewPreset) => {
     if (get().previewPreset === previewPreset) return
     set({ previewPreset, selection: compose(get().persisted, previewPreset) })
@@ -56,20 +60,30 @@ function syncFromCache(): void {
   useThemeStore.setState({ persisted: next, selection: compose(next, previewPreset) })
 }
 
+/** Re-derive `reduceMotion` from the nav entry (no entry / removed → false). Sets only on a real change. */
+function syncMotionFromCache(): void {
+  const next = queryClient.getQueryData<MergedNavPreferences>(NAV_PREFS_KEY)?.reduce_motion ?? false
+  if (useThemeStore.getState().reduceMotion !== next) useThemeStore.setState({ reduceMotion: next })
+}
+
 const USER_PREFS_HASH = hashKey(USER_PREFS_KEY)
+const NAV_PREFS_HASH = hashKey(NAV_PREFS_KEY)
 
 // Install once. Query-cache listeners run synchronously (inside notifyManager.batch), so a writer `setQueryData` updates
 // the theme in the same tick; `queryClient.clear()` emits `removed` → back to THEME_DEFAULT. No HMR dispose: a stacked
 // dev-only listener is idempotent (syncFromCache sets only on change).
 syncFromCache()
+syncMotionFromCache()
 queryClient.getQueryCache().subscribe((event) => {
   if (event.query.queryHash === USER_PREFS_HASH) syncFromCache()
+  else if (event.query.queryHash === NAV_PREFS_HASH) syncMotionFromCache()
 })
 
 /** Tests only — drop any preview and re-derive from the (usually just-cleared) cache. */
 export function resetThemeStoreForTests(): void {
   useThemeStore.setState({ previewPreset: null })
   syncFromCache()
+  syncMotionFromCache()
   const { persisted } = useThemeStore.getState()
   useThemeStore.setState({ selection: persisted })
 }

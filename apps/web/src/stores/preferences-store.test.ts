@@ -4,27 +4,23 @@ import { usePreferencesStore } from './preferences-store'
 describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0 deferred persistence)', () => {
   beforeEach(() =>
     usePreferencesStore.setState({
-      reduceMotion: false,
+      timeFormat: '24h',
       moduleVisibility: {},
       moduleNames: {},
     }),
   )
 
-  it('defaults: reduceMotion off; the Home arrangement is no longer mirrored here (R3 — live via usePreferences)', () => {
+  it('no longer mirrors the Home arrangement (R3) or reduce motion (R4) — both are live via usePreferences', () => {
     const s = usePreferencesStore.getState()
-    expect(s.reduceMotion).toBe(false)
     expect('arrangement' in s).toBe(false)
-  })
-
-  it('setReduceMotion toggles the flag', () => {
-    usePreferencesStore.getState().setReduceMotion(true)
-    expect(usePreferencesStore.getState().reduceMotion).toBe(true)
+    expect('reduceMotion' in s).toBe(false)
+    expect('setReduceMotion' in s).toBe(false)
   })
 
   it('hydrate (the deferred-seam activation point) merges a partial patch', () => {
     usePreferencesStore.getState().hydrate({ moduleVisibility: { finance: false } })
     expect(usePreferencesStore.getState().moduleVisibility).toEqual({ finance: false })
-    expect(usePreferencesStore.getState().reduceMotion).toBe(false) // untouched key preserved
+    expect(usePreferencesStore.getState().timeFormat).toBe('24h') // untouched key preserved
   })
 
   // S5 — module show/hide + rename (read-merge-write into the maps; absent key ⇒ visible/canonical label)

@@ -15,9 +15,6 @@ export type TimeFormat = '12h' | '24h'
 export type WeekStartsOn = 0 | 1
 
 interface PreferencesStoreState {
-  /** App-pref mirror of nav_preferences.reduce_motion. NOTE: actual motion gating is OS-media-query-driven
-   *  (@vida/ui useReducedMotion); this app-pref override's live effect is persistence-gated (§A0). */
-  reduceMotion: boolean
   /** S5 — per-module nav show/hide (key → visible). Absent key ⇒ visible (default true). Persist seam → module_visibility. */
   moduleVisibility: Record<string, boolean>
   /** S5 — per-module custom name (key → label). Absent ⇒ the canonical module-map label. Persist seam → dashboard_layout.moduleNames. */
@@ -31,7 +28,6 @@ interface PreferencesStoreState {
   notifPush: boolean
   notifEmail: boolean
   quietHours: boolean
-  setReduceMotion: (on: boolean) => void
   setModuleVisible: (key: string, visible: boolean) => void
   setModuleName: (key: string, name: string) => void
   setDateFormat: (format: string) => void
@@ -46,7 +42,6 @@ interface PreferencesStoreState {
     patch: Partial<
       Pick<
         PreferencesStoreState,
-        | 'reduceMotion'
         | 'moduleVisibility'
         | 'moduleNames'
         | 'dateFormat'
@@ -62,7 +57,6 @@ interface PreferencesStoreState {
 }
 
 export const usePreferencesStore = create<PreferencesStoreState>()((set) => ({
-  reduceMotion: false,
   moduleVisibility: {},
   moduleNames: {},
   // S6 defaults mirror USER_PREFERENCES_DEFAULTS (service.ts:55-77).
@@ -73,7 +67,6 @@ export const usePreferencesStore = create<PreferencesStoreState>()((set) => ({
   notifPush: true,
   notifEmail: true,
   quietHours: false,
-  setReduceMotion: (reduceMotion) => set({ reduceMotion }),
   // read-merge-write into the map (the §B dashboard_layout/module_visibility merge discipline, applied in-session).
   setModuleVisible: (key, visible) =>
     set((s) => ({ moduleVisibility: { ...s.moduleVisibility, [key]: visible } })),

@@ -23,7 +23,8 @@ import { App } from './App'
 import { router } from './routes'
 import { queryClient } from './lib/query-client'
 import { resetPreferencesWriterForTests } from './preferences/writer-instance'
-import { resetTestPreferences } from './test/preferences-test-utils'
+import { resetTestPreferences, testPreferences } from './test/preferences-test-utils'
+import { NAV_PREFERENCES_DEFAULTS } from '@vida/core'
 import { resetThemeStoreForTests } from './stores/theme-store'
 import { useCommandBarUIStore } from './stores/command-bar-ui-store'
 import { useAppShellUIStore } from './stores/app-shell-ui-store'
@@ -105,5 +106,12 @@ describe('App shell — whole-shell integration (S5)', () => {
     fireEvent.click(screen.getByRole('option', { name: 'Graph' }))
     await waitFor(() => expect(screen.getByText('No connections yet.')).toBeTruthy())
     expect(router.state.location.pathname).toBe('/graph')
+  })
+
+  it('a persisted reduce-motion preference reaches <html data-vida-motion> after boot (preferences-rescope R4, acc. 7)', async () => {
+    testPreferences.state.nav = { ...NAV_PREFERENCES_DEFAULTS, reduce_motion: true }
+    render(<App />)
+    await waitFor(() => expect(shellChrome()).not.toBeNull())
+    expect(document.documentElement.getAttribute('data-vida-motion')).toBe('reduce')
   })
 })

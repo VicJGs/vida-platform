@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Switch primitive — the state machine a Tamagui styled(View) can't express, driven off the
 // native <input type="checkbox" role="switch">'s own `:checked` / `:focus-visible` pseudo-classes. Mirrors
@@ -35,7 +36,7 @@ export function ensureSwitchStyles(): void {
     '.vida-switch:has(.vida-switch-input:focus-visible) .vida-switch-track' +
       '{outline:2px solid var(--colorFocusRing);outline-offset:2px}',
     // reduced motion: the knob snaps instantly (BR-SW-5).
-    '@media (prefers-reduced-motion:reduce){.vida-switch-knob{transition:none}}',
+    reducedMotionCss(['.vida-switch-knob'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

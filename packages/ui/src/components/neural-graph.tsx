@@ -47,7 +47,7 @@ export interface NeuralGraphProps {
   state?: ViewState
   /** Frame height (px). Default 400. */
   height?: number
-  /** forceatlas2 iterations. Default 200. Capped to 0 under prefers-reduced-motion (BR-12). */
+  /** forceatlas2 iterations. Default 200. Capped to 0 under reduced motion — `useReducedMotion()` (BR-12). */
   layoutIterations?: number
   /** Slot overriding the default "Loading…" message (e.g. a teaching component). */
   loading?: ReactNode
@@ -81,6 +81,9 @@ const Frame = styled(View, {
   overflow: 'hidden',
 })
 const CanvasHost = styled(View, { width: '100%', height: '100%' })
+
+/** Sigma camera settings under reduced motion (R4-BR-8, D-R4-3). */
+const INSTANT_CAMERA = { zoomDuration: 1, doubleClickZoomingDuration: 1, inertiaDuration: 1, inertiaRatio: 0 }
 
 export function NeuralGraph({
   nodes,
@@ -190,7 +193,10 @@ export function NeuralGraph({
     // reduced-motion → 0 iterations = the nodes stay on their deterministic circular seed (no force-settling); BR-12.
     const iterations = reduced ? 0 : layoutIterations
     forceAtlas2.assign(graph, { iterations, settings: { barnesHutOptimize: true } })
-    const sigma = new Sigma(graph, containerRef.current, {})
+    // Reduced motion also makes the CAMERA instant (R4-BR-8; motion.md §Reduced Motion). 1 ms, never 0: sigma's
+    // Camera.animate computes t = elapsed / duration and runs its first frame synchronously (sigma 3.0.3 sigma.esm.js:199),
+    // so 0 gives 0/0 = NaN → one blank frame per wheel tick. 1 ms = start state, then the end state next frame. No inertia.
+    const sigma = new Sigma(graph, containerRef.current, reduced ? INSTANT_CAMERA : {})
     sigma.on('clickNode', ({ node }) => onNodeClickRef.current?.(node))
     return () => {
       sigma.kill()

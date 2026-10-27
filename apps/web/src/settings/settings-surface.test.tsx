@@ -10,8 +10,7 @@ vi.mock('@vida/ui', async (orig) => ({ ...(await orig<typeof import('@vida/ui')>
 import { UIProvider } from '@vida/ui'
 import SettingsSurface from './settings-surface'
 import { SETTINGS_COPY } from './settings-copy'
-import { resetThemeStoreForTests } from '../stores/theme-store'
-import { usePreferencesStore } from '../stores/preferences-store'
+import { resetThemeStoreForTests, useThemeStore } from '../stores/theme-store'
 import { queryClient } from '../lib/query-client'
 import { createPrefsWrapper, resetTestPreferences, testPreferences } from '../test/preferences-test-utils'
 import { preferencesWriter, resetPreferencesWriterForTests } from '../preferences/writer-instance'
@@ -31,7 +30,6 @@ afterEach(() => {
 // R3: the app seeds the cache at boot (App's gate), so the surface renders its panes immediately — mirror that here, or
 // every synchronous pane query below would meet the loading skeleton.
 beforeEach(async () => {
-  usePreferencesStore.setState({ reduceMotion: false })
   toastSpy.mockClear()
   await seedPreferences(queryClient)
 })
@@ -191,6 +189,20 @@ describe('SettingsSurface — honest states (R3 · EC-7 · D1 · C5 UI)', () => 
     await waitFor(() => expect(within(screen.getByLabelText('Mode')).getByText('Light')).toBeTruthy()) // reverted
     expect(toastSpy).toHaveBeenCalledTimes(1)
     expect(screen.queryByText('Saved on this device')).toBeNull()
+  })
+
+  it('a rejected reduce-motion save reverts the switch AND the provider input, with ONE toast (R4 · PR-4 · R3-BR-7)', async () => {
+    renderUI(<SettingsSurface />)
+    testPreferences.state.failNext = new Error('boom')
+    const sw = screen.getByLabelText('Reduce motion') as HTMLInputElement
+    fireEvent.click(sw)
+    expect(useThemeStore.getState().reduceMotion).toBe(true) // optimistic
+    await act(async () => {
+      await preferencesWriter.flushAll()
+    })
+    await waitFor(() => expect((screen.getByLabelText('Reduce motion') as HTMLInputElement).checked).toBe(false))
+    expect(useThemeStore.getState().reduceMotion).toBe(false)
+    expect(toastSpy).toHaveBeenCalledTimes(1)
   })
 })
 

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // fe-settings S3 (EC-4/EC-5) → preferences-rescope R3 (D4/D6/D7/D10, EC-7): the Appearance pane reads the persisted view
-// and writes through the preferences writer (theme · arrangement · persona persist); reduce motion stays on the
-// transitional store until R4. Read-only (a read error) disables every control.
+// and writes through the preferences writer (theme · arrangement · persona persist); R4: reduce motion persists too
+// (nav_preferences.reduce_motion). Read-only (a read error) disables every control.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 
@@ -11,7 +11,6 @@ import { UIProvider } from '@vida/ui'
 import { UpdatePreferencesSchema } from '@vida/core'
 import { AppearancePane } from './appearance-pane'
 import { SettingsContext } from './settings-context'
-import { usePreferencesStore } from '../stores/preferences-store'
 import { useThemeStore, resetThemeStoreForTests } from '../stores/theme-store'
 import { queryClient } from '../lib/query-client'
 import { seedPreferences } from '../preferences/preferences-queries'
@@ -22,7 +21,6 @@ const PrefsWrapper = createPrefsWrapper()
 
 beforeEach(async () => {
   resetTestPreferences()
-  usePreferencesStore.setState({ reduceMotion: false })
   await seedPreferences(queryClient)
 })
 afterEach(() => {
@@ -101,10 +99,21 @@ describe('AppearancePane (EC-4/EC-5 · R3 persistence)', () => {
     expect(UpdatePreferencesSchema.safeParse({ persona: null }).success).toBe(true)
   })
 
-  it('reduce motion still binds the transitional store (R4 moves it)', () => {
+  it('reduce motion persists through the seam (R4-BR-1): toggle → nav_preferences.reduce_motion; a fresh cache reads it', async () => {
     renderUI(<AppearancePane />)
-    fireEvent.click(screen.getByLabelText('Reduce motion'))
-    expect(usePreferencesStore.getState().reduceMotion).toBe(true)
+    const sw = screen.getByLabelText('Reduce motion') as HTMLInputElement
+    expect(sw.checked).toBe(false)
+    fireEvent.click(sw)
+    expect(useThemeStore.getState().reduceMotion).toBe(true) // optimistic — the provider input moves at once
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.nav?.reduce_motion).toBe(true)
+    // reload: a fresh cache over the same store reads it back and drives `checked`
+    cleanup()
+    queryClient.clear()
+    resetPreferencesWriterForTests()
+    await seedPreferences(queryClient)
+    renderUI(<AppearancePane />)
+    expect((screen.getByLabelText('Reduce motion') as HTMLInputElement).checked).toBe(true)
   })
 
   it('reflects the persisted values (a seeded row)', async () => {

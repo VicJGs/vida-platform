@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // fe-codec-patterns · S4 — HonestProgress indeterminate shimmer (injected because a @keyframes can't be a Tamagui
 // style prop — the toast/dialog precedent). B12: transform-only + a reduced-motion @media that stops it (the instant
@@ -17,7 +18,7 @@ export function ensureSyncStatusStyles(): void {
     // the indeterminate segment slides across the track — transform only (B12).
     `@keyframes vida-progress-indeterminate{from{transform:translateX(-100%)}to{transform:translateX(320%)}}`,
     `.vida-progress-indeterminate{animation:vida-progress-indeterminate ${dur} ${motion.easing.inOut} infinite}`,
-    `@media (prefers-reduced-motion: reduce){.vida-progress-indeterminate{animation:none}}`,
+    reducedMotionCss(['.vida-progress-indeterminate'], 'animation:none'),
   ].join('')
   document.head.appendChild(style)
 }

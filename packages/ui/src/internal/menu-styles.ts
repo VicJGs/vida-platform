@@ -1,5 +1,6 @@
 import { motion } from '../themes/motion'
 import { shadow } from '../themes/shadow'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Menu primitive — the panel ENTER animation a Tamagui styled(View) can't express across a
 // react-dom portal (the shipped Select/Checkbox precedent; NOT Tamagui enterStyle, unverified across the portal).
@@ -24,7 +25,7 @@ export function ensureMenuStyles(): void {
     '.vida-menu-panel[data-side="top"]{transform:translateY(4px) scale(0.98)}',
     '.vida-menu-panel.is-open{opacity:1;transform:none}',
     // reduced motion: appears instantly.
-    `@media (prefers-reduced-motion:reduce){.vida-menu-panel{transition:none}}`,
+    reducedMotionCss(['.vida-menu-panel'], 'transition:none'),
   ].join('')
   document.head.appendChild(style)
 }

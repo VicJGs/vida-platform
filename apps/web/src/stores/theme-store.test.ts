@@ -7,7 +7,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 vi.mock('../db/composition-root', async () => (await import('../test/preferences-test-utils')).compositionRootMock())
 
 import { THEME_DEFAULT } from '@vida/ui'
-import { USER_PREFERENCES_DEFAULTS } from '@vida/core'
+import { NAV_PREFERENCES_DEFAULTS, USER_PREFERENCES_DEFAULTS } from '@vida/core'
 import { queryClient } from '../lib/query-client'
 import { USER_PREFS_KEY } from '../preferences/preferences-keys'
 import { seedPreferences } from '../preferences/preferences-queries'
@@ -81,5 +81,51 @@ describe('theme-store (derived cache)', () => {
     const before = sel()
     await preferencesWriter.writePreferences({ time_format: '12h' })
     expect(sel()).toBe(before)
+  })
+})
+
+// preferences-rescope R4 (PLAN-R4 R4-BR-2; IMPL-PLAN-R4 step 8) — `reduceMotion` derives from the NAV entry through the
+// SAME cache subscription (no second Zustand-holds-prefs exemption), so UIProvider — outside QueryClientProvider — gets it.
+describe('theme-store reduceMotion (derived from the nav entry)', () => {
+  const motion = () => useThemeStore.getState().reduceMotion
+
+  it('is false with an empty cache', () => {
+    expect(motion()).toBe(false)
+  })
+
+  it('follows a seeded nav row before any render (the boot seed loads nav too — first themed frame)', async () => {
+    testPreferences.state.nav = { ...NAV_PREFERENCES_DEFAULTS, reduce_motion: true }
+    await seedPreferences(queryClient)
+    expect(motion()).toBe(true)
+  })
+
+  it('a writer edit moves it SYNCHRONOUSLY, and a rejected write returns it (PR-4 revert)', async () => {
+    await seedPreferences(queryClient)
+    void preferencesWriter.writeNavPreferences({ reduce_motion: true })
+    expect(motion()).toBe(true) // optimistic — same tick
+    await preferencesWriter.flushAll()
+    testPreferences.state.failNext = new Error('boom')
+    const p = preferencesWriter.writeNavPreferences({ reduce_motion: false }).catch(() => {})
+    expect(motion()).toBe(false)
+    await p
+    expect(motion()).toBe(true) // reverted to the confirmed value
+  })
+
+  it('an unrelated nav change sets nothing; clearing the cache (removed) falls back to false', async () => {
+    testPreferences.state.nav = { ...NAV_PREFERENCES_DEFAULTS, reduce_motion: true }
+    await seedPreferences(queryClient)
+    let sets = 0
+    const unsub = useThemeStore.subscribe(() => sets++)
+    await preferencesWriter.writeNavPreferences({ show_labels: false })
+    unsub()
+    expect(sets).toBe(0)
+    queryClient.clear()
+    expect(motion()).toBe(false)
+  })
+
+  it('a failed nav seed leaves it false — the OS query still applies (R4-BR-6)', async () => {
+    testPreferences.state.failReads = 'all'
+    await seedPreferences(queryClient)
+    expect(motion()).toBe(false)
   })
 })

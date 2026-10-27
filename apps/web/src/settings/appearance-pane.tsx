@@ -1,7 +1,6 @@
 import { Text, View } from '@tamagui/core'
 import { Card, Select, Switch, type ThemeDensity, type ThemeMode, type ThemePreset } from '@vida/ui'
 import { PERSONA } from '@vida/types'
-import { usePreferencesStore } from '../stores/preferences-store'
 import { usePreferences } from '../preferences/use-preferences'
 import { PERSONA_UNSET, type HomeArrangement, type PersonaChoice } from '../preferences/preferences-view'
 import { OptionRow } from './option-row'
@@ -47,8 +46,6 @@ const PERSONA_OPTIONS: ReadonlyArray<{ value: PersonaChoice; label: string }> = 
 export function AppearancePane() {
   const { view } = usePreferences()
   const { readOnly, update } = useSettings()
-  const reduceMotion = usePreferencesStore((s) => s.reduceMotion)
-  const setReduceMotion = usePreferencesStore((s) => s.setReduceMotion)
   const { selection } = view
 
   return (
@@ -122,8 +119,8 @@ export function AppearancePane() {
             <Switch
               aria-label="Reduce motion"
               disabled={readOnly}
-              checked={reduceMotion}
-              onCheckedChange={setReduceMotion}
+              checked={view.reduceMotion}
+              onCheckedChange={(reduceMotion) => update({ reduceMotion })}
             />
           }
         />

@@ -45,7 +45,9 @@ Source model: **code-first** (`docs/specs/foundation/frontend-source-of-truth.md
   a `@media (prefers-reduced-motion: reduce)` alternative that is an *instant state change* (not the absence of
   motion; if it communicates state, communicate it another way); (b) animates **only** `transform`/`opacity`/
   `clip-path` — never `color`/`background`/`box-shadow`/`border`/`width`/`height`/`top-left-right-bottom`/`margin`/
-  `padding`. This layer-doc is B12's enforcement artifact.
+  `padding`. This layer-doc is B12's enforcement artifact. **Emit (a) through `internal/reduced-motion-css.ts`
+  `reducedMotionCss(selectors, declarations)`** — it writes the OS `@media` rule AND the in-app
+  `[data-vida-motion="reduce"]` twin (preferences-rescope R4); never hand-write the media query (a guard test fails it).
 - Keep it deterministic: sort by path, no timestamps (B4).
 - **⚠ Values are a provisional placeholder palette** (indigo/slate/emerald + Space Grotesk/Inter) — NOT Vida's brand
   ([[ds-2-palette-is-provisional-placeholder]]). The architecture is final; a brand pass swaps VALUES only + re-runs

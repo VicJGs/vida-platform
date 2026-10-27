@@ -1,4 +1,5 @@
 import { motion } from '../themes/motion'
+import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Tabs primitive — the pieces a Tamagui styled(View) can't express: the indicator's
 // transform-only transition (the B12 showcase), the panel enter-fade, and the hover label-strengthen. Reads the
@@ -32,7 +33,8 @@ export function ensureTabsStyles(): void {
     // descendant selector beats Tamagui's atomic colour class ([[injected-css-loses-to-tamagui-variants]]).
     `.vida-tabs-tab:not([aria-selected="true"]):not([aria-disabled="true"]):hover .vida-tabs-label{color:var(--textActive)}`,
     // Reduced motion: indicator jumps, panel appears without a fade.
-    `@media (prefers-reduced-motion:reduce){.vida-tabs-indicator[data-ready="true"]{transition:none}.vida-tabs-panel{animation:none}}`,
+    reducedMotionCss(['.vida-tabs-indicator[data-ready="true"]'], 'transition:none'),
+    reducedMotionCss(['.vida-tabs-panel'], 'animation:none'),
   ].join('')
   document.head.appendChild(style)
 }

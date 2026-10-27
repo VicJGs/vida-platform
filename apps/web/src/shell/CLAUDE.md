@@ -105,12 +105,15 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   dark self-cancels → the 1px border carries it). **Dismiss** = Esc / click-scrim / re-toggle → `onClose`; **focus** moves
   IN on open (first focusable) and RETURNS to the bar toggle on dismiss (app-shell's `onClose`, reliable for every open
   path incl. the in-panel Dock→Float switch — capturing `document.activeElement` would grab `<body>` there, g2 #1). The
-  Tab **trap** mirrors Dialog's algorithm. Motion = the fail-safe-visible injected keyframes (reduced-motion `@media`).
+  Tab **trap** mirrors Dialog's algorithm. Motion = the fail-safe-visible injected keyframes (reduced motion: the OS
+  `@media` OR `[data-vida-motion="reduce"]`, R4).
   Float is now ENABLED (S3's `disabled` removed).
 - `shell-panel-styles.ts` (fe-shell #14, S4) — `ensureShellPanelStyles()`: the injected `<style>` (mirrors `@vida/ui`
   `internal/dialog-styles.ts`) for the float scrim-in + per-edge panel slide-in `@keyframes` + the `.vida-shell-panel`
   `box-shadow:shadow.overlay`. **Visible resting base** (scrim 0.5 / panel opacity 1, transform none) so a missed
-  animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced-motion `@media`→`animation:none`. B12:
+  animation FAILS SAFE VISIBLE (a modal must never render invisible); reduced motion → `animation:none` on BOTH triggers
+  (the OS `@media` + a hand-written `[data-vida-motion="reduce"]` twin of `@vida/ui`'s internal `reducedMotionCss`, pinned
+  by `shell-panel-styles.test.ts` — preferences-rescope R4). B12:
   opacity/transform only.
 - `module-dock.tsx` (S2) — the dock content: `MODULE_MAP` grouped, drawer/rail/sidebar forms, empty-group skip,
   collapse toggle. _(`global-bar.tsx` was DELETED at fe-shell-scope #15 S3 — superseded by `global-bar-1.tsx` +

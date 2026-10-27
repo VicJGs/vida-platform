@@ -17,7 +17,7 @@ const mount = () => render(createElement(Wrapper, null, createElement(Preference
 
 beforeEach(() => {
   resetTestPreferences()
-  usePreferencesStore.setState({ dateFormat: 'YYYY-MM-DD', timeFormat: '24h', reduceMotion: false })
+  usePreferencesStore.setState({ dateFormat: 'YYYY-MM-DD', timeFormat: '24h' })
 })
 
 afterEach(() => {
@@ -30,13 +30,11 @@ afterEach(() => {
 describe('PreferencesBridge', () => {
   it('hydrates the store from the persisted view once both reads succeed', async () => {
     testPreferences.state.user = { ...(await testPreferences.svc.getMergedPreferences()), date_format: 'DD/MM/YYYY' }
-    testPreferences.state.nav = { ...(await testPreferences.svc.getNavPreferences()), reduce_motion: true }
     mount()
     await waitFor(() => expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY'))
-    expect(usePreferencesStore.getState().reduceMotion).toBe(true)
   })
 
-  it('R3 — mirrors 10 fields: the Home arrangement is NOT bridged (Home reads usePreferences directly)', async () => {
+  it('R4 — mirrors 9 fields: neither the Home arrangement (R3) nor reduce motion (R4) is bridged — both read the seam', async () => {
     testPreferences.state.user = {
       ...(await testPreferences.svc.getMergedPreferences()),
       date_format: 'DD/MM/YYYY',
@@ -45,6 +43,7 @@ describe('PreferencesBridge', () => {
     mount()
     await waitFor(() => expect(usePreferencesStore.getState().dateFormat).toBe('DD/MM/YYYY'))
     expect('arrangement' in usePreferencesStore.getState()).toBe(false)
+    expect('reduceMotion' in usePreferencesStore.getState()).toBe(false)
   })
 
   it('re-hydrates ONLY changed fields — an in-session edit to another field survives', async () => {

@@ -40,6 +40,8 @@ export function App() {
   // so the whole app still re-themes instantly (EC-5) and reverts on a failed save.
   const selection = useThemeStore((s) => s.selection)
   const setPreview = useThemeStore((s) => s.setPreview)
+  // preferences-rescope R4: the in-app reduce-motion preference, derived from the nav entry by the same store (R4-BR-2).
+  const reduceMotion = useThemeStore((s) => s.reduceMotion)
 
   // fe-onboarding S4 — the guided-setup theme picker live-previews across the app through the store's preview LAYER
   // (re-hydration never clobbers it, E8).
@@ -127,7 +129,7 @@ export function App() {
   // host, so onboarding/guided-setup preference writes reach the same cache Settings reads (N7). PreferencesBridge
   // (mounted once, under it) mirrors the persisted view into the not-yet-migrated panes' store + flushes on hide.
   return (
-    <UIProvider selection={selection}>
+    <UIProvider selection={selection} reduceMotion={reduceMotion}>
       <QueryClientProvider client={queryClient}>
         <PreferencesBridge />
         {firstRun.status === 'onboarding' ? (

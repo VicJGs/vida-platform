@@ -73,16 +73,26 @@ interface reconcile (created_at/updated_at) + the deferred `sessions` inline-rea
 - **R3-BR-7 (PR-4, C5 UI)** one `SyncStatus` "Saved on this device" (no Saving state; clears on failure); **one revert
   toast per failed batch**, fired by the writer (`onFailed`) whatever surface is mounted — PR-4 "never silently dropped".
 - **R3-BR-8/9 (D4, D6, D7, D10)** preset/mode/density/arrangement/persona persist through `update(viewPatch)` (per-sub-key
-  merge, IR-2); persona `Not set` ↔ `null`; no `game` preset (D3). Reduce motion stays on the mirror (R4).
+  merge, IR-2); persona `Not set` ↔ `null`; no `game` preset (D3).
 - **R3-BR-10 (F17)** every R3 string lives in `settings/settings-copy.ts`, `lintCopy`-tested.
+
+## ② surface — enforced live (preferences-rescope R4, 2026-10-26 · Visual Gate PASS, Victor `visual-approved` 2026-10-27)
+- **R4-BR-1 (D8)** reduce motion persists through `update({ reduceMotion })` → `nav_preferences.reduce_motion`
+  (optimistic, reverts + one toast on a failed batch — PR-4/R3-BR-7); the mirror no longer holds it.
+- **R4-BR-2** `theme-store.reduceMotion` derives from the nav cache entry in the same subscription (boot-seeded → the
+  first themed frame; failed nav read → `false`).
+- **R4-BR-3…6 (D9)** `UIProvider reduceMotion` → `<html data-vida-motion="reduce"|"full">` (CSS: every gate via
+  `reducedMotionCss`, the OS `@media` + the attribute twin) + `ReducedMotionContext` (JS: `useReducedMotion()` = context
+  OR OS, right on the first render). The preference only adds reduction — off never forces motion.
+- **R4-BR-7/8** theme swaps stay instant (the attribute survives a swap — its own effect, not `clearCodec`); the graph
+  camera goes instant (1 ms durations, no inertia).
 
 ## ② surface — what is NOT enforced live yet (baseline 2026-10-21, preferences-rescope Step 0 — superseded in part by R2/R3)
 The service rules above hold **only at the service boundary**; the shipped ② surface never calls it (service not
 registered, `current-spec.md` "② Surface plane"). So live today: PR-2 (defaults) is met by store defaults, not
 `getMergedPreferences`; **PR-4 (persist + revert-on-error), PR-5 (theme from the DB value), PR-9 (local write +
 sync_queue) are unmet in the app**; the escape hatch (business-rules.md:28) is UI-enforced in `HIDEABLE_MODULES`
-(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R3:** reduce
-motion (R4), Modules (R5), Locale/Notifications (R6) persist; the onboarding commit (R7).
+(`settings/settings-model.ts:37-46`). preferences-rescope (LIF-247) closes these. **Still unmet after R4:** Modules (R5), Locale/Notifications (R6) persist; the onboarding commit (R7).
 
 ## Delegated (never enforced here — other domains own them)
 PR-8 (account/data), PR-10 (PII stays in `user_profile`), PR-11 (`sms` never a channel), PR-12 (integration

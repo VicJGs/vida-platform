@@ -468,7 +468,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   consumer slots** — `loading?`/`error?`/`empty?: ReactNode` override the default `Message` (`{slot ?? <Message>}`,
   the board/calendar precedent), `content` widened to `ReactNode`; absent → verbatim copy. **(3) reduced-motion** —
   `useReducedMotion()` gates the forceatlas2 iterations (`reduced ? 0 : layoutIterations`; 0 = the deterministic
-  circular seed, no force-settling); `reduced` IS in the effect deps. Visual Gate PASS (Brave, 3 presets × light/dark:
+  circular seed, no force-settling); `reduced` IS in the effect deps. **R4:** `reduced` also passes `INSTANT_CAMERA`
+  (`zoomDuration`/`doubleClickZoomingDuration`/`inertiaDuration` 1 ms + `inertiaRatio` 0) to Sigma — 1 not 0, since sigma's
+  `Camera.animate` divides by the duration (0 → a NaN frame). Visual Gate PASS (Brave, 3 presets × light/dark:
   node ink concrete + DISTINCT per preset [blue/oxblood/olive] · edges hairline · canvas mounts · 12-node a11y list ·
   empty/loading/error AA 5.76–6.53 incl. warm reader-dark · slot override · axe 0 · 375 no overflow). @vida/ui 473 tests.
   Spec: `docs/specs/foundation/fe-codec-canvas-graph/`.
@@ -731,13 +733,18 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   has `internal/toast-store.ts` — the module-level external store + `toast` singleton (NOT a stylesheet; the
   imperative→React bridge, see the Toast paragraph). **`internal/data-view.tsx`** (UI-2 · V3) is the shared data-view
   spine — `ViewState` + `Message` + `resolveDataViewState` — consumed by list-view/gallery-view/timeline (see the
-  timeline paragraph).
+  timeline paragraph). **`internal/reduced-motion-css.ts`** (preferences-rescope R4) — `reducedMotionCss(selectors,
+  declarations)`: EVERY "reduced-motion `@media`" above is emitted through it, which also writes the in-app
+  `[data-vida-motion="reduce"]` twin (one declaration body; `reduced-motion-css.test.ts` fails any other file naming the
+  media query).
   **Rule:** a PROP-driven state (e.g. a
   danger border keyed to `invalid`) belongs in a Tamagui `variant`, NOT injected CSS — injected rules lose the
   specificity race against Tamagui's own atomic classes (learned at U3). Injected CSS is only for pseudo-class/`:has`
   state the styled component can't see.
 - `hooks/` — `use-reduced-motion.ts` (**the codec `ReducedMotion` primitive**, fe-codec-patterns S2 RATIFY — gates the
-  Tamagui `animation` prop; pairs with the `@media (prefers-reduced-motion)` convention in the `internal/*-styles.ts`).
+  Tamagui `animation` prop; = `ReducedMotionContext` (UIProvider's `reduceMotion`) OR the OS query, read during render —
+  preferences-rescope R4). CSS gates go through `internal/reduced-motion-css.ts` `reducedMotionCss()` (the OS `@media`
+  rule + the `[data-vida-motion="reduce"]` twin).
   `icons/` — v1 stubs.
 - **fe-codec-patterns** (the CODEC behavioural pattern-kit, LIF-211) — `components/empty-state.tsx`: **EmptyState** (S3),
   the teaching-invitation empty state (P5) — a presentational `role="group"` named by its `title` (which is ALSO a

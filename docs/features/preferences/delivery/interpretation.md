@@ -151,7 +151,8 @@ Gate is **SKIP** (§5), so these are this unit's Visual-Gate MUSTs and ELC-9 re-
   (`useState` + `matchMedia` only, `packages/ui/src/hooks/use-reduced-motion.ts`), and the 12 CSS gates are injected style strings
   (`packages/ui/src/internal/*-styles.ts`), so pure JS cannot reach them. The doc-sanctioned mechanism is the
   **provider-applied root data-attribute**, the `data-vida-density` precedent (fe-codec-theme seam-contract.md ~:56). The
-  hook and the CSS both key on it. **⚠ This edits `packages/ui`**, which is CODEC-owned (RATIFY) and outside this unit's code
+  hook and the CSS both key on it. *(Refined at PLAN-R4 §XXVIII D-R4-1, Victor 2026-10-26: one prop, two carriers — the
+  attribute for CSS, a provider context for the hook, so the first render is right; observing the attribute races first paint. The gate count is 13 at R4 — fe-calendar S7 added `calendar-motion.ts`.)* **⚠ This edits `packages/ui`**, which is CODEC-owned (RATIFY) and outside this unit's code
   homes (debt-plan.md:23). Per process.md §5, "a CODEC defect found at a consumer's ELC is fixed in the CODEC unit", but it
   ships here as a scoped CODEC edit with fe-codec-theme as the edge. Step 5 records it.
 - `apps/web/src/onboarding/{use-module-selection,use-theme-selection,guided-setup-mount}.ts(x)`: live commits (N7, N8).

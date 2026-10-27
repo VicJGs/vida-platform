@@ -23,3 +23,6 @@ docs/specs/foundation/fe-shell/delivery/ — entity-rescope writes reconciliatio
 - blocked by `data-plane-wiring`
 - blocked by `preferences-rescope`
 - soft: db-8-fts5-search (live FTS completes there; DB-8's close re-verifies ⌘K/notes search live)
+
+## Cross-unit edges (inbound)
+- **preferences-rescope R4 (2026-10-26):** `shell/shell-panel-styles.ts` gained the `[data-vida-motion="reduce"]` twin of its reduced-motion gate (pinned by `shell-panel-styles.test.ts`). The app-wide reduce-motion gate is LIVE: `useReducedMotion()` = the in-app preference OR the OS query, so the dock/panels need no `reduceMotion` read of their own — this unit's "read reduceMotion" scope item is satisfied by the hook.

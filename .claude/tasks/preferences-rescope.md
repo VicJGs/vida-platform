@@ -34,7 +34,9 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - [x] R2 live preferences seam — Verification Gate PASS 2026-10-22 (PLAN-R2 §7); committed + pushed
 - [x] Merge origin/main `f796c34` (fe-calendar #157/#158): composition-root = main's pure `composeServices` + R2 preferences + R1 lock in `build()`; the pure compose test now runs over the locked db (nested-tx deadlock guard)
 - [x] R3 boot/Appearance — PLAN-R3 rev 2.2 + IMPL rev 3.1 (Victor 2026-10-26). Build steps 0–23 done (uncommitted): 16b loop guard + Retry · 17 Home live arrangement · 18 store/bridge 10 fields · 19 blast radius · 20 mutations #1–#5 killed · 21 suite 895/895, tsc 0, eslint 0 · 22 live Visual Gate items 9–14 PASS (no-flash w/ negative control · arrangement first frame · states · 108-cell matrix text ≥4.52/axe 0/0 overflow · persistence · boot +70 ms ≈ noise) · 23 docs §XXIX + independent /critique REVISE→folded→**SHIP**. Victor `visual-approved` 2026-10-26 → committed. **Next: R4 reduce-motion.**
-- [ ] Step 6 slices (remaining): R3 boot/Appearance → R4 reduce-motion → R5 Modules+⌘K → R6 Locale/Notif → R7 onboarding → R-T transition → R8 entity close (ELC-1…9)
+- [x] Merge origin/main `c09346c` (LIF-250 #159 + notes close-out #161): 4 doc conflicts resolved by meaning; `getServices()` now clears a rejected build around the R1-locked `build()` — R3's recorded `buildPromise` limit is gone. tsc 0 · targeted 252/252.
+- [x] R4 reduce-motion — **PLAN-R4 rev 2: Approval 1 (Victor 2026-10-26) incl. §XXVIII D-R4-1** (hook reads a provider context fed by the same prop as the `data-vida-motion` attribute — the attribute-observer reading races first paint). Critique REVISE (4 blocking) folded. Found: 13 CSS gates (calendar-motion added post-ledger) + an ungated Sigma camera (R4-BR-8). IMPL-PLAN-R4 rev 2: /preflight PASSED · **Approval 2 (Victor) incl. D-R4-2/3/4**. Built TDD 1–11 · mutations 11/11 killed · ui 764/764 · web 999/999 · tsc 0 · eslint 0 err · live Visual Gate PASS (9/13 gates live-proven, 4 unit-proven) · **Victor `visual-approved` 2026-10-27** · pre-ship /critique REVISE (doc currency) → folded → **SHIP** · committed. **Next: R5 Modules + ⌘K.**
+- [ ] Step 6 slices (remaining): R5 Modules+⌘K → R6 Locale/Notif → R7 onboarding → R-T transition → R8 entity close (ELC-1…9)
 - [ ] Owed at close (from the main checkout): mint the i18n platform unit (task + Linear) · write cross-unit edges onto owning tasks
 
 ## Route History
@@ -65,4 +67,4 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - (new, unnumbered) — first-read-error refetch loop — **resolved** 2026-10-26: PLAN-R3 rev 2.2 (`retryOnMount: false` + §3 Retry), mutation #4
 - F008 (2026-10-26 variant) — 2 `App.test` timeouts at load ~40 → 12/12 alone ×2 — environmental, recorded
 - Visual-Gate harness (not product): OPFS `createSyncAccessHandle` "another open Access Handle" on reopening a persistent profile right after close → 4 s pause + retry · the no-flash probe first missed the transparent-root UA canvas (negative control caught it) — resolved
-
+- F008 (2026-10-26 R4 merge) — targeted run 8 fails at load ~270 → 1 fail (`App.integration` ⌘K→/notes, cold lazy-chunk 5 s timeout) → passes alone ×2 (1.9 s) — environmental, recorded

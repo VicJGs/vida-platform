@@ -186,4 +186,24 @@ describe('NeuralGraph', () => {
     renderUI(<NeuralGraph nodes={NODES} edges={EDGES} layoutIterations={150} aria-label="Map" />)
     expect(h.assign).toHaveBeenLastCalledWith(expect.anything(), expect.objectContaining({ iterations: 0 }))
   })
+
+  it('A7b (R4-BR-8, D-R4-3): reduced motion → instant camera (1 ms, never 0 = NaN frame; no inertia); normal → defaults', () => {
+    enableWebGL()
+    renderUI(<NeuralGraph nodes={NODES} edges={EDGES} aria-label="Map" />)
+    expect(h.Sigma.mock.calls.at(-1)?.[2]).toEqual({})
+    cleanup()
+    // The in-app preference (UIProvider reduceMotion) reaches the graph through the hook, like the OS query.
+    enableWebGL()
+    render(
+      <UIProvider reduceMotion>
+        <NeuralGraph nodes={NODES} edges={EDGES} aria-label="Map" />
+      </UIProvider>,
+    )
+    expect(h.Sigma.mock.calls.at(-1)?.[2]).toEqual({
+      zoomDuration: 1,
+      doubleClickZoomingDuration: 1,
+      inertiaDuration: 1,
+      inertiaRatio: 0,
+    })
+  })
 })
