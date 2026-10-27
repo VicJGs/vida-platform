@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R0 shipped (853570e…f2c35cc, 2026-10-26); next R1 page frame (§XXVI gate 1)
+# Status: in-progress — Step 6: R1 page frame PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -75,3 +75,10 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
   clean. Commits 853570e (core) · 84b7f58 (editor) · a6bd158 (web+e2e) · f2c35cc (docs). Forward obligations: R5 delete
   calls `cancel()`; R9/import/M4 body writers clear `latestBody(id)` first. Noted out of scope: `/favicon.ico` 404 (main too).
   Next: R1 page frame — §XXVI gate 1.
+- 2026-10-27 (Step 6 · R1 gate 1) — 1a: notes current-* current (no apps/packages commit since f2c35cc; surface plane
+  already covers entity/adapter + home region). PLAN-R1-page-frame.md: independent critique r1 REVISE (6 blocking: "Untitled
+  task" false — the seed H1 carries the parent title → "<Type> note"; 2 statuses on a locked page → chip hides; observer =
+  subscriptions + tabbed-Overview case; Retry vs retry:1 → `retrying`; live-smoke methods; EC map) → rev 2 → r2 SHIP → rev 3
+  (non-blocking folded). Grounded, not asked: page gate = new fn + `gate` field (entity gate unchanged); ⋯ hidden until R3
+  (no dead affordance), EC-34 "beside ⋯" closes at R3; journal Overview stub removed (EC-18a + journal /summary → journals-
+  rescope); parentName fed by R7's A-33 label seam (forward obligation); DEV `?readerror` flag. Victor: APPROVED (Approval 1).
