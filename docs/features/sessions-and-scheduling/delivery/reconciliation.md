@@ -42,7 +42,7 @@
 | R-31 | Proof affordance visible, no-op (IR-S14) | F | ❌ | `onProof: () => {}` (`session-runtime-surface.tsx:79`) | ELC-5 · decisions.md:1177 |
 | R-32 | Routines N9 detach workaround (L15) | B (routines) | ❌ (after R-4) | detaches after `completeFocus` (`routines/service.ts:979-984`) | attach_pomodoro binding · routines current-BR:97-99 |
 | R-33 | Routines stamp-retry / re-entry vs a closed spine (L17) | B (routines) | ❌ (after R-4) | relies on `findOpenSessionForEntity` (`in_progress` only, `sessions/service.ts:442`); `routines/service.ts:990-1003,1084-1085`; `isRunningMakeGood` on focus blocks (`:528-529`, used `:624,:759`). Tasks' caller (`tasks/service.ts:532`) is `'work'`-only → unaffected | BR-RT-S3d-5 |
-| R-34 | Test harnesses register focus handlers (L18) | B | 🕳 | routines harness registers the tasks timer optionally (`routines-service.test.ts:105,129`); sessions tests have no focus handlers | IR-S4(3) |
+| R-34 | Test harnesses register focus handlers + tasks timer tests stop backdating via `updateSession` (L18) | B | 🕳 | routines harness registers the tasks timer optionally (`routines-service.test.ts:105,129`); sessions tests have no focus handlers | IR-S4(3) |
 | R-35 | Stale code comments (L16) | F | 📄 | `use-active-session.ts:4-5` · `use-flow-session.ts:4-6` · `session-runtime/CLAUDE.md:21` · `flow/CLAUDE.md:24-25` | §XXIX |
 | R-36 | Current-* currency for changed rules (BR-9, BR-10, BR-21, BR-25; effects current-BR; tasks/routines current-*) | S | 📄 | rules change with R-4…R-14, R-32/33 | §XXIX |
 | R-37 | HUD idle form stays hidden in M1 | F | ✅ | `hidden` default; no start flow | HUD Envision answer 1 |
@@ -79,7 +79,8 @@
 | `SHIPPED_SESSION_TYPES` focus def (+skip, +surface_journal) | registry.ts:74,79 (envelope ceiling) · registry.test.ts:20,159 · flashcards envelope note (`flashcards/service.ts:70`) | ceiling widens by `surface_journal` (recorded); registry tests updated | B |
 | `findOpenSessionForEntity` (semantics unchanged; callers' assumptions change) | routines `service.ts:528-529,624,759,990-1003` · tasks `:532` | routines BREAK after R-4 (R-33); tasks SAFE (`'work'`) | B — in the routines slice |
 | stub→live hooks (`useActiveSession`, `useFlowSession`) | tests R-49 | BREAK (pin stub defaults) | B |
-| `SessionPatch.status` + run fields in `extension` rejected | 0 callers pass them (routines:502 · tasks tests 556,582,585 pass other fields) | SAFE | B |
+| `SessionPatch.status` + run fields in `extension` rejected | 0 callers pass them (routines:502 passes other fields) | SAFE | B |
+| `started_at`/`ended_at` patch rejected once started (IR-S18 d) | `tasks/__tests__/service.test.ts:556,582,585` (backdate a started timer) | BREAKS (3 test calls) | B — rework in L18 (fake timers / create-time `started_at`) |
 | `FlowEffect.status?` (additive, `@vida/ui`) | `packages/ui/src/index.ts` export · `flow-session-view.stories.tsx` · `flow-session-view.test.tsx:123,131` · `apps/web/src/gamification/rule-authoring-flow.tsx` (+ `rules.test.tsx`) | SAFE (optional) | B |
 | `providers?` on `createSessionsService` (10 construction files) + `TransitionDeps` (literal `lifecycle.test.ts:73`) | as listed | SAFE (optional) | B |
 | focus delegation in `completeSession`/`transitionSession` | completeSession row callers (none focus in prod) · sessions-service.test 4c (:296-306 — still `NoEffectHandler` via the preflight) | SAFE | B |

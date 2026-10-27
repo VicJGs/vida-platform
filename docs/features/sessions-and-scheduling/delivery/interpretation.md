@@ -192,11 +192,14 @@
   (`status`, `duration_seconds`, `total_pause_seconds`, `paused_at`, `completed_count`, interval `type` —
   `types.ts:44-54,96-98`, written at `service.ts:378-384`) is rejected: run state moves only through the focus runtime
   (BR-21 state machine; IR-S5 derives the payload from those rows); (d) `started_at`/`ended_at` are engine-stamped
-  (`lifecycle.ts:121-126`) and become immutable once the spine leaves `scheduled|planned` — a patch → `InvalidSessionInput`
+  (`lifecycle.ts:121-126`) and become immutable once the spine leaves `scheduled|planned` — a PATCH → `InvalidSessionInput`; a caller-supplied
+  `started_at` at CREATION stays allowed (`createSession`, `service.ts:473`; fe-calendar R12 seeds past focus that way).
+  BREAKS: `tasks/__tests__/service.test.ts:556,582,585` backdate an already-started timer via `updateSession({started_at})`
+  → reworked in L18 (fake timers, or create with `started_at` before start)
   (`service.ts:368-369` today allows it): per-occurrence ids key on the STABLE `utcDate(started_at)` (BR-S3-5,
   `lifecycle.ts:51-53,68`), IR-S5's payload and IR-S11's re-derived ids read it — an edit after the fact would re-key a
-  replay (double-count), orphan the EC-4 rows and change a replayed `log_time`. Callers: none pass `status`/`extension`
-  (`routines/service.ts:502` · `tasks/__tests__/service.test.ts:556,582,585` pass other fields) → SAFE.
+  replay (double-count), orphan the EC-4 rows and change a replayed `log_time`. Callers: none pass `status`/`extension` → SAFE for (b)/(c)
+  (`routines/service.ts:502` passes `planned_block_id`/`scheduling_mode`).
 - **IR-S19 · Subject reads go through the ONE shared `ViewProviderRegistry` (R-43).** ADR-007 §3.4 (:78-82): cross-module
   reads fan out to each entity's documented read API via the provider pattern (`foundation/views/provider-registry.ts:12`)
   — never a per-module port or a table join. The sessions service takes an optional `providers?: ViewProviderRegistry`
