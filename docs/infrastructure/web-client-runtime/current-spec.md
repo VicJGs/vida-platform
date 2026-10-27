@@ -63,8 +63,8 @@ Initial bundle (shell + router + core React) **< 80 KB gzipped**; framework < 12
 ## AR-4 — IMPLEMENTED (2026-07-30 · LIF-75 · branch `ar-4-state-routing-forms`)
 The client runtime + its DB binding are built. `[FACT: apps/web/src/*]`
 - **D5 main↔worker binding** — `db/client.ts` (`WorkerDbClient`): spawns the worker (injectable for tests),
-  `{id}`-correlated promisified RPC, shaped as an `SqliteDriver` proxy (`query`/`run`/`close` live; `exec`/`values`/
-  `batch` throw a documented deferred seam → land with entity CRUD). `db/worker.ts` protocol extended to
+  `{id}`-correlated promisified RPC, shaped as an `SqliteDriver` proxy (`query`/`run`/`close` + — since `data-plane-wiring`
+  (2026-10-20) — `exec`/`values`/`batch` live, `db/client.ts:189-198` → `db/worker.ts:122`; current-business-rules.md:55-57). `db/worker.ts` protocol extended to
   `open·exists·migrate·run·query·close` (`exec` KEPT as an alias — AR-2 compat). `db/boot.ts` = StrictMode-safe
   single client + memoized open. `[FACT: db/{client,worker,boot}.ts]`
 - **React Query** — `lib/query-client.ts` module-scope singleton (defaults 30s/5m/retry1/no-refocus);

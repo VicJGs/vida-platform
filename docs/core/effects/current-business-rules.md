@@ -36,6 +36,6 @@
   (the session engine) never call it, and never infer `moduleClass` from a binding (IR-5). [ADR-004 §3.2.5-A3; BR-17]
 
 ## Deferred (not in this increment)
-Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ #46 / MOD-*); `effect_event_id`
+Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-* tracks, SES-13; "#46" was decomposition.md:46); `effect_event_id`
 columns on consumer output rows; cross-device convergence merge (AR-9/M4); the `derive()` hash.
 **No longer deferred:** session-lifecycle→fire wiring is BUILT (#32, `foundation/sessions/lifecycle.ts`).

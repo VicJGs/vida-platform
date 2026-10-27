@@ -1,41 +1,117 @@
-<!-- Slice Map — features/sessions-and-scheduling · MOD-sessions ① (LIF-139) · Entity Delivery Flow §2/§8.
-     Mode: RATIFY + detail — the ① surface is fixed by m1.1-delivery-plan.md:238-249; this records the slices,
-     tags each plane, orders them by dependency, and attaches the per-slice Verification-Gate ledger. -->
+# Slice Map — Sessions & Scheduling · RESCOPE (sessions-rescope, LIF-248) · Re-scope Gate (Step 5)
 
-# Slice Map — MOD-sessions ① (backend service `services/sessions`)
+> Entity Delivery Flow recovery variant, Step 5. Turns the DRY reconciliation ledger (`reconciliation.md`, R-1…R-49 +
+> impact scan) into a corrected, plane-tagged slice plan. Supersedes the MOD-sessions ① build's slice-map (S1–S7, all
+> shipped — `git show 5c961c4:docs/features/sessions-and-scheduling/delivery/slice-map.md`). Yardstick:
+> `interpretation.md` rev 8.3 (Interpretation Gate PASS + delta gate) · inherited ECs (HUD EC-1…10 · Flow EC-1…11).
+> **No ENTITY CLOSE here** — ELC-9 is fe-sessions' (debt-plan.md:25,51); this unit gates its legs live (ELC-3…7).
+>
+> **Every slice** runs the §XXVI double gate (PLAN → `/critique` → Approval 1 → `/preflight` → `/critique` → Approval 2)
+> before code, then its per-plane blocking gate:
+> - **backend (B)** → Verification Gate: Vitest (logic + failure paths) → typed-error assertions → live smoke on the real store.
+> - **frontend (F)** → Visual Gate: real browser, every state × light/dark × 375/768/1440, §XIV a11y, the slice's EC MUSTs.
+> - **shared (S)** → both.
+> Each slice re-runs its impact-scan rows (`reconciliation.md` §2) at gate 2, flips the tests its leg invalidates,
+> rewrites the stale comments it touches, records its §XXVIII items from the interpretation §5 register, and refreshes
+> the `current-*` of every context it touches (§XXIX).
 
-All slices are **backend**. The ② frontend slices (session/planner hub, `/pomodoro` widget-lens) belong to
-`fe-sessions` and are out of scope here. Envision Gate N/A (pure backend — interpretation.md).
+## Order and dependencies
 
-**Home:** `packages/core/src/services/sessions/` (NEW). Factory-object service (`createSessionsService`),
-mirroring `foundation/spaces/service.ts` (D7). Each slice: PLAN ░g1░ → IMPL ░g2░ → BUILD → **Verification
-Gate (blocking)** before the next slice. No batching, no "owed" gates.
+```
+X1 engine ─── X2 focus lifecycle + routines ─┬─ X3 reads ──────────┬─ X5 HUD live ─────┬─ X7 live close
+                                             └─ X4 composition root ┴─ X6 runtime live ──┘
+```
+X1 first: every completion path's semantics (typed errors, keying, preflight) sit under X2. X2 carries the routines
+adaptation + `listSessionsForEntity` WITH the focus-lifecycle change, so no slice leaves a suite red (impact §2 "fix all
+in the same slice"). X3 before X5/X6 (they consume `findActiveSession` / the applied-effects read). X4 before X5/X6
+(handlers + providers at the root). X7 last (the ELC-7 live leg needs everything).
 
-**Verification Gate (every slice):** Vitest (logic + failure paths) → typed-error assertions → **live smoke on
-the REAL data store with an UNLOCKED vault** (N1 — the write path exercises the encrypt/persist/content-hash
-seam a mock hides) → PASS before the next slice.
+**Not sliced:** R-1 · R-37 · R-38 (✅ aligned) · R-22 (edge → gamification-rescope) · R-40 + EC-5 `⋯` (routed to
+fe-sessions' ENTITY CLOSE).
 
-| Slice | Plane | Surface (what it builds) | Tables | Depends on | Key rules |
-|-------|-------|--------------------------|--------|------------|-----------|
-| **S1 — Session CRUD + attach** | backend | `createSession`/`getSession`/`updateSession`/`softDelete`/`restore` over the spine + 1:1 extension write; `attach(session_id, entity_type, entity_id, level)` / `detach` / `resolveTargets` (read via #32) | `sessions`, `study_sessions`, `focus_sessions`, `session_attachments` | D1,D2,D4,D5 | BR-S1 (spine fields never re-stored in extension), IR-7 (attachments no `deleted_at`), IR-5 (typed validation) |
-| **S2 — createSession + registry validation + completion wiring** | backend | runtime `sub_type`/`entity_type` validation against `SessionRegistry` on the write path; wire completion → `transition(deps, id, 'complete')` (the #32 engine) | `sessions`, `session_type_registry` | S1, D1,D2,D3 | **IR-1** (route through existing `transition()`, no second firing path), BR-3/BR-4 (registry containment), IR-5 |
-| **S3 — Pomodoro focus runtime** | backend | `startFocus`/`pause`/`resume`/`complete`/`cancel`/`nextInterval` over `focus_sessions`; pause-exclusion + interruption capture + interval cadence; config resolution | `focus_sessions`, `sessions` (via S2 createSession) | S2, D6,D8 | **IR-3** (template→prefs→PD-3 defaults; mid-run change → next interval), **IR-4** (real focus = elapsed−paused; `was_interrupted`), IR-5 (illegal resume rejected) |
-| **S4 — Availability** | backend | `setAvailability(day_of_week, window, preference)` / `addException(date, …)` CRUD | `study_availability`, `availability_exceptions` | S-none (only D4,D5) | SS-9 (Planner-owned input), BR-5c CHECKs (day 0..6, score 1..5), `reason` `[E]` seam |
-| **S5 — Plan batch lifecycle endpoints** | backend | `approve`/`activate`/`recalc` batch state machine (draft→pending_approval→approved→active→completed→failed); `generatePlan` = **endpoint shell only** (no placement algorithm — G5 deferred) | `study_plan_batches`, `planned_blocks` | S1 | SS-8 (block↔session = intent↔reality; activate may `createSession`), `NoAvailability`/`NothingToSchedule` typed (never silent empty batch), `name` `[E]` |
-| **S6 — session_templates CRUD** | backend | focus-preset CRUD (`create`/`update`/`delete`/`list`/`setDefault`) | `session_templates` | S-none (only D4,D5) | PD-3 (Sessions-owned focus presets), `name`/`description` `[E]`, `is_default` single-winner |
-| **S7 — dueIn aggregator + analytics** | backend (shared primitive) | `dueIn(range): DueItem[]` = own `planned_blocks` ∪ live provider reads (empty provider registry seam); derived session analytics getters | `planned_blocks`, `sessions` (read) | S1, S5 | **IR-2** (shared platform primitive, general `DueItem` shape), **N5** (`ProviderUnavailable` degrades one lane), **IR-6** (analytics derived-on-read, never stored) |
+---
 
-## Order & rationale
-`S1 → S2 → S3` is the critical chain (focus runtime needs `createSession`, which needs the spine write + registry
-validation). `S4`, `S6` are independent CRUD (can run any time after the factory scaffold). `S5` needs `S1`
-(batch→session bridge). `S7` is last (it reads blocks + the session log). Recommended build order:
-**S1 · S2 · S3 · S4 · S6 · S5 · S7**.
+## X1 — Effect engine semantics · **B** · `foundation/sessions` + `foundation/effects`
+- **Ledger:** R-7 (class keying) · R-9 (canTouch target typing + `PermissionDenied`) · R-10 (`EffectFailed`, completion
+  commits) · R-11/R-44 (`AttachmentTargetMissing`, `missing[]`) · R-12 (preflight inside `transition`) · R-13
+  (soft-deleted spine) · R-15 (`replayCompletionEffects` + derived unapplied) · R-42 (`fired` excludes projection) ·
+  per-sub-type payload resolver seam (IR-S5) · optional `providers?: ViewProviderRegistry` on `TransitionDeps` (IR-S19).
+  The optional `providers?` dep on `createSessionsService` (10 construction files, all SAFE) is added here too.
+  Backend stale "#46" comments (R-48 part: `foundation/sessions/CLAUDE.md:20` · `foundation/effects/CLAUDE.md:22` ·
+  `services/sessions/service.ts:30-32` · sessions-service.test 4c title `:296`).
+- **IR:** S4 · S5 (seam) · S16 · S17(0) · S19.
+- **§XXVIII:** #3 (BR-S3-5 narrowing) · #8 (continue past `EffectFailed`).
+- **Tests flipped:** lifecycle.test A2/A4/A5 · sessions-service.test 4b.
+- **Gate:** Verification — typed errors for each of the 4 outcomes; replay dedupes; 2nd focus run same task/day logs;
+  `award_xp` still per occurrence; live smoke on a real store.
 
-## Deferrals (homed — NOT built in this issue)
-- Effect HANDLERS + fire-time consent → #46 / MOD-* · `generatePlan()` placement algorithm → M1.2 design-pass ·
-  Global Calendar render → M2 · `/pomodoro` widget + Focus Mode UI → `fe-sessions` / design-pass · `[E]`
-  field encryption activation → M3/DB-5 (M1.0 `encryptedFields:[]` pass-through seam holds).
+## X2 — Focus lifecycle, one door + routines adaptation · **B** · `services/sessions` (+ `services/tasks` handler, `services/routines`)
+- **Ledger:** R-2 (`attach_pomodoro` handler, in-tx, self-target denied) · R-4/R-14 (`completeFocus` closes the spine,
+  resume-close) · R-5 (`cancelFocus` → `skipped`) · R-6 (payload from persisted rows) · R-8 (tasks handler:
+  `duration_seconds`, throw) · R-21 (`surface_journal` declared + allowed) · R-41 (start delegation · `updateSession` /
+  `createSession` bans) · R-20 (`listSessionsForEntity(type, id, range)` — moved here: routines' retry needs it) ·
+  R-32 (drop the N9 detach workaround) · R-33 (stamp-retry + re-entry + `isRunningMakeGood` vs a closed spine, via
+  `listSessionsForEntity`) · R-34 (sessions/tasks/routines harnesses register focus handlers; tasks `:556,:582,:585` +
+  sessions `:229,:636,:637` reworked).
+- **IR:** S1 · S2 · S3 · S5 · S13 (service side) · S17 · S18.
+- **§XXVIII:** #1 · #4 · #5 · #6 · #7 · #9 (tasks BR-TK-S4-6).
+- **Impact:** every `completeFocus`/`cancelFocus` caller fixed IN this slice — routines `service.ts:975,1018,1065,1084`
+  + tests sessions `:387,:393,:400,:422` · routines `:778,:792,:801,:1924`.
+- **Gate:** Verification — focus start→pause→complete closes the spine, fires `attach_pomodoro` + `log_time` (real focus
+  minutes in `task_time_logs`), `surface_journal` projection; cancel → `skipped`, no effects; every rejected door typed;
+  routines suite green (a focus step completes → spine closed, attachment kept, stamp-retry after a stamp failure);
+  live smoke. Currency: sessions + tasks + routines `current-*`.
+- **Edge:** `award_xp` → gamification-rescope (focus def gains it with the handler).
 
-## Traceability
-Every slice → its Verification-Gate row (above) → its rules (→ `business-rules.md` SS-*/`pomodoro/business-rules.md`
-PD-*) → promoted to `current-*` at close (§XXIX). Seam consumed by `fe-sessions` + Journals → `seam-contract.md`.
+## X3 — Reads · **B** · `services/sessions` (+ `ProviderUnavailable` shared home)
+- **Ledger:** R-16 (`findActiveSession` — IR-S7 incl. terminal-run exclusion) · R-17 (applied-effects read, shared
+  event-input construction, `detail` via providers) · R-18/R-19 (`dueInDetailed` additive; `ProviderUnavailable` moved,
+  journals re-exports).
+- **IR:** S7 · S11 · S12 · S19.
+- **Gate:** Verification — each read on a real store, incl. soft-deleted, concurrent, and failed-lane cases; `dueIn`
+  callers unchanged.
+- **Edge:** Calendar adopts `dueInDetailed` for G17 lane state (fe-calendar is shipped → recorded edge, not built here).
+
+## X4 — Composition root · **S** · `apps/web/src/db/composition-root.ts`
+- **Ledger:** R-3 (`composeServices` async; `registerTasksTimer`; the sessions `attach_pomodoro` registration) · R-43
+  (build the shared `ViewProviderRegistry`; register the existing tasks provider; pass `providers` to sessions) · R-48
+  part (root comment).
+- **Impact:** `composeServices` ×3 callers (root · calendar-readonly.test · composition-root.test).
+- **Gate:** Verification (root boots on real OPFS, handlers + provider present, first-boot `work` row) + a no-regression
+  Visual check that the Calendar and Home still load.
+
+## X5 — Focus store + HUD live · **F** · `apps/web/src/{stores,session-hud}`
+- **Ledger:** R-23 (`focus-runtime-ui-store.ts`) · R-24 (`useActiveSession` live) · R-25 (port binding by focus-row id /
+  `startFocus({sessionId})`) · R-26 (paused-elapsed + Pause⇄Resume) · R-27 (title via providers, fallback
+  `humanizeSubType`; `kindLabel` bare) · R-47 part (loading/failure → `hidden`; pause/resume invalidate
+  `['session', id]` + `['active-session']`) · R-49 part · R-35 part.
+- **IR:** S6 · S7 · S8 · S9 · S10 · S15.
+- **§XXVIII:** #2 (HUD derivation).
+- **ECs (MUST):** HUD EC-1…10.
+- **Gate:** Visual — all HUD forms × light/dark × 375/768/1440 + a11y; countdown forms driven through the REAL store API.
+
+## X6 — Runtime page live · **F** · `apps/web/src/{flow,session-runtime}`
+- **Ledger:** R-28 (`useFlowSession` live) · R-29 (mark-done live; focus → `completeFocus`) · R-30/R-31 (attach only with
+  a `deliverable_note` target; proof hidden) · R-46 (EC-5: subject title, `SyncStatus` from write outcome, `⋯` hidden) ·
+  R-45 (EC-4 re-pin: unapplied rows muted in the same list via additive `FlowEffect.status?` — §XXVIII #10 — + aria-label "Session effects") · R-47 part (mark-done invalidates `['active-session']`) · R-49 part · R-35/R-48 part.
+- **IR:** S8 · S11 · S13 · S14 · S15.
+- **ECs (MUST):** Flow EC-2 (mark-done; attach-when-target) · EC-4 · EC-5 (minus `⋯`) · EC-6…9 · EC-10 · EC-11.
+- **Gate:** Visual — every terminal state × light/dark × 375/768/1440 + a11y.
+
+## X7 — Live close (ELC-3…7) · **S**
+- **Ledger:** R-39 (ELC-7 live leg) · L19 seed harness (dev-server import of `db/composition-root`: a focus session on a
+  task — start · pause · complete; a `work` session; a deleted-task subject for `AttachmentTargetMissing`) · R-36/R-48
+  currency sweep · close-time edges (notes-rescope page `ReadProvider` · Linear relations).
+- **Gate:** live Visual Gate on real OPFS (Brave): write → reload → persists (rows) · countdown degrades honestly to
+  elapsed after reload · reopen with no spurious write · console clean · every inherited EC re-verified live except the
+  routed divergences (EC-5 `⋯`, Flow EC-2 proof) → handed to fe-sessions' ENTITY CLOSE.
+
+---
+
+## Re-scope Gate — APPROVED (Victor, 2026-10-27)
+1. **Slice plan X1…X7 approved** — "approve all if they are grounded in the documentation": every slice item traces to a
+   ledger row with its governing cite (reconciliation.md; Doc/Interpretation Gates + 10 sweep passes); the only doc-silent
+   placements were R-45 (ruled below) and EC-5 `⋯` (routed to fe-sessions).
+2. **R-45 — EC-4 re-pinned:** unapplied effects in the SAME list, calm muted ("Not applied … retry pending"); additive
+   `FlowEffect.status?` (§XXVIII #10, shipped-CODEC change) + aria-label "Session effects". Recorded in
+   `docs/specs/foundation/fe-codec-flow-session/delivery/envision.md` § Re-pins.
