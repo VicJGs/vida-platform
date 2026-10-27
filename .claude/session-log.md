@@ -6971,3 +6971,18 @@ Next session:
   - First actions: `cd .claude/worktrees/preferences-rescope` · `PATH="$HOME/.nvm/versions/node/v24.17.0/bin:$PATH"` · `git fetch` + `git rev-list --left-right --count origin/main...HEAD` (main has LIF-250 #159 — consider merging before R4) · `git log -1` = `600edbc`. GROUND FIRST: slice-map R4 row, reconciliation rows D8 + the reduce-motion EC rows, `packages/ui` motion docs (ds-3-motion-foundation), state/motion standards, decisions.md — present no "calls" the docs already answer.
   - Packages edit ⇒ note memory `worktree-apps-web-ui-symlink-resolves-to-main` + `editing-vida-types-needs-dist-rebuild-before-core-typecheck` (rebuild @vida/ui dist before apps/web typecheck).
 ---
+
+---
+Date: 2026-10-26 → 2026-10-27
+Task: preferences-rescope (LIF-247) — slice R4 reduce-motion · Add Frontend Component / entity-rescope · worktree `.claude/worktrees/preferences-rescope`
+Accomplished:
+  - Merged origin/main `c09346c` (LIF-250 #159 + notes close-out #161): 4 doc conflicts resolved by meaning; R3's `buildPromise` limit gone.
+  - **R4 shipped to branch `d381482` (pushed):** the Reduce motion switch persists (`nav_preferences.reduce_motion`, optimistic + revert/toast) and gates ALL motion: `theme-store.reduceMotion` (nav entry, same subscription) → `<UIProvider reduceMotion>` → `<html data-vida-motion>` (13 CSS gates via `reducedMotionCss`, + the shell twin) + `ReducedMotionContext` (`useReducedMotion` = context OR OS) · Sigma camera instant.
+  - Full §XXVI: PLAN rev 2.1 (critique REVISE → Approval 1 incl. D-R4-1) · IMPL rev 2 (/preflight PASSED, critique REVISE → Approval 2 incl. D-R4-2/3/4) · TDD 1–11 · mutations 11/11 killed · ui 764/764 · web 999/999 · tsc 0 · live Visual Gate PASS (negative control; 9/13 gates live, 4 unit-proven) · Victor visual-approved · pre-ship /critique REVISE (doc currency) → SHIP.
+Decisions:
+  - D-R4-1 context carrier (attribute-observer races first paint) · D-R4-2 attribute cleanup in its own effect (clearCodec runs on every theme swap) · D-R4-3 Sigma 1 ms (0 → NaN frame) · D-R4-4 no-literal glob guard → decisions.md.
+Watch:
+  - 4 gates unit-proven only (tabs/sync-status/popover/checkbox — no M1 mount) · faint disabled Switch track (DS sibling) · F008 load flakes · CI dark (billing) · no PR yet · dev server may still be on :5173.
+Next session:
+  - **R5 Modules + ⌘K** (slice-map R5) — fresh PLAN-R5 in this worktree.
+---

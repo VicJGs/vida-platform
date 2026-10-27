@@ -1,4 +1,15 @@
-<!-- Last updated: 2026-10-26 (preferences-rescope R3) -->
+<!-- Last updated: 2026-10-27 by /session-end -->
+
+## preferences-rescope R4 — reduce motion end to end (2026-10-26/27 — LIF-247)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-26 | R4 / hook | how `useReducedMotion` reads the in-app preference (D-R4-1, Victor) | **a `ReducedMotionContext` from `UIProvider`, fed by the same `reduceMotion` prop that writes `<html data-vida-motion>`** — one prop, two carriers; NOT observing the attribute | React 19 subscribes `useSyncExternalStore` in a passive effect, after the provider's layout-effect write → a boot frame could animate; context is read during render | yes |
+| 2026-10-26 | R4 / provider | where the attribute is removed (D-R4-2, Victor) | **its own `[reduceMotion]` effect's cleanup; `clearCodec` unchanged** | `clearCodec` is the `[preset, density]` effect's cleanup → runs on every theme swap; removing the attribute there turns the CSS gates off while JS says reduce (EC-7) | yes |
+| 2026-10-26 | R4 / graph | Sigma camera under reduced motion (D-R4-3, Victor) | **`zoomDuration`/`doubleClickZoomingDuration`/`inertiaDuration` = 1 ms + `inertiaRatio` 0** | sigma 3.0.3 divides by the duration (`sigma.esm.js:199`) → 0 is a NaN (blank) frame | yes |
+| 2026-10-26 | R4 / CSS gates | how the 13 gates key on the preference (D-R4-4, Victor) | **`internal/reduced-motion-css.ts` `reducedMotionCss()` emits the `@media` rule + the `[data-vida-motion="reduce"]` twin; a glob guard fails any other file naming the media query** | CSS can't OR a media query with a selector; one body → can't drift; stronger than a per-file twin check (catches a half-converted module) | yes |
+| 2026-10-26 | R4 / state | where the app derives the provider input | **`theme-store` gains `reduceMotion`, derived from `['preferences','nav']` in its ONE cache subscription** | `UIProvider` renders outside `QueryClientProvider`; a second store would be a second Zustand-holds-prefs exemption (PR-5) | yes |
+
 
 ## preferences-rescope R3 — failed-read recovery (2026-10-26 — LIF-247)
 

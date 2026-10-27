@@ -52,6 +52,11 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 | R3 step 16 | pane tests import the real composition root via `useSettings()` | blast radius missed | ✅ `compositionRootMock()` added to 3 pane tests |
 | R3 /critique | pre-ship critique REVISE: boot cost unmeasured · C8 stale · failed later-error Retry leaked focus | gaps the tests didn't cover | ✅ measured (+70 ms vs merge base) · C8 fixed · end-Retry-on-settle + re-key status (mutation #5) → SHIP |
 | R3 step 22 | matrix graphics probe measured text-only rail buttons, then Select borders | probe over-reached WCAG 1.4.11 | ✅ narrowed to identifying graphics; low boundaries recorded in decisions.md |
+| R4 step 0 | merge origin/main — 4 doc conflicts (decisions · known-failures · session-log · web-client-runtime BRs) | both sides appended | ✅ resolved by meaning (`c09346c`) |
+| R4 PLAN g1 | critique REVISE: attribute-observer hook races first paint (uSES subscribes passively) · doc rows missing · guard un-importable · Sigma camera ungated | PLAN premise wrong on React + sweep incomplete | ✅ rev 2 · §XXVIII D-R4-1 (context carrier) Victor-approved |
+| R4 IMPL g2 | critique REVISE: `clearCodec` runs on every theme swap · Sigma duration 0 → NaN frame | PLAN rev 2 premises false on disk | ✅ D-R4-2/3/4 Victor-approved at Approval 2 |
+| R4 Visual Gate | 3 timed-out runs: /tmp/vg empty · guided-setup overlay · ambiguous "Modules" + no cleanup on error | harness drift | ✅ repo playwright-core · Skip for now · scoped locator · finally-close (playbook memory) |
+| R4 /critique | pre-ship REVISE: stale doc statuses + D9 row's superseded design + PLAN lines contradicting D-R4-2/3 | doc currency | ✅ folded → SHIP |
 
 ## Knowledge Loaded
 - `docs/features/preferences/delivery/{slice-map,reconciliation,interpretation}.md` · `sessions/PLAN-R2-live-seam.md` — R3 PLAN
@@ -61,6 +66,7 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - 2026-10-26: `docs/core/architecture/state-conventions.md` §2/§3/§4 · `performance-strategy.md` §5 · `query.js:411-417` (fetchState) — rev 2.2 grounding
 - 2026-10-26: `.claude/docs/decisions.md:138,162` · `standards/design.md:218` · `standards/engineering.md:117` (WCAG 1.4.11) · `standards/process.md` §XXVIII — Retry design + gate
 - 2026-10-26: memory `visual-gate-playbook` — Step 22 live gate
+- 2026-10-26/27 (R4): `slice-map.md` R4 · `reconciliation.md` D8/D9 + §H · `interpretation.md:148-156` · fe-codec-theme `seam-contract.md` · `docs/ui/token-pipeline/current-business-rules.md` B12 · `standards/motion.md` §Reduced Motion · `packages/ui/src/{provider.tsx,hooks/use-reduced-motion.ts,internal/*-styles.ts}` · `apps/web/src/stores/theme-store.ts` · React 19.2.4 `react-dom-client.development.js:8144` (uSES passive subscribe) · sigma 3.0.3 `settings.d.ts:42-48` + `sigma.esm.js:199,425,595` · query-core 5.101.4 types — PLAN/IMPL-R4
 
 ## Failures This Session
 - F008 — cold first-test timeouts + calendar dense-day fail even alone at load 300–400 — environmental (reproduced on `main`), recorded
@@ -68,3 +74,5 @@ docs/features/preferences/delivery/ — entity-rescope writes reconciliation.md 
 - F008 (2026-10-26 variant) — 2 `App.test` timeouts at load ~40 → 12/12 alone ×2 — environmental, recorded
 - Visual-Gate harness (not product): OPFS `createSyncAccessHandle` "another open Access Handle" on reopening a persistent profile right after close → 4 s pause + retry · the no-flash probe first missed the transparent-root UA canvas (negative control caught it) — resolved
 - F008 (2026-10-26 R4 merge) — targeted run 8 fails at load ~270 → 1 fail (`App.integration` ⌘K→/notes, cold lazy-chunk 5 s timeout) → passes alone ×2 (1.9 s) — environmental, recorded
+- R4 Visual-Gate harness (not product): 3 timed-out runs — /tmp/vg deps gone · guided-setup overlay intercepted clicks · strict-mode "Modules" + no ctx cleanup → node hung — resolved (playbook memory)
+- R4 F008 variants — `tabs.test` first test 5.9 s cold (23/23 alone) · full apps/web run killed at the 2 h limit with sed-buffered output (32 KB) → chunked 999/999 — environmental, recorded
