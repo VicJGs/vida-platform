@@ -1,6 +1,8 @@
 <!-- Interpretation Layer — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248 · #63) · BOTH planes.
      Entity Delivery Flow §3 + §6 (recovery). Supersedes the MOD-sessions ① build's interpretation (kept in git at
-     5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line. Input corpus gated by the
+     5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line.
+     REVISION: rev 7 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
+     @3e48e6b/31d768b/d0b9238 → delta Interpretation Gate). Input corpus gated by the
      Documentation Gate (rounds 1–2, 2026-10-27 — `.claude/tasks/sessions-rescope.md` Route History). -->
 
 # Interpretation — Sessions & Scheduling · RESCOPE (sessions-rescope) · ① service + ② surface
