@@ -1033,9 +1033,9 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
     await fl.softDeleteResidency(r.id)
     expect((await fl.listResidencies()).find((x) => x.id === r.id)).toBeUndefined()
     // invalid enum + not-found
-    // @ts-expect-error — invalid owner_type is the failure path under test
     await expect(
       fl.setResidency({
+        // @ts-expect-error — invalid owner_type is the failure path under test
         owner_type: 'nope',
         owner_id: 'u',
         jurisdiction_code: 'X',
