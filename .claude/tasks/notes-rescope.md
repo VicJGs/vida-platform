@@ -1,5 +1,5 @@
 # Task: notes-rescope
-# Status: in-progress — Step 6: R3 PLAN APPROVED (Approval 1, 2026-10-27); gate 2 next
+# Status: in-progress — Step 6: R3 building (Approval 2, 2026-10-27)
 # Worktree: .claude/worktrees/notes-rescope (branch notes-rescope, pushed; Node 24)
 # Linear: LIF-245
 # Profile: Add Frontend Component
@@ -113,3 +113,6 @@ docs/features/notes-and-pages/delivery/ — entity-rescope writes reconciliation
 - 2026-10-27 (Step 6 · R3 gate 1) — PLAN-R3-metadata-rename.md: critique r1 REVISE (7 doc-fidelity blockers: tabbed cover,
   invented 160 height, R1 focus targets, region name in edit, A-4 create path, perf attachment rule, unlabelled fills) → rev 2 →
   r2 REVISE (arrow keys saving; unrequired thumbnail → R4 obligation) → rev 3 → r3 SHIP. Victor: APPROVED (Approval 1).
+- 2026-10-27 (Step 6 · R3 gate 2) — /preflight PASSED. IMPL-PLAN-R3: critique r1 REVISE (6: region name, blur race, Input
+  display, full-blob thumbnail read, jsdom IO, recovery→empty) → r2 REVISE (stale sketch, R-10 focus) → r3 SHIP. Awaiting
+  Victor: Approval 2.

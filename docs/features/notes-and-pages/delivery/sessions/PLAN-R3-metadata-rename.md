@@ -132,3 +132,4 @@ on the two pickers + the rename seam · `/critique` SHIP.
   greybox order in C4.
 - rev 3 → critique r3 **SHIP** (the R4 thumbnail requirement relabelled `[INTERP]`, not a contract quote).
 - **APPROVED by Victor (Approval 1) on 2026-10-27** (rev 3).
+- **APPROVED by Victor (Approval 2) on 2026-10-27** with IMPLEMENTATION-PLAN-R3 rev 3 (R-1…R-10).
