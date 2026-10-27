@@ -1,7 +1,7 @@
 <!-- Interpretation Layer — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248 · #63) · BOTH planes.
      Entity Delivery Flow §3 + §6 (recovery). Supersedes the MOD-sessions ① build's interpretation (kept in git at
      5c961c4). Every claim FACT / DERIVATION / ELIMINATION / UNKNOWN, cited path:line.
-     REVISION: rev 8.2 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
+     REVISION: rev 8.3 (rev 1–4 Interpretation Gate rounds 1–3 → PASS @3441419; rev 5–7 = Step-4 sweep amendments
      @3e48e6b/31d768b/d0b9238 + rev 8 delta-gate fixes → delta Interpretation Gate). Input corpus gated by the
      Documentation Gate (rounds 1–2, 2026-10-27 — `.claude/tasks/sessions-rescope.md` Route History). -->
 
@@ -204,7 +204,8 @@
   extension at creation only with an `in_progress` spine and a `running` run (the `startFocus` fresh path, `:469`).
   Callers: no prod caller passes a terminal status (learning-education `:788` forwards the caller's, default
   `scheduled`; its tests pass none) → SAFE, LE current-BR currency notes the narrowing; BREAKS sessions-service test
-  fixtures `:229,:636,:637` (seed terminal rows for analytics) → reworked via `transition` in L18
+  fixtures `:636,:637` (seed terminal rows for analytics) → reworked via `transition` in L18; `:229` (the
+  `ended_at < started_at` test) switches its status to `in_progress` so it still exercises the `ended_at` rule
   (`service.ts:368-369` today allows it): per-occurrence ids key on the STABLE `utcDate(started_at)` (BR-S3-5,
   `lifecycle.ts:51-53,68`), IR-S5's payload and IR-S11's re-derived ids read it — an edit after the fact would re-key a
   replay (double-count), orphan the EC-4 rows and change a replayed `log_time`. Callers: none pass `status`/`extension` → SAFE for (b)/(c)
@@ -291,12 +292,30 @@ Resolved (each in the task Route History with cites): cancel → `skipped` (ELIM
 (FACT) · focus-store writer = fe-sessions (FACT) · EC-2 attach/proof → fe-sessions' close, hidden here (FACT +
 binding precedent) · `award_xp` → Gamification (FACT) · handler registration here (FACT) · "#46" misread corrected.
 
-**Remains for the Interpretation Gate (no UNKNOWN is guessed):**
-1. ~~IR-S5 ordering~~ — RESOLVED from code (`effects/service.ts:58-68`: ledger first) → applicability is canTouch's (IR-S4(1)), handlers throw (A.3).
-2. IR-S9 — a §XXVIII deviation from the HUD seam's zero-signature claim (state derivation changes); recorded for the PLAN.
-3. IR-S16 — narrows the shipped BR-S3-5 keying for `log_time`/`attach_pomodoro` → §XXVIII at the PLAN.
-5. IR-S17 — the BR-21 resume-close exception → §XXVIII at the PLAN.
-4. IR-S2 — the focus def gains a transition (`registry.test.ts` pin) — §XXVIII note at the PLAN (S3-focus-runtime.md:16).
+**Resolved in-text:** ~~IR-S5 ordering~~ — from code (`effects/service.ts:58-68`: ledger first) → applicability is
+canTouch's (IR-S4(1)), handlers throw (A.3).
+
+**The ONE register the PLAN + Re-scope Gate inherit (no UNKNOWN is guessed):**
+
+*§XXVIII deviations from shipped rules — recorded + approved at the slice PLAN:*
+1. IR-S2 — the focus def gains `in_progress→skipped` (`registry.test.ts` pin; S3-focus-runtime.md:16).
+2. IR-S9 — HUD state derivation (paused for both timing forms) vs the HUD seam's zero-signature claim.
+3. IR-S16 — per-run keying for `log_time`/`attach_pomodoro` narrows BR-S3-5 (current-BR BR-9).
+4. IR-S17 — `completeFocus` resumes the close on a completed run under an `in_progress` spine (BR-21 exception).
+5. IR-S18(a′) — `startFocus({sessionId})` creates the run for a run-less scheduled/planned focus spine (BR-21 today:
+   `SessionMissing`, `service.ts:461-463`).
+6. IR-S18(b–d) — `updateSession` rejects spine `status`, focus run fields, and `started_at`/`ended_at` once started
+   (accepted today, `service.ts:356-388`).
+7. IR-S18(e) — `createSession` only in entry states; a focus run only with an `in_progress` spine.
+8. IR-S4 — transition completion continues past a runtime handler failure (`EffectFailed`), vs fire-then-commit abort
+   (BR-S3-8 crash ordering kept).
+
+*Victor items — at the Re-scope Gate:*
+- **R-45** — EC-4 re-pin: where the unapplied/error effect state renders (the rail is pinned to "fired").
+
+*Divergences routed (recorded, not waived — §2.5 rule 3):*
+- EC-5 `⋯` hidden → fe-sessions' ENTITY CLOSE, must be BUILT or RE-PINNED by Victor there.
+- Flow EC-2 proof + target-less attach → fe-sessions' ENTITY CLOSE (the borrowed capture flow).
 
 ## 6. Inherited EC set — leg → where verified (ELC-9 is fe-sessions')
 

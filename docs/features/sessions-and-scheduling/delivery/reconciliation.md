@@ -1,5 +1,5 @@
 <!-- Reconciliation ledger — features/sessions-and-scheduling · RESCOPE (sessions-rescope, LIF-248) · Entity Delivery Flow §6 Step 4.
-     BUILT code (both planes) vs `delivery/interpretation.md` rev 8 (rev 4 = Interpretation Gate PASS; rev 5–8 = sweep-driven amendments, delta-gated — see §3) + the inherited ECs.
+     BUILT code (both planes) vs `delivery/interpretation.md` rev 8.3 (rev 4 = Interpretation Gate PASS; rev 5–8 = sweep-driven amendments, delta-gated — see §3) + the inherited ECs.
      Buckets: ✅ aligned · ❌ wrong (→fix) · 📄 undocumented/stale doc (→back-fill) · 🕳 gap (→build) · ⛔ ungated-owed (→run gate).
      Plane: B = backend (①) · F = frontend (②) · S = shared. Exit condition = a DRY pass (§3). -->
 
@@ -84,7 +84,7 @@
 | `FlowEffect.status?` (additive, `@vida/ui`) | `packages/ui/src/index.ts` export · `flow-session-view.stories.tsx` · `flow-session-view.test.tsx:123,131` · `apps/web/src/gamification/rule-authoring-flow.tsx` (+ `rules.test.tsx`) | SAFE (optional) | B |
 | `providers?` on `createSessionsService` (10 construction files) + `TransitionDeps` (literal `lifecycle.test.ts:73`) | as listed | SAFE (optional) | B |
 | focus delegation in `completeSession`/`transitionSession` | completeSession row callers (none focus in prod) · sessions-service.test 4c (:296-306 — still `NoEffectHandler` via the preflight) | SAFE | B |
-| `createSession` initial status ∈ entry states (IR-S18 e) | prod: tasks:535 · flashcards:228 · books:777 · routines:854,893,917 · purposes:729 · learning-education:785 (forwards caller status, default `scheduled`) · sessions:469 — none pass terminal; tests: sessions-service.test `:229,:636,:637` seed terminal rows | prod SAFE; 3 test fixtures BREAK | B — fixtures via `transition` in L18 |
+| `createSession` initial status ∈ entry states (IR-S18 e) | prod: tasks:535 · flashcards:228 · books:777 · routines:854,893,917 · purposes:729 · learning-education:785 (forwards caller status, default `scheduled`) · sessions:469 — none pass terminal; tests: sessions-service.test `:636,:637` seed terminal rows (analytics) + `:229` (`ended_at` rule test, passes a terminal status) | prod SAFE; `:636,:637` BREAK; `:229` stays green but would test `status` first | B — `:636,:637` via `transition`, `:229` → `in_progress`, in L18 |
 | `deriveEffectEventId` | economy/handlers.ts:47 · effects/service.ts:42 · notifications/service.ts:367 | SAFE — signature unchanged; only the inputs fire-step passes change | — |
 
 ```
@@ -103,4 +103,5 @@ Verdict:    CLEAR to proceed (re-run per slice at PLAN gate 2)
 - **Pass 4** (independent): NOT DRY — 2 new (title fallback duplicated the eyebrow → `humanizeSubType`, the pinned fallback; edges not written in their homes → fe-sessions/fe-habits/fe-routines task files amended, notes-rescope edge = close-time action [its file is in flight in another session]) + 1 correction (R-46 cite).
 - **Pass 5** (independent): NOT DRY — 3 doc items (R-46 wording · revision marker · rev 5–7 un-gated) → fixed + delta Interpretation Gate run: REVISE (IR-S18 `start` door + `started_at` mutability → rev 8; R-45 = EC-4 re-pin → Victor at Re-scope Gate).
 - **Pass 6** (independent): NOT DRY — 2 items: tasks tests backdating `started_at` (already fixed in rev 8.1) · `createSession` = a second lifecycle door → IR-S18(e) entry-state rule + impact row (rev 8.2).
-- **Pass 7:** pending — must be DRY.
+- **Pass 7** (independent): NOT DRY — 3 doc-consistency items (§5 register incomplete → ONE register of 8 §XXVIII + 1 Victor item + 2 routed divergences · `:229` misdescribed · header rev) → rev 8.3.
+- **Pass 8:** pending — must be DRY.
