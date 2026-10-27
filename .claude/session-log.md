@@ -6855,3 +6855,19 @@ Decisions / lessons:
 Next session:
   - **notes-rescope (L1, LIF-245)** — Victor's pick. preferences-rescope (LIF-247) stays in flight in its own worktree; tell it the R3 `buildPromise` limit is fixed on main.
   - Watch: CI dark (billing) · post-ack `open` unbounded (recorded trade-off).
+
+---
+Date: 2026-10-27 (session opened 2026-10-21)
+Task: mod-routines (LIF-138 · #64) — Entity Re-scope, ① track close · worktree `.claude/worktrees/mod-routines` (Node 24)
+Completed:
+  - **PR #162 merged (`d2bc57a`) + close-out PR #163 (`879d8a6`); LIF-138 → Done** (tracker_sync `--task` from main, file swapped + restored around the other session's dirty tree).
+  - Slices S5c, S6, S7, S8, S9 built this stretch (S2c–S5 earlier in the same session): each g1 → Approval 1 → preflight/§5 → step-5 → Approval 2 → tests-first build → g2 → /critique → §XXIX, mutation-checked.
+  - Track close: slice-map S6–S9 ✅ with SHAs, agenda-bridge borrowed leg, fe-routines N5 edge; merged main into the branch (known-failures F007 clash → mine renumbered F009).
+Decisions:
+  - S6 SS-8 intent block (v1 no-persistence → v2 eager session → v3 SS-8); BR-RT-S6-5 ratified by Victor.
+  - S7: Victor "nothing to approve, everything is in the documentation" — rule 21 settles reflection; the settleToday detour reverted (memory 8th repeat).
+  - Merged on local-green (core 2198/2198); CI dark = Actions minutes (jobs ran 0 steps).
+Next session:
+  - **fe-routines (LIF-197)** — ② surface + the composition-root wiring (service deps + `registerRoutinesJournal` / `registerRoutinesDueProvider` + effects).
+  - Watch: CI dark (billing) · the journals→Sessions agenda bridge (routines absent from the Journal agenda until it lands) · the mod-routines worktree can be removed.
+---

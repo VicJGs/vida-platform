@@ -1,4 +1,4 @@
-<!-- Last updated: 2026-10-25 by /session-end -->
+<!-- Last updated: 2026-10-27 by /session-end -->
 
 ## fe-calendar S6 — first-consumer reads (2026-10-21 — LIF-203)
 
@@ -1196,6 +1196,16 @@ Editorial Layer-1 refinement of the month-grid renderer; closes LIF-230 (all 5 v
 - **The live interval clock is client-ephemeral BY DESIGN** — V5 owns the ephemeral countdown; the service persists summary facts (PD-11). F-HUD-1 = the ① `findActiveSession` read + a ② shared focus-runtime client store (ships with the first live timer driver); interval-start persistence NOTED, never assumed.
 - **D-S3-1 (Victor): the 375 strip-budget redistribution** — filling the reserved hudSlot overcommitted the strip ~80px (element OVERLAP, invisible to scrollWidth probes; Bar-1 scrollW 179 vs clientW 87). Chosen "keep the time": scope compact → globe-only · Search → first More-menu row (still the ⌘K action) · HUD keeps ring+time. #15-owned files changed under the shipped-primitive-fix precedent.
 - **`fe-codec-system` #12 dissolved — ratified-by-consumption** — a "reuse UI-4" unit; no SystemView/spec intended; all System-type consumers (#24/#25/#32/#17/#15) shipped gated; zero residual scope, no Linear issue needed.
+
+## mod-routines ① — completed 2026-10-27 (LIF-138, #64; PR #162 `d2bc57a`)
+- **Re-scope re-run through the full flow** (Victor: "Let's run everything again from the flow") — Step 0 baseline → Documentation/Interpretation/Re-scope Gates → S2c–S9 each under §XXVI (g1 → Approval 1 → preflight/§5 → step-5 → Approval 2 → build → g2 → /critique → §XXIX).
+- **The policy is entirely the user's** (S4) — no shipped defaults in routines; `policy_source:'undefined'` when none; defaults = Spaces templates (SP5).
+- **S5c (Q1/RT-4/D3): every step drives an entity** — a check-off step IS a Task; a standard task's occurrences are Tasks `work` sessions, an obligation keeps `completeTask`; routines starts any REGISTERED session sub-type and registers none. A schema comment ("an actionable step may have none") never overrides a resolved intake gap.
+- **S6 reschedule = an SS-8 intent block** (`planned_blocks`, `source 'routines:<D>'` — derived: R3 no MOD schema, Q3 no same-day-only); the make-good creates the session carrying `planned_block_id`. **BR-RT-S6-5 ratified by Victor:** a make-good begun in-window completes after the window closes.
+- **S7 trigger = rule 21** (the routine write that reaches policy-done, as a not-done→done transition); a reflection-only done emits nothing — Victor: "everything is described in the documentation" (my `settleToday`/amendment detour reverted).
+- **S8 deps `spaces`/`notes` REQUIRED** per the approved seam (not the tasks optional convention).
+- **S9: ONE due lane on Sessions (SS-7)**, summary-only Journal contribution; the due predicate rebuilt from S5/S6 logic; the owner's live drop of closed reschedule blocks; register helpers shipped, NOT called (N5 → fe-routines).
+- **Lesson (memory 8th repeat):** a critic's "shortfall vs an intent doc" is not a gap when a gated interpretation already resolved it — reaffirm the approved rule, don't invent a mechanism.
 
 ## mod-tasks ① — completed 2026-10-20 (LIF-142, #65; PR #145 `e1fc356`)
 - **Tasks pulled ahead of mod-routines** — routines drives task-type steps through `createTask`/`completeTask`/`getTask`/`listTasks`.
