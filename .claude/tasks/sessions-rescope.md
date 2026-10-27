@@ -117,3 +117,8 @@ docs/features/sessions-and-scheduling/delivery/ — entity-rescope writes reconc
   (INTENDED, PD-9; no backfill) · payload resolver labeled DERIVATION · "exact" → "to the second".
   PLAN-time §XXVIII register: IR-S2 (focus def transition) · IR-S9 (HUD derivation) · IR-S16 (BR-S3-5 narrowing) ·
   IR-S17 (BR-21 exception). Step 3.5 Envision → SKIP (critic-confirmed). Next: Step 4 reconciliation ledger.
+- 2026-10-27 (Step 4 — Reconciliation) — ledger R-1…R-49 + impact scan (20 rows); passes 1→4 by an independent sweeper
+  (pass 2: 8 new, pass 3: 3 new, pass 4: 2 new) — interpretation amended to rev 7 (IR-S18 one-door lifecycle, IR-S19
+  shared ViewProviderRegistry, title fallback = humanizeSubType). Edges written: fe-sessions (EC-5 ⋯ · EC-2 proof/attach ·
+  countdown re-verify · idle form) · fe-habits + fe-routines (ReadProvider). **Close-time actions:** notes-rescope page
+  `ReadProvider` edge (its task file is in flight in another session — write at this unit's merge) + Linear relations.

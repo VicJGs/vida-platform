@@ -194,7 +194,10 @@
   filtered `:382-384`). Providers "register per-module at their build" (`provider-registry.ts:6-7`), so notes pages
   (`getPage`, notes/service.ts:128), habits (`getHabit`, habits/service.ts:296) and `routine_step` (no by-id getter;
   routines not composed at the web root) are their OWNING modules' — recorded as edges (notes-rescope · fe-habits ·
-  fe-routines). Until then, for every non-task subject: title = the bare kind label, existence UNKNOWN ⇒ treated as
+  fe-routines). Until then, for every non-task subject: title = the SHIPPED, gated fallback `humanizeSubType` ("Focus session",
+  `flow-source.ts:64-67,99`; pinned by fe-session-runtime `PLAN-2026-10-15-s1-use-flow-session.md:75-77` "never blank") —
+  NOT the bare kind label, which would duplicate the eyebrow (FOCUS · Focus; aria "Focus — Focus", `session-hud.tsx:151`)
+  — existence UNKNOWN ⇒ treated as
   existing (fail-open, never a false `AttachmentTargetMissing`) — stated, not implied.
 - **IR-S6 · HUD port ids.** The service's pause takes the `focus_sessions.id` (`service.ts:151`; HUD interpretation:30);
   the HUD emits the spine id (`session-hud.tsx:205`). The binding resolves it: pause = `getSession(id).extension.id →
@@ -206,7 +209,7 @@
   single-active invariant on disk; only one open session per task, BR-TK-S4-2) — the HUD shows the most recent.
 - **IR-S8 · HUD title + kind.** `title` = the instance-level attached subject's title (flow-session
   interpretation.md:189-191; the `?sample` forms use entity titles, use-active-session.ts:83,103) resolved via the
-  shared provider registry (IR-S19); fallback = the kind label. `kindLabel` = the bare eyebrow ("Focus", "Work";
+  shared provider registry (IR-S19); fallback = `humanizeSubType` (IR-S19). `kindLabel` = the bare eyebrow ("Focus", "Work";
   `session-hud/types.ts:34`) — NOT `humanizeSubType`, which appends " session" (`flow-source.ts:64-67`). The runtime
   hero title (EC-5) uses the same subject title (flow interp:189-191), today `humanizeSubType` (`flow-source.ts:99`, R-46).
 - **IR-S9 · HUD timing without the store.** Countdown is NOT reconstructable from persistence (no interval start
