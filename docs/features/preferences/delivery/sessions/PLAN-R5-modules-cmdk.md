@@ -33,7 +33,7 @@
   - ⌘K's nav commands come from `deriveNavCommands()` with no arguments `[FACT: command-bar/registry.ts:30]`, which reads
     `MODULE_MAP` labels `[FACT: command-bar/nav-commands.ts:14-27]`.
   - The host builds the list **once** (`useMemo(…, [])`) `[FACT: shell/command-bar.tsx:68-75]`.
-  - This unit owns these readers: decisions.md:71 ("Readers of hide/rename/reduce-motion → preferences-rescope; shell
+  - This unit owns these readers: decisions.md:80 ("Readers of hide/rename/reduce-motion → preferences-rescope; shell
     mounts the dock + placement").
 - **⌘K has no history (F9).**
   - The host ranks with empty history (`collect([], Date.now())`, `command-bar.tsx:73`).
