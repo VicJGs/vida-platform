@@ -9,14 +9,17 @@ Slice contract: docs/features/notes-and-pages/delivery/{slice-map,seam-contract,
 Builds ON S1 (shipped `ef8c1ed`): reuses `pageRepo`, `createPage`, `getPagesForEntity`.
 
 ## 1. Identity
+
 S2 adds the **entity-note lifecycle** + **attachments** to the `NotesService`.
+
 - **What it is:** `ensureEntityNote` (idempotent auto-exist `*_note` with a deterministic client-side seed, NP-8/ZK-1)
-  + `addAttachment`/`getAttachments`/`removeAttachment` over the `note_attachments` table.
+  - `addAttachment`/`getAttachments`/`removeAttachment` over the `note_attachments` table.
 - **What it is NOT:** the eager-trigger WIRING (owning modules call `ensureEntityNote` — NOT-13, not here); `[E]`
   blob encryption (M3/DB-5 — M1.0 pass-through); page-links (S3); entity-link/tag facade (S4).
 - **Rows:** NOT-11 · 12 · 29 · 30 · 31.
 
 ## 2. Business Rules
+
 - **BR-S2-1 (NP-8 idempotent auto-exist):** `ensureEntityNote(pageType, entityType, entityId, seed)` returns the EXISTING
   non-deleted `*_note` for `(pageType, entityType, entityId)` if present (via S1 `getPagesForEntity` filtered by `type`),
   else creates one seeded. Second call with same args → same row (no duplicate). [FACT: notes-and-pages.md:25 (NOT-11); mod-notes/_index.md:46]
@@ -44,28 +47,44 @@ order, which isn't guaranteed across callers); nullish skipped. `JSON.stringify`
 equal seeds. [INTERP: content=TipTap JSON (schema/notes.ts:49) + @vida/types EditorDocument]. Plain-string alt rejected (content
 must render as an editor doc).
 
-**DECISION D-S2-2 (validator depth).** Extend `validators/note.ts` (do NOT overwrite — mod-notes/_index.md:88) with ONLY
+**DECISION D-S2-2 (validator depth).** Extend `validators/note.ts` (do NOT overwrite — mod-notes/\_index.md:88) with ONLY
 `newAttachmentSchema` (filename non-empty, mime_type non-empty, size_bytes nonneg int, `encrypted_blob` `z.instanceof(Uint8Array)`,
 `thumbnail_blob` optional) — defense-in-depth for `addAttachment`. **NO `entityNoteSeedSchema` (R2):** the seed is caller-internal
 parent-field data, the authority (`notes-and-pages.md`) mandates no seed validator, and an unused schema is dead code — `EntityNoteSeed`
 stays a plain TS type. [FACT: notes-and-pages.md NOT-11/12 name no seed validator]
 
 ## 3. Contract (appended to `NotesService`)
+
 ```ts
 ensureEntityNote(pageType: PageType, entityType: string, entityId: string, seed: EntityNoteSeed): Promise<PageRow> // NOT-11/12
 addAttachment(pageId: string, file: NewAttachment): Promise<NoteAttachmentRow>  // NOT-29
 getAttachments(pageId: string): Promise<NoteAttachmentRow[]>                    // NOT-30
 removeAttachment(id: string): Promise<void>                                     // NOT-31
 ```
+
 Net-new types (in `services/notes/types.ts`, zod-free per @vida/types/CLAUDE.md):
+
 ```ts
-interface EntityNoteSeed { title?: string; type?: string; status?: string; [k: string]: string | number | boolean | null | undefined }
-interface NewAttachment { filename: string; mimeType: string; encryptedBlob: Uint8Array; thumbnailBlob?: Uint8Array; sizeBytes: number }
+interface EntityNoteSeed {
+  title?: string
+  type?: string
+  status?: string
+  [k: string]: string | number | boolean | null | undefined
+}
+interface NewAttachment {
+  filename: string
+  mimeType: string
+  encryptedBlob: Uint8Array
+  thumbnailBlob?: Uint8Array
+  sizeBytes: number
+}
 ```
+
 Returns `NoteAttachmentRow` (`typeof noteAttachments.$inferSelect` [FACT: schema/notes.ts:114]) / `PageRow`.
 No net-new error class (reuses `UnregisteredEntityTypeError` via S1 createPage).
 
 ## 4. Acceptance
+
 - [ ] `NotesService` gains the 4 S2 methods; `EntityNoteSeed`/`NewAttachment` in `types.ts`; barrel + interface updated.
 - [ ] `validators/note.ts` EXTENDED (not overwritten) with `newAttachmentSchema` ONLY (no `entityNoteSeedSchema`, R2); `PageTypeSchema`/`createPageSchema`/`updatePageSchema` untouched; enum-parity test still green.
 - [ ] `attachRepo = createRepository(db, noteAttachments, {deviceId, encryptedFields:[], softDelete:true})`.
@@ -76,6 +95,7 @@ No net-new error class (reuses `UnregisteredEntityTypeError` via S1 createPage).
 - [ ] **Verification Gate (live store):** ensureEntityNote idempotence + seed determinism + unregistered-type reject; attachment add→get→remove→get(excluded) with a real BLOB round-trip.
 
 ## 5. Implementation Prompt
+
 1. `types.ts` — append `EntityNoteSeed`, `NewAttachment`, and the 4 method signatures to `NotesService`.
 2. `validators/note.ts` — APPEND `newAttachmentSchema` ONLY (import `z`; do not touch existing exports; no `entityNoteSeedSchema`, R2). Satisfies D-S2-2.
 3. `service.ts` — add `attachRepo` (BR-S2-5). Hoisted pure `seedContent(seed: EntityNoteSeed): string` → `JSON.stringify` of a deterministic `EditorDocument`: heading=`seed.title`; a paragraph listing the leading fields in FIXED order (type, status), then the remaining keys via `Object.keys(seed).sort()` (R1), skipping nullish — no Date/random (BR-S2-2, D-S2-1).
@@ -84,10 +104,12 @@ No net-new error class (reuses `UnregisteredEntityTypeError` via S1 createPage).
 6. Update `index.ts` barrel exports (add `EntityNoteSeed`/`NewAttachment`). Then §4 is the done-check.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - D-S2-1 (seed format) + D-S2-2 (validator depth): leans stated above; confirm at Approval 1.
 - None blocking. `ensureEntityNote` reuses S1 primitives; attachments are single-table.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change                                |
+| ---------- | ------------------------ | ------------------------------------- |
 | 2026-09-19 | mod-notes-and-pages (S2) | initial draft — gate-1, after S1 ship |

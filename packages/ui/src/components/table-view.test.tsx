@@ -50,9 +50,7 @@ describe('TableView', () => {
       { ...COLS[1]!, sort: 'desc' },
       { key: 'x', header: 'X', render: () => null },
     ]
-    const { getAllByRole } = renderUI(
-      <TableView items={ROWS} columns={sorted} getKey={key} aria-label="Items" />,
-    )
+    const { getAllByRole } = renderUI(<TableView items={ROWS} columns={sorted} getKey={key} aria-label="Items" />)
     const heads = getAllByRole('columnheader')
     expect(heads[0]?.getAttribute('aria-sort')).toBe('ascending')
     expect(heads[1]?.getAttribute('aria-sort')).toBe('descending')
@@ -88,7 +86,14 @@ describe('TableView', () => {
 
   it('empty → a designed empty row (NOT a role="status"); headers still render', () => {
     const { getByRole, getAllByRole, getByText } = renderUI(
-      <TableView items={[]} columns={COLS} getKey={key} state="empty" empty={<span>none yet</span>} aria-label="Items" />,
+      <TableView
+        items={[]}
+        columns={COLS}
+        getKey={key}
+        state="empty"
+        empty={<span>none yet</span>}
+        aria-label="Items"
+      />,
     )
     expect(getByRole('table')).not.toBeNull() // still a table (designed empty, calendar divergence)
     expect(getAllByRole('columnheader')).toHaveLength(2)
@@ -97,7 +102,14 @@ describe('TableView', () => {
 
   it('success with 0 items self-heals to the empty render', () => {
     const { getByRole, getByText } = renderUI(
-      <TableView items={[]} columns={COLS} getKey={key} state="success" empty={<span>self-healed</span>} aria-label="Items" />,
+      <TableView
+        items={[]}
+        columns={COLS}
+        getKey={key}
+        state="success"
+        empty={<span>self-healed</span>}
+        aria-label="Items"
+      />,
     )
     expect(getByRole('table')).not.toBeNull()
     expect(getByText('self-healed')).not.toBeNull()

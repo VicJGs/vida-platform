@@ -143,7 +143,13 @@ export function CanvasView({
               {title}
             </Text>
             {meta != null ? (
-              <Text className="vida-canvas-meta" fontFamily="$body" fontSize="$small" color="$colorTextMuted" style={{ fontVariantNumeric: 'tabular-nums' }}>
+              <Text
+                className="vida-canvas-meta"
+                fontFamily="$body"
+                fontSize="$small"
+                color="$colorTextMuted"
+                style={{ fontVariantNumeric: 'tabular-nums' }}
+              >
                 {meta}
               </Text>
             ) : null}

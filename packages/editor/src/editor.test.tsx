@@ -214,12 +214,37 @@ describe('content-check schema table (notes-rescope R0, 6b)', () => {
 
   it.each([
     ['empty doc (`doc` is block+)', { type: 'doc', content: [] }, false],
-    ['heading with an empty text node', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: '' }] }] }, false],
+    [
+      'heading with an empty text node',
+      { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: '' }] }] },
+      false,
+    ],
     ['unknown node', { type: 'doc', content: [{ type: 'futureBlock' }] }, false],
-    ['unknown mark', { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x', marks: [{ type: 'futureMark' }] }] }] }, false],
+    [
+      'unknown mark',
+      {
+        type: 'doc',
+        content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x', marks: [{ type: 'futureMark' }] }] }],
+      },
+      false,
+    ],
     ['one empty paragraph (the empty-seed fallback)', { type: 'doc', content: [{ type: 'paragraph' }] }, true],
-    ['heading + paragraph (a full seed)', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'T' }] }, { type: 'paragraph', content: [{ type: 'text', text: 'type: a' }] }] }, true],
-    ['heading with no content (an empty-text heading after G4 stripping)', { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [] }] }, true],
+    [
+      'heading + paragraph (a full seed)',
+      {
+        type: 'doc',
+        content: [
+          { type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: 'T' }] },
+          { type: 'paragraph', content: [{ type: 'text', text: 'type: a' }] },
+        ],
+      },
+      true,
+    ],
+    [
+      'heading with no content (an empty-text heading after G4 stripping)',
+      { type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [] }] },
+      true,
+    ],
   ])('%s → valid=%s', (_l, content, valid) => {
     expect(check(content)).toBe(valid)
   })

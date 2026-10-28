@@ -10,6 +10,7 @@
 Writes succeed on-device instantly (<10ms, invalidate-and-reread, **no optimistic layer**) [FACT: state-conventions.md:102-108].
 The sync engine is a **no-flush stub** in M1 (AR-9 `SyncNotActivated`); **ZK server sync arrives at M3** [FACT: frontend-quality-bar/_index.md:82 P4].
 The P4 specimen is explicit [FACT: p4-trust-reversibility-specimen.html:103,115]:
+
 - **"There is no 'Saving…' spinner; the data is already real."** → **no `saving` state** (confirms the g1 catch).
 - **"until then the indicator says 'saved on this device,' never 'synced to cloud.'"**
 - The specimen's `synced · pending · offline · conflict` chip states are the **M3 multi-device vision**, NOT honest in M1.
@@ -21,10 +22,10 @@ No existing `SyncStatus`/`HonestProgress` component exists (grep-clean). The dat
 ## §1. What S4 is / is not
 
 **Is:** two `@vida/ui` presentational primitives — **`SyncStatus`** (a calm, never-alarming local-first chiplet: dot +
-label) and **`HonestProgress`** (determinate/indeterminate progress for genuinely-slow *local* ops). `packages/ui/src/components/sync-status.tsx`.
+label) and **`HonestProgress`** (determinate/indeterminate progress for genuinely-slow _local_ ops). `packages/ui/src/components/sync-status.tsx`.
 
 **Is not:** the `/sync` **page** (change log + multi-device compare) → `fe-sync-log` #21 / M3 (interpretation O1); real sync
-transport / the cloud states → M3; the presentation *switch* (chip · page · on-change · hidden — a user pref) → fe-sync-log
+transport / the cloud states → M3; the presentation _switch_ (chip · page · on-change · hidden — a user pref) → fe-sync-log
 / Settings; any **fake spinner** (forbidden — writes are instant).
 
 ## §2. Business rules (invariants)
@@ -53,13 +54,13 @@ transport / the cloud states → M3; the presentation *switch* (chip · page · 
 export type LocalSyncState = 'saved' | 'error'
 export interface SyncStatusProps extends Omit<GetProps<typeof ChipFrame>, 'children'> {
   state: LocalSyncState
-  label?: string   // override; defaults are stage-honest ("Saved on this device" / a local-error message)
+  label?: string // override; defaults are stage-honest ("Saved on this device" / a local-error message)
 }
 
 export interface HonestProgressProps extends Omit<GetProps<typeof ProgressFrame>, 'children'> {
-  label: string            // the honest op name ("Rebuilding search index…")
-  value?: number           // 0..1 determinate; omit → indeterminate
-  indeterminate?: boolean  // explicit indeterminate (genuinely-unknown duration only)
+  label: string // the honest op name ("Rebuilding search index…")
+  value?: number // 0..1 determinate; omit → indeterminate
+  indeterminate?: boolean // explicit indeterminate (genuinely-unknown duration only)
 }
 ```
 

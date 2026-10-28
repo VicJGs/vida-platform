@@ -96,11 +96,23 @@ export function CoverImage({ cover, variant, height = 96 }: CoverImageProps) {
   const h = variant === 'header' ? height : '100%'
 
   const src = isUrl ? cover : objectUrl
-  if (failed || (!isUrl && attachmentId == null) || (attachmentId != null && thumb.isSuccess && !thumb.data) || thumb.isError) {
+  if (
+    failed ||
+    (!isUrl && attachmentId == null) ||
+    (attachmentId != null && thumb.isSuccess && !thumb.data) ||
+    thumb.isError
+  ) {
     return <Placeholder variant={variant} height={h} />
   }
   return (
-    <View ref={ref} height={h} width="100%" borderRadius="$md" overflow="hidden" backgroundColor="$colorSurfaceSecondary">
+    <View
+      ref={ref}
+      height={h}
+      width="100%"
+      borderRadius="$md"
+      overflow="hidden"
+      backgroundColor="$colorSurfaceSecondary"
+    >
       {src ? (
         <img
           src={src}

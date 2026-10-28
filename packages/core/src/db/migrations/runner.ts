@@ -107,9 +107,7 @@ const ALL_MIGRATIONS: Migration[] = [
  * (adapter.ts:231) — masked until DB-7 only by test fixtures. (DB-7 · BR-4/BR-5)
  */
 export async function ensureInfra(driver: SqliteDriver): Promise<void> {
-  await driver.run(
-    `CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
-  )
+  await driver.run(`CREATE TABLE IF NOT EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`)
 }
 
 /**
@@ -121,9 +119,7 @@ export async function ensureInfra(driver: SqliteDriver): Promise<void> {
  *
  * @returns Number of migrations applied and the resulting version.
  */
-export async function migrate(
-  driver: SqliteDriver,
-): Promise<{ applied: number; currentVersion: number }> {
+export async function migrate(driver: SqliteDriver): Promise<{ applied: number; currentVersion: number }> {
   await ensureInfra(driver)
   return runMigrations(driver, ALL_MIGRATIONS)
 }
@@ -134,9 +130,7 @@ export async function currentVersion(driver: SqliteDriver): Promise<number> {
 }
 
 /** The latest migration version available in the codebase. */
-export const LATEST_VERSION = ALL_MIGRATIONS.length > 0
-  ? ALL_MIGRATIONS[ALL_MIGRATIONS.length - 1].version
-  : 0
+export const LATEST_VERSION = ALL_MIGRATIONS.length > 0 ? ALL_MIGRATIONS[ALL_MIGRATIONS.length - 1].version : 0
 
 /** Check if the database needs migrations. */
 export async function needsMigration(driver: SqliteDriver): Promise<boolean> {

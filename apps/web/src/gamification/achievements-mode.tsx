@@ -57,7 +57,14 @@ function TierMedal({ earned }: { earned: boolean }) {
 function AchievementTile({ row }: { row: AchievementRow }) {
   const { achievement, earned } = row
   return (
-    <View gap="$8" alignItems="center" padding="$12" borderWidth={1} borderColor="$colorBorderDefault" borderRadius="$lg">
+    <View
+      gap="$8"
+      alignItems="center"
+      padding="$12"
+      borderWidth={1}
+      borderColor="$colorBorderDefault"
+      borderRadius="$lg"
+    >
       <TierMedal earned={earned} />
       <View gap="$2" alignItems="center">
         <Text fontSize="$body" color="$colorTextPrimary" numberOfLines={2} style={{ textAlign: 'center' }}>

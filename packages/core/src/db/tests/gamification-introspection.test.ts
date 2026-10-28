@@ -44,8 +44,7 @@ async function introspectAsync(table: string): Promise<PragmaCol[]> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mirrorCols = (t: any): Record<string, SQLiteColumn> =>
-  getTableColumns(t) as Record<string, SQLiteColumn>
+const mirrorCols = (t: any): Record<string, SQLiteColumn> => getTableColumns(t) as Record<string, SQLiteColumn>
 
 const CASES: ReadonlyArray<{ name: string; table: unknown }> = [
   { name: 'user_profile', table: userProfile },
@@ -102,17 +101,19 @@ describe('DB-4 group #21 — DDL-introspection parity (SQL ↔ Drizzle mirror)',
       for (const col of Object.values(mirror)) {
         const p = byName.get(col.name)!
         const sqlDefault = p.dflt_value == null ? null : String(p.dflt_value)
-        expect(
-          sqlDefault,
-          `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`,
-        ).toBe(norm(col))
+        expect(sqlDefault, `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`).toBe(
+          norm(col),
+        )
       }
     })
   }
 
   it('achievements is NON-SYNCABLE: no _sync_*, no updated_at, no deleted_at (static seed — the floor)', async () => {
     const cols = (await introspectAsync('achievements')).map((c) => c.name)
-    expect(cols.filter((c) => c.startsWith('_sync_')), 'achievements must carry NO _sync_* columns').toEqual([])
+    expect(
+      cols.filter((c) => c.startsWith('_sync_')),
+      'achievements must carry NO _sync_* columns',
+    ).toEqual([])
     expect(cols).not.toContain('updated_at')
     expect(cols).not.toContain('deleted_at')
     expect(cols).toContain('created_at') // the sole timestamp

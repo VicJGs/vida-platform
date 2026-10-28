@@ -1,6 +1,8 @@
 # Spec: component:ui-2-platform-views
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: draft            <!-- draft → approved → implemented -->
+
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-09-ui-2-platform-views (created; §1–§5 authored at PLAN).
@@ -13,6 +15,7 @@ Sessions: 2026-08-09-ui-2-platform-views (created; §1–§5 authored at PLAN).
 -->
 
 ## 1. Identity
+
 UI-2 (LIF-87) — **Platform views.** The reusable cross-module display surfaces in `@vida/ui`, built ONCE and reused
 by every module `[FACT: m1.0-delivery-plan.md:200; capability-framework.md:112 V1; REPO.md:17]`. Seven components:
 
@@ -25,12 +28,12 @@ by every module `[FACT: m1.0-delivery-plan.md:200; capability-framework.md:112 V
   sprawl — ADR-007 §2). They compose the UI-1 primitives + DS-2..DS-5 tokens/sub-themes.
 - **What it is NOT:**
   - NOT the saved-`views` DATA layer — that's AR-6 (`core/foundation/views`, DONE). These are the **renderers** a
-    `views` row *picks* (ADR-007 §3.1). `[FACT: capability-framework.md:112 V1]`
+    `views` row _picks_ (ADR-007 §3.1). `[FACT: capability-framework.md:112 V1]`
   - ~~NOT `table`/`board` renderers.~~ **SUPERSEDED 2026-10-04 by the G6 frontend-replan** (`g6-edge-ledger.md:46`:
-    *"extend ui-2 → add table · board"*). The 2026-08-09 "table/board = graceful-degradation, by design not built"
+    _"extend ui-2 → add table · board"_). The 2026-08-09 "table/board = graceful-degradation, by design not built"
     stance is **reversed**: `fe-codec-viewmodes` (LIF-214) BUILDS the 2 missing canonical renderers — **`table` (V8,
     DONE S1)** · **`board` (V9, S2)** — completing the `VIEW_LAYOUT` 7 `[FACT: packages/types/src/view.ts:17-25;
-    capability-framework.md:114 V3; g6-edge-ledger.md:46; g6-reshape-runbook.md:33]`. Graceful-degradation
+capability-framework.md:114 V3; g6-edge-ledger.md:46; g6-reshape-runbook.md:33]`. Graceful-degradation
     (a layout an entity can't satisfy → "unavailable/degraded, never a crash", ADR-007:62-64) remains the View
     Engine's concern, orthogonal to the renderers now existing. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
   - NOT the view DATA services — search/backlink/export/graph-prep are AR-8 (`core/services/{search,export}`, DONE);
@@ -38,6 +41,7 @@ by every module `[FACT: m1.0-delivery-plan.md:200; capability-framework.md:112 V
   - NOT module-specific screens (those consume these views); NOT the UI-1 primitives (those are the atoms).
 
 ## 2. Business Rules (shared across all data-driven views)
+
 The 5 layout renderers are **data-driven** — the first such components in `@vida/ui` (UI-1 primitives are stateless
 shells). This section fixes the ONE shared pattern; per-view rules live in each sub-spec.
 
@@ -57,25 +61,27 @@ shells). This section fixes the ONE shared pattern; per-view rules live in each 
   - **error** = a provider failed (ADR-007 §3.3.4); rendered, never a crash.
 - **BR-3 · Degraded layout is declared, never a crash.** A view whose entity lacks a layout's required field renders
   a declared "unavailable/degraded" state (calendar → needs a date field; gallery → a cover/image field). `[FACT:
-  ADR-007:62-64; capability-framework.md:114 V3]`
+ADR-007:62-64; capability-framework.md:114 V3]`
 - **BR-4 · Compose UI-1 + tokens; no raw values.** Rows/cards/headers compose UI-1 primitives (Card, Button, Menu…)
-  + DS tokens/sub-themes. Dimension props use the token scale (`$md`/`$lg`/`$12`), color props use theme keys —
-  the DEF-U8-h + DEF-U4-e lessons carry. `[FACT: packages/ui/src/CLAUDE.md Rules]`
+  - DS tokens/sub-themes. Dimension props use the token scale (`$md`/`$lg`/`$12`), color props use theme keys —
+    the DEF-U8-h + DEF-U4-e lessons carry. `[FACT: packages/ui/src/CLAUDE.md Rules]`
 - **BR-5 · Third-party render surfaces are mounted, not reimplemented.** `neural-graph` = Sigma.js/WebGL;
   any chart = Chart.js/canvas (ADR-001:124-125). These mount inside a Tamagui frame via a ref + effect lifecycle
   (the Tabs `ResizeObserver` boundary, scaled). New deps (`sigma`+`graphology`; `date-fns` for calendar) are added
   at the unit that needs them, flagged at its gate. `[FACT: ADR-001:124-125,250-251; packages/ui/package.json has
-  none of these]`
+none of these]`
 - **BR-6 · A11y + motion inherit the UI-1 contract.** WAI-ARIA per view, jsdom-guarded browser APIs, B12 motion
   (transform/opacity only), reduced-motion `@media`, focus-visible rings. `[FACT: packages/ui/src/CLAUDE.md]`
 
 ## 3. Contract (per view — DELEGATED to /contract at each unit)
+
 Each view's `/contract` is authored fresh at its unit (no DS-5 contract exists for the views — DS-5 covered the 10
 primitives only). Every contract specifies: props (incl. `items<T>` + `state`/`error` for data-views) · the 8-state
 matrix (§VIII) incl. the 4 terminal states · a11y (roles/keyboard/focus) · B12 motion · the sub-theme
 (`light_/dark_<View>`, registered in `tamagui.config.ts`). `[FACT: scenario default.md Step 2]`
 
 ## 4. Acceptance (umbrella — each unit adds its own)
+
 - [ ] All 7 components implemented in `packages/ui/src/components`, exported from `index.ts`, each with
       `*.test.tsx` (jsdom) + `*.stories.tsx` (Visual-Gate surface) + `internal/<view>-styles.ts` where motion needs it.
 - [ ] The 5 data-views implement BR-1..BR-4 (generic `items<T>`, 4 rendered terminal states, degraded-not-crash).
@@ -87,20 +93,22 @@ matrix (§VIII) incl. the 4 terminal states · a11y (roles/keyboard/focus) · B1
 - [ ] `pnpm --filter @vida/ui typecheck && build && test` green; root typecheck 10/10; §XXIX currency (CLAUDE.md refreshed).
 
 ## 5. Implementation Prompt — the V1…V7 sequence (ordered simplest → hardest)
+
 Each Vn is its own UNIT: sub-spec `v<n>-<view>.md` → /contract → §XXVI gate-1 → preflight → gate-2 → implement →
 component Visual Gate → next. V1 establishes the shared data-view spine (BR-1..BR-4) the rest reuse.
 
-| Unit | View | Notes / new surface |
-|------|------|---------------------|
-| **V1** | `list-view` | **Establishes the generic `<T>` + item-slot + 4-terminal-state spine.** Pure DOM/Tamagui. |
-| **V2** | `gallery-view` | Reuses V1's spine; responsive flex-wrap grid. (Cover/image-field degradation is the VIEW ENGINE's, ADR-007:62-64 — NOT this renderer, which lays out whatever `renderItem` returns.) |
-| **V3** | `timeline` | Sequential/temporal DOM layout; reuses the spine. |
-| **V4** | `calendar-view` | Date grid — **+`date-fns`**; needs a date field (BR-3). |
-| **V5** | `pomodoro-widget` | Presentational shell + **deferred session-engine seam** (MOD-sessions #35); not a data-view. |
-| **V6** | `export-dialog` | Composes UI-1 `Dialog` + **`@vida/core` export serializers** (AR-8, cross-package); not a data-view. |
-| **V7** | `neural-graph` | **Sigma.js/WebGL** — **+`sigma`+`graphology`**; canvas lifecycle (BR-5); consumed by HARD-3. |
+| Unit   | View              | Notes / new surface                                                                                                                                                                  |
+| ------ | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **V1** | `list-view`       | **Establishes the generic `<T>` + item-slot + 4-terminal-state spine.** Pure DOM/Tamagui.                                                                                            |
+| **V2** | `gallery-view`    | Reuses V1's spine; responsive flex-wrap grid. (Cover/image-field degradation is the VIEW ENGINE's, ADR-007:62-64 — NOT this renderer, which lays out whatever `renderItem` returns.) |
+| **V3** | `timeline`        | Sequential/temporal DOM layout; reuses the spine.                                                                                                                                    |
+| **V4** | `calendar-view`   | Date grid — **+`date-fns`**; needs a date field (BR-3).                                                                                                                              |
+| **V5** | `pomodoro-widget` | Presentational shell + **deferred session-engine seam** (MOD-sessions #35); not a data-view.                                                                                         |
+| **V6** | `export-dialog`   | Composes UI-1 `Dialog` + **`@vida/core` export serializers** (AR-8, cross-package); not a data-view.                                                                                 |
+| **V7** | `neural-graph`    | **Sigma.js/WebGL** — **+`sigma`+`graphology`**; canvas lifecycle (BR-5); consumed by HARD-3.                                                                                         |
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - [RESOLVED 2026-08-09] view inventory (7, not table/board — capability-framework V1/V3) · Visual-Gate applies
   (frontend-visual-gate.md:20 "platform views") · grain (7 units, UI-1 precedent).
 - [UNKNOWN: needs V1 /contract] the exact generic `items<T>` + `renderItem` vs children-slot shape — settled at V1,
@@ -108,14 +116,15 @@ component Visual Gate → next. V1 establishes the shared data-view spine (BR-1.
 - [UNKNOWN: needs V7 turn] `@sigma/react` vs raw `sigma`+`graphology` binding — decided at V7 against ADR-001:251.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-09 | ui-2-platform-views | initial stub (task activation) |
-| 2026-08-09 | ui-2-platform-views | §1–§5 authored at PLAN: shared data-view pattern (BR-1..BR-6) + V1…V7 sequence; inventory/table-board/visual-gate UNKNOWNs resolved against capability-framework + ADR-007 |
-| 2026-10-04 | fe-codec-viewmodes | **G6 supersession:** the "NOT table/board" §1 stance reversed — `table` (V8) built + Visual-Gate PASS; `board` (V9) = S2. 6 of 7 canonical VIEW_LAYOUT renderers now ship. Spec `v8-table-view.md`; delivery `docs/specs/foundation/fe-codec-viewmodes/`. |
-| 2026-10-04 | fe-codec-viewmodes | **V9 `board-view` built (S2).** The last canonical renderer — `role="group"` of per-column `role="list"` kanban columns over PRE-GROUPED data (read-only; drag-to-move is a Capability, O1). Hybrid spine reuse: `resolveDataViewState` per column, board-level loading/error/board-empty direct. **All 7 `VIEW_LAYOUT` renderers now ship.** Spec `v9-board-view.md`. |
-| 2026-10-07 | fe-codec-dashboard | **`DashboardView` built (S1)** — the CODEC **Dashboard shell** (2nd archetype, decomposition.md:30 §1.2 "a grid of integration blocks"). A SHELL not a renderer: composes blocks via a `renderBlock` render-prop over an RN-safe flex grid of `size`-enum span cells (a `maxWidth` cap stops a lone non-`full` cell filling, EC-6); each cell a `Card` frame; the shell owns the generic loading/empty/error (calm muted `role="status"`), `renderBlock`=success-only. Visual Gate PASS (3 presets × light/dark, AA 4.52–5.22, axe 0, EC-1..EC-8). Spec `dashboard-view.md`; delivery `docs/specs/foundation/fe-codec-dashboard/`. **S2** = the apps/web adapter. |
-| 2026-10-18 | fe-calendar #19 S2 | **V10 `agenda-view` built** — the Global Calendar's Agenda range (a calendar RANGE, not a `VIEW_LAYOUT`): pre-dayparted multi-day schedule, only today dayparted, completion = render-when-handler intent. Spec `v10-agenda-view.md`. _(row added at S3 currency — S2 missed it.)_ |
-| 2026-10-21 | fe-calendar #19 S5 | **V13 `living-view` built** — the signature Living range (a calendar RANGE, not a `VIEW_LAYOUT`): ④ purpose budget (honest-null "unmeasured", "0h · none yet", stale) · ② habit threads (4 node states + the vision's connector line; one sr sentence per row) · 7 temporal day `Card`s via alive-hooks (past faded · today warm · future) with today's ordered entries (open-time offer, slip flag). Lanes degrade alone. + `internal/calendar-shared.ts` extracted (rule of three). Visual Gate PASS (Victor). Spec `v13-living-view.md`. |
-| 2026-10-20 | fe-calendar #19 S4 | **V12 `year-view` built** — the Year range (a calendar RANGE, not a `VIEW_LAYOUT`): 12 mini-months (flex-wrap 4-up/2-up) of has/busy density dots, today ringed, current month accented, a month-heading `<button>` drills into Month (`onPickMonth` 0–11, navigation intent). Each mini-month a `role="table"` with offset-aware `aria-colindex` + weekday-in-label cells. Pure geometry in `internal/year-layout.ts`. D-S4-DEV-1 has-dot .75 (3:1) · D-S4-DEV-2 V4 `tabIndex`. Visual Gate PASS (Victor). Spec `v12-year-view.md`. |
-| 2026-10-19 | fe-calendar #19 S3 | **V11 `week-view` built** — the Week AND Day ranges (Day = one column): time-column grid, one all-day strip, blocks by hour, drawn-extent overlap lanes, window auto-extends, keyboard-reachable Week scroll region, `timeFormat`. Geometry in `internal/week-layout.ts`. Spec `v11-week-view.md`. |
+
+| Date       | Session             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------- | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-09 | ui-2-platform-views | initial stub (task activation)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2026-08-09 | ui-2-platform-views | §1–§5 authored at PLAN: shared data-view pattern (BR-1..BR-6) + V1…V7 sequence; inventory/table-board/visual-gate UNKNOWNs resolved against capability-framework + ADR-007                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-10-04 | fe-codec-viewmodes  | **G6 supersession:** the "NOT table/board" §1 stance reversed — `table` (V8) built + Visual-Gate PASS; `board` (V9) = S2. 6 of 7 canonical VIEW_LAYOUT renderers now ship. Spec `v8-table-view.md`; delivery `docs/specs/foundation/fe-codec-viewmodes/`.                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-10-04 | fe-codec-viewmodes  | **V9 `board-view` built (S2).** The last canonical renderer — `role="group"` of per-column `role="list"` kanban columns over PRE-GROUPED data (read-only; drag-to-move is a Capability, O1). Hybrid spine reuse: `resolveDataViewState` per column, board-level loading/error/board-empty direct. **All 7 `VIEW_LAYOUT` renderers now ship.** Spec `v9-board-view.md`.                                                                                                                                                                                                                                                                                            |
+| 2026-10-07 | fe-codec-dashboard  | **`DashboardView` built (S1)** — the CODEC **Dashboard shell** (2nd archetype, decomposition.md:30 §1.2 "a grid of integration blocks"). A SHELL not a renderer: composes blocks via a `renderBlock` render-prop over an RN-safe flex grid of `size`-enum span cells (a `maxWidth` cap stops a lone non-`full` cell filling, EC-6); each cell a `Card` frame; the shell owns the generic loading/empty/error (calm muted `role="status"`), `renderBlock`=success-only. Visual Gate PASS (3 presets × light/dark, AA 4.52–5.22, axe 0, EC-1..EC-8). Spec `dashboard-view.md`; delivery `docs/specs/foundation/fe-codec-dashboard/`. **S2** = the apps/web adapter. |
+| 2026-10-18 | fe-calendar #19 S2  | **V10 `agenda-view` built** — the Global Calendar's Agenda range (a calendar RANGE, not a `VIEW_LAYOUT`): pre-dayparted multi-day schedule, only today dayparted, completion = render-when-handler intent. Spec `v10-agenda-view.md`. _(row added at S3 currency — S2 missed it.)_                                                                                                                                                                                                                                                                                                                                                                                |
+| 2026-10-21 | fe-calendar #19 S5  | **V13 `living-view` built** — the signature Living range (a calendar RANGE, not a `VIEW_LAYOUT`): ④ purpose budget (honest-null "unmeasured", "0h · none yet", stale) · ② habit threads (4 node states + the vision's connector line; one sr sentence per row) · 7 temporal day `Card`s via alive-hooks (past faded · today warm · future) with today's ordered entries (open-time offer, slip flag). Lanes degrade alone. + `internal/calendar-shared.ts` extracted (rule of three). Visual Gate PASS (Victor). Spec `v13-living-view.md`.                                                                                                                       |
+| 2026-10-20 | fe-calendar #19 S4  | **V12 `year-view` built** — the Year range (a calendar RANGE, not a `VIEW_LAYOUT`): 12 mini-months (flex-wrap 4-up/2-up) of has/busy density dots, today ringed, current month accented, a month-heading `<button>` drills into Month (`onPickMonth` 0–11, navigation intent). Each mini-month a `role="table"` with offset-aware `aria-colindex` + weekday-in-label cells. Pure geometry in `internal/year-layout.ts`. D-S4-DEV-1 has-dot .75 (3:1) · D-S4-DEV-2 V4 `tabIndex`. Visual Gate PASS (Victor). Spec `v12-year-view.md`.                                                                                                                              |
+| 2026-10-19 | fe-calendar #19 S3  | **V11 `week-view` built** — the Week AND Day ranges (Day = one column): time-column grid, one all-day strip, blocks by hour, drawn-extent overlap lanes, window auto-extends, keyboard-reachable Week scroll region, `timeFormat`. Geometry in `internal/week-layout.ts`. Spec `v11-week-view.md`.                                                                                                                                                                                                                                                                                                                                                                |

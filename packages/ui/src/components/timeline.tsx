@@ -156,8 +156,7 @@ export function Timeline<T>({
   // Fulcrum boundary (F3/G2): the first non-`past` item; -1 = no "now" to render (all-past / no getTemporalState / no
   // items). Computed here (not in the success branch) so `hasGutter` keys on whether the fulcrum ACTUALLY renders —
   // else a no-op `nowFulcrum` would force an empty 80px gutter onto every row.
-  const fulcrumAt =
-    nowFulcrum && getTemporalState ? items.findIndex((it, i) => getTemporalState(it, i) !== 'past') : -1
+  const fulcrumAt = nowFulcrum && getTemporalState ? items.findIndex((it, i) => getTemporalState(it, i) !== 'past') : -1
   // The gutter column renders when the consumer gives a date/eyebrow — OR when the fulcrum actually renders (its "now"
   // label lives in the gutter). Absent all → the 2-col layout (back-compat with label-less timelines).
   const hasGutter = Boolean(getLabel || getEyebrow || fulcrumAt !== -1)
@@ -216,7 +215,9 @@ export function Timeline<T>({
           <TimelineItem key={FULCRUM_KEY} aria-hidden>
             {hasGutter && (
               <When className="vida-timeline-gutter">
-                <Eyebrow tone="accent" className="vida-timeline-now">{nowLabel}</Eyebrow>
+                <Eyebrow tone="accent" className="vida-timeline-now">
+                  {nowLabel}
+                </Eyebrow>
               </When>
             )}
             <Rail>
@@ -239,7 +240,9 @@ export function Timeline<T>({
           {hasGutter && (
             <When className="vida-timeline-gutter">
               {getLabel && (
-                <Label className="vida-timeline-date" style={{ fontVariantNumeric: 'tabular-nums' }}>{getLabel(item, index)}</Label>
+                <Label className="vida-timeline-date" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  {getLabel(item, index)}
+                </Label>
               )}
               {getEyebrow && <Eyebrow className="vida-timeline-eyebrow">{getEyebrow(item, index)}</Eyebrow>}
             </When>

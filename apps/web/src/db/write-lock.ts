@@ -105,7 +105,6 @@ export const writeLock: WriteLock = createWriteLock({
  */
 export function withTransactionLock(db: DrizzleDb, lock: WriteLock): DrizzleDb {
   const original = db.transaction.bind(db)
-  db.transaction = ((callback, config) =>
-    lock.runExclusive(() => original(callback, config))) as typeof db.transaction
+  db.transaction = ((callback, config) => lock.runExclusive(() => original(callback, config))) as typeof db.transaction
   return db
 }

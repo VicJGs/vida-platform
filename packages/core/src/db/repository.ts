@@ -233,18 +233,14 @@ export interface Repository<T extends AnyTable> {
  * const task = taskRepo.create({ title: 'Buy groceries', status: 'not_started', ... })
  * ```
  */
-export function createRepository<T extends AnyTable>(
-  db: DrizzleDb,
-  table: T,
-  config: RepositoryConfig,
-): Repository<T> {
+export function createRepository<T extends AnyTable>(db: DrizzleDb, table: T, config: RepositoryConfig): Repository<T> {
   const { deviceId, softDelete = false } = config
   const encryptedFieldSet = new Set(config.encryptedFields)
   const tableName = getTableName(table)
 
   // Drizzle table columns typed as `any` for dynamic access
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const cols = (table as any)
+  const cols = table as any
 
   // Lazy vault key: fetched ONLY when there are encrypted fields. In M1.0 the [E] set
   // is empty (ADR-017:20 pass-through seam) and getVaultKey() THROWS while the vault is
@@ -340,7 +336,10 @@ export function createRepository<T extends AnyTable>(
     encrypted._sync_hash = computeSyncHash(encrypted)
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await tx.insert(table).values(encrypted as any).run()
+    await tx
+      .insert(table)
+      .values(encrypted as any)
+      .run()
     await enqueue(tx, 'create', id, encrypted)
 
     return decryptRow(encrypted, encryptedFieldSet, vaultKey) as RowOf<T>
@@ -355,11 +354,9 @@ export function createRepository<T extends AnyTable>(
 
   async function findById(id: string): Promise<RowOf<T> | null> {
     const filter = notDeleted()
-    const where = filter
-      ? and(eq(cols.id, id), filter)
-      : eq(cols.id, id)
+    const where = filter ? and(eq(cols.id, id), filter) : eq(cols.id, id)
 
-    const rows = await db.select().from(table).where(where).all() as Record<string, unknown>[]
+    const rows = (await db.select().from(table).where(where).all()) as Record<string, unknown>[]
     if (rows.length === 0) return null
     return decrypt(rows[0])
   }
@@ -369,15 +366,15 @@ export function createRepository<T extends AnyTable>(
   async function findAll(): Promise<RowOf<T>[]> {
     const filter = notDeleted()
     const rows = filter
-      ? (await db.select().from(table).where(filter).all() as Record<string, unknown>[])
-      : (await db.select().from(table).all() as Record<string, unknown>[])
+      ? ((await db.select().from(table).where(filter).all()) as Record<string, unknown>[])
+      : ((await db.select().from(table).all()) as Record<string, unknown>[])
     return decryptAll(rows)
   }
 
   // ---- FIND WHERE -----------------------------------------------------------
 
   async function findWhere(where: SQL): Promise<RowOf<T>[]> {
-    const rows = await db.select().from(table).where(where).all() as Record<string, unknown>[]
+    const rows = (await db.select().from(table).where(where).all()) as Record<string, unknown>[]
     return decryptAll(rows)
   }
 
@@ -386,13 +383,9 @@ export function createRepository<T extends AnyTable>(
   async function count(where?: SQL): Promise<number> {
     const baseWhere = where
     const filter = notDeleted()
-    const combined = baseWhere && filter
-      ? and(baseWhere, filter)
-      : baseWhere ?? filter
+    const combined = baseWhere && filter ? and(baseWhere, filter) : (baseWhere ?? filter)
 
-    const rows = combined
-      ? await db.select().from(table).where(combined).all()
-      : await db.select().from(table).all()
+    const rows = combined ? await db.select().from(table).where(combined).all() : await db.select().from(table).all()
     return rows.length
   }
 
@@ -403,20 +396,13 @@ export function createRepository<T extends AnyTable>(
 
     // Read → update → re-read → enqueue, all in ONE transaction (ADR-004 §3.4).
     return db.transaction(async (tx) => {
-      const existing = await tx
-        .select()
-        .from(table)
-        .where(eq(cols.id, id))
-        .all() as Record<string, unknown>[]
+      const existing = (await tx.select().from(table).where(eq(cols.id, id)).all()) as Record<string, unknown>[]
 
       if (existing.length === 0) {
         throw new Error(`Row not found: ${id}`)
       }
 
-      const currentVersion =
-        typeof existing[0]._sync_version === 'number'
-          ? existing[0]._sync_version
-          : 1
+      const currentVersion = typeof existing[0]._sync_version === 'number' ? existing[0]._sync_version : 1
 
       const timestamp = ts()
       const partial: Record<string, unknown> = {
@@ -432,15 +418,15 @@ export function createRepository<T extends AnyTable>(
       encrypted._sync_hash = computeSyncHash({ ...existing[0], ...encrypted })
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      await tx.update(table).set(encrypted as any).where(eq(cols.id, id)).run()
+      await tx
+        .update(table)
+        .set(encrypted as any)
+        .where(eq(cols.id, id))
+        .run()
 
       // Re-read the full persisted row — this is both the return value and the
       // sync_queue payload snapshot (PLAN §2: the final persisted/re-read row).
-      const updated = await tx
-        .select()
-        .from(table)
-        .where(eq(cols.id, id))
-        .all() as Record<string, unknown>[]
+      const updated = (await tx.select().from(table).where(eq(cols.id, id)).all()) as Record<string, unknown>[]
 
       if (updated.length === 0) {
         throw new Error(`Row vanished after update: ${id}`)
@@ -467,11 +453,7 @@ export function createRepository<T extends AnyTable>(
   async function hardDelete(id: string): Promise<void> {
     // Snapshot before removal → delete + enqueue('delete') in ONE transaction.
     await db.transaction(async (tx) => {
-      const existing = await tx
-        .select()
-        .from(table)
-        .where(eq(cols.id, id))
-        .all() as Record<string, unknown>[]
+      const existing = (await tx.select().from(table).where(eq(cols.id, id)).all()) as Record<string, unknown>[]
 
       await tx.delete(table).where(eq(cols.id, id)).run()
 

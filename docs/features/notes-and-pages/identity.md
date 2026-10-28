@@ -3,7 +3,7 @@
      (eaf64f8, 2026-09-13) and never restored though docs/features/README.md:36 lists it. Realigned to ADR-004/006/008/021
      + the as-built code (docs/modules/notes/current-*). backend-intent NOT-* line cites refer to the eaf64f8^ text. -->
 
-# Identity — Notes & Pages  (level: Feature)
+# Identity — Notes & Pages (level: Feature)
 
 **What it is.** The platform's **unifying integration layer**: a single polymorphic `pages` table plus its page-link and
 attachment satellites, rendered through the TipTap block editor (`@vida/editor`). It is the daily surface (the journal)
@@ -17,6 +17,7 @@ and a single web of meaning (`[[links]]` + backlinks + graph) over all their lif
 module, it is the unifying layer." `[FACT: CLAUDE.md §8; INTENT: Victor 2026-06-18]`
 
 **Scope — full v1 (NOT an MVP; nothing deferred by intent).** `[INTENT: Victor 2026-06-18, gap G1]`
+
 - **All 6 page types, all editor-led:** `journal` · `note` · `task_note` · `task_group_note` · `milestone_note` ·
   `deliverable_note`. `[FACT: packages/types/src/note.ts:23-29]` Every page type opens with the editor facet
   `[FACT: docs/specs/foundation/fe-notes-and-pages/delivery/envision.md EC-15; frontend-replan surface-map.md:48]`.
@@ -29,6 +30,7 @@ module, it is the unifying layer." `[FACT: CLAUDE.md §8; INTENT: Victor 2026-06
   `[FACT: CLAUDE.md §8; INTENT G3]`
 
 **What it is NOT.**
+
 - **Not collaborative.** Single-user, multi-device only. `[FACT: CLAUDE.md "Core Privacy Model"]`
 - **Not server-aware.** The server never sees page content; rendering, search, summary aggregation and the entity-note
   seed happen client-side (zero-knowledge). `[FACT: core business-rules ZK-1]`
@@ -44,4 +46,5 @@ module, it is the unifying layer." `[FACT: CLAUDE.md §8; INTENT: Victor 2026-06
   (`docs/editor/`, `docs/ui/`). `[FACT: docs/README.md manifest, Components level]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" · [x] each claim [FACT/INTENT: src] · [x] realigned to ADR-004/006/008/021

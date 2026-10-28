@@ -13,11 +13,7 @@
 /** Instantiation terminal states — FIXED (ADR-009:108-110). Declared,
  *  degrade-never-crash: a bundle referencing a capability absent on this device
  *  seeds what it can and flags the rest (`partial-failure`), never throws. */
-export const INSTANTIATION_STATUS = [
-  'in-progress',
-  'success',
-  'partial-failure',
-] as const
+export const INSTANTIATION_STATUS = ['in-progress', 'success', 'partial-failure'] as const
 export type InstantiationStatus = (typeof INSTANTIATION_STATUS)[number]
 
 /** The portable seed bundle ENVELOPE — the 5 FIXED members (ADR-009:46-50 §3.1).

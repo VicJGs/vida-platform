@@ -14,13 +14,7 @@
 // ============================================================================
 
 import type { CapabilityEnforcer } from '../capability'
-import {
-  PROMPT_ORIGINS,
-  type AiAgentGate,
-  type AiTool,
-  type BoundedPromptInput,
-  type PromptSegment,
-} from './types'
+import { PROMPT_ORIGINS, type AiAgentGate, type AiTool, type BoundedPromptInput, type PromptSegment } from './types'
 
 export function createAiAgentGate(enforcer: CapabilityEnforcer): AiAgentGate {
   // XCU-21 — the tool-set IS the granted envelope. assertPermitted throws
@@ -40,10 +34,11 @@ export function createAiAgentGate(enforcer: CapabilityEnforcer): AiAgentGate {
   // with an origin outside the known set is treated as untrusted (fail-safe: an
   // unknown provenance is never assumed trusted).
   function boundPromptInput(segments: PromptSegment[]): BoundedPromptInput {
-    const normalized = segments.map((s): PromptSegment =>
-      (PROMPT_ORIGINS as readonly string[]).includes(s.origin)
-        ? s
-        : { content: s.content, origin: 'untrusted' as const },
+    const normalized = segments.map(
+      (s): PromptSegment =>
+        (PROMPT_ORIGINS as readonly string[]).includes(s.origin)
+          ? s
+          : { content: s.content, origin: 'untrusted' as const },
     )
     const hasUntrusted = normalized.some((s) => s.origin === 'untrusted')
     return { segments: normalized, hasUntrusted }

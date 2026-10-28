@@ -45,7 +45,14 @@ const CASES: Array<[string, (k: number | undefined) => ReactElement, string]> = 
   ],
   [
     'AgendaView',
-    (k) => <AgendaView days={[{ date: TODAY, items: [{ id: 'a', title: 'Gym', daypart: 'evening' }] }]} today={TODAY} pulseKey={k} aria-label="Agenda" />,
+    (k) => (
+      <AgendaView
+        days={[{ date: TODAY, items: [{ id: 'a', title: 'Gym', daypart: 'evening' }] }]}
+        today={TODAY}
+        pulseKey={k}
+        aria-label="Agenda"
+      />
+    ),
     '.vida-agenda-today',
   ],
   [

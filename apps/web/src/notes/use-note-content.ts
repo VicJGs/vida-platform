@@ -48,7 +48,10 @@ export interface NoteContentSeed {
   status: NoteEntityData['contentStatus']
 }
 
-export type NoteContentPage = Pick<NoteEntityData, 'id' | 'title' | 'type' | 'content' | 'journalDate' | 'contentStatus'>
+export type NoteContentPage = Pick<
+  NoteEntityData,
+  'id' | 'title' | 'type' | 'content' | 'journalDate' | 'contentStatus'
+>
 
 const DEBOUNCE_MS = 500
 

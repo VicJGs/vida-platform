@@ -26,13 +26,13 @@ was excluded (→ P3). `notes.ts` was NOT audited — it is the §4 rebuild.
 
 **435 schema-implicating items classified:**
 
-| Class | Count | Meaning |
-|-------|------:|---------|
-| **ALIGNED** | 312 | schema already supports it (cite present) |
-| **DEFERRED** | 117 | legitimately later — **0 unhomed** (all carry a home) |
-| **DIVERGENT** | 6 | schema vs corpus tension — **all resolved below** |
-| **GAP** | **0** | *no corpus-proven shape the schema lacks* |
-| bidx candidates | 8 | inferred equality-over-`[E]` needs |
+| Class           | Count | Meaning                                               |
+| --------------- | ----: | ----------------------------------------------------- |
+| **ALIGNED**     |   312 | schema already supports it (cite present)             |
+| **DEFERRED**    |   117 | legitimately later — **0 unhomed** (all carry a home) |
+| **DIVERGENT**   |     6 | schema vs corpus tension — **all resolved below**     |
+| **GAP**         | **0** | _no corpus-proven shape the schema lacks_             |
+| bidx candidates |     8 | inferred equality-over-`[E]` needs                    |
 
 **fixKind distribution (non-DEFERRED):** `none` 184 (verify-only) · `expose` 112 (types/validators, **no
 migration**) · `check-vocab` 20 (parity/CHECK verification) · `move-vocab` 1 (already-retired) · `add-migrate` 1.
@@ -43,7 +43,7 @@ thesis — DB-4's holistic Model-B build already carries the backend intent. The
 is `033_notes.ts`** (the notes hub); every other candidate change is either expose-only (no migration) or
 defers to its owning module build. Three genuine dispositions require an Approval-2 ruling (§9).
 
-The audit's highest-value output is the set of **anti-gaps** — guards proving where a column must *not* be
+The audit's highest-value output is the set of **anti-gaps** — guards proving where a column must _not_ be
 added (Books/Finance/Relationships must not carry `measurement_kind`; a would-be AMEND there is a bug). These
 prevent manufactured work and are as binding as the positive findings.
 
@@ -51,18 +51,18 @@ prevent manufactured work and are as binding as the positive findings.
 
 ## 2. Headline per-domain result
 
-| Domain | A | Di | De | bidx | Domain | A | Di | De | bidx |
-|--------|--:|--:|--:|--:|--------|--:|--:|--:|--:|
-| books | 14 | 0 | 3 | 0 | notifications | 10 | 0 | 3 | 1 |
-| check-ins | 7 | 1 | 2 | 0 | preferences | 9 | 0 | 3 | 0 |
-| finance | 10 | 0 | 7 | 1 | projects | 11 | 0 | 5 | 0 |
-| gamification | 7 | 1 | 5 | 0 | purposes | 11 | 0 | 7 | 0 |
-| habits | 13 | 0 | 2 | 0 | relationships | 14 | 0 | 5 | 2 |
-| health-core | 15 | 0 | 6 | 0 | routines | 13 | 0 | 4 | 0 |
-| health-nutrition | 14 | 0 | 5 | 2 | skills | 13 | 0 | 3 | 2 |
-| health-training | 16 | 0 | 7 | 0 | tasks | 10 | 2 | 6 | 0 |
-| journals | 2 | 0 | 3 | 0 | **foundation** (12 files) | 91 | 1 | 27 | 0 |
-| knowledge | 11 | 0 | 8 | 0 | learning | 21 | 1 | 6 | 0 |
+| Domain           |   A |  Di |  De | bidx | Domain                    |   A |  Di |  De | bidx |
+| ---------------- | --: | --: | --: | ---: | ------------------------- | --: | --: | --: | ---: |
+| books            |  14 |   0 |   3 |    0 | notifications             |  10 |   0 |   3 |    1 |
+| check-ins        |   7 |   1 |   2 |    0 | preferences               |   9 |   0 |   3 |    0 |
+| finance          |  10 |   0 |   7 |    1 | projects                  |  11 |   0 |   5 |    0 |
+| gamification     |   7 |   1 |   5 |    0 | purposes                  |  11 |   0 |   7 |    0 |
+| habits           |  13 |   0 |   2 |    0 | relationships             |  14 |   0 |   5 |    2 |
+| health-core      |  15 |   0 |   6 |    0 | routines                  |  13 |   0 |   4 |    0 |
+| health-nutrition |  14 |   0 |   5 |    2 | skills                    |  13 |   0 |   3 |    2 |
+| health-training  |  16 |   0 |   7 |    0 | tasks                     |  10 |   2 |   6 |    0 |
+| journals         |   2 |   0 |   3 |    0 | **foundation** (12 files) |  91 |   1 |  27 |    0 |
+| knowledge        |  11 |   0 |   8 |    0 | learning                  |  21 |   1 |   6 |    0 |
 
 Full roster: `schema-audit-appendix.md`.
 
@@ -70,14 +70,14 @@ Full roster: `schema-audit-appendix.md`.
 
 ## 3. DIVERGENT dispositions (6 — all resolved)
 
-| # | Item | Class of divergence | Disposition | Migration? |
-|---|------|---------------------|-------------|:----------:|
-| D1 | **check-ins CHE-22** — corpus says `template_id` SET NULL/CASCADE; schema is no-FK plain TEXT | **stale-corpus-wording** — schema is CORRECT per ADR-016 §3.4 (no cross-table FK; app-layer referential behavior). Comments already note `(was SET NULL)`. | No action — FK semantics are P3 service-owned. | No |
-| D2 | **gamification GM-14** — corpus says `user_achievement.achievement_id` "FK CASCADE"; schema no-FK plain TEXT | **stale-corpus-wording** — v1-residue phrasing; ADR-016 §3.4 mandates no-FK/app-cascade. | No action — flag corpus wording as stale, not schema. | No |
-| D3 | **tasks TAS-27** — corpus says migrate inline `tasks.tags` JSON → `entity_tags` | **aligned-by-absence** — v2 schema never authored an inline tags column (ADR-006 SP1, Spaces-owned). | No action — migration is a no-op here. | No |
-| D4 | **learning LEA-64** — `course_type`: keep subject-level modality vs drop (mode now at Institution/Self-taught level)? *(Part-D UNKNOWN homed to P2)* | **open P2 disposition** — column authored & nullable; schema's own lean = keep as modality. | **Ratify keep-as-modality** (§9 O1) → then expose. No migration either way. | No |
-| D5 | **tasks TAS-24** — `kind` is FIXED CHECK (2-value `TASK_KIND`); corpus wants it OPEN/user-extensible (Duties dissolution → `standard\|obligation\|duty\|…`) | **intent-vs-shape tension** — TAS-24 is `⚠ INTENDED` build-phase (ADR-002 amendment); the widening ships with Duties dissolution, not now. | **Keep FIXED now** (§9 O2); drop the CHECK to plain TEXT when the widening lands (its own build). | No (now) |
-| D6 | **foundation/knowledge-review `XCU-17 [xcut-review]`** — corpus names TWO caps (`new_cards_per_day` + `reviews_per_day`); schema has a single generic `daily_cap`. *(NB: `XCU-17` is a domain-scoped id — distinct from the finance `move_money` `XCU-17 [xcut-economy]`.)* | **shape divergence** (`add-migrate` candidate) — but the consuming review engine is MOD-knowledge (M1.2). | **Defer to MOD-knowledge M1.2 build** (§9 O3) with home; or split now if Victor prefers. | Deferred |
+| #   | Item                                                                                                                                                                                                                                                                        | Class of divergence                                                                                                                                        | Disposition                                                                                       | Migration? |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | :--------: |
+| D1  | **check-ins CHE-22** — corpus says `template_id` SET NULL/CASCADE; schema is no-FK plain TEXT                                                                                                                                                                               | **stale-corpus-wording** — schema is CORRECT per ADR-016 §3.4 (no cross-table FK; app-layer referential behavior). Comments already note `(was SET NULL)`. | No action — FK semantics are P3 service-owned.                                                    |     No     |
+| D2  | **gamification GM-14** — corpus says `user_achievement.achievement_id` "FK CASCADE"; schema no-FK plain TEXT                                                                                                                                                                | **stale-corpus-wording** — v1-residue phrasing; ADR-016 §3.4 mandates no-FK/app-cascade.                                                                   | No action — flag corpus wording as stale, not schema.                                             |     No     |
+| D3  | **tasks TAS-27** — corpus says migrate inline `tasks.tags` JSON → `entity_tags`                                                                                                                                                                                             | **aligned-by-absence** — v2 schema never authored an inline tags column (ADR-006 SP1, Spaces-owned).                                                       | No action — migration is a no-op here.                                                            |     No     |
+| D4  | **learning LEA-64** — `course_type`: keep subject-level modality vs drop (mode now at Institution/Self-taught level)? _(Part-D UNKNOWN homed to P2)_                                                                                                                        | **open P2 disposition** — column authored & nullable; schema's own lean = keep as modality.                                                                | **Ratify keep-as-modality** (§9 O1) → then expose. No migration either way.                       |     No     |
+| D5  | **tasks TAS-24** — `kind` is FIXED CHECK (2-value `TASK_KIND`); corpus wants it OPEN/user-extensible (Duties dissolution → `standard\|obligation\|duty\|…`)                                                                                                                 | **intent-vs-shape tension** — TAS-24 is `⚠ INTENDED` build-phase (ADR-002 amendment); the widening ships with Duties dissolution, not now.                 | **Keep FIXED now** (§9 O2); drop the CHECK to plain TEXT when the widening lands (its own build). |  No (now)  |
+| D6  | **foundation/knowledge-review `XCU-17 [xcut-review]`** — corpus names TWO caps (`new_cards_per_day` + `reviews_per_day`); schema has a single generic `daily_cap`. _(NB: `XCU-17` is a domain-scoped id — distinct from the finance `move_money` `XCU-17 [xcut-economy]`.)_ | **shape divergence** (`add-migrate` candidate) — but the consuming review engine is MOD-knowledge (M1.2).                                                  | **Defer to MOD-knowledge M1.2 build** (§9 O3) with home; or split now if Victor prefers.          |  Deferred  |
 
 **Net: 3 no-action (stale wording / absence), 1 ratify-keep (D4), 1 keep-FIXED (D5), 1 deferred-shape (D6).**
 Zero DIVERGENT forces a migration now. D1/D2 also confirm a **platform-wide pattern**: the corpus's FK-cascade
@@ -90,15 +90,15 @@ phrasing lags the no-FK convention everywhere — noted, not fixed per-domain.
 The `*_bidx` inference (equality-lookup/filter over an `[E]` field — NOT full-text, which is FTS5/DB-8) was
 deliberately restrained. Consolidated ruling:
 
-| Candidate | Verdict | Reason |
-|-----------|---------|--------|
-| `transactions.category_bidx` (finance) | **PRESENT — expose only** | recurring analytics GROUP-BY over `[E]` category (FIN-30/FIN-22); the named precedent, already authored + indexed (`finance.ts:86`). |
-| `nutrition_ingredients.name_bidx` | **Defer-add → nutrition build (M1.2)** (§9 O3) | genuine recurring equality probe (HEA-28 barcode scan vs local food-DB copy) — structurally identical to `category_bidx`. Consuming service is not M1.1-now → home it, author at nutrition build. |
-| `shopping_items.name` | **REJECT** | one-shot small-N in-service de-dup (single-user local DB); no blind index warranted. |
-| `contacts.email` / `contacts.phone` | **REJECT** | REL-08 import dedup is one-shot small-N over decrypted rows in-service; the `category_bidx` precedent is recurring large-N analytics, not import dedup. |
-| `skill_definitions.name` | **REJECT** | SKI-24 add-only import dedup — same one-shot small-N reasoning. |
-| `notifications.entity_id` | **correctly rejected** | `entity_type`/`entity_id` are PLAINTEXT (NF-11) → plain index, no bidx. |
-| `skills.name` | **correctly rejected** | roster groups by plaintext `domain`, not `[E]` name. |
+| Candidate                              | Verdict                                        | Reason                                                                                                                                                                                            |
+| -------------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `transactions.category_bidx` (finance) | **PRESENT — expose only**                      | recurring analytics GROUP-BY over `[E]` category (FIN-30/FIN-22); the named precedent, already authored + indexed (`finance.ts:86`).                                                              |
+| `nutrition_ingredients.name_bidx`      | **Defer-add → nutrition build (M1.2)** (§9 O3) | genuine recurring equality probe (HEA-28 barcode scan vs local food-DB copy) — structurally identical to `category_bidx`. Consuming service is not M1.1-now → home it, author at nutrition build. |
+| `shopping_items.name`                  | **REJECT**                                     | one-shot small-N in-service de-dup (single-user local DB); no blind index warranted.                                                                                                              |
+| `contacts.email` / `contacts.phone`    | **REJECT**                                     | REL-08 import dedup is one-shot small-N over decrypted rows in-service; the `category_bidx` precedent is recurring large-N analytics, not import dedup.                                           |
+| `skill_definitions.name`               | **REJECT**                                     | SKI-24 add-only import dedup — same one-shot small-N reasoning.                                                                                                                                   |
+| `notifications.entity_id`              | **correctly rejected**                         | `entity_type`/`entity_id` are PLAINTEXT (NF-11) → plain index, no bidx.                                                                                                                           |
+| `skills.name`                          | **correctly rejected**                         | roster groups by plaintext `domain`, not `[E]` name.                                                                                                                                              |
 
 **Net: 1 present (expose), 1 defer-add (nutrition), 4 reject, 2 correctly-rejected. No auditor manufactured a
 bidx over a plaintext or full-text field.** The **REJECT** rulings are recorded so a later pass does not
@@ -118,7 +118,7 @@ silently auto-add `email_bidx`/`phone_bidx` and manufacture a gap (a standing an
    interface's field to `number | null` as **ONE batch** (DB-11 mirror sweep) — no per-domain nullability drift.
 3. **Inline `tags` retired → `entity_tags` (ADR-006 SP1)** — already landed platform-wide (no inline column
    anywhere); `_registry.ts` already carries every flagged `entity_type`. No domain owes a column or registry edit.
-4. **v2 `pages` table — NOT YET AUTHORED** *(BLOCKING → §11)* — ~9 domains route load-bearing intent "to a
+4. **v2 `pages` table — NOT YET AUTHORED** _(BLOCKING → §11)_ — ~9 domains route load-bearing intent "to a
    pages row" (PRO-24 mission, REL-49 descriptions, BOO-16/17 notes, KN-5, CHE-14, task notes). This is exactly
    the **§4 notes-hub rebuild**; those deferrals are homed there, not per-domain gaps.
 5. **Session sub-type extension shape** — `reading/workout/class_sessions` all = base `sessions` row + 1:1
@@ -133,42 +133,45 @@ silently auto-add `email_bidx`/`phone_bidx` and manufacture a gap (a standing an
 
 ## 6. Coherence-flag dispositions
 
-| Flag (severity) | Disposition |
-|-----------------|-------------|
-| **[blocking] v2 `pages` not authored** | = the §4 notes-hub rebuild. Confirms §4 is the top P2 dependency (not a gap). Resolved by building `033_notes.ts` (§11). |
-| **[review] REL-08 email/phone bidx** | **NO bidx** (§4 ruling) — small-N single-user in-service dedup. Recorded to prevent a manufactured gap. |
-| **[review] nutrition barcode vs shopping-list bidx** | **split the decision**: `nutrition_ingredients.name_bidx` is real (defer-add, O3); `shopping_items.name` rejected. |
-| **[review] user_profile single-writer split (E9)** | **Verify** at fix-time: `check_in_streak*` removed from `user_profile` (Gamification #21 landed?) + receive columns present in `user_preferences`; no field with two/zero writers (§8 V1). |
-| **[review] health-training `exercise_plans.status` OPEN vs FIXED** | corpus lists a 4-state ladder `{draft·active·deload-week·completed}` — smells FIXED. **Disposition O5** (§9): FIXED-with-CHECK vs keep OPEN. |
-| **[nit] LEA-64 course_type** | genuine sign-off → O1 (§9). |
-| **[nit] CHE-22/GM-14 no-FK** | stale corpus wording, consistent platform-wide — no action (D1/D2). |
-| **[nit] PRO-13 deliverables "table absent"** | corpus STALE — table IS authored (`projects.ts:99`); ALIGNED-expose. **The positive precedent** that the expose-vs-add rule is working. |
+| Flag (severity)                                                    | Disposition                                                                                                                                                                                |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **[blocking] v2 `pages` not authored**                             | = the §4 notes-hub rebuild. Confirms §4 is the top P2 dependency (not a gap). Resolved by building `033_notes.ts` (§11).                                                                   |
+| **[review] REL-08 email/phone bidx**                               | **NO bidx** (§4 ruling) — small-N single-user in-service dedup. Recorded to prevent a manufactured gap.                                                                                    |
+| **[review] nutrition barcode vs shopping-list bidx**               | **split the decision**: `nutrition_ingredients.name_bidx` is real (defer-add, O3); `shopping_items.name` rejected.                                                                         |
+| **[review] user_profile single-writer split (E9)**                 | **Verify** at fix-time: `check_in_streak*` removed from `user_profile` (Gamification #21 landed?) + receive columns present in `user_preferences`; no field with two/zero writers (§8 V1). |
+| **[review] health-training `exercise_plans.status` OPEN vs FIXED** | corpus lists a 4-state ladder `{draft·active·deload-week·completed}` — smells FIXED. **Disposition O5** (§9): FIXED-with-CHECK vs keep OPEN.                                               |
+| **[nit] LEA-64 course_type**                                       | genuine sign-off → O1 (§9).                                                                                                                                                                |
+| **[nit] CHE-22/GM-14 no-FK**                                       | stale corpus wording, consistent platform-wide — no action (D1/D2).                                                                                                                        |
+| **[nit] PRO-13 deliverables "table absent"**                       | corpus STALE — table IS authored (`projects.ts:99`); ALIGNED-expose. **The positive precedent** that the expose-vs-add rule is working.                                                    |
 
 ---
 
 ## 7. THE APPLIED-FIX LIST (concrete P2 changes, after Approval 2)
 
 **A. Notes-hub rebuild — the ONLY new DDL migration (§11 detail):**
+
 - author `schema/notes.ts` (`pages` · `page_links` · `note_attachments`) + `@vida/types/note.ts` (flat) +
   `validators/note.ts` + `migrations/033_notes.ts` (`version:33`) + barrel exports + parity rows + `_registry`
   soft re-validate. ~9 cross-domain "notes-via-pages" deferrals home here.
 
 **B. O4 provenance unify (Victor-approved 2026-09-14) — types + CHECK + parity:**
+
 - rename `'llm'` → `'ai'` so the triad is the single canonical `manual | ai | import` across
   `PHYSICAL_ROLE_AUTHORING_SOURCE` (`health.ts:108`) + `SKILL_FILL_SOURCE` (`skill.ts:27`) — matching the
   already-`'ai'` `MEAL_SOURCE`/`HEALTH_METRIC_VALUE_SOURCE`. Edit the tuple + the source migration's CHECK
   in place (pre-release, empty tables → parity stays mirror≡migration) + the parity row. Introspection-verify
   each touched table.
 
-**B′. Expose sweep — DEFERRED to DB-11 / consuming module builds (NOT P2).** *(scope refinement 2026-09-14)*
+**B′. Expose sweep — DEFERRED to DB-11 / consuming module builds (NOT P2).** _(scope refinement 2026-09-14)_
 The ~112 inert-column exposes + the `progress`/`mastery`/`current_value` → `number | null` batch (§5.1/§5.2)
-are **not** P2 work: the plan's Acceptance (§8) requires types-colocation *correct* (a verification), not a
+are **not** P2 work: the plan's Acceptance (§8) requires types-colocation _correct_ (a verification), not a
 speculative bulk-expose, and §3.2 exposes only a column "an M1 service **now** needs" — no M1.1 service
 consumes these yet (same defer logic as O3). Home: **DB-11 interface reconcile** + each module's build (expose
 its own cols when its service lands). Recorded in `schema-audit-deferred-homes.md`. P2 exposes ONLY the notes
 hub's own `@vida/types/note.ts`.
 
 **C. Parity / CHECK verification (~20 check-vocab, NO schema change):**
+
 - confirm each FIXED enum's parity row exists (`validators/enum-parity.test.ts`) — habits, notifications,
   preferences, purposes, relationships, health-training vocabs, economy, scheduling, spaces `VIEW_LAYOUT`, etc.
   These are already `enumText`→CHECK in their migrations; the audit asks only that the parity assertion is present.
@@ -196,7 +199,7 @@ to MOD-knowledge / nutrition module builds unless Approval-2 elects to author no
 
 ## 9. Open dispositions for Approval 2 (leans stated — ratify or override)
 
-These are the *only* genuine calls in the audit; all others are doc-fixed. Each carries a FACT-grounded lean.
+These are the _only_ genuine calls in the audit; all others are doc-fixed. Each carries a FACT-grounded lean.
 
 - **O1 · LEA-64 `course_type`** — **LEAN: keep as subject-level modality** (column authored nullable;
   `conventions L71`; harmless, expose-only). No migration either way.
@@ -206,7 +209,7 @@ These are the *only* genuine calls in the audit; all others are doc-fixed. Each 
 - **O3 · Deferred-add DDL (D6 `daily_cap` split + `nutrition_ingredients.name_bidx`)** — **RATIFIED: DEFER to
   the owning module builds** (MOD-knowledge M1.2 / nutrition M1.2), **flagged prominently so context is not
   lost** (Victor 2026-09-14). Neither consuming service is M1.1-now; ADR-016 resolves build-phase DDL at the
-  module build. Carry-forward recorded in `schema-audit-deferred-homes.md` (§ *P2 defer-adds — DO NOT LOSE*).
+  module build. Carry-forward recorded in `schema-audit-deferred-homes.md` (§ _P2 defer-adds — DO NOT LOSE_).
 - **O4 · Provenance triad naming (`'ai'` vs `'llm'`)** — **RATIFIED: UNIFY to `manual|ai|import` now** (Victor
   2026-09-14). Applied in §7.B (tables empty → zero-risk rename). Two synonyms collapse to one canonical triad.
 - **O5 · health-training `exercise_plans.status`** — **RATIFIED: keep OPEN (no CHECK) for P2** (leaned). Flag
@@ -219,7 +222,7 @@ These are the *only* genuine calls in the audit; all others are doc-fixed. Each 
 ## 10. Deferred-with-home (117 — 0 unhomed)
 
 Grouped in `schema-audit-deferred-homes.md`. The dominant homes: **review-engine design-pass** (journals/M1.4),
-**M2 ADR-014/015 ingestion+AI** (import_staging / ai_* tables uniformly deferred), **M3/DB-5** (field-level
+**M2 ADR-014/015 ingestion+AI** (import*staging / ai*\* tables uniformly deferred), **M3/DB-5** (field-level
 encryption wiring), **DB-8** (FTS5), **P3 module decomposition** (per-module service DDL at build phase),
 **Spaces/Views design-passes** (saved-view selection, neural-graph data-prep). Every item names its owner;
 none is homeless.
@@ -229,6 +232,7 @@ none is homeless.
 ## 11. Notes-hub rebuild inputs (§4 — the one authored unit)
 
 The rebuild MUST honor (from the triage `notesHubReminders`):
+
 1. **Author the v2 `pages` + `page_links` + `note_attachments`** (they exist ONLY in `_legacy/schema.v1.ts`).
    Shape grounded in `parts/notes-and-pages.md` (NOT-01…54): 6-type FIXED CHECK `pages.type`; `journal_date`
    partial-UNIQUE (NP-2); `entity_type`/`entity_id` polymorphic **OPEN no-CHECK** (registry-validated, NP-6);

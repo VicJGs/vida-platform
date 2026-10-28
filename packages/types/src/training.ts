@@ -14,26 +14,11 @@
 // ============================================================================
 
 // Exercise movement pattern (structure-data.md:10). `[HT-7 modality; conventions L16]`
-export const MOVEMENT_PATTERN = [
-  'push',
-  'pull',
-  'hinge',
-  'squat',
-  'lunge',
-  'carry',
-  'rotation',
-] as const
+export const MOVEMENT_PATTERN = ['push', 'pull', 'hinge', 'squat', 'lunge', 'carry', 'rotation'] as const
 export type MovementPattern = (typeof MOVEMENT_PATTERN)[number]
 
 // Per-set category within a workout (structure-data.md:26).
-export const WORKOUT_SET_CATEGORY = [
-  'warm-up',
-  'main',
-  'accessory',
-  'cardio',
-  'mobility',
-  'cool-down',
-] as const
+export const WORKOUT_SET_CATEGORY = ['warm-up', 'main', 'accessory', 'cardio', 'mobility', 'cool-down'] as const
 export type WorkoutSetCategory = (typeof WORKOUT_SET_CATEGORY)[number]
 
 // Calories-burned estimation method on a workout (structure-data.md:24). `[HC-6 energy loop]`

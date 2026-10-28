@@ -1,6 +1,8 @@
 # Spec: component:ar-6-spaces
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented (2026-07-29 — 3 critiques clean, typecheck 10/10, tests green)   <!-- draft → approved → implemented -->
+
+Status: implemented (2026-07-29 — 3 critiques clean, typecheck 10/10, tests green) <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-07-28-ar-6-spaces (§7).
@@ -19,7 +21,8 @@ Intent: the connective tissue every M1.1+ module inherits — universal tagging,
 lightweight user-assembled Spaces, and saved Views — built as generic primitives, not per-feature Hub
 pages. [FACT: ADR-006 §1; ADR-007 §1; docs/core/spaces/README.md]
 
-**What it is NOT** (each reconciles against the roadmap AR-6 row, which reads *"Spaces + `entity_tags`/`entity_links` + backlinks + saved Views"* with home `foundation/{spaces,views,effects}` [FACT: m1.0-delivery-plan.md:121] — that row conflates AR-6's and AR-7's homes, the same class of error §5.1.1 was correcting):
+**What it is NOT** (each reconciles against the roadmap AR-6 row, which reads _"Spaces + `entity_tags`/`entity_links` + backlinks + saved Views"_ with home `foundation/{spaces,views,effects}` [FACT: m1.0-delivery-plan.md:121] — that row conflates AR-6's and AR-7's homes, the same class of error §5.1.1 was correcting):
+
 - NOT the effect-firing rail. Despite `:121` listing `effects` under AR-6's home, `foundation/effects` (R1/R2)
   is **AR-7** [FACT: capability-framework §2; m1.0-delivery-plan:122 lists `effects` under AR-7 too]. **No SP/V
   predicate references R1/R2** (verified — SP1–SP7/V1–V5 contain zero effect-rail tokens), so building it here
@@ -28,14 +31,16 @@ pages. [FACT: ADR-006 §1; ADR-007 §1; docs/core/spaces/README.md]
   `space_enabled_blocks` junction (refs into AR-7's registry). [FACT: capability-framework.md:105,118-127]
 - **"backlinks" in the `:121` row = the `entity_links` TABLE + its backlink-read index, which AR-6 SHIPS**
   (§3.1 table 3 + the `(entity_type, entity_id)` index — "what links point at this entity"). The backlink
-  *resolver service* that reads it is **AR-8** [FACT: m1.0-delivery-plan §5.1.1:207 — resolver reads
+  _resolver service_ that reads it is **AR-8** [FACT: m1.0-delivery-plan §5.1.1:207 — resolver reads
   `entity_links` "owned by AR-6"]. Table-and-index here; resolver there — not an under-build.
-- NOT the predicate-DSL grammar, per-layout visual specs, or the unify⇄separate resolution *surface* —
+- NOT the predicate-DSL grammar, per-layout visual specs, or the unify⇄separate resolution _surface_ —
   all build-time [FACT: ADR-006 §"What this decision does NOT do":129; ADR-007 §"does NOT":94].
 - NOT the `page_tags`→`entity_tags` migration — N&P's build (M1.1); no live floor exists to migrate. [INTERP: v2 floor has no `pages`/`page_tags`; schema/index.ts exports only sync-queue + sessions]
 
 ### 1.1 Gathered source set (delivery-plan §2.1 `[B]` DoD — routed, not derived)
+
 Every table/enum/shape below traces to one of these; none derived:
+
 - **Routing map:** `docs/README.md` (Spaces = CORE/foundation, docs = "ADR set + core docs, not 5 aspect docs" :107) → `docs/core/spaces/README.md` (front door).
 - **Scope decision (mechanical):** `docs/specs/foundation/capability-framework.md` §2 rails + §3 SP1–SP7 / V1–V5 (:100-116).
 - **ADRs:** ADR-006 (§3.1–3.5 + §"does NOT"), ADR-007 (§3.1–3.5 + §"does NOT"); ADR-008 CB1–6 (boundary → AR-7).
@@ -61,7 +66,7 @@ Each maps a framework capability predicate. Invariants (must/never), validation,
   `tags.name NOT NULL UNIQUE`]: (a) nesting means two Spaces may each own a child `#spanish`, so global-unique
   is wrong; (b) `name` is `[E]` — a SQL `UNIQUE` on ciphertext is meaningless (per-nonce ciphertext differs),
   so `[E]` fields **never carry SQL UNIQUE** (AR-5 precedent). Uniqueness, if desired, is `(parent_tag_id,
-  name)` enforced **app-layer** in `SpacesService`. A `parent_tag_id` chain that reaches itself is rejected
+name)` enforced **app-layer** in `SpacesService`. A `parent_tag_id` chain that reaches itself is rejected
   (`InvalidTagNesting`, fail-loud). [FACT: capability-framework:102; ADR-006 §3.2]
 - **BR-4 (SP4) Tags vs links — distinct, never merged.** `entity_tags` (grouping) and `entity_links` (typed
   reference) are two tables that never merge; both draw `entity_type` from the one registry (BR-2). [FACT:
@@ -118,8 +123,8 @@ resolution, thrown only on a direct provider lookup). Junction duplicates/misses
 
 ### 3.1 Tables (DDL shape — hand-SQL migration 003; Drizzle query mirror in schema)
 
-All compose `...baseColumns` (id + created_at + updated_at + 6 `_sync_*`) + `deleted_at`. entity_type = plain
-`text()` NO CHECK (BR-2). JSON = plain `text()` (app stringifies). No cross-table FK (plain TEXT + index).
+All compose `...baseColumns` (id + created*at + updated_at + 6 `\_sync*\*`) + `deleted_at`. entity_type = plain
+`text()`NO CHECK (BR-2). JSON = plain`text()` (app stringifies). No cross-table FK (plain TEXT + index).
 
 1. **`tags`** — `name [E]` · `color` · `icon` · `description [E]` · `parent_tag_id` (nullable, self-ref, no FK). idx on `parent_tag_id`. [FACT: v1 shape ADR-002:1399 (id/name[E]/color); ADR-006 §3.2 metadata adds icon/description[E]; §5.20:3792 AMEND +parent_tag_id; UNIQUE(name) retired per BR-3]
 2. **`entity_tags`** — `tag_id` · `entity_type` (open) · `entity_id`. `UNIQUE(tag_id, entity_type, entity_id)`; idx on `(entity_type, entity_id)`. [FACT: ADR-002 §5.20:3765 `entity_tags(tag_id, entity_type, entity_id)`; ADR-006 §3.2]
@@ -131,6 +136,7 @@ All compose `...baseColumns` (id + created_at + updated_at + 6 `_sync_*`) + `del
 ### 3.2 Types placement — per the BUILT-substrate convention (AR-5 precedent + ADR-016)
 
 A built DB-layer substrate places types exactly as AR-5 did — NOT as hand-written entity interfaces in `@vida/types`:
+
 - **`@vida/types` = enum vocab only** (`@vida/types/CLAUDE.md`: "footprint deliberately tiny … the canonical enum
   tuples"). AR-6's only enum: `VIEW_LAYOUT = ['list','table','board','gallery','calendar','graph','timeline'] as const`
   → `ViewLayout` union → `z.enum` (DB-9 C2). `entity_type`/`link` are the OPEN registry (no enum); `entity_links`
@@ -197,7 +203,7 @@ Ordered; each step cites the §2/§3 rule it satisfies. Mirrors the AR-5 session
   **target** `entity_type`/`entity_id` (open registry), `context [E]`. [FACT: cross-module-integration.md
   §3.2:137; security-model.md:473; ADR-002:1365 opened per ADR-006 §3.2]. The features-first "no `pages` table
   yet" gap is already solved by the **live no-FK convention** — `page_id` is plain TEXT (no `REFERENCES
-  pages(id)`), so the table stands up now and stays empty until N&P (M1.1) writes links. My earlier
+pages(id)`), so the table stands up now and stays empty until N&P (M1.1) writes links. My earlier
   "source-polymorphic" framing was an invention (drift), not a documented decision — retracted.
 - ~~DECISION-2 (`link_type` vocab)~~ **VOID** — the decided `entity_links` shape has no `link_type` column; I
   invented it. Removed from §3.1/§3.2/§4. `entity_type` (the open registry) is the only "type" on a link.
@@ -206,14 +212,15 @@ Ordered; each step cites the §2/§3 rule it satisfies. Mirrors the AR-5 session
   substrate boundary — mirrors AR-5's registry-ahead-of-modules; real providers register per-module (ADR-007 §3.4). Not under-build.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-07-28 | 2026-07-28-ar-6-spaces | initial draft (stub + home) |
-| 2026-07-28 | 2026-07-28-ar-6-spaces | PLAN authored — SP1–SP7 + V1–V5 mechanical scope; 6 tables; §6 DECISION-1 entity_links source-polymorphic |
-| 2026-07-28 | 2026-07-28-ar-6-spaces | Independent critique (REVISE→SHIP): MF-1 backlinks table-vs-resolver reconciled vs :121; MF-2 effects-home conflict disclosed; MF-3 tags UNIQUE(name) retired + [E]-no-UNIQUE rule; MF-4 cycle-guard DoD; MF-5 enabled_blocks structural DoD; MF-6 DECISION-2 closed. |
-| 2026-07-28 | 2026-07-28-ar-6-spaces | **Victor caught drift**: `entity_links` shape was already DECIDED in cross-module-integration.md §3.2 + security-model.md:473 = `(page_id, entity_type, entity_id, context)`. Retracted my invented source-polymorphic shape + fabricated `link_type` column. DECISION-1 VOID/closed-by-docs, DECISION-2 VOID. Features-first gap solved by live no-FK convention (page_id plain TEXT). |
-| 2026-07-28 | 2026-07-28-ar-6-spaces | **§2.1 gather protocol applied** (post-triage fix): routed full source set (§1.1), read ADR-002 §5.20 owed-ledger — confirms every table name + shape (`entity_tags`:3765, `spaces`:3766, `space_enabled_blocks`:3767, `views`:3768; AR-7-owned block_instances/capability_grants). Every §3.1 shape now FACT-cited; zero derived. |
-| 2026-07-28 | 2026-07-28-ar-6-spaces | g1 critique RE-RUN (full sources): REVISE→SHIP. MF-1 fixed — retracted `link_type` survived in §5 step 3 build prompt (removed). SF-1 — tightened ADR-006 §"does NOT":129 cite. Critic verified-and-cleared: entity_links correction faithful, SP1–SP7+V1–V5 exact, PC-1/INT-1a/DATA-4 compliant, pattern conformant, tags shape sanctioned. |
-| 2026-07-29 | 2026-07-28-ar-6-spaces | Approval 1 (PLAN gate cleared). §XXVI g2 /preflight: BLOCKED→resolved. G1 — added BR-13 (M1.0 empty-[E] pass-through, [E]=M3 target, filter plaintext). G2 — dropped speculative `'view'` from ENTITY_TYPES (§5 step 5 no-change; no doc sanctions views as taggable). §4 checkboxes updated. |
-| 2026-07-29 | 2026-07-28-ar-6-spaces | g2 (2nd independent) critique: REVISE→SHIP. Caught 3 executability defects vs real repository.ts API: MF-1 junction re-tag leaks raw UNIQUE → BR-14 idempotent findWhere-before-insert; MF-2 remove-by-business-key not expressible → BR-15 resolve-then-soft-delete(operation:update); MF-3 default_view_id↔space_id write sequence → create→create→update stated. §2/§3.3/§4/§5 propagated. Cleared: BR-13/G2 correct+propagated, migration 003 executable, schema mirror, sync-enqueue test non-false-green, entity_links faithful, scope exact. |
+
+| Date       | Session                | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------- | ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | initial draft (stub + home)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | PLAN authored — SP1–SP7 + V1–V5 mechanical scope; 6 tables; §6 DECISION-1 entity_links source-polymorphic                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | Independent critique (REVISE→SHIP): MF-1 backlinks table-vs-resolver reconciled vs :121; MF-2 effects-home conflict disclosed; MF-3 tags UNIQUE(name) retired + [E]-no-UNIQUE rule; MF-4 cycle-guard DoD; MF-5 enabled_blocks structural DoD; MF-6 DECISION-2 closed.                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | **Victor caught drift**: `entity_links` shape was already DECIDED in cross-module-integration.md §3.2 + security-model.md:473 = `(page_id, entity_type, entity_id, context)`. Retracted my invented source-polymorphic shape + fabricated `link_type` column. DECISION-1 VOID/closed-by-docs, DECISION-2 VOID. Features-first gap solved by live no-FK convention (page_id plain TEXT).                                                                                                                                                                                                                                                                                                                        |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | **§2.1 gather protocol applied** (post-triage fix): routed full source set (§1.1), read ADR-002 §5.20 owed-ledger — confirms every table name + shape (`entity_tags`:3765, `spaces`:3766, `space_enabled_blocks`:3767, `views`:3768; AR-7-owned block_instances/capability_grants). Every §3.1 shape now FACT-cited; zero derived.                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-07-28 | 2026-07-28-ar-6-spaces | g1 critique RE-RUN (full sources): REVISE→SHIP. MF-1 fixed — retracted `link_type` survived in §5 step 3 build prompt (removed). SF-1 — tightened ADR-006 §"does NOT":129 cite. Critic verified-and-cleared: entity_links correction faithful, SP1–SP7+V1–V5 exact, PC-1/INT-1a/DATA-4 compliant, pattern conformant, tags shape sanctioned.                                                                                                                                                                                                                                                                                                                                                                   |
+| 2026-07-29 | 2026-07-28-ar-6-spaces | Approval 1 (PLAN gate cleared). §XXVI g2 /preflight: BLOCKED→resolved. G1 — added BR-13 (M1.0 empty-[E] pass-through, [E]=M3 target, filter plaintext). G2 — dropped speculative `'view'` from ENTITY_TYPES (§5 step 5 no-change; no doc sanctions views as taggable). §4 checkboxes updated.                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-07-29 | 2026-07-28-ar-6-spaces | g2 (2nd independent) critique: REVISE→SHIP. Caught 3 executability defects vs real repository.ts API: MF-1 junction re-tag leaks raw UNIQUE → BR-14 idempotent findWhere-before-insert; MF-2 remove-by-business-key not expressible → BR-15 resolve-then-soft-delete(operation:update); MF-3 default_view_id↔space_id write sequence → create→create→update stated. §2/§3.3/§4/§5 propagated. Cleared: BR-13/G2 correct+propagated, migration 003 executable, schema mirror, sync-enqueue test non-false-green, entity_links faithful, scope exact.                                                                                                                                                            |
 | 2026-07-29 | 2026-07-28-ar-6-spaces | IMPLEMENTED + post-impl independent critique (REVISE→SHIP). MF-1 (BLOCKING bug): missing `spaces.parent_space_id` cycle guard → added `assertNoSpaceCycle` + `InvalidSpaceNesting` + test (spaces 14/14). MF-2: NOT a real divergence — verified the built-substrate convention (AR-5: `@vida/types`=enum only, row types=`$inferSelect`, service types=core); code was correct, §3.2/§5 prose corrected to match (no menu, no code change). SF-1: engine never emits 'loading' (consumer state); partial-provider-failure → 'error' by intent (fail-loud). Verify: typecheck 10/10, core 123/124 (lone fail = pre-existing vault 1MB load-flake, green alone), spaces 14/14, parity 7/7, deferral grep clean. |

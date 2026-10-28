@@ -110,37 +110,36 @@ export interface HonestProgressProps extends Omit<GetProps<typeof ProgressWrap>,
   indeterminate?: boolean
 }
 
-export const HonestProgress = forwardRef<ComponentRef<typeof ProgressWrap>, HonestProgressProps>(function HonestProgress(
-  { label, value, indeterminate, ...rest },
-  ref,
-) {
-  if (process.env.NODE_ENV !== 'production' && indeterminate && value != null) {
-    console.warn('[vida/ui] HonestProgress: `indeterminate` with a `value` is a contradiction — pass one, not both.')
-  }
-  ensureSyncStatusStyles()
+export const HonestProgress = forwardRef<ComponentRef<typeof ProgressWrap>, HonestProgressProps>(
+  function HonestProgress({ label, value, indeterminate, ...rest }, ref) {
+    if (process.env.NODE_ENV !== 'production' && indeterminate && value != null) {
+      console.warn('[vida/ui] HonestProgress: `indeterminate` with a `value` is a contradiction — pass one, not both.')
+    }
+    ensureSyncStatusStyles()
 
-  const isIndeterminate = indeterminate || value == null
-  const clamped = Math.min(1, Math.max(0, value ?? 0))
+    const isIndeterminate = indeterminate || value == null
+    const clamped = Math.min(1, Math.max(0, value ?? 0))
 
-  return (
-    <ProgressWrap ref={ref} {...rest}>
-      <ProgressLabel>{label}</ProgressLabel>
-      <ProgressTrack
-        // Determinate: role=progressbar + valuenow/min/max. Indeterminate: valuenow OMITTED (the APG signal) + valuetext.
-        role="progressbar"
-        aria-label={label}
-        {...(isIndeterminate
-          ? { 'aria-valuetext': 'Working…' }
-          : { 'aria-valuenow': Math.round(clamped * 100), 'aria-valuemin': 0, 'aria-valuemax': 100 })}
-      >
-        {isIndeterminate ? (
-          // A segment that slides across (transform-only keyframe; reduced-motion @media stops it — the instant alt).
-          <ProgressFill className="vida-progress-indeterminate" width="40%" />
-        ) : (
-          // B12-safe: scale the full-width fill on X (GPU transform), never an animated width. transform-origin left.
-          <ProgressFill style={{ transform: `scaleX(${clamped})`, transformOrigin: 'left' }} />
-        )}
-      </ProgressTrack>
-    </ProgressWrap>
-  )
-})
+    return (
+      <ProgressWrap ref={ref} {...rest}>
+        <ProgressLabel>{label}</ProgressLabel>
+        <ProgressTrack
+          // Determinate: role=progressbar + valuenow/min/max. Indeterminate: valuenow OMITTED (the APG signal) + valuetext.
+          role="progressbar"
+          aria-label={label}
+          {...(isIndeterminate
+            ? { 'aria-valuetext': 'Working…' }
+            : { 'aria-valuenow': Math.round(clamped * 100), 'aria-valuemin': 0, 'aria-valuemax': 100 })}
+        >
+          {isIndeterminate ? (
+            // A segment that slides across (transform-only keyframe; reduced-motion @media stops it — the instant alt).
+            <ProgressFill className="vida-progress-indeterminate" width="40%" />
+          ) : (
+            // B12-safe: scale the full-width fill on X (GPU transform), never an animated width. transform-origin left.
+            <ProgressFill style={{ transform: `scaleX(${clamped})`, transformOrigin: 'left' }} />
+          )}
+        </ProgressTrack>
+      </ProgressWrap>
+    )
+  },
+)

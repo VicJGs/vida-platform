@@ -1,19 +1,24 @@
 # foundation/egress — substrate (ADR-014 §3.3 · XCU-06/08)
+
 # Auto-read by Claude when editing this layer.
 
 ## What this substrate is
+
 The per-target egress-mediation service — the STRICTEST grant in the system. Vault-leaving data requires
 per-target explicit consent + union-of-consents + an audit trail of what left & when + never auto-transmit
 (always user-initiated). Compositional-exfiltration (XCU-08): a cap with a sensitive read + ANY external grant
 treats its outbound fetch URL/params as egress ("a fetch is an outbound request").
 
 ## Owning ADR
+
 ADR-014 §3.3/§3.1 (+ ADR-015 §3.3 — a cloud call is an egress that rides this guard)
 
 ## Capabilities (framework §3)
+
 X4 (egress guard) · X6 (compositional exfiltration)
 
 ## Status
+
 Built by XS-egress-guard #43 (2026-09-20). `service.ts` (`createEgressGuard(enforcer, ports?)` —
 `assertEgressPermitted` / `checkEgress` [pure, XCU-06] + `assertFetchEgress` [XCU-08]) over the BUILT
 CapabilityEnforcer #31: step order = never-auto-transmit → target → external_out boolean (delegated to #31) →

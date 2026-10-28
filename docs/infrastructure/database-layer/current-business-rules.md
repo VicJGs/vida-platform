@@ -6,6 +6,7 @@
 > **No-Guessing:** each rule `[FACT: src]` or `[INTENT]` (documented, owed).
 
 ## Invariants every syncable table upholds
+
 1. **[FACT]** PK = `id`, UUIDv7 TEXT, client-generated. `[ADR-002 §2.1; CLAUDE.md]`
 2. **[FACT]** Timestamps (`created_at`, `updated_at`, `*_at`) = Unix-ms INTEGER (`Date.now()`). `[ADR-002 §2.2]`
 3. **[FACT]** Booleans = INTEGER 0/1. Money = INTEGER cents. Calendar dates = `YYYY-MM-DD` TEXT. JSON = TEXT
@@ -14,7 +15,7 @@
    **Zod** validator in `@vida/core` (DB-9). Drizzle's `enumText` supplies the TS union for query types only — DDL is
    not generated from Drizzle objects (no drizzle-kit). `[FACT: ADR-002 §2.3/§5; migrations/001_initial.ts]`
 5. **[FACT]** Every syncable table carries the sync-metadata columns (`_sync_id · _sync_version · _sync_device_id ·
-   _sync_lww_ts · _sync_status · _sync_hash`). `[ADR-002 §3; ADR-003]` **[INTENT]** `_sync_field_ts` is added to
+_sync_lww_ts · _sync_status · _sync_hash`). `[ADR-002 §3; ADR-003]` **[INTENT]** `_sync_field_ts` is added to
    the set by **DB-2** (ADR-003 §17). `[roadmap DB-2]`
 6. **[FACT]** Notes are never inline columns — all note bodies live in `pages` via the polymorphic
    `entity_type`/`entity_id` pattern. `[ADR-002 §2.7]`
@@ -26,15 +27,17 @@
    sync-blob (whole row for transit). `[ADR-002 §4]`
 
 ## Rules established/changed by DB-1 (IMPLEMENTED 2026-07-21 — `schema/_shared.ts` + `_registry.ts`)
+
 - **[NEW]** Conventions #1–#4 are enforced on the **query/type side** by reusable typed primitives in
-  `schema/_shared.ts`, not hand-repeated per table — closing the reconciliation's *hand-repeated-conventions* drift.
-  (The systemic *zero-CHECK* gap is closed on the DDL side by the SQL-migration `CHECK` + Zod — DB-3/DB-4/DB-9 — not by
+  `schema/_shared.ts`, not hand-repeated per table — closing the reconciliation's _hand-repeated-conventions_ drift.
+  (The systemic _zero-CHECK_ gap is closed on the DDL side by the SQL-migration `CHECK` + Zod — DB-3/DB-4/DB-9 — not by
   a Drizzle helper.) `[reconciliation §E]`
 - **[NEW]** The `schema/` directory is the v2 authoring surface; the v1 monolith `schema.ts` is **reference-only**
   and additive-safe (its `./db/schema` import path is preserved until consumers migrate at DB-6/7).
 - **[FACT — boundary]** DB-1 adds **no table** and does **not** add `_sync_field_ts` (DB-2's charter).
 
 ## Rules established/changed by AR-2 (IMPLEMENTED 2026-07-27 — `adapter.ts` + `apps/web/src/db/`)
+
 - **[NEW] BR1 — open without encryption.** In M1.0 the DB opens with no passphrase: `config.sqlCipher` is optional,
   and `initializeConnection` skips all cipher PRAGMAs + key verification when it is absent. `[FACT: adapter.ts; ADR-017]`
 - **[FACT] BR2 — the encryption seam survives.** When a `sqlCipher` config is supplied, `open()` configures + verifies
@@ -47,7 +50,9 @@
   the repository's encrypt/decrypt seam semantics (DB-6) — it only async-propagates the consumers to keep the build green.
 
 ## DB-6 — IMPLEMENTED (2026-07-28 · LIF-68)
+
 Rules the repository ALREADY enforced (preserved, no regression — proven by `repository.test.ts`):
+
 - **[FACT]** Managed fields are repository-owned — callers never supply `id/created_at/updated_at/_sync_*`; the
   factory generates UUIDv7 `id`, stamps timestamps, and bumps `_sync_version` on update. `[FACT: repository.ts:37-52,267,336]`
 - **[FACT]** Soft delete is honored when `config.softDelete` + a `deleted_at` column exist; `findById/findAll` filter
@@ -56,6 +61,7 @@ Rules the repository ALREADY enforced (preserved, no regression — proven by `r
   `[FACT: repository.ts:151-160,244]`
 
 Rules DB-6 ESTABLISHED (implemented + tested):
+
 - **[FACT] BR-DB6-1 — co-transactional enqueue.** Every mutation writes a `sync_queue` row in the **same
   transaction** (`db.transaction()`) as the entity row; both commit or both roll back. Proven by the SQL-level
   atomicity test (a mid-tx queue-write fault rolls back the entity row). `[FACT: repository.ts create/update/hardDelete; repository.test.ts]`
@@ -75,6 +81,7 @@ Rules DB-6 ESTABLISHED (implemented + tested):
   The reader/flush that consumes these is AR-9 (stubbed → M4). `[FACT: repository.ts del/hardDelete]`
 
 ## DB-7 — IMPLEMENTED (2026-07-29 · LIF-69)
+
 - **[FACT] BR-DB7-1 — `app_state` is the device-local version store.** `(key TEXT PRIMARY KEY, value TEXT NOT NULL)`,
   ADR-002 §5.0 shape; holds `schema_version` (ADR-002 §9.1). NOT synced — no `baseColumns`/`syncColumns`.
   `[FACT: schema/foundation/app-state.ts; ADR-002 §5.0/§9.1]`
@@ -91,11 +98,13 @@ Rules DB-6 ESTABLISHED (implemented + tested):
   creates the table, so tests exercise the production path. `[FACT: the 4 test files; migrations-runner.test.ts]`
 
 ## AR-5/6/7 substrate (boundary — 2026-08-18)
+
 - **[FACT]** AR-5/6/7 authored 15 substrate tables into `schema/foundation/` (migrations 002–006); their per-table
   business rules live in `docs/core/{sessions,spaces,capability,effects,economy}/current-business-rules.md`, not here.
   `[FACT: schema/foundation/*.ts]`
 
 ## DB-3 — IMPLEMENTED (2026-08-18 · LIF-65)
+
 - **[FACT] BR-DB3-1 — the 11 Stream (i) ADD tables are authored** (migrations 007–011), each a syncable table upholding
   invariants #1–#9 (cross-domain refs plain TEXT no FK, targets are DB-4). `[FACT: migrations/00{7..11}_*.ts]`
 - **[FACT] BR-DB3-2 — OPEN-vocab columns carry NO CHECK.** `planned_blocks.sub_type` is plain TEXT (registry-validated
@@ -115,8 +124,10 @@ documented (this section + current-spec DB-3 table); the **Knowledge** review en
 DB-4 per-domain authoring begins.
 
 ## DB-4 group #1 — Notes & Pages (IN PROGRESS · 2026-08-18 · LIF-66)
+
 The first Stream (ii) domain module — `pages` · `page_links` · `note_attachments` (`schema/notes.ts` +
 `migrations/012_notes.ts`). `[FACT: those files]`
+
 - **[FACT] BR-N4-1 — net-new = 3 tables.** Tagging (`tags`/`entity_tags`) + typed refs (`entity_links`) are AR-6
   substrate (migration 003); N&P is a consumer (ADR-006 §3.1). `pomodoro_sessions`→`focus_sessions` (group #3);
   `page_tags`→`entity_tags` (retired, verified absent). `[FACT: spaces.ts; ADR-004 §3.1]`
@@ -133,8 +144,10 @@ The first Stream (ii) domain module — `pages` · `page_links` · `note_attachm
   MOD-notes (#31) finds every needed column — PASS. `[FACT: vitest run]`
 
 ## DB-4 group #2 — Preferences (2026-08-19 · LIF-66)
+
 The second Stream (ii) domain module — `user_preferences` · `nav_preferences` · `command_bar_history`
 (`schema/preferences.ts` + `migrations/013_preferences.ts`). `[FACT: those files]`
+
 - **[FACT] BR-P4-1 — ALL plaintext, ZERO `[E]` (PR-1).** Preferences is structural config, not content; no field is
   field-level encrypted. The Repository registers an empty `[E]` set (M1.0 pass-through, BR-DB6-3). `[FACT: ADR-002 L1123-1127 "All P"]`
 - **[FACT] BR-P4-2 — 5 FIXED enums → SQL CHECK, sourced from `@vida/types` tuples.** `theme`(THEME) · `time_format`(TIME_FORMAT)
@@ -161,10 +174,12 @@ The second Stream (ii) domain module — `user_preferences` · `nav_preferences`
   11/11. Foundation-readiness: MOD-preferences (#32) contract finds every needed column — PASS. `[FACT: vitest run]`
 
 ## DB-4 group #3 — Sessions & Scheduling (+Pomodoro) (2026-08-19 · LIF-66)
+
 The third Stream (ii) domain module — **6 tables** completing the Session framework on the AR-5/AR-7/DB-3 substrate:
 `study_sessions` · `focus_sessions` (`schema/foundation/session-extensions.ts`) + `study_availability` ·
 `availability_exceptions` · `study_plan_batches` · `session_templates` (`schema/foundation/scheduling.ts`), DDL in
 `migrations/014_sessions_scheduling.ts`. `[FACT: those files]`
+
 - **[FACT] BR-S4-1 — `focus_sessions` IS the `focus` timer runtime; `pomodoro_sessions` is RETIRED (not authored).**
   Doc-determined by the consuming-module reframe (`notes-and-pages/structure-data.md:30`, `contract.md:19` — line cites at `eaf64f8^`; realigned 2026-10-26 → structure-data "Consumed, not owned" + contract "Pomodoro"): the
   `/pomodoro` widget is a lens onto the `focus_sessions` extension keyed by `session_id`. The retired v2 Notes table's
@@ -180,10 +195,10 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `sessions` (AR-5); `focus_sessions` has NO `started_at`/`ended_at`; `study_sessions` holds only
   `resource_type`/`resource_id`/`pages_read`/`lessons_completed`. `[FACT: 014_sessions_scheduling.ts vs 002_sessions.ts]`
 - **[FACT] BR-S4-4 — 5 FIXED enums → SQL CHECK from `@vida/types` tuples; OPEN vocab = plain TEXT no CHECK.**
-  `study_sessions.resource_type`(STUDY_SESSION_RESOURCE_TYPE) · `focus_sessions.type`(POMODORO_TYPE)/`.status`(POMODORO_STATUS)
+  `study_sessions.resource_type`(STUDY*SESSION_RESOURCE_TYPE) · `focus_sessions.type`(POMODORO_TYPE)/`.status`(POMODORO_STATUS)
   · `study_availability.preset_block`(PRESET_BLOCK — **reused**, `knowledge.ts:30`) · `study_plan_batches.status`
   (STUDY_PLAN_BATCH_STATUS **+ `'failed'`**, `business-rules.md:89`). Parity asserted for all 5. `day_of_week`(0-6)/
-  `preference_score`(1-5) are numeric BETWEEN checks (not tuple-sourced); `scope_type`/`sub_type` OPEN no CHECK. `[FACT: 014_*.ts; enum-parity.test.ts]`
+  `preference_score`(1-5) are numeric BETWEEN checks (not tuple-sourced); `scope_type`/`sub_type` OPEN no CHECK. `[FACT: 014*\*.ts; enum-parity.test.ts]`
 - **[FACT] BR-S4-5 — 4 `[E]` fields (not "all-plaintext").** `study_plan_batches.name` · `session_templates.name` ·
   `session_templates.description` · `availability_exceptions.reason` are `[E]`; `study_sessions`/`study_availability`/
   `focus_sessions` are zero-`[E]` (timer state structural, `pomodoro/conventions.md:35`). SQL `-- [E]` ↔ mirror
@@ -205,6 +220,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `013_preferences.user_preferences` → a group #2 backfill (the runtime reads it, never re-stores). NOT this unit's table. `[FACT: pomodoro business-rules PD-7; 013_preferences.ts]`
 
 ## Rules established by DB-4 group #4 — Tasks (IMPLEMENTED 2026-08-19 · `015_tasks.ts` + `schema/tasks.ts`)
+
 - **[FACT] BR-T4-1 — 2 tables, 2 `[E]`.** `tasks` (`title`/`description` `[E]`) + `task_time_logs` (zero `[E]`). Both full
   `...baseColumns`; `tasks` has `deleted_at` (soft delete), `task_time_logs` does **not** (ledger — hard-deletes with the
   task, §5.3 + TK-4). `[FACT: 015_tasks.ts; ADR-002 §5.3]`
@@ -238,6 +254,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   PASSED · gate-2 REVISE→SHIP · post-impl SHIP. Foundation-readiness: MOD-tasks finds every needed column — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #5 — Projects (IMPLEMENTED 2026-08-19 · `016_projects.ts` + `schema/projects.ts`)
+
 - **[FACT] BR-PJ5-1 — 4 tables, 11 `[E]`.** `projects` (title/description/vision `[E]`) · `milestones` (title/description
   `[E]`) · `deliverables` (title/description `[E]`) · `project_documents` (name/encrypted_blob `[E]`). All full
   `...baseColumns`; projects/milestones/deliverables have `deleted_at` (soft delete); `project_documents` does **not**
@@ -248,7 +265,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
 - **[FACT] BR-PJ5-3 — `deliverables` (the four-level hierarchy) authored now (build-phase INTENDED, G2).** The real level
   between milestones and tasks, an ADR-011 pursuable. The ⚠ INTENDED flag points TO this build phase. `[FACT: structure-data.md G2; [[build-phase-flags-mean-resolve-now-not-defer]]]`
 - **[FACT] BR-PJ5-4 — `progress` is a NULLABLE override slot on projects/milestones/deliverables.** Was §5.4 `INTEGER NOT
-  NULL DEFAULT 0`; reframed to nullable (NULL ⇒ derive via `progress()` on-read, ADR-011 §3.2/§3.4). Never a hand-set
+NULL DEFAULT 0`; reframed to nullable (NULL ⇒ derive via `progress()` on-read, ADR-011 §3.2/§3.4). Never a hand-set
   `NOT NULL DEFAULT 0`. `[FACT: ADR-002 §5.4 L1574/L1610; ADR-011 §3.2; PJ-3]`
 - **[FACT] BR-PJ5-5 — measurement pair on `deliverables` ONLY.** `measurement_kind` NOT NULL DEFAULT 'milestone' (doc-
   licensed rollup natural) + `binding_mode` NULLABLE no default (NULL ⇒ derive, §3.2 override grain). Projects/milestones
@@ -280,6 +297,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   [[module-doc-is-db4-roster-not-adr-broad-list]]). Foundation-readiness: MOD-projects finds every needed column — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #6 — Habits (IMPLEMENTED 2026-08-19 · `017_habits.ts` + `schema/habits.ts`)
+
 - **[FACT] BR-HB6-1 — 3 tables, 7 `[E]`.** `habits` (name/description/unit/cue/reward + `success_criteria` `[E]`) ·
   `habit_completions` (`location` `[E]`) · `project_habits` (zero `[E]`, the kept junction). `habits`/`project_habits`
   full `...baseColumns` + `deleted_at`; `habit_completions` full baseColumns (+`updated_at`) but **no `deleted_at`**
@@ -318,6 +336,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   column — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #7 — Routines (IMPLEMENTED 2026-08-19 · `018_routines.ts` + `schema/routines.ts`)
+
 - **[FACT] BR-RT7-1 — the REFRAME, not the POC.** Authors 3 tables — `routines` (sequence) · `routine_step`
   (polymorphic step, **replaces** the flat `routine_actions`) · `routine_completions` (per-step ledger). The
   orchestration reframe DESIGN landed (`docs/intake/routines.md` §E, RT-1…RT-19); only the DDL was deferred "→ build
@@ -357,6 +376,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   step/ledger — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #8 — Purpose & Goals (IMPLEMENTED 2026-08-19 · `019_purposes.ts` + `schema/purposes.ts`)
+
 - **[FACT] BR-PG8-1 — the capstone: 6 tables, DB-3 substrate excluded.** Authors `purposes`·`targets`·`purpose_metrics`·
   `purpose_metric_values`·`target_reviews`·`dreams` (the §5.7 floor MINUS the DB-3 `values`/`contributions`/
   `purpose_reviews`/`plan_steps`, consumed no-FK). `schema/purposes.ts` (plural) ≠ `foundation/purpose.ts` (DB-3).
@@ -402,6 +422,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #9 — Finance (+Fiscal & Legal) (IMPLEMENTED 2026-08-20 · `020_finance.ts` + `schema/finance.ts`)
+
 - **[FACT] BR-FN9-1 — 9 tables: 6 finance entities (fresh) + 3 net-new Fiscal & Legal.** Authors the §5.8 `accounts`·
   `transactions`·`assets`·`liabilities`·`investments`·`income_streams` (absent from the new `schema/` — they lived in the
   pre-rebuild monolith) + `fiscal_residencies`·`legal_entities`·`fiscal_obligations` (§5.20 L3828). The DB-3 `store`/`rules`
@@ -436,6 +457,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   MOD-finance finds the 6 entities + net worth over the DB-3 `store` tree + the fiscal spine — PASS. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group Skills (IMPLEMENTED 2026-08-20 · `021_skills.ts` + `schema/skills.ts`)
+
 - **[FACT] BR-SK-1 — mastery is DERIVED, never a stored default.** `skills.current_level` + `progress` are nullable
   derived slots (service-written); `mastery_override` is the nullable manual override (M3). The ADR-002 §5.9
   `mastery_level NOT NULL DEFAULT 'novice'` anti-signal is resolved OUT — §5.9's whole DDL is STALE, superseded by the
@@ -443,17 +465,17 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
 - **[FACT] BR-SK-2 — `skill_actions` IS the Sessions `practice` sub-type**, not a standalone table: own `id` UUIDv7 PK +
   `session_id TEXT NOT NULL UNIQUE` (1:1 key, no FK); spine (timer/scheduling) lives on `sessions`, never re-stored. The
   group-#3 `study_sessions`/`focus_sessions` pattern. `SESSION_SUB_TYPE` already carries `'practice'` (OPEN). `[FACT:
-  021_skills.ts:141-160; session-extensions.ts; session.ts:24]`
+021_skills.ts:141-160; session-extensions.ts; session.ts:24]`
 - **[FACT] BR-SK-3 — no FK anywhere.** Self-ref `parent_skill_id`, all parent refs (`skill_id`/`level_id`/`activity_id`),
   `definition_id`, `session_id`, and the graph edges (`from_/to_skill_id`) are plain TEXT; cascade = app/sync-layer
   (ADR-016 §3.4; §5.9 `REFERENCES` superseded). `[FACT: 021_skills.ts]`
 - **[FACT] BR-SK-4 — no stored `measurement_kind`.** The Composer `measurement_config` is `[E]` JSON stored as plain
   `text()` (opaque blob at rest, P-2), referencing the ADR-011 taxonomy at the service layer — NOT a typed CHECK column.
   The pursuable Target-Mastery's M1/M2 is Purpose-owned (C-M1). `components_tracked` (plain) = `json<T>`. `[FACT:
-  skills.ts:81-83]`
+skills.ts:81-83]`
 - **[FACT] BR-SK-5 — tags/notes/links ride the AR-6 substrate.** No inline tags column; tags via `entity_tags`, notes via
   `pages`, links via `entity_links`. `ENTITY_TYPES += skill/skill_level/skill_activity/skill_dev_log/skill_dependency/
-  skill_definition`; **`skill_action` EXCLUDED** (session sub-type → base `session`, ADR-004 §3.1); the roster's stale
+skill_definition`; **`skill_action` EXCLUDED** (session sub-type → base `session`, ADR-004 §3.1); the roster's stale
   "`skill` already reserved" corrected (skill was absent). `skill_resources` RETIRED → `entity_links` (not authored).
   `[FACT: _registry.ts; structure-data.md:44,47-48]`
 - **[FACT] BR-SK-6 — FIXED vs OPEN enums.** 14 FIXED CHECK cols / 11 tuples parity-asserted; 7 net-new enums
@@ -467,6 +489,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #10 Knowledge (+flashcards) (IMPLEMENTED 2026-08-20 · `022_knowledge.ts` + `schema/knowledge.ts`)
+
 - **[FACT] BR-KN-1 — the recursive spine.** `knowledge_objects.parent_object_id` (self-ref, no FK) IS the
   `Subject›Unit›Topic` + user-kinds hierarchy (KN-3); every object has `kind_id` → `object_kinds`. `knowledge_objects`
   generalizes the retired `study_topics`. `[FACT: 022_knowledge.ts:35-40; structure-data.md:35]`
@@ -489,12 +512,13 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   (replaces `resource_urls[E]`, KN-1 — the gate-1 catch). **4 FIXED CHECK cols = 4 tuples**: reused `STUDY_TOPIC_STATUS`/
   `TOPIC_DIFFICULTY` + net-new `KNOWLEDGE_CONTAINER_TYPE`/`CARD_TYPE`. OPEN no-CHECK: `object_kinds.name`/`learning_realm`
   (user-extensible, KN-4), `references.type`, `compound_sets.consumer_module`. `ENTITY_TYPES += knowledge_object/
-  knowledge_container/reference/flashcard`. `compound_sets`/`knowledge_lab_entries` = base tables only (AI-assist +
+knowledge_container/reference/flashcard`. `compound_sets`/`knowledge_lab_entries` = base tables only (AI-assist +
   automation surface undesigned, deferred). **Phase-5 introspection** (28 × 4). `@vida/core` green; `LATEST_VERSION`=22;
   typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved (`references.url` [E]) · preflight PASSED (8 folds) · gate-2 SHIP ·
   post-impl SHIP (reconciled `data_refs` → plain per spec). **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #11 Books (IMPLEMENTED 2026-08-20 · `023_books.ts` + `schema/books.ts`)
+
 - **[FACT] BR-BK-1 — book = the WORK, copies = assets (BK-2).** `books` holds work-level identity; `book_assets` (0..n,
   no FK) each carry `format` + one `native_position`. A 0-asset book (TOC-only) is first-class. `[FACT: BK-2; 023_books.ts]`
 - **[FACT] BR-BK-2 — unified progress DERIVED (BK-3/M3).** `books.progress` nullable override (`NULL⇒derive`); the §Books
@@ -514,7 +538,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `binding_mode` is a Purpose target (Purpose-owned; Books absent from the M1 pursuable set — the Skills pattern);
   `reading_plans` holds only plan mechanics. **4 FIXED CHECK = 4 tuples**: reused `BOOK_STATUS` + net-new `BOOK_ASSET_FORMAT`/
   `READING_PLAN_ARRANGEMENT`/`READING_PLAN_GOAL_TYPE`; `books.rating` numeric BETWEEN. `ENTITY_TYPES += book/book_chapter/
-  book_bookmark/book_quote`. `BOOK_FORMAT` now stale → DB-11. **Phase-5 introspection** (40 × 4). `@vida/core` **503 tests**
+book_bookmark/book_quote`. `BOOK_FORMAT` now stale → DB-11. **Phase-5 introspection** (40 × 4). `@vida/core` **503 tests**
   green; `LATEST_VERSION`=23; typecheck 11/11; eslint 0. Gates: gate-1 REVISE→resolved (deleted_at-on-extension audit — see
   BR-DB-AUDIT) · preflight PASSED (7 folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** `[FACT: vitest run]`
 - **[FACT] BR-DB-AUDIT (2026-08-20) — session extensions carry NO `deleted_at`.** A session sub-type extension
@@ -524,6 +548,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `[FACT: session-extensions.ts; skills.ts; 021_skills.ts]`
 
 ## Rules established by DB-4 group #12 Learning/Education (+ICS) (IMPLEMENTED 2026-08-20 · `024_learning_education.ts` + `schema/learning.ts`)
+
 - **[FACT] BR-ED-1 — SP1: no inline tags.** `subjects` (= `courses` reshaped) does NOT carry an inline `tags` column;
   classification is `entity_tags` (`entity_type='subject'`, ADR-006 SP1). Registered in `ENTITY_TYPES`.
 - **[FACT] BR-ED-2 — M3: progress DERIVED, never a counter.** `subjects.progress` + `education_measurements.progress` are
@@ -560,6 +585,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   Interface reconcile (Course→Subject, `default_course_id`→`default_subject_id`) → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #14 Relationships (CRM) (IMPLEMENTED 2026-08-20 · `025_relationships.ts` + `schema/relationships.ts`)
+
 - **[FACT] BR-RL-1 — PII is [E]; health is DERIVED, never a measurable (C1).** All identifying contact fields + free text are
   `[E]` (RL-1; empty [E] set in M1.0, pass-through). Relationship health carries **NO `measurement_kind`/`binding_mode`** —
   contacts are ADR-011-excluded reference data; health is a derived, closeness-weighted analytic, never stored. `[FACT: 025:*]`
@@ -582,7 +608,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `PRIORITY`); `reminder_groups.anchor_type`(NN DEFAULT 'schedule')/`anchor_days_before` (event-anchored, G11). `[FACT: 025]`
 - **[FACT] BR-RL-8 — 9 FIXED CHECK cols; 1 net-new enum; registry +2; boundaries held.** FIXED: `RELATIONSHIP_TYPE`·
   `FREQUENCY`×3·`CONTACT_EVENT_TYPE`·`INTERACTION_TYPE`·`SENTIMENT`·`PRIORITY`·net-new `REMINDER_GROUP_ANCHOR` (`{schedule,
-  birthday}`); `closeness_tier` OPEN no-CHECK. `ENTITY_TYPES += contact/network` (child/junction excluded — `habit_completions`
+birthday}`); `closeness_tier` OPEN no-CHECK. `ENTITY_TYPES += contact/network` (child/junction excluded — `habit_completions`
   precedent). **OUT** (cite-not-author): notification delivery (N1/N2, Notifications-owned — no delivery cols); device import
   (X1/X8, ADR-014 service — no `import_staging`); health-compute/closeness-banding; Sigma.js graph; Gamification streak
   (C2, `[INTENT]`, no E2). **Phase-5 introspection** (32 × 4). `@vida/core` **619 tests** green (1 pre-existing vault-1MB perf
@@ -591,6 +617,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   (Contact/Interaction/ContactReminder/ReminderGroup + new NetworkGroup/NetworkGroupContact) → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #16 Check-ins (IMPLEMENTED 2026-08-20 · `026_check_ins.ts` + `schema/check-ins.ts`)
+
 - **[FACT] BR-CK-1 — enums RECONCILE, not net-new (gate-1 catch).** The 4 check-in tuples (`CHECK_IN_TYPE`/
   `CHECK_IN_SCHEDULE_TYPE`/`CHECK_IN_PREFERRED_TIME`/`CHECK_IN_QUESTION_FIELD_TYPE`) + the 3 interfaces + the 4 Zod schemas
   **already exist** in `@vida/types/entities/user.ts` + `validators/user.ts` (colocated because `check_in_streak*` historically
@@ -617,14 +644,15 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.** Interface reconcile → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #17 Health: Core (IMPLEMENTED 2026-08-20 · `027_health_core.ts` + `schema/health-core.ts`)
+
 - **[FACT] BR-HC-1 — recovered domain, 12 net-new tables, the documented floor governs.** Health has NO v2 schema/code,
-  but the `structure-data.md` roster (from the AUTHORITATIVE 18-DB Notion design) IS the per-table floor. "No v2 *code*"
-  ≠ "no *documented* floor" (a gate-1 critic's "no floor → blanket baseline" premise was FALSE, Victor corrected it). 12
+  but the `structure-data.md` roster (from the AUTHORITATIVE 18-DB Notion design) IS the per-table floor. "No v2 _code_"
+  ≠ "no _documented_ floor" (a gate-1 critic's "no floor → blanket baseline" premise was FALSE, Victor corrected it). 12
   tables authored per the floor: `health_metrics`·`health_metric_values`·`health_domains`·`health_factors`·`health_exams`·
   `assigned_exams`·`health_goals`·`physical_roles`·`health_experiments`·`health_responses`·`medical_profile_entries`·
   `safety_flags`. `[FACT: structure-data.md §Entities; 027_health_core.ts]`
 - **[FACT] BR-HC-2 — `deleted_at` on `health_goals` ONLY (the floor, L45).** Every other table's tail-notation
-  ("timestamps"/"_sync_*") omits it; header L7 lists soft-delete as the deletion *mechanism*, not a per-table mandate.
+  ("timestamps"/"_sync_*") omits it; header L7 lists soft-delete as the deletion *mechanism\*, not a per-table mandate.
   Entities manage lifecycle via `status`/`end_date`/`phase`; the 4 ledgers (`health_metric_values`/`assigned_exams`/
   `health_responses`/`safety_flags`) append. Selective, NOT blanket. `[FACT: structure-data L45; introspection deleted_at-floor test]`
 - **[FACT] BR-HC-3 — goal `type` DECOMPOSED (ADR-011 M1/M2), never authored.** `health_goals` carries `measurement_kind`
@@ -653,6 +681,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   interfaces + 14 enums → DB-11 interface reconcile. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #18 Health: Nutrition (IMPLEMENTED 2026-08-20 · `028_health_nutrition.ts` + `schema/health-nutrition.ts`)
+
 - **[FACT] BR-NT-1 — 6 net-new tables; the fuel pillar composes the Core spine (#17).** `nutrition_ingredients`·
   `nutrition_dishes`·`nutritional_plans`·`daily_meal_plans`·`meals`·`shopping_items`. Net-new (recovered domain); the
   `structure-data.md` roster IS the documented per-table floor. Nutrition owns only food-specific entities; Nutrition Goals →
@@ -661,11 +690,11 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   5 omit it (libraries = reference data; daily_plans/meals/shopping = instances/logs). The #17 ruling applied cleanly (follow
   the documented per-table floor). `[FACT: structure-data L22; introspection deleted_at-floor test]`
 - **[FACT] BR-NT-3 — OPEN-vocab-heavy: only 3 FIXED CHECK.** `meals.source` (`MEAL_SOURCE`=manual|ai|import, AI6 triad, net-new)
-  + `daily_meal_plans.generation_method` (`MEAL_GENERATION_METHOD`, net-new) + `nutritional_plans.review_frequency` (reused
-  `FREQUENCY`). **Everything else OPEN** (no CHECK): caloric_strategy/dietary_framework/philosophy/meal_type = modality
-  (conventions L17); `functional_area`/`whole_food_type` = editable STARTERS (C5/HN-12/HN-13 — never hard-code as truth); all
-  `status` columns = bare "status P" in the floor (terminal-states prose is ambiguous UI-state, not a stored-enum contract).
-  `[FACT: floor inline-enumeration + conventions L17 + C5; [[open-vocab-columns-take-no-sql-check]]]`
+  - `daily_meal_plans.generation_method` (`MEAL_GENERATION_METHOD`, net-new) + `nutritional_plans.review_frequency` (reused
+    `FREQUENCY`). **Everything else OPEN** (no CHECK): caloric_strategy/dietary_framework/philosophy/meal_type = modality
+    (conventions L17); `functional_area`/`whole_food_type` = editable STARTERS (C5/HN-12/HN-13 — never hard-code as truth); all
+    `status` columns = bare "status P" in the floor (terminal-states prose is ambiguous UI-state, not a stored-enum contract).
+    `[FACT: floor inline-enumeration + conventions L17 + C5; [[open-vocab-columns-take-no-sql-check]]]`
 - **[FACT] BR-NT-4 — SP1 forward-reframe: NO inline `meals.tags`.** Dropped → `entity_tags` (a forward `[INTENT]` correction,
   no live floor → no R6); the 6 `entity_type`s register in the OPEN SP2 registry. `ENTITY_TYPES += 6` (incl. `nutritional_plan`,
   NOT `nutrition_plan`). `[FACT: rerun G-SP1/F1; _registry.ts]`
@@ -680,6 +709,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   (2 NITs) · post-impl SHIP. **Zero build-decisions.** 6 row interfaces + 2 enums → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #19 Health: Training (IMPLEMENTED 2026-08-20 · `029_health_training.ts` + `schema/health-training.ts`)
+
 - **[FACT] BR-HT-1 — 5 net-new tables; the exercise pillar; a workout IS a Session.** `exercises`·`exercise_plans`·
   `workout_templates`·`workout_sessions`·`workout_sets` (Catalog → Plan → Template → Instance → Log). Net-new (recovered
   domain, **no rerun** — row 21 ALIGNED). `workout_sessions` = the `sessions` `workout` sub-type **1:1 extension** (ADR-004):
@@ -710,6 +740,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   **The Health domain (#17 Core + #18 Nutrition + #19 Training) is now COMPLETE.** `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #20 Journals (IMPLEMENTED 2026-08-21 · `030_journals.ts` + `schema/journals.ts`)
+
 - **[FACT] BR-JR-1 — 1 net-new table; the INTEGRATION LAYER is mostly runtime code / owned elsewhere.** `journal_snapshots`
   is the sole owned table — a point-in-time frozen record of a day's aggregated summary (JR-6/JR-7), the one home for
   point-in-time journal data the temporal Review engine reads. Owned ELSEWHERE (referenced, never re-authored): the journal
@@ -723,7 +754,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   `created_at`/`updated_at`; a **frozen ledger record** (JR-6/JR-7 lifecycle; backfill re-capture is design-pass) → NO
   `deleted_at`. The floor lists exactly `id · snapshot_date · sections_data[E] · captured_at · sync` — the
   `check_in_template_questions` reduced-column precedent (floor-governed omission; `pk==['id']` holds). `[FACT: structure-data
-  L16-17; check-ins.ts:86; introspection no-deleted_at/created_at/updated_at guard]`
+L16-17; check-ins.ts:86; introspection no-deleted_at/created_at/updated_at guard]`
 - **[FACT] BR-JR-3 — `sections_data` NOT NULL [E], licensed by JR-7.** The column IS the frozen record ("the frozen
   per-section data", structure-data L17) → a null contradicts JR-7 ("a faithful record of that day", `[INTENT: J4]`). Authored
   now (build phase). `[E]` via `@encrypted` JSDoc + plain `text()` (NOT `json<T>()`) — the `summary_config` pattern
@@ -731,7 +762,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   JSDoc is documentation-of-intent (M1.0 = pass-through). `[FACT: JR-7; conventions L29; notes.ts:54-55]`
 - **[FACT] BR-JR-4 — no enums / no CHECK / no UNIQUE / no FK.** Zero FIXED-vocab column → no CHECK, no `@vida/types` tuple, no
   validator, no enum-parity row. Plain `index('idx_journal_snapshots_date')` on `snapshot_date` (supports `getJournal(date)`,
-  mirrors `idx_pages_journal_date`); **NO UNIQUE** — one-per-date is NP-2 for *pages* (JR-1 boundary), never stated for
+  mirrors `idx_pages_journal_date`); **NO UNIQUE** — one-per-date is NP-2 for _pages_ (JR-1 boundary), never stated for
   snapshots, and backfill re-capture is design-pass → a UNIQUE would encode an undecided rule. No cross-table FK (ADR-016 §3.4;
   `snapshot_date` links to the pages journal by date at the app layer). `[FACT: business-rules JR-1/JR-6; structure-data L24-25]`
 - **[FACT] BR-JR-5 — reviews + per-period rollups REFUSED (design-pass); no discriminator manufactured.** structure-data L24-25:
@@ -751,6 +782,7 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   build-decisions.** 1 `JournalSnapshot` row interface → DB-11. `[FACT: vitest run; repository.ts:334-337]`
 
 ## Rules established by DB-4 group #21 Gamification ("the System") (IMPLEMENTED 2026-08-21 · `031_gamification.ts` + `schema/gamification.ts`)
+
 - **[FACT] BR-GM-1 — the heaviest INTENDED reframe (ADR-012), but only 3 tables authored.** The System's economy spine
   (`currencies`·`consequence_ledger`·`store`·`rules`) is **already-authored DB-3 substrate** (`foundation/economy.ts:23-103`)
   — CONSUMED, not authored. The rule→consequence engine, the typed effects (`grant_currency`/`lock_currency`/`move_money`/
@@ -773,23 +805,24 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   [[stale-source-plus-live-convention-is-fact-not-a-decision]]). Same rule set `achievements.tier` NOT NULL DEFAULT 'bronze'
   (interface `AchievementTier` non-null). `[FACT: entities/user.ts:43-79]`
 - **[FACT] BR-GM-5 — `achievements` is the FIRST non-syncable table.** App-defined **static seed**: `id + key(UNIQUE) +
-  category(CHECK) + tier(CHECK dflt 'bronze') + title + description + icon + xp_reward + condition(JSON) + is_secret + created_at`
+category(CHECK) + tier(CHECK dflt 'bronze') + title + description + icon + xp_reward + condition(JSON) + is_secret + created_at`
   ONLY — **NO `_sync_*`, NO `updated_at`, NO `deleted_at`** (the `Achievement` interface extends neither `SyncableEntity` nor
   `SyncMetadata`, `user.ts:67-79`; §5.15 L3405-3423). ⚠ **Downstream (M1.1):** the generic `Repository.create()` injects
   `_sync_*` unconditionally (`repository.ts:295-303`), so `achievements` must be **seeded via a dedicated path, NOT the sync
   Repository**. `[FACT: entities/user.ts:67-79; §5.15 L3405-3423]`
 - **[FACT] BR-GM-6 — `user_achievements` = SyncMetadata + UNIQUE; no-FK; registry +1.** `id + achievement_id(plain TEXT no-FK,
-  CASCADE app-layer) + earned_at + progress(JSON) + 6 _sync_*`, **UNIQUE(achievement_id)**, NO `created_at`/`updated_at`
+CASCADE app-layer) + earned_at + progress(JSON) + 6 _sync_*`, **UNIQUE(achievement_id)**, NO `created_at`/`updated_at`
   (`UserAchievement extends SyncMetadata` — the `check_in_template_questions` precedent), no `deleted_at`. **2 FIXED CHECK**
   (`achievements.category`→`ACHIEVEMENT_CATEGORY`, `.tier`→`ACHIEVEMENT_TIER`) reuse the EXISTING tuples (+2 enum-parity rows);
   no new enum/validator (reconcile-and-extend, the colocation-in-`entities/user.ts` handled upfront). `ENTITY_TYPES += 'achievement'`
   (a pages/entity_links target; `user_profile` singleton + `user_achievement` via achievement_id EXCLUDED). No ADR-002 §5-body
   edit (named-not-enumerated §5.20). **Phase-5 introspection** (`gamification-introspection.test.ts`, 3 × 4 + non-syncable guard
-  + SyncMetadata/UNIQUE guard + no-deleted_at guard = 15) + 2 parity rows. `@vida/core` **780 green**; `LATEST_VERSION`=31;
-  typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
-  build-decisions.** UserProfile interface reconcile (shed 7 fields) + XpHistory retire → DB-11. `[FACT: vitest run]`
+  - SyncMetadata/UNIQUE guard + no-deleted_at guard = 15) + 2 parity rows. `@vida/core` **780 green**; `LATEST_VERSION`=31;
+    typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero
+    build-decisions.** UserProfile interface reconcile (shed 7 fields) + XpHistory retire → DB-11. `[FACT: vitest run]`
 
 ## Rules established by DB-4 group #22 Notifications (IMPLEMENTED 2026-08-21 · `032_notifications.ts` + `schema/notifications.ts`) — **the FINAL DB-4 group → DB-4 COMPLETE (21/21)**
+
 - **[FACT] BR-NF-1 — 1 table; the dead-last observer leaf (a PURE SINK).** `notifications` — in-degree = everything,
   out-degree 0 (nothing depends on it). The dispatcher (`reminder-engine.ts`, 0 bytes), the two production paths
   (event-driven `surface_notification` / time-driven `dueIn()`), derived-until-fire reminders (NF-3, no phantom future
@@ -810,17 +843,17 @@ The third Stream (ii) domain module — **6 tables** completing the Session fram
   stopped at the module roster and didn't cross-check ADR-012's Additive mechanism — [[verify-a-critiques-escalation-and-defer-target-before-relaying]]
   applied in reverse: doc-check the critique's RULING → it was a real doc-fixed FACT). `[FACT: ADR-012 L45/L139; economy.ts:46,52; effects.ts:5]`
 - **[FACT] BR-NF-4 — RESOLUTION-N4 build-phase AMENDMENTs authored.** `metadata` [E] (optional entity payload JSON, nullable)
-  + a **3-flag delivery-audit** `delivered_in_app`/`delivered_push`/`delivered_email` (P, NN default 0 — which channels a row
-  fired on, multi-device delivery dedup). The delivery-audit shape (docs offered "flags OR a set") = **3 flags**, grounded on
-  the Preferences channel-triad (`preferences.ts:69-71`, the canonical channel representation; SMS dropped). `[FACT: RESOLUTION N4;
-  preferences.ts:69-71]`
+  - a **3-flag delivery-audit** `delivered_in_app`/`delivered_push`/`delivered_email` (P, NN default 0 — which channels a row
+    fired on, multi-device delivery dedup). The delivery-audit shape (docs offered "flags OR a set") = **3 flags**, grounded on
+    the Preferences channel-triad (`preferences.ts:69-71`, the canonical channel representation; SMS dropped). `[FACT: RESOLUTION N4;
+preferences.ts:69-71]`
 - **[FACT] BR-NF-5 — nullability = the interface; 1 CHECK; terminal-sink registry.** Nullability from the `common.ts:90-108`
-  `Notification` interface (title/type/is_read/is_archived/created_at NN; rest nullable). **1 FIXED CHECK** (`type` →
+  `Notification` interface (title/type/is*read/is_archived/created_at NN; rest nullable). **1 FIXED CHECK** (`type` →
   `NOTIFICATION_TYPE`, reuse existing tuple; +1 enum-parity row); `entity_type` OPEN (registry-validated, no CHECK). **No
   `ENTITY_TYPES` append** (terminal sink — a link *source* via `entity_type`/`entity_id`, never a link *target*). No new
   enum/validator (`NOTIFICATION_TYPE`/`NotificationTypeSchema` exist). §5.16 partial index `idx_notifications_unread(is_read)
-  WHERE is_archived=0` = SQL-only (NP-2 precedent). **Phase-5 introspection** (`notifications-introspection.test.ts`, 1 × 4 +
+WHERE is_archived=0` = SQL-only (NP-2 precedent). **Phase-5 introspection** (`notifications-introspection.test.ts`, 1 × 4 +
   no-updated_at/deleted_at guard + UNIQUE-convergence/partial-index behavioral guard = 6) + 1 parity row. `@vida/core` **787
   green**; `LATEST_VERSION`=32; typecheck 0; eslint 0. Gates: gate-1 **REVISE**→resolved (the `effect_event_id` catch) ·
-  preflight PASSED · gate-2 SHIP · post-impl SHIP. `Notification` interface reconcile (add metadata/delivered_*/effect_event_id
-  + sync) → DB-11. **⚠ DB-4 is now COMPLETE — 21/21 active groups authored → the M1.0 schema foundation is done.** `[FACT: vitest run]`
+  preflight PASSED · gate-2 SHIP · post-impl SHIP. `Notification` interface reconcile (add metadata/delivered*\*/effect_event_id
+  - sync) → DB-11. **⚠ DB-4 is now COMPLETE — 21/21 active groups authored → the M1.0 schema foundation is done.** `[FACT: vitest run]`

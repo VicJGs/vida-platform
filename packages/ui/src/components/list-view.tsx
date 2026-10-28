@@ -248,11 +248,7 @@ export function ListView<T>({
             <View key={section.id}>
               <SectionHeader id={headerId}>{section.title}</SectionHeader>
               <ListRoot role={secRole} aria-labelledby={headerId} density={density}>
-                {secEmpty ? (
-                  <Message>Nothing here yet.</Message>
-                ) : (
-                  section.items.map((item, i) => renderRow(item, i))
-                )}
+                {secEmpty ? <Message>Nothing here yet.</Message> : section.items.map((item, i) => renderRow(item, i))}
               </ListRoot>
             </View>
           )

@@ -11,7 +11,7 @@
 ## 0. Grounding (ground truth this PLAN is built on)
 
 - **Ratified economy frame:** ADR-012 — rule→consequence engine; `grant_currency` (`award_xp` = XP case) is a §3.2.5
-  Additive effect (§3.1); XP is *one currency, not privileged* (§3.2); balances DERIVED from `consequence_ledger`
+  Additive effect (§3.1); XP is _one currency, not privileged_ (§3.2); balances DERIVED from `consequence_ledger`
   (§3.3); shipped rules trusted, user rules under ADR-010 sandbox (§3.9); the `rules` table shape + reward config
   format are the item ADR-012 §97 leaves to the build phase — **which is now** (this campaign).
 - **Authored substrate (DB-3, live):** `packages/core/src/db/schema/foundation/economy.ts` — `currencies`
@@ -46,105 +46,116 @@
 Each fork: the options, the OS-fit test (against the grounding above), a recommendation. The gate decides.
 
 ### Fork A — Where the shipped-default reward amounts live
+
 - **A1 — Seeded `rules` rows (`grant_id NULL`).** The app-default reward set IS data in the authored `rules` table.
-  *OS-fit:* reuses the authored substrate + the `grant_id NULL = shipped` convention (economy.ts:98); one truth path
-  (everything is a rule). *Cost:* need a seed migration.
-- **A2 — A dedicated `xp_action_rewards` config table.** *OS-fit:* adds a table ADR-012 never designed → a DIVERGENT
+  _OS-fit:_ reuses the authored substrate + the `grant_id NULL = shipped` convention (economy.ts:98); one truth path
+  (everything is a rule). _Cost:_ need a seed migration.
+- **A2 — A dedicated `xp_action_rewards` config table.** _OS-fit:_ adds a table ADR-012 never designed → a DIVERGENT
   new structure parallel to `rules`; two reward models. ✗
-- **A3 — Code constants that materialize into rules on first run.** *OS-fit:* splits truth between code + DB;
+- **A3 — Code constants that materialize into rules on first run.** _OS-fit:_ splits truth between code + DB;
   re-seed/versioning ambiguity. ✗
 - **▶ Recommend A1** — the substrate exists for exactly this.
 
 #### Fork A′ — The seed/sync MODEL of the shipped-default rules (blocking sub-decision)
+
 The `rules` table carries `...baseColumns` (syncable). Shipped defaults are app-config, not user content, so their
 sync model is a real decision with a **multi-device double-seed hazard**:
+
 - **A′1 — Static-seed, NON-synced** (the `achievements` precedent — the OS's "first non-syncable static-seed table",
   DB-4 #21): defaults are app-provided identical rows on every device; **deterministic IDs** (e.g. `rule:xp:<action>`)
   so re-seed is idempotent and no device double-seeds. User-authored rules (`grant_id` set) sync normally.
-  *OS-fit:* matches the only static-seed precedent in the OS; no sync churn on app-shipped config.
-- **A′2 — Synced rows.** *OS-fit:* two devices each seed → duplicate default rules unless UNIQUE-keyed; puts
+  _OS-fit:_ matches the only static-seed precedent in the OS; no sync churn on app-shipped config.
+- **A′2 — Synced rows.** _OS-fit:_ two devices each seed → duplicate default rules unless UNIQUE-keyed; puts
   app-config through the user sync channel. ✗
 - **▶ Recommend A′1** — mirror the `achievements` static-seed model; deterministic IDs. (DDL stays build-phase; the
-  *model* is ratified here.)
+  _model_ is ratified here.)
 
 ### Fork B — The weighting-switch granularity
-- **B1 — Global-only** (`user_preferences.xp_difficulty_weighting` bool). *Simple; not advanced-tunable.*
+
+- **B1 — Global-only** (`user_preferences.xp_difficulty_weighting` bool). _Simple; not advanced-tunable._
 - **B2 — Global default + per-rule override**, using the **`resolveSelection` PATTERN** (global-default + local-override
-  precedence — the shape, not reuse of that journal-summary function). *OS-fit:* the VERIFIED house pattern (BR-6,
+  precedence — the shape, not reuse of that journal-summary function). _OS-fit:_ the VERIFIED house pattern (BR-6,
   PR-1/PR-2); a plaintext bool in `user_preferences` (merged via `getMergedPreferences`) is the default; the **per-rule
   setting is the descriptor's `weight_by` (Fork C1) itself** — a rule that sets `weight_by` overrides the global default;
   a rule that leaves it unset inherits the global. **ONE mechanism, not a second column.** Matches Victor's intent.
-- **B3 — Per-rule only.** *No global default = no protection floor.* ✗ (contradicts intent #1).
-- **▶ Recommend B2** — established precedent AND stated intent. *(Reconciled with C1: the per-rule override is the
-  `weight_by` field, not a separate `rules` column — see §2.C.)*
+- **B3 — Per-rule only.** _No global default = no protection floor._ ✗ (contradicts intent #1).
+- **▶ Recommend B2** — established precedent AND stated intent. _(Reconciled with C1: the per-rule override is the
+  `weight_by` field, not a separate `rules` column — see §2.C.)_
 
 ### Fork C — The weighting EXPRESSION grammar (`rules.consequences`)
+
 - **C1 — Structured typed-effect descriptor** with an optional weight, e.g.
   `{ effect:'grant_currency', currency:'XP', base:N, weight_by:'difficulty'|'priority'|null, scale:<map|curve-ref> }`.
-  `weight_by: null` = flat; a set value = weighted (this field IS the per-rule override of Fork B2). *OS-fit:* fits the
+  `weight_by: null` = flat; a set value = weighted (this field IS the per-rule override of Fork B2). _OS-fit:_ fits the
   "typed-consequence effect descriptors (ADR-004 §3.2.5)" the schema comment already names (economy.ts:96); the
   weight input (`difficulty`/`priority`) is a **triggering-entity attribute read from the event payload** (the rule's
-  *condition* remains the ADR-011 binding); JSON-as-TEXT is already the column type; **`GrantCurrencyPayload` is
+  _condition_ remains the ADR-011 binding); JSON-as-TEXT is already the column type; **`GrantCurrencyPayload` is
   UNTOUCHED** — weighting resolves upstream → a final amount reaches the effect. **Missing weight input** (a rule
   weights by `priority` but the entity has none) → **falls back to `base` (flat), flagged** — the GM-10 missing-signal
   precedent (never fabricate a multiplier).
-- **C2 — Free-form formula/expression string.** *OS-fit:* an eval surface = ZK/sandbox hazard (ADR-010); rejected by
+- **C2 — Free-form formula/expression string.** _OS-fit:_ an eval surface = ZK/sandbox hazard (ADR-010); rejected by
   the "declared schema, not arbitrary eval" posture. ✗
-- **C3 — Fixed difficulty→multiplier map only** (no per-rule expression). *Rigid; can't express priority or curves.*
+- **C3 — Fixed difficulty→multiplier map only** (no per-rule expression). _Rigid; can't express priority or curves._
 - **▶ Recommend C1** — declarative, sandbox-safe, seam-native, effect-rail-preserving.
 
 ### Fork D — The `achievements.xp_reward` parallel path
+
 > **Scope note:** D is included in GG4 only as a **write-path-consistency** statement (GG4 owns the reward-grant
 > model). The achievement-EVALUATION engine that fires it is **GG6** — D3 is cross-referenced to GG6, not built here.
+
 - **D1 — Subsume:** achievements become rules (condition = achievement predicate; consequence = `grant_currency`);
-  `xp_reward` retires to legacy. *Cleanest single-model; most rework.*
-- **D2 — Keep two paths:** achievements own their flat reward; rules own action-XP. *OS-fit:* a second write path that
+  `xp_reward` retires to legacy. _Cleanest single-model; most rework._
+- **D2 — Keep two paths:** achievements own their flat reward; rules own action-XP. _OS-fit:_ a second write path that
   does NOT go through the rail = violates the "one ledger truth / grant via the rail" spirit (ADR-012 §3.1). ✗
 - **D3 — Bridge:** keep the `xp_reward` column as the achievement's amount, but GRANT it through a `grant_currency`
-  effect on the rail **when the GG6 engine fires** (unify the write path, keep the authored column). *OS-fit:* one
+  effect on the rail **when the GG6 engine fires** (unify the write path, keep the authored column). _OS-fit:_ one
   ledger truth (§3.3) + no schema churn + achievements stay a distinct authored entity. Least-rework unification.
 - **▶ Recommend D3** — unifies the write path without retiring an authored column or forcing achievements-as-rules;
   materializes with GG6's engine (cross-ref, not GG4 build).
 
 ### Fork E — Integration-readiness realization (currency ↔ M2)
+
 - **E1 — Forward-constraint only (no schema now):** record that `currencies.backing_kind` + `code` are the extension
-  point; the webhook/bank plumbing is M2/ADR-014. *OS-fit:* respects layer ownership + "reconcile-not-redo"; ZK-safe
-  by deferring nothing about the *model*, only the *plumbing* (which is genuinely another milestone's build).
-- **E2 — Pre-author provenance columns now** (`external_source`/`external_ref` on `currencies`). *OS-fit:* authors
+  point; the webhook/bank plumbing is M2/ADR-014. _OS-fit:_ respects layer ownership + "reconcile-not-redo"; ZK-safe
+  by deferring nothing about the _model_, only the _plumbing_ (which is genuinely another milestone's build).
+- **E2 — Pre-author provenance columns now** (`external_source`/`external_ref` on `currencies`). _OS-fit:_ authors
   M2's schema early = crosses the layer boundary Victor drew; premature. ✗
 - **▶ Recommend E1** — integration-ready by model, M2 owns the plumbing (cite ADR-014/FN-8/EX-2).
 
 ### Fork F — Home/layer of GG4's CODE (planning disposition — MINE to plan, gate to approve)
+
 - **F1 — Gamification module backend build issue** (P3-decomposed): seeds default rules (A1), adds the global toggle +
-  per-rule override (B2), implements the C1 grammar + D3 bridge. *OS-fit:* GG4 is module-backend intent; P2 stays a
+  per-rule override (B2), implements the C1 grammar + D3 bridge. _OS-fit:_ GG4 is module-backend intent; P2 stays a
   pure reconcile pass (PLAN-p2:135). Design ratified now; code built from settled intent.
-- **F2 — Fold the two additive columns into P2.** *OS-fit:* contradicts P2's own scope line; smuggles new-module build
+- **F2 — Fold the two additive columns into P2.** _OS-fit:_ contradicts P2's own scope line; smuggles new-module build
   into a reconcile. ✗
-- **F3 — A dedicated economy-reward build issue** (separate from the gamification module). *Possible; finer grain,
-  decided at P3 decomposition.*
+- **F3 — A dedicated economy-reward build issue** (separate from the gamification module). _Possible; finer grain,
+  decided at P3 decomposition._
 - **▶ Recommend F1** (with F3 as a P3 grain option) — resolve-now (design) + build-in-the-right-layer.
 
-### Fork G — The v1 default reward VALUE SET (GG4 is literally "the reward *table*")
-GG4 names an XP-per-action reward *table* + difficulty weighting. The forks above settle the *mechanism*; the actual
+### Fork G — The v1 default reward VALUE SET (GG4 is literally "the reward _table_")
+
+GG4 names an XP-per-action reward _table_ + difficulty weighting. The forks above settle the _mechanism_; the actual
 **numbers** (per-action base amounts + the difficulty/priority → multiplier map) are a distinct deliverable that must
 be homed, not left implicit.
+
 - **G1 — Ratify the SHAPE + weighting POLICY here; author the NUMBERS in F1** (the module build), with Victor sign-off
-  on the concrete value set at that point. *OS-fit:* keeps this gate a design-ratification (its stated type); the value
+  on the concrete value set at that point. _OS-fit:_ keeps this gate a design-ratification (its stated type); the value
   set is content, authored where the seed migration lives; avoids bikeshedding numbers in a model gate.
-- **G2 — Fix the numbers now.** *Pulls value-tuning into a design gate; premature — the feeders (Tasks/Habits/…) and
-  their difficulty vocabularies are the inputs, better set beside the seed.*
+- **G2 — Fix the numbers now.** _Pulls value-tuning into a design gate; premature — the feeders (Tasks/Habits/…) and
+  their difficulty vocabularies are the inputs, better set beside the seed._
 - **▶ Recommend G1** — ratify shape + policy now; the default value set is an F1 authoring deliverable with your
   explicit sign-off. **This keeps GG4 fully resolved (nothing implicit) without turning the gate into number-tuning.**
 
 ## 3. Recommended composite approach
 
-**A1 + A′1 + B2 + C1 + D3 + E1 + F1 + G1.** In one line: *shipped default rules (static-seed, deterministic IDs —
+**A1 + A′1 + B2 + C1 + D3 + E1 + F1 + G1.** In one line: _shipped default rules (static-seed, deterministic IDs —
 `achievements` model) seed the protected baseline; a global
 `xp_difficulty_weighting` preference (per-rule override via `resolveSelection`) toggles flat vs difficulty/priority
 weighting; the weight is the declarative `weight_by` field in the `rules.consequences` descriptor (also the per-rule
 override); the final amount is granted through the existing `grant_currency` rail (achievements bridge via D3 when the
 GG6 engine fires); the currency stays integration-ready by model (M2/ADR-014 owns the plumbing); the SHAPE + weighting
-policy ratify here, the default value set + all code author in the gamification module backend build (F1), not P2.*
+policy ratify here, the default value set + all code author in the gamification module backend build (F1), not P2._
 Ratified into an **ADR-012 amendment** (closes GG4) + the **corpus GG4 line** flips UNKNOWN→RESOLVED.
 
 ## 4. Acceptance — does it fit the OS?
@@ -174,6 +185,7 @@ Ratified into an **ADR-012 amendment** (closes GG4) + the **corpus GG4 line** fl
 The global toggle `xp_difficulty_weighting` is a **Preferences-owned** column (PR-1 all-plaintext; GM-12 single-writer)
 that gamification **consumes** — it is NOT authored by the gamification module. So the composite touches **two build
 homes**, which P3 decomposition must encode:
+
 - **Preferences build** authors the `user_preferences.xp_difficulty_weighting` plaintext column + its `DEFAULTS` entry.
 - **Gamification build (F1)** authors the seed rules (A1/A′1), the `weight_by` descriptor grammar (C1), the D3 bridge,
   and **reads** the preference via `getMergedPreferences` (never a cross-module table write — INT-2).

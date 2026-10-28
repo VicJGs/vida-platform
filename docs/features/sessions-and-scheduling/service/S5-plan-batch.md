@@ -20,6 +20,7 @@ pending_approval` hop is the deferred algorithm's output) so the endpoint set is
 course_id → scope_type/scope_id per G5 — scheduling.ts:74]`
 
 ## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+
 - `generatePlan(input): PlanBatch` — create a batch (the "generate" action). Status → `pending_approval`,
   `generated_at:now`, `total_sessions:0`. `input` = `{ scope_type?, scope_id?, name? }`. `name` `[E]`. The
   placement **`window`** (seam-contract) is NOT accepted here — it is algorithm-only input, added in M1.2 with
@@ -30,9 +31,10 @@ course_id → scope_type/scope_id per G5 — scheduling.ts:74]`
   recompute (re-placement on miss) is the deferred algorithm (M1.2) — M1.1 is the endpoint shell.
 
 ## §2 Operation-flow & invariants
+
 - **State machine (business-rules:88), fail-loud (IR-5).** `pending_approval → approved → active`, with
   `recalc` self-looping on `active`. Any endpoint invoked from a non-matching status → `InvalidBatchTransition
-  (id, from, event)`, **no write**. `draft` (wizard-in-progress) is the DDL default for a batch created outside
+(id, from, event)`, **no write**. `draft` (wizard-in-progress) is the DDL default for a batch created outside
   `generatePlan` (a ② concern); `completed`/`failed` are terminal outcomes of the deferred algorithm +
   session-completion (M1.2) — **S5 does not transition into them** (no `completePlan`/`failPlan` endpoint;
   they're not in the contract's `approve`/`activate`/`recalc` set). `[FACT: business-rules.md:88-89; contract.md:37-38]`
@@ -47,10 +49,12 @@ course_id → scope_type/scope_id per G5 — scheduling.ts:74]`
   batch row); it does not run placement, so it neither schedules nor fails on emptiness. Noted, not built.
 
 ## §3 Contract (delta)
+
 Adds the 4 endpoints to `SessionsService`. `GeneratePlanInput` (`{ scope_type?, scope_id?, name? }`),
 `PlanBatch` = the row type, `InvalidBatchTransition`. `scope_type`/`scope_id` are OPEN (no CHECK, G5-widened).
 
 ## §4 Acceptance criteria (Verification Gate — live unlocked vault)
+
 1. `generatePlan({scope_type:'course', scope_id:'c1', name:'Wk1'})` → a row `status:'pending_approval'`,
    `generated_at` set, `total_sessions:0`; `sync_queue` enqueued.
 2. `approvePlan` → `approved` + `approved_at` set; `activatePlan` → `active`; `recalcPlan` → stays `active`,
@@ -62,13 +66,15 @@ Adds the 4 endpoints to `SessionsService`. `GeneratePlanInput` (`{ scope_type?, 
 5. `tsc` clean; full `@vida/core` suite green.
 
 ## §5 Implementation prompt (order)
+
 1. `types.ts` — `GeneratePlanInput`, `PlanBatch` (= `StudyPlanBatchRow`), `InvalidBatchTransition(id, from, event)`.
 2. `service.ts` — `batchRepo` (`softDelete:false`); the 4 endpoints; a hoisted `assertBatchStatus(row, expected,
-   event)` guard.
+event)` guard.
 3. Wire into the `SessionsService` interface; re-export `InvalidBatchTransition`.
 4. `__tests__` — AC1–AC4 on a live vault.
 
 ## §6 Out of scope (homed)
+
 The **placement algorithm** (urgency/conflict scoring, `planned_blocks` population, `recalc` re-placement, G5) →
 M1.2 study-planner design-pass · SS-8 block→session instantiation → with the algorithm · `completed`/`failed`
 transitions → algorithm + session-completion (M1.2) · `dueIn` consuming the plan → S7 · `name` encryption → M3/DB-5.

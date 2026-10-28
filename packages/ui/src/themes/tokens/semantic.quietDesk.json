@@ -2,19 +2,19 @@
   "_note": "PRESET OVERLAY (light) — quietDesk. Loaded BY FILENAME in the themes.ts emitter (NOT the SD source glob). Full remap of the preset-colored semantics to color.quietDesk.*; signal/space/radius inherit from semantic.json (per-leaf merge). Precedence: semantic.json < semantic.quietDesk.json.",
   "color": {
     "surface": {
-      "primary":   { "value": "{color.quietDesk.neutral.50}", "type": "color" },
+      "primary": { "value": "{color.quietDesk.neutral.50}", "type": "color" },
       "secondary": { "value": "{color.quietDesk.neutral.100}", "type": "color" },
-      "inverse":   { "value": "{color.quietDesk.neutral.900}", "type": "color" }
+      "inverse": { "value": "{color.quietDesk.neutral.900}", "type": "color" }
     },
     "text": {
       "primary": { "value": "{color.quietDesk.neutral.900}", "type": "color" },
-      "muted":   { "value": "{color.quietDesk.neutral.500}", "type": "color" }
+      "muted": { "value": "{color.quietDesk.neutral.500}", "type": "color" }
     },
     "brand": {
-      "primary":  { "value": "{color.quietDesk.accent.500}", "type": "color" },
+      "primary": { "value": "{color.quietDesk.accent.500}", "type": "color" },
       "emphasis": { "value": "{color.quietDesk.accent.600}", "type": "color" }
     },
-    "focus":  { "ring": { "value": "{color.quietDesk.accent.500}", "type": "color" } },
+    "focus": { "ring": { "value": "{color.quietDesk.accent.500}", "type": "color" } },
     "border": { "default": { "value": "{color.quietDesk.neutral.200}", "type": "color" } }
   }
 }

@@ -149,11 +149,7 @@ function IntegrationBlockPlaceholder({ node }: NodeViewProps): ReactElement {
   const label = def?.label ?? node.type.name
   return (
     <NodeViewWrapper className="vida-integration-block" data-block-type={node.type.name}>
-      <PlaceholderCard
-        role="note"
-        aria-label={`${label} — available when its module ships`}
-        contentEditable={false}
-      >
+      <PlaceholderCard role="note" aria-label={`${label} — available when its module ships`} contentEditable={false}>
         <CardTitle>{label}</CardTitle>
         {def?.description ? <CardText>{def.description}</CardText> : null}
         <CardText fontStyle="italic">Available when its module ships</CardText>
@@ -193,10 +189,7 @@ export function createIntegrationBlockNode(def: InlineBlockDef): Node {
 
     renderHTML({ HTMLAttributes }) {
       // Atom → no content hole. Config attrs are `rendered:false`, so only the type-identifying data-* reach the DOM.
-      return [
-        'div',
-        mergeAttributes(HTMLAttributes, { 'data-type': 'integration-block', 'data-block-type': def.name }),
-      ]
+      return ['div', mergeAttributes(HTMLAttributes, { 'data-type': 'integration-block', 'data-block-type': def.name })]
     },
 
     addNodeView() {

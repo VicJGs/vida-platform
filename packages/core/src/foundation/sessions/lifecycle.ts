@@ -92,19 +92,13 @@ export async function fireCompletionEffects(
  * commit the new status LAST. Illegal `(status, event)` → `InvalidTransition` (no write). Not
  * target-state idempotent: re-issuing an already-applied event throws `InvalidTransition` (BR-S3-9).
  */
-export async function transition(
-  deps: TransitionDeps,
-  sessionId: string,
-  event: string,
-): Promise<TransitionResult> {
+export async function transition(deps: TransitionDeps, sessionId: string, event: string): Promise<TransitionResult> {
   const rows = await deps.db.select().from(sessions).where(eq(sessions.id, sessionId)).all()
   const session = rows[0]
   if (!session) throw new InvalidTransition(sessionId, 'missing', event)
 
   const def = await deps.registry.get(session.sub_type) // throws SessionTypeNotFound if unknown
-  const match = def.lifecycle.transitions.find(
-    (t) => t.from === session.status && t.event === event,
-  )
+  const match = def.lifecycle.transitions.find((t) => t.from === session.status && t.event === event)
   if (!match) throw new InvalidTransition(sessionId, session.status, event)
 
   const toStatus = match.to

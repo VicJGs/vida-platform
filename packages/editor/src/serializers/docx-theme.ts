@@ -57,7 +57,11 @@ export const BLOCKQUOTE_INDENT = 360 // 0.25"
 /** Nested-list indent per level (twips). */
 export const LIST_INDENT_PER_LEVEL = 360
 /** Code block shading (a light surface behind the monospace run). */
-export const CODE_SHADING: IShadingAttributesProperties = { type: ShadingType.CLEAR, fill: DOCX_COLORS.codeBg, color: 'auto' }
+export const CODE_SHADING: IShadingAttributesProperties = {
+  type: ShadingType.CLEAR,
+  fill: DOCX_COLORS.codeBg,
+  color: 'auto',
+}
 
 /** Callout left border (accent) + tint shading, per variant. */
 export function calloutBorder(variant: CalloutVariant): IBorderOptions {

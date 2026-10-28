@@ -1,8 +1,10 @@
 # PLAN — check-ins ① · S3 Templates & questions
+
 Status: draft (gate-1 = this spec) · Session: 2026-09-19-mod-check-ins · Slice: S3 (legs CHE-05,06,07,08,09,10,11,12,22)
 No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded in the notes/S2 precedent + check-ins docs (intake §Resolution G3/G5).
 
 ## 1. Identity
+
 Extend the check-ins service with the **template form-engine**: template CRUD, typed questions, default-first
 resolution, schedule config, seeding, and the no-FK app-cascade on template delete.
 **What it is NOT:** not per-type template rows keyed by a `check_in_type` column — **there is none** (ADR-002
@@ -10,6 +12,7 @@ resolution, schedule config, seeding, and the no-FK app-cascade on template dele
 seams (S5).
 
 ## 2. Business Rules (the model — from the CONFIRMED intake §Resolution)
+
 - **G5 / CK-4 — the built-in columns ARE the default template.** `[FACT: intake:55; business-rules CK-4]` The
   `daily_check_ins` standard columns are the default; a `check_in_templates` row exists ONLY when the user
   personalizes. Creating a row to represent the built-in would DUPLICATE it (violates single-source) — so the
@@ -23,7 +26,7 @@ seams (S5).
   shape; M1.0 resolves default-first. `[FACT: intake:47-55; parts CHE-05]`
 - **CHE-12 `seedDefaultTemplates()` — seeds ONE canonical default, idempotent.** Reconciles all three docs:
   CHE-12 (seed a default) + G3 (the user "edits defaults to personalize" ⇒ an editable default ROW must exist) +
-  G5 (the columns are where *answers* materialize — the seeded row DEFINES the default's questions, it does NOT
+  G5 (the columns are where _answers_ materialize — the seeded row DEFINES the default's questions, it does NOT
   duplicate answers). So `seedDefaultTemplates()` seeds **one canonical, type-agnostic default template**
   (`is_default=true, is_active=true`) IF none exists (idempotent — skip when a default already exists; never a
   duplicate on re-run). The built-in columns remain the zero-setup answer path (G5); the seeded row is the
@@ -48,6 +51,7 @@ seams (S5).
   `encryptedFields: []` (M1.0). `[FACT: check-ins.ts:80,85]`
 
 ## 3. Contract (types.ts append)
+
 ```ts
 interface CheckInsService {                       // + S3 methods
   getActiveTemplate(type: CheckInType): Promise<CheckInTemplate | null>          // CHE-05
@@ -63,11 +67,13 @@ interface CheckInsService {                       // + S3 methods
 }
 class DuplicateFieldKeyError extends Error   // CHE-08
 ```
+
 Templates return the parsed `CheckInTemplate` (schedule_days JSON → number[]); questions return
 `CheckInTemplateQuestionRow` (no JSON fields → raw Row is the seam, the "raw reader returns Row" convention),
 with the phantom baseColumns stripped.
 
 ## 4. Acceptance
+
 - [ ] createTemplate persists + backfills defaults; updateTemplate patches; schedule_days round-trips (number[]).
 - [ ] getActiveTemplate returns the active is_default template, else null (built-in).
 - [ ] seedDefaultTemplates seeds one canonical default (is_default=true) on an empty store; is idempotent (re-run creates no duplicate); getActiveTemplate then returns it.
@@ -78,6 +84,7 @@ with the phantom baseColumns stripped.
 - [ ] **Verification Gate:** Vitest + ≥2 failure paths (dup field_key, cascade) + **live-store smoke** (real seed + template delete cascade + getActiveTemplate fallback).
 
 ## 5. Implementation Prompt
+
 1. `validators/user.ts` already has `CreateTemplateSchema`/`UpdateTemplateSchema`/`AddQuestionSchema`/`ScheduleConfigSchema` (S1) — reuse.
 2. `types.ts` — append the S3 methods + input types (z.infer) + `DuplicateFieldKeyError`.
 3. `service.ts` — add `templateRepo` (check_in_templates, softDelete:false) + reuse the read-only `questionRepo`; implement §2/§3. Template returns via a `toTemplate(row)` mapper (parse schedule_days) + `serializeTemplate` (stringify). Question create strips phantom base cols. deleteTemplate does the app-cascade in code.
@@ -85,9 +92,11 @@ with the phantom baseColumns stripped.
 5. `pnpm --filter @vida/core test` + `tsc --noEmit` → §4 done-check. Currency Rule: refresh current-spec.
 
 ## 6. Open UNKNOWNs
+
 - [none blocking] — the template↔type model is doc-resolved (G3/G5): built-in default is type-agnostic; resolution via is_default/is_active; no check_in_type column. seedDefaultTemplates idempotent-thin (G5 subsumes per-type rows). To be stress-tested at gate-1.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change                                                                                  |
+| ---------- | ------------------------ | --------------------------------------------------------------------------------------- |
 | 2026-09-19 | 2026-09-19-mod-check-ins | S3 PLAN draft (template model grounded in intake §Resolution G3/G5 after a drift-catch) |

@@ -214,9 +214,20 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
     completion_time: p.completion_time ?? null,
   })
   // re-log / edit patch: only the keys the caller sent (never null-blanks an unpassed field).
-  const serializeCompletionPatch = (p: LogCompletionInput | EditCompletionInput): UpdateInput<typeof habitCompletions> => {
+  const serializeCompletionPatch = (
+    p: LogCompletionInput | EditCompletionInput,
+  ): UpdateInput<typeof habitCompletions> => {
     const out: UpdateInput<typeof habitCompletions> = {}
-    for (const k of ['count', 'value', 'mood_before', 'mood_after', 'ease_rating', 'satisfaction', 'location', 'completion_time'] as const) {
+    for (const k of [
+      'count',
+      'value',
+      'mood_before',
+      'mood_after',
+      'ease_rating',
+      'satisfaction',
+      'location',
+      'completion_time',
+    ] as const) {
       if (k in p) (out as Record<string, unknown>)[k] = (p as Record<string, unknown>)[k]
     }
     return out
@@ -449,7 +460,9 @@ export function createHabitsService(deps: HabitsServiceDeps): HabitsService {
         if (existing.deleted_at == null) return toProjectHabit(existing) // live → idempotent return
         return toProjectHabit(await projectHabitsRepo.update(existing.id, { deleted_at: null })) // resurrect
       }
-      return toProjectHabit(await projectHabitsRepo.create({ project_id: projectId, habit_id: habitId, deleted_at: null }))
+      return toProjectHabit(
+        await projectHabitsRepo.create({ project_id: projectId, habit_id: habitId, deleted_at: null }),
+      )
     },
 
     unlinkProject: async (habitId, projectId) => {

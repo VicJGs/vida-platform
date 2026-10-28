@@ -1,6 +1,6 @@
 <!-- Business Rules — features/tasks · /documentation Phase 2 · sources: ADR-002 §5.3 · task.ts · intake -->
 
-# Business Rules — Tasks  (level: Feature)
+# Business Rules — Tasks (level: Feature)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3. Every rule below complies.
 
@@ -19,28 +19,33 @@
 - **TK-11 — The task is a pursuable (measurable).** A task carries `measurement_kind` CHECK ∈ `quantitative·milestone·rate·qualitative` (natural = **`milestone`**) + `binding_mode` CHECK ∈ `manual·derived-pull·event-trigger` (ADR-011 M1/M2). It has **no** bespoke `target_type` (pure add), stores **no** progress column (progress derives — M3, TK-3), and is **not** an M5 queryable-measure source (tasks aren't in the M5 applies-to set); it contributes UP to a purpose via `contributions` (M4 ladder), never owning Purpose rollup tables. `[INTENT; ADR-011 M1/M2/M3/M4]`
 
 ## Validation & edge cases
+
 - Enum CHECKs: `status`∈{not_started,in_progress,completed,on_hold,cancelled}, `priority`∈{critical,high,medium,low,none}, `difficulty`∈{trivial,easy,medium,hard,expert}. `[FACT: ADR-002 L1474-1481]`
 - A running timer (`end_time IS NULL`) must be closed before its `duration_minutes` counts toward rollup (TK-5). `[INTERP: ADR-002 task_time_logs]`
 - Setting two parent FKs is rejected (TK-2); orphaning a sub-task (parent deleted) is impossible — it cascades (TK-4). `[INTENT G2; FACT TK-4]`
 - An obligation with no recurrence rule behaves as a standard task until a rule is set (TK-7). `[INTERP TK-7]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Task list / any view | skeleton | "no tasks" / "nothing matches this view" + create CTA | typed read error, retry | rendered view |
-| Create / edit task | — | — | validation error (bad enum / two parents) surfaced inline | persisted, optimistic |
-| Sub-task rollup | computing | "no sub-tasks" | child read error → show partial + flag | "x/y done" on parent |
-| Timer (start/stop) | starting | no logs yet (opted out or none) | start/stop fails → revert, typed toast | running indicator; on stop a log + rollup |
-| Obligation completion | — | — | recurrence-rule parse error → complete but flag (no regen) | completed + next occurrence created |
-| View-builder (`views` row, V1; R5 states) | loading saved views | "no custom views — use a preset" (T4) | save fails → keep editing, typed error | named `views` row saved/pinned |
+
+| Capability                                | loading             | empty                                                 | error                                                      | success                                   |
+| ----------------------------------------- | ------------------- | ----------------------------------------------------- | ---------------------------------------------------------- | ----------------------------------------- |
+| Task list / any view                      | skeleton            | "no tasks" / "nothing matches this view" + create CTA | typed read error, retry                                    | rendered view                             |
+| Create / edit task                        | —                   | —                                                     | validation error (bad enum / two parents) surfaced inline  | persisted, optimistic                     |
+| Sub-task rollup                           | computing           | "no sub-tasks"                                        | child read error → show partial + flag                     | "x/y done" on parent                      |
+| Timer (start/stop)                        | starting            | no logs yet (opted out or none)                       | start/stop fails → revert, typed toast                     | running indicator; on stop a log + rollup |
+| Obligation completion                     | —                   | —                                                     | recurrence-rule parse error → complete but flag (no regen) | completed + next occurrence created       |
+| View-builder (`views` row, V1; R5 states) | loading saved views | "no custom views — use a preset" (T4)                 | save fails → keep editing, typed error                     | named `views` row saved/pinned            |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A failed save/timer reverts the optimistic state and surfaces a typed error — never silent data loss. `[INTENT G4; FACT §5]`
 - An obligation that completes but can't regenerate (bad rule) still completes, and **flags** the missing next occurrence loudly — never silently stops recurring. `[INTENT G8]`
 - An aggregation source being unavailable degrades that group to an explicit empty/error state, not the whole view. `[INTERP TK-9]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 The following are **INTENDED**, not in ADR-002 §5.3 / `task.ts` today — TK-6/7/8/11 + the view-builder depend on them: `completed_at`, `scheduled_date`, recurrence rule + `kind` (`standard`/`obligation`), `measurement_kind`/`binding_mode` (M1/M2), saved-views persistence via the **`views`** primitive (ADR-007 V1 — retiring the schema-0 `task_views` build target), and migration of inline `tasks.tags` → **`entity_tags`** (SP1). All converge into one **ADR-002 amendment** in the build phase. Until then, the live invariants are TK-1..TK-5, TK-9, TK-10. `[FACT: ADR-002 §5.3; INTENT G1,G5,G6,G7,G8; ADR-011/006/007/009/004/012]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

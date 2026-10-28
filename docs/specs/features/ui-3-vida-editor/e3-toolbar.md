@@ -1,39 +1,46 @@
 # Spec: feature:ui-3-vida-editor — E3 (editor toolbar)
+
 <!-- sub-unit spec under the UI-3 umbrella (_index.md §5, E3 row). -->
-Status: draft            <!-- draft → approved → implemented -->
+
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-12-ui-3-vida-editor (E3 PLAN).
-Parent: docs/specs/features/ui-3-vida-editor/_index.md · Ground truth: docs/editor/current-{spec,business-rules}.md
+Parent: docs/specs/features/ui-3-vida-editor/\_index.md · Ground truth: docs/editor/current-{spec,business-rules}.md
 
 ---
 
 ## 1. Identity
+
 **E3 — the editor toolbar.** The formatting chrome for `<VidaEditor>`: a `role="toolbar"` row of controls that
 **apply** formatting commands and **reflect** the active marks/block at the current selection. Composes UI-1 `Button`
-+ `Menu` `[FACT: _index.md §5 E3 row "Formatting controls; composes UI-1 Button/Menu; reflects active marks"; BR-4]`.
+
+- `Menu` `[FACT: _index.md §5 E3 row "Formatting controls; composes UI-1 Button/Menu; reflects active marks"; BR-4]`.
 
 **Scope IN:** the toolbar component + its mount into `<VidaEditor>` + active-state reflection via `useEditorState`
-+ the a11y toolbar pattern (roving tabindex).
-**Scope OUT (grounded):**
-- **Slash menu** — E4 `[FACT: _index.md §5 E4]`.
-- **Bubble/floating (selection-anchored) toolbar** — not in the umbrella's E3 row (which says "toolbar", the fixed
+
+- the a11y toolbar pattern (roving tabindex).
+  **Scope OUT (grounded):**
+
+* **Slash menu** — E4 `[FACT: _index.md §5 E4]`.
+* **Bubble/floating (selection-anchored) toolbar** — not in the umbrella's E3 row (which says "toolbar", the fixed
   chrome). A floating variant, if ever wanted, is a later enhancement. `[INTERP: _index.md §5]`
-- **Image + Link controls** — both need a URL/attachment input surface the editor does not yet have: `image` is
+* **Image + Link controls** — both need a URL/attachment input surface the editor does not yet have: `image` is
   presentational with its attachment pipeline **deferred** (BR-E2-5), and `link` needs a URL prompt UI. Excluded from
   E3; they return with their input surfaces. `[FACT: docs/editor/current-business-rules.md BR-E2-5; StarterKit ships
-  bold/italic/underline/strike/code/**link** — link present but URL-UI absent]`
+bold/italic/underline/strike/code/**link** — link present but URL-UI absent]`
 
 ## 2. Business Rules (E3)
+
 - **BR-E3-1 · The toolbar mounts INSIDE `<VidaEditor>`; the raw `Editor` never leaks.** E1 deliberately curated the
   imperative handle to `setContent/focus/getDocument` and does **not** expose the Tiptap `Editor` `[FACT: editor.tsx
-  VidaEditorHandle]`. The toolbar renders inside `VidaEditorImpl` (where `editor` is already in scope), above
+VidaEditorHandle]`. The toolbar renders inside `VidaEditorImpl` (where `editor` is already in scope), above
   `<EditorContent>` within the frame — so consumers stay decoupled from Tiptap (BR-7 spirit) and no new editor-leak API
   is added. A detached/portal toolbar (app places it in a sticky header) is a **documented deferred option**, not E3.
   `[INTERP: BR-E1-1 encapsulation + _index.md §5]`
   - **Null-editor gate (BLOCKER fix, gate-1 B2):** `useEditor` returns `Editor | null` under E1's
     `immediatelyRender:false` — the editor mounts asynchronously `[FACT: editor.tsx:120; @tiptap/react d.ts useEditor
-    Editor|null overload; editor.test.tsx waits for .ProseMirror]`. So `EditorToolbar` is rendered ONLY when `editor`
+Editor|null overload; editor.test.tsx waits for .ProseMirror]`. So `EditorToolbar` is rendered ONLY when `editor`
     is non-null (`{toolbar && editable && editor && <EditorToolbar editor={editor} … />}`), which keeps the
     `editor: Editor` (non-null) prop honest and prevents the `useEditorState` selector from dereferencing `null` on
     first render. The toolbar simply isn't in the tree until the editor exists (a frame-height reflow the Visual Gate
@@ -44,17 +51,17 @@ Parent: docs/specs/features/ui-3-vida-editor/_index.md · Ground truth: docs/edi
     `[FACT: editor.tsx:104-106,154-158]`
 - **BR-E3-2 · Active state via `useEditorState`, not per-transaction re-render.** E1 runs Tiptap v3's default
   `shouldRerenderOnTransaction:false` — the editor does NOT re-render the React tree on every transaction `[FACT:
-  e1 §8 handoff note; @tiptap/react@3.30.0 UseEditorOptions.shouldRerenderOnTransaction]`. The toolbar subscribes to a
+e1 §8 handoff note; @tiptap/react@3.30.0 UseEditorOptions.shouldRerenderOnTransaction]`. The toolbar subscribes to a
   **selected slice** of editor state via `useEditorState({ editor, selector })` (present in `@tiptap/react@3.30.0`
   `[FACT: node_modules/.pnpm/@tiptap+react@3.30.0.../dist/index.d.ts:589 useEditorState; UseEditorStateOptions {editor,
-  selector, equalityFn?}]`) so it re-renders **only** when a reflected value (active mark, active block, can-undo)
+selector, equalityFn?}]`) so it re-renders **only** when a reflected value (active mark, active block, can-undo)
   changes — not on every keystroke.
   - ⚠ **MAT-2 · `useEditorState` gates the RE-RENDER, not the selector COMPUTE.** The selector runs on **every
     transaction**; it does O(controls) `editor.isActive(...)` + `editor.can()...` probes (~5 marks + undo/redo + block
     checks), and each `can()` builds a throwaway state. Standard Tiptap-toolbar practice and fine for normal docs, but
     NOT free — the React re-render is deduped, the per-keystroke compute is not. If the Visual Gate or a perf pass
     shows jank on large docs, narrow/memoize the probe set. Do not read this hook as "cost-free". `[FACT: useEditorState
-    runs the selector per transaction; @tiptap/core can() allocates a state]`
+runs the selector per transaction; @tiptap/core can() allocates a state]`
 - **BR-E3-3 · Toggle controls compose UI-1 `Button`; active-state is added by E3, UI-1 is NOT reopened.** UI-1 `Button`
   exposes `intent ∈ {primary,secondary,ghost,danger}` + `size` + `disabled` + `onPress` but **no toggle/pressed §VIII
   state** `[FACT: packages/ui/src/components/button.tsx ButtonProps; Intent type]`. E3 introduces a thin
@@ -62,7 +69,7 @@ Parent: docs/specs/features/ui-3-vida-editor/_index.md · Ground truth: docs/edi
   **active background token** for the visual pressed state — it does NOT edit the merged `@vida/ui` package (wave
   discipline; UI-1 is Done). The missing primitive state is filed as **DEF-E3-a** for the DS owner (the DEF-register
   precedent), so a real `Button` toggle variant can subsume `ToolbarButton` later. `[INTERP: BR-4 "compose UI-1"; the
-  UI-1 DEF-register precedent]`
+UI-1 DEF-register precedent]`
   - ⚠ **Inline-vs-variant risk (Visual-Gate check):** `ghost` sets `backgroundColor:'transparent'` via a variant;
     E3's active background is applied as a direct Tamagui prop. Direct props resolve after variants in Tamagui, so the
     override is expected to hold — but this is exactly the [[injected-css-loses-to-tamagui-variants]] failure class, so
@@ -70,7 +77,7 @@ Parent: docs/specs/features/ui-3-vida-editor/_index.md · Ground truth: docs/edi
     `intent` (ghost↔secondary) between states (variant-clean). `[INTERP: memory + Tamagui resolution order]`
 - **BR-E3-4 · Block-type + insert actions use UI-1 `Menu`.** "Turn into…" (block type) and "Insert…" (table/callout/
   divider) are `Menu`s whose `trigger` is a `Button` and whose `items` dispatch the command via `onSelect` `[FACT:
-  packages/ui/src/components/menu.tsx MenuProps{trigger,items}, MenuItem{id,label,onSelect}]`. `Menu` has no
+packages/ui/src/components/menu.tsx MenuProps{trigger,items}, MenuItem{id,label,onSelect}]`. `Menu` has no
   checked/active `menuitemradio` state, so the **active block type is reflected on the trigger label** ("Heading 1 ▾"),
   not by a menu checkmark. `[FACT: MenuItem has no `selected`/`checked` field]`
   - **PREFLIGHT F2 · each Menu needs an accessible name.** UI-1 Menu requires an `aria-label`/`aria-labelledby` (a
@@ -99,47 +106,55 @@ Parent: docs/specs/features/ui-3-vida-editor/_index.md · Ground truth: docs/edi
   (`useEditorState` — already a dep) usage. **No `@vida/core` / app import.** `[FACT: _index.md §4 boundary gate]`
 
 ## 3. Contract — API & composition
+
 ### `<VidaEditor>` — additive prop (no breaking change)
+
 ```ts
 interface VidaEditorProps {
   // …E1/E2 props unchanged…
-  toolbar?: boolean   // render the formatting toolbar. Default true. Ignored when editable===false (BR-E3-6).
+  toolbar?: boolean // render the formatting toolbar. Default true. Ignored when editable===false (BR-E3-6).
 }
 ```
+
 No other public prop changes; `VidaEditorHandle` is unchanged (BR-E3-1 — no editor leak).
 
 ### `EditorToolbar` (internal component — `toolbar.tsx`, not exported from the barrel in E3)
+
 ```ts
 interface EditorToolbarProps {
-  editor: Editor          // NON-NULL — the mount site only renders EditorToolbar once `editor != null` (BR-E3-1
-                          // null-editor gate); internal, never crosses the package boundary.
-  'aria-label'?: string   // default 'Formatting'
+  editor: Editor // NON-NULL — the mount site only renders EditorToolbar once `editor != null` (BR-E3-1
+  // null-editor gate); internal, never crosses the package boundary.
+  'aria-label'?: string // default 'Formatting'
 }
 ```
+
 - Reads active state through `useEditorState({ editor, selector })` → `{ marks: {bold,italic,underline,strike,code},
-  can: {bold,italic,…,undo,redo}, activeBlock: BlockTypeKey }`. Equality is the default deepEqual (small flat object).
+can: {bold,italic,…,undo,redo}, activeBlock: BlockTypeKey }`. Equality is the default deepEqual (small flat object).
 - **`ToolbarButton`** (internal): `{ active?: boolean; disabled?: boolean; onPress: () => void; 'aria-label': string;
-  children }` → composes `<Button intent="ghost" size="sm" disabled aria-pressed={active} onPress>` + active-bg token.
+children }` → composes `<Button intent="ghost" size="sm" disabled aria-pressed={active} onPress>` + active-bg token.
 
 ### Control set (grounded in the registered schema)
+
 `[FACT: StarterKit@3.30.0 bundles bold·italic·underline·strike·code·link·paragraph·heading·blockquote·codeBlock·
 bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·table·callout]`
 
-| Group | Controls | Command | Reflected |
-|-------|----------|---------|-----------|
-| Marks | Bold · Italic · Underline · Strike · Code | `toggleBold` … `toggleCode` | `aria-pressed` = `isActive(mark)` |
-| Block type (Menu) | Paragraph · H1 · H2 · H3 · Bullet list · Ordered list · Task list · Quote · Code block | `setParagraph`/`toggleHeading({level})`/`toggleBulletList`/`toggleOrderedList`/`toggleTaskList`/`toggleBlockquote`/`toggleCodeBlock` | trigger label = active block |
-| Insert (Menu) | Table · Callout · Divider | `insertTable({rows:3,cols:3,withHeaderRow:true})` · **`setCallout()` (ADDED to callout.ts in E3 — BR-E3-4a)** · `setHorizontalRule` | — (one-shot) |
-| History | Undo · Redo | `undo`/`redo` | `disabled` = `!can().undo()` |
+| Group             | Controls                                                                               | Command                                                                                                                              | Reflected                         |
+| ----------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------- |
+| Marks             | Bold · Italic · Underline · Strike · Code                                              | `toggleBold` … `toggleCode`                                                                                                          | `aria-pressed` = `isActive(mark)` |
+| Block type (Menu) | Paragraph · H1 · H2 · H3 · Bullet list · Ordered list · Task list · Quote · Code block | `setParagraph`/`toggleHeading({level})`/`toggleBulletList`/`toggleOrderedList`/`toggleTaskList`/`toggleBlockquote`/`toggleCodeBlock` | trigger label = active block      |
+| Insert (Menu)     | Table · Callout · Divider                                                              | `insertTable({rows:3,cols:3,withHeaderRow:true})` · **`setCallout()` (ADDED to callout.ts in E3 — BR-E3-4a)** · `setHorizontalRule`  | — (one-shot)                      |
+| History           | Undo · Redo                                                                            | `undo`/`redo`                                                                                                                        | `disabled` = `!can().undo()`      |
 
 > Image + Link intentionally excluded (BR scope-out — need URL/attachment input).
 
 ## 4. States (§VIII applicable subset)
+
 - **Control resting** (ghost), **hover** (ghost hover fill — UI-1), **active/pressed** (toggle on, `aria-pressed`,
   active-bg), **disabled** (command can't run), **focus** (`:focus-visible` ring — UI-1 Button), **Menu open**
   (UI-1 Menu). No loading/empty/error at the toolbar (the editor's terminal states are the app's, UX-4).
 
 ## 5. Accessibility (§XIV) — APG toolbar pattern
+
 - Container `role="toolbar"`, `aria-label="Formatting"` (overridable), `aria-orientation="horizontal"`.
 - **Roving tabindex:** the toolbar is a **single tab stop**; `ArrowLeft/ArrowRight` move focus between controls,
   `Home/End` jump to first/last; only the focused control has `tabIndex=0`, the rest `-1`. Menu triggers participate
@@ -160,6 +175,7 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
   bug; the toolbar's roving tabindex governs Tab/arrow traversal, not post-command focus. `[FACT: editor.chain().focus()]`
 
 ## 6. Acceptance
+
 - [ ] `toolbar` renders inside `<VidaEditor>` (default on), hidden when `editable===false` or `toolbar={false}`.
 - [ ] Each mark button toggles its mark AND shows `aria-pressed` reflecting `isActive` — verified after a selection
       change WITHOUT a full editor re-render (proves the `useEditorState` path, BR-E3-2).
@@ -184,6 +200,7 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
       source of truth. `[FACT: src/index.ts:2 vs package.json version]`
 
 ## 7. Implementation Prompt — build steps (materialize on Approval 2)
+
 - **B0 · default-on regression audit (gate-2 MAT-3)** — `toolbar` defaults `true`, so EVERY existing render of
   `<VidaEditor>` (5 stories in `editor.stories.tsx`; the `editor.test.tsx` + `extensions/standard-blocks.test.tsx`
   renders) now gets a toolbar row. BEFORE building, audit those for assumptions that break under a default-on toolbar:
@@ -194,10 +211,10 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
 - **B1 · version + cleanup** — `package.json` 0.2.0→0.3.0; remove `EDITOR_VERSION` from `index.ts` (unconsumed; drifted).
 - **B1a · `setCallout` command (BR-E3-4a)** — add `addCommands()` to `extensions/callout.ts` exposing
   `setCallout(variant?: CalloutVariant)` → `insertContent({type:'callout', attrs: variant ? {variant} : {},
-  content:[{type:'paragraph'}]})` (let the node's `default`/`renderHTML` resolve the variant — MAT-1, no
+content:[{type:'paragraph'}]})` (let the node's `default`/`renderHTML` resolve the variant — MAT-1, no
   `normalizeVariant` in the command). **PREFLIGHT F1:** also add the Tiptap module augmentation so `editor.chain()
-  .setCallout()` typechecks — `declare module '@tiptap/core' { interface Commands<ReturnType> { callout: {
-  setCallout: (variant?: CalloutVariant) => ReturnType } } }` (runtime `addCommands` alone does NOT type the chain).
+.setCallout()` typechecks — `declare module '@tiptap/core' { interface Commands<ReturnType> { callout: {
+setCallout: (variant?: CalloutVariant) => ReturnType } } }` (runtime `addCommands` alone does NOT type the chain).
   A getJSON round-trip test proves it inserts a well-formed callout (default `info`).
 - **B2 · `internal/toolbar-state.ts`** — the `useEditorState` selector → `{marks, can, activeBlock}`; a pure
   `resolveActiveBlock(editor)` helper (paragraph/heading level/bulletList/orderedList/**taskList (nests in `taskItem` —
@@ -220,17 +237,18 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
   - **PREFLIGHT F3 · mark tests must seed content + a non-empty text selection first.** A `toggleBold` on an empty doc
     with a collapsed cursor is a no-op — seed a paragraph, `selectAll`/set a text range, THEN toggle and assert
     `isActive('bold')`/`aria-pressed`. Follow E1's `waitFor(editor.isEditable)` before asserting (immediatelyRender:false).
-- **B8 · §XXIX currency + DEF-E3-a** — refresh current-*, `editor-architecture.md`, `CLAUDE.md`, umbrella row; file DEF.
+- **B8 · §XXIX currency + DEF-E3-a** — refresh current-\*, `editor-architecture.md`, `CLAUDE.md`, umbrella row; file DEF.
 - **B9 · Visual Gate (Victor)** — real browser, both themes (BR-E3-3 active-bg is the key check).
 
 ## 8. Deviations (§XXVIII) — recorded during implementation
+
 - **DEV-1 · Callout insertion via `insertContent`, not a `setCallout` node command (BR-E3-4a mechanism swap).** The
   planned `addCommands` `setCallout` + `declare module '@tiptap/core'` chain augmentation compiled inside `callout.ts`
   but the in-source augmentation **did not propagate** to the toolbar's `ChainedCommands` type in this pnpm monorepo
   (node-module extensions' shipped-`.d.ts` augmentations do — e.g. `insertTable` — an in-source one didn't). Rather
   than force it with casts, the toolbar inserts via the already-typed `editor.chain().focus().insertContent(
-  calloutInsertContent())` — the EXACT operation `setCallout` would run. `callout.ts` exports `calloutInsertContent(
-  variant?)` (the canonical payload; the node's attr `default` still resolves an omitted variant → `info`). Net: no
+calloutInsertContent())` — the EXACT operation `setCallout` would run. `callout.ts` exports `calloutInsertContent(
+variant?)` (the canonical payload; the node's attr `default` still resolves an omitted variant → `info`). Net: no
   `@tiptap/core` direct dep, no augmentation, fully typed. BR-E3-4a's intent (toolbar inserts a callout + round-trip
   test) is met. Mechanical (which typed API), not a re-decision.
 - **DEV-2 · `isolating: true` added to the E2 Callout node.** `insertContent({type:'callout', …})` "opened" the
@@ -246,6 +264,7 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
   `setTextSelection({from:1, to:size-1})` to reflect real cursor state.
 
 ## 9. Open Decisions
+
 - [DECIDED] Toolbar mounts inside `<VidaEditor>` (BR-E3-1), not a separately-exported component — preserves E1's
   no-editor-leak boundary; detached-toolbar deferred.
 - [DECIDED] Active-state = `useEditorState` selector (BR-E3-2) — the E1 §8 resolution.
@@ -256,10 +275,11 @@ bulletList·orderedList·horizontalRule·undoRedo; E2 adds taskList·image·tabl
   design call; the spec fixes behavior, the Visual Gate fixes the look. Flagged so Victor can steer at review.
 
 ## 10. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-12 | ui-3-vida-editor | E3 sub-spec authored at PLAN. Grounded control set (StarterKit v3 + E2), mount/active-state/toggle decisions vs the E1 precedent, APG toolbar a11y, DEF-E3-a (Button toggle state), baseline `EDITOR_VERSION` drift fold-in. |
+
+| Date       | Session          | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ---------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-12 | ui-3-vida-editor | E3 sub-spec authored at PLAN. Grounded control set (StarterKit v3 + E2), mount/active-state/toggle decisions vs the E1 precedent, APG toolbar a11y, DEF-E3-a (Button toggle state), baseline `EDITOR_VERSION` drift fold-in.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | 2026-08-12 | ui-3-vida-editor | **IMPLEMENTED + post-impl /critique REVISE → resolved (no blockers).** Independent critic confirmed the Menu ref-composition, M2 arrow handling, insert payload, and isolating-serialization are correctly executed. Fixed MAT-A/B: the roving `rovingId` never reconciled to `effectiveRoving` when a control left the enabled set → added a reconcile `useEffect` (adopts the effective stop; refocuses only if a toolbar control owns focus — never steals from the editor). MAT-D: styled the mark glyphs (bold B / italic I / underlined U / struck S / mono `</>`). Nit: callout insert disabled inside a callout (no nesting). Added tests: mark-disabled-in-codeblock, never-zero-tab-stops, callout-nest-guard, no-focus-steal-on-mount. §XXVIII deviations DEV-1..4 recorded (§8). Automated: editor typecheck ✓ · **60 tests** ✓ · build + build-storybook ✓ · root typecheck 11/11 · boundary clean · no hex. |
-| 2026-08-12 | ui-3-vida-editor | **Gate-2 /critique REVISE → resolved (no blockers).** Confirmed all gate-1 + preflight fixes landed correctly vs live `callout.ts`/`menu.tsx`/`editor.tsx`. Fixed 3 new material the edits opened: MAT-1 reconciled `setCallout` attrs payload (`variant ? {variant} : {}`, node resolves default — no private `normalizeVariant`); MAT-2 honest note that `useEditorState` gates re-render, not the per-transaction `can()` compute; MAT-3 added B0 default-on regression audit of E1/E2 stories+tests + acceptance line. Folded nits N-1 (a11y sibling guarantee), N-2 (frame column-direction), N-4 (dedup acceptance). |
-| 2026-08-12 | ui-3-vida-editor | **/preflight PASS + 4 folds:** F1 `setCallout` needs a `@tiptap/core` Commands module augmentation to typecheck the chain (not just `addCommands`); F2 both Menus need `aria-label` (Turn into / Insert, DEF-U7-d); F3 mark tests must seed content + a text selection (empty-doc toggle is a no-op); F4 `.focus()` returns focus to the editor post-command (intentional). |
-| 2026-08-12 | ui-3-vida-editor | **Gate-1 /critique REVISE → resolved.** Independent critic confirmed `useEditorState`/Underline/TaskList/Table/roving-viability TRUE. Fixed **2 blockers**: B1 `setCallout` does not exist (E2 shipped no insertion command) → E3 adds it to `callout.ts` (BR-E3-4a); B2 null-editor first render (`immediatelyRender:false` → `useEditor` is `Editor|null`) → mount null-gate (BR-E3-1). Fixed **3 material**: M1 pinned `insertTable` shape; M2 roving owns Left/Right/Home/End only (never Menu's ArrowDown/Up); M3 live enabled-set roving. Folded nits: N1 dist-barrel-clean acceptance, N3 taskList-nesting test note. |
+| 2026-08-12 | ui-3-vida-editor | **Gate-2 /critique REVISE → resolved (no blockers).** Confirmed all gate-1 + preflight fixes landed correctly vs live `callout.ts`/`menu.tsx`/`editor.tsx`. Fixed 3 new material the edits opened: MAT-1 reconciled `setCallout` attrs payload (`variant ? {variant} : {}`, node resolves default — no private `normalizeVariant`); MAT-2 honest note that `useEditorState` gates re-render, not the per-transaction `can()` compute; MAT-3 added B0 default-on regression audit of E1/E2 stories+tests + acceptance line. Folded nits N-1 (a11y sibling guarantee), N-2 (frame column-direction), N-4 (dedup acceptance).                                                                                                                                                                                                                                                                                                |
+| 2026-08-12 | ui-3-vida-editor | **/preflight PASS + 4 folds:** F1 `setCallout` needs a `@tiptap/core` Commands module augmentation to typecheck the chain (not just `addCommands`); F2 both Menus need `aria-label` (Turn into / Insert, DEF-U7-d); F3 mark tests must seed content + a text selection (empty-doc toggle is a no-op); F4 `.focus()` returns focus to the editor post-command (intentional).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| 2026-08-12 | ui-3-vida-editor | **Gate-1 /critique REVISE → resolved.** Independent critic confirmed `useEditorState`/Underline/TaskList/Table/roving-viability TRUE. Fixed **2 blockers**: B1 `setCallout` does not exist (E2 shipped no insertion command) → E3 adds it to `callout.ts` (BR-E3-4a); B2 null-editor first render (`immediatelyRender:false` → `useEditor` is `Editor                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | null`) → mount null-gate (BR-E3-1). Fixed **3 material**: M1 pinned `insertTable` shape; M2 roving owns Left/Right/Home/End only (never Menu's ArrowDown/Up); M3 live enabled-set roving. Folded nits: N1 dist-barrel-clean acceptance, N3 taskList-nesting test note. |

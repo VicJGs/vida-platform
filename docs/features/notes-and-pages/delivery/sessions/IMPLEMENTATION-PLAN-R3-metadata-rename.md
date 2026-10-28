@@ -26,7 +26,7 @@
   state change, so exactly one of them acts (Enter → 1 commit; Esc → 0; a blur after either → nothing). After Enter **and**
   Esc an effect moves focus to the title button (BR-R3-7). Enter is ignored while `e.nativeEvent.isComposing`.
 - **R-7 · The thumbnail read is projected.** `getAttachmentThumbnail` = `db.select({ thumb: noteAttachments.thumbnail_blob })
-  .from(noteAttachments).where(and(eq(noteAttachments.id, id), isNull(noteAttachments.deleted_at)))` — never
+.from(noteAttachments).where(and(eq(noteAttachments.id, id), isNull(noteAttachments.deleted_at)))` — never
   `attachRepo.findById`, which selects every column incl. `encrypted_blob` (`repository.ts:356-363`) and would copy the whole
   file across the worker `postMessage`.
 - **R-8 · In-view loading.** Only gallery **tiles** observe visibility (`IntersectionObserver`, feature-detected — absent, as
@@ -44,9 +44,10 @@
 ## 1. Build steps
 
 ### Step 1 — core (test A)
+
 - `validators/note.ts`: `export const pageIconSchema = z.string().regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, 'icon must be a Lucide
-  icon name').max(64)` and `export const pageCoverSchema = z.union([z.string().max(2048).regex(/^https?:\/\/\S+$/i),
-  z.string().regex(/^attachment:[0-9a-zA-Z-]+$/)])`. Used as `.nullish()` in **both** `createPageSchema` (`icon`,
+icon name').max(64)` and `export const pageCoverSchema = z.union([z.string().max(2048).regex(/^https?:\/\/\S+$/i),
+z.string().regex(/^attachment:[0-9a-zA-Z-]+$/)])`. Used as `.nullish()` in **both** `createPageSchema` (`icon`,
   `cover_image`) and `updatePageSchema`.
 - `services/notes/service.ts` + `types.ts`: `getAttachmentThumbnail(id): Promise<Uint8Array | null>` — the projected select
   of R-7 (`null` when absent or deleted). Test: the query selects only `thumbnail_blob` (spy the Drizzle select / assert the
@@ -56,19 +57,32 @@
 - `pnpm --filter @vida/core build`.
 
 ### Step 2 — `@vida/ui` EntityView heading + title seam; CollectionView `titleRef` (test B)
+
 - `entity-view.tsx`: new props `onTitleCommit?`, `titleEditValue?`, `titleRef?`. The title block becomes:
+
   ```tsx
   // region: aria-labelledby={titleTextId} — the span below ALWAYS holds `title` (R-5)
-  <View role="heading" aria-level={1} tabIndex={-1} ref={titleRef}>           {/* persistent H1, focus target */}
+  ;<View role="heading" aria-level={1} tabIndex={-1} ref={titleRef}>
+    {' '}
+    {/* persistent H1, focus target */}
     {onTitleCommit == null ? (
       <TitleText id={titleTextId}>{title}</TitleText>
     ) : editing ? (
       <>
-        <span id={titleTextId} style={SR_ONLY}>{title}</span>
-        <Input ref={inputRef} size="display" aria-label="Page title" defaultValue={titleEditValue ?? title}
-          onKeyDown={(e) => { if (e.key === 'Enter' && !e.nativeEvent.isComposing) finish('enter', e)
-                              else if (e.key === 'Escape') finish('escape', e) }}
-          onBlur={(e) => finish('blur', e)} />
+        <span id={titleTextId} style={SR_ONLY}>
+          {title}
+        </span>
+        <Input
+          ref={inputRef}
+          size="display"
+          aria-label="Page title"
+          defaultValue={titleEditValue ?? title}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.nativeEvent.isComposing) finish('enter', e)
+            else if (e.key === 'Escape') finish('escape', e)
+          }}
+          onBlur={(e) => finish('blur', e)}
+        />
       </>
     ) : (
       <TitleButton ref={buttonRef} role="button" tabIndex={0} aria-describedby={hintId} onPress={startEdit}>
@@ -76,18 +90,29 @@
       </TitleButton>
     )}
   </View>
-  {onTitleCommit != null && <span id={hintId} style={SR_ONLY}>Rename the page</span>}   {/* SIBLING, outside */}
+  {
+    onTitleCommit != null && (
+      <span id={hintId} style={SR_ONLY}>
+        Rename the page
+      </span>
+    )
+  }
+  {
+    /* SIBLING, outside */
+  }
 
   // finish(kind): if (endedRef.current) return; endedRef.current = true; lastEnd.current = kind
   //   enter|blur → commit when changed (trimmed) · escape → no commit; then setEditing(false)
   // effect on editing: open → endedRef=false, inputRef.select(); close → if lastEnd ∈ {enter, escape} focus buttonRef
   //   (never on first mount, never after a blur)
   ```
+
   - `TitleButton` = a `role="button"` `tabIndex={0}` Text in the same `$display` type (Enter/Space start editing).
   - Commit = `const next = value.trim(); if (next !== (titleEditValue ?? title).trim()) onTitleCommit(next)` — an empty
     `next` passes through (the app maps it to `null`, PLAN G12).
   - `aria-level` / `role` on a Tamagui `View` → verify they render (the region/role precedent in this file); the line-height
     pairing stays on the text.
+
 - `collection-view.tsx`: `titleRef?: Ref<HTMLElement>` on the title `Text` (`tabIndex={-1}`).
 - `input.tsx`: the `display` size (R-4) + its test.
 - Tests: PLAN §4 B in `entity-view.test.tsx` / `collection-view.test.tsx`, plus: the region name `=== title` exactly
@@ -97,6 +122,7 @@
   `titleRef`. `pnpm --filter @vida/ui build`.
 
 ### Step 3 — icons, covers, labelled controls (test C4)
+
 - R-2 guard also asserts `String(map[k])` contains `/icons/<k>.mjs` (rejects lucide's deprecated alias names).
 - `notes/page-icons.ts`: `PAGE_ICONS: Record<string, { icon: LucideIcon; label: string }>` (about 48 named imports, e.g.
   `sticky-note`, `book-open`, `lightbulb`, `graduation-cap`, `target`, `flag`, `rocket`, `folder-kanban`, `briefcase`,
@@ -107,7 +133,7 @@
 - `live-mappers.ts`: `NotesRow` gains `icon: string | null`, `cover: string | null`; `toNotesRow` maps them.
 - `note-renderers.tsx`: rows/tiles use `pageIconFor`; the tile's 72 px media area shows `<CoverImage>` when `cover` is set.
 - `notes/cover-image.tsx` (new): `CoverImage({ pageId, cover, height })` — a URL → `<img alt="" referrerPolicy="no-referrer"
-  loading="lazy" style={{objectFit:'cover'}} onError→placeholder>`; `attachment:<id>` → `useAttachmentThumbnail(id)` (a
+loading="lazy" style={{objectFit:'cover'}} onError→placeholder>`; `attachment:<id>` → `useAttachmentThumbnail(id)` (a
   React Query read over `notes.getAttachmentThumbnail`; in tiles enabled only once in view, R-8) → an object URL per R-8;
   nothing / failure → the placeholder (header: `role="img"` "Cover unavailable"; tile: decorative). Used by the header strip
   and the tiles.
@@ -117,12 +143,14 @@
   `NotionHeader`. `notion-header.tsx`: the badge uses `pageIconFor`.
 
 ### Step 4 — live metadata (test C1)
+
 - `use-page-metadata.ts` → `usePageMetadata(page)`: one `useMutation` (`mutationFn: patch => notes.updatePage(page.id,
-  patch)`), `onSuccess` invalidates the G2 key set (`metadataKeys(page)`; rename adds `renameKeys`), `onError` →
+patch)`), `onSuccess` invalidates the G2 key set (`metadataKeys(page)`; rename adds `renameKeys`), `onError` →
   `notifyError(action, e)` with the action carried in the mutation variables. Exposes `toggleFavorite`, `toggleArchive`,
   `setIcon`, `setCover`, `rename(next)` (`next === '' → null`), and `isPending` (controls `aria-disabled` while pending, still focusable — R-10).
 
 ### Step 5 — the pickers (test C2, C3)
+
 - `notes/icon-picker.tsx` (lazy, `React.lazy`): `Dialog` "Choose an icon" + a `radiogroup` grid (roving tabindex; arrows move
   focus + `aria-checked` without saving; Enter/Space/click → `setIcon(name)` and close; "Remove icon" when set).
 - `notes/cover-picker.tsx` (lazy): `Dialog` "Page cover": the link `Input` (+ inline error from `pageCoverSchema` shape,
@@ -132,6 +160,7 @@
   trigger stays mounted and the Dialog's own focus return (`dialog.tsx:184,200`) lands on it.
 
 ### Step 6 — rename (test C5)
+
 - `NoteEntity` owns `titleRef` (it also drives the Retry focus, Step 7) and passes it to `NoteEntityView`;
   `NoteEntityView`: `toEntityProps({ …, onTitleCommit: m.rename, titleEditValue: page.title, titleRef })` — `EntitySource`
   and `toEntityProps` carry the three new props through (the Tamagui ref typed as `Ref<HTMLElement>`). `NoteEntityView`
@@ -142,12 +171,14 @@
   `Menu` gets `aria-labelledby={triggerId}` (no `aria-label`).
 
 ### Step 7 — focus after Retry (test C6)
+
 - `notes/use-focus-on-recovery.ts`: `useFocusOnRecovery(state, ref)` — per R-9 (error → any settled state, incl. `empty`).
   Tests include error → empty for the collection. Used by `NoteEntity` (the EntityView `titleRef`), `NotesSurface` (the
   CollectionView `titleRef`) and `JournalPageRegion` (the `PageFrame`, `tabIndex={-1}`).
 
 ### Step 8 — docs, live leg, Visual Gate, gates
-- Docs: notes current-* (BR-R3-*; BR-SUR-1 untouched; current-spec metadata + rename + the core read); `contract.md:70-72`
+
+- Docs: notes current-_ (BR-R3-_; BR-SUR-1 untouched; current-spec metadata + rename + the core read); `contract.md:70-72`
   UNKNOWN closed (icon = Lucide name, cover = URL | `attachment:<id>`); slice-map R4: the two obligations; `entity/CLAUDE.md`
   (`onTitleCommit`/`titleEditValue`/`titleRef` passthrough).
 - `apps/web/e2e/notes-metadata-rename.spec.ts` (PLAN §4 D) with the routed cover (R-3).
@@ -156,6 +187,7 @@
   seam) · `/critique`.
 
 ## 2. Files
+
 New: core — none (edits) · ui — none (edits) · web `notes/{page-icons.ts, cover-image.tsx, icon-picker.tsx, cover-picker.tsx,
 rename-dialog.tsx, use-focus-on-recovery.ts}` + tests · `e2e/fixtures/cover.png` · `e2e/notes-metadata-rename.spec.ts`.
 Changed: core `validators/note.ts`, `services/notes/{service,types}.ts` · ui `components/{entity-view,collection-view,input}.tsx`
@@ -164,12 +196,14 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
 `home/journal-page-region.tsx` · docs per Step 8.
 
 ## 3. Risks
+
 - **`@vida/ui` contract changes** (EntityView heading; Input `display` size): every EntityView consumer gets a heading role — today only the
   notes page renders EntityView live; stories updated.
 - **Remote covers** depend on the remote host; failure is handled (placeholder).
 - **Load:** run suites alone; full-page tests may need the 20 s timeout precedent.
 
 ## 4. Change log
+
 - rev 1 (2026-10-27) — drafted after preflight PASSED.
 - rev 2 (2026-10-27) — gate-2 critique r1 **REVISE** (6 blocking, verified): the region name would include the hint and blank
   while editing → R-5; blur double/undo-commit + focus loss → R-6; `Input` can't take `$display` / no `selectOnFocus` → R-4 (a
@@ -185,8 +219,9 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
 ## 5. Deviations (§XXVIII)
 
 ### DEV-R3-1 · `Input`'s font styles never apply (found building Step 2, 2026-10-27) — APPROVED by Victor: option (A) root fix
+
 - **Found:** writing R-4's test. `Input`'s native element is `styled(View, { render: 'input', fontFamily: '$body', variants:
-  { size: { sm|md|lg: { fontSize } } } })` (`input.tsx` NativeInput). A Tamagui **`View` drops font props**: the rendered
+{ size: { sm|md|lg: { fontSize } } } })` (`input.tsx` NativeInput). A Tamagui **`View` drops font props**: the rendered
   `<input>` carries no font class and no inline style for any size (probe: `md` → no `_ff-`/`_fs-`/`_lh-`; a `$display` Text →
   `font_display _ff-… _fs-… _lh-…`), and `input-styles.ts` sets no font. So every `Input` in the app renders in the
   **browser's default input font**, and R-4's `display` size (family/size/leading) cannot take effect either.
@@ -198,6 +233,7 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   (`.vida-input-display`), the other sizes stay as they render today (the defect remains, recorded for `@vida/ui`).
 
 ### DEV-R3-2 · `@vida/ui` Dialog never returned focus on close (found at the Visual Gate, 2026-10-27) — fixed per the contract
+
 - **Found:** the live Visual Gate — Esc on the icon picker and on the Rename dialog left focus off the trigger. Root cause:
   the Dialog restored focus in a **layout-effect** cleanup, but un-inerted the background in a **passive-effect** cleanup,
   which React runs AFTER; a browser ignores `focus()` inside an `inert` subtree, so focus never returned (jsdom doesn't
@@ -208,6 +244,7 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   ancestor. Visual Gate re-run 28/28 (both focus returns pass).
 
 ## 6. Build record
+
 - Steps 1–8 tests-first: core notes 69/69 · ui 699/699 · web 1002/1002 (129 files) · tsc 0 · lint 0 errors. Live (Brave,
   real OPFS): `e2e/notes-metadata-rename.spec.ts` ✓ + R0/R1/R2 specs ✓ (5/5). Visual Gate `.playwright-mcp/r3-live/` 28/28
   (axe 0 light/dark; greybox order; H1; cover both modes; focus returns; DEV-R3-1 token font on the input surfaces).
@@ -220,4 +257,3 @@ note-renderers.tsx, live-mappers.ts, use-notes-rows.ts, page-actions.tsx, note-e
   (live metadata, rename, `getAttachmentThumbnail`), B3 collection-view `titleRef` contract, B4 this note; I1 the link error
   is `role="alert"` in the danger colour with a `useId` id; I2 an unchanged rename writes nothing; I3 toggle-only guard;
   P1 busy dimming; stale headers; the C6 test asserts the NAMED focus target.
-

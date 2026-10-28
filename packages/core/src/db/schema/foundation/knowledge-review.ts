@@ -55,10 +55,7 @@ export const reviewEvents = sqliteTable(
     reviewed_at: integer('reviewed_at').notNull(), // Unix ms
     // NO deleted_at — append-only outcome log (mirrors consequence_ledger BR-3).
   },
-  (t) => [
-    index('idx_review_events_object').on(t.object_id),
-    index('idx_review_events_method').on(t.method_id),
-  ],
+  (t) => [index('idx_review_events_object').on(t.object_id), index('idx_review_events_method').on(t.method_id)],
 )
 
 export type ReviewCurveRow = typeof reviewCurves.$inferSelect

@@ -25,8 +25,9 @@ A THROWAWAY composition mock (deleted after the gate) — the SHIPPED `@vida/ui`
   **no overflow**) + single / empty-log / states. Attached at review.
 
 **What the greybox resolved (the flagged precisions + Victor's review-1 typography correction):**
+
 - **Precision 1 (the #6 dep):** the greybox **MIRRORS `EntityView`'s serif-`$display` header** (title-hero) for the
-  attached-entity identity. The flow is its own surface *about* an entity, so it mirrors the header pattern rather than
+  attached-entity identity. The flow is its own surface _about_ an entity, so it mirrors the header pattern rather than
   nesting inside `EntityView`. **Resolved: mirror (not compose-as-host).**
 - **Precision 2 (the stage-rail primitive):** the greybox uses the shipped **`Timeline`** — `getTemporalState`
   past/present/future maps 1:1 to done/current/upcoming, and `nowFulcrum` renders the **"current stage"** boundary. Reads
@@ -44,19 +45,19 @@ A THROWAWAY composition mock (deleted after the gate) — the SHIPPED `@vida/ui`
 
 ## Anchored checkpoints (PROPOSED — pin/edit at review)
 
-| EC | Screen / state | Assertion (the vision) | Type | Slice(s) | Gate assertion |
-|----|----------------|------------------------|------|----------|----------------|
-| EC-1 | Multi-stage | the flow reads top-to-bottom as a **staged progression**: done stages collapsed · a **"current stage" fulcrum** · the current stage expanded · upcoming stages faded; the rail is continuous through the fulcrum | structural | S-frame · S-stages | Visual-Gate MUST |
-| EC-2 | Current stage | the current stage surfaces, in one card: the **deliverable + a description** · the **attach** affordance (doc / photo / audio) · **mark-done** + **require-proof** actions | structural | S-stage-body | Visual-Gate MUST |
-| EC-3 | Done / upcoming | a **done** stage shows its delivered **proof** (collapsed); an **upcoming** stage reads as not-yet (faded, collapsed); the rail dot's temporal state (done ✓ / current accent+ring / upcoming faded) is visible | structural | S-stages | Visual-Gate MUST |
-| EC-4 | Effect rail | the effects a session fired show as a **calm, chronological log** (type eyebrow + detail); the **empty** log is a teaching `EmptyState`, never a blank | structural | S-effect-log | Visual-Gate MUST |
-| EC-5 | Header | **title-hero**: the serif `$display` title carries alone + ONE quiet plain-language context line + a **`HonestProgress` bar** for progress (NOT a text subtitle) + a `SyncStatus` chip + `⋯` action; NO all-caps eyebrow, NO middle-dot meta-string (mirrors `EntityView`; precision 1) | structural | S-frame | Visual-Gate MUST |
-| EC-6 | Per-stage state | each stage threads its **OWN** loading/empty/error independently; a loading stage = a calm skeleton (`aria-busy`), an errored stage = a calm `role="status"` muted message — the shell **degrades-never-crashes** | structural | S-state | Visual-Gate MUST |
-| EC-7 | 375 → 1440 | the staged layout + effect log reflow with **no 375 overflow**; content column centered on desktop; the rail + stage cards stay usable at 375 | structural | S-frame | Visual-Gate MUST |
-| EC-8 | all · dark | header title serif `$display`; DIRECT semantic tokens; dark **designed** (not inverted); **preset accent flips** (editorial blue / reader oxblood / quietDesk olive) across the fulcrum + current dot + effect eyebrows + Mark-done | structural | S-frame | Visual-Gate MUST |
-| EC-9 | Single-stage | a **single-stage** flow (check-in entry / one-shot) reads sanely — one current stage, no spurious done/upcoming chrome, an honest empty log | structural | S-stages | Visual-Gate MUST |
-| EC-10 | Stage advance | marking a stage done → the next becoming current feels **immediate**; attach / proof feel direct (not a buried form) | feel | S-stage-body | live Visual Gate (feel) |
-| EC-11 | all text | **typography follows the semantic scale — NO arbitrary px** (`design.md:103`); serif `$display` for the title, consistent hierarchy (current `$heading` · done/upcoming `$subheading` · body `$body` · labels `$caption`/`$small`); weight is hierarchy; accent spent in ONE place; 4pt vertical rhythm | structural | S-frame · S-stage-body · S-effect-log | Visual-Gate MUST |
+| EC    | Screen / state  | Assertion (the vision)                                                                                                                                                                                                                                                                                  | Type       | Slice(s)                              | Gate assertion          |
+| ----- | --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ------------------------------------- | ----------------------- |
+| EC-1  | Multi-stage     | the flow reads top-to-bottom as a **staged progression**: done stages collapsed · a **"current stage" fulcrum** · the current stage expanded · upcoming stages faded; the rail is continuous through the fulcrum                                                                                        | structural | S-frame · S-stages                    | Visual-Gate MUST        |
+| EC-2  | Current stage   | the current stage surfaces, in one card: the **deliverable + a description** · the **attach** affordance (doc / photo / audio) · **mark-done** + **require-proof** actions                                                                                                                              | structural | S-stage-body                          | Visual-Gate MUST        |
+| EC-3  | Done / upcoming | a **done** stage shows its delivered **proof** (collapsed); an **upcoming** stage reads as not-yet (faded, collapsed); the rail dot's temporal state (done ✓ / current accent+ring / upcoming faded) is visible                                                                                         | structural | S-stages                              | Visual-Gate MUST        |
+| EC-4  | Effect rail     | the effects a session fired show as a **calm, chronological log** (type eyebrow + detail); the **empty** log is a teaching `EmptyState`, never a blank                                                                                                                                                  | structural | S-effect-log                          | Visual-Gate MUST        |
+| EC-5  | Header          | **title-hero**: the serif `$display` title carries alone + ONE quiet plain-language context line + a **`HonestProgress` bar** for progress (NOT a text subtitle) + a `SyncStatus` chip + `⋯` action; NO all-caps eyebrow, NO middle-dot meta-string (mirrors `EntityView`; precision 1)                 | structural | S-frame                               | Visual-Gate MUST        |
+| EC-6  | Per-stage state | each stage threads its **OWN** loading/empty/error independently; a loading stage = a calm skeleton (`aria-busy`), an errored stage = a calm `role="status"` muted message — the shell **degrades-never-crashes**                                                                                       | structural | S-state                               | Visual-Gate MUST        |
+| EC-7  | 375 → 1440      | the staged layout + effect log reflow with **no 375 overflow**; content column centered on desktop; the rail + stage cards stay usable at 375                                                                                                                                                           | structural | S-frame                               | Visual-Gate MUST        |
+| EC-8  | all · dark      | header title serif `$display`; DIRECT semantic tokens; dark **designed** (not inverted); **preset accent flips** (editorial blue / reader oxblood / quietDesk olive) across the fulcrum + current dot + effect eyebrows + Mark-done                                                                     | structural | S-frame                               | Visual-Gate MUST        |
+| EC-9  | Single-stage    | a **single-stage** flow (check-in entry / one-shot) reads sanely — one current stage, no spurious done/upcoming chrome, an honest empty log                                                                                                                                                             | structural | S-stages                              | Visual-Gate MUST        |
+| EC-10 | Stage advance   | marking a stage done → the next becoming current feels **immediate**; attach / proof feel direct (not a buried form)                                                                                                                                                                                    | feel       | S-stage-body                          | live Visual Gate (feel) |
+| EC-11 | all text        | **typography follows the semantic scale — NO arbitrary px** (`design.md:103`); serif `$display` for the title, consistent hierarchy (current `$heading` · done/upcoming `$subheading` · body `$body` · labels `$caption`/`$small`); weight is hierarchy; accent spent in ONE place; 4pt vertical rhythm | structural | S-frame · S-stage-body · S-effect-log | Visual-Gate MUST        |
 
 > Slice ids (S-frame · S-stages · S-stage-body · S-effect-log · S-state) are PROPOSED names for Step-2 decomposition — the
 > coverage check maps every `structural` EC to ≥1 slice there.
@@ -70,6 +71,7 @@ text subtitle). (blocking — decomposition follows.) The greybox `packages/ui/s
 retired after the gate; the durable record = this file + the `/tmp/vg/flow/` screenshots.
 
 ## Re-pins
+
 - **EC-4 re-pinned — Victor, 2026-10-27 (sessions-rescope LIF-248, Re-scope Gate, R-45).** The effect rail shows the
   effects a session **fired + any declared effect that did not apply** — the unapplied ones in the SAME chronological
   list as calm muted rows ("Not applied — <kind> · retry pending"), never flipping the whole log to `error`. Grounds the

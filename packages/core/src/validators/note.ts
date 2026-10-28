@@ -36,7 +36,10 @@ export const pageIconSchema = z
  * notes-rescope R3, A-4 · EC-29 "paste an image link · use an attachment". `cover_image` stays [E].
  */
 export const pageCoverSchema = z.union([
-  z.string().max(2048).regex(/^https?:\/\/\S+$/i, 'cover must be an http(s) URL'),
+  z
+    .string()
+    .max(2048)
+    .regex(/^https?:\/\/\S+$/i, 'cover must be an http(s) URL'),
   z.string().regex(/^attachment:[0-9A-Za-z-]+$/, 'cover must be attachment:<id>'),
 ])
 

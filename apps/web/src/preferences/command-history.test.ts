@@ -25,7 +25,14 @@ afterEach(() => {
 
 describe('toHistoryEntry', () => {
   it('maps the service row to the palette contract (is_pinned boolean → 0|1)', () => {
-    const row = { command_key: 'k', command_label: 'K', command_category: null, use_count: 2, last_used_at: 5, is_pinned: true }
+    const row = {
+      command_key: 'k',
+      command_label: 'K',
+      command_category: null,
+      use_count: 2,
+      last_used_at: 5,
+      is_pinned: true,
+    }
     expect(toHistoryEntry(row as never)).toEqual({ ...row, is_pinned: 1 })
     expect(toHistoryEntry({ ...row, is_pinned: false } as never).is_pinned).toBe(0)
   })

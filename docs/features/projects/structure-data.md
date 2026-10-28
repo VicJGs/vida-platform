@@ -1,14 +1,14 @@
 <!-- Structure & Data — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · project.ts · ADR-001/003 · intake -->
 
-# Structure & Data — Projects  (level: Feature)
+# Structure & Data — Projects (level: Feature)
 
 ## Data model — 3 owned tables (current, authoritative) `[FACT: ADR-002 §5.4 L1532-1625; project.ts]`
 
-| Table | Purpose | `[E]` fields | Key constraints |
-|---|---|---|---|
-| `projects` | the project | title, description, vision, tags | `scope`/`complexity`/`status`/`priority` CHECKs; `progress` 0-100; hours in **minutes**; idx status; soft-delete |
-| `milestones` | milestone (nestable) | title, description | `project_id` **CASCADE**; `parent_milestone_id` self-ref **SET NULL**; `status` CHECK; `progress` 0-100; idx project |
-| `project_documents` | secure file vault | name, `encrypted_blob` (BLOB) | `project_id` **CASCADE**; `milestone_id` **SET NULL**; file_type/file_size |
+| Table               | Purpose              | `[E]` fields                     | Key constraints                                                                                                      |
+| ------------------- | -------------------- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| `projects`          | the project          | title, description, vision, tags | `scope`/`complexity`/`status`/`priority` CHECKs; `progress` 0-100; hours in **minutes**; idx status; soft-delete     |
+| `milestones`        | milestone (nestable) | title, description               | `project_id` **CASCADE**; `parent_milestone_id` self-ref **SET NULL**; `status` CHECK; `progress` 0-100; idx project |
+| `project_documents` | secure file vault    | name, `encrypted_blob` (BLOB)    | `project_id` **CASCADE**; `milestone_id` **SET NULL**; file_type/file_size                                           |
 
 - `progress` on projects + milestones is currently `0-100 **NOT NULL**` (As-is FACT). **[INTENT M3 — ADR-011 §3.4/§3.2]:**
   reframe to a **nullable override slot** (`NULL ⇒ derive`) — the module implements **`progress()` derived-on-read**;
@@ -17,6 +17,7 @@
 - Structured columns sync **LWW**; document blobs follow the attachment path (large → R2). `[FACT: ADR-003]`
 
 ### ⚠ INTENDED additions (NOT in ADR-002 / project.ts today) — ADR-002 amendment + ADRs `[INTENT G2,G3,G4,G6,G8]`
+
 - **`deliverables` table (G2):** under a milestone; an ADR-011 **pursuable**. Carries **`measurement_kind`** CHECK
   ∈ `quantitative·milestone·rate·qualitative` (M1) + **`binding_mode`** CHECK ∈ `manual·derived-pull·event-trigger`
   (M2, distinct from provenance `source`); nullable `progress()` (M3). The bespoke `measurement_type` enum is
@@ -39,6 +40,7 @@
 - **Shared-tags migration (G11):** deprecate inline `projects.tags` → the `entity_tags` primitive (ADR-006 SP1, scoped).
 
 ## State management map `[FACT: ADR-001 State; v1 hooks/API.md]`
+
 - **React Query** owns project/milestone/document reads + optimistic writes, the **derived** progress rollups,
   and (⚠) deliverable measurement reads (incl. cross-module Finance/metric pulls). Invalidated up the hierarchy
   on any descendant change.
@@ -47,6 +49,7 @@
 - Progress + project time are **derived** (PJ-3/PJ-6) — never hand-maintained.
 
 ## Page / route map `[INTENT G1,G9; FACT: CLAUDE.md §2]`
+
 - **Projects Dashboard** (all projects) · **Projects Timeline** (+ user-chosen layout: timeline/board/Kanban) ·
   **pinned project**.
 - **Project standalone** — milestones (Kanban + tree), document vault, progress, vision/mission pages, linked tasks.
@@ -56,15 +59,17 @@
 - Archived = a **view filter** (status ∈ completed/cancelled / soft-deleted), not a new state (G9).
 
 ## Dependencies / graph
+
 - **Wave 2 foundation + hub.** In-edges: Tasks (tasks point up via FKs), **Purpose** (As-is FACT `purpose_projects`
   junction, project.ts L248 — **[INTENT M7]: retired → the polymorphic weighted `contributions` primitive**, ADR-011
-  §Amends; a project *contributes* to a purpose/target), `project_habits` (**kept** — not in M7's retirement list),
+  §Amends; a project _contributes_ to a purpose/target), `project_habits` (**kept** — not in M7's retirement list),
   Bucket List (`project_id`), Check-in reviews, Journal/Calendar. Out-edges: Tasks (dedicated API), Finance (deliverable
   measurement source via the M5/R7 seam + account links), Relationships (`project_contacts`), Notes (pages), ⚠ external
   ingestion (**ADR-014**) + agentic AI (**ADR-015**). `[FACT: module-dependency-graph; project.ts junctions; INTENT M7, G4,G7,G8]`
 - No direct cross-module table reads — integration points only (§6). `[FACT: core §6]`
 
 ## Single source of truth (constitution §3)
+
 - **Progress** derives bottom-up (Tasks→Deliverable→Milestone→Project) via `progress()` on-read (M3) — never a second
   truth. **[INTENT M4 — ADR-011 §3.3]:** the DOWN nesting weight is a **per-child column** (default NULL = equal-weight);
   the UP ladder (project → purpose) is weighted by **`contributions.contribution_percentage`** — not count-weighting.
@@ -75,6 +80,7 @@
 - Tags → the `entity_tags` primitive (ADR-006 SP1, scoped; PJ-12), not inline. `[INTENT G11]`
 
 ## ADRs / structural decisions
+
 - **ADR-002 §5.4** — 3 tables (authoritative). **ADR-001** — RQ+Zustand, TipTap (vision/mission), R2 docs. **ADR-003** — LWW + attachments.
 - **ADR-011** (universal measurability) — `measurement_kind`/`binding_mode`/nullable `progress()`/weighted rollup/
   `contributions` (M1–M7). **ADR-014** (external ingestion) — `third_party_metric` device-mediated (X1) under
@@ -84,4 +90,5 @@
   (the INTENDED tables); (2) the **extension-model principle** → core constitution. `[INTENT G2,G4,G6, governing principle]`
 
 ## Completion checklist
+
 - [x] data model (3 tables + INTENDED deliverables) · [x] dep graph (Wave-2 hub, within budget) · [x] state + route map · [x] ADRs · [x] single source per cross-cutting concern · [x] [FACT/INTENT/INTERP] each claim

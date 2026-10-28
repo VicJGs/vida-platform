@@ -9,6 +9,7 @@ No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: nee
 ---
 
 ## 0. Baseline (code-as-is — verified this session)
+
 - **Sub-theme already generated, not yet registered.** `light_Checkbox`/`dark_Checkbox` exist in
   `themes/themes.ts` (keys: `backgroundChecked`, `border`, `borderError`, `checkmark`, `radius`) but
   `tamagui.config.ts` wires only `light_/dark_Button` + `light_/dark_Input`. [FACT: themes.ts:15-16;
@@ -25,6 +26,7 @@ No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: nee
   session-log 2026-08-07]
 
 ## 1. Structure (native input + styled box + label wrapper)
+
 The accessible checkbox pattern: a **real visually-transparent `<input type="checkbox">`** overlaid by a
 styled visual box, both inside a **real `<label>`** (so label + box + text all toggle natively).
 
@@ -56,20 +58,21 @@ styled visual box, both inside a **real `<label>`** (so label + box + text all t
   the label". [FACT: input-styles.ts:9-17; checkbox.md §A11y "Focus: ring on the box"]
 
 ## 2. State visuals — driven by the native input's CSS pseudo-classes (`internal/checkbox-styles.ts`)
+
 A new injected stylesheet (mirrors `input-styles.ts`: idempotent, browser-only, appended after Tamagui's
 sheet, real switching theme vars). The **wrapper `<label>`** is `name:'Checkbox'` (§1), so Tamagui emits the
 sub-theme keys as `--backgroundChecked` / `--border` / `--checkmark` / `--borderError` on the `.t_Checkbox`
 scope — `.box` and the injected rules below are descendants, so the vars resolve on them.
 
-| Visual | Selector | Declaration (theme var) |
-|--------|----------|--------------------------|
-| fill on checked | `.vida-checkbox:has(input:checked) .box` | `background:var(--backgroundChecked);border-color:var(--backgroundChecked)` |
-| fill on indeterminate | `.vida-checkbox:has(input:indeterminate) .box` | same fill |
-| checkmark show | `.vida-checkbox:has(input:checked) .box .check` | `opacity:1;transform:scale(1)` (base: `opacity:0;transform:scale(.8)`) |
-| checkmark hide when indeterminate | `.vida-checkbox:has(input:indeterminate) .box .check` | `opacity:0` (dash wins — contract: mutually exclusive) |
-| dash show | `.vida-checkbox:has(input:indeterminate) .box .dash` | `opacity:1` (base `opacity:0`) |
-| focus ring | `.vida-checkbox:has(input:focus-visible) .box` | `outline:2px solid var(--colorFocusRing);outline-offset:2px` |
-| error border | `.vida-checkbox-invalid .box` | `border-color:var(--borderError)` (precedence: after focus-border, danger wins; ring still shows) |
+| Visual                            | Selector                                              | Declaration (theme var)                                                                           |
+| --------------------------------- | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| fill on checked                   | `.vida-checkbox:has(input:checked) .box`              | `background:var(--backgroundChecked);border-color:var(--backgroundChecked)`                       |
+| fill on indeterminate             | `.vida-checkbox:has(input:indeterminate) .box`        | same fill                                                                                         |
+| checkmark show                    | `.vida-checkbox:has(input:checked) .box .check`       | `opacity:1;transform:scale(1)` (base: `opacity:0;transform:scale(.8)`)                            |
+| checkmark hide when indeterminate | `.vida-checkbox:has(input:indeterminate) .box .check` | `opacity:0` (dash wins — contract: mutually exclusive)                                            |
+| dash show                         | `.vida-checkbox:has(input:indeterminate) .box .dash`  | `opacity:1` (base `opacity:0`)                                                                    |
+| focus ring                        | `.vida-checkbox:has(input:focus-visible) .box`        | `outline:2px solid var(--colorFocusRing);outline-offset:2px`                                      |
+| error border                      | `.vida-checkbox-invalid .box`                         | `border-color:var(--borderError)` (precedence: after focus-border, danger wins; ring still shows) |
 
 - **Motion (B12)** [FACT: checkbox.md §Motion]: only `transform`(scale) + `opacity` transition, on the
   checkmark/dash, `duration.fast`/`easing.out`. Reduced-motion: `@media (prefers-reduced-motion:reduce)`
@@ -90,6 +93,7 @@ scope — `.box` and the injected rules below are descendants, so the vars resol
   still no animated colour) instead of / in addition to the overlay — a documented fallback, not a silent gloss.
 
 ## 3. API (exported `CheckboxProps` — FLAT, exactly as the contract authors it)
+
 [FACT: checkbox.md:11-25 authors `export interface CheckboxProps { … }` FLAT.] The contract is the
 authoritative spec for this primitive, so the interface ships **verbatim** — I do not rewrite the authored
 API surface at implementation time (deliverable = the doc).
@@ -102,10 +106,10 @@ export interface CheckboxProps {
   /** tri-state: visually a dash; aria-checked="mixed". Mutually exclusive with a checked=true render. */
   indeterminate?: boolean
   disabled?: boolean
-  invalid?: boolean          // required-but-unchecked in a submitted form → danger border + aria-invalid
+  invalid?: boolean // required-but-unchecked in a submitted form → danger border + aria-invalid
   required?: boolean
-  size?: 'sm' | 'md' | 'lg'  // default 'md'
-  label?: React.ReactNode    // slot; when omitted, aria-label REQUIRED
+  size?: 'sm' | 'md' | 'lg' // default 'md'
+  label?: React.ReactNode // slot; when omitted, aria-label REQUIRED
   name?: string
   value?: string
 }
@@ -114,10 +118,11 @@ export interface CheckboxProps {
 
 **§VII discriminated-union tension — flagged, not resolved unilaterally (was F#2, re-grounded).** §VII
 (components.md:93) mandates a discriminated union for mutually-exclusive combos, and DS-5 `_index.md §2`
-*claims* §VII compliance — yet the checkbox contract authors `checked`/`indeterminate` as independent
+_claims_ §VII compliance — yet the checkbox contract authors `checked`/`indeterminate` as independent
 optionals. That is an inconsistency **inside DS-5's own docs** (contract vs its parent conventions). Per the
 "half-baked spec is triage, not a decision" rule, UI-1 does **not** silently rewrite the contract into a
 union (my discretion) nor ship a knowingly §VII-violating API without a word. Instead:
+
 1. **Deliver the flat contract API** (authoritative for this primitive; also the universal ecosystem shape —
    Radix/MUI/React-Aria all keep `checked`+`indeterminate` independent, because a single native `<input>` is
    one element, not a union of two).
@@ -144,7 +149,7 @@ union (my discretion) nor ship a knowingly §VII-violating API without a word. I
   })
   ```
   The inner input reuses the Input precedent's typed cast (`NativeInputEl as unknown as
-  ForwardRefExoticComponent<… & RefAttributes<HTMLInputElement>>`, input.tsx:109-111) so the DOM ref forwards
+ForwardRefExoticComponent<… & RefAttributes<HTMLInputElement>>`, input.tsx:109-111) so the DOM ref forwards
   through the styled component. **Verify at impl** the ref resolves to a real `HTMLInputElement` (else the
   `useLayoutEffect` no-ops on `null` — the `if (innerRef.current)` guard makes that safe, not a crash).
 - `{...rest}` spread onto the input FIRST so computed a11y props win (N1, carried from Button/Input).
@@ -154,18 +159,22 @@ union (my discretion) nor ship a knowingly §VII-violating API without a word. I
   `aria-label`/`aria-labelledby` is present.
 
 ## 4. 8 visual states (contract §Visual States — `loading` justified N/A)
+
 default (unchecked box) · hover (overlay) · focus (`:focus-visible` ring on box) · active (press overlay) ·
 disabled (opacity 0.5, native tab-removal, hover suppressed) · **loading = N/A** (contract: a checkbox
 toggles instantly) · error (`invalid` → danger border + `aria-invalid`) · empty (unchecked **is** the empty
 state). [FACT: checkbox.md §Visual States]
 
 ## 5. Accessibility (contract §A11y)
+
 Role `checkbox` (native). `aria-checked` true/false native; **`"mixed"`** via `.indeterminate` property.
 Name = `label` slot (native `<label>` association) or `aria-label` (warn if neither). `invalid`→`aria-invalid`
-+ pass-through `aria-describedby`; `required`→`aria-required` (+ native `required`); `disabled`→ native
-`disabled`. Keyboard: **Space** toggles (native), Tab-reachable, label-click toggles (native). [FACT: checkbox.md §A11y]
+
+- pass-through `aria-describedby`; `required`→`aria-required` (+ native `required`); `disabled`→ native
+  `disabled`. Keyboard: **Space** toggles (native), Tab-reachable, label-click toggles (native). [FACT: checkbox.md §A11y]
 
 ## 6. Files
+
 - `packages/ui/src/components/checkbox.tsx` — the primitive.
 - `packages/ui/src/components/checkbox.stories.tsx` — Visual Gate surface (states × unchecked/checked/
   indeterminate × light｜dark; sizes; with/without label; invalid; disabled).
@@ -176,10 +185,11 @@ Name = `label` slot (native `<label>` association) or `aria-label` (warn if neit
 - (barrel `index.ts` if primitives are re-exported there — verify at impl.)
 
 ## 7. Decisions — with grounding label (FACT = written in a doc · INTERP = derived · UNKNOWN = doc silent)
+
 - **D1 — box size values `sm 16 · md 20 · lg 24` dp. [INTERP: 4pt grid; contract + design.md SILENT on box
   dimension].** Honest grounding: the contract's Visual-States table (checkbox.md:29-38) cites `checkbox.border/
-  backgroundChecked/checkmark/radius` but **no size**; design.md has no checkbox/control box-size spec (line 103
-  "no arbitrary pixels" governs the *type scale*; §IV 4pt grid governs spacing). So the only applicable rule is
+backgroundChecked/checkmark/radius` but **no size**; design.md has no checkbox/control box-size spec (line 103
+  "no arbitrary pixels" governs the _type scale_; §IV 4pt grid governs spacing). So the only applicable rule is
   the **4pt grid** → 16/20/24 are grid-legal, `$size` (32/40/48) is control-height (too large for a square box).
   **This is my interpretation of a doc gap, not a spec value** — UI-1 does not invent a `checkbox.size` token
   (DS-2/DS-5 own tokens). Flagged for DS to tokenize if it wants exactness (§8 defect list).
@@ -197,6 +207,7 @@ Name = `label` slot (native `<label>` association) or `aria-label` (warn if neit
   2026-08-07.] Satisfies contract §A11y "label click toggles" (checkbox.md:50). Confirm `<label>` in the DOM at impl.
 
 ## 8. Definition of Done (U3)
+
 - [ ] `CheckboxProps` = the FLAT contract interface verbatim (D4); `checked`+`indeterminate=true` prevented
       at render (dash wins) + NODE_ENV dev-warn.
 - [ ] unchecked/checked/indeterminate render; explicit `aria-checked="mixed"` when indeterminate
@@ -209,6 +220,7 @@ Name = `label` slot (native `<label>` association) or `aria-label` (warn if neit
       overlay-perceptibility measurement (F#8; border-strengthen fallback if under-perceptible) — Victor confirms.
 
 ## 8b. Build result + gates (2026-08-07) — IMPLEMENTED, Visual Gate PASS
+
 Files: `components/checkbox.tsx` · `checkbox.stories.tsx` · `checkbox.test.tsx` (17 jsdom) ·
 `internal/checkbox-styles.ts` · `tamagui.config.ts` (+`light_/dark_Checkbox`) · `index.ts` barrel ·
 `.storybook/preview.tsx` (canvas paint). typecheck 2/2 · @vida/ui **68/68** · build + build-storybook ✓ · root 10/10.
@@ -218,14 +230,16 @@ Files: `components/checkbox.tsx` · `checkbox.stories.tsx` · `checkbox.test.tsx
 checked×hover×dark overlay 0→0.08 (ink adapts) · 0 page errors.
 
 **3 things the Visual Gate caught that typecheck + jsdom passed clean** (why the gate exists):
+
 - **Box missing its `.vida-checkbox-box` class** → every injected fill/ring/error rule no-op'd. Fixed + jsdom guard.
 - **Danger border via injected CSS lost the specificity race** vs Tamagui's own border classes → moved to a Tamagui
   `invalid` variant (Input precedent). [[injected-css-loses-to-tamagui-variants]]
 - **Storybook canvas stayed white in dark mode** → dark-theme label (correctly light) invisible → decorator now
   paints `$colorSurfacePrimary` (benefits all stories).
-Deviations from the plan were additive/corrective (not approach changes) — no §XXVIII re-gate needed.
+  Deviations from the plan were additive/corrective (not approach changes) — no §XXVIII re-gate needed.
 
 ## 9. Defects raised (for DS, not resolved in UI-1)
+
 - **DEF-U3-a — checkbox.md contract vs `_index.md §2`(§VII) inconsistency.** The contract authors
   `checked`/`indeterminate` as independent optionals; `_index.md §2` claims §VII "discriminated unions for
   exclusive combos." DS to reconcile: union the contract, or record a §VII waiver for it (single native input

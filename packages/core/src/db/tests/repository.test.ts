@@ -66,7 +66,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -108,9 +111,7 @@ describe('DB-6 — migration wiring', () => {
     // migration 002 (sessions), so the global count is no longer 1; this test's charter is
     // that DB-6's own migration ran and created sync_queue, not the global migration count.
     expect(await currentVersion(driver)).toBeGreaterThanOrEqual(1)
-    const tables = await driver.values(
-      `SELECT name FROM sqlite_master WHERE type='table' AND name='sync_queue'`,
-    )
+    const tables = await driver.values(`SELECT name FROM sqlite_master WHERE type='table' AND name='sync_queue'`)
     expect(tables).toHaveLength(1)
     await driver.close()
   })

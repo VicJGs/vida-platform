@@ -20,7 +20,7 @@ The gated P6 decomposition homes **exactly two legs** to `fe-notifications`:
 **Out of scope — "channel-matrix controls" is drift.** The task-header reshape line names it, but it is **not a
 traced leg** for fe-notifications, and it is **not** in `fe-settings`' control set (theme·motion·density·arrangement·
 sync-vis·Atlas·rename) `[FACT: .claude/tasks/fe-settings.md:9]`. Channel toggles are a Preferences-config concern
-the service only *reads* (`gateChannels`) `[FACT: services/notifications/service.ts:284-310]`. Per the "gated
+the service only _reads_ (`gateChannels`) `[FACT: services/notifications/service.ts:284-310]`. Per the "gated
 decomposition outranks a reshape summary" discipline, it is excluded here. No Preferences **writes** in this unit →
 zero overlap with the live `fe-settings` session.
 
@@ -32,7 +32,7 @@ zero overlap with the live `fe-settings` session.
   - **No live apps/web service composition root exists yet.** The first ② surface (notes) ships every data hook
     **M1-default empty** with a `?sample` DEV param; a live `Service.method()` call would throw on the worker-RPC
     Drizzle `values` seam today. `[FACT: apps/web/src/notes/use-notes-rows.ts:6,48; use-note-entity.ts:4,125;
-    [[visual-gate-catches-worker-rpc-bugs-unit-tests-bypass]]]` → fe-notifications inherits this convention
+[[visual-gate-catches-worker-rpc-bugs-unit-tests-bypass]]]` → fe-notifications inherits this convention
     (honest-empty default + `?sample`; live swap documented + deferred to the composition root).
 - **`NotificationView` = `@vida/types` `Notification`.** The read row shape the UI renders: `type` (6-enum),
   `title`, `message`, `action_url`, `action_label`, `entity_type`, `entity_id`, `is_read`, `read_at`,

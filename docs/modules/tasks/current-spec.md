@@ -8,19 +8,21 @@
 > task-type steps). Design authority: `docs/features/tasks/` + `docs/specs/foundation/backend-intent/parts/tasks.md`.
 
 ## Build status — slices
-| Slice | State | Surface |
-|-------|-------|---------|
-| **S1 Foundation** | ✅ BUILT (2026-10-14) | CRUD · ≤1-parent guard · app-layer cascade · list filters · DB-11 reconcile |
-| **S2 Sub-tasks + M4 rollup** | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read |
-| **S3 Completion + effects** | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out |
-| **S4 Timer + log_time** | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger |
-| **S5 Obligations + recurrence** | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js` |
-| **S6 Measurability + contribution** | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards |
-| **S7 Aggregation** | ✅ BUILT (2026-10-16) | `getAggregatedTasks` over the SHARED `ViewProviderRegistry` (R7/V4); standalone Inbox; per-group degradation |
-| **S8 Tags + Notes + Views + ReadProvider** | ✅ BUILT (2026-10-18) | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` (`task_note` page) · `saveView`/`listViews` (exact-`['task']` views) · `TASK_VIEW_PRESETS` + `kind` filter · tasks registered as a `ReadProvider` (nested tags) |
+
+| Slice                                               | State                 | Surface                                                                                                                                                                                                                                                                      |
+| --------------------------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **S1 Foundation**                                   | ✅ BUILT (2026-10-14) | CRUD · ≤1-parent guard · app-layer cascade · list filters · DB-11 reconcile                                                                                                                                                                                                  |
+| **S2 Sub-tasks + M4 rollup**                        | ✅ BUILT (2026-10-14) | `addSubtask` (single-level) · `getSubtasks` · `getRollup` derived-on-read                                                                                                                                                                                                    |
+| **S3 Completion + effects**                         | ✅ BUILT (2026-10-14) | `completeTask`/`reopenTask` + deny-safe completion effect fan-out                                                                                                                                                                                                            |
+| **S4 Timer + log_time**                             | ✅ BUILT (2026-10-15) | `startTimer`/`stopTimer`/`getActualMinutes` over a `'work'` session sub-type; `log_time` → kept ledger                                                                                                                                                                       |
+| **S5 Obligations + recurrence**                     | ✅ BUILT (2026-10-15) | `setRecurrence` (obligation-only) + `completeTask` regen hook; RRULE via `ical.js`                                                                                                                                                                                           |
+| **S6 Measurability + contribution**                 | ✅ BUILT (2026-10-15) | `getTaskProgress` (pursuable `progress()`, derived-on-read honoring `binding_mode`) + C1/C2 guards                                                                                                                                                                           |
+| **S7 Aggregation**                                  | ✅ BUILT (2026-10-16) | `getAggregatedTasks` over the SHARED `ViewProviderRegistry` (R7/V4); standalone Inbox; per-group degradation                                                                                                                                                                 |
+| **S8 Tags + Notes + Views + ReadProvider**          | ✅ BUILT (2026-10-18) | `tagTask`/`untagTask`/`getTaskTags` · `getTaskNote` (`task_note` page) · `saveView`/`listViews` (exact-`['task']` views) · `TASK_VIEW_PRESETS` + `kind` filter · tasks registered as a `ReadProvider` (nested tags)                                                          |
 | **S9 Journal summary + DueProvider (the ① closer)** | ✅ BUILT (2026-10-19) | `getDayTasksSummary` (the §2 journal set) · `getDueReminders` (the SS-7 due-bucket) · `journal.ts` (`registerTasksJournal` + `registerTasksDueProvider` on Sessions) · `utcDay` · TAS-29 `TaskViewConfig`/`TaskViewConfigSchema` · TAS-32/36 RATIFY — **① BACKEND COMPLETE** |
 
 ## Persistence (built floor — migration 015)
+
 - `tasks` — 5 parent refs (`project_id`/`milestone_id`/`course_id`/`contact_id`/`parent_task_id`, plain TEXT no FK),
   `status`/`priority`/`difficulty` (CHECK enums), `due_date`/`scheduled_date`, `estimated_minutes`, `actual_minutes`
   (derived, S4), `completed_at` (S3), `kind`, `recurrence_rule`, `measurement_kind` (NN `milestone`), `binding_mode`
@@ -29,6 +31,7 @@
   `deleted_at`** (hard-deletes with the task).
 
 ## S1 surface — `createTasksService(deps)`
+
 - **Deps (as of S3):** `{ db, deviceId, effects? }` where `effects?: { rail: EffectRail; registry: EffectRegistry }`
   (deny-safe, S3). (Still grows — `sessions`/`spaces`/`notes`/`registry`/`providers` land later.)
 - `createTask(input): TaskRow` — validates (Zod); **≤1 parent-module FK** or `MultipleParentError`; backfills every
@@ -44,6 +47,7 @@
 - **Returns Drizzle `TaskRow`** (not `@vida/types.Task` — the interface is the mirror; `_sync_status` string≠union).
 
 ## S2 surface — sub-tasks + rollup
+
 - `addSubtask(parentId, input): TaskRow` — `TaskNotFoundError` if parent absent; **single-level** (`SubtaskNestingError`
   if the parent is itself a sub-task, TK-3); delegates to `createTask` with `parent_task_id=parentId` (S1 guards apply).
 - `getSubtasks(parentId): TaskRow[]` — direct children, soft-delete filtered, ordered `sort_order` then `created_at`.
@@ -53,6 +57,7 @@
   completion never force-completes children.
 
 ## S3 surface — completion + effect fan-out
+
 - `completeTask(id): TaskRow` — `TaskNotFoundError` if absent. Sets `status='completed'` + `completed_at=Date.now()`
   via **`tasksRepo.update`** (the repo primitive — `updateTask` cannot write `completed_at`, BR-TK-S1-5). On the
   not-completed→completed transition, **post-commit**, fans out the completion catalogue (below). Sole writer of
@@ -68,6 +73,7 @@
   dedups via `effect_event_id = derive(taskId‖'task_completed'‖type)` — complete→reopen→re-complete grants once ever.
 
 ## S4 surface — timer + log_time + actual_minutes (the decided model: G-S1/G-S4/C4)
+
 - **Deps (as of S4):** `+ sessions?: SessionsService` (required for the timer — the timer composes it) and `effects?`
   (S3's optional rail; the timer **asserts both are wired** → `TimerNotWiredError`, fail-loud, not S3-dormant).
 - `registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId })` — **composition wiring** (not a service
@@ -87,6 +93,7 @@
   substrate touch (the `fireCompletionEffects`-payload edit was rejected for write-side blast radius).
 
 ## S5 surface — obligations + recurrence (TAS-21/22/23; the routines RT-4 seam)
+
 - `setRecurrence(taskId, rule): TaskRow` — obligation-only (`RecurrenceNotAllowedError` on a non-obligation, TK-7);
   `null` clears it (the obligation then behaves standard). The `recurrence_rule ⇒ kind='obligation'` invariant is
   enforced at **every** write path (create/update/setRecurrence).
@@ -102,9 +109,10 @@
   the latter drifts one day early in UTC-positive zones (g2 B1; a `TZ=Asia/Tokyo` test guards it).
 
 ## S6 surface — measurability (TAS-25/26; the pursuable `progress()` contract)
+
 - `getTaskProgress(id): number | null` — a task's OWN progress ∈ [0,1] | null, DERIVED on read (XCU-08/BR-8). No deps
   added (`{db, deviceId, effects?, sessions?}` unchanged). `TaskNotFoundError` on a missing/soft-deleted id (never
-  `null` — `null` is the distinct *unmeasured* signal). Resolution (Projects-faithful; tasks has **no** stored override
+  `null` — `null` is the distinct _unmeasured_ signal). Resolution (Projects-faithful; tasks has **no** stored override
   column, C6, so it always derives):
   - **parent (has sub-tasks)** ⇒ the M4 `getRollup().progress` (container rollup wins, regardless of `binding_mode`);
   - **childless `binding_mode='derived-pull'`** ⇒ `null` (source-fed, not completion-fed; no task↔source binding in M1
@@ -123,6 +131,7 @@
   `purpose_reviews`/`plan_steps` are Purpose-domain, §3.8).
 
 ## S7 surface — aggregation (TAS-05/32; R7 fan-out over the shared seam)
+
 - **Deps (as of S7):** `+ providers?: ViewProviderRegistry` — the **shared** `foundation/views` R7/V4 read-provider
   seam (ADR-007 §3.4; XCU-07/08), deny-safe optional. The slice-map's `AggregationProviderPort` placeholder resolved to
   this type: tasks **consumes the one OS seam and defines no provider port of its own** (a second registry = a fork).
@@ -147,12 +156,13 @@
     a throwing `list` ⇒ THAT group `state:'degraded'` (`parentRow:null`, fallback label, **tasks still present**);
     the method **never rejects for a source outage** — the view never blanks. A throw is caught per-group.
   - **Not `ViewEngine.resolve`** (grounded non-reuse): `resolve(viewRow)` is saved-view-driven with single-field
-    grouping; `getAggregatedTasks` is an ad-hoc derivation over one type with a 4-FK partition + a parent *lookup* —
+    grouping; `getAggregatedTasks` is an ad-hoc derivation over one type with a 4-FK partition + a parent _lookup_ —
     tasks consumes the registry (the seam), not the engine.
 - Result types `AggregatedGroup { key, label, parent, parentRow, state, tasks }` + `AggregatedTasks { groups }` in
   `services/tasks/types.ts`; `AggGroupingSchema` in `validators/task.ts`.
 
 ## S8 surface — tags · notes · views · the tasks ReadProvider (TAS-27/28/30/31 · XCU-07/08)
+
 - **Deps (as of S8):** `+ spaces?: SpacesService` · `+ notes?: NotesService` · `+ views?: ViewsService` — optional +
   **fail-loud** (`TasksDepNotWiredError(dep)`; the S4 `TimerNotWiredError` is kept). **No `registry` dep:** `'task'` is
   pre-seeded in `_registry.ts` ENTITY_TYPES, so the taggable registry needs no tasks `register()` (the seam-contract's
@@ -183,7 +193,7 @@
   additive) so a kind-bound preset is expressible through the provider. The preset PRIMITIVE + tab = Spaces/P6
   (first-consumer-pull); row seeding = XCU-06 pipeline (db-10).
 - **Tasks as a `ReadProvider` (XCU-07/08 — the other direction of the S7 seam):** `createTasksReadProvider({svc, db,
-  deviceId}): ReadProvider` + `registerTasksReadProvider(providers, deps)` (the `registerTasksTimer` composition shape;
+deviceId}): ReadProvider` + `registerTasksReadProvider(providers, deps)` (the `registerTasksTimer` composition shape;
   no composition root at M1). `list(filter)` honours what it understands, ignores the rest, never throws for a bad
   predicate (ADR-007 §3.3.4 / XCU-13): (1) a present `predicates.id` SHORT-CIRCUITS → string ⇒ `[getTask(id)]` (a
   sub-task IS returned by id), non-string ⇒ `[]`; (2) `PROVIDER_KEYS` (`status · priority · project_id · parent_task_id · completed · due_before · kind`) picked
@@ -207,6 +217,7 @@
   `SaveTaskViewSchema` · `ListTasksFilterFieldsSchema` (+ `ListTasksFilterSchema = …optional()`) in `validators/task.ts`.
 
 ## S9 surface — Journal summary + DueProvider (TAS-19 `surface_journal` PULL · TAS-29/32/36 RATIFY · the ① closer)
+
 - **Governing doc:** `docs/core/architecture/cross-module-integration.md` §2 ("Governs: the daily-summary aggregation")
   — the tasks row verbatim: "Tasks completed or due on the date: title, status, priority | `tasks` WHERE `due_date = ?`
   OR completed on date"; `docs/features/tasks/contract.md:32` adds `scheduled_date` to "due". Journal = PULL
@@ -215,7 +226,7 @@
 - **`getDayTasksSummary(date): TasksDaySummaryItem[]`** — the day's journal SET over `listTasks()` (every row, soft-
   delete filtered, no grain filter): a task is a member when `completed_at != null && utcDay(completed_at) === date`
   (`completedToday`) or `due_date === date || scheduled_date === date` (`dueToday`); projected to `{ id, title, status,
-  priority, completedToday, dueToday }`. A set union — a task completed-on AND due-on the date is ONE member with both
+priority, completedToday, dueToday }`. A set union — a task completed-on AND due-on the date is ONE member with both
   flags; a `status:'completed'` row with no timestamp is NOT "completed on date" (TK-6: a completion is status +
   timestamp) but still a member via its date. Order `sort_order` → `created_at` → `id` codepoint. Never throws for
   data; an idle or malformed `date` ⇒ `[]`.
@@ -229,19 +240,19 @@
   half, JR-5); a task is in the window when `utcMidnightMs(due_date)` OR `utcMidnightMs(scheduled_date)` ∈ `[start,end]`
   (inclusive; `Date.parse(ymd+'T00:00:00Z')` — the purposes/relationships convention = how every caller builds bounds;
   `NaN`/absent ⇒ not in window). Item `{ source_module:'tasks', ref_id, label:title, est_minutes: estimated_minutes ?? 0,
-  urgency:0, hard_deadline?: dueMs }` — `hard_deadline` OMITTED when the task has no (valid) `due_date`, never NaN;
+urgency:0, hard_deadline?: dueMs }` — `hard_deadline` OMITTED when the task has no (valid) `due_date`, never NaN;
   `urgency:0` = the deferred G5 placement algorithm (ADR-004 §3.3). A TOTAL deterministic order: `hard_deadline` asc
   with none LAST, then `sort_order`, `created_at`, `id` codepoint. Never throws; soft-deleted excluded.
 - **`journal.ts`** — `createTasksJournalContribution(svc)` (`module:'tasks'`, `sectionKey:'summary'`, dataPoints
   `completed_today 'Completed'` · `due_today 'Due today'`; `summary(date)` ⇒ `state = items.length>0 ? 'success' :
-  'empty'`, `items` = the set; **summary-only — no `dueIn`**) · `registerTasksJournal(registry, svc)` (overwrite-dedup
+'empty'`, `items` = the set; **summary-only — no `dueIn`**) · `registerTasksJournal(registry, svc)` (overwrite-dedup
   by module) · `registerTasksDueProvider(sessions, svc)` ⇒ `sessions.registerDueProvider({ module:'tasks', fetch })`.
   ONE registration for due work, on Sessions (journals contract:27-32 + JR-3/JR-5 "agenda reads the shared `dueIn()`"
-  + SS-7 "never duplicator"); consequence: `buildDashboard().agenda` carries no tasks section in M1 (the built engine
-  reads only `JournalContribution.dueIn`; the journals→Sessions bridge is journals' contract). Registry handles are
-  PARAMS (no new dep). The file imports only the `../journals`/`../sessions` barrels + `./types` (structural gate).
+  - SS-7 "never duplicator"); consequence: `buildDashboard().agenda` carries no tasks section in M1 (the built engine
+    reads only `JournalContribution.dueIn`; the journals→Sessions bridge is journals' contract). Registry handles are
+    PARAMS (no new dep). The file imports only the `../journals`/`../sessions` barrels + `./types` (structural gate).
 - **TAS-29 RATIFY + name:** `TaskViewConfig = TaskViewPreset['view']` (types.ts) + `TaskViewConfigSchema =
-  SaveTaskViewSchema.omit({ id, space_id })` (validators/task.ts; `strictObject().omit` keeps the `never` catchall on
+SaveTaskViewSchema.omit({ id, space_id })` (validators/task.ts; `strictObject().omit` keeps the `never` catchall on
   zod 4.4.3 ⇒ `entity_types`/`id`/`space_id` still rejected) — the ONE saved-view config schema the 12 renderers consume.
   **TAS-32 RATIFY:** the per-group typed-error half is the S7 group `state:'degraded'` (BR-TK-S7-5). **TAS-36 RATIFY:**
   the ② reverts optimistic state on the 10 typed errors (stable `.name`), surface-guarded by test.
@@ -249,11 +260,13 @@
   tasks) + the `utcDay` helper. No schema, no `@vida/types` change, no new dep, no new error.
 
 ## DB-11 reconcile (shipped S1)
+
 `@vida/types/task.ts`: `Task` dropped `tags`, gained `scheduled_date`/`completed_at`/`kind`/`recurrence_rule`/
 `measurement_kind`/`binding_mode`/`nesting_weight`; `TaskTimeLog` gained `updated_at`. `validators/task.ts` gained
 `CreateTaskSchema`/`UpdateTaskSchema`/`ListTasksFilterSchema`.
 
 ## Verification (through S9)
+
 **S9:** tsc 0 · eslint 0 · tasks suite **96/96** (+9 S9: the 9-member §2 set with flags/fields/order + idle/malformed ·
 `utcDay` + the day bucket timezone-INDEPENDENT under `TZ=Asia/Tokyo` and `America/Sao_Paulo` · the contribution through
 the REAL `createJournalRegistry` + `buildDashboard` (success/empty, dedup, no agenda section, per-section degrade) ·
@@ -278,6 +291,7 @@ F5 perf-NIT accepted — DRY over a micro-opt on bounded single-level children) 
 no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3). dep `ical.js@2.2.1` (S5, RRULE parser).
 
 ## Deferred / downstream
+
 **① BACKEND COMPLETE (S1–S9).** **S9 deferrals (each homed in a DOC):** urgency ranking (`urgency:0`) → ADR-004 §3.3
 L139 + `parts/xcut-sessions.md` UNKNOWN-1 (G5 placement design-pass) · a user-timezone day bucket → the designed
 `user_profile.timezone` (ADR-002:3370-3381, unbuilt) + journals BR-S3-4 ("strict tz-aware today = design-pass");

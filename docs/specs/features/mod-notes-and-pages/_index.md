@@ -13,7 +13,8 @@ re-planned holistically; this is the clean rebuild (LIF-131, M1.1.1 head #35).
 — Decomposition Gate PASSED (Approval 1, 2026-09-19).
 
 ## Slices (each = own §XXVI double-gate + per-slice Verification Gate)
-- **S1 — Service shell + Pages core** → `sessions/PLAN-s1-pages-core.md` · **✅ BUILT (2026-09-19)** — @vida/core 979 green; current-* born at `docs/modules/notes/`
+
+- **S1 — Service shell + Pages core** → `sessions/PLAN-s1-pages-core.md` · **✅ BUILT (2026-09-19)** — @vida/core 979 green; current-\* born at `docs/modules/notes/`
 - **S2 — Entity notes + attachments** → (pending S1)
 - **S3 — Page-links + wiki resolution** → (pending S1)
 - **S4 — Delegation facade + registry** → (pending S1, S3)

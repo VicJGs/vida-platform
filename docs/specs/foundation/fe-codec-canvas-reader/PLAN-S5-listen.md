@@ -6,19 +6,22 @@
 > `envision.md` EC-7/EC-1/EC-12/EC-15 + `slice-map.md` S5 row + `interpretation.md` IR-7 (TTS deny-safe degrade).
 
 ## §1 · Context
+
 The slim **persistent listen bar** — the reader's whole-book text-to-speech control. The envision concept pins listen as
 "a slim persistent control" (EC-1) with three honest states (EC-7): **idle** (ready to play) · **playing** (a live
-`HonestProgress`) · **unavailable** (a *calm* "Listening isn't available on this device", never an error — IR-7).
+`HonestProgress`) · **unavailable** (a _calm_ "Listening isn't available on this device", never an error — IR-7).
 
 **S5 is shell-rendered, the inverse of S4.** S4's selection pieces are consumer-composed because they anchor to a `Range`
 inside the `renderContent` slot the shell doesn't own (IR-NEEDS-3). The listen bar has no such constraint — it is
 **book-level persistent chrome**, so it lives **on `CanvasReaderProps`** exactly as the seam-contract already proposes.
-It is distinct from S4's `SelectionActions.onListenFrom` (listen *from a selection*, selection-seeded): S5 is whole-book
+It is distinct from S4's `SelectionActions.onListenFrom` (listen _from a selection_, selection-seeded): S5 is whole-book
 playback + its states. The two coexist; S5 touches neither `SelectionActions` nor `ReaderHighlightMark`.
 
 ## §2 · The surfacing model (the S5 design decision — doc-resolved, confirm at Approval 1)
+
 **DECISION: a shell-rendered slim `ListenBar` on `CanvasReader`, driven by the proposed seam-contract props; rendered
 only when `listen` is provided (the `progress` render-when-provided precedent, `canvas-reader.tsx:478`).** Grounded:
+
 - **seam-contract §A:55–59** already homes `listen?: ListenMode` / `listenProgress?` / `listenLabel?` / `onListenToggle?`
   on `CanvasReaderProps` — S5 ratifies that proposal (the "proposed-per-slice" clause S2/S3/S4 all used).
 - **EC-1 "a slim persistent control" + EC-9 "header + listen bar stack"** → a full-width slim row that is sibling chrome
@@ -34,9 +37,10 @@ ONLY because of the Range-anchoring constraint; a persistent book-level bar has 
 homes its props on `CanvasReaderProps`. Exporting it would fragment the shell's own chrome for no reason.)_
 
 ## §3 · Business rules (S5 scope)
+
 - **BR-S5-1 (the bar is shell chrome, EC-1):** `CanvasReader` renders a slim full-width `ListenBar` row between `Header`
   and `Body`, **only when `listen != null`** (render-when-provided; `progress`/`positionNote` precedent). `ListenMode =
-  'idle' | 'playing' | 'unavailable'` (a LOCAL union, @vida/ui Tamagui-only — the `ReaderState` precedent).
+'idle' | 'playing' | 'unavailable'` (a LOCAL union, @vida/ui Tamagui-only — the `ReaderState` precedent).
 - **BR-S5-2 (three honest states, EC-7):**
   - **idle** → a `ListenIcon` toggle button (`aria-label` "Listen") + the `listenLabel` (default "Listen to this book");
     `onListenToggle` starts playback.
@@ -62,22 +66,25 @@ homes its props on `CanvasReaderProps`. Exporting it would fragment the shell's 
   graphical object ≥3:1.
 
 ## §4 · Contract (additive `CanvasReaderProps` — ratifies seam-contract §A:55–59)
+
 ```ts
 export type ListenMode = 'idle' | 'playing' | 'unavailable'
 
 interface CanvasReaderProps {
   // … existing …
   // ── listen (S5) ──
-  listen?: ListenMode            // render the bar only when provided; drives the 3 states (BR-S5-1/2)
-  listenProgress?: number        // 0..1, shown in 'playing' only, render-when-provided (honest)
-  listenLabel?: ReactNode        // default "Listen to this book"
-  onListenToggle?: () => void    // intent only; renders the control on idle/playing (BR-S5-4)
+  listen?: ListenMode // render the bar only when provided; drives the 3 states (BR-S5-1/2)
+  listenProgress?: number // 0..1, shown in 'playing' only, render-when-provided (honest)
+  listenLabel?: ReactNode // default "Listen to this book"
+  onListenToggle?: () => void // intent only; renders the control on idle/playing (BR-S5-4)
 }
 ```
+
 No change to `SelectionActions`/`ReaderHighlightMark` (S4). No new exported component — only the `ListenMode` type joins
 the barrel.
 
 ## §5 · Acceptance (Visual Gate MUSTs)
+
 - **EC-7:** the three states render — idle (listen affordance) · playing (pause + `HonestProgress`) · unavailable (calm
   muted "Listening isn't available on this device", a `role="status"`, **not** an error colour).
 - **EC-15:** every control is a **real inline SVG icon** (ListenIcon / PauseIcon), never an emoji (gate asserts `<svg>`
@@ -90,6 +97,7 @@ the barrel.
 - tsc 0 · eslint 0 · tests green · **axe 0**.
 
 ## §6 · Implementation prompt
+
 1. `canvas-reader.tsx` —
    - add `export type ListenMode = 'idle' | 'playing' | 'unavailable'` near `ReaderState`.
    - add a `PauseIcon` inline-SVG (two bars, `aria-hidden`, 16px, `currentColor`) beside the S4 icons; reuse `ListenIcon`.
@@ -112,6 +120,7 @@ the barrel.
    ledger ✅).
 
 ## Deviations / open
+
 - The §2 surfacing model (shell-rendered bar on `CanvasReader`, NOT an exported piece) is the deliberate inverse of S4 —
   grounded (no Range constraint + seam-contract homes the props on `CanvasReaderProps`). Surfaced for Approval 1.
 - Region-naming (`role="region"` vs letting the toggle carry the name) resolved at impl to avoid an empty-named region

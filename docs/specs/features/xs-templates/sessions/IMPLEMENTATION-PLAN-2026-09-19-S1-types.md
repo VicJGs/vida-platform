@@ -1,10 +1,11 @@
-# IMPLEMENTATION-PLAN — xs-templates S1  (§XXVI gate 2 = build-steps)
+# IMPLEMENTATION-PLAN — xs-templates S1 (§XXVI gate 2 = build-steps)
 
 Status: draft (gate 2). Executes the approved SPEC `PLAN-2026-09-19-S1-types.md` §1–§4. Every step cites a spec
 rule; nothing invented at build time. Ground rule: no shape beyond the spec's envelope (Victor drift directive).
 Env: Node 24 via nvm + corepack pnpm. Branch `xs-templates`.
 
 ## Grounding note folded from gate-2 prep
+
 `INSTANTIATION_STATUS` has **no table column / no SQL CHECK** (it is a runtime result type, not persisted) →
 it is **NOT** added to `validators/enum-parity.test.ts` (that fixture is SQL-CHECK↔tuple only,
 enum-parity.test.ts:1-11). Its parity (tuple ≡ `z.enum`) is asserted in the S1 validator test instead. `[FACT: enum-parity.test.ts:8-11; templates.ts has no status column]`
@@ -24,8 +25,8 @@ enum-parity.test.ts:1-11). Its parity (tuple ≡ `z.enum`) is asserted in the S1
 5. **`packages/core/src/validators/template.ts`** — create. `import { z } from 'zod'` + `INSTANTIATION_STATUS`,
    `TemplateBundle` from `@vida/types`. `export const InstantiationStatusSchema = z.enum(INSTANTIATION_STATUS)`
    (mirror `validators/view.ts`). `export const BundleSchema = z.object({ root_tag: z.unknown(), seed_entities:
-   z.array(z.unknown()), views: z.array(z.unknown()), enabled_blocks: z.unknown(), child_structure: z.unknown().optional() })
-   .refine((d) => 'root_tag' in d && (d as { root_tag?: unknown }).root_tag !== undefined, { message: 'root_tag is required', path: ['root_tag'] })`
+z.array(z.unknown()), views: z.array(z.unknown()), enabled_blocks: z.unknown(), child_structure: z.unknown().optional() })
+.refine((d) => 'root_tag' in d && (d as { root_tag?: unknown }).root_tag !== undefined, { message: 'root_tag is required', path: ['root_tag'] })`
    — **envelope only**. `seed_entities`/`views` are required by `z.array` (not optional); `root_tag` is forced
    required by the `.refine` (a `z.unknown()` field is optional-by-default in Zod, so the refine gives the "missing
    root_tag" test teeth). `root_tag` required is grounded: `spaces.root_tag_id` is `notNull` — a bundle with no
@@ -41,8 +42,10 @@ enum-parity.test.ts:1-11). Its parity (tuple ≡ `z.enum`) is asserted in the S1
    `@vida/types` from built dist (not source), run `--filter @vida/types build` first (fold — [[first-runtime-consumer-surfaces-latent-barrel-defects]]).
 
 ## Deviation
+
 Any divergence from these steps → §XXVIII (STOP → /critique → /preflight → Approval → re-impl). Update this plan +
 task `## Build Steps` in lockstep.
 
 ## Done-check
-SPEC §4 Acceptance all ticked → S1 done → S2 (store CRUD). §XXIX (spaces current-*) runs at HEAD close, not per-slice.
+
+SPEC §4 Acceptance all ticked → S1 done → S2 (store CRUD). §XXIX (spaces current-\*) runs at HEAD close, not per-slice.

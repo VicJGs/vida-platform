@@ -11,27 +11,30 @@
 > repo rule: raw readers return `*Row` types, constructed/merged returns use view types. [[drizzle-row-not-assignable-to-vida-types-interface]]
 
 ## Factory
+
 ```ts
 function createRoutinesService(deps: RoutinesServiceDeps): RoutinesService
 
-interface RoutinesServiceDeps {             // ⟲ amended (A2, N3, D1)
-  sessionRegistry: SessionRegistry            // ⟲ S5c REQUIRED (read-only): resolve sub-types + lifecycles; routines registers none
+interface RoutinesServiceDeps {
+  // ⟲ amended (A2, N3, D1)
+  sessionRegistry: SessionRegistry // ⟲ S5c REQUIRED (read-only): resolve sub-types + lifecycles; routines registers none
   db: DrizzleDb
   deviceId: string
-  clock?: () => string                       // ⟲ built (as-built S1): asOf YYYY-MM-DD, default UTC today
-  tasks: TasksService                         // ⟲ REQUIRED (D1). Replaces the deny-safe TasksPort
-  registry: TaggableTypeRegistry              // entity_type validation at addStep (R2). Registration already seeded (_registry.ts:45-46)
-  sessions: SessionsService                   // required (createSession/startFocus, attach, registerDueProvider, dueIn)
-  habits?: HabitsService                       // habit-step native tick
-  spaces: SpacesService                       // required (tags/links) — as-built S8
-  notes: NotesService                         // required (pages) — as-built S8
-  effects?: { rail: EffectRail; registry: EffectRegistry }   // producer guard registry.resolve before applyEffect (N8) — as-built S7
-  prefs?: RoutinesPrefsPort                    // the USER's policy (S4); absent/none ⇒ policy_source 'undefined' (no routines-side default)
+  clock?: () => string // ⟲ built (as-built S1): asOf YYYY-MM-DD, default UTC today
+  tasks: TasksService // ⟲ REQUIRED (D1). Replaces the deny-safe TasksPort
+  registry: TaggableTypeRegistry // entity_type validation at addStep (R2). Registration already seeded (_registry.ts:45-46)
+  sessions: SessionsService // required (createSession/startFocus, attach, registerDueProvider, dueIn)
+  habits?: HabitsService // habit-step native tick
+  spaces: SpacesService // required (tags/links) — as-built S8
+  notes: NotesService // required (pages) — as-built S8
+  effects?: { rail: EffectRail; registry: EffectRegistry } // producer guard registry.resolve before applyEffect (N8) — as-built S7
+  prefs?: RoutinesPrefsPort // the USER's policy (S4); absent/none ⇒ policy_source 'undefined' (no routines-side default)
   // ⟲ dropped: measurementSources (rule 12: no M5 source)
 }
 ```
 
 ## Routine lifecycle (S1)
+
 ```ts
 createRoutine(input: CreateRoutineInput): Promise<Routine>           // {name, description?, recurrence_rule?, measurement_kind?, binding_mode?, sort_order?}
 updateRoutine(id: Id, patch: UpdateRoutineInput): Promise<Routine>   // re-validates axes + lifecycle
@@ -42,6 +45,7 @@ listRoutines(filter?: { lifecycle?: RoutineLifecycle }): Promise<Routine[]>
 ```
 
 ## Steps (S1)
+
 ```ts
 addStep(routineId: Id, step: AddStepInput): Promise<RoutineStep>     // {step_type, entity_type?, entity_id?, is_required?, title, description?, time_of_day?, skip_dates?}
 reorderSteps(routineId: Id, orderedStepIds: Id[]): Promise<RoutineStep[]>
@@ -52,6 +56,7 @@ listSteps(routineId: Id): Promise<RoutineStep[]>
 ```
 
 ## Run / complete / skip / reschedule (S2, S3, S6)
+
 ```ts
 runStep(stepId: Id, input?: { date?: string }): Promise<StepRunState>  // ⟲ amended (S3, input added; S5c): drives tasks.startTimer (standard; obligation → completeTask) | a registered session sub-type | habits.logCompletion(date) |
                                                                    //   focus: startFocus({}) + attach(routine_step, instance) → completeFocus + detach (S3) (never completeSession, N9);
@@ -75,6 +80,7 @@ rescheduleStep(stepId: Id, input: { date: string; slot: { start: number; end?: n
 ```
 
 ## Derivations — evaluate / progress / analytics (S4, S5)
+
 ```ts
 evaluateRoutine(routineId: Id, input?: { date?: string }): Promise<RoutineEvaluation>   // ⟲ S4: options object
 //   RoutineEvaluation = { status: 'done'|'partial'|'not_started', percent: number, done: StepRef[], not_done: StepRef[],
@@ -91,6 +97,7 @@ getAnalytics(routineId: Id, range: RoutineDateRange): Promise<RoutineAnalytics> 
 ```
 
 ## Tags · notes · links (S8) — ⟲ amended (A27): the frozen seam listed no surface; shapes follow tasks (tagTask/getTaskNote) + purposes (linkEntity)
+
 ```ts
 tagRoutine(routineId: Id, tagId: Id): Promise<EntityTagRow>    // live routine + LIVE tag (TagNotFound); idempotent via spaces.tagEntity
 untagRoutine(routineId: Id, tagId: Id): Promise<void>          // live routine; a deleted tag stays cleanable
@@ -103,6 +110,7 @@ unlinkPage(pageId: Id, target): Promise<void>                  // spaces.removeL
 ```
 
 ## Provider seam + Journal wiring (S9)
+
 ```ts
 // ⟲ as-built S9 (2026-10-26): dueIn = routine-days still due by the PLAN-S9 predicate (S5/S6 logic), per-routine isolated, item
 //   { source_module:'routines', ref_id:'<routineId>|<D>', label: name, est_minutes:0, urgency:0, hard_deadline: UTC midnight of D };
@@ -120,23 +128,25 @@ function registerRoutinesDueProvider(sessions: SessionsService, svc: RoutinesSer
 ```
 
 ## Typed errors (fail loud — ROU-30)
+
 ```ts
-EntityUnavailableError   // ⟲ renamed (S3, module *Error convention) — a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
-OutsideAcceptanceWindowError  // ⟲ S6 (module *Error naming): make-good/skip/reschedule past the user's window → rejected, no state change (RT-6)
-NotMissedOccurrenceError      // S6: rescheduleStep for a date that isn't a make-good-admissible occurrence of the step (future · not an occurrence · not in the step set · planned skip · done · inactive)
-InvalidRescheduleSlotError    // S6: the slot is before now, before D's day, or past the last make-good day
-RoutineContributionError      // S7: the re-drivable purpose contribution failed (G8; habits MetricContributionError precedent)
+EntityUnavailableError // ⟲ renamed (S3, module *Error convention) — a step's driven entity missing/deleted/port-absent → typed step state, never silent skip (RT-3)
+OutsideAcceptanceWindowError // ⟲ S6 (module *Error naming): make-good/skip/reschedule past the user's window → rejected, no state change (RT-6)
+NotMissedOccurrenceError // S6: rescheduleStep for a date that isn't a make-good-admissible occurrence of the step (future · not an occurrence · not in the step set · planned skip · done · inactive)
+InvalidRescheduleSlotError // S6: the slot is before now, before D's day, or past the last make-good day
+RoutineContributionError // S7: the re-drivable purpose contribution failed (G8; habits MetricContributionError precedent)
 // S7: updateStep throws StepNotFoundError for a truly missing step (was the repo's generic 'Row not found'; soft-deleted still succeeds, g2 N1) · OutsideAcceptanceWindowError / InvalidRoutinePolicyError for newly added past skip_dates
-PolicyUndefined          // ⟲ S4: not thrown — evaluateRoutine returns policy_source 'undefined' (flagged); the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves
+PolicyUndefined // ⟲ S4: not thrown — evaluateRoutine returns policy_source 'undefined' (flagged); the shipped default = Spaces templates/presets (SP5, `docs/intake/spaces.md:183-185`); routines reads the user's policy and flags `policy_source:'undefined'` when none resolves
 InvalidRoutinePolicyError // S4: the port returned a completion kind the docs don't define (fails loud)
-ProviderEmitFailed       // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
+ProviderEmitFailed // dueIn/summary failure isolated — routine + sibling providers unaffected (RT-13)
 // ⟲ added (A25): the as-built errors
-RoutineNotFoundError     // addStep on a missing/archived routine (no orphan step)
-StepNotFoundError        // complete/skip/plan/edit on a missing/archived step (no orphan completion)
-CompletionNotFoundError  // edit/delete an absent (step,date)
+RoutineNotFoundError // addStep on a missing/archived routine (no orphan step)
+StepNotFoundError // complete/skip/plan/edit on a missing/archived step (no orphan completion)
+CompletionNotFoundError // edit/delete an absent (step,date)
 ```
 
 ## What ② must NOT expect from ① (boundary)
+
 - No XP/ledger/currency write surface — routines emits effects; Gamification owns `consequence_ledger`.
 - No scheduler/session-engine/tag-store/purpose-metric ownership — all composed via the deps above.
 - No cached streak/progress columns — every number is derived-on-read; ② must not assume a stored counter.

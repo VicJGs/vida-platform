@@ -69,7 +69,13 @@ describe('SummaryView (S5 — /summary block)', () => {
 
   it('opaque items are never rendered (only dataPoint labels)', () => {
     const withItems: readonly SectionData[] = [
-      { sectionKey: 'summary', module: 'habits', dataPoints: [{ id: 'h1', label: 'Shown' }], state: 'success', items: [{ secret: 'hidden' }] },
+      {
+        sectionKey: 'summary',
+        module: 'habits',
+        dataPoints: [{ id: 'h1', label: 'Shown' }],
+        state: 'success',
+        items: [{ secret: 'hidden' }],
+      },
     ]
     const { queryByText, getByText } = renderUI(<SummaryView sections={withItems} state="populated" />)
     expect(getByText('Shown')).not.toBeNull()

@@ -1,14 +1,15 @@
 <!-- Contract — features/finance · /documentation Phase 2 · sources: ADR-002 §5.8 · finance.ts · v1 API.md · intake -->
 
-# Contract — Finance  (level: Feature)
+# Contract — Finance (level: Feature)
 
 > **Status:** types exist (`@vida/types/finance.ts`, 6 entities); `@vida/core` `models/finance.ts` +
 > `services/finance-service.ts` exist but are **empty placeholders (0 lines)**; there is **no schema** for
 > import, budgeting, liability-payments, or multi-currency. Signatures below
 > are the **designed interface**; ⚠ INTENDED items depend on the ADR-002 amendment + dedicated ADRs. `[FACT:
-> finance.ts present; no core service; ADR-002 §5.8]`
+finance.ts present; no core service; ADR-002 §5.8]`
 
 ## Exposed surface (via `@vida/core`)
+
 - **Account CRUD & balance** (`Account` `[FACT: finance.ts L67-84]`):
   - `createAccount({opening_balance, ...})` · `updateAccount` · `softDeleteAccount` (cascades transactions, FN-11)
   - `getBalance(accountId)` → derived `opening_balance + Σ ledger` (FN-3) · `listAccounts()`
@@ -43,6 +44,7 @@
     design-pass.** `[INTENT: Victor 2026-07-15]`
 
 ## What it consumes (outside dependencies)
+
 - **Notes & Pages** — notes on transaction/account/asset/investment/liability via `pages` (`entity_type`), read
   through the Notes contract, never its tables. `[FACT: ADR-002 §5.2; INTENT G12]`
 - **Shared tag system** — transaction tagging via **`entity_tags`** (`tag_id, entity_type, entity_id`, SP1;
@@ -51,25 +53,29 @@
   import/connection personalization. `[INTENT G3,G6,G8; FACT: Preferences contract]`
 
 ## Fed by (parent-module links — read via integration points, §6)
+
 - **Independent domain (Wave 1)** — no upstream owner; Finance entities are created/owned standalone. (External
   bank/broker data, when an ADR allows it, enters as device-side imports — not a module dependency.) `[FACT:
-  docs/core/architecture/module-dependency-graph.md]`
+docs/core/architecture/module-dependency-graph.md]`
 
 ## Consumed by
+
 - **Notes journal `/summary`** → today's transactions + net-worth snapshot. `[FACT: Notes /summary]`
 - **Purpose & Goals** → financial targets (e.g. savings) read net worth / balances; ⚠ INTENDED metric
   contribution. `[INTENT; FACT: CLAUDE.md Purpose]`
 - **Gamification** → transaction-create / milestone events feed achievements (v1 fired an achievement check on
   create). `[FACT: v1 API.md L173]`
 - **Gamification / System (economy)** → consumes the **`store`** reward-target boxes (`is_locked`,
-  `dream_id`/`purpose_id`), and *emits* the **`move_money`** Additive effect that Finance executes via its effect
+  `dream_id`/`purpose_id`), and _emits_ the **`move_money`** Additive effect that Finance executes via its effect
   handler (**R2**, idempotent **R1**) — penalties LOCK a box, never destroy (E5, FN-16). `[INTENT; ADR-012 E4/E6]`
 
 ## Contract error cases
+
 - `createTransfer` with no destination or source==destination → typed `InvalidTransferError` (FN-4). `[INTENT G5]`
 - `getOverview`/conversion with a missing FX rate → typed `FxRateMissingError` (prompt, no silent 1:1, FN-8). `[INTENT G8]`
 - `importStatement` requiring server-side plaintext → refused with typed `ZeroKnowledgeViolationError` (FN-9). `[INTENT G2]`
 - Mutating a transaction → balance re-derive failure surfaces a flagged partial, not a wrong balance (FN-3). `[INTENT G4]`
 
 ## Completion checklist
+
 - [x] exposed + consumed + fed-by + consumed-by · [x] types/errors cited · [x] integration via documented points (no direct table access) · [x] [FACT/INTENT] each claim · [x] not-yet-coded + INTENDED flagged

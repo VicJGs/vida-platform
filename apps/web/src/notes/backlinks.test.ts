@@ -51,7 +51,14 @@ describe('mergeBacklinks (BR-S4-4 — the G6 merge the ① defers to the UI)', (
   it('page-only: one item per source with the snippet', () => {
     const out = mergeBacklinks({ pageLinks: [page('a', 'see the log', 10)], entityLinks: [] }, resolve)
     expect(out).toHaveLength(1)
-    expect(out[0]).toMatchObject({ sourceId: 'a', type: 'note', title: 'Research log', module: 'Notes', count: 1, snippet: 'see the log' })
+    expect(out[0]).toMatchObject({
+      sourceId: 'a',
+      type: 'note',
+      title: 'Research log',
+      module: 'Notes',
+      count: 1,
+      snippet: 'see the log',
+    })
   })
 
   it('entity-only: sourced from page_id', () => {

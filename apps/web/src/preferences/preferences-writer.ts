@@ -26,7 +26,13 @@ import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { MODULE_MAP } from '../nav/module-map'
 import { MANAGED_SURFACE_KEYS } from '../nav/nav-prefs'
 import { TransactionLockTimeoutError } from '../db/write-lock'
-import { NAV_PREFS_KEY, PREFERENCES_FAMILY, PREFERENCES_GC_MS, PREFERENCES_STALE_MS, USER_PREFS_KEY } from './preferences-keys'
+import {
+  NAV_PREFS_KEY,
+  PREFERENCES_FAMILY,
+  PREFERENCES_GC_MS,
+  PREFERENCES_STALE_MS,
+  USER_PREFS_KEY,
+} from './preferences-keys'
 import { applyNavPatch, applyUserPatch } from './preferences-view'
 import { createWriteQueue, type WriteQueue } from './write-queue'
 

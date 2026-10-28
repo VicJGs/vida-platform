@@ -9,15 +9,18 @@
 > P3 — a box-shadow can't affect text contrast). Gate script `/tmp/vg/p3-gate.mjs`.
 
 ## 0. Source model
+
 Code-first. No hard-coded palette; no new token (reuse the shipped `shadow.overlay`); no new dep. No API change.
 
 ## 1. Baseline (ground truth) + the audit
+
 The three overlay primitives are **already well-refined** — most P3 plan bullets are RATIFY:
+
 - **RATIFY · Dialog title already serif-display** — `DialogTitle` is `fontFamily:'$display'` / `fontSize:'$heading'`
   (`render:'h2'`) [FACT: dialog.tsx:107-111]. Popover + Menu carry **no title** (anchored/command surfaces). No work.
 - **RATIFY · Menu item hover + active already shipped** — `MenuItemRow` has `hoverStyle:{backgroundColor:'$colorSurfaceSecondary}`
-  + an `active` variant + a `disabled` hover-cancel [FACT: menu.tsx:94-98] — the same §VIII-complete pattern P2 added to
-  export-dialog. No work.
+  - an `active` variant + a `disabled` hover-cancel [FACT: menu.tsx:94-98] — the same §VIII-complete pattern P2 added to
+    export-dialog. No work.
 
 **The ONE real gap (design §V):** no overlay panel has an **elevation shadow**. `DialogPanel` / `PopoverPanel` /
 `MenuPanel` float above content with only a **1px border + surface**, no shadow [FACT: dialog.tsx:84-94, popover.tsx:85-93,
@@ -26,14 +29,16 @@ have none. And `shadow.ts` ships an **`overlay`** token (`0 12px 32px -4px rgba(
 **currently unused** [FACT: themes/shadow.ts].
 
 ## 2. The crux (one shared refinement — all presentational, no API change)
+
 **Apply `shadow.overlay` (Level-3) to the three overlay panels**, via the **injected-stylesheet elevation mechanism**
 (the Card precedent: `card-styles.ts` injects `box-shadow` reading `shadow.ts` [FACT: card-styles.ts:1,29]). Each panel
 already has a stable class + an injected stylesheet:
+
 - `internal/dialog-styles.ts` → `.vida-dialog-panel`
 - `internal/popover-styles.ts` → `.vida-popover-panel`
 - `internal/menu-styles.ts` → `.vida-menu-panel`
-Add `box-shadow:${shadow.overlay}` to each panel's **base** rule (static — NOT animated; the enter keyframes stay
-transform/opacity-only, B12). Import `shadow` from `../themes/shadow` in each (as `card-styles.ts` does).
+  Add `box-shadow:${shadow.overlay}` to each panel's **base** rule (static — NOT animated; the enter keyframes stay
+  transform/opacity-only, B12). Import `shadow` from `../themes/shadow` in each (as `card-styles.ts` does).
 
 **Dark mode (design §XI — self-cancel by construction, gate confirms):** `shadow.overlay`'s COLOR is
 `rgba(15,23,42,·)` = **the dark surface/page color**. So on dark it blends to near-nothing — the **same self-cancel**
@@ -47,9 +52,11 @@ halo shows, the fallback is a reduced dark shadow targeting the dark `<html>` sc
 conformant — `borderRadius:'$lg'`, padding tokens). Change only if a value is off-grid.
 
 ## 3. Contract
+
 **No prop change** on any of the three. P3 = injected-CSS elevation (3 stylesheets) + the RATIFY notes. Non-breaking.
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking):** Brave, 3 presets × light/dark. For **each** of Dialog / Popover / Menu (open each):
   - **light:** the panel shows the `shadow.overlay` Level-3 lift (measured — `box-shadow` present + non-none on the
     panel's computed style), clearly separating it from the content beneath;
@@ -63,6 +70,7 @@ conformant — `borderRadius:'$lg'`, padding tokens). Change only if a value is 
 - **§XXIX currency:** `packages/ui/src/CLAUDE.md` (the 3 overlay paragraphs: +Level-3 elevation) + the v-specs' change logs.
 
 ## 4b. Preflight RESULT (2026-10-06 — PASSED, grounded in the 3 stylesheets)
+
 - **V2 RESOLVED — base panel rule exists in all 3.** `dialog-styles.ts` `.vida-dialog-panel{animation:…both}`;
   `popover-styles.ts` `.vida-popover-panel{opacity:0;transform…;transition:opacity,transform}`; `menu-styles.ts`
   `.vida-menu-panel{opacity:0;transition:opacity,transform}` [FACT: the 3 files]. Add `box-shadow:${shadow.overlay}` to
@@ -76,6 +84,7 @@ conformant — `borderRadius:'$lg'`, padding tokens). Change only if a value is 
   shadow on the dark scheme-class rule.
 
 ## 4a. Preflight + /verify (resolved above in §4b)
+
 - **V1 — dark self-cancel CONFIRM (expected to hold):** `shadow.overlay` color = the dark surface `rgba(15,23,42,·)` →
   self-cancels in dark by the Card mechanism (§XI by construction). Gate CONFIRMS the `0.18` alpha vanishes on navy (vs
   resting `0.06`); if a faint halo shows, fallback = a reduced shadow on the dark `<html>` scheme-class rule. Not an open
@@ -87,6 +96,7 @@ conformant — `borderRadius:'$lg'`, padding tokens). Change only if a value is 
   `overflow:visible` for the arrow; Menu/Dialog panels — verify the shadow paints outside the panel box).
 
 ## 5. Implementation prompt
+
 In each of `internal/dialog-styles.ts`, `popover-styles.ts`, `menu-styles.ts`: `import { shadow } from '../themes/shadow'`
 and add `box-shadow:${shadow.overlay}` to the base panel rule (`.vida-dialog-panel` / `.vida-popover-panel` /
 `.vida-menu-panel`) — create the base rule if only keyframe rules exist. Static only (no transition on box-shadow). Verify

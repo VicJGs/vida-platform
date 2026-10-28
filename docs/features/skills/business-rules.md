@@ -27,7 +27,7 @@ terminal states (in `contract.md`).
   (`external_out_ok`, per-target consent, **never auto-transmit**). The **LLM** draft is an ADR-015 model call (X11
   split) in `on_device`/`cloud` modes (AI1, server-blind), cloud = egress + scope-min (AI3); an imported/community def
   is untrusted content whose provenance travels into any prompt (AI5); generated rows carry `source=ai` (AI6). `[INTENT;
-  ADR-014 X1/X2/X3/X4/X5/X8/X9/X10/X11; ADR-015 AI1/AI3/AI5/AI6]`
+ADR-014 X1/X2/X3/X4/X5/X8/X9/X10/X11; ADR-015 AI1/AI3/AI5/AI6]`
 - **SK-4 — Mastery is DERIVED (hybrid) — and honest about the unmeasurable.** Current level/progress compute from
   gates + activities + assessments + linked Knowledge mastery + practice consistency; manual override is flagged.
   ⚠ **REALISM:** many real-life abilities (empathy, leadership, taste) **cannot be objectively measured digitally** —
@@ -36,9 +36,9 @@ terminal states (in `contract.md`).
   **`measurement_kind`** taxonomy (`quantitative`/`milestone` objective · **`qualitative`** self-rated) × `binding_mode`=
   **`derived-pull`**; skills **references** the taxonomy, it does **not** store a pursuable `measurement_kind` column
   (skills is not in the M1 pursuable set — the pursuable Target-Mastery target lives in Purposes, SK-10). `[INTENT CI-1;
-  ADR-011 M1/M2; validation 2026-07-14]`
-- **SK-5 — The Skill Composer defines measurement.** Per skill the user configures *what it is · which OS components
-  it interacts with · what's tracked · how progress/mastery is measured*, in **Quick** or **Advanced** mode. This is
+ADR-011 M1/M2; validation 2026-07-14]`
+- **SK-5 — The Skill Composer defines measurement.** Per skill the user configures _what it is · which OS components
+  it interacts with · what's tracked · how progress/mastery is measured_, in **Quick** or **Advanced** mode. This is
   how the module handles the hardness of measuring real-life ability; it also **subsumes cross-domain** (chosen per
   skill). `[INTENT CI-2]`
 - **SK-6 — Dispatch, don't duplicate.** `Activity.Type` routes work to the owning module: **Project→Projects ·
@@ -71,10 +71,12 @@ terminal states (in `contract.md`).
   is a scoped generate, not a tool-wielding agent (no AI4 envelope). `[INTENT; ADR-014/015]`
 
 ## Terminal states
+
 Skill (planning · active · honing/maintaining · completed) · Definition fill (manual · AI-generating→**fail→manual**
 · importing→**not-found→manual/community-import**) · Level (upcoming/locked · active · complete) · Action (planned ·
 in-progress · complete/**skipped**) · Mastery (insufficient-data · derived · manual-override) · Graph (no-deps ·
 recommended-path · synergy-detected) · Decay flag (none · at-risk · **dismissed**).
 
 ## Completion checklist
+
 - [x] rules + [FACT/INTENT] · [x] terminal states · [x] no `{{…}}`

@@ -25,6 +25,7 @@ Inherits platform baselines + Core conventions (`../core/conventions.md`). Nutri
   `shopping_item`) **register** in the SP2 **open** `entity_type` registry (no `CHECK` enum). `[INTENT HL10; ADR-006 SP1/SP2]`
 
 ## Pitfalls / local "never do"
+
 - **Never route the food-DB fetch or the AI call through the server** — device-mediated / BYO-key, server-blind (X1 / AI1).
 - **Never auto-transmit a cloud photo/generation** — it is a user-consented X4 egress under `external_out_ok` (X5); **never send more than the scope-minimized slice** (AI3).
 - **Never model a meal as a session** — a meal is a scheduled/logged entity via `dueIn()` (HN-2), not a `workout` sub-type.
@@ -33,4 +34,5 @@ Inherits platform baselines + Core conventions (`../core/conventions.md`). Nutri
 - **Never tag via an inline column** — all tags ride `entity_tags` (SP1); `entity_type` registers in the open SP2 registry.
 
 ## Completion checklist
+
 - [x] platform + Core inheritance · [x] Nutrition specifics · [x] [FACT/INTENT] · [x] no `{{…}}` · [x] pitfalls (X1/AI1/X4/AI3/SP1 landmines)

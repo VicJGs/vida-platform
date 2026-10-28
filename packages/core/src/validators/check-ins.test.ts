@@ -118,12 +118,19 @@ describe('AddQuestionSchema (CHE-08)', () => {
 
 describe('ScheduleConfigSchema (CHE-11)', () => {
   it('accepts a valid schedule config', () => {
-    expect(ScheduleConfigSchema.safeParse({ schedule_type: 'weekly', schedule_days: [0, 6], preferred_time: 'evening' }).success).toBe(true)
+    expect(
+      ScheduleConfigSchema.safeParse({ schedule_type: 'weekly', schedule_days: [0, 6], preferred_time: 'evening' })
+        .success,
+    ).toBe(true)
   })
   it('accepts null config fields (nullable)', () => {
-    expect(ScheduleConfigSchema.safeParse({ schedule_type: null, schedule_days: null, preferred_time: null }).success).toBe(true)
+    expect(
+      ScheduleConfigSchema.safeParse({ schedule_type: null, schedule_days: null, preferred_time: null }).success,
+    ).toBe(true)
   })
   it('rejects an invalid preferred_time', () => {
-    expect(ScheduleConfigSchema.safeParse({ schedule_type: null, schedule_days: null, preferred_time: 'noon' }).success).toBe(false)
+    expect(
+      ScheduleConfigSchema.safeParse({ schedule_type: null, schedule_days: null, preferred_time: 'noon' }).success,
+    ).toBe(false)
   })
 })

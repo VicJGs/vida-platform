@@ -47,10 +47,7 @@ export interface QueryResultLike<T> {
  * Conceptually parallels `@vida/core`'s `ViewEngine.resolve` degrade contract
  * ("degrade, never crash") — same four-state shape, distinct implementation.
  */
-export function deriveTerminalState<T>(
-  result: QueryResultLike<T>,
-  isEmpty: (data: T) => boolean,
-): TerminalState {
+export function deriveTerminalState<T>(result: QueryResultLike<T>, isEmpty: (data: T) => boolean): TerminalState {
   if (result.isPending) return 'loading'
   if (result.isError) return 'error'
   if (result.data === undefined) return 'loading'

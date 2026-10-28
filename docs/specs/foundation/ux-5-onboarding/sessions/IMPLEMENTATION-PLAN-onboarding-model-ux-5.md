@@ -32,20 +32,25 @@ export interface OnboardingStep {
 }
 
 export const ONBOARDING_STEPS: readonly OnboardingStep[] = [
-  { id: 'welcome', kind: 'intro',
-    copy: { m1: 'Vida — your life, in one place, on your device.' } },
-  { id: 'privacy', kind: 'explain',
+  { id: 'welcome', kind: 'intro', copy: { m1: 'Vida — your life, in one place, on your device.' } },
+  {
+    id: 'privacy',
+    kind: 'explain',
     copy: {
       m1: 'Vida is local-first: your data lives on this device. Encryption arrives as the platform hardens.',
       m3: 'Your data is encrypted on your device and never leaves in plaintext — only you hold the keys.',
-    } },
-  { id: 'vault', kind: 'vault-create', deferredImpl: 'vault-key',
+    },
+  },
+  {
+    id: 'vault',
+    kind: 'vault-create',
+    deferredImpl: 'vault-key',
     copy: {
-      m1: 'Your local vault is ready on this device.',   // confirmation, NOT "create" (BR-4 step-3 honesty)
+      m1: 'Your local vault is ready on this device.', // confirmation, NOT "create" (BR-4 step-3 honesty)
       m3: 'Create the passphrase that unlocks your vault.',
-    } },
-  { id: 'ready', kind: 'complete',
-    copy: { m1: "You're all set. Welcome to Vida." } },
+    },
+  },
+  { id: 'ready', kind: 'complete', copy: { m1: "You're all set. Welcome to Vida." } },
 ] as const
 ```
 
@@ -146,7 +151,7 @@ describe('ONBOARDING_STEPS', () => {
 ### Step 5 — `apps/web/src/onboarding/CLAUDE.md`
 
 Layer doc matching the `nav`/`shell`/`state-conventions` siblings: what the layer is (the UX-5 first-run
-onboarding *model*, not chrome — UI-4 renders), the pattern (typed data + pure logic, **no barrel — import
+onboarding _model_, not chrome — UI-4 renders), the pattern (typed data + pure logic, **no barrel — import
 specific files, STANDARDS §XX**), key files (`steps.ts`, `first-run.ts`), the two-signal rule, and the deferred
 seams (AR-3/UX-5b/M3).
 
@@ -165,7 +170,9 @@ Check for `apps/web` context `current-*` docs; refresh if the model changes them
 ---
 
 ## Acceptance → build-step map
+
 A1→S1 · A2→S2 · A3→S1/S6 (seam register) · A4→S1/S6 (copy) · A5→S2/S6 (reuse+no-Escape) · A6→S1–S4 (typecheck+tests) · A7→S6 · A8→S7.
 
 ## Verify (done-gate)
+
 `pnpm --filter @vida/web typecheck` (0 err) · `pnpm --filter @vida/web test` (green, new tests pass) · root `pnpm typecheck` unregressed · no rendered surface / no Visual Gate. No edits to `App.tsx`/`routes.tsx`/schema.

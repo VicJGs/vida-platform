@@ -154,5 +154,4 @@ export const ENTITY_TYPES = [
 ] as const
 export type EntityType = (typeof ENTITY_TYPES)[number]
 
-export const isEntityType = (v: string): v is EntityType =>
-  (ENTITY_TYPES as readonly string[]).includes(v)
+export const isEntityType = (v: string): v is EntityType => (ENTITY_TYPES as readonly string[]).includes(v)

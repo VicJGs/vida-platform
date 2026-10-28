@@ -45,7 +45,10 @@ describe('app-shell UI store (Zustand — UI state only, BR-RT-6)', () => {
 describe('app-shell UI store — panel placement (fe-shell #14)', () => {
   beforeEach(() =>
     useAppShellUIStore.setState({
-      placement: { system: { mode: 'dock', edge: 'left', open: false }, modules: { mode: 'dock', edge: 'left', open: false } },
+      placement: {
+        system: { mode: 'dock', edge: 'left', open: false },
+        modules: { mode: 'dock', edge: 'left', open: false },
+      },
     }),
   )
 

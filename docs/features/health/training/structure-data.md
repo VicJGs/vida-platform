@@ -7,6 +7,7 @@ All new (recovered domain) → **ADR-002 additions**. Platform baselines apply (
 soft-delete · no inline notes). Modality = properties, not tables.
 
 ## Entities (Training-owned)
+
 - **`exercises`** — catalog. `id` · `name` **E** · `movement_pattern` P (push/pull/hinge/squat/lunge/carry/rotation)
   · `primary_muscle` P · `secondary_muscles` P (JSON) · `equipment` P (JSON) · `difficulty` P · `risk_level` P ·
   `form_cues` **E** · `common_errors` **E** · `instructions` **E** · `variations` **E** · `video_url` **E** ·
@@ -29,13 +30,16 @@ soft-delete · no inline notes). Modality = properties, not tables.
   `form_quality` P · `is_pr` P (0/1). `[INTENT HL5/CI-2]`
 
 ## Composed / emitted (NOT Training tables)
+
 - Base session row + runtime + schedule → **Sessions** (`sessions` + scheduler). `[FACT ADR-004]`
 - Performance KPIs (1RM/volume/PR) → **Core `health_metric_values`** (source=derived). `[INTENT HC-2/HT-5]`
 - Testing/Recovery **protocols** → **Knowledge** (kind=`protocol`). Notes/tags → **Notes&Pages/Spaces**. `[INTENT]`
 
 ## ADR-002 additions
+
 Tables above + `entity_type` extensions: `exercise` · `exercise_plan` · `workout_session` · `workout_set`. Consolidate
 into the standing ADR-002 amendment; coordinate `workout_sessions` with ADR-004's table-per-type scheme. `[INTENT HL10]`
 
 ## Completion checklist
+
 - [x] entities + P/E · [x] composed-vs-owned · [x] ADR-002 additions · [x] no `{{…}}`

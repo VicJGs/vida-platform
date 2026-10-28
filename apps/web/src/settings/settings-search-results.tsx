@@ -7,8 +7,7 @@ import { groupResults, searchSettings } from './settings-search'
 // category with an uppercase category eyebrow + a count header; each result row navigates to its category (clearing the
 // query). No match → a calm EmptyState in a role="status" region (NOT an error). DIRECT semantic tokens.
 
-const categoryLabel = (id: SettingsCategoryId): string =>
-  SETTINGS_CATEGORIES.find((c) => c.id === id)?.label ?? id
+const categoryLabel = (id: SettingsCategoryId): string => SETTINGS_CATEGORIES.find((c) => c.id === id)?.label ?? id
 
 const ResultRow = styled(View, {
   name: 'SettingsResultRow',

@@ -90,9 +90,7 @@ export const migration015Tasks: Migration = {
     await driver.run(`CREATE INDEX idx_tasks_contact ON tasks(contact_id)`)
     await driver.run(`CREATE INDEX idx_tasks_parent ON tasks(parent_task_id)`)
     // Partial indexes (SQL-migration-only; the mirror declares plain indexes only).
-    await driver.run(
-      `CREATE INDEX idx_tasks_status ON tasks(status) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_tasks_status ON tasks(status) WHERE deleted_at IS NULL`)
     await driver.run(`CREATE INDEX idx_tasks_due ON tasks(due_date) WHERE deleted_at IS NULL`)
 
     // --- task_time_logs: the time ledger (zero [E]; no deleted_at — ledger) ----

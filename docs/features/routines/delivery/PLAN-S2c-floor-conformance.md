@@ -10,10 +10,12 @@
 > live-store Verification Gate.
 
 ## 1a. Context docs (§XXVI.1a)
+
 `docs/modules/routines/current-{spec,business-rules}.md` were refreshed at the Step-0 baseline (`58b1d1f`). **No code has changed
 since** (Steps 1–5 were docs-only), so they are **current**. §XXIX re-promotes them after this slice.
 
 ## Grounding — patterns in use (§XXIV, 3+ implementations read)
+
 - **Calendar-date validation:** `z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'expected YYYY-MM-DD')` in tasks `validators/task.ts:21-25`,
   projects `validators/project.ts:27-29`, purposes `validators/purpose.ts:38-40`, notes `validators/note.ts:21,32`. → rule 16, ADR-002 §2.8.
 - **Progress override range:** projects `ProgressSchema = z.number().int().min(0).max(100).nullable().optional()`
@@ -34,27 +36,30 @@ since** (Steps 1–5 were docs-only), so they are **current**. §XXIX re-promote
   - So the tasks comment (`services/tasks/service.ts:161`) is right for invalid values. The only gap is the missing-FREQ case.
 
 ## What is already built (the floor this slice corrects)
+
 `createRoutinesService({db, deviceId, clock?})`, with S1 routine CRUD, S2 step CRUD + ordering, and the ledger (as-built S3),
 over migration 018 (`services/routines/{service,types,index}.ts`, `validators/routine.ts`). 28/28 live-store tests green on Node 24.
 
 ## Scope (in S2c)
-| # | Ledger | Change | Grounding |
-|---|---|---|---|
-| 1 | A6 | **`setLifecycle(id, lifecycle): Promise<Routine>`**: Zod-validate the enum, `loadRoutineOrThrow` (archived/missing → `RoutineNotFoundError`), update, return the faithful row. No behavioural effect yet (miss suppression = S5) | seam :38 · ROU-17 · module's typed-guard pattern |
-| 2 | A10 | **`entity_type` validated against `TaggableTypeRegistry`** on `addStep` and `updateStep` whenever a non-null `entity_type` is passed. Unregistered → `UnknownEntityType` (foundation error), no write. Adds the **required** `registry: TaggableTypeRegistry` dep (seam Factory) | R2 · N3 · sessions `:393` precedent |
-| 3 | B1 | **Calendar-date format** (shape only, `YYYY-MM-DD`, precedent parity: not a calendar-validity check) on `CompleteStepSchema.date`, `SkipStepSchema.date`, `PlanSkipDatesSchema.dates[]`, `RoutineStepFields.skip_dates[]`. Also the `date` **argument** of `editCompletion`/`deleteCompletion` (a positional string today). **Declared error-type change:** a malformed date there now throws `ZodError` instead of `CompletionNotFoundError` | rule 16 · 4 shipped precedents |
-| 4 | B2 | **`progress`** = `z.number().int().min(0).max(100).nullable()` | projects `ProgressSchema` |
-| 5 | B3 | **`recurrence_rule` parse-validated at write** (create/update) via `ICAL.Recur.fromString`. Invalid → `InvalidRecurrenceRuleError(rule)` (new typed error), no write. `null` always allowed | **[INTERP]** constitution §5 fail-loud + ADR-002:1160 RFC-5545 + canonical parser. Tasks defers detection to regen (TAS-23), but routines reads its rule on every `dueIn`/`summary`/evaluate (S5/S9), so a bad rule would break providers silently. Approved as ledger row B3 |
-| 6 | B16 | **Non-empty `name` / `title`** (`.min(1)`) on create and update. Put it on **both** the base fields **and** the `.extend({name|title})` overrides in `CreateRoutineSchema`/`AddStepSchema` (`validators/routine.ts:35-37,56-58`), because the override would bypass a base-only `.min(1)` | tasks/projects convention |
-| 7 | A8 | **`listRoutines` sorted** `sort_order`, then `created_at`, then `byCodepoint(id)` | tasks `:237,768` precedent |
-| 8 | A11 | **`addStep` appends**: when `step_order` is not given, `step_order = (max(live step_order) ?? -1) + 1` over the routine's live steps (the explicit `isNull(deleted_at)` read, rule 7). `listSteps` sorts `step_order`, then `created_at`, then `byCodepoint(id)` | approved seam `seam-contract.md:50` + slice-map S2c. *(A draft §XXVIII deviation ("default 0 + created_at tie-break") was withdrawn at g1: after `reorderSteps` compacts orders to 0..n-1, a default-0 add would land 2nd, not last; and same-ms inserts tie on `created_at` with a random-within-ms UUIDv7, `db/repository.ts:66-80`)* |
-| 9 | A12 | **`reorderSteps` returns `Promise<RoutineStep[]>`** (the routine's live steps after reorder, via the `listSteps` read) | seam :46 |
-| 10 | D2–D5, D8 + seam | **Back-fills:** the seam `setLifecycle` annotation "paused/off generate no misses (S2c)" → "(miss suppression lands with S5's miss derivation; vacuous until then)" so the seam and this PLAN agree; `services/routines/CLAUDE.md` (stale "no code" → as-built status + pattern), `types.ts` header (superseded 8-slice numbering → governing S-numbers), test titles' retired `IR-n` labels → interp §4.n / RT-n, `db/tests/routines-introspection.test.ts:13-15` note (DB-11 done), `archiveRoutine` comment (`service.ts:180-182`) | ledger D2–D5, D8 |
+
+| #   | Ledger           | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                | Grounding                                                                                                                                                                                                                                                                                                                               |
+| --- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| 1   | A6               | **`setLifecycle(id, lifecycle): Promise<Routine>`**: Zod-validate the enum, `loadRoutineOrThrow` (archived/missing → `RoutineNotFoundError`), update, return the faithful row. No behavioural effect yet (miss suppression = S5)                                                                                                                                                                                                                                                                                                      | seam :38 · ROU-17 · module's typed-guard pattern                                                                                                                                                                                                                                                                                        |
+| 2   | A10              | **`entity_type` validated against `TaggableTypeRegistry`** on `addStep` and `updateStep` whenever a non-null `entity_type` is passed. Unregistered → `UnknownEntityType` (foundation error), no write. Adds the **required** `registry: TaggableTypeRegistry` dep (seam Factory)                                                                                                                                                                                                                                                      | R2 · N3 · sessions `:393` precedent                                                                                                                                                                                                                                                                                                     |
+| 3   | B1               | **Calendar-date format** (shape only, `YYYY-MM-DD`, precedent parity: not a calendar-validity check) on `CompleteStepSchema.date`, `SkipStepSchema.date`, `PlanSkipDatesSchema.dates[]`, `RoutineStepFields.skip_dates[]`. Also the `date` **argument** of `editCompletion`/`deleteCompletion` (a positional string today). **Declared error-type change:** a malformed date there now throws `ZodError` instead of `CompletionNotFoundError`                                                                                         | rule 16 · 4 shipped precedents                                                                                                                                                                                                                                                                                                          |
+| 4   | B2               | **`progress`** = `z.number().int().min(0).max(100).nullable()`                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | projects `ProgressSchema`                                                                                                                                                                                                                                                                                                               |
+| 5   | B3               | **`recurrence_rule` parse-validated at write** (create/update) via `ICAL.Recur.fromString`. Invalid → `InvalidRecurrenceRuleError(rule)` (new typed error), no write. `null` always allowed                                                                                                                                                                                                                                                                                                                                           | **[INTERP]** constitution §5 fail-loud + ADR-002:1160 RFC-5545 + canonical parser. Tasks defers detection to regen (TAS-23), but routines reads its rule on every `dueIn`/`summary`/evaluate (S5/S9), so a bad rule would break providers silently. Approved as ledger row B3                                                           |
+| 6   | B16              | **Non-empty `name` / `title`** (`.min(1)`) on create and update. Put it on **both** the base fields **and** the `.extend({name                                                                                                                                                                                                                                                                                                                                                                                                        | title})`overrides in`CreateRoutineSchema`/`AddStepSchema` (`validators/routine.ts:35-37,56-58`), because the override would bypass a base-only `.min(1)`                                                                                                                                                                                | tasks/projects convention |
+| 7   | A8               | **`listRoutines` sorted** `sort_order`, then `created_at`, then `byCodepoint(id)`                                                                                                                                                                                                                                                                                                                                                                                                                                                     | tasks `:237,768` precedent                                                                                                                                                                                                                                                                                                              |
+| 8   | A11              | **`addStep` appends**: when `step_order` is not given, `step_order = (max(live step_order) ?? -1) + 1` over the routine's live steps (the explicit `isNull(deleted_at)` read, rule 7). `listSteps` sorts `step_order`, then `created_at`, then `byCodepoint(id)`                                                                                                                                                                                                                                                                      | approved seam `seam-contract.md:50` + slice-map S2c. _(A draft §XXVIII deviation ("default 0 + created_at tie-break") was withdrawn at g1: after `reorderSteps` compacts orders to 0..n-1, a default-0 add would land 2nd, not last; and same-ms inserts tie on `created_at` with a random-within-ms UUIDv7, `db/repository.ts:66-80`)_ |
+| 9   | A12              | **`reorderSteps` returns `Promise<RoutineStep[]>`** (the routine's live steps after reorder, via the `listSteps` read)                                                                                                                                                                                                                                                                                                                                                                                                                | seam :46                                                                                                                                                                                                                                                                                                                                |
+| 10  | D2–D5, D8 + seam | **Back-fills:** the seam `setLifecycle` annotation "paused/off generate no misses (S2c)" → "(miss suppression lands with S5's miss derivation; vacuous until then)" so the seam and this PLAN agree; `services/routines/CLAUDE.md` (stale "no code" → as-built status + pattern), `types.ts` header (superseded 8-slice numbering → governing S-numbers), test titles' retired `IR-n` labels → interp §4.n / RT-n, `db/tests/routines-introspection.test.ts:13-15` note (DB-11 done), `archiveRoutine` comment (`service.ts:180-182`) | ledger D2–D5, D8                                                                                                                                                                                                                                                                                                                        |
 
 **Considered, not added (no doc grounding):** rejecting a half polymorphic ref (`entity_type` without `entity_id` or vice versa).
 No routines doc or shipped precedent states it, so it is not invented here.
 
 ## Operations (net-new / changed signatures)
+
 ```ts
 // types.ts — RoutinesServiceDeps
 registry: TaggableTypeRegistry            // NEW, required (seam Factory). Validation only; types are pre-seeded
@@ -65,31 +70,36 @@ reorderSteps(routineId: string, orderedStepIds: string[]): Promise<RoutineStep[]
 export class InvalidRecurrenceRuleError extends Error { constructor(public readonly rule: string) }   // NEW (B3)
 // UnknownEntityType is re-used from foundation/spaces (not redefined, so no barrel collision)
 ```
+
 `validators/routine.ts`: a module-local `CalendarDate = z.string().regex(YMD, 'expected YYYY-MM-DD')` (the tasks/projects
 per-validator-file pattern; no shared export is introduced). `ProgressField` 0–100. `.min(1)` on `name`/`title`. A
 `SetRoutineLifecycleSchema = z.object({ lifecycle: RoutineLifecycleSchema })`.
 
 ## Operation flow + invariants
+
 - **setLifecycle:** parse → `loadRoutineOrThrow(id)` → `routinesRepo.update(id, {lifecycle})` → `toRoutine`. A same-value set is a
   harmless update (it re-stamps the sync version; the twin `update` behaviour).
 - **Entity-type guard:** runs **after** Zod parse and **before** any repo write, and only when `entity_type != null`. On
   `updateStep` it runs only if the patch carries `entity_type`.
 - **RRULE guard:** a helper `assertValidRrule(rule)`: parse with `ICAL.Recur.fromString(rule)`. A **throw OR `freq == null`** (RFC 5545
   makes FREQ required) → `InvalidRecurrenceRuleError(rule)`. The `freq == null` leg is required by the verified parser behaviour above.
-  called in `createRoutine`/`updateRoutine` when `recurrence_rule` is a non-null string. *(The `ical.js` import is the first one in
-  routines; it is already a `@vida/core` dep.)*
+  called in `createRoutine`/`updateRoutine` when `recurrence_rule` is a non-null string. _(The `ical.js` import is the first one in
+  routines; it is already a `@vida/core` dep.)_
 - **Sorting** is done in memory after the explicit `isNull(deleted_at)` read (rule 7 preserved).
 - **Unchanged:** every S1/S2 invariant in `current-business-rules.md` (faithful echo, partial update never blanks, upsert per
   (step,date), soft-delete preserves the ledger, …).
 
 ## Deps / validators
+
 - New required dep `registry`. **Impact (ledger impact scan):** the only constructor call sites are the module's own test
   file (`createRoutinesService(...)` in `routines-service.test.ts`), updated to pass `createTaggableTypeRegistry()`. No runtime
   consumer exists (N5).
 - `setLifecycle` and the return-type change are additive or narrowing for the own tests only; no external caller.
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3 + `migrate()`, real `TaggableTypeRegistry`)
+
 New tests (the existing 28 must stay green, with retitled `IR-n` labels):
+
 1. `setLifecycle` → `paused`, then `off`, then `active`. Each returns the faithful row; `getRoutine` reflects it.
 2. `setLifecycle` on an archived / missing routine → `RoutineNotFoundError`, no write: `_sync_version`/`updated_at` and the `sync_queue`
    count are unchanged before vs after.
@@ -112,18 +122,20 @@ New tests (the existing 28 must stay green, with retitled `IR-n` labels):
     **Reorder then add:** reorder [C,A,B], then an unordered `addStep` D → `listSteps` = C, A, B, D.
 12. `reorderSteps` returns the live steps in the new order, deep-equal to a fresh `listSteps`.
 13. **Persistence probe:** `setLifecycle` enqueues a `sync_queue` row (local-first, RT-18).
-Gates: `@vida/core` tsc 0 · eslint 0 · routines suite green · full `@vida/core` suite run sequentially (no regression; the DB-11
-enum parity test untouched) · g2 code review · /critique SHIP · §XXIX promotion (`current-*` + layer `CLAUDE.md`).
+    Gates: `@vida/core` tsc 0 · eslint 0 · routines suite green · full `@vida/core` suite run sequentially (no regression; the DB-11
+    enum parity test untouched) · g2 code review · /critique SHIP · §XXIX promotion (`current-*` + layer `CLAUDE.md`).
 
 ## Preflight (gate 2): `/preflight` PASSED, 0 gaps (after Approval 1, 2026-10-21)
-| Layer | Specified? | Where |
-|---|---|---|
-| Backend (in-process `@vida/core` service; no HTTP endpoint, no auth: single-user local-first, ZK seam `encryptedFields:[]` unchanged) | ✅ signatures, inputs (Zod), typed errors, flows | §Operations · §Operation flow · §Scope |
-| Database | ✅ tables `routines` · `routine_step` (read + update; no new columns, **no migration**) · `routine_completions` untouched | §Scope |
-| Integration | ✅ service → Repository (`update` re-reads the full row `db/repository.ts:204,425-440`, so `setLifecycle`'s echo is faithful) · registry injected · no frontend (② = fe-routines) | §Deps |
-| Durable-doc invariants | ✅ no BR contradicted. The append rule is a **new** BR (no current BR states the default-0 order). §XXIX re-promotes **BR-RT-S1-6** (list now sorted), **S2-1** (`entity_type` now registry-validated), **S2-6** (reorder now returns rows; ownership + contiguity preserved), plus new validation BRs for B1/B2/B3/B16 and `setLifecycle` | `current-business-rules.md` |
+
+| Layer                                                                                                                                 | Specified?                                                                                                                                                                                                                                                                                                                                 | Where                                  |
+| ------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------- |
+| Backend (in-process `@vida/core` service; no HTTP endpoint, no auth: single-user local-first, ZK seam `encryptedFields:[]` unchanged) | ✅ signatures, inputs (Zod), typed errors, flows                                                                                                                                                                                                                                                                                           | §Operations · §Operation flow · §Scope |
+| Database                                                                                                                              | ✅ tables `routines` · `routine_step` (read + update; no new columns, **no migration**) · `routine_completions` untouched                                                                                                                                                                                                                  | §Scope                                 |
+| Integration                                                                                                                           | ✅ service → Repository (`update` re-reads the full row `db/repository.ts:204,425-440`, so `setLifecycle`'s echo is faithful) · registry injected · no frontend (② = fe-routines)                                                                                                                                                          | §Deps                                  |
+| Durable-doc invariants                                                                                                                | ✅ no BR contradicted. The append rule is a **new** BR (no current BR states the default-0 order). §XXIX re-promotes **BR-RT-S1-6** (list now sorted), **S2-1** (`entity_type` now registry-validated), **S2-6** (reorder now returns rows; ownership + contiguity preserved), plus new validation BRs for B1/B2/B3/B16 and `setLifecycle` | `current-business-rules.md`            |
 
 **Assumptions that would have been made, now pinned:**
+
 1. `InvalidRecurrenceRuleError` lives in `services/routines/types.ts` and is re-exported by the routines barrel (no collision: g1 #6).
 2. `UnknownEntityType` is **imported** from `../../foundation/spaces/types`, not redefined or re-exported.
 3. The positional `date` args of `editCompletion`/`deleteCompletion` are validated by parsing through the module-local `CalendarDate`
@@ -137,10 +149,11 @@ enum parity test untouched) · g2 code review · /critique SHIP · §XXIX promot
 8. Node 24 for all gates (the better-sqlite3 ABI), full suites run sequentially.
 
 ## Implementation plan (§5, worked via `victor:execute-plan-code`)
+
 1. **validators/routine.ts:** module-local `YMD` + `CalendarDate` regex · `ProgressField` 0–100 · `.min(1)` on base + `.extend` `name`/`title`
    · `skip_dates: z.array(CalendarDate)` · `CompleteStep/SkipStep/PlanSkipDates` use `CalendarDate` · export `SetRoutineLifecycleSchema`.
 2. **types.ts:** `registry: TaggableTypeRegistry` dep · `setLifecycle` + `reorderSteps(): Promise<RoutineStep[]>` on the interface ·
-   `InvalidRecurrenceRuleError` · refresh the header (D3). **index.ts:** export the new error. *(No `SetLifecycleInput` type: `setLifecycle(id, lifecycle)` takes a positional enum.)*
+   `InvalidRecurrenceRuleError` · refresh the header (D3). **index.ts:** export the new error. _(No `SetLifecycleInput` type: `setLifecycle(id, lifecycle)` takes a positional enum.)_
 3. **service.ts:** `assertValidRrule` (throw ∨ `freq==null`) in create/update · `assertEntityType` in addStep/updateStep ·
    `setLifecycle` · max+1 append in `addStep` · `byCodepoint` + 3-key sorts in `listRoutines`/`listSteps` · `reorderSteps` returns
    `listSteps` · positional-date parse in `editCompletion`/`deleteCompletion` · fix the `archiveRoutine` comment (D8).
@@ -148,17 +161,19 @@ enum parity test untouched) · g2 code review · /critique SHIP · §XXIX promot
    tests 1–13.
 5. **Back-fills:** `services/routines/CLAUDE.md` (D2) · `db/tests/routines-introspection.test.ts:13-15` (D5) · the seam `setLifecycle`
    annotation.
-**Gate point:** steps 2–4 are **one** gate point. Making `registry` required + adding `setLifecycle` turns tsc red until step 3 and
-the suite red until step 4, so verify only after step 4 (write the step-4 tests first as red, then 2–3).
+   **Gate point:** steps 2–4 are **one** gate point. Making `registry` required + adding `setLifecycle` turns tsc red until step 3 and
+   the suite red until step 4, so verify only after step 4 (write the step-4 tests first as red, then 2–3).
 6. **Gates:** tsc 0 · eslint 0 · routines suite · full `@vida/core` suite sequentially · g2 review · /critique · §XXIX
    (`current-*` + BR-RT-S2-3 change).
 
 ## Implementation notes (§XXVIII-minor, recorded)
+
 - The calendar-date schema is module-local (`CalendarDate`) but **exported under the namespaced name `RoutineCalendarDateSchema`**, because the
   service (another module) needs it for the positional-date checks (pin 3). This keeps pin 3's intent (no `export *` collision) while
   satisfying the cross-file import. No behaviour change.
 
 ## Addendum — g2 code review + final /critique (post-implementation; §XXVIII: the spec never lags the code)
+
 - **g2 (10 findings):** fixed the exact-error-type assertions in Gate tests 2/3/6 (+ `_sync_version`/`updated_at` no-write check), the
   `archiveRoutine` reuse of `liveSteps()`, and the RRULE docstring (parse + FREQ only). Recorded, not changed: `updateRoutine` writes on an
   archived routine (ratified twin behaviour); `reorderSteps` per-step transactions (as-built S2) → "Known edges" in current-business-rules.
@@ -170,12 +185,15 @@ the suite red until step 4, so verify only after step 4 (write the step-4 tests 
 - **Gates (final):** routines 41/41 · `@vida/core` tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts, 36/36 alone).
 
 ## Step-5 critique (folded): SHIP + 7 non-blocking (schema renamed `SetRoutineLifecycleSchema`, dropped phantom
+
 `SetLifecycleInput`, BR re-promotion list corrected, pin 5 reworded + concurrency declared, `!= null` RRULE guard, steps 2–4 as one
 gate point, ZodError change on positional dates declared)
 
 ## g1 critique (folded): REVISE → 1 blocking (A11 deviation withdrawn → max+1) + 6 non-blocking (byCodepoint tie-break,
+
 ical.js grounding corrected, B1 gate gaps, B16 `.extend` trap, stale seam cites + seam annotation, no-write assertions)
 
 ## Out of scope (homed)
+
 `utcDay` reuse (B11) → S3 (needs the `tasks` dep) · the drive leg (A15/A16) → S3 · lifecycle's miss-suppression semantics → S5 ·
 every remaining 🕳 → S3–S9 per the approved slice map.

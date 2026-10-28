@@ -7,6 +7,7 @@ All new (recovered domain) → **ADR-002 additions**. Platform baselines apply (
 `YYYY-MM-DD` · **money = cents INTEGER** · `_sync_*` · soft-delete · no inline notes).
 
 ## Entities (Nutrition-owned)
+
 - **`nutrition_ingredients`** — atomic foods. `id` · `name` **E** · `category` P · **`whole_food_type` P** (leafy-
   greens/cruciferous/roots/bioactive-fruits/nuts-seeds/legumes/whole-grains/animal-proteins/spices/functional-
   beverages) · **`functional_area` P** (JSON → the 8-system "area of action", editable starter) · `serving_size` **E**
@@ -33,6 +34,7 @@ All new (recovered domain) → **ADR-002 additions**. Platform baselines apply (
   `needed_by` P · `meal_ref` P (nullable) · timestamps.
 
 ## Composed / emitted (NOT Nutrition tables)
+
 - Nutrition Goal phases → **Core `health_goals`** (type=body-composition). `[INTENT HN-4]`
 - Meal-timing/portion Experiments + food Responses → **Core Adaptation** (`health_experiments`/`health_responses`,
   pillar=nutrition). `[INTENT HN-5]`
@@ -40,6 +42,7 @@ All new (recovered domain) → **ADR-002 additions**. Platform baselines apply (
 - Cost → **Finance**. Notes → **Notes&Pages**; **tags → `entity_tags`** (SP1, Spaces-owned — the one tag mechanism). `[INTENT: ADR-006 SP1]`
 
 ## ADR-002 additions
+
 Tables above + `entity_type` extensions: `nutrition_ingredient` · `nutrition_dish` · `nutritional_plan` ·
 `daily_meal_plan` · `meal` · `shopping_item` — these **register** as taggable types in the SP2 **open** `entity_type`
 registry (no `CHECK` enum). The tables are subject to **ADR-014** (X1/X2/X3/X5/X11 food-DB + photo ingestion), **ADR-015**
@@ -47,4 +50,5 @@ registry (no `CHECK` enum). The tables are subject to **ADR-014** (X1/X2/X3/X5/X
 ADR-002 amendment. `[INTENT HL10; ADR-006 SP1/SP2; ADR-014; ADR-015]`
 
 ## Completion checklist
+
 - [x] entities + P/E · [x] composed-vs-owned · [x] ADR-002 additions · [x] no `{{…}}`

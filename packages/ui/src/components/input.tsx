@@ -118,11 +118,10 @@ const NativeInputEl = NativeInput as unknown as React.ForwardRefExoticComponent<
   NativeInputExtra & React.RefAttributes<HTMLInputElement>
 >
 
-export interface InputProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    'size' | 'type' | 'onChange' | 'value' | 'defaultValue'
-  > {
+export interface InputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'type' | 'onChange' | 'value' | 'defaultValue'
+> {
   /** Controlled value. */
   value?: string
   /** Uncontrolled initial value. */

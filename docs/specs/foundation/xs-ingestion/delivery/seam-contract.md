@@ -117,6 +117,7 @@ createIngestionGuard(
 ```
 
 ## Contract invariants the consumer can rely on
+
 - **Device-mediated, never server-proxied; refuse-not-downgrade**: a fetch that could only work server-side is
   denied `server_proxy_refused`, never silently downgraded. `[FACT: ADR-014:40; capability-framework.md:195 (X1)]`.
 - **Necessary-but-not-sufficient boolean**: `external_in_ok=true` (decided by `#31`) is required first, then the
@@ -139,6 +140,7 @@ createIngestionGuard(
   the M2 adapters field-encrypt (L2/L3); the M1 in-memory ports never touch disk. `[FACT: ADR-014:9; ADR-002 L2]`.
 
 ## Seams this contract does NOT cross (delegated)
+
 `external_in` boolean + in/out union across action checks (`CapabilityEnforcer #31`) · **outbound-fetch-as-egress**
 (URL/params consent + audit) (`EgressGuard #43`, XCU-08) · the **model call** (XS-ai `#45` / ADR-015, XCU-17…27) ·
 the **durable stores + real native adapters + public mirror/CDN + actual network fetch** (M2 port adapters,

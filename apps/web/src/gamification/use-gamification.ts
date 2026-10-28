@@ -87,7 +87,13 @@ function bal(earned: number, locked: number, spent: number): CurrencyBalance {
   return { earned, locked, spent, distributed: 0, current: earned - spent - locked, toDistribute: null }
 }
 
-function ach(key: string, category: Achievement['category'], tier: Achievement['tier'], title: string, xp: number): Achievement {
+function ach(
+  key: string,
+  category: Achievement['category'],
+  tier: Achievement['tier'],
+  title: string,
+  xp: number,
+): Achievement {
   return {
     id: `a-${key}`,
     key,
@@ -109,17 +115,27 @@ const SAMPLE_OVERVIEW: GamificationOverview = {
   level: { info: { level: 7, title: 'Adept' }, total: 4120, nextLevelAt: 4900, fraction: 520 / 1300 },
   balances: [
     { def: { code: 'XP', name: 'Experience', backing_kind: 'self-granted', unit: 'xp' }, balance: bal(4120, 0, 0) },
-    { def: { code: 'FOCUS', name: 'Focus Hours', backing_kind: 'measured-time', unit: 'min' }, balance: bal(1860, 120, 600) },
+    {
+      def: { code: 'FOCUS', name: 'Focus Hours', backing_kind: 'measured-time', unit: 'min' },
+      balance: bal(1860, 120, 600),
+    },
     { def: { code: 'COIN', name: 'Allowance', backing_kind: 'self-granted', unit: 'coin' }, balance: bal(240, 50, 90) },
   ],
   recentUnlocks: [
     { achievement: ach('streak-7', 'habits', 'silver', 'Seven-day streak', 150), earnedAt: NOW_REF - 5 * 3_600_000 },
-    { achievement: ach('first-focus', 'learning', 'bronze', 'First focus session', 50), earnedAt: NOW_REF - 3 * 86_400_000 },
+    {
+      achievement: ach('first-focus', 'learning', 'bronze', 'First focus session', 50),
+      earnedAt: NOW_REF - 3 * 86_400_000,
+    },
   ],
 }
 
 function devFlag(name: string): boolean {
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has(name)
+  )
 }
 
 /** DEV/gate-only: force a terminal state the honest-empty seam can't otherwise reach (loading/error). Off in prod. */

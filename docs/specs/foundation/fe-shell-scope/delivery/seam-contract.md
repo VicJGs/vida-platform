@@ -10,14 +10,15 @@
 // apps/web/src/shell/spaces-scope.ts
 import type { ProviderRead } from '../providers/provider-read' // EXISTING: () => Promise<T> [provider-read.ts:15]
 export interface SpaceOption {
-  id: string          // space id (opaque)
-  name: string        // display label (M3: decrypted [E] — M1.0 pass-through)
-  icon?: string       // optional nav-icon key → navIcon(); absent ⇒ FALLBACK_ICON
+  id: string // space id (opaque)
+  name: string // display label (M3: decrypted [E] — M1.0 pass-through)
+  icon?: string // optional nav-icon key → navIcon(); absent ⇒ FALLBACK_ICON
 }
 // REUSE ProviderRead<T> — the ShellPrefsRead precedent [shell-prefs.ts:13]. Do NOT redefine the thunk shape.
 export type SpacesScopeRead = ProviderRead<SpaceOption[]>
 export const stubSpacesScope: SpacesScopeRead = () => Promise.resolve([]) // M1.0 ⇒ global-only ("All")
 ```
+
 - **M1.0 = stub → `[]`** ⇒ the selector degrades to global-only (EC-2 empty). **No `listSpaces` exists** on
   `SpacesService` yet [FACT: packages/core/src/foundation/spaces/service.ts:38-61]; the live provider (a future
   `SpacesService.listSpaces` / a mod-spaces read) swaps in at the first consumer — **zero signature change** (the
@@ -35,6 +36,7 @@ interface ScopeState {
 }
 export const useScopeStore: UseBoundStore<...>   // Zustand; ephemeral UI state (app-shell-ui-store precedent)
 ```
+
 - `activeSpaceId = null` ⇒ global/All [FACT: docs/core/spaces/current-business-rules.md:16 BR-9].
 - **Emit-to-seam (IR3):** `setScope` updates state only; no live view consumes it in M1.0 (ViewProviderRegistry ships
   empty [FACT: docs/core/spaces/current-spec.md:31]). Honest: it switches scope, it does not fabricate a filtered view.
@@ -47,12 +49,14 @@ export const useScopeStore: UseBoundStore<...>   // Zustand; ephemeral UI state 
 systemPanelSlot?: ReactNode   // #15 — the System panel BODY (expanded Bar 1). Default ⇒ PanelBodyPlaceholder.
 // bar1Slot?: ReactNode       // ALREADY EXISTS (app-shell.tsx:58-59) — the top-strip condensed Bar 1.
 ```
+
 - The `system` panel body renders `systemPanelSlot ?? <PanelBodyPlaceholder id="system"/>` in BOTH the docked
   (:159) + float (:344) branches; `modules` keeps the placeholder (its re-home is a separate unit).
 - Additive + defaulted ⇒ existing `AppShell` callers + all shell tests stay green (no required prop).
 - `bar1Slot` consumed as-is — no change to the top-strip render (app-shell.tsx:269-270).
 
 ## §D — consumed, unchanged (compose, never rebuild)
+
 - `@vida/ui`: `Menu` (+ `MenuItem`), `Button` [FACT: packages/ui/src/components/{menu,button}.tsx].
 - shell: `NavLink` + `useShellNavigate`, `navIcon(key)`/`FALLBACK_ICON`, `useCommandBarUIStore((s) => s.open)` (⌘K
   trigger — the selector-hook form, per the `global-bar.tsx:25` precedent), `PanelId`/`panelDomId`
@@ -60,6 +64,7 @@ systemPanelSlot?: ReactNode   // #15 — the System panel BODY (expanded Bar 1).
 - nav: `GLOBAL_SURFACES` (the 6, DATA — do not duplicate) [FACT: apps/web/src/nav/module-map.ts:114-121].
 
 ## §E — deferred (homed, not built here)
+
 - Live space-list read (`listSpaces`) → first-consumer pull (mod-spaces / fe-spaces-page) — §A swap, no signature change.
   **When it lands, reconcile a dangling `activeSpaceId`:** if the live list no longer contains the stored id (a deleted
   Space), the first consumer should clear scope → null. M1.0 degrades the LABEL to "All" (selector:37-38) but leaves the

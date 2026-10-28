@@ -21,9 +21,7 @@ describe('useCommandSearch', () => {
     // 'a' resolves LATER than 'b'; without the guard 'a' would overwrite 'b'.
     const provider: SearchProvider = {
       search: (q) =>
-        new Promise<SearchOutcome>((res) =>
-          setTimeout(() => res({ status: 'empty', message: q }), q === 'a' ? 40 : 0),
-        ),
+        new Promise<SearchOutcome>((res) => setTimeout(() => res({ status: 'empty', message: q }), q === 'a' ? 40 : 0)),
     }
     const { result, rerender } = renderHook(({ q }) => useCommandSearch(q, provider), {
       initialProps: { q: 'a' },

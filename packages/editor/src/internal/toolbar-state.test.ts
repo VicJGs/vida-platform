@@ -22,11 +22,28 @@ afterEach(() => {
 
 const calloutDoc: EditorDocument = {
   type: 'doc',
-  content: [{ type: 'callout', attrs: { variant: 'info' }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }] }],
+  content: [
+    {
+      type: 'callout',
+      attrs: { variant: 'info' },
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+    },
+  ],
 }
 const taskDoc: EditorDocument = {
   type: 'doc',
-  content: [{ type: 'taskList', content: [{ type: 'taskItem', attrs: { checked: false }, content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }] }] }],
+  content: [
+    {
+      type: 'taskList',
+      content: [
+        {
+          type: 'taskItem',
+          attrs: { checked: false },
+          content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+        },
+      ],
+    },
+  ],
 }
 
 describe('resolveActiveBlock', () => {

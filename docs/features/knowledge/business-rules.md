@@ -1,6 +1,6 @@
 <!-- Business Rules — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 Learning (study_topics L2557-2621, knowledge_notes L2715-2738) · schema.ts · CLAUDE.md §7 · docs/intake/knowledge.md -->
 
-# Business Rules — Knowledge  (level: Feature / own module)
+# Business Rules — Knowledge (level: Feature / own module)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3 + the extension-model
 > principle. Every rule below complies. Invariants are **KN-n** (numeric); the intake's KN-A/B/C are the
@@ -16,12 +16,12 @@
   Education hierarchy Topic. The two are **separate entities, linked** via the Education compound set; deleting
   an Education planning Topic never deletes the acquired knowledge. `[INTENT KN-A]`
 - **KN-3 — Knowledge lives on the `Subject › Unit › Topic` spine; the user grows his own kinds BELOW Topic
-  (⚠ INTENDED).** The fixed academic spine *to reach* a Topic is **Subject › Unit › Topic** — "very important
+  (⚠ INTENDED).** The fixed academic spine _to reach_ a Topic is **Subject › Unit › Topic** — "very important
   for the environment of the knowledges" (Subject = the container-org leaf, KN-7). **Below** a Topic the user
   grows his own hierarchy of knowledge objects via `parent_object_id` — the "whole hierarchy of entities below
   topics" Victor described. Every object has a **`kind`**; the kind registry is **user-extensible** —
   `concept`/`definition` ship as editable/removable defaults and the user may add new kinds (KN-4). No kind set
-  is imposed. `[INTENT K1; Subject›Unit›Topic: Victor 2026-07-10]` Whether the kind *registry itself* nests
+  is imposed. `[INTENT K1; Subject›Unit›Topic: Victor 2026-07-10]` Whether the kind _registry itself_ nests
   (`parent_kind_id`) or stays flat is an open modeling choice. `[INTERP — validate at build]`
 - **KN-4 — Every kind declares a learning-realm (⚠ INTENDED).** Each kind carries `learning_realm`
   (`understand` | `memorize` | user-defined). Realm is the DEFAULT driver of study method (KN-8): `memorize`
@@ -31,7 +31,7 @@
   knowledge note is a `pages` row with a knowledge-specific `entity_type` and a **personalizable UI/UX** — the
   task-notes precedent ("alike but not the same as Tasks"). The standalone `knowledge_notes` table **retires**
   into the platform `pages` + `entity_links` pattern (no inline notes columns, platform convention). `[INTENT K3;
-  FACT superseded: ADR-002 L2715-2738]`
+FACT superseded: ADR-002 L2715-2738]`
 - **KN-6 — Cross-module reach is via the link graph (⚠ INTENDED, supersedes `resource_type` CHECK).** Objects
   relate to courses, books, skills, languages, finance, health, … through **`entity_links`**. The narrow
   `study_topics`/`knowledge_notes` `resource_type` CHECK (`course`/`book`/`topic`) is **retired** — it cannot
@@ -61,16 +61,18 @@
   Setups are **reproducible by mimicry** (follow the steps), not shared objects. `[INTENT Victor 07-06]`
 
 ## Terminal states per capability
-| Capability | Empty | Error | Success |
-|---|---|---|---|
-| Catalog / All-Knowledge view | default kind tree + one starter container (anti-lost) | typed load error, no partial silent state | objects grouped by container/tag across areas |
-| Create object | — | invalid kind / broken parent-object ref rejected | object placed in the hierarchy under a Topic |
-| Study/review a level | "nothing due" (not blank) | scheduler/method error surfaced | review logged → mastery re-derived |
-| Knowledge note (page type) | new personalizable page shell | save reverts optimistic write | page persisted via `pages` + link |
-| Mastery → Education source | "no signal yet" | contract mismatch flagged, not guessed | 3-signal mastery exposed to Education |
-| Knowledge Lab entry | empty lab canvas | — | hypothesis + data → conclusion → catalog object |
+
+| Capability                   | Empty                                                 | Error                                            | Success                                         |
+| ---------------------------- | ----------------------------------------------------- | ------------------------------------------------ | ----------------------------------------------- |
+| Catalog / All-Knowledge view | default kind tree + one starter container (anti-lost) | typed load error, no partial silent state        | objects grouped by container/tag across areas   |
+| Create object                | —                                                     | invalid kind / broken parent-object ref rejected | object placed in the hierarchy under a Topic    |
+| Study/review a level         | "nothing due" (not blank)                             | scheduler/method error surfaced                  | review logged → mastery re-derived              |
+| Knowledge note (page type)   | new personalizable page shell                         | save reverts optimistic write                    | page persisted via `pages` + link               |
+| Mastery → Education source   | "no signal yet"                                       | contract mismatch flagged, not guessed           | 3-signal mastery exposed to Education           |
+| Knowledge Lab entry          | empty lab canvas                                      | —                                                | hypothesis + data → conclusion → catalog object |
 
 ## ⚠ INTENDED / forward-dependency ledger
+
 - **KN-5/KN-6/KN-8/KN-9** reinterpret or retire FACT-base columns (`knowledge_notes` table, `resource_type`
   CHECK, fixed SM-2 columns, hand-set `mastery_level`) → **ADR-002 amendment** (consolidated).
 - **KN-10** references the **subject SYLLABUS-as-calendar** — an **Education-owned** entity + Education's

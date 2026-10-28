@@ -13,7 +13,10 @@ import { SLASH_MENU_ITEMS, filterSlashItems, isBlockAvailable } from './slash-co
 const editors: Editor[] = []
 // A paragraph seeded with the trigger text `/x` (positions 1..3) — the range the Suggestion plugin would hand `run`.
 function seeded(): Editor {
-  const content: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: '/x' }] }] }
+  const content: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: '/x' }] }],
+  }
   const e = new Editor({ extensions: [StarterKit, ...STANDARD_BLOCK_EXTENSIONS], content })
   editors.push(e)
   return e
@@ -28,8 +31,18 @@ describe('SLASH_MENU_ITEMS — composition', () => {
     const ids = SLASH_MENU_ITEMS.filter((i) => i.available).map((i) => i.id)
     expect(ids).toEqual(
       expect.arrayContaining([
-        'text', 'heading1', 'heading2', 'heading3', 'bulletList', 'orderedList',
-        'taskList', 'blockquote', 'codeBlock', 'divider', 'table', 'callout',
+        'text',
+        'heading1',
+        'heading2',
+        'heading3',
+        'bulletList',
+        'orderedList',
+        'taskList',
+        'blockquote',
+        'codeBlock',
+        'divider',
+        'table',
+        'callout',
       ]),
     )
   })

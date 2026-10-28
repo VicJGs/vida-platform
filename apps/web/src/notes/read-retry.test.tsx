@@ -16,8 +16,16 @@ const reads = { getPage: 0, listPages: 0, ensureJournal: 0 }
 let fail = 0 // how many upcoming reads reject
 let gate: Promise<void> | null = null // when set, a SUCCESSFUL read waits on it (to observe the in-flight frame)
 const row = {
-  id: 'p1', type: 'note', title: 'Kickoff', content: null, is_favorite: false, is_archived: false,
-  updated_at: Date.now(), journal_date: null, icon: null, cover_image: null,
+  id: 'p1',
+  type: 'note',
+  title: 'Kickoff',
+  content: null,
+  is_favorite: false,
+  is_archived: false,
+  updated_at: Date.now(),
+  journal_date: null,
+  icon: null,
+  cover_image: null,
 }
 function read<T>(k: keyof typeof reads, value: T): Promise<T> {
   reads[k] += 1
@@ -33,7 +41,8 @@ vi.mock('../db/composition-root', () => ({
       notes: {
         getPage: () => read('getPage', row),
         listPages: () => read('listPages', [row]),
-        ensureJournal: (d: string) => read('ensureJournal', { ...row, id: 'j1', type: 'journal', title: d, journal_date: d }),
+        ensureJournal: (d: string) =>
+          read('ensureJournal', { ...row, id: 'j1', type: 'journal', title: d, journal_date: d }),
         writePageContent: async () => undefined,
       },
     }),
@@ -43,7 +52,9 @@ vi.mock('@tanstack/react-router', () => ({
   getRouteApi: () => ({ useParams: () => ({ id: 'p1' }) }),
 }))
 // R2: NoteEntity also reads the remembered modes (app_state) — never reach the real ensureDbReady → new Worker in jsdom.
-vi.mock('../db/boot', () => ({ ensureDbReady: () => Promise.resolve({ driver: { query: async () => [], run: async () => {} } }) }))
+vi.mock('../db/boot', () => ({
+  ensureDbReady: () => Promise.resolve({ driver: { query: async () => [], run: async () => {} } }),
+}))
 vi.mock('@vida/editor', () => ({ VidaEditor: () => <div data-testid="editor" />, toMarkdown: () => '' }))
 
 import { useNoteEntity } from './use-note-entity'
@@ -56,7 +67,8 @@ import { JournalPageRegion } from '../home/journal-page-region'
 let qc: QueryClient
 const appDefaults = () =>
   new QueryClient({ defaultOptions: { queries: { ...appClient.getDefaultOptions().queries, retryDelay: 0 } } })
-const wrapper = ({ children }: { children: React.ReactNode }) => createElement(QueryClientProvider, { client: qc }, children)
+const wrapper = ({ children }: { children: React.ReactNode }) =>
+  createElement(QueryClientProvider, { client: qc }, children)
 const renderUI = (ui: React.ReactNode) =>
   render(
     <UIProvider>

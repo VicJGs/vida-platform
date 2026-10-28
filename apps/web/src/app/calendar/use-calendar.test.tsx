@@ -128,7 +128,12 @@ describe('useCalendar', () => {
 
   it('empty states: Year / Week / Agenda with nothing → "empty" (Month keeps its designed grid → success)', async () => {
     svc.current = fake()
-    for (const [range, expected] of [['year', 'empty'], ['week', 'empty'], ['agenda', 'empty'], ['month', 'success']] as const) {
+    for (const [range, expected] of [
+      ['year', 'empty'],
+      ['week', 'empty'],
+      ['agenda', 'empty'],
+      ['month', 'success'],
+    ] as const) {
       const { result, unmount } = renderHook(() => useCalendar(range, '2026-06-10', 1, { now: NOW }), { wrapper })
       await waitFor(() => expect(result.current.state).toBe(expected))
       unmount()

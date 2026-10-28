@@ -1,15 +1,17 @@
-> companion backing doc — no current-* equivalent (it is the canonical home for conventions).
+> companion backing doc — no current-\* equivalent (it is the canonical home for conventions).
+
 <!-- Conventions — features/check-ins · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · intake -->
 
-# Conventions — Check-ins  (level: Feature)
+# Conventions — Check-ins (level: Feature)
 
 ## How to build here
+
 - **One check-in per (date, type).** Key/upsert on (`check_in_date`, `check_in_type`) — never on date alone
   (CK-2, the schema bug to fix). `[INTENT G2]`
 - **Default-template-first.** Seed a default template per check_in_type so a user can check in with zero setup;
   only build a custom template when he personalizes (CK-3/CK-4). `[INTENT G3]`
 - **Columns are the default template; `custom_data` is for extras.** Write the standard fields to their columns
-  (queryable, trendable); store only *additional* template answers in `custom_data` JSON — never duplicate a
+  (queryable, trendable); store only _additional_ template answers in `custom_data` JSON — never duplicate a
   standard field there (CK-4/CK-5). `[INTENT G5]`
 - **Reviews read other modules through integration points.** weekly/monthly/yearly reviews aggregate
   Purpose/Project/Task progress via documented APIs, never direct table reads; degrade to free reflection if a
@@ -29,6 +31,7 @@
   derived from `daily_check_ins` (E9). `[INTENT; ADR-012 E2/E3/E9]`
 
 ## Naming & layout
+
 - Enum values (canonical, SQL CHECK + to-build Zod in `@vida/core`): `check_in_type` (current
   morning/evening/weekly_review → ⚠ + afternoon/monthly_review/yearly_review), `field_type`
   (mood_scale/energy_scale/text_list/text_area/rating/boolean), `schedule_type`(daily/weekly/custom),
@@ -38,6 +41,7 @@
   (`check_in_date`), `_sync_*`. `[FACT: CLAUDE.md Conventions; docs/core/conventions.md]`
 
 ## Local landmines / "never do"
+
 - **Never** key a check-in on date alone — multiple types per day are required (CK-2). `[INTENT G2]`
 - **Never** duplicate a standard field inside `custom_data` (CK-4). `[INTENT G5]`
 - **Never** read Purpose/Projects/Tasks tables directly for a review — integration points only (CK-6, §6). `[INTENT G7]`
@@ -50,4 +54,5 @@
 - **Never** let the Journal hold a second copy of check-in answers — link, don't copy (CK-7). `[INTENT G10]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

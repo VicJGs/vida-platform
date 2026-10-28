@@ -62,9 +62,7 @@ export const migration018Routines: Migration = {
       )
     `)
     // partial index (SQL-migration-only — not in the Drizzle mirror)
-    await driver.run(
-      `CREATE INDEX idx_routines_lifecycle ON routines(lifecycle) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_routines_lifecycle ON routines(lifecycle) WHERE deleted_at IS NULL`)
 
     // --- routine_step: polymorphic step (replaces routine_actions) ---
     // step_type is an OPEN vocab (NO CHECK); entity_type/entity_id = polymorphic ref.

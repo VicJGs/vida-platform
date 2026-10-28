@@ -485,11 +485,7 @@ export interface LearningEducationService {
   tagEntity(ref: EducationEntityRef, tagId: string): Promise<EntityTagRow>
   /** Link two Education-scoped entities (SP4). Composes `spaces.createLink` with `from.entityId` in the generic
    *  anchor slot (the knowledge `linkObjects` precedent); the TARGET `entityType` is registry-checked by spaces. */
-  linkEntities(
-    from: EducationEntityRef,
-    to: EducationEntityRef,
-    context?: string | null,
-  ): Promise<EntityLinkRow>
+  linkEntities(from: EducationEntityRef, to: EducationEntityRef, context?: string | null): Promise<EntityLinkRow>
 
   // --- cross-module consume + Journal (S10 — ED-9 · BK-12 · KN-10 · Journal) ---
   /** Homework via the Tasks→Education port (ED-9). **Deny-safe:** `tasks?` absent ⇒ `[]` (Tasks owns the entity,

@@ -105,9 +105,7 @@ export const migration028HealthNutrition: Migration = {
         ${BASE}
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_nutritional_plans_status ON nutritional_plans (status) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_nutritional_plans_status ON nutritional_plans (status) WHERE deleted_at IS NULL`)
 
     // --- daily_meal_plans: per-day ---
     await driver.run(`

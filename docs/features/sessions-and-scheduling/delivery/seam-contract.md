@@ -60,17 +60,20 @@ getSessionAnalytics(range: TimeRange): Promise<SessionAnalytics>        // deriv
 ```
 
 ## Key shapes (canonical in `@vida/types`)
+
 - `DueItem = { source_module: string; ref_id: string; label: string; est_minutes: number; urgency: number; hard_deadline?: number }` `[FACT: contract.md:33-35]`
 - `FiredEffect = { effect_type: EffectType; target: ResolvedTarget; effect_event_id: string }` (from #32 rail)
 - `FocusTimer` reflects `focus_sessions`: `{ session_id, type, status, completed_count, total_pause_seconds, was_interrupted, … }`
 
 ## Typed error taxonomy (fail-loud — contract.md:60-65 + pomodoro/contract.md:55-62)
+
 `InvalidTransition(session, event)` · `AttachmentTargetMissing(entity)` · `PermissionDenied(type, effect, target)` ·
 `ProviderUnavailable(module)` (degrades one `dueIn` lane) · `NoAvailability` / `NothingToSchedule` (plan) ·
 `NoFocusSession` / `SessionMissing(id)` (focus runtime) · `InvalidSessionInput(field)` (validation, IR-5) ·
 `DuplicateSubType` / `InvalidSessionTypeDef` (registry, from AR-5).
 
 ## Consumers
+
 - **`fe-sessions` (② UI):** the whole surface — session list, availability grid, plan review/approve, templates, focus runtime driver.
 - **Journals (`MOD-journals`):** `dueIn(today)` for the daily agenda (IR-2). MOD-journals is currently blocked on this.
 - **Future Global Calendar (M2):** `dueIn(range)` full range + reads `planned_blocks`.

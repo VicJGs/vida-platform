@@ -52,7 +52,9 @@ export function getVaultStatus(): VaultStatus {
 /** Subscribe to vault status changes. Returns unsubscribe function. */
 export function onVaultStatusChange(listener: StatusListener): () => void {
   _listeners.add(listener)
-  return () => { _listeners.delete(listener) }
+  return () => {
+    _listeners.delete(listener)
+  }
 }
 
 /** Check if the vault is currently unlocked */
@@ -73,11 +75,7 @@ export function isUnlocked(): boolean {
  * @param salt       - Argon2id salt (from server during SRP challenge)
  * @returns The Vault Key (also cached internally)
  */
-export async function unlock(
-  password: string,
-  accountKey: Uint8Array,
-  salt: Uint8Array,
-): Promise<Uint8Array> {
+export async function unlock(password: string, accountKey: Uint8Array, salt: Uint8Array): Promise<Uint8Array> {
   if (_state === 'unlocked' && _vaultKey !== null) {
     return _vaultKey
   }
@@ -172,9 +170,7 @@ export function markFtsReady(): void {
  *
  * This does NOT automatically re-encrypt anything — it only derives the new keys.
  */
-export async function prepareKeyRotation(
-  newPassword: string,
-): Promise<{
+export async function prepareKeyRotation(newPassword: string): Promise<{
   oldVaultKey: Uint8Array
   newKeyChain: KeyChain
   newSalt: Uint8Array

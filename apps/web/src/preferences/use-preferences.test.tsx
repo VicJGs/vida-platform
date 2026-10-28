@@ -41,7 +41,10 @@ describe('usePreferences', () => {
     testPreferences.state.failReads = 'all'
     await seedPreferences(queryClient) // both error, no data
     testPreferences.state.failReads = 'none'
-    await queryClient.fetchQuery({ queryKey: ['preferences', 'user'], queryFn: () => testPreferences.svc.getMergedPreferences() })
+    await queryClient.fetchQuery({
+      queryKey: ['preferences', 'user'],
+      queryFn: () => testPreferences.svc.getMergedPreferences(),
+    })
     testPreferences.state.failReads = 'all'
     const { result } = renderHook(() => usePreferences(), { wrapper })
     await waitFor(() => expect(result.current.state).toBe('error'), { timeout: 3000 })

@@ -66,9 +66,7 @@ const clockEqual = (a: HudClock, b: HudClock) =>
 /** Value key — the effect must re-arm on timing VALUES, never object identity (a consumer may rebuild an
  *  equal timing per render; an identity dep would re-arm the interval on every tick-driven re-render). */
 const timingKey = (t: HudTiming): string =>
-  t.kind === 'countdown'
-    ? `c:${t.phase}:${t.endAt}:${t.durationSeconds}:${t.pausedAt ?? ''}`
-    : `e:${t.startedAt}`
+  t.kind === 'countdown' ? `c:${t.phase}:${t.endAt}:${t.durationSeconds}:${t.pausedAt ?? ''}` : `e:${t.startedAt}`
 
 /**
  * The ticking wrapper. Arms ONE ~1s interval per timing VALUE (re-derive on change is immediate);

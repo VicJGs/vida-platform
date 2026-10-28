@@ -22,9 +22,7 @@ export default defineConfig({
   timeout: 120_000,
   use: {
     baseURL: 'http://localhost:4174',
-    launchOptions: process.env.PW_EXECUTABLE_PATH
-      ? { executablePath: process.env.PW_EXECUTABLE_PATH }
-      : {},
+    launchOptions: process.env.PW_EXECUTABLE_PATH ? { executablePath: process.env.PW_EXECUTABLE_PATH } : {},
   },
   projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   webServer: {

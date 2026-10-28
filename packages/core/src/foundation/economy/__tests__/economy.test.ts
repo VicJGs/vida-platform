@@ -45,7 +45,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -147,9 +150,7 @@ describe('economy effect handlers (via the rail)', () => {
   it('lock_currency writes a lock row', async () => {
     const { db } = await harness()
     const rail = economyRail(db)
-    await rail.applyEffect(
-      grant({ effectType: 'lock_currency', payload: { currencyId: 'XP', amount: 50 } }),
-    )
+    await rail.applyEffect(grant({ effectType: 'lock_currency', payload: { currencyId: 'XP', amount: 50 } }))
     const rows = await db.select().from(consequenceLedger).all()
     expect(rows).toHaveLength(1)
     expect(rows[0].kind).toBe('lock')
@@ -172,11 +173,7 @@ describe('CurrencyRegistry', () => {
     const reg = createCurrencyRegistry(db, 'device-1')
     await reg.create({ code: 'gold', name: 'Gold', backing_kind: 'self-granted', unit: 'coin' })
 
-    const queued = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.table_name, 'currencies'))
-      .all()
+    const queued = await db.select().from(syncQueue).where(eq(syncQueue.table_name, 'currencies')).all()
     expect(queued).toHaveLength(1)
     const codes = (await reg.list()).map((c) => c.code)
     expect(codes).toEqual(expect.arrayContaining(['XP', 'gold'])) // shipped ∪ persisted

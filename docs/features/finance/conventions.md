@@ -1,8 +1,9 @@
 <!-- Conventions — features/finance · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · v1 finances · intake -->
 
-# Conventions — Finance  (level: Feature)
+# Conventions — Finance (level: Feature)
 
 ## How to build here
+
 - **Money is integer cents; rates are basis points — never floats.** Use `Money` (cents) and `BasisPoints`;
   format for display only at the edge (FN-2). `[FACT: CLAUDE.md Conventions; finance.ts L6]`
 - **Balance is derived, never stored truth.** Compute `current_balance` = `opening_balance` + Σ ledger; recompute
@@ -27,6 +28,7 @@
   investment/liability), never inline columns. `[FACT: ADR-002 §5.2; INTENT G12]`
 
 ## Naming & layout
+
 - Enum values are canonical (string-literal unions in `@vida/types`, SQL CHECK + Zod in `@vida/core`, never TS
   `enum`): `account_type`(checking…other), `transaction_type`(income/expense/transfer), `asset_type`,
   `liability_type`, `investment_type`, `income_type`, `work_type`. `[FACT: finance.ts L13-61; ADR-002 §5.8]`
@@ -35,6 +37,7 @@
   in cents (INTEGER), soft delete, `_sync_*`. `[FACT: CLAUDE.md Conventions; docs/core/conventions.md]`
 
 ## Local landmines / "never do"
+
 - **Never** store money as a float or in major units — cents only (FN-2). `[FACT: Conventions]`
 - **Never** hand-edit an account balance — it derives from the ledger (FN-3). `[INTENT G4]`
 - **Never** let a transfer count as income or expense (FN-4). `[INTENT G5]`
@@ -54,4 +57,5 @@
   `move_money`/`store` (FN-16). `[INTENT; ADR-012 E4/E5]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

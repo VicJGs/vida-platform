@@ -10,9 +10,9 @@
 The Learning domain is now documented as **one sub-context (Education)** — everything else was extracted to
 its own module or moved under another module (see header):
 
-| Sub-context | Status | Tables | Docs |
-|---|:---:|---|---|
-| **Education** (renamed from "Courses & Classes", 2026-07-02) | ✅ | `courses`(=subjects) · `ics_feed_configs` · `ics_synced_events` (+ large INTENDED hierarchy) | [education/](education/) |
+| Sub-context                                                  | Status | Tables                                                                                       | Docs                     |
+| ------------------------------------------------------------ | :----: | -------------------------------------------------------------------------------------------- | ------------------------ |
+| **Education** (renamed from "Courses & Classes", 2026-07-02) |   ✅   | `courses`(=subjects) · `ics_feed_configs` · `ics_synced_events` (+ large INTENDED hierarchy) | [education/](education/) |
 
 - **Flashcards** (`flashcards`) was **reframed** into a **study-method service sub-context of Knowledge**
   [../knowledge/flashcards/](../knowledge/flashcards/) (2026-07-12): retention + gathering; content+drill only,
@@ -20,7 +20,7 @@ its own module or moved under another module (see header):
 
 - **Knowledge** (`study_topics`/`topic_reviews`/`knowledge_notes`) was **extracted** into [its own module](../knowledge/)
   (2026-07-10): the knowledge Universe — the user's lifelong catalog, the most-personalizable module — where
-  Education *plans* acquisition and Knowledge *holds/transforms/creates* it. Serves consumer modules
+  Education _plans_ acquisition and Knowledge _holds/transforms/creates_ it. Serves consumer modules
   (Education/Skills/Finance/Health/…) via per-consumer **compound sets**, and provides Education a mastery
   **measurement source** (KN-10). `[FACT: ../../intake/knowledge.md]`
 - **Books** (`books`/`book_chapters`) was **extracted** into [its own module](../books/) (2026-07-03): a full

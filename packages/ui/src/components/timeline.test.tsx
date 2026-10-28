@@ -71,7 +71,14 @@ describe('Timeline', () => {
   // ── P3: gutter eyebrow + temporal dot tones + now-fulcrum ───────────────────
   it('renders getEyebrow as real content in the gutter', () => {
     const { getByText } = renderUI(
-      <Timeline items={events} getKey={key} renderItem={item} getLabel={(e) => e.when} getEyebrow={(e) => `day-${e.id}`} aria-label="History" />,
+      <Timeline
+        items={events}
+        getKey={key}
+        renderItem={item}
+        getLabel={(e) => e.when}
+        getEyebrow={(e) => `day-${e.id}`}
+        aria-label="History"
+      />,
     )
     const eyebrow = getByText('day-b') // unique per row; real content, not aria-hidden
     expect(eyebrow).not.toBeNull()
@@ -121,7 +128,14 @@ describe('Timeline', () => {
   it('nowFulcrum with all-past → no-op + dev-warn (no divider, no phantom gutter)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const { queryByText, getAllByRole, container } = renderUI(
-      <Timeline items={events} getKey={key} renderItem={item} getTemporalState={() => 'past'} nowFulcrum aria-label="History" />,
+      <Timeline
+        items={events}
+        getKey={key}
+        renderItem={item}
+        getTemporalState={() => 'past'}
+        nowFulcrum
+        aria-label="History"
+      />,
     )
     expect(queryByText('now')).toBeNull()
     expect(getAllByRole('listitem')).toHaveLength(3)
@@ -133,7 +147,14 @@ describe('Timeline', () => {
 
   it('nowFulcrum with all-future → divider at the top (index 0)', () => {
     const { getAllByRole, container, getByText } = renderUI(
-      <Timeline items={events} getKey={key} renderItem={item} getTemporalState={() => 'future'} nowFulcrum aria-label="History" />,
+      <Timeline
+        items={events}
+        getKey={key}
+        renderItem={item}
+        getTemporalState={() => 'future'}
+        nowFulcrum
+        aria-label="History"
+      />,
     )
     expect(getByText('now')).not.toBeNull()
     expect(dots(container)).toHaveLength(4)
@@ -165,9 +186,7 @@ describe('Timeline', () => {
   })
 
   it('error: role="status" + default message', () => {
-    const { getByRole, getByText } = renderUI(
-      <Timeline items={[]} getKey={key} renderItem={item} state="error" />,
-    )
+    const { getByRole, getByText } = renderUI(<Timeline items={[]} getKey={key} renderItem={item} state="error" />)
     expect(getByRole('status')).not.toBeNull()
     expect(getByText(/couldn/i)).not.toBeNull()
   })

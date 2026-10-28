@@ -7,8 +7,9 @@
 **Tags:** architecture · database · schema · migrations · process · foundation
 **Realizes:** **ADR-002 §5.20** — this is the deferred consolidation session; §5/§7/§8 are rewritten from the authored schema at DB-11.
 **Amends:**
+
 - **ADR-001 (Tech Stack)** — resolves ADR-001's silence on migration generation: DDL is **hand-written SQL migrations** applied by the custom cross-platform runner; `drizzle-kit` is **not** adopted. Drizzle ORM stays the **query-only** type mirror.
-**Inherits:** the reconciliation finding (v1 stale); DB-1 primitives (`schema/_shared.ts` · `_registry.ts`); the No-Guessing Principle.
+  **Inherits:** the reconciliation finding (v1 stale); DB-1 primitives (`schema/_shared.ts` · `_registry.ts`); the No-Guessing Principle.
 
 ---
 
@@ -17,7 +18,7 @@
 The implemented storage schema is v1 and cannot be incrementally patched into the v2 target — retire ~22 tables, add ~90-110, reshape ~9, with five systemic gaps (zero CHECKs, missing sync col, flattened partial indexes, `updated_at` omissions, no consolidation primitives). Because the platform is **local-first with no deployed data** (no dogfood vault yet), a rebuild carries **zero migration cost**. So:
 
 - **Rebuild from zero into a fresh `packages/core/src/db/schema/` directory**, authored **from the documentation** (the 24 `structure-data.md` docs + ADR-002 §5.20). The v1 monolith `schema.ts` stays **reference-only** and is deleted at parity.
-- **DDL is hand-written SQL migrations** (ADR-002 §5 model) applied by the existing custom runner (`migrations/*` + `runner.ts`); **Zod** validators (DB-9) are the runtime enforcement. **Drizzle objects are the query-only type mirror** — DDL is *not* generated from them (no `drizzle-kit`). Enum enforcement = SQL-migration `CHECK` + Zod + the Drizzle `enumText` union.
+- **DDL is hand-written SQL migrations** (ADR-002 §5 model) applied by the existing custom runner (`migrations/*` + `runner.ts`); **Zod** validators (DB-9) are the runtime enforcement. **Drizzle objects are the query-only type mirror** — DDL is _not_ generated from them (no `drizzle-kit`). Enum enforcement = SQL-migration `CHECK` + Zod + the Drizzle `enumText` union.
 - **Every table clears its own Per-Step Build Gate** — its own forward spec, critique, approvals, verification — governed by a **master plan** (`docs/infrastructure/storage-build-plan.md`): the table ledger, phase sequence, and per-table-spec template.
 
 ## 2. Context — what triggered this
@@ -42,7 +43,7 @@ The implemented storage schema is v1 and cannot be incrementally patched into th
 ## 4. Consequences
 
 - **Dual-authoring is the accepted cost** of the cross-platform custom runner: 130+ tables authored twice (Drizzle + SQL), synced by hand. The per-table gate is where they're checked against each other.
-- **Reversibility preserved (the B trigger).** A→B is a clean later migration (generate SQL from the existing Drizzle objects). **Revisit trigger:** if hand-sync drift bites *before DB-3 authors tables at volume*, reopen the drizzle-kit-generate hybrid (Option B) in a follow-up ADR — at which point a Drizzle `check()` helper becomes valid again.
+- **Reversibility preserved (the B trigger).** A→B is a clean later migration (generate SQL from the existing Drizzle objects). **Revisit trigger:** if hand-sync drift bites _before DB-3 authors tables at volume_, reopen the drizzle-kit-generate hybrid (Option B) in a follow-up ADR — at which point a Drizzle `check()` helper becomes valid again.
 - **The DB-cluster (DB-2…DB-11) is re-scoped** to "author net-new" rather than "mutate the monolith"; the master plan maps each to a phase. Linear re-scope owed (not executed here).
 - **ADR-002 §5/§7/§8 are rewritten** from the authored schema at DB-11; §5.20's stale Stream-ii count (19) is corrected to disk (24).
 

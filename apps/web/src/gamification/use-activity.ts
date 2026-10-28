@@ -102,7 +102,11 @@ const SAMPLE_ENTRIES: readonly ActivityEntry[] = Array.from({ length: 64 }, (_, 
 })
 
 function devFlag(name: string): boolean {
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has(name)
+  )
 }
 function forcedState(): InteractionState | null {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null

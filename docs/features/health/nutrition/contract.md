@@ -6,6 +6,7 @@
 Nutrition's services + seams. **Designed — not yet coded** (`@vida/core/services/health/nutrition/`).
 
 ## Exposed services (Nutrition-owned)
+
 - **Libraries** — `upsertIngredient({macros, category, allergens})` · `upsertDish({ingredients[], source_type})`
   (macros auto-sum, HN-1). `[INTENT]`
 - **Plan** — `buildPlan({caloric_strategy, framework, target})` (manual, `source=manual`) · `aiGenerateMealPlan(goal)`
@@ -19,22 +20,25 @@ Nutrition's services + seams. **Designed — not yet coded** (`@vida/core/servic
 - **Shopping** — `buildShoppingList(period)` (from meal plans) · `markPurchased(item)` → Finance cost event. `[INTENT HN-7]`
 
 ## PROVIDES →
+
 - **Core** — calories consumed (energy loop) · Nutrition Goal progress · nutrition Experiments/Responses (Adaptation). `[INTENT]`
 - **Journal** — meals + macros logged per date. **Finance** — meal/shopping cost. **Gamification** — adherence/goal.
   **Notifications** — meal reminders. **Scheduler/`dueIn()`** — planned meals → agenda (not a Session). `[INTENT §C; HN-2]`
 
 ## CONSUMES ←
+
 - **Core** — Health Goals (intake target source) · energy loop (burn input) · Adaptation engine (experiments/
   responses) · Health Metrics (weight/body-comp for target recompute) · **Medical Profile** (allergy/condition/
   prescription filter via Allergens — advisory). `[INTENT HC-3/HC-6/HC-7/HC-16]`
 - **Finance** — budget context for cost. **Knowledge** — dishes/ingredients as a kind (optional). **Spaces** —
   photo-food-logger Block (#8 stub) + the **`entity_tags`** tag primitive (SP1) all nutrition entities tag through.
   **Preferences** — units (kcal/kJ) + dietary defaults. **AI layer** — `ai_connections` (AI2, `mode·provider·encrypted_key
-  [L2/L3, mediator custody]`, key never in sandbox — consumed, not owned). **External ADRs** — food-DB (X2
+[L2/L3, mediator custody]`, key never in sandbox — consumed, not owned). **External ADRs** — food-DB (X2
   `public-reference`, X3 whole-set) / barcode / photo / prescription import under `external_in_ok`/`external_out_ok`
   (X5, opt-in). `[INTENT; ADR-006 SP1; ADR-015 AI2; ADR-014 X2/X3/X5]`
 
 ## Terminal states (per capability)
+
 - **Plan:** planning · active · on-hold · completed. **Daily plan:** planning · assigned · in-progress · completed · modified.
 - **Meal:** planned · confirmed · completed · **skipped/substituted**. **Photo log:** analyzing · **fail→manual** (the
   AI1/AI3 model call is isolated — a model/cloud failure never blocks the manual library path).
@@ -43,4 +47,5 @@ Nutrition's services + seams. **Designed — not yet coded** (`@vida/core/servic
   `external_out_ok`) **fails closed** (X5); no fetch, no egress, no fabrication.
 
 ## Completion checklist
+
 - [x] provides/consumes · [x] terminal states · [x] designed-not-coded · [x] no `{{…}}`

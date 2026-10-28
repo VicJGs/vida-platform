@@ -51,7 +51,17 @@ test('notes-rescope R3 — metadata + both renames persist across a reload', asy
   const t = Date.now()
   await db.exec(
     'INSERT INTO pages (id, created_at, updated_at, _sync_id, _sync_device_id, _sync_lww_ts, type, title, content) VALUES (?,?,?,?,?,?,?,?,?)',
-    [note.id, t, t, randomUUID(), 'e2e', t, 'note', note.title, JSON.stringify({ type: 'doc', content: [para('body')] })],
+    [
+      note.id,
+      t,
+      t,
+      randomUUID(),
+      'e2e',
+      t,
+      'note',
+      note.title,
+      JSON.stringify({ type: 'doc', content: [para('body')] }),
+    ],
   )
   await db.close()
 
@@ -99,12 +109,20 @@ test('notes-rescope R3 — metadata + both renames persist across a reload', asy
   await page.goto('/e2e/harness.html')
   await page.waitForFunction(() => typeof window.__vidaDb !== 'undefined')
   await db.open('vida')
-  const row = (await db.query('SELECT title, is_favorite, is_archived, icon, cover_image FROM pages WHERE id = ?', [note.id]))[0] as {
+  const row = (
+    await db.query('SELECT title, is_favorite, is_archived, icon, cover_image FROM pages WHERE id = ?', [note.id])
+  )[0] as {
     title: string
     is_favorite: number
     is_archived: number
     icon: string
     cover_image: string
   }
-  expect(row).toMatchObject({ title: 'R3 renamed', is_favorite: 1, is_archived: 1, icon: 'book-open', cover_image: coverUrl })
+  expect(row).toMatchObject({
+    title: 'R3 renamed',
+    is_favorite: 1,
+    is_archived: 1,
+    icon: 'book-open',
+    cover_image: coverUrl,
+  })
 })

@@ -32,8 +32,7 @@ export function createBooksJournalContribution(svc: BooksService): JournalContri
     async summary(date: string): Promise<SectionData> {
       const digest = await svc.getDayBooksDigest(date)
       // BR-BK-S10-5 — any activity (a page read OR a session logged) ⇒ success; a genuinely idle day ⇒ empty.
-      const state: TerminalState =
-        digest.pagesRead + digest.sessionsLogged > 0 ? 'success' : 'empty'
+      const state: TerminalState = digest.pagesRead + digest.sessionsLogged > 0 ? 'success' : 'empty'
       return {
         sectionKey: 'summary',
         module: 'books',

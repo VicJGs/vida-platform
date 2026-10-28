@@ -1,10 +1,10 @@
 <!-- CURRENT-BUSINESS-RULES · module: learning-education · living invariants (§XXIX) · never lags the code -->
 
-# Learning: Education — CURRENT BUSINESS RULES  (`@vida/core` `services/learning-education`)
+# Learning: Education — CURRENT BUSINESS RULES (`@vida/core` `services/learning-education`)
 
 > The invariants the code enforces, promoted per slice from the slice PLANs. Inherits the CORE constitution
 > (ZK-1/2/3, LF-1/2/3). Born at S1 (LIF-130, #52). Source rules: `docs/features/learning/education/business-rules.md`
-> (ED-1..16) + `docs/specs/foundation/db-4-learning-education/_index.md` (BR-ED-*) + the delivery interpretation
+> (ED-1..16) + `docs/specs/foundation/db-4-learning-education/_index.md` (BR-ED-\*) + the delivery interpretation
 > (R1..R10).
 
 ## Shipped invariants (as of S1 — hierarchy spine + routing)
@@ -48,8 +48,7 @@
   `UpdateSubjectSchema` (Zod strips a force-passed value), hardcoded `null` on create, never in the update patch.
   Derivation lands at S8. `[code: service.ts createSubject/updateSubject; validators/learning.ts]`
 - **BR-LE-S2-3 (DB-11 `Course`→`Subject` complete)** — `@vida/types` `Course` is REPLACED by `Subject`: inline
-  `tags` retired (→ entity_tags, SP1/S9), `progress`→nullable (M3), `total_modules`/`completed_modules`→nullable,
-  +`curriculum_id`/`term_id`/`degree_tier`; `course_type` kept as a nullable subject modality (R6). The
+  `tags` retired (→ entity_tags, SP1/S9), `progress`→nullable (M3), `total_modules`/`completed_modules`→nullable, +`curriculum_id`/`term_id`/`degree_tier`; `course_type` kept as a nullable subject modality (R6). The
   `CourseType`/`CourseStatus` tuples are retained (schema + validators). No remaining `Course` interface consumer.
   `[code: packages/types/src/learning.ts]`
 - **BR-LE-S2-4 (metadata defensive parse / R10)** — `subjects.metadata` is a superseded TEXT [E] slot; `toSubject`
@@ -94,6 +93,7 @@
   (`findById` filters `deleted_at`). `[code: service.ts forkCurriculum]`
 
 ## S4 — Schedule + class sessions (ED-4/ED-5; register the `class` sub-type)
+
 - **BR-LE-S4-1 (register the `class` sub-type — call-once, idempotent)** — `registerLearningEducation()` registers
   `CLASS_SESSION_TYPE_DEF` via the injected `SessionRegistry`; a 2nd call throws `DuplicateSubType` → caught → no-op.
   `createClassSession` → `sessions.createSession('class')` surfaces `SessionTypeNotFound` until this runs.
@@ -110,13 +110,13 @@
   `[code: service.ts setSchedule]`
 - **BR-LE-S4-4 (a class meeting = base session + 1:1 extension; `started_at` = the MEETING TIME)** —
   `createClassSession(subjectId,input)` guards the subject exists, then `sessions.createSession({sub_type:'class',…})`
-  + writes its own `class_sessions` row keyed `session_id` + attaches the subject. `started_at` is REQUIRED and set at
-  create regardless of `status` (the spine has no other time column — sessions.ts:32-34 — and the #32 engine only
-  auto-stamps on a transition into `in_progress`). `class_sessions` has NO `deleted_at` → `softDelete:false`; the base
-  owns lifecycle (BR-ED-7). Three writes, no outer tx — an orphan is harmless + re-drivable (no-FK, eventually-consistent).
-  `[code: service.ts createClassSession]`
+  - writes its own `class_sessions` row keyed `session_id` + attaches the subject. `started_at` is REQUIRED and set at
+    create regardless of `status` (the spine has no other time column — sessions.ts:32-34 — and the #32 engine only
+    auto-stamps on a transition into `in_progress`). `class_sessions` has NO `deleted_at` → `softDelete:false`; the base
+    owns lifecycle (BR-ED-7). Three writes, no outer tx — an orphan is harmless + re-drivable (no-FK, eventually-consistent).
+    `[code: service.ts createClassSession]`
 - **BR-LE-S4-5 (the subject is the §3.2.1 target)** — after create, `sessions.attach(sessionId,'subject',subjectId,
-  'instance')` (`subject` is a registered ENTITY_TYPE). `[code: service.ts createClassSession]`
+'instance')` (`subject` is a registered ENTITY_TYPE). `[code: service.ts createClassSession]`
 - **BR-LE-S4-6 (derived reads go through the base session)** — `listSessions(subjectId)` reads its own
   `class_sessions` then resolves each base via `sessions.getSession`; a soft-deleted base (→ null) is excluded.
   `getWeeklySchedule(range)` is cross-subject: base `started_at` ∈ `[start,end]` (INCLUSIVE both ends — matches the
@@ -128,6 +128,7 @@
   mirroring the schema rows; `ClassSession` OMITS `deleted_at` (session extension). `[code: packages/types/src/learning.ts]`
 
 ### S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/X9/X10)
+
 - **BR-LE-S5-1 (ICS tables are add-only — no soft-delete)** — `ics_feed_configs` + `ics_synced_events` omit
   `deleted_at` → both repos `softDelete:false`. A feed is revoked via `is_active` (X9), an event hidden via
   `is_ignored` (X8) — **never deleted**. `[code: service.ts icsFeedConfigsRepo/icsSyncedEventsRepo; schema learning.ts:109-153]`
@@ -159,6 +160,7 @@
   M2. When the M2 sync loop lands, skip inactive feeds so a revoked feed is not silently re-synced (g2 NIT1).
 
 ### S6 — grading systems + components (ED-7 · H3)
+
 - **BR-LE-S6-1 (a grading system is scoped + fail-loud on create)** — `createGradingSystem(scope,{…})` validates the
   scope entity exists (`Institution`/`Program`/`SubjectNotFoundError` by `scope.type`) BEFORE any write (no-FK, the
   `BR-LE-S1-2` convention). A `subject`-scoped system OVERRIDES the broader one; the override-RESOLUTION (which system
@@ -183,11 +185,12 @@
   two same-type buckets (e.g. two `exam` components), per ED-7 "each with own weight/points, per professor" (No-Guessing — no doc mandates uniqueness). `[code: service.ts createGradingSystem]`
 
 ### S7 — assessments + grade/GPA compute (ED-8 · ED-7 compute · AI6)
+
 - **BR-LE-S7-1 (an assessment attaches to a subject; create is fail-loud)** — `createAssessment(subjectId, input)` guards
   the subject exists (`SubjectNotFoundError`) and, when `grading_component_id` is given, that it resolves to a live
   component (`GradingComponentNotFoundError`); a null component id is allowed (unmapped). `score` starts null; `source`
   backfilled to `'manual'` service-side so the create-echoed row is faithful (not the DB default). `[business-rules.md
-  ED-8; code: service.ts createAssessment; [[repository-create-returns-input-row-not-db-defaults]]]`
+ED-8; code: service.ts createAssessment; [[repository-create-returns-input-row-not-db-defaults]]]`
 - **BR-LE-S7-2 (grade is DERIVED, never stored)** — `recordResult(assessmentId, {score})` writes `score` ONLY and
   returns the updated assessment; there is no stored grade. A subject's grade is derived-on-read by `computeGrade`.
   `[business-rules.md:37-38 "derived … never hand-set"; ED-10 M3; code: service.ts recordResult]`
@@ -196,10 +199,10 @@
   `program.parent_type==='institution'` — the institution (`program.parent_id`); a self_taught-rooted program stops at
   program (self_taught ∉ `GRADING_SCOPE`). >1 live system at the chosen scope ⇒ most-recently-created picked +
   `ambiguous-system` flag (never a throw); none anywhere ⇒ `grade:null` + `no-system`. `[business-rules.md:74;
-  code: service.ts resolveGradingSystem/pickSystem]`
+code: service.ts resolveGradingSystem/pickSystem]`
 - **BR-LE-S7-4 (`computeGrade` = the engine's two-level rollup; partial, never fabricated)** — per scored assessment,
   `normalize({kind:'quantitative', current:score, baseline:0, target: assessment.max_points ?? component.max_points,
-  isHigherBetter:true})` (score>max clamps to 1.0, no >100%); per component, equal-weight `rollup` of its normalized
+isHigherBetter:true})` (score>max clamps to 1.0, no >100%); per component, equal-weight `rollup` of its normalized
   assessments; subject grade = `rollup` of component progress weighted by `weight` bp (null/0 ⇒ equal-weight; null-progress
   components excluded). Flags: `incomplete` (a component had no scored assessment), `unmapped-assessments` (a scored
   assessment with a null OR foreign `grading_component_id` — grouping is by the resolved system's components, never a
@@ -208,13 +211,13 @@
 - **BR-LE-S7-5 (`computeGPA(ref)` = equal-weight rollup; partial + `flagged`)** — `ref={type:'term'|'curriculum', id}`.
   Subject set: `term` ⇒ `term_id===id`; `curriculum` ⇒ `curriculum_id===id` OR `term_id ∈ the curriculum's live terms`
   (the S3 fork union). Guards the ref (`TermNotFoundError`/`CurriculumNotFoundError`). `gpa = rollup(per-subject grades,
-  equal-weight)` (no credit-hours in schema → engine default); `flagged` iff any subject grade is null OR any per-subject
+equal-weight)` (no credit-hours in schema → engine default); `flagged` iff any subject grade is null OR any per-subject
   flags non-empty; empty set ⇒ `gpa:null, flagged:true`. Never fabricated. `[contract.md:64; business-rules.md:92;
-  code: service.ts computeGPA]`
+code: service.ts computeGPA]`
 - **BR-LE-S7-6 (grade returned normalized [0,1] + scale metadata; label mapping is NOT S7)** — `GradeResult.grade` is the
   normalized value; `scaleType` + parsed `scaleConfig` ride along for the display tier. The letter/numeric boundary
   algorithm is undefined in the aspect docs → ②/M-later, not fabricated here (No-Guessing). `[grep clean — scale named
-  only as an enum business-rules.md:37; code: service.ts computeGrade/types.ts GradeResult]`
+only as an enum business-rules.md:37; code: service.ts computeGrade/types.ts GradeResult]`
 - **BR-LE-S7-7 (`@vida/types` `Assessment` — net-new)** — `extends SyncableEntity`, mirrors `AssessmentRow` exactly
   (`grading_component_id`/`title`/`description`/`date`/`weight`/`max_points`/`modality`/`score` nullable; `source`
   `RecordSource`; `deleted_at`). `assessments` is `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts]`
@@ -223,14 +226,15 @@
   result. `GradeResult`/`GpaResult` are result objects, not errors. `[business-rules.md:92; code: service.ts]`
 
 ### S8 — education measurement (ED-10 · M1/M2/M3)
+
 - **BR-LE-S8-1 (Education-forged measure, one per ref, upsert, fail-loud)** — `setMeasurement(ref,{measurement_kind,
-  binding_mode?})` where `ref={type:'subject'|'program', id}` guards the ref (`SubjectNotFoundError`/`ProgramNotFoundError`)
+binding_mode?})` where `ref={type:'subject'|'program', id}` guards the ref (`SubjectNotFoundError`/`ProgramNotFoundError`)
   then upserts the single `education_measurements` row for `(ref_type,ref_id)` (update kind/mode if present — PRESERVING
   the `progress` override; else create). Separate storage, never Projects' (C-M5). `[schema learning.ts:324-339 non-unique
-  index; the setSchedule precedent; code: service.ts setMeasurement/findMeasurement]`
+index; the setSchedule precedent; code: service.ts setMeasurement/findMeasurement]`
 - **BR-LE-S8-2 (`measurement_kind` REQUIRED; `binding_mode` nullable ⇒ derive; kind is declared metadata)** —
   `measurement_kind ∈ MEASUREMENT_KIND` caller-supplied (no default — a dedicated measure entity); `binding_mode ∈
-  BINDING_MODE` nullish (omittable ⇒ null ⇒ derive, M2). **The M1 derivation does NOT branch on `measurement_kind`** —
+BINDING_MODE` nullish (omittable ⇒ null ⇒ derive, M2). **The M1 derivation does NOT branch on `measurement_kind`** —
   it is kind-agnostic (grade/rollup); the kind is persisted for the record + the M-later direct per-kind `normalize`
   path (a subject measured not-via-grade). `[schema learning.ts:331-334; code: validators SetMeasurementSchema, service.ts]`
 - **BR-LE-S8-3 (`getProgress` returns integer 0–100 or null; engine works in [0,1])** — the `progress` override column is
@@ -246,7 +250,7 @@
   subject, `binding_mode==='derived-pull'` OR `null` (derive-by-default) ⇒ `computeGrade(subjectId).grade` (Education's
   natural progress signal, [0,1]|null); `'manual'` ⇒ null (manual has no auto-derivation — the override is its only
   source, ED-10 "manual→manual"); `'event-trigger'` ⇒ null (no event source until M2). `[business-rules.md:49;
-  BINDING_MODE measurement.ts:9; code: service.ts deriveProgress01]`
+BINDING_MODE measurement.ts:9; code: service.ts deriveProgress01]`
 - **BR-LE-S8-6 (program derivation: the engine's fractal `rollup` over its subjects)** — for a program, roll up its
   subjects' [0,1] progress via `rollup` (equal-weight; null-progress subjects excluded). The subject set = the union over
   the program's live curricula of (`curriculum_id===c.id` OR `term_id ∈ c's live terms`), deduped (the S7 computeGPA/S3
@@ -255,13 +259,14 @@
   cycle. `[engine.ts:38-53; seam-contract.md:61; code: service.ts deriveProgress01/programSubjectIds]`
 - **BR-LE-S8-7 (`@vida/types` `EducationMeasurement` — net-new)** — `extends SyncableEntity`, mirrors
   `EducationMeasurementRow` (`ref_type: MeasurementRefType`, `ref_id`, `measurement_kind: MeasurementKind`, `binding_mode:
-  BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts:370]`
+BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts:370]`
 - **BR-LE-S8-8 (no `advertise()`, no Projects storage — C-M5)** — Education exposes progress ONLY via the `getProgress`
   method (the KN-10 per-subject-measure-is-a-method pattern); never calls the measurement source-registry `advertise()`
   (global scalars only) and never writes Projects' measure tables. `[seam-contract.md:13;
-  [[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
+[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
 
 ## S9 — Subject vault + tags/links/notes (ED-13 · ED-16 · SP1 · PJ-8)
+
 - **BR-LE-S9-1 (vault write is subject-scoped, fail-loud, NO soft-delete)** — `addDocument(subjectId, input)` guards
   `subjectsRepo.findById` live (`SubjectNotFoundError`, the no-FK app-layer integrity convention), then creates one
   `subject_documents` row. The table has NO `deleted_at` → `softDelete:false` (the PJ-8 `project_documents` vault
@@ -280,15 +285,15 @@
   mapped `→ SubjectDocument`, sorted by `created_at` in JS (`findWhere` has no orderBy, non-mutating `[...rows].sort`);
   `notes` = `notes.getPagesForEntity('subject', subjectId)` returned as `PageRow[]` raw (the NotesService convention —
   no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud). `[seam-contract.md:65;
-  notes/service.ts:144-148; code: service.ts getVault]`
+notes/service.ts:144-148; code: service.ts getVault]`
 - **BR-LE-S9-4 (`tagEntity` guards the tag resolves BEFORE the blind insert)** — `spaces.tagEntity` blind-inserts an
   unresolved `tag_id`, so `tagEntity(ref, tagId)` guards `tagsRepo.findById(tagId) == null ⇒ TagNotFound` first, then
   delegates (idempotent revive/no-op). An unregistered `entityType` ⇒ `UnknownEntityType` (from spaces). Remove stays the
   SpacesService surface. `[knowledge/service.ts:434-437; spaces/service.ts:128-143;
-  [[spaces-junctions-split-read-write-tagentity-blind-inserts]]; code: service.ts tagEntity]`
+[[spaces-junctions-split-read-write-tagentity-blind-inserts]]; code: service.ts tagEntity]`
 - **BR-LE-S9-5 (`linkEntities` reuses the `page_id` anchor slot)** — `entity_links` is page→entity, so
   `linkEntities(from, to, context?)` delegates to `spaces.createLink(from.entityId, to.entityType, to.entityId,
-  context)` — the source entity id rides the generic `page_id` TEXT slot (no FK), the knowledge `linkObjects` precedent.
+context)` — the source entity id rides the generic `page_id` TEXT slot (no FK), the knowledge `linkObjects` precedent.
   spaces asserts the TARGET type; `from.entityType` is informational-only (no source-type column — neither stored nor
   validated). `[knowledge/service.ts:411-413; spaces/service.ts:158; code: service.ts linkEntities]`
 - **BR-LE-S9-6 (`@vida/types` `SubjectDocument` — net-new)** — `extends SyncableEntity`, mirrors `SubjectDocumentRow`
@@ -299,9 +304,10 @@
   BR-LE-S9-4 guard. Port types named `EducationFileBlob`/`EducationAttachmentPort` (not `FileBlob`/`AttachmentPort`) to
   avoid the flat `@vida/core` barrel collision with the books types (the `HabitDateRange` rename-on-collision precedent;
   Education's subject-keyed `upload` ≠ the books book-keyed one, so NOT reused). `[code: types.ts Deps + port interfaces;
-  knowledge/types.ts:66,75]`
+knowledge/types.ts:66,75]`
 
 ## S10 — Cross-module fan-out + Journal (ED-9 · BK-12 · KN-10 · Journal · effects) — closes ①
+
 - **BR-LE-S10-1 (`listEducationTasks` deny-safe ⇒ `[]` when absent — C-HW)** — `tasks?: TasksEducationPort`
   (`listForEducation(subjectRef): Promise<Task[]>`); absent ⇒ `[]` (no throw — Tasks owns the entity, `services/tasks`
   not built). Returns the Tasks-owned `@vida/types` `Task` (no Education-invented shape); `subjectRef` = a subject id or
@@ -310,20 +316,20 @@
   (`getPlansForConsumer(): Promise<ReadingPlan[]>`); absent ⇒ `[]`. M1 is a passthrough (BK-12 has no subject arg);
   `subjectId` reserved (the book↔subject filter = M2). `[seam-contract.md:69; code: service.ts getBookPlansForSubject]`
 - **BR-LE-S10-3 (`getMasteryForSubject` consumes Knowledge KN-10; absent ⇒ all-null — unmeasured)** — `knowledge?:
-  KnowledgeMasteryPort` (`getMasterySource(subjectId): Promise<SubjectMastery>`); absent ⇒ `{objectMastery:null,
-  assessmentResults:null, paceVsSyllabus:null}` (a valid unmeasured reading, no throw). `SubjectMastery` is an
+KnowledgeMasteryPort` (`getMasterySource(subjectId): Promise<SubjectMastery>`); absent ⇒ `{objectMastery:null,
+assessmentResults:null, paceVsSyllabus:null}` (a valid unmeasured reading, no throw). `SubjectMastery` is an
   Education-local structural copy of Knowledge's leaf (NOT imported — avoids service→service coupling + the barrel
   collision). Education owns any rollup (M1 = passthrough; the reverse-wire enriching `assessmentResults` stays
   Knowledge-owned, M2). `[MasterySource knowledge/types.ts:161; code: service.ts getMasteryForSubject]`
 - **BR-LE-S10-4 (Journal `/summary` PULL — today's class sessions + due assessments)** — `getDayEducationDigest(date) →
-  {classSessions, dueAssessments}`: `classSessions` = class meetings whose `started_at` ∈ the UTC day (via
+{classSessions, dueAssessments}`: `classSessions` = class meetings whose `started_at` ∈ the UTC day (via
   `getWeeklySchedule`, inclusive both ends); `dueAssessments` = assessments whose calendar `date` equals `date` (via
   `listAssessments({range:{start:date,end:date}})`). `journal.ts` exports
   `createLearningEducationJournalContribution(svc)` (`module:'learning-education'`, `sectionKey:'summary'`,
   `DATA_POINTS=[class_sessions, due_assessments]` from contract.md:57) whose `summary(date)` ⇒ `state:'success'` iff
   counts > 0 else `'empty'` (reuses `TerminalState` BY TYPE, never `deriveTerminalState`) + `registerLearningEducationJournal(registry, svc)`.
   PULL path (ADR-004 §3.2.5, NOT a rail push); registry dedups by `module`; no `journalRegistry` dep. `[contract.md:57;
-  books/journal.ts precedent; code: service.ts getDayEducationDigest, journal.ts]`
+books/journal.ts precedent; code: service.ts getDayEducationDigest, journal.ts]`
 - **BR-LE-S10-5 (`effects?` emit-only fan-out on `recordResult` — dormant, isolated, C-E2)** — after the score write,
   `fanOutAssessmentRecorded(assessmentId, subject_id)` fires ONE `emit_measurement_signal` (grain = assessment id =
   `subjectNaturalKey`; `targetRef` = subject id; `transition='assessment.recorded'`). Dormant: `if (!effects) return`;
@@ -331,13 +337,14 @@
   stands). A re-recorded score derives the same `effect_event_id` → rail no-op (correct for a derive-on-read measure).
   **C-E2: measurement signals ONLY — never `award_xp`/`grant_currency`.** `subject_id` captured from the `findById`
   guard row (not the `update` echo). `[books fanOutReadingCompletion service.ts:318-334; effects/event-id.ts;
-  [[event-fanout-pull-push-split-and-occurrence-grain]]; code: service.ts recordResult/fanOutAssessmentRecorded]`
+[[event-fanout-pull-push-split-and-occurrence-grain]]; code: service.ts recordResult/fanOutAssessmentRecorded]`
 - **BR-LE-S10-6 (deps grew by `tasks?`/`books?`/`knowledge?`/`effects?`, all deny-safe/optional; NO `ai?`)** — the `?`
   optionality is seam-contract-specified (lines 16-24; even `books?` despite Books DONE) — M1 has no composition root, so
   every cross-module dep is injected absent (wired at M2/P6). No S10 method consumes AI → `ai?` not added (No-Guessing).
   No new `@vida/types`, no schema. `[seam-contract.md:16-24; code: types.ts Deps]`
 
-## Scope guards honored (the C-* negatives — rerun-ratified)
+## Scope guards honored (the C-\* negatives — rerun-ratified)
+
 - **C-HIER** — hierarchy + subject shape is DB-4-done; S1/S2 are CRUD only, no schema redesign.
 - **C-E2 (honored at S4 + S10)** — the `class` sub-type declares `effects:[]`/`allowed_effects:[]` (S4); the S10
   `recordResult` fan-out emits ONLY `emit_measurement_signal` (never `award_xp`/`grant_currency`) — Education is not an

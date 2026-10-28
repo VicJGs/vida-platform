@@ -50,12 +50,7 @@ export interface SessionRegistry {
   list(): Promise<SessionTypeDef[]>
 }
 
-const REQUIRED_DIMENSIONS: (keyof SessionTypeDef)[] = [
-  'attachment_defaults',
-  'effects',
-  'lifecycle',
-  'permissions',
-]
+const REQUIRED_DIMENSIONS: (keyof SessionTypeDef)[] = ['attachment_defaults', 'effects', 'lifecycle', 'permissions']
 
 function rowToDef(row: SessionTypeRegistryRow): SessionTypeDef {
   return {
@@ -70,14 +65,10 @@ function rowToDef(row: SessionTypeRegistryRow): SessionTypeDef {
 }
 
 export function createSessionRegistry(db: DrizzleDb, deviceId: string): SessionRegistry {
-  const shipped = new Map<string, SessionTypeDef>(
-    SHIPPED_SESSION_TYPES.map((d) => [d.sub_type, d]),
-  )
+  const shipped = new Map<string, SessionTypeDef>(SHIPPED_SESSION_TYPES.map((d) => [d.sub_type, d]))
   // The union of every shipped type's allowed effects — the ceiling a user type
   // may not exceed (BR-4 / SS-6). encryptedFields: [] — the registry has no [E] fields.
-  const shippedEnvelope = new Set(
-    SHIPPED_SESSION_TYPES.flatMap((d) => d.permissions.allowed_effects),
-  )
+  const shippedEnvelope = new Set(SHIPPED_SESSION_TYPES.flatMap((d) => d.permissions.allowed_effects))
   const userRepo = createRepository(db, sessionTypeRegistry, { deviceId, encryptedFields: [] })
 
   return {

@@ -13,7 +13,9 @@ vi.mock('../db/composition-root', async () => (await import('../test/preferences
 // renders standalone. The region itself is covered by journal-page-region.test.tsx.
 vi.mock('./journal-page-region', () => ({
   JournalPageRegion: ({ 'aria-label': ariaLabel = 'Journal entry' }: { 'aria-label'?: string }) => (
-    <div role="region" aria-label={ariaLabel}>journal</div>
+    <div role="region" aria-label={ariaLabel}>
+      journal
+    </div>
   ),
 }))
 

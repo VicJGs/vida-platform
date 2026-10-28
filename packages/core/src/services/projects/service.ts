@@ -86,7 +86,11 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
   const milestonesRepo = createRepository(db, milestones, { deviceId, softDelete: true, encryptedFields: [] })
   const deliverablesRepo = createRepository(db, deliverables, { deviceId, softDelete: true, encryptedFields: [] })
   // `project_documents` has NO deleted_at (faithful §5.4, the PJ-8 vault pattern) → softDelete:false (delete = hard).
-  const projectDocumentsRepo = createRepository(db, projectDocuments, { deviceId, softDelete: false, encryptedFields: [] })
+  const projectDocumentsRepo = createRepository(db, projectDocuments, {
+    deviceId,
+    softDelete: false,
+    encryptedFields: [],
+  })
 
   // ---- S1: projects CRUD + queries -----------------------------------------
   async function createProject(input: CreateProjectInput): Promise<ProjectRow> {
@@ -167,9 +171,7 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
     const f = ListProjectsFilterSchema.parse(filter)
     const rows = await projectsRepo.findAll() // applies isNull(deleted_at)
     if (!f) return rows
-    return rows.filter(
-      (r) => (f.status ? r.status === f.status : true) && (f.scope ? r.scope === f.scope : true),
-    )
+    return rows.filter((r) => (f.status ? r.status === f.status : true) && (f.scope ? r.scope === f.scope : true))
   }
 
   // ---- S2: milestones (nestable tree) --------------------------------------
@@ -417,7 +419,10 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
   }
   async function getDeliverableSources(deliverableId: string): Promise<DeliverableSourceRef[]> {
     // outbound entity_links where page_id=deliverableId (the association resolver's read half).
-    const res = await associations.resolveAssociations({ entityType: 'deliverable', entityId: deliverableId }, 'separate')
+    const res = await associations.resolveAssociations(
+      { entityType: 'deliverable', entityId: deliverableId },
+      'separate',
+    )
     const links = res.mode === 'separate' ? res.links : []
     return links.map((l) => ({ entityType: l.target.entityType, entityId: l.target.entityId }))
   }

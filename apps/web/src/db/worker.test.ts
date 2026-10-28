@@ -82,7 +82,10 @@ describe('DB worker — receipt ack (LIF-250)', () => {
     expect(posted).toEqual([{ id: 1, ack: true }]) // alive, still opening
     release()
     await done
-    expect(posted).toEqual([{ id: 1, ack: true }, { id: 1, ok: true }])
+    expect(posted).toEqual([
+      { id: 1, ack: true },
+      { id: 1, ok: true },
+    ])
   })
 
   it('acks migrate; never acks a read', async () => {

@@ -1,11 +1,14 @@
 # Spec: component:ui-2-platform-views · V7 — neural-graph
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) — the LAST UI-2 view -->
+
 Status: implemented + Visual Gate PASS (Victor, 2026-08-10) — DONE
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md.
+Parent: docs/specs/components/ui-2-platform-views/\_index.md.
 
 ## 1. Identity
+
 V7 `neural-graph` — the renderer for the `graph` VIEW_LAYOUT `[FACT: view.ts:23; ADR-007:60]`: a **force-directed
 WebGL graph** (Sigma.js) visualizing connections between entities (notes/people/projects…). The last UI-2 view; the
 hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph complete). Currently a 0-byte stub.
@@ -25,6 +28,7 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   accessible text-alternative (canvas is SR-opaque; V7 gives an aria-label summary, text-alt deferred) · NOT edge labels.
 
 ## 2. Business Rules
+
 - **NG-1 · Nodes/edges props + local types.** `nodes: readonly GraphNode[]` (`{ id; label?; color?; size? }`) +
   `edges: readonly GraphEdge[]` (`{ source; target; color? }`). Edges whose `source`/`target` aren't in `nodes` are
   **skipped** (dev-warn) — a dangling edge must not crash graphology. `[INTERP: graphology addEdge throws on missing node]`
@@ -33,15 +37,15 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   array every render → `kill()`+rebuild+relayout every render (flicker, camera reset, WebGL-context churn → the ~16-context
   browser cap → crash; the Toast re-arm bug at WebGL scale). Instead dep on a **content signature**:
   `const graphKey = useMemo(() => nodes.map(n=>n.id).join('|')+'¦'+edges.map(e=>e.source+'>'+e.target).join('|'),
-  [nodes, edges])` (the calendar `[gridStart.getTime()]` precedent). The `useEffect` (deps `[graphKey, webglAvailable,
-  layoutIterations]`, reading current nodes/edges): skip if `!webglAvailable || !containerRef.current || nodes.length===0`;
+[nodes, edges])` (the calendar `[gridStart.getTime()]` precedent). The `useEffect` (deps `[graphKey, webglAvailable,
+layoutIterations]`, reading current nodes/edges): skip if `!webglAvailable || !containerRef.current || nodes.length===0`;
   else build a `graphology.Graph` (add nodes with a **deterministic circular seed** `x=cos(2πi/n),y=sin(2πi/n)` — m1, no
   RNG, non-degenerate FA2 start), add valid edges, run **`forceatlas2.assign(graph, { iterations, settings:{
-  barnesHutOptimize:true } })`** (M4 — O(n log n) not naïve O(n²)), `new Sigma(graph, containerRef.current, settings)`,
+barnesHutOptimize:true } })`** (M4 — O(n log n) not naïve O(n²)), `new Sigma(graph, containerRef.current, settings)`,
   wire `sigma.on('clickNode', …) → onNodeClick(id)`. **Cleanup: `sigma.kill()`** — disposes the WebGL context + renderer +
   camera + the `clickNode` listener (Sigma-owned) + drops the graphology/FA2 refs. Re-inits only when the TOPOLOGY
   actually changes (color/size-only change without a diff-update is deferred). `[FACT: sigma.kill() teardown; calendar
-  content-key precedent; tabs.tsx effect-cleanup]`
+content-key precedent; tabs.tsx effect-cleanup]`
 - **NG-2b · WebGL availability (jsdom guard).** `webglAvailable` computed once via a **`useState` lazy init** (m3 —
   not `useMemo`; it's a computed-once client constant): `document.createElement('canvas').getContext('webgl') != null`
   (false in jsdom → the effect skips, no crash; false in a real no-WebGL browser → the NG-6 fallback). Top-level
@@ -61,7 +65,7 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   fills, wrong for an sr-only element) showing label + neighbour count, firing `onNodeClick(id)`. So `onNodeClick` is
   fully **keyboard-reachable + SR-navigable** — the §XIV mouse↔keyboard equivalence is MET in V7, not deferred (V7 has
   the data; needs no HARD-3). ⚠ **sr-only technique (m-B):** an injected/inline style `{ position:absolute; width:1px;
-  height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); whiteSpace:nowrap; border:0 }` — **NEVER
+height:1px; padding:0; margin:-1px; overflow:hidden; clip-path:inset(50%); whiteSpace:nowrap; border:0 }` — **NEVER
   `display:none`/`visibility:hidden`** (they remove focusability). The whole widget is a labelled region (`aria-label`
   = consumer's ?? `"Network graph: ${nodes.length} nodes, ${validEdges} connections"`). The list shares NG-8's node
   ceiling (one button/node; 10K → §6 virtualization). Bonus: the node buttons make `onNodeClick` jsdom-testable.
@@ -90,7 +94,7 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   synchronous FA2 (even Barnes-Hut O(n log n)) blocks the main thread; ADR-001's 10K+ ambition would freeze it. **V7 is
   validated to ~a few hundred nodes** (the realistic per-Space/backlink graph); above that, layout jank is expected and
   the **webworker layout (§6) is required** — a documented V7 ceiling, not a silent freeze. `[FACT: engineering.md §XIII
-  INP; ADR-001:125 10K ambition → §6 webworker]`
+INP; ADR-001:125 10K ambition → §6 webworker]`
   **UPDATED — fe-codec-canvas-graph / LIF-205:** a reduced-motion iteration-gate now EXISTS — `useReducedMotion()`
   caps `forceatlas2.assign` to **0 iterations** when `prefers-reduced-motion` is set (the nodes stay on the
   deterministic circular seed — an instant, predictable, non-organic layout), vs `layoutIterations` normally;
@@ -98,11 +102,21 @@ hardest (WebGL + new deps). Consumed by **HARD-3** (backlinks + neural graph com
   calm-layout preference on the synchronous-settle axis. See `fe-codec-canvas-graph/` BR-12.
 
 ## 3. Contract
-```ts
-import { type ViewState } from './list-view'   // reused type
 
-export interface GraphNode { id: string; label?: string; color?: string; size?: number }
-export interface GraphEdge { source: string; target: string; color?: string }
+```ts
+import { type ViewState } from './list-view' // reused type
+
+export interface GraphNode {
+  id: string
+  label?: string
+  color?: string
+  size?: number
+}
+export interface GraphEdge {
+  source: string
+  target: string
+  color?: string
+}
 
 export interface NeuralGraphProps {
   nodes: readonly GraphNode[]
@@ -118,14 +132,16 @@ export interface NeuralGraphProps {
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
 }
-export function NeuralGraph(props: NeuralGraphProps): ReactElement   // NOT generic; React-19 ref-as-prop
+export function NeuralGraph(props: NeuralGraphProps): ReactElement // NOT generic; React-19 ref-as-prop
 ```
+
 - 8-state matrix (§VIII): success(graph) · loading/error/empty(`Message`) · no-WebGL(fallback message) · hover/focus
   (Sigma camera; container focusable?) · disabled(n/a) · dark(frame base tokens; Sigma bg a documented default) ·
   responsive (the frame fills width; height fixed). Sub-theme: none (NG-7). Export from `index.ts`. `*.test.tsx` (jsdom
   — guarded, no WebGL) + `*.stories.tsx` (the real graph, Visual Gate).
 
 ## 4. Acceptance
+
 - [ ] `NeuralGraph` renders a Tamagui frame; with WebGL + nodes → mounts Sigma (verified in the Visual Gate, NOT jsdom).
 - [ ] jsdom (no WebGL): renders the frame + the correct message per state (loading/empty/error/no-WebGL) WITHOUT
       crashing; Sigma is never inited; dangling edges are skipped + dev-warn; node/edge props accepted.
@@ -142,6 +158,7 @@ export function NeuralGraph(props: NeuralGraphProps): ReactElement   // NOT gene
 - [ ] `pnpm --filter @vida/ui typecheck && build && test` green; root typecheck 10/10; §XXIX CLAUDE.md paragraph.
 
 ## 5. Implementation Prompt (ordered)
+
 1. **VERIFY the library APIs first (§global rule).** `sigma` v3 (`new Sigma(graph, container, settings)`, events),
    `graphology` (`new Graph()`, `addNode`/`addEdge`/`hasNode`), `graphology-layout-forceatlas2`
    (`forceatlas2.assign(graph, {iterations, settings})`) — via context7/docs; pin the versions installed.
@@ -165,15 +182,17 @@ export function NeuralGraph(props: NeuralGraphProps): ReactElement   // NOT gene
 10. **Export** + CLAUDE.md paragraph (+ note the deps + the WebGL-guard + kill lifecycle).
 
 ## 6. Deferred (documented — NOT V7, likely HARD-3 / later)
+
 Hover-highlight neighbours · zoom/reset controls UI · node clustering/grouping (by Space/tag) · filtering · edge
 labels · a live/animated layout · **RICHER graph a11y** (edge-traversal / keyboard graph navigation between neighbours
 — the BASIC accessible node-list + onNodeClick is IN V7, NG-5; this is the enhancement) · performance tuning for 10K+
 nodes (webworker layout) · node search/focus · the `@sigma/react` wrapper (if a future consumer prefers it).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-10 | ui-2-platform-views | V7 sub-spec authored at PLAN (Sigma.js WebGL force-directed graph; raw sigma+graphology+forceatlas2, WebGL-guarded ref+effect mount + kill cleanup; presentational nodes/edges props — AR-8 boundary; role=img + summary, text-alt deferred; the last view); gate-1 next |
-| 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed: **B1** (effect keyed on CONTENT signature `graphKey`, not array-ref → no kill/relayout/context-churn per render; + acceptance test), **M1** (kill = full teardown; context-exhaustion is B1's consequence), **M4** (barnesHutOptimize + a documented node-ceiling — sync FA2 bounds), m1 (deterministic circular seed not RNG), m2 (transparent Sigma canvas → frame bg flips with theme), m3 (webglAvailable useState-lazy), m4 (top-import-no-WebGL acceptance) |
-| 2026-08-10 | ui-2-platform-views | preflight PASSED (sigma v3 API verified via context7: `new Sigma(graph,container,settings)`·`on('clickNode',{node})`·`kill()`; sigma 3.0.3/graphology 0.26.0/forceatlas2 0.10.1). Gate-2 critique **REVISE**→fixed (all fixes confirmed landed): **M-A material** — impl step 6 still said the OLD `[nodes,edges]` deps (would reintroduce the B1 churn bug) → `[graphKey,…]`; m-B (pin the sr-only clip style, forbid display:none), m-C (a11y list shares the node ceiling), m-D (node-list = bare `<button>`, not UI-1 Button). **Approval 2 pending.** |
+
+| Date       | Session             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-10 | ui-2-platform-views | V7 sub-spec authored at PLAN (Sigma.js WebGL force-directed graph; raw sigma+graphology+forceatlas2, WebGL-guarded ref+effect mount + kill cleanup; presentational nodes/edges props — AR-8 boundary; role=img + summary, text-alt deferred; the last view); gate-1 next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed: **B1** (effect keyed on CONTENT signature `graphKey`, not array-ref → no kill/relayout/context-churn per render; + acceptance test), **M1** (kill = full teardown; context-exhaustion is B1's consequence), **M4** (barnesHutOptimize + a documented node-ceiling — sync FA2 bounds), m1 (deterministic circular seed not RNG), m2 (transparent Sigma canvas → frame bg flips with theme), m3 (webglAvailable useState-lazy), m4 (top-import-no-WebGL acceptance)                                                                                                                                                                                                                                                  |
+| 2026-08-10 | ui-2-platform-views | preflight PASSED (sigma v3 API verified via context7: `new Sigma(graph,container,settings)`·`on('clickNode',{node})`·`kill()`; sigma 3.0.3/graphology 0.26.0/forceatlas2 0.10.1). Gate-2 critique **REVISE**→fixed (all fixes confirmed landed): **M-A material** — impl step 6 still said the OLD `[nodes,edges]` deps (would reintroduce the B1 churn bug) → `[graphKey,…]`; m-B (pin the sr-only clip style, forbid display:none), m-C (a11y list shares the node ceiling), m-D (node-list = bare `<button>`, not UI-1 Button). **Approval 2 pending.**                                                                                                                                                                                               |
 | 2026-08-10 | ui-2-platform-views | Rev 3 — **Victor caught 2 manufactured "sign-off decisions" as DRIFT** (both self-resolved, no gap left hanging): **①** the a11y "deferral to HARD-3" was a hand-wave (HARD-3's scope is "working graph", owns NO a11y; engineering.md §XIV has no carve-out) → **BUILD the accessible equivalent IN V7** (aria-hidden canvas + a visually-hidden `role="list"` of focusable node `<button>`s firing onNodeClick — §XIV MET, jsdom-testable, no deviation); **②** the raw-sigma "§XXVIII sign-off" was manufacturing a fork the pattern answers (BR-5 third-party-mount rule + ADR-001:125 "Sigma.js") → APPLY the pattern, no decision. [[dont-manufacture-an-architecture-fork-the-pattern-already-answers]] + [[dont-ask-scope-the-docs-already-fix]] |

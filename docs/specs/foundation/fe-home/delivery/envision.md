@@ -4,10 +4,11 @@
 > review PASSED 2026-10-10** (two-entity model confirmed; arrangement resolved; checkpoints pinned). The firing was the
 > mechanical doc test; THIS gate was the blocking human review (the reviewer is the human, not a `victor:*` skill).
 > **Greybox (THROWAWAY — deleted after this gate per §3.75):** `apps/web/src/__envision__/{home-greybox,envision-main}.tsx`
-> + `apps/web/envision.html`, driven in Brave over the real vite app across 3 presets × light/dark × calm/dense ×
-> both arrangements × 4 state scenarios × 375/768/1440. Composed the REAL `@vida/ui` `DashboardView` + `Card` + the
-> theme `UIProvider`; the journal page was a faithful editor placeholder (real `VidaEditor` = the N6 mount seam —
-> `@vida/editor` is not an apps/web dep).
+>
+> - `apps/web/envision.html`, driven in Brave over the real vite app across 3 presets × light/dark × calm/dense ×
+>   both arrangements × 4 state scenarios × 375/768/1440. Composed the REAL `@vida/ui` `DashboardView` + `Card` + the
+>   theme `UIProvider`; the journal page was a faithful editor placeholder (real `VidaEditor` = the N6 mount seam —
+>   `@vida/editor` is not an apps/web dep).
 
 ## What was envisioned
 
@@ -26,6 +27,7 @@ Both arrangements, every state (normal · per-widget degrade · all-loading · e
 The FIRST greybox collapsed the architecture: it made the entry a **plain free-text box** and the dashboard a **fixed
 4-card strip** (schedule/stats/day-actions/quick). Victor's gate note + re-grounding in **ADR-008 §3.2** +
 `docs/editor/block-registry.md` corrected it:
+
 - A capability (integration block) declares `render_targets {inline, standalone}` — the SAME capability renders inline
   (in the editor page) OR standalone (as a dashboard widget). `[FACT: ADR-008 §3.2:57-60; block-registry.md "two halves"]`
 - So Home's **dashboard widgets are a DIFFERENT entity from the editor's inline blocks** (Victor, point 1).
@@ -59,17 +61,17 @@ A static spec would have shipped the wrong model; the leading greybox caught it 
 Each `structural` EC is greybox-provable → MUST map to ≥1 slice at Decomposition AND be a blocking Visual-Gate assertion.
 `feel` ECs defer to the live per-slice Visual Gate.
 
-| EC | Checkpoint | Type |
-|----|-----------|------|
-| **EC-1** | Home composes TWO distinct entities — a journal **page** (inline blocks) + a personalized **Dashboard** (standalone widgets); they are not the same blocks | `structural` |
-| **EC-2** | Arrangement renders per the persisted **Settings** preference (default Journal-first): Journal-first = page hero + "At a glance" dashboard rail; Dashboard-first = OS grid + page below. (The toggle CONTROL is Settings', not Home's.) | `structural` |
-| **EC-3** | The journal page = prose + **inline** integration blocks + a "/" insert affordance | `structural` |
-| **EC-4** | The Dashboard = a **personalized** grid of **standalone** stat/summary widgets across OS domains (finance · tasks · projects · purposes · dreams · habits · schedule) | `structural` |
-| **EC-5** | Per-widget degrade: one dashboard widget error/loading/empty while siblings + the page stay live — never a blank Home | `structural` |
-| **EC-6** | Greet header: eyebrow date + serif greeting + sub-line | `structural` |
-| **EC-7** | Responsive: 2-col → single column at 375, no overflow | `structural` |
-| **EC-8** | Preset identity: serif + per-preset accent + warm-dark surfaces; AA holds both modes | `feel` + Visual-Gate |
-| **EC-9** | The arrangement render is instant / reduced-motion-safe | `feel` |
+| EC       | Checkpoint                                                                                                                                                                                                                              | Type                 |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------- |
+| **EC-1** | Home composes TWO distinct entities — a journal **page** (inline blocks) + a personalized **Dashboard** (standalone widgets); they are not the same blocks                                                                              | `structural`         |
+| **EC-2** | Arrangement renders per the persisted **Settings** preference (default Journal-first): Journal-first = page hero + "At a glance" dashboard rail; Dashboard-first = OS grid + page below. (The toggle CONTROL is Settings', not Home's.) | `structural`         |
+| **EC-3** | The journal page = prose + **inline** integration blocks + a "/" insert affordance                                                                                                                                                      | `structural`         |
+| **EC-4** | The Dashboard = a **personalized** grid of **standalone** stat/summary widgets across OS domains (finance · tasks · projects · purposes · dreams · habits · schedule)                                                                   | `structural`         |
+| **EC-5** | Per-widget degrade: one dashboard widget error/loading/empty while siblings + the page stay live — never a blank Home                                                                                                                   | `structural`         |
+| **EC-6** | Greet header: eyebrow date + serif greeting + sub-line                                                                                                                                                                                  | `structural`         |
+| **EC-7** | Responsive: 2-col → single column at 375, no overflow                                                                                                                                                                                   | `structural`         |
+| **EC-8** | Preset identity: serif + per-preset accent + warm-dark surfaces; AA holds both modes                                                                                                                                                    | `feel` + Visual-Gate |
+| **EC-9** | The arrangement render is instant / reduced-motion-safe                                                                                                                                                                                 | `feel`               |
 
 ## Exit
 

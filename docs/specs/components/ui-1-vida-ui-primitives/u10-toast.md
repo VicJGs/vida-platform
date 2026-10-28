@@ -1,5 +1,7 @@
 # Spec: U10 — Toast (UI-1 primitive 10/10, 3rd/last overlay)
+
 <!-- type: component -->
+
 Status: IMPLEMENTED (2026-08-09) — Visual Gate PASS (Victor, both themes). Implements `ds-5-primitive-contracts/toast.md`.
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
@@ -26,28 +28,31 @@ signature]
 
 ## 2. API Contract
 
-### 2.1 The imperative surface  [FACT: toast.md:9-21]
+### 2.1 The imperative surface [FACT: toast.md:9-21]
+
 ```ts
 export type ToastIntent = 'info' | 'success' | 'danger'
 export interface ToastOptions {
   title: React.ReactNode
   description?: React.ReactNode
-  intent?: ToastIntent          // default 'info'
+  intent?: ToastIntent // default 'info'
   /** ms before auto-dismiss; 0 = sticky (requires manual dismiss). Default 5000. */
   duration?: number
-  action?: { label: string; onPress: () => void }  // one optional action
+  action?: { label: string; onPress: () => void } // one optional action
   onDismiss?: () => void
 }
 export interface ToastHandle {
-  (options: ToastOptions): string        // returns the toast id
+  (options: ToastOptions): string // returns the toast id
   dismiss: (id: string) => void
 }
-export const toast: ToastHandle          // the singleton — Object.assign(fn, { dismiss })
+export const toast: ToastHandle // the singleton — Object.assign(fn, { dismiss })
 ```
+
 - `toast(options)` returns a string **id** (used for `toast.dismiss(id)` and as the React `key`). [FACT: toast.md:20]
 - `toast.dismiss(id)` removes a toast programmatically (e.g. resolving a sticky loading toast). [FACT: toast.md:20]
 
 ### 2.2 The region-mount component (a NECESSARY structural addition — DEF-U10-a)
+
 The contract says the element "renders in a portal region" [FACT: toast.md:20] but **does not name the component
 that mounts that region**. One is architecturally required: the region must render **inside the app's React
 tree** (under `UIProvider`) so it inherits the Tamagui theme + `<Theme name="Toast">` scope — a detached React
@@ -63,8 +68,9 @@ export interface ToastProviderProps {
 }
 export function ToastProvider(props: ToastProviderProps): JSX.Element
 ```
+
 Mounted **once** near the app root (UX-3/UI-4's job to place it). Named `ToastProvider` to match the repo's
-`UIProvider` idiom [FACT: index.ts:12] — though it provides a *render region* backed by the external store, not a
+`UIProvider` idiom [FACT: index.ts:12] — though it provides a _render region_ backed by the external store, not a
 React context. **DEF-U10-a**: the contract under-specifies this mount component; naming + `limit`/`placement`
 props are a disclosed structural addition, flagged for the DS. [INTERP]
 
@@ -77,31 +83,52 @@ mount ONE provider and unmount it (§3.2 harness note). [INTERP: module-singleto
 ## 3. Mechanism — the imperative→React bridge
 
 ### 3.1 The external store (`internal/toast-store.ts`, net-new — the core seam)
+
 A module-level store, subscribed via **`useSyncExternalStore`** (React 19 built-in, zero-dep — `@vida/ui` has no
 zustand; deps are Tamagui-only [FACT: packages/ui/package.json]). This is the react-hot-toast / sonner pattern.
 [INTERP: the standard imperative-toast bridge]
 
 ```ts
-type ToastPhase = 'entering' | 'exiting'   // [M5] no explicit 'visible' — the enter keyframe settles + holds
-interface ToastRecord extends ToastOptions { id: string; phase: ToastPhase }
+type ToastPhase = 'entering' | 'exiting' // [M5] no explicit 'visible' — the enter keyframe settles + holds
+interface ToastRecord extends ToastOptions {
+  id: string
+  phase: ToastPhase
+}
 
-let records: ToastRecord[] = []                 // the snapshot (stable ref between emits)
+let records: ToastRecord[] = [] // the snapshot (stable ref between emits)
 const listeners = new Set<() => void>()
-let counter = 0                                 // id source — a monotonic counter, NOT UUIDv7
-                                                //   (ephemeral UI state, never persisted/synced) [FACT: conventions — UUIDv7 is for DB PKs]
+let counter = 0 // id source — a monotonic counter, NOT UUIDv7
+//   (ephemeral UI state, never persisted/synced) [FACT: conventions — UUIDv7 is for DB PKs]
 
-function emit() { records = [...records]; listeners.forEach(l => l()) }   // new ref each change → useSyncExternalStore re-renders
-export function subscribe(l: () => void) { listeners.add(l); return () => { listeners.delete(l) } }
-export function getSnapshot() { return records }        // SAME ref when unchanged → no infinite loop
-export function getServerSnapshot() { return records }  // no-op for a non-SSR SPA; retained for API-completeness
+function emit() {
+  records = [...records]
+  listeners.forEach((l) => l())
+} // new ref each change → useSyncExternalStore re-renders
+export function subscribe(l: () => void) {
+  listeners.add(l)
+  return () => {
+    listeners.delete(l)
+  }
+}
+export function getSnapshot() {
+  return records
+} // SAME ref when unchanged → no infinite loop
+export function getServerSnapshot() {
+  return records
+} // no-op for a non-SSR SPA; retained for API-completeness
 
-export function addToast(opts: ToastOptions): string { /* push {id, phase:'entering', ...}; emit; return id */ }
-export function dismissToast(id: string): void { /* IDEMPOTENT → §3.4 exit orchestration */ }
+export function addToast(opts: ToastOptions): string {
+  /* push {id, phase:'entering', ...}; emit; return id */
+}
+export function dismissToast(id: string): void {
+  /* IDEMPOTENT → §3.4 exit orchestration */
+}
 
-export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToast }) as ToastHandle  // [m1]
+export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToast }) as ToastHandle // [m1]
 ```
-- **Snapshot stability** [FACT: React `useSyncExternalStore` contract]: `getSnapshot` must return the *same
-  reference* when nothing changed, or React loops. So `records` is reassigned **only** in `emit()`; reads return
+
+- **Snapshot stability** [FACT: React `useSyncExternalStore` contract]: `getSnapshot` must return the _same
+  reference_ when nothing changed, or React loops. So `records` is reassigned **only** in `emit()`; reads return
   the current ref untouched.
 - **`getServerSnapshot`** [M6] is a **no-op belt-and-suspenders** — `useSyncExternalStore` only calls it during
   SSR/hydration, which never happens in this non-SSR SPA; it returns the same `records` ref (no hydration
@@ -135,6 +162,7 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
     consumer tell them apart, but the contract has none, so UI-1 ships the param-less callback verbatim.
 
 ### 3.2 `ToastProvider` (the region — `toast.tsx`)
+
 - `const records = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)`.
 - Renders a **portal to `document.body`** (react-dom `createPortal`, the Select/Menu/Popover precedent
   [FACT: CLAUDE.md:24-27]) re-wrapped in **`<Theme name="Toast">`** so `light_/dark_Toast` crosses the portal.
@@ -176,6 +204,7 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
   `aria-atomic` is needed. [FACT: §XIV live regions]
 
 ### 3.3 `ToastItem` (internal to `toast.tsx`) — one toast
+
 - **Layout**: a surface panel (`toast.background`, `toast.text`), `borderRadius:'$lg'` via the **token scale**
   (radius.card — NOT the inert `$radius` sub-theme key, DEF-U8-h) [FACT: CLAUDE.md:123-130], `overflow:'hidden'`
   so the accent clips to the corner, title (+ optional description), an optional **action button**
@@ -203,6 +232,7 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
 - **Enter/exit motion** via the injected `toast-styles.ts` keyed on `data-phase` (§5).
 
 ### 3.4 Timer + exit orchestration (net-new — no prior primitive auto-closes on a timer)
+
 - **Timer** (in `ToastItem`, runs ONLY while mounted): if `duration === 0` → sticky, no timer [FACT: toast.md:15].
   Else a **remaining-time** timer armed for `duration ?? 5000` [FACT: toast.md:15 default 5000].
 - **⚠ Timer effect deps — the gate-2 B1 fix (critical):** `ToastItem` re-renders on **every** store `emit()` (any
@@ -211,7 +241,7 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
   would re-arm on unrelated sibling emits and a busy screen's toasts would **never** auto-dismiss). Pause/resume
   are **imperative via refs** (`timerRef`, `remainingRef`, `startedAtRef`) mutated **inside the hover/focus event
   handlers** — never by re-running the arming effect. **Pause** = `clearTimeout` + `remainingRef -=
-  now − startedAt`; **resume** = `startedAt = now; setTimeout(dismiss, remainingRef)`. Pause on `onMouseEnter` +
+now − startedAt`; **resume** = `startedAt = now; setTimeout(dismiss, remainingRef)`. Pause on `onMouseEnter` +
   focus-in (`onFocus`, bubbles = focus-within); resume on `onMouseLeave` + focus-out (`onBlur` whose
   `relatedTarget` is outside the toast). [FACT: toast.md:27,49] Timer cleared on unmount [FACT: toast.md:52].
 - **Exit orchestration** — `dismissToast(id)` is **IDEMPOTENT (M1)**: if the record is already `exiting` or already
@@ -229,6 +259,7 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
   two-mechanism ambiguity the critique flagged. Reduced-motion `@media` makes enter instant (§5).
 
 ### 3.5 Reuse map
+
 - `assignRef` / `composeHandlers` / the `FOCUSABLE` selector + `getFocusable` — copy-per-file (module-level,
   pure), as Menu/Dialog/Popover each do (no shared util extracted in UI-1). [FACT: menu.tsx:116-132;
   dialog.tsx:52-57]
@@ -239,27 +270,29 @@ export const toast: ToastHandle = Object.assign(addToast, { dismiss: dismissToas
 - **NOT reused**: no positioning/flip engine (Toast is corner-anchored `fixed`, not trigger-anchored — no
   Menu/Popover refine), no focus trap (Dialog), no focus-into (Popover — Toast explicitly does NOT move focus).
 
-## 4. Visual States  [FACT: toast.md:23-33 · components §VIII]
-| State | Applies | Visual | Token |
-|-------|---------|--------|-------|
-| **default** | shown | surface panel, intent left-accent border, title/description, `radius`, stacked at corner | `$background` · `$text` · `$accentInfo\|$accentSuccess\|$accentDanger` · `zIndex.toast` [FACT: toast.md:26] |
-| **hover** | pointer over toast | **timer pauses**; slight elevation (overlay opacity) | overlay opacity [FACT: toast.md:27] |
-| **focus** | Tab/F6 to action or dismiss | 2px ring on the **focusable control** (not the toast body) | `color.focus.ring` [FACT: toast.md:28] |
-| **active** | action/dismiss pressed | press feedback on that control | overlay opacity [FACT: toast.md:29] |
-| **error** | `intent="danger"` | danger accent + `role="alert"`/`aria-live="assertive"` | `$accentDanger` [FACT: toast.md:31] |
-| **loading** | async in-progress | **consumer-composed** — `toast({ duration:0, description:<Spinner/> })` (sticky + spinner); dismiss via the returned id on resolve | — [INTERP: no `loading` field in `ToastOptions` → the U5/U6/U8/U9 precedent; `aria-busy` unsettable → DEF-U10-b] |
-| **empty** | — | **N/A** — a toast is created with content [FACT: toast.md:32] | — |
-| **disabled** | — | **N/A** — a toast is not a persistent control [FACT: toast.md:33] | — |
+## 4. Visual States [FACT: toast.md:23-33 · components §VIII]
+
+| State        | Applies                     | Visual                                                                                                                             | Token                                                                                                            |
+| ------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| **default**  | shown                       | surface panel, intent left-accent border, title/description, `radius`, stacked at corner                                           | `$background` · `$text` · `$accentInfo\|$accentSuccess\|$accentDanger` · `zIndex.toast` [FACT: toast.md:26]      |
+| **hover**    | pointer over toast          | **timer pauses**; slight elevation (overlay opacity)                                                                               | overlay opacity [FACT: toast.md:27]                                                                              |
+| **focus**    | Tab/F6 to action or dismiss | 2px ring on the **focusable control** (not the toast body)                                                                         | `color.focus.ring` [FACT: toast.md:28]                                                                           |
+| **active**   | action/dismiss pressed      | press feedback on that control                                                                                                     | overlay opacity [FACT: toast.md:29]                                                                              |
+| **error**    | `intent="danger"`           | danger accent + `role="alert"`/`aria-live="assertive"`                                                                             | `$accentDanger` [FACT: toast.md:31]                                                                              |
+| **loading**  | async in-progress           | **consumer-composed** — `toast({ duration:0, description:<Spinner/> })` (sticky + spinner); dismiss via the returned id on resolve | — [INTERP: no `loading` field in `ToastOptions` → the U5/U6/U8/U9 precedent; `aria-busy` unsettable → DEF-U10-b] |
+| **empty**    | —                           | **N/A** — a toast is created with content [FACT: toast.md:32]                                                                      | —                                                                                                                |
+| **disabled** | —                           | **N/A** — a toast is not a persistent control [FACT: toast.md:33]                                                                  | —                                                                                                                |
 
 **No `loading`/`aria-busy` prop, no `toast.update`** — the API surface is `toast()`/`toast.dismiss()` only
 [FACT: toast.md:20]. Loading is composed (sticky + spinner in `description`, dismissed via id). **DEF-U10-b**
 flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: CLAUDE.md DEF-U5-f/U6-c/U8-b/U9-c]
 
-## 5. Motion (B12)  [FACT: toast.md:37-42]
-| Transition | Duration | Easing | Property |
-|-----------|----------|--------|----------|
-| enter | `duration.moderate` (250ms) | `easing.out` | `opacity` 0→1 + `transform: translateY/X` slide from the stack edge |
-| exit | `duration.fast` (150ms) | `easing.in` | `opacity` 1→0 + `transform` slide out |
+## 5. Motion (B12) [FACT: toast.md:37-42]
+
+| Transition | Duration                    | Easing       | Property                                                            |
+| ---------- | --------------------------- | ------------ | ------------------------------------------------------------------- |
+| enter      | `duration.moderate` (250ms) | `easing.out` | `opacity` 0→1 + `transform: translateY/X` slide from the stack edge |
+| exit       | `duration.fast` (150ms)     | `easing.in`  | `opacity` 1→0 + `transform` slide out                               |
 
 - Slide direction = from the `placement` edge: `bottom` region → enter from `translateY(+n)`, `top` → from
   `translateY(−n)`. [INTERP: toast.md:40 "slide from edge"]
@@ -270,7 +303,8 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
 - **Reduced-motion**: `@media (prefers-reduced-motion: reduce)` → instant appear/disappear; **the message is
   still conveyed via `aria-live`** (B12(a) — communicate state another way). [FACT: toast.md:42; motion.md:60-77]
 
-## 6. Accessibility  [FACT: toast.md:44-49 — the contract quotes engineering §XIV verbatim]
+## 6. Accessibility [FACT: toast.md:44-49 — the contract quotes engineering §XIV verbatim]
+
 - **Live regions (the core)**: `role="status"`+`aria-live="polite"` for info/success; `role="alert"`+
   `aria-live="assertive"` for danger. Both regions **pre-exist in the DOM** (persistently mounted) so an inserted
   toast is announced. [FACT: toast.md:46; §XIV]
@@ -284,13 +318,15 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
 - Dismiss button has an accessible name (`aria-label="Dismiss"`); the action button's name is `action.label`.
   [INTERP: §XIV names]
 
-## 7. Performance  [FACT: toast.md:51-52]
+## 7. Performance [FACT: toast.md:51-52]
+
 - Portal region; **max `limit` visible per region** (default 3), overflow evicts the oldest (store-enforced);
   `log()` the cap at provider mount.
 - **One transform per toast** (no per-frame work — no anchor to follow); **all timers cleared on unmount**
   (the timer effect's cleanup + the store's exit-removal both clear). [FACT: toast.md:52]
 
 ## 8. Business Rules (the invariants the critique attacks)
+
 - **BR-1** `toast(options) → id` and `toast.dismiss(id)` are the ONLY imperative surface; both are callable from
   outside React via the module-level external store. [FACT: toast.md:20]
 - **BR-2** The store snapshot ref is stable between changes (reassigned only in `emit`) — `useSyncExternalStore`
@@ -322,7 +358,8 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
 - **BR-13** Pressing `action` fires `action.onPress` and does **NOT** dismiss the toast; only dismiss/Esc/timer
   remove it (F2). [INTERP: toast.md:17]
 
-## 9. Acceptance Criteria  [FACT: toast.md:54-58 + the state/a11y rows]
+## 9. Acceptance Criteria [FACT: toast.md:54-58 + the state/a11y rows]
+
 - [ ] `toast(opts)→id` + `toast.dismiss(id)` work from a non-component module (jsdom: call `toast()` outside a
       component, assert the provider renders it).
 - [ ] `status`/`polite` (info·success) vs `alert`/`assertive` (danger); both regions present when empty; **focus
@@ -357,6 +394,7 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
       per intent, corner placement, reduced-motion instant.
 
 ## 10. Files
+
 - `packages/ui/src/internal/toast-store.ts` (new — the external store + `toast` singleton)
 - `packages/ui/src/components/toast.tsx` (new — `ToastProvider` + internal `ToastItem`; re-exports `toast`)
 - `packages/ui/src/components/toast.stories.tsx` (new — the Visual-Gate surface; stories trigger `toast()` via a button)
@@ -370,6 +408,7 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
 - `packages/ui/src/CLAUDE.md` — §XXIX currency refresh (Toast paragraph + the store/live-region rules + test count)
 
 ## 11. Deferrals / DEFs to flag for DS
+
 - **DEF-U10-a** the contract under-specifies the **region-mount component**; UI-1 adds `ToastProvider`
   (`limit`/`placement`) as a necessary structural piece. Naming + props are a disclosed addition.
 - **DEF-U10-b** the loading state names `aria-busy` but the API has no `loading` prop / no `toast.update` →
@@ -382,11 +421,12 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
 - **DEF-U10-e** `limit`/cap policy (per-region, store-enforced, evict-oldest, default 3) is an implementation
   choice — the contract says "max N visible (older ones collapse/queue)" without pinning N or the eviction order.
   See OQ-2.
-- **DEF-U10-f** the contract's `onDismiss: () => void` is **param-less**, so it cannot distinguish a *user
-  dismiss* from a *cap eviction* from a *timeout* — all three fire it identically. A `reason` arg would resolve
+- **DEF-U10-f** the contract's `onDismiss: () => void` is **param-less**, so it cannot distinguish a _user
+  dismiss_ from a _cap eviction_ from a _timeout_ — all three fire it identically. A `reason` arg would resolve
   it. Shipped verbatim; flagged for the DS. [gate-2 B2]
 
 ## 12. Resolved by the docs / disclosed assumptions (NOT forks to escalate)
+
 - **OQ-1 [RESOLVED — architecture]** The imperative→React bridge = a module-level **external store** +
   `useSyncExternalStore` (zero-dep; `@vida/ui` has no zustand). This is forced by the imperative signature +
   the theme-context constraint (the region must render under `UIProvider`). Not a fork — the standard pattern.
@@ -400,6 +440,7 @@ flags the `aria-busy` gap. Consistent with every prior loading deferral. [FACT: 
   `ToastProvider` for repo-idiom consistency.
 
 ## 13. Build Result (2026-08-09 — IMPLEMENTED, Visual Gate PASS)
+
 Shipped exactly per §1–§12. Files: `internal/toast-store.ts` (external store + `toast` singleton + test-only
 `resetToastStore`), `components/toast.tsx` (`ToastProvider` + internal `ToastItem`), `internal/toast-styles.ts`,
 `toast.stories.tsx`, `toast.test.tsx` (**16 jsdom**, `vi.useFakeTimers` for the timer paths), barrel, `light_/dark_Toast`

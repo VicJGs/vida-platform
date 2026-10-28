@@ -6,10 +6,12 @@
 > Decomposition Gate — this PLAN builds it, it does not re-open it.
 
 ## Decided model (SETTLED — cite, do not re-litigate)
+
 Source: Tasks Part-1.2 re-run (`realignment-master-plan/part-1.2-reruns/tasks.md`, ✅ IMPLEMENTED, Victor LITE-gate)
 §2 **G-S1/G-S4** + guard **C4**; mirrored in the approved `interpretation.md §5 D2` / `slice-map.md D2`:
+
 - **G-S1** — the timer **is a `sessions` sub-type that references the task** (attachment), not a bespoke task timer.
-- **G-S4** — *"TK-5's 'timer writes `task_time_logs`' becomes the `log_time` S4 effect"* — `log_time` writes the ledger
+- **G-S4** — _"TK-5's 'timer writes `task_time_logs`' becomes the `log_time` S4 effect"_ — `log_time` writes the ledger
   via **R2 (documented handler, never a direct client write)**, idempotent via **R1**.
 - **C4** — **keep `task_time_logs`** (wrapped, not replaced); the `work_session` extension-table ("replaced" branch) is
   a deferred **P2 schema-reconcile** (`schema-audit-deferred-homes.md:350-366`) — NOT needed here, so NOT in ① scope.
@@ -17,6 +19,7 @@ Source: Tasks Part-1.2 re-run (`realignment-master-plan/part-1.2-reruns/tasks.md
 - **Handler home** = the tasks service (XCU-23 "tasks handler" — the single documented writer of `task_time_logs`).
 
 ## The build-concrete left to S4 (interpretation D2: "decide concretely at S4") — the emit path
+
 TAS-16 homes the effect to **"tasks service (emit)"** and TAS-13 says **"closing produces the `log_time` effect."** So
 the producer is TASKS, not the Sessions lifecycle — `stopTimer` fires `log_time` itself via **`rail.applyEffect`**
 (the `projects/service.ts:72 fanOutCompletion` pattern: a module firing its own completion effect through the rail,
@@ -30,6 +33,7 @@ a contributor) and **read-only** — far lower risk than editing the shared `fir
 rejected alternative: write-side blast radius on every module's completion).
 
 ## Operations (added to the S1–S3 surface)
+
 - `registerTasksTimer(registry)` (composition wiring, not a service method) — registers the tasks `log_time` **handler**
   into the effect registry (idempotent; skip if present). The `'work'` `SessionTypeDef` (effects `[]`, lifecycle
   `not_started→in_progress→completed`, attachment instance-level) is registered into the **session** registry at the
@@ -50,6 +54,7 @@ rejected alternative: write-side blast radius on every module's completion).
   `0` when none.
 
 ## The `log_time` handler (tasks-owned — the single ledger writer, XCU-23; never a direct client write, G-S4)
+
 `(event, tx) => { const { started_at, ended_at } = event.payload; const mins = Math.max(0, Math.round((ended_at −
 started_at)/60000)); tx.insert(task_time_logs).values({ task_id: event.targetRef, start_time: started_at, end_time:
 ended_at, duration_minutes: mins, ...base/sync cols }) }`. Co-writes through the rail tx (F1 §3B). Fired with
@@ -58,22 +63,25 @@ ended_at, duration_minutes: mins, ...base/sync cols }) }`. Co-writes through the
 `{applied:false}`).
 
 ## Composition (no re-implementation)
+
 Composes `SessionsService` (required dep `sessions: SessionsService` — already in the seam-contract factory) + the
 effect `rail` + `registry`. `task_time_logs` stays the S1 `timeLogsRepo` (`softDelete:false`). **No new DB table, no
 DDL. One read-only Sessions addition** (`findOpenSessionForEntity`) + its g2 — the only substrate touch.
 
 ## Types / validators
+
 - `types.ts`: `TimerAlreadyRunningError`, `TimerNotFoundError`; extend `TasksServiceDeps` with `sessions:
-  SessionsService` (required — the timer composes it). `effects?` stays **optional** (S3's deny-safe contract,
+SessionsService` (required — the timer composes it). `effects?` stays **optional** (S3's deny-safe contract,
   unchanged); but the timer is a live feature, so `startTimer`/`stopTimer` **assert `effects` is wired** and throw a
   clear error if not (fail-loud, not silent-0) — distinct from S3's dormant completion catalogue. Extend `TasksService`
   with `startTimer` / `stopTimer` / `getActualMinutes`. No `@vida/types` change.
 - **Sessions substrate (ONE read-only addition):** `SessionsService.findOpenSessionForEntity(subType, entityType,
-  entityId): Promise<SessionRow | null>` — the in_progress session of `subType` attached to `(entityType, entityId)`, or
+entityId): Promise<SessionRow | null>` — the in_progress session of `subType` attached to `(entityType, entityId)`, or
   null. Composes the existing attachment read + a spine status/`sub_type` filter; no write, no lifecycle change. Needs
   its own unit test on the Sessions side + g2 (a substrate change, however small).
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3 + real SessionsService + rail)
+
 1. `startTimer(taskId)` → a running `'work'` session attached to the task; `getActualMinutes` still `0`.
 2. second `startTimer` on the same task (one running) → `TimerAlreadyRunningError`.
 3. `stopTimer(sessionId)` → session `completed`; exactly one `task_time_logs` row written **by the handler** (not a
@@ -96,6 +104,7 @@ DDL. One read-only Sessions addition** (`findOpenSessionForEntity`) + its g2 —
     returns the open session; after `stopTimer`, it returns null (so a fresh `startTimer` is allowed again).
 
 ## Out of scope (documented deferrals — grounded)
+
 `work_session` extension table ("replaced" branch — P2 schema-reconcile, `schema-audit-deferred-homes.md:365`) ·
 `setTimeTrackingEnabled` + the `time_tracking_enabled` column (no sanctioned column; db-4-tasks:441 "all intended cols"
 excludes it) · `attach_pomodoro` focus-mode binding (TAS-17 — the pomodoro-lens ②/later; the `'work'` timer declares

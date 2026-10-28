@@ -88,7 +88,9 @@ export function layoutDay<T extends Span>(spans: readonly T[], window: readonly 
     const start = Math.min(s.start, h1 - MIN_SPAN_H)
     return { start, end: Math.max(s.end, start + MIN_SPAN_H) }
   })
-  const order = spans.map((_, i) => i).sort((a, b) => drawn[a].start - drawn[b].start || drawn[b].end - drawn[a].end || a - b)
+  const order = spans
+    .map((_, i) => i)
+    .sort((a, b) => drawn[a].start - drawn[b].start || drawn[b].end - drawn[a].end || a - b)
 
   const lane = new Array<number>(spans.length).fill(0)
   const lanes = new Array<number>(spans.length).fill(1)

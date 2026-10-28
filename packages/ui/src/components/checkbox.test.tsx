@@ -100,9 +100,7 @@ describe('Checkbox', () => {
 
   it('enabled box is vida-interactive (hover/press overlay); disabled box is not', () => {
     const on = renderCheckbox(<Checkbox label="On" />)
-    expect(on.closest('.vida-checkbox')?.querySelector('.vida-checkbox-box')?.className).toContain(
-      'vida-interactive',
-    )
+    expect(on.closest('.vida-checkbox')?.querySelector('.vida-checkbox-box')?.className).toContain('vida-interactive')
     const off = renderCheckbox(<Checkbox label="Off" disabled />)
     expect(off.closest('.vida-checkbox')?.querySelector('.vida-checkbox-box')?.className).not.toContain(
       'vida-interactive',

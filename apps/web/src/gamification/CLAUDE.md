@@ -6,6 +6,7 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
 `docs/specs/foundation/fe-gamification/delivery/`.
 
 ## Files (S1)
+
 - **`use-gamification.ts`** — the Overview DATA seam. TYPE-correct against the shipped `GamificationService`
   (seam-contract.md), data **STUBBED** at M1 (IR-G1 — the fe-notes data-plane gap). M1 default = a fresh System
   (level 1, no currencies/unlocks) → `success` (the hero always renders; the hub is never a blank "empty").
@@ -64,6 +65,7 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
   create live in the BODY, NOT `onNewView` (that `+` is SavedView-semantic, hardcoded "New view").
 
 ## Key invariants (why, not what)
+
 - **The switcher is `Tabs` (role=tablist), not a toolbar.** The modes are DIFFERENT content (the entity-view
   precedent) — the INVERSE of the collection-view toolbar, which swaps layouts of the SAME data. Only the active
   panel mounts.
@@ -76,14 +78,17 @@ change**; the UI renders the seam's shapes and holds no business logic (IR-G3). 
 - **persona touches ONLY copy (EC-10 / GM-16).** The whole effect of persona is a few noun swaps in `reward-copy.ts`.
 
 ## G0-consequence changes outside this dir (keep green)
+
 G0 added `game` to `@vida/ui` `ThemePreset`/`THEME_PRESETS`. Once apps/web resolves the branch's `@vida/ui`, every
 `Record<ThemePreset, …>` must include `game`:
+
 - `packages/ui/src/provider.tsx` — `PRESET_CLASSES` gained `'game'` (it was omitted in G0 → `t_game` stuck stale on
   `<body>` after switching away, which the XP-ring preset read would mis-report).
 - `apps/web/src/onboarding/theme-picker.tsx` + `theme-picker.test.tsx` — the `game` label (the picker iterates
   `THEME_PRESETS`; game is meant to be pickable here per GM-16).
 
 ## Verify
+
 - Node 24 (the worktree standard; better-sqlite3 ABI).
 - **⚠ Worktree `@vida/ui` resolution:** apps/web's `node_modules/@vida/ui` symlink canonicalizes to **main's**
   `packages/ui` (no `game`). For any gate that must see the branch's `@vida/ui` (this unit changed it), re-point it:

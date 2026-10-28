@@ -60,9 +60,7 @@ export const migration014SessionsScheduling: Migration = {
         _sync_hash        TEXT
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_study_sessions_resource ON study_sessions(resource_type, resource_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_study_sessions_resource ON study_sessions(resource_type, resource_id)`)
 
     // --- focus_sessions: the `focus` sub-type extension = the timer runtime ----
     // (zero [E]; timer state is structural — pomodoro/conventions.md:35). The

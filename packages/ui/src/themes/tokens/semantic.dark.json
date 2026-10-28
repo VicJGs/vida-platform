@@ -2,20 +2,20 @@
   "_note": "DARK OVERLAY (B7) — editorial (default preset) dark delta. Loaded BY FILENAME in the themes.ts emitter, NOT via the Style Dictionary source glob. Only tokens whose value differs in dark. Each references a PRIMITIVE. Maps 1:1 to Figma variable modes. Dark shadows (design.md §V = border-based) are handled in CSS at DS-4, not here. Precedence: semantic.json < semantic.dark.json.",
   "color": {
     "surface": {
-      "primary":   { "value": "{color.editorial.neutral.900}", "type": "color" },
+      "primary": { "value": "{color.editorial.neutral.900}", "type": "color" },
       "secondary": { "value": "{color.editorial.neutral.800}", "type": "color" },
-      "inverse":   { "value": "{color.white}", "type": "color" }
+      "inverse": { "value": "{color.white}", "type": "color" }
     },
     "text": {
       "primary": { "value": "{color.editorial.neutral.50}", "type": "color" },
-      "muted":   { "value": "{color.editorial.neutral.400}", "type": "color" },
+      "muted": { "value": "{color.editorial.neutral.400}", "type": "color" },
       "inverse": { "value": "{color.editorial.neutral.900}", "type": "color" }
     },
     "brand": {
-      "primary":  { "value": "{color.editorial.accent.400}", "type": "color" },
+      "primary": { "value": "{color.editorial.accent.400}", "type": "color" },
       "emphasis": { "value": "{color.editorial.accent.300}", "type": "color" }
     },
-    "focus":  { "ring": { "value": "{color.editorial.accent.400}", "type": "color" } },
+    "focus": { "ring": { "value": "{color.editorial.accent.400}", "type": "color" } },
     "border": { "default": { "value": "{color.editorial.neutral.700}", "type": "color" } }
   }
 }

@@ -12,10 +12,7 @@ import type { z } from 'zod'
 import type { Binding } from '../../foundation/measurement'
 import type { EffectEvent } from '../../foundation/effects'
 import type { RuleRow } from '../../db/schema/foundation/economy'
-import {
-  RuleConditionSchema,
-  ConsequenceSpecSchema,
-} from '../../validators/gamification'
+import { RuleConditionSchema, ConsequenceSpecSchema } from '../../validators/gamification'
 
 export type RuleCondition = z.infer<typeof RuleConditionSchema>
 export type ConsequenceSpec = z.infer<typeof ConsequenceSpecSchema>
@@ -88,7 +85,8 @@ export function evaluateCondition(
   if (c.kind === 'event_trigger') return { met: ctx.event?.type === c.eventType }
   const value = query(c.measureKey)
   if (value == null) return { met: false, unmeasured: true }
-  const met = c.operator === 'gte' ? value >= c.threshold : c.operator === 'lte' ? value <= c.threshold : value === c.threshold
+  const met =
+    c.operator === 'gte' ? value >= c.threshold : c.operator === 'lte' ? value <= c.threshold : value === c.threshold
   return { met }
 }
 
@@ -117,8 +115,7 @@ export function rulesToBindings(rules: Rule[]): Binding[] {
     for (const producer of rules) {
       const produces = producer.consequences.some(
         (c) =>
-          (c.effectType === 'grant_currency' || c.effectType === 'lock_currency') &&
-          c.payload.currencyId === measure,
+          (c.effectType === 'grant_currency' || c.effectType === 'lock_currency') && c.payload.currencyId === measure,
       )
       if (produces) {
         edges.push({

@@ -72,11 +72,10 @@ const SwitchKnob = styled(View, {
   pointerEvents: 'none',
 })
 
-export interface SwitchProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    'size' | 'onChange' | 'checked' | 'defaultChecked' | 'type'
-  > {
+export interface SwitchProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'onChange' | 'checked' | 'defaultChecked' | 'type'
+> {
   /** Controlled checked state. */
   checked?: boolean
   /** Uncontrolled initial checked state. */
@@ -105,9 +104,7 @@ export const Switch = forwardRef<HTMLInputElement, SwitchProps>(function Switch(
     const r = rest as Record<string, unknown>
     const named = label != null || r['aria-label'] != null || r['aria-labelledby'] != null
     if (!named) {
-      console.warn(
-        '[vida/ui] Switch: provide a `label`, or an `aria-label`/`aria-labelledby`, for an accessible name.',
-      )
+      console.warn('[vida/ui] Switch: provide a `label`, or an `aria-label`/`aria-labelledby`, for an accessible name.')
     }
   }
 

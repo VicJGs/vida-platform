@@ -246,11 +246,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   //   • emit_measurement_signal (keyed) — completion advances the measure (binding_mode='event-trigger', TAS-06).
   //   • surface_journal (projection) — NOT pushed; realized by the S9 pull registry (rail no-ops projections, BR-6).
   //   • surface_calendar (projection) — D1: a valid EffectType but Tasks does NOT emit it (calendar = read-seam).
-  const COMPLETION_EFFECTS: readonly EffectType[] = [
-    'award_xp',
-    'contribute_purpose_metric',
-    'emit_measurement_signal',
-  ]
+  const COMPLETION_EFFECTS: readonly EffectType[] = ['award_xp', 'contribute_purpose_metric', 'emit_measurement_signal']
   // The projects completion-fan-out pattern (services/projects/service.ts:72). DORMANT without a wired rail/handler;
   // post-commit, failure-isolated — the completed task stands even if a handler throws. Rail-idempotent via
   // effect_event_id = derive(taskId‖transition‖type) (PLAN-S3 D-S3-2 — one task, one completion grant).
@@ -276,9 +272,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   function assertSingleParent(row: Record<string, unknown>): void {
     const set = PARENT_MODULE_KEYS.filter((k) => row[k] != null)
     if (set.length > 1) {
-      throw new MultipleParentError(
-        `A task may set at most one parent module; got: ${set.join(', ')}`,
-      )
+      throw new MultipleParentError(`A task may set at most one parent module; got: ${set.join(', ')}`)
     }
   }
 
@@ -360,9 +354,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   async function softDeleteTask(id: string): Promise<void> {
     if (!(await tasksRepo.findById(id))) throw new TaskNotFoundError(id)
     // App-layer cascade (no FK, TK-4): direct sub-tasks (single level) + time_logs of the task AND its sub-tasks.
-    const subtasks = await tasksRepo.findWhere(
-      and(eq(tasks.parent_task_id, id), isNull(tasks.deleted_at))!,
-    )
+    const subtasks = await tasksRepo.findWhere(and(eq(tasks.parent_task_id, id), isNull(tasks.deleted_at))!)
     for (const sub of subtasks) {
       await hardDeleteTimeLogs(sub.id)
       await tasksRepo.delete(sub.id) // soft delete
@@ -419,9 +411,7 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
 
   async function getSubtasks(parentId: string): Promise<TaskRow[]> {
     // findWhere skips the soft-delete filter → pass isNull(deleted_at) explicitly.
-    const rows = await tasksRepo.findWhere(
-      and(eq(tasks.parent_task_id, parentId), isNull(tasks.deleted_at))!,
-    )
+    const rows = await tasksRepo.findWhere(and(eq(tasks.parent_task_id, parentId), isNull(tasks.deleted_at))!)
     return rows.sort((a, b) => a.sort_order - b.sort_order || a.created_at - b.created_at)
   }
 
@@ -613,7 +603,8 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
     for (const t of all) {
       const p = parentOf(t)
       if (g.by === 'status') put(`status:${t.status}`, t.status, null, t)
-      else if (p === null) put(STANDALONE, STANDALONE, null, t) // the ungrouped bucket (BR-10), both parent groupings
+      else if (p === null)
+        put(STANDALONE, STANDALONE, null, t) // the ungrouped bucket (BR-10), both parent groupings
       else if (g.by === 'parent_type') put(`parent_type:${p.type}`, p.type, null, t)
       else put(`${p.type}:${p.id}`, `${p.type}:${p.id}`, p, t)
     }
@@ -681,7 +672,11 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   async function getTaskTags(taskId: string) {
     // findWhere skips the soft-delete filter → hand-appended (BR-TK-S1-4). An unknown id ⇒ [] (a read, never a throw).
     return entityTagRepo.findWhere(
-      and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), eq(entityTags.entity_id, taskId), isNull(entityTags.deleted_at))!,
+      and(
+        eq(entityTags.entity_type, TASK_ENTITY_TYPE),
+        eq(entityTags.entity_id, taskId),
+        isNull(entityTags.deleted_at),
+      )!,
     )
   }
 
@@ -993,5 +988,9 @@ export const TASK_VIEW_PRESETS: readonly TaskViewPreset[] = [
     kind: null,
     view: { name: 'Board', layout: 'board', predicates: { open: true }, grouping: { field: 'status' } },
   },
-  { key: 'all_by_project', kind: null, view: { name: 'All by project', layout: 'list', grouping: { field: 'project_id' } } },
+  {
+    key: 'all_by_project',
+    kind: null,
+    view: { name: 'All by project', layout: 'list', grouping: { field: 'project_id' } },
+  },
 ]

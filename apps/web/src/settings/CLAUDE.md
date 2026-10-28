@@ -5,6 +5,7 @@ intent `docs/features/preferences` + `decomposition.md:71` (the System archetype
 `docs/specs/foundation/fe-settings/delivery/` (interpretation · envision [12 ECs] · slice-map · seam-contract · s1-switch).
 
 ## The surface (two-pane System archetype, EC-1)
+
 `/settings`, rendered inside the UI-4 shell `<Outlet/>` (lazy route, `routes.tsx`). Composes shipped @vida/ui primitives;
 DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (nav/module-map.ts:104 registers the entry).
 
@@ -22,7 +23,7 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   `Promise<boolean>`), so a later unrelated refetch never moves focus; each failed Retry re-keys the status line
   (re-announced). Without a press, no focus moves. **Saves (C5 UI):** the surface
   owns the ONE `useUpdatePreferences()` (shared via `SettingsContext.update`) and renders one bare `SyncStatus
-  state="saved"` ("Saved on this device") after a save — **no "Saving…" state** (P4); a failure clears it (the writer's one
+state="saved"` ("Saved on this device") after a save — **no "Saving…" state** (P4); a failure clears it (the writer's one
   revert toast reports it, so it is never announced twice). `role="region"`.
 - `appearance-pane.tsx` — **AppearancePane** (S3, EC-4 Appearance + EC-5 live apply; **persisted since R3**): a `Card`
   of `OptionRow`s reading `usePreferences().view` and writing `useSettings().update` — Theme preset → `dashboard_layout.theme`
@@ -73,6 +74,7 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   `../preferences/CLAUDE.md`.
 
 ## Stores (app-owned theme/pref state — AR-4)
+
 - `../stores/theme-store.ts` (S2; **derived since R3**) — `{ persisted, previewPreset, selection, reduceMotion }` →
   `<UIProvider selection reduceMotion>` (R4: `reduceMotion` follows the `['preferences','nav']` entry in the same subscription); the EC-5 keystone. `persisted` follows the `['preferences','user']` cache through one query-cache
   subscription (no theme setters — Settings writes go through the writer); `setPreview` is the guided-setup preview layer.
@@ -81,6 +83,7 @@ DIRECT semantic tokens, no sub-themes. Reachable from the shell Bar-1 + ⌘K (na
   slice (R5/R6); R6 deletes it.
 
 ## Live data (preferences-rescope — supersedes the 2026-10-12 "deferred seam")
+
 The worker data plane is live (data-plane-wiring) and the Preferences seam is wired (R2): reads come from React Query over
 SQLite. **R3 moved Appearance onto the seam** (theme · persona · arrangement persist; reduce motion in R4; **Modules in R5**). The
 other panes still bind `preferences-store`, hydrated FROM the persisted view (the `PreferencesBridge` mirror), and move in
@@ -88,12 +91,14 @@ their own slice (R6 Locale/Notifications — R6 deletes `preferences-store`); un
 in-session only.
 
 ## ECs covered — S1–S6 (surface COMPLETE)
+
 S1 `Switch` primitive (EC-3) · S2 theme store (EC-5 mechanism) · S3 shell+route+Appearance (EC-1,2,5-live,7,8,10) +
 gate-1 #1 (activated `useHomeArrangement`) · S4 search (EC-6) · S5 Modules show/hide+rename+Surfaces (EC-4 rem · EC-8
 escape hatch · EC-12 rename) · S6 Locale/Notifications (EC-4) + delegated Data/Account placeholders (EC-9). All 6
 categories built. EC-11 (editorial voice/feel) = verified per-slice at each live Visual Gate.
 
 ## Rules
+
 - Persisted pref changes go through `useSettings().update` (→ the preferences writer); never write `theme-store` or the
   raw service, never hardcode a palette. Not-yet-migrated panes still dispatch to `preferences-store`.
 - Every pane honours `useSettings().readOnly` (`disabled` / rename hidden). New user-facing copy goes in `settings-copy.ts`.

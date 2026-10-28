@@ -5,12 +5,14 @@
 > contract.md:25, the C1 guard (NOT a measurement), S2 derived stats, S3 events, the books `asOf` determinism seam.
 
 ## §1. Context
+
 Relationship health (REL-22) is a **derived, closeness-weighted analytic** — recomputed on read, **never stored**,
 and explicitly **NOT an ADR-011 measurement** (C1: contacts are framework-excluded reference data; no
 `measurement_kind`/`binding_mode`/M5-advertise). Network health (REL-47) is the rollup of members' health. This slice
 DESIGNS the formula (grounded + simple + documented); `asOf?` is the determinism seam (books precedent). Deps unchanged.
 
 ## §2. Business Rules (S6) — the formula
+
 - **BR-RL-S6-1 (REL-22/23 — contact health)** — `getContactHealth(id, asOf?): ContactHealth`
   `= { band, score, factors, partial? }`. Guards a live contact (`ContactNotFoundError`).
   - **`new` (REL-23):** `interaction_count === 0` → `{ band:'new', score:null }` (no baseline — never "overdue").
@@ -38,10 +40,12 @@ DESIGNS the formula (grounded + simple + documented); `asOf?` is the determinism
   source registry. A pure derived read.
 
 ## §3. Surface (S6)
+
 ```ts
 getContactHealth(id: string, asOf?: string): Promise<ContactHealth>       // ContactNotFoundError
 getNetworkHealth(networkId: string, asOf?: string): Promise<NetworkHealth>  // NetworkNotFoundError
 ```
+
 - `HealthBand = 'new' | 'healthy' | 'at_risk' | 'overdue'`.
 - `ContactHealth = { band: HealthBand; score: number | null; factors: HealthFactors; partial?: boolean }`;
   `HealthFactors = { daysOverdue: number; tracked: boolean; closenessWeight: number; recentSentiment: number | null }`.
@@ -49,6 +53,7 @@ getNetworkHealth(networkId: string, asOf?: string): Promise<NetworkHealth>  // N
 - `asOf` = `YYYY-MM-DD` determinism seam (default realToday). No new validators (read-only).
 
 ## §4. Acceptance
+
 - [ ] no interactions → `{band:'new', score:null}`.
 - [ ] a recently-contacted, not-overdue contact → `healthy`; an overdue contact → `overdue`; within grace → `at_risk`.
 - [ ] closeness weight: an inner-tier (family/favorite) contact scores LOWER than an acquaintance at the same daysOverdue (penalized more).
@@ -58,15 +63,17 @@ getNetworkHealth(networkId: string, asOf?: string): Promise<NetworkHealth>  // N
 - [ ] NO measurement_kind / no source-registry advertise (C1). tsc 0 · eslint 0 · live-store green.
 
 ## §5. Implementation prompt
+
 1. **types.ts** — `HealthBand`, `ContactHealth`, `HealthFactors`, `NetworkHealth`; 2 methods.
 2. **service.ts** — helpers: `todayISO()`, `daysBetweenISO(a,b)`, `closenessWeight(type,fav)`, `recentSentiment(contactId)`.
    `getContactHealth`: guard → count-0 new → compute daysOverdue/weight/sentiment → score (clamp) → band → factors;
    wrap the numeric compute so a non-finite score yields `{partial:true}`. `getNetworkHealth`: guard network →
    members → map getContactHealth → aggregate (mean score, worst band, counts).
 3. **tests** — S6 describe block covering §4 (use `asOf` for determinism).
-4. Verification Gate → independent g2 (design-pass — dispatch) → full-suite checkpoint → currency BR-RL-S6-* → commit.
+4. Verification Gate → independent g2 (design-pass — dispatch) → full-suite checkpoint → currency BR-RL-S6-\* → commit.
 
 ## Open calls (resolved, No-Guessing)
+
 - **formula = designed here** (decomposition UNKNOWN homed to this [F] spec; resolve-now, [[build-phase-flags-mean-resolve-now-not-defer]]). Simple/interpretable/documented; tunable later.
 - **closeness weight source = relationship_type + is_favorite** (REL-25 alternative) — `closeness_tier` is OPEN vocab, not deterministically weightable; stays a stored/display field. FACT-grounded.
 - **NOT a measurement** (C1) — pure derived read, no registry advertise.

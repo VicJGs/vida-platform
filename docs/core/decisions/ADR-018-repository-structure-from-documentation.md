@@ -7,15 +7,16 @@
 **Tags:** architecture · repository-structure · foundation · process · substrates
 **Realizes:** the `[home: Part 2]` markers across the 8 arch docs + the directory-home half of every `[DEFERRED — Part 2]` marker in the 17 Part-1.2 re-runs (their DDL/columns/ADR-002 halves stay build-phase).
 **Amends:**
+
 - **The master-plan Part-2 line** — reconciles it with ADR-017: Part 2 does **structural placement + quarantine + unwire only**; it does **not** author schema tables (that is per-feature, ADR-016 §3.5 / ADR-017 §1).
-**Consistent with (does NOT amend):** ADR-002 (§5/§7/§8 schema reconciliation stays **DB-11**'s), ADR-016 (§3.1 `schema/` layout honored), ADR-017 (features-first; encryption/sync/auth deferred), `data-flow.md` (which governs `services/` — retained here, not contradicted).
-**Inherits:** the No-Guessing Principle; the DB-1 primitives (`schema/_shared.ts` · `_registry.ts`).
+  **Consistent with (does NOT amend):** ADR-002 (§5/§7/§8 schema reconciliation stays **DB-11**'s), ADR-016 (§3.1 `schema/` layout honored), ADR-017 (features-first; encryption/sync/auth deferred), `data-flow.md` (which governs `services/` — retained here, not contradicted).
+  **Inherits:** the No-Guessing Principle; the DB-1 primitives (`schema/_shared.ts` · `_registry.ts`).
 
 ---
 
 ## 1. Summary
 
-`@vida/core/src` is reshaped to match the realigned docs' model — *"feature modules riding shared foundation substrates"* (`module-dependency-graph.md:31`) — mapped physically as:
+`@vida/core/src` is reshaped to match the realigned docs' model — _"feature modules riding shared foundation substrates"_ (`module-dependency-graph.md:31`) — mapped physically as:
 
 - **`foundation/`** (new) — the **cross-cutting substrate tier**: one subdir per substrate + the two table-less integration layers. **14 substrates → 12 dirs + 2 documented merges.**
 - **`services/`** (kept) — the **per-module business-logic tier**, retained because `data-flow.md:7` already governs it as the service home with a mandated data-flow pattern.
@@ -37,7 +38,7 @@ Plus two **unwires**: the v1 `schema.ts` monolith (81 tables, ~60% stale) is qua
 
 `sessions/` (ADR-004) · `review/` (ADR-005) · `spaces/` (ADR-006 — incl. `entity_tags` + the open taggable-type registry, **merge #13**) · `views/` (ADR-007) · `capability/` (ADR-008 **+ ADR-010** authoring-security, **merge #7**) · `templates/` (ADR-009) · `measurement/` (ADR-011) · `economy/` (ADR-012) · `notifications/` (ADR-013 — the ZK 3-tier delivery **rail**) · `ingestion/` (ADR-014) · `ai/` (ADR-015) · `effects/` (framework §2 R1/R2 — the `effect_event_id`/`applied_effects` exactly-once rail sessions/economy/measurement ride).
 
-**Substrate accounting:** 14 substrates → **12 dirs + 2 merges** (CapSecurity #7 → `capability/`; OpenRegistry #13 → `spaces/`). Making the substrate tier a single, visible home is the point: these carry *"the widest blast radius in the platform"* (`module-dependency-graph.md:34, 302`) — changed once, not duplicated per module.
+**Substrate accounting:** 14 substrates → **12 dirs + 2 merges** (CapSecurity #7 → `capability/`; OpenRegistry #13 → `spaces/`). Making the substrate tier a single, visible home is the point: these carry _"the widest blast radius in the platform"_ (`module-dependency-graph.md:34, 302`) — changed once, not duplicated per module.
 
 **3.2 `services/` — the per-module tier (kept).** Per-module business logic, one subdir per module, following the `data-flow.md` service-method pattern: `notes/ preferences/ journals/ tasks/ habits/ finance/ relationships/ learning/ languages/ projects/ routines/ checkins/ purposes/ bucketlist/ gamification/ notifications/` + platform utilities `export/ search/ analytics/`. Retained (not replaced by a new name) because `data-flow.md:7` already **governs** `packages/core/src/services/` as the business-logic home.
 

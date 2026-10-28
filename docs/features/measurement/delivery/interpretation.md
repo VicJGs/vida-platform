@@ -61,7 +61,7 @@ the roster. The genuinely-owed surface is narrow; the reconciliation (Step 5) co
     STORAGE is deferred"; UNKNOWN-2 :85] So the perf-envelope **cannot** resolve in #33 and defers with cause;
     the guard runs over the author-time `Binding[]` set, which is all #33 needs. Not under-scoping.
 - **N2 — XCU-10: enforce the `binding_mode` ≠ provenance `source` invariant.** `binding_mode {manual·
-  derived-pull·event-trigger}` (how a measurable is fed) must never collide with a value's provenance
+derived-pull·event-trigger}` (how a measurable is fed) must never collide with a value's provenance
   `source {manual·auto}` (where a recorded value came from). [FACT: `docs/core/measurement/current-business-rules.md:13`]
   **No enforcement code found in `foundation/measurement`** — grep for validation returned empty.
   [FACT: no match in `packages/core/src/foundation/measurement/` for a binding_mode/source guard]

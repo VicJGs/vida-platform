@@ -10,6 +10,7 @@
 > R2 changes **no visible UI**. Panes keep binding the stores; R3–R6 move each pane onto the seam.
 
 ## 1. Problem (as-built)
+
 - `preferences` is not registered `[FACT: apps/web/src/db/composition-root.ts:36-39,81]`.
 - `usePreferences` returns the two Zustand stores + a hard `state:'success'`, and `useUpdatePreferences` has a no-op persist
   and no callers `[FACT: apps/web/src/settings/use-preferences.ts:22-43]`.
@@ -21,6 +22,7 @@
   replaces whole JSON columns `[FACT: fe-settings seam-contract.md:60-68]`.
 
 ## 2. Business rules (after R2)
+
 - **R2-BR-1 · Source of truth = React Query over SQLite** (A6). Two **non-overlapping** keys under one family prefix:
   `['preferences','user']` → `getMergedPreferences()` and `['preferences','nav']` → `getNavPreferences()`. Every per-table
   cancel/invalidate targets its exact key, so a user-table invalidate never refetches nav mid-patch.
@@ -35,6 +37,7 @@
   - persona `null` ↔ the `'unset'` sentinel (no `PERSONA` collision, `user.ts:13-20`).
 
   `defaultView()` is the mapper over the service DEFAULTS, so parity holds by construction (C10/IR-7).
+
 - **R2-BR-3 · ONE merge function per table.** `applyUserPatch(merged, patch)` / `applyNavPatch(merged, patch)` are the
   only way a patch is applied. They are used for the optimistic cache **and** for the in-queue merge against the freshly
   read row, so the two can never diverge.
@@ -49,10 +52,11 @@
     patch still in the debounce is never wiped, IR-11). **Invalidate the exact key only when that table's queue is idle**
     (this also corrects R1-BR-6 phantom reads).
   - **On batch failure:** every caller in the batch rejects with the same typed error; drop the batch's patches; set the
-    cache to `applyPending(confirmed)`, so the DB state plus any *later* patches remains, never a stacked per-call snapshot.
+    cache to `applyPending(confirmed)`, so the DB state plus any _later_ patches remains, never a stacked per-call snapshot.
 
   Because this lives in the writer (over the `lib/query-client.ts` singleton), **writes from outside React (F10 consumers)
   keep the cache correct too.** The hook keeps only the echo check + `saveState`.
+
 - **R2-BR-5 · One serial write queue per singleton table**, with 500 ms debounce batching (PR-4). The batch's merge runs
   **inside** the queued task against a fresh read, then writes once via `updatePreferences` / `updateNavPreferences`
   (`setModuleVisibility` unused). That gives no lost update and no first-write double-create (IR-10/A4). R1's lock
@@ -61,7 +65,7 @@
   never writes.
 - **R2-BR-7 · Flush while alive** (F18 queue half). On `visibilitychange: hidden` (first) and `pagehide`, every queue
   flushes its debounce immediately. Registered once by the bridge's `useEffect` (cleanup on unmount), not at import.
-  - **Expected limit, stated up front:** a *reload* inside the window can still lose the write. One write needs at least 4
+  - **Expected limit, stated up front:** a _reload_ inside the window can still lose the write. One write needs at least 4
     worker round trips (`repository.ts:405-451`) and the main-thread event loop stops at unload; a bfcache `pagehide`
     also terminates the worker (R1).
   - The deterministic guarantee is: **hide without unload → written immediately.** A hard reload within ~the RPC time of
@@ -87,16 +91,18 @@
   visible change: `isFeatureEnabled` is still stubbed fail-closed.
 
 ## 3. Design (new feature home `apps/web/src/preferences/`, the notes precedent `apps/web/src/notes/use-*.ts`)
-| File | Role |
-|---|---|
-| `preferences-keys.ts` | `PREFERENCES_FAMILY = ['preferences']`, `USER_PREFS_KEY = ['preferences','user']`, `NAV_PREFS_KEY = ['preferences','nav']`, `PREFERENCES_STALE_MS`, `PREFERENCES_GC_MS` |
-| `preferences-view.ts` | `PreferencesView` + the pure mapper: `toView(merged, nav)`, `defaultView()`, `toUserPatch(viewPatch)` / `toNavPatch`, **`applyUserPatch` / `applyNavPatch` (the one merge, map-aware)**, sub-key + scalar degrade, persona sentinel, `system→light` |
-| `write-queue.ts` | `createWriteQueue({ debounceMs, write })`: per-table serial + debounced batching; `enqueue(merge)`, `flush()`, `isIdle()`. Plus `registerFlushOnHide(queues)` |
-| `preferences-writer.ts` | the module-singleton writer over `getServices().preferences` + the `queryClient` singleton: per table `confirmed` + `pending` + its queue; cache = `applyPending(confirmed)`; success/failure sync (R2-BR-4); the exported write path (R2-BR-8); `flushAll()` |
-| `use-preferences.ts` | `usePreferences()` → `{ view, state, error }` (both keys) · `useUpdatePreferences()` → `{ update(viewPatch), saveState, lastError }`: an echo check + the writer call + saveState (R2-BR-6/9); no cache logic |
-| `preferences-bridge.tsx` | `<PreferencesBridge/>`: under QCP; field-diff hydration of `preferences-store` after both keys succeed (R2-BR-10); registers the hide-flush once (R2-BR-7). Mounted once in App |
+
+| File                     | Role                                                                                                                                                                                                                                                          |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preferences-keys.ts`    | `PREFERENCES_FAMILY = ['preferences']`, `USER_PREFS_KEY = ['preferences','user']`, `NAV_PREFS_KEY = ['preferences','nav']`, `PREFERENCES_STALE_MS`, `PREFERENCES_GC_MS`                                                                                       |
+| `preferences-view.ts`    | `PreferencesView` + the pure mapper: `toView(merged, nav)`, `defaultView()`, `toUserPatch(viewPatch)` / `toNavPatch`, **`applyUserPatch` / `applyNavPatch` (the one merge, map-aware)**, sub-key + scalar degrade, persona sentinel, `system→light`           |
+| `write-queue.ts`         | `createWriteQueue({ debounceMs, write })`: per-table serial + debounced batching; `enqueue(merge)`, `flush()`, `isIdle()`. Plus `registerFlushOnHide(queues)`                                                                                                 |
+| `preferences-writer.ts`  | the module-singleton writer over `getServices().preferences` + the `queryClient` singleton: per table `confirmed` + `pending` + its queue; cache = `applyPending(confirmed)`; success/failure sync (R2-BR-4); the exported write path (R2-BR-8); `flushAll()` |
+| `use-preferences.ts`     | `usePreferences()` → `{ view, state, error }` (both keys) · `useUpdatePreferences()` → `{ update(viewPatch), saveState, lastError }`: an echo check + the writer call + saveState (R2-BR-6/9); no cache logic                                                 |
+| `preferences-bridge.tsx` | `<PreferencesBridge/>`: under QCP; field-diff hydration of `preferences-store` after both keys succeed (R2-BR-10); registers the hide-flush once (R2-BR-7). Mounted once in App                                                                               |
 
 Changes elsewhere:
+
 - **`db/composition-root.ts`:** `Services.preferences` + `createPreferencesService({ db, deviceId })`, appended after
   `deviceId` (no service deps; ELC-3).
 - **`App.tsx`:** hoist `<QueryClientProvider>` to wrap the Onboarding/router branch **and** the overlay + `ToastProvider`
@@ -114,6 +120,7 @@ Changes elsewhere:
   files get the wrapper only where they now need it (F1).
 
 ## 4. Acceptance (Verification Gate)
+
 1. **Mapper (unit):**
    - round-trip `view → patch → merged → view` for every field;
    - `system → light`;
@@ -167,6 +174,7 @@ Changes elsewhere:
    - reconciliation row status.
 
 ## 5. Risks
+
 - **The transitional mirror** (R2-BR-8): accepted, bounded by R6.
 - **Hoisting QCP above Onboarding:** Onboarding uses no queries today, so there's no behavior change. Re-run `App.test` /
   `App.integration` alone.
@@ -175,6 +183,7 @@ Changes elsewhere:
 - **`@vida/core` rebuild** needed for apps/web to see the default change (memory: editing types/core needs a dist rebuild).
 
 ## 6. Gate record
+
 - **rev 1 → independent critique: REVISE** (5 blocking, 12 nits). Folded:
   - B1: non-overlapping exact keys `['preferences','user']` / `['preferences','nav']`.
   - B2/B3/B4: the writer owns cache truth, `confirmed + applyPending` (no wiping of a later patch on success; restore =
@@ -187,6 +196,7 @@ Changes elsewhere:
     folder home matches practice.
 
 ## 7. Verification Gate record — R2 (2026-10-22) · **PASS**
+
 - **Unit (Vitest), `apps/web/src/preferences/`, 44 tests:** mapper 13 · queue 6 · writer 15 · hooks 7 · bridge 3. Plus the
   composition-root assertion and the core default test (25/25).
   - **Mutation checks (3, each killed then restored from a copy):**

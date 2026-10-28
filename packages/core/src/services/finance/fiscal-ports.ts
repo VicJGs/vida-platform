@@ -26,8 +26,7 @@ import type { FiscalObligationRow, FiscalResidencyRow, LegalEntityRow } from '..
 // The "not professional advice" label baked onto every advisement (FL-3/FL-13).
 // NOT the same as `buildAiDisclosure(mode)` (the egress-honesty bound) — an
 // Advisement carries BOTH. `[FACT: business-rules.md:18-21,58-60]`
-export const NOT_PROFESSIONAL_ADVICE =
-  'This is informational only — not professional, legal, or tax advice.' as const
+export const NOT_PROFESSIONAL_ADVICE = 'This is informational only — not professional, legal, or tax advice.' as const
 
 // ─── FL-04 INFORM — the rule-pack handle ────────────────────────────────────
 // A MINIMAL handle: `version` is structurally required NOW (a confirmed obligation's

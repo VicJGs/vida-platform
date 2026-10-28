@@ -16,8 +16,24 @@ const renderUI = (ui: React.ReactNode) =>
 const noop = (): void => {}
 
 const ROWS: NotesRow[] = [
-  { id: '1', title: 'Project kickoff', type: 'note', excerpt: 'Scope.', updated: '2h ago', date: '2026-10-10', favorite: true },
-  { id: '2', title: 'Daily journal', type: 'journal', excerpt: 'Reflection.', updated: 'today', date: '2026-10-10', favorite: false },
+  {
+    id: '1',
+    title: 'Project kickoff',
+    type: 'note',
+    excerpt: 'Scope.',
+    updated: '2h ago',
+    date: '2026-10-10',
+    favorite: true,
+  },
+  {
+    id: '2',
+    title: 'Daily journal',
+    type: 'journal',
+    excerpt: 'Reflection.',
+    updated: 'today',
+    date: '2026-10-10',
+    favorite: false,
+  },
 ]
 
 describe('renderNotesView (S1, NOT-48/49)', () => {
@@ -61,7 +77,17 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
   })
 
   it('B-60 — cards use the shared note-chrome type labels', () => {
-    const rows: NotesRow[] = [{ id: '9', title: 'Plan', type: 'task_note', excerpt: '', updated: '1h ago', date: '2026-10-10', favorite: false }]
+    const rows: NotesRow[] = [
+      {
+        id: '9',
+        title: 'Plan',
+        type: 'task_note',
+        excerpt: '',
+        updated: '1h ago',
+        date: '2026-10-10',
+        favorite: false,
+      },
+    ]
     const { getByText, queryByText } = renderUI(<>{renderNotesView('list', 'success', rows, noop)}</>)
     expect(getByText('Task · 1h ago')).not.toBeNull()
     expect(queryByText(/Task note ·/)).toBeNull()
@@ -75,7 +101,16 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
 
   it('B-63 — an untitled card drops the doubled type segment', () => {
     const rows: NotesRow[] = [
-      { id: '7', title: 'Task note', labelFromType: true, type: 'task_note', excerpt: '', updated: 'now', date: '2026-10-10', favorite: false },
+      {
+        id: '7',
+        title: 'Task note',
+        labelFromType: true,
+        type: 'task_note',
+        excerpt: '',
+        updated: 'now',
+        date: '2026-10-10',
+        favorite: false,
+      },
     ]
     const { getByRole } = renderUI(<>{renderNotesView('gallery', 'success', rows, noop)}</>)
     expect(getByRole('button', { name: 'Task note, edited now' })).not.toBeNull()
@@ -83,7 +118,17 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
 
   it('E-4 / B-38 — rows and tiles show the chosen icon; a tile shows its cover image', () => {
     const rows: NotesRow[] = [
-      { id: '8', title: 'Iconed', type: 'note', excerpt: '', updated: 'now', date: '2026-10-10', favorite: false, icon: 'book-open', cover: 'https://e.com/c.png' },
+      {
+        id: '8',
+        title: 'Iconed',
+        type: 'note',
+        excerpt: '',
+        updated: 'now',
+        date: '2026-10-10',
+        favorite: false,
+        icon: 'book-open',
+        cover: 'https://e.com/c.png',
+      },
     ]
     const list = renderUI(<>{renderNotesView('list', 'success', rows, noop)}</>)
     expect(list.container.querySelector('svg.lucide-book-open')).not.toBeNull()
@@ -96,4 +141,3 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
     expect(noCover.container.querySelector('svg.lucide-book-open')).not.toBeNull()
   })
 })
-

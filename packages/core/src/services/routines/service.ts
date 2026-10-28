@@ -169,7 +169,8 @@ const addDays = (ymd: string, n: number): string => {
   t.setUTCFullYear(y, m - 1, d + n) // setUTCFullYear keeps years 0–99 literal (Date.UTC would map them to 1900–1999)
   return t.toISOString().slice(0, 10) // YYYY-MM-DD for years 0000–9999
 }
-const daysBetween = (from: string, to: string): number => (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000
+const daysBetween = (from: string, to: string): number =>
+  (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000
 
 // The rule's explicit BY-parts as a date predicate: applied to EVERY yield (filters the phantom DTSTART and ical.js mis-yields; every
 // real occurrence passes). BYDAY ordinals are ignored (weekday only); negative BYMONTHDAY is resolved against the month length.
@@ -385,7 +386,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     | null
   const resolveTarget = async (step: RoutineStepRow, rf: Reflection): Promise<Resolved> => {
     const st = step.step_type
-    const ref = step.entity_type != null && step.entity_id != null ? { type: step.entity_type, id: step.entity_id } : null
+    const ref =
+      step.entity_type != null && step.entity_id != null ? { type: step.entity_type, id: step.entity_id } : null
     if (st === 'focus') return { target: 'focus' }
     if (st === 'work') return ref?.type === 'task' ? { target: 'task', entityId: ref.id } : null // a work timer is always task-attached
     if (st != null && st !== 'task' && st !== 'habit') {
@@ -443,7 +445,12 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
   }
 
-  const state = (step: RoutineStepRow, date: string, target: StepTarget, extra: Partial<StepRunState>): StepRunState => ({
+  const state = (
+    step: RoutineStepRow,
+    date: string,
+    target: StepTarget,
+    extra: Partial<StepRunState>,
+  ): StepRunState => ({
     step_id: step.id,
     date,
     target,
@@ -456,7 +463,12 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     startedAt == null ? null : Math.max(0, Math.round((Date.now() - startedAt) / 60_000))
 
   // S3 (obligation, 3b) — TK-7 regeneration is the obligation's own occurrence engine: completeTask, TERMINAL reflection.
-  const driveObligation = async (step: RoutineStepRow, task: TaskRow, date: string, minutes: number | null): Promise<StepRunState> => {
+  const driveObligation = async (
+    step: RoutineStepRow,
+    task: TaskRow,
+    date: string,
+    minutes: number | null,
+  ): Promise<StepRunState> => {
     if (task.status === 'cancelled') throw new EntityUnavailableError(step.id, `task ${task.id} is cancelled`)
     if (task.status === 'completed') {
       return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
@@ -465,7 +477,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     try {
       await tasks.completeTask(task.id) // effect-idempotent re-drive (rule 17)
     } catch (e) {
-      if (e instanceof TaskNotFoundError) throw new EntityUnavailableError(step.id, `task ${task.id} is missing or deleted`)
+      if (e instanceof TaskNotFoundError)
+        throw new EntityUnavailableError(step.id, `task ${task.id} is missing or deleted`)
       if (!(e instanceof RecurrenceRegenError)) throw e
       flag = 'recurrence_regen_failed' // TAS-23: the completion is durable; only the next occurrence failed
     }
@@ -484,7 +497,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       : null
   const isPending = (b: PlannedBlockRow): boolean => b.status === 'planned' || b.status === 'scheduled'
   const pendingBlock = async (stepId: string, date: string): Promise<PlannedBlockRow | undefined> =>
-    (await sessions.listPlannedBlocksForTarget('routine_step', stepId)).find((b) => b.source === blockSource(date) && isPending(b))
+    (await sessions.listPlannedBlocksForTarget('routine_step', stepId)).find(
+      (b) => b.source === blockSource(date) && isPending(b),
+    )
   // R5b — the occurrence day of a session linked to one of this step's blocks, or null (then the S5c day rules apply).
   const blockDay = async (stepId: string, plannedBlockId: string | null): Promise<string | null> => {
     if (plannedBlockId == null) return null
@@ -515,7 +530,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   const byRoutineOrder = (a: RoutineRow, b: RoutineRow): number =>
     a.sort_order - b.sort_order || a.created_at - b.created_at || byCodepoint(a.id, b.id)
   const activeRoutines = async (): Promise<RoutineRow[]> =>
-    (await routinesRepo.findWhere(and(isNull(routines.deleted_at), eq(routines.lifecycle, 'active')) as SQL)).sort(byRoutineOrder)
+    (await routinesRepo.findWhere(and(isNull(routines.deleted_at), eq(routines.lifecycle, 'active')) as SQL)).sort(
+      byRoutineOrder,
+    )
   type BlocksByStep = Map<string, PlannedBlockRow[]>
   const blocksOf = async (cache: BlocksByStep, stepId: string): Promise<PlannedBlockRow[]> => {
     let b = cache.get(stepId)
@@ -526,7 +543,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     (await blocksOf(cache, stepId)).some((b) => b.source === blockSource(date) && isPending(b))
   // BR-RT-S6-5 — a pending block with an open session linked to it is a make-good in flight (never dropped).
   const isRunningMakeGood = async (b: PlannedBlockRow, stepId: string): Promise<boolean> =>
-    b.sub_type != null && (await sessions.findOpenSessionForEntity(b.sub_type, 'routine_step', stepId))?.planned_block_id === b.id
+    b.sub_type != null &&
+    (await sessions.findOpenSessionForEntity(b.sub_type, 'routine_step', stepId))?.planned_block_id === b.id
   const plannedSkips = (st: RoutineStepRow): readonly string[] => parseJsonArray<string>(st.skip_dates) ?? []
 
   // The due predicate for one active routine over [from, to] (UTC days): a routine-day D is due iff some step in stepsAsOf(D) —
@@ -535,7 +553,13 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   //  · D = today: the same without the window (S5 A2: today is pending);
   //  · D > today: is not planned-skipped (no reflection on future days — a completed obligation would read done forever).
   // Throws on a malformed policy / unexpandable rule / reflection failure → the caller isolates the routine (RT-13).
-  const dueDays = async (routine: RoutineRow, from: string, to: string, today: string, cache: BlocksByStep): Promise<string[]> => {
+  const dueDays = async (
+    routine: RoutineRow,
+    from: string,
+    to: string,
+    today: string,
+    cache: BlocksByStep,
+  ): Promise<string[]> => {
     const rule = routine.recurrence_rule
     if (rule == null) return []
     const dates = occurrences(rule, utcDay(routine.created_at), from, to)
@@ -544,7 +568,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const window = validWindow(routine.id, policy)
     const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routine.id) as SQL) // incl. soft-deleted (stepsAsOf, rule 7)
     // Rows over the whole window: a future day's own (U1) done row counts (a completion stamped ahead), reflection never does.
-    const rows = await completionsBetween(all.map((st) => st.id), from, to)
+    const rows = await completionsBetween(
+      all.map((st) => st.id),
+      from,
+      to,
+    )
     const rf = newReflection()
     const due: string[] = []
     for (const date of dates) {
@@ -574,7 +602,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
   const dueItems = async (range: TimeRange, cache: BlocksByStep): Promise<DueItem[]> => {
     const MAX_MS = 8.64e15 // the Date range: beyond it utcDay's toISOString throws
-    if (![range.start, range.end].every((x) => Number.isFinite(x) && Math.abs(x) <= MAX_MS) || range.start > range.end) return []
+    if (![range.start, range.end].every((x) => Number.isFinite(x) && Math.abs(x) <= MAX_MS) || range.start > range.end)
+      return []
     const from = utcDay(range.start)
     const to = utcDay(range.end)
     const today = clock()
@@ -653,7 +682,15 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   const liveTagRows = async (entityType: RoutineLinkTarget['type'], entityId: string) => {
     const rows = await notes.getTagsForEntity(entityType, entityId)
     if (rows.length === 0) return rows
-    const live = await tagsRepo.findWhere(and(inArray(tags.id, rows.map((r) => r.tag_id)), isNull(tags.deleted_at)) as SQL)
+    const live = await tagsRepo.findWhere(
+      and(
+        inArray(
+          tags.id,
+          rows.map((r) => r.tag_id),
+        ),
+        isNull(tags.deleted_at),
+      ) as SQL,
+    )
     const liveIds = new Set(live.map((t) => t.id))
     return rows.filter((r) => liveIds.has(r.tag_id))
   }
@@ -689,7 +726,15 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const rule = ctx.routine.recurrence_rule
     if (rule == null || !occurrences(rule, utcDay(ctx.routine.created_at), date, date).includes(date)) return null
     const all = await stepsRepo.findWhere(eq(routineStep.routine_id, ctx.routine.id) as SQL)
-    const rows = new Map((await completionsBetween(all.map((st) => st.id), date, date)).get(date) ?? [])
+    const rows = new Map(
+      (
+        await completionsBetween(
+          all.map((st) => st.id),
+          date,
+          date,
+        )
+      ).get(date) ?? [],
+    )
     if (swap) {
       if (swap.row) rows.set(swap.stepId, swap.row)
       else rows.delete(swap.stepId)
@@ -709,7 +754,12 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     for (const effectType of EMITTED) {
       if (!effects?.registry.resolve(effectType)) continue // dormant per type (N8)
       try {
-        await effects.rail.applyEffect({ subjectNaturalKey: routineId, transition: `completed:${date}`, effectType, targetRef: routineId })
+        await effects.rail.applyEffect({
+          subjectNaturalKey: routineId,
+          transition: `completed:${date}`,
+          effectType,
+          targetRef: routineId,
+        })
       } catch {
         failed = true // post-commit, isolated: the write stands (rule 13); flagged on drives, re-drivable for the contribution
       }
@@ -717,7 +767,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return failed
   }
   // A non-drive write on known dates: before → write → after; emit each date that went not-done → done.
-  const withEmission = async <T>(routineId: string | null, dates: readonly string[], write: () => Promise<T>): Promise<T> => {
+  const withEmission = async <T>(
+    routineId: string | null,
+    dates: readonly string[],
+    write: () => Promise<T>,
+  ): Promise<T> => {
     const ctx = dates.length ? await emitContext(routineId) : null
     if (!ctx) return write()
     const days = [...new Set(dates)]
@@ -732,7 +786,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   }
   // A drive (completeStep/runStep): the requested D is read before (reflection may change); a stamped date ≠ D (R5b / cross-midnight
   // focus) is non-reflecting, so its before-state is the post-write day with this step's prior row swapped back in (exact, B1).
-  const driveWithEmission = async (step: RoutineStepRow, date: string, drive: () => Promise<StepRunState>): Promise<StepRunState> => {
+  const driveWithEmission = async (
+    step: RoutineStepRow,
+    date: string,
+    drive: () => Promise<StepRunState>,
+  ): Promise<StepRunState> => {
     const ctx = await emitContext(step.routine_id)
     if (!ctx) return drive()
     const beforeD = await doneOn(ctx, date)
@@ -746,7 +804,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
     if (st.completion == null) return st // nothing stamped (e.g. in_progress) ⇒ no date written
     const day = st.date
-    const before = day === date ? beforeD : probe.has(day) ? await doneOn(ctx, day, { stepId: step.id, row: probe.get(day) }) : null
+    const before =
+      day === date ? beforeD : probe.has(day) ? await doneOn(ctx, day, { stepId: step.id, row: probe.get(day) }) : null
     if (before !== false || (await doneOn(ctx, day)) !== true) return st
     const failed = await fire(ctx.routine.id, day)
     return failed && st.flag == null ? { ...st, flag: 'effect_emit_failed' } : st // the entity's regen failure keeps precedence
@@ -762,7 +821,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
   // W1–W3 — the acceptance-window guard. The user's window, validated ONCE here and by loadWindow (no drift).
   const validWindow = (routineId: string, policy: RoutinePolicy | null | undefined): number | undefined => {
     const w = policy?.miss?.acceptance_window_days
-    if (w !== undefined && !(Number.isInteger(w) && w >= 0)) throw new InvalidRoutinePolicyError(routineId, policy?.miss)
+    if (w !== undefined && !(Number.isInteger(w) && w >= 0))
+      throw new InvalidRoutinePolicyError(routineId, policy?.miss)
     return w
   }
   // A step with no routine (nullable FK-less column) has no user policy → no window.
@@ -806,7 +866,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     if (mode === 'run') {
       if (openOnStep) {
         // R5b — a linked make-good is D's; an unlinked re-entered occurrence reports its own start day (g2 N2: never re-linked)
-        const day = (await blockDay(step.id, openOnStep.planned_block_id)) ?? (openOnStep.started_at != null ? utcDay(openOnStep.started_at) : date)
+        const day =
+          (await blockDay(step.id, openOnStep.planned_block_id)) ??
+          (openOnStep.started_at != null ? utcDay(openOnStep.started_at) : date)
         return state(step, day, 'task', { status: 'in_progress', session_id: openOnStep.id })
       }
       const done = await findDone(step.id, date) // one occurrence per day: a done day starts nothing (the runFocus rule)
@@ -846,7 +908,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       return state(step, day, 'task', { completion, session_id: open.id })
     }
     // One occurrence per day: re-checking a done day creates no session; the row still upserts (BR-RT-S3-1 minutes).
-    if (await findDone(step.id, date)) return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
+    if (await findDone(step.id, date))
+      return state(step, date, 'task', { completion: await stamp(step.id, date, minutes) })
     if ((await subTypeDef(newReflection(), 'work')) == null) {
       throw new EntityUnavailableError(step.id, 'the tasks timer is not wired (no work sub-type)')
     }
@@ -884,7 +947,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
     if (mode === 'run' && runningCapable) {
       if (open) {
-        const day = (await blockDay(step.id, open.planned_block_id)) ?? (open.started_at != null ? utcDay(open.started_at) : date) // R5b · g2 N2
+        const day =
+          (await blockDay(step.id, open.planned_block_id)) ?? (open.started_at != null ? utcDay(open.started_at) : date) // R5b · g2 N2
         return state(step, day, 'session', { status: 'in_progress', session_id: open.id })
       }
       const done = await findDone(step.id, date)
@@ -908,7 +972,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       return state(step, day, 'session', { completion, session_id: open.id })
     }
     // One occurrence per day (as for a task): no second session; the row still upserts (BR-RT-S3-1).
-    if (await findDone(step.id, date)) return state(step, date, 'session', { completion: await stamp(step.id, date, minutes) })
+    if (await findDone(step.id, date))
+      return state(step, date, 'session', { completion: await stamp(step.id, date, minutes) })
     const from = transitions.find((t) => t.event === 'complete')?.from
     if (from !== 'in_progress' && from !== 'scheduled') {
       throw new EntityUnavailableError(step.id, `session sub-type ${r.subType} declares no completable state`)
@@ -1076,7 +1141,10 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const done = await findDone(step.id, date)
     if (done) return state(step, date, 'focus', { completion: toRoutineCompletion(done) })
     if (attached && isRunning(attached.extension) && (await dropIfAbandoned(attached, step.id))) {
-      throw new EntityUnavailableError(step.id, 'the running focus session was abandoned (started before yesterday; cancelled)')
+      throw new EntityUnavailableError(
+        step.id,
+        'the running focus session was abandoned (started before yesterday; cancelled)',
+      )
     }
     if (attached && isRunning(attached.extension)) {
       // R5b — a make-good linked to D's block is D's; else the day it started (may differ from `date` across UTC midnight)
@@ -1335,9 +1403,14 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     const routineId = routine.id
     const policy = prefs ? await prefs.policyFor(routineId) : null
     validWindow(routineId, policy)
-    if (routine.recurrence_rule == null) return { routine, policy, all: [], rows: new Map() as RowsByDate, rf: newReflection() } // nothing to read
+    if (routine.recurrence_rule == null)
+      return { routine, policy, all: [], rows: new Map() as RowsByDate, rf: newReflection() } // nothing to read
     const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL)
-    const rows = await completionsBetween(all.map((st) => st.id), from, to)
+    const rows = await completionsBetween(
+      all.map((st) => st.id),
+      from,
+      to,
+    )
     return { routine, policy, all, rows, rf: newReflection() }
   }
   type Window = Awaited<ReturnType<typeof loadWindow>>
@@ -1481,7 +1554,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       const task = await tasks.createTask({ title: p.title })
       try {
         return toRoutineStep(
-          await stepsRepo.create(serializeStep(routineId, { ...p, step_order, entity_type: 'task', entity_id: task.id })),
+          await stepsRepo.create(
+            serializeStep(routineId, { ...p, step_order, entity_type: 'task', entity_id: task.id }),
+          ),
         )
       } catch (e) {
         await bestEffort(() => tasks.softDeleteTask(task.id)) // no orphan responsibility
@@ -1502,7 +1577,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         const had = new Set(parseJsonArray<string>(step.skip_dates) ?? [])
         const added = p.skip_dates ? [...new Set(p.skip_dates)].filter((d) => !had.has(d)) : []
         for (const d of added) await assertWritable(step, d)
-        return toRoutineStep(await withEmission(step.routine_id, added, () => stepsRepo.update(stepId, serializeStepUpdate(p))))
+        return toRoutineStep(
+          await withEmission(step.routine_id, added, () => stepsRepo.update(stepId, serializeStepUpdate(p))),
+        )
       })
     },
 
@@ -1567,7 +1644,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         const rf = newReflection()
         const r = await resolveTarget(step, rf)
         const needWork = async () => {
-          if ((await subTypeDef(rf, 'work')) == null) throw new EntityUnavailableError(stepId, 'the tasks timer is not wired')
+          if ((await subTypeDef(rf, 'work')) == null)
+            throw new EntityUnavailableError(stepId, 'the tasks timer is not wired')
         }
         let target: StepTarget
         let subType: string | null
@@ -1581,7 +1659,10 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
               subType = null // TK-7: an obligation's occurrence is its own completion, no session
             } else {
               if (task.status === 'completed' || task.status === 'cancelled') {
-                throw new EntityUnavailableError(stepId, `task ${task.id} is ${task.status} (the responsibility is closed)`)
+                throw new EntityUnavailableError(
+                  stepId,
+                  `task ${task.id} is ${task.status} (the responsibility is closed)`,
+                )
               }
               await needWork()
               subType = 'work'
@@ -1629,12 +1710,16 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         const slotDay = utcDay(p.slot.start)
         if (p.slot.start < Date.now()) throw new InvalidRescheduleSlotError(stepId, 'before_now')
         if (slotDay < date) throw new InvalidRescheduleSlotError(stepId, 'before_occurrence') // defence-in-depth: start ≥ now and D ≤ today imply it
-        if (window !== undefined && slotDay > addDays(date, window)) throw new InvalidRescheduleSlotError(stepId, 'past_window')
+        if (window !== undefined && slotDay > addDays(date, window))
+          throw new InvalidRescheduleSlotError(stepId, 'past_window')
         if (r.target === 'checkoff') await linkCheckoffTask(step) // S5c migrate-on-touch (self-compensating)
         // R4 — one pending block per (step, D): a re-reschedule moves it.
         const existing = await pendingBlock(stepId, date)
         const block = existing
-          ? await sessions.updatePlannedBlock(existing.id, { scheduled_start: p.slot.start, scheduled_end: p.slot.end ?? null })
+          ? await sessions.updatePlannedBlock(existing.id, {
+              scheduled_start: p.slot.start,
+              scheduled_end: p.slot.end ?? null,
+            })
           : await sessions.planBlock({
               scheduled_start: p.slot.start,
               scheduled_end: p.slot.end ?? null,
@@ -1653,7 +1738,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
       await loadRoutineOrThrow(routineId) // archived/missing → RoutineNotFoundError (known limit for past-date reads, S5/S9)
       const date = p.date ?? clock()
       const all = await stepsRepo.findWhere(eq(routineStep.routine_id, routineId) as SQL) // one read (incl. soft-deleted, E1b)
-      const rows = await completionsBetween(all.map((st) => st.id), date, date)
+      const rows = await completionsBetween(
+        all.map((st) => st.id),
+        date,
+        date,
+      )
       const policy = prefs ? await prefs.policyFor(routineId) : null // a port throw propagates (fail loud)
       return judgeDay(routineId, all, rows.get(date) ?? new Map(), date, policy, newReflection())
     },
@@ -1690,7 +1779,8 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         comparison: {
           previous,
           completion: prevCompletion,
-          rate_delta: completion.rate != null && prevCompletion.rate != null ? completion.rate - prevCompletion.rate : null,
+          rate_delta:
+            completion.rate != null && prevCompletion.rate != null ? completion.rate - prevCompletion.rate : null,
         },
         policy_source: sourceOf(win, both),
       }
@@ -1717,7 +1807,11 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         await assertWritable(step, date) // S6 — a skip is a miss write (BR:120)
         // RT-8 — a LOGGED skip on the day (completion row, skipped=true + reason). Distinct from a pre-planned skip.
         const row = await withEmission(step.routine_id, [date], () =>
-          upsertCompletion(stepId, date, { skipped: true, skip_reason: p.reason ?? null, actual_duration_minutes: null }),
+          upsertCompletion(stepId, date, {
+            skipped: true,
+            skip_reason: p.reason ?? null,
+            actual_duration_minutes: null,
+          }),
         ) // S7 — a neutral skip can reach policy-done
         await cancelBlock(stepId, date) // S6 R6
         return row
@@ -1733,7 +1827,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         const had = new Set(parseJsonArray<string>(step.skip_dates) ?? [])
         const merged = [...new Set([...had, ...parsed])].sort()
         const added = parsed.filter((d) => !had.has(d))
-        const row = await withEmission(step.routine_id, added, () => stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) })) // S7
+        const row = await withEmission(step.routine_id, added, () =>
+          stepsRepo.update(stepId, { skip_dates: JSON.stringify(merged) }),
+        ) // S7
         for (const d of parsed) await cancelBlock(stepId, d) // S6 R6
         return toRoutineStep(row)
       })
@@ -1751,7 +1847,9 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
         if ('skipped' in p) out.skipped = p.skipped
         if ('skip_reason' in p) out.skip_reason = p.skip_reason
         if ('actual_duration_minutes' in p) out.actual_duration_minutes = p.actual_duration_minutes
-        const row = toRoutineCompletion(await withEmission(step.routine_id, [date], () => completionsRepo.update(existing.id, out))) // S7
+        const row = toRoutineCompletion(
+          await withEmission(step.routine_id, [date], () => completionsRepo.update(existing.id, out)),
+        ) // S7
         if (p.skipped === true) await cancelBlock(stepId, date) // S6 R6
         return row
       })
@@ -1843,11 +1941,19 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
 
     summary: async (date) => {
       RoutineCalendarDateSchema.parse(date)
-      const empty: SectionData = { sectionKey: 'summary', module: 'routines', dataPoints: ROUTINES_DATA_POINTS, state: 'empty', items: [] }
+      const empty: SectionData = {
+        sectionKey: 'summary',
+        module: 'routines',
+        dataPoints: ROUTINES_DATA_POINTS,
+        state: 'empty',
+        items: [],
+      }
       const rows = await completionsRepo.findWhere(eq(routineCompletions.completed_date, date) as SQL)
       if (rows.length === 0) return empty
       // Unfiltered reads: steps/routines removed or archived since still carry their ledger (RT-17).
-      const steps = await stepsRepo.findWhere(inArray(routineStep.id, [...new Set(rows.map((r) => r.routine_step_id))]) as SQL)
+      const steps = await stepsRepo.findWhere(
+        inArray(routineStep.id, [...new Set(rows.map((r) => r.routine_step_id))]) as SQL,
+      )
       const stepById = new Map(steps.map((st) => [st.id, st]))
       const routineIds = [...new Set(steps.map((st) => st.routine_id).filter((x): x is string => x != null))]
       if (routineIds.length === 0) return empty

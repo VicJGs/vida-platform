@@ -84,6 +84,7 @@ Invariants the shared spine enforces. Every capability enumerates terminal state
   `[INTENT CI-6/R4; ADR-014 X1/X2/X4/X5/X8]`
 
 ### Safety & Medical (Health-owned facet)
+
 - **HC-14 — Autonomy-with-clarity (never a warden).** The user has full sovereignty over his own body/life — he
   can do whatever he wants. The OS **records, advises, and safety-nets, but never gatekeeps, prescribes,
   credentials, or blocks.** A one-time explicit acknowledgment + a standing rule; the user is always free to
@@ -109,6 +110,7 @@ Invariants the shared spine enforces. Every capability enumerates terminal state
   autonomy-with-clarity; biomarker data is the **most-sensitive ZK class**. `[INTENT R1; extends HC-14/HC-17]`
 
 ## Terminal states (every Core capability)
+
 Metric series (empty=no readings · error=unit mismatch) · Monitoring (Domain/Factor empty→no metrics linked) · Exam
 (scheduled · due · **overdue** · logged→results in) · Goal (no target set · unmeasurable→review-rated · achieved) ·
 Physical Role (no exercises yet · in-progress mastery · mastered) · Experiment (planning · running A/B · inconclusive
@@ -116,4 +118,5 @@ Physical Role (no exercises yet · in-progress mastery · mastered) · Experimen
 (**none** · raised/active · **dismissed** · acknowledged). Detailed in `contract.md`.
 
 ## Completion checklist
+
 - [x] rules enumerated + labeled [FACT/INTENT] · [x] terminal states noted · [x] no `{{…}}`

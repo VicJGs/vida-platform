@@ -71,7 +71,11 @@ describe('createIntegrationRegistry — S5 (XCU-14/15/16)', () => {
 
   it('XCU-16: a mediator-custodied user-managed connector registers at the user-managed layer', () => {
     const reg = createIntegrationRegistry()
-    const def: UserConnectorDef = { integrationId: 'my-webhook', contract: contract('wh-v1'), credentialCustody: 'mediator' }
+    const def: UserConnectorDef = {
+      integrationId: 'my-webhook',
+      contract: contract('wh-v1'),
+      credentialCustody: 'mediator',
+    }
     reg.registerUserManagedConnector(def)
     expect(reg.get('my-webhook')?.source.layer).toBe('user-managed')
     expect(reg.get('my-webhook')?.contract.id).toBe('wh-v1')

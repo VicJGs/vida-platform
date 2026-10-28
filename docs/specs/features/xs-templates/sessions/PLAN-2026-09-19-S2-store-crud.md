@@ -1,4 +1,4 @@
-# PLAN — xs-templates S2: store CRUD (`TemplatesService`)  (§XXVI gate 1 = the SPEC)
+# PLAN — xs-templates S2: store CRUD (`TemplatesService`) (§XXVI gate 1 = the SPEC)
 
 Status: draft (gate 1)
 Unit: Slice **S2** of the xs-templates head (#36) — the `templates` store CRUD, over S1's types.
@@ -29,7 +29,7 @@ edit-in-place); you save a new bundle, you do not mutate a stored one, so XCU-01
   calls hoist to closures / inline (never `this.` — breaks on destructure); validating methods async-reject.
   `[FACT: foundation/views/service.ts:56 (createViewsService); [[factory-service-no-this-for-intra-calls]]]`
 - **BR-S2-3 (Repository, syncable soft-delete, M1.0 `[E]` pass-through).** `createRepository(db, templates,
-  { deviceId, encryptedFields: [], softDelete: true })` — writes flow to `sync_queue`; `deleteTemplate` = soft
+{ deviceId, encryptedFields: [], softDelete: true })` — writes flow to `sync_queue`; `deleteTemplate` = soft
   (deleted_at set, row still syncs `operation:'update'`); `encryptedFields: []` at M1.0 (name/bundle `[E]` is the
   M3 target — XCU-09 ratify). `[FACT: views service.ts:60; repository.ts:316,458-461; XCU-09; [[m10-repos-use-empty-encryptedfields-seam]]]`
 - **BR-S2-4 (bundle serialized to TEXT on write; opaque on read).** `createTemplate` accepts a `TemplateBundle`
@@ -44,33 +44,41 @@ edit-in-place); you save a new bundle, you do not mutate a stored one, so XCU-01
 ## 3. Contract
 
 **`packages/core/src/foundation/templates/service.ts`** (exported):
+
 ```ts
-export interface CreateTemplateInput { name: string; bundle: TemplateBundle }          // BR-S2-4
+export interface CreateTemplateInput {
+  name: string
+  bundle: TemplateBundle
+} // BR-S2-4
 export interface TemplatesService {
-  createTemplate(input: CreateTemplateInput): Promise<TemplateRow>                      // BR-S2-1/3/4
-  listTemplates(): Promise<TemplateRow[]>                                               // BR-S2-1/5 (excludes soft-deleted)
-  getTemplate(id: string): Promise<TemplateRow>                                         // BR-S2-1/5 (→ TemplateNotFound)
-  deleteTemplate(id: string): Promise<void>                                             // BR-S2-1/3 (soft)
+  createTemplate(input: CreateTemplateInput): Promise<TemplateRow> // BR-S2-1/3/4
+  listTemplates(): Promise<TemplateRow[]> // BR-S2-1/5 (excludes soft-deleted)
+  getTemplate(id: string): Promise<TemplateRow> // BR-S2-1/5 (→ TemplateNotFound)
+  deleteTemplate(id: string): Promise<void> // BR-S2-1/3 (soft)
 }
 export function createTemplatesService(db: DrizzleDb, deviceId: string): TemplatesService
 ```
+
 Imports: `TemplateBundle` from `@vida/types`; `templates`/`TemplateRow` from `db/schema/foundation/templates`;
 `TemplateNotFound` from `./types`; `createRepository` from `db/repository`. `[FACT: mirror views service.ts:9-13]`
 
 ## 4. Acceptance
+
 - [ ] `service.ts` exports `TemplatesService`, `CreateTemplateInput`, `createTemplatesService`; re-exported from
-  `foundation/templates/index.ts`. (BR-S2-1)
+      `foundation/templates/index.ts`. (BR-S2-1)
 - [ ] Vitest (real store — better-sqlite3 + migrations, the enum-parity/introspection fixture style):
-  create→list→get→delete round-trips; `getTemplate` on an absent/deleted id rejects `TemplateNotFound`;
-  `listTemplates` excludes a soft-deleted row; a `create` enqueues a `sync_queue` insert row; `bundle` persists as
-  the stringified envelope and round-trips. (BR-S2-1..5)
+      create→list→get→delete round-trips; `getTemplate` on an absent/deleted id rejects `TemplateNotFound`;
+      `listTemplates` excludes a soft-deleted row; a `create` enqueues a `sync_queue` insert row; `bundle` persists as
+      the stringified envelope and round-trips. (BR-S2-1..5)
 - [ ] `tsc --noEmit` 0 (`@vida/core`); regression floor **901** holds (+ new S2 tests).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - None. (Whether `getTemplate`/`listTemplates` should JSON.parse `bundle` for the caller is resolved: NO — S2 is a
   pure store, parsing is S4's concern, mirroring views' engine-parses-not-service split. `[FACT: views engine.ts parses; service stores TEXT]`)
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                 | Change                   |
+| ---------- | ----------------------- | ------------------------ |
 | 2026-09-19 | 2026-09-19-xs-templates | S2 spec drafted (gate 1) |

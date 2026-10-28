@@ -8,12 +8,12 @@
 
 ## Greybox coverage (rendered + reviewed)
 
-| Screen / state | Shot |
-|---|---|
-| Default (Appearance pane) | `Default__editorial-light__1440.png` · `…reader-dark…` · `…375` |
+| Screen / state                                         | Shot                                                                |
+| ------------------------------------------------------ | ------------------------------------------------------------------- |
+| Default (Appearance pane)                              | `Default__editorial-light__1440.png` · `…reader-dark…` · `…375`     |
 | Modules (show/hide + inline rename + Surfaces toggles) | `ModulesPane__editorial-light__1440.png` · `…reader-dark…` · `…375` |
-| Search — matches / no-match | `SearchMatches…` · `SearchNoMatch…` |
-| Loading / ReadError / Saved | `Loading…` · `ReadError…` · `Saved…` |
+| Search — matches / no-match                            | `SearchMatches…` · `SearchNoMatch…`                                 |
+| Loading / ReadError / Saved                            | `Loading…` · `ReadError…` · `Saved…`                                |
 
 ## Decisions taken at the gate
 
@@ -27,20 +27,20 @@
 
 > `structural` = greybox-provable → MUST map to ≥1 slice + a Visual-Gate MUST. `feel` = deferred to the live per-slice Visual Gate.
 
-| EC | Checkpoint | Screen/state | Type |
-|---|---|---|---|
-| **EC-1** | Two-pane **System layout**: left category rail (Appearance·Locale·Notifications·Modules·Data·Account) + right pane (search on top → sectioned option rows). | Default | structural |
-| **EC-2** | **Option-row pattern**: label (+ optional muted `$small` description) left · control right · hairline divider. | all panes | structural |
-| **EC-3** | **`Switch` primitive** (pill toggle) is the boolean control everywhere. | new primitive · Appearance/Modules/Notifications | structural |
-| **EC-4** | **All 7 controls present + wired**: theme-preset · mode · density · reduce-motion · home-arrangement (Appearance); module show/hide · inline rename · Feature Atlas · sync-log visibility (Modules/Surfaces). | Appearance + Modules | structural |
-| **EC-5** | **Theme keystone — live apply**: changing preset/mode/density re-themes the WHOLE app instantly (the new app theme store feeds `UIProvider`, replacing the `THEME_DEFAULT` constant). | Appearance | structural (instant-ness = feel) |
-| **EC-6** | **Searchable index**: one index drives both the search box (filter across all categories) AND the section grouping; no-match → calm `role=status` + hint. | Search | structural |
-| **EC-7** | **Honest states**: loading skeleton · read-error → defaults read-only + "your data is safe on this device" · write → optimistic + "Saved on this device" + revert-on-error (no cloud language, M1). | Loading/ReadError/Saved | structural |
-| **EC-8** | **Reachability (≥2 + escape hatch)**: Settings reached from the shell Bar-1 AND ⌘K; module-visibility can never hide the path back to Settings. | reachability | structural |
-| **EC-9** | **Delegated sections**: Account/Security + Data import-export render as calm "a later release" placeholders (owners M3/M4), visually distinct from live controls. | Data/Account | structural |
-| **EC-10** | **Responsive**: two-pane ≥768 → single column at 375 (nav above pane), no overflow. | 375 | structural |
-| **EC-11** | **Editorial voice**: serif section titles · quiet muted descriptions · accent spent sparingly (nav tick + active control) · warm-dark readable (full-matrix AA). | all | feel |
-| **EC-12** | **Inline rename feel**: pencil → inline edit with clear save/cancel; light, non-modal. | Modules | feel |
+| EC        | Checkpoint                                                                                                                                                                                                    | Screen/state                                     | Type                             |
+| --------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------ | -------------------------------- |
+| **EC-1**  | Two-pane **System layout**: left category rail (Appearance·Locale·Notifications·Modules·Data·Account) + right pane (search on top → sectioned option rows).                                                   | Default                                          | structural                       |
+| **EC-2**  | **Option-row pattern**: label (+ optional muted `$small` description) left · control right · hairline divider.                                                                                                | all panes                                        | structural                       |
+| **EC-3**  | **`Switch` primitive** (pill toggle) is the boolean control everywhere.                                                                                                                                       | new primitive · Appearance/Modules/Notifications | structural                       |
+| **EC-4**  | **All 7 controls present + wired**: theme-preset · mode · density · reduce-motion · home-arrangement (Appearance); module show/hide · inline rename · Feature Atlas · sync-log visibility (Modules/Surfaces). | Appearance + Modules                             | structural                       |
+| **EC-5**  | **Theme keystone — live apply**: changing preset/mode/density re-themes the WHOLE app instantly (the new app theme store feeds `UIProvider`, replacing the `THEME_DEFAULT` constant).                         | Appearance                                       | structural (instant-ness = feel) |
+| **EC-6**  | **Searchable index**: one index drives both the search box (filter across all categories) AND the section grouping; no-match → calm `role=status` + hint.                                                     | Search                                           | structural                       |
+| **EC-7**  | **Honest states**: loading skeleton · read-error → defaults read-only + "your data is safe on this device" · write → optimistic + "Saved on this device" + revert-on-error (no cloud language, M1).           | Loading/ReadError/Saved                          | structural                       |
+| **EC-8**  | **Reachability (≥2 + escape hatch)**: Settings reached from the shell Bar-1 AND ⌘K; module-visibility can never hide the path back to Settings.                                                               | reachability                                     | structural                       |
+| **EC-9**  | **Delegated sections**: Account/Security + Data import-export render as calm "a later release" placeholders (owners M3/M4), visually distinct from live controls.                                             | Data/Account                                     | structural                       |
+| **EC-10** | **Responsive**: two-pane ≥768 → single column at 375 (nav above pane), no overflow.                                                                                                                           | 375                                              | structural                       |
+| **EC-11** | **Editorial voice**: serif section titles · quiet muted descriptions · accent spent sparingly (nav tick + active control) · warm-dark readable (full-matrix AA).                                              | all                                              | feel                             |
+| **EC-12** | **Inline rename feel**: pencil → inline edit with clear save/cancel; light, non-modal.                                                                                                                        | Modules                                          | feel                             |
 
 ## Open design decisions the greybox made (Victor to confirm with the EC set)
 

@@ -3,9 +3,11 @@
 **Owning issue:** fe-codec-patterns (LIF-211) · **Authority:** `frontend-quality-bar §0` (OVERFLOWING: no cross-module tables).
 
 ## What lives here
+
 - `provider-read.ts` — the `ProviderRead<T> = () => Promise<T>` type + the convention.
 
 ## Rules
+
 - **No direct cross-module tables.** A surface reads another module's data through that module's exposed PROVIDER method
   (`booksService.getDayBooksDigest`, the `dueIn(today)` provider, …), consumed via React Query
   (`useQuery({ queryKey, queryFn: provider })` where `provider satisfies ProviderRead<T>`). Touching another module's

@@ -24,7 +24,7 @@ Platform baselines apply (UUIDv7 PK · Unix-ms timestamps · `YYYY-MM-DD` dates 
 - **Modality is a property, not a table — and modality ≠ the measurement axis (C1 guard).** Training focus / dietary
   framework / `physical_roles.type` are enum/tag dimensions — never spawn a table per modality. `physical_roles.type`
   (martial-art/sport/…) and `health_metrics.kind` (body-measure/biomarker/…) are **categories, kept as-is** — they are
-  NOT the ADR-011 `measurement_kind` (that is the *goal's* measure-shape). Only the bespoke `health_goals.type`
+  NOT the ADR-011 `measurement_kind` (that is the _goal's_ measure-shape). Only the bespoke `health_goals.type`
   decomposes. `[INTENT "finer levers on one spine"; ADR-011 M1 guard]`
 - **Compose the foundations by reference.** Reference Sessions/Knowledge/Purposes/Finance entities by id; never
   duplicate their data. Protocols live in Knowledge; workouts in Sessions; cost in Finance. `[INTENT HC-12/HC-13]`
@@ -33,7 +33,7 @@ Platform baselines apply (UUIDv7 PK · Unix-ms timestamps · `YYYY-MM-DD` dates 
 - **Extension paths are consent-gated + labeled.** Any field/flow fed by AI/wearable/food-DB/photo/prescription/
   curated-import carries its `source` and is only populated after opt-in consent (extension-model). INPUT is
   **device-mediated (ADR-014 X1)** under `external_in_ok` (X5); AI rides **ADR-015** (on_device/cloud AI1, cloud = egress
-  + scope-min AI3, `source=ai` AI6). `[FACT ZK-1; HC-10; ADR-014 X1/X5; ADR-015 AI1/AI3/AI6]`
+  - scope-min AI3, `source=ai` AI6). `[FACT ZK-1; HC-10; ADR-014 X1/X5; ADR-015 AI1/AI3/AI6]`
 - **Egress is the sharpest gate (ADR-014 X4).** INPUT integrations ingest into the vault; **OUTPUT to external/medical
   services is data egress** — the **X4 egress guard** (`external_out_ok` + union-of-consents + audit + never-auto-transmit),
   a distinct, stricter gate (data leaves the ZK vault). Intent-only until built. `[INTENT HC-22/R4; ADR-014 X4/X5]`
@@ -46,4 +46,5 @@ Platform baselines apply (UUIDv7 PK · Unix-ms timestamps · `YYYY-MM-DD` dates 
   of the ADR-006 registry, never a tag-table owner. `[INTENT HL10; ADR-006 SP1/SP2]`
 
 ## Completion checklist
+
 - [x] platform baselines referenced · [x] Health-Core specifics listed · [x] labeled [FACT/INTENT] · [x] no `{{…}}`

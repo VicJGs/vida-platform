@@ -25,9 +25,7 @@ test.describe('AR-2 OPFS browser proof', () => {
   // persisted DB from a re-migrated fresh one). No throwaway table.
   test('persists a written row across reopen (item 2)', async ({ db, page }) => {
     await db.open('vida') // migrate() bootstraps app_state (ensureInfra)
-    await db.run(
-      "INSERT OR REPLACE INTO app_state (key, value) VALUES ('e2e:probe', 'persisted-v1')",
-    )
+    await db.run("INSERT OR REPLACE INTO app_state (key, value) VALUES ('e2e:probe', 'persisted-v1')")
     await page.reload() // full worker teardown + reload
     await db.open('vida') // reloaded worker's driver is null → reopen
     const rows = await db.query("SELECT value FROM app_state WHERE key = 'e2e:probe'")

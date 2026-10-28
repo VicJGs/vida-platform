@@ -1,8 +1,9 @@
 <!-- Conventions — features/books · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · docs/intake/books.md -->
 
-# Conventions — Books  (level: Feature / own module)
+# Conventions — Books (level: Feature / own module)
 
 ## How to build here
+
 - **The work is the anchor.** Annotations, quotes, plans, sessions, subjects — everything attaches to the
   BOOK (the work); only native positions and files live on assets (BK-2/BK-5). `[INTENT B2/B14]`
 - **Positions are honest.** Show a mapped position only when the mapping is computed; otherwise native
@@ -11,7 +12,7 @@
 - **Derive, don't store, progress.** Unified progress computes from asset positions under the conflict rule
   (BK-3/BK-8) — the live `books.progress` is a nullable override that derives (`NULL ⇒ derive`, M3), never a
   `NOT NULL DEFAULT 0` counter; pace-status computes from Education schedule data via the partition (BK-13). `[INTENT;
-  ADR-011 M3]`
+ADR-011 M3]`
 - **Consent before any integration.** ISBN lookup = device-mediated public-reference (ADR-014 X1/X2/X3/X5); TTS,
   transcription, OCR = model calls split to ADR-015 (X11, `on_device`/`cloud` AI1, untrusted-page provenance AI5,
   `source=ai` AI6) — never AI4 agents; consent step first (the X4/AI1 gate), typed refusal path, manual fallback
@@ -24,13 +25,14 @@
 - **Sessions through the session entity.** All reading activity (manual, digital, audio, photo-assisted)
   logs a `reading_session` = a base `sessions` `sub_type='reading'` + the Books extension (`session_id`, S1) — never a
   standalone table, and never a `study_session` reuse (`reading` ≠ `study`; distinct sub-types, BK-10). `[INTENT
-  B10-confirm; ADR-004 S1]`
+B10-confirm; ADR-004 S1]`
 - **Plans reshape, never silently rewrite.** Missed quotas → recalculation + make-up proposal; unreachable
   targets → options surfaced (BK-11). `[INTENT B9]`
 - **Ship defaults with every personalizable view; render sparse data gracefully.** TOC-only and copy-less
   books are first-class states (BK-17). `[INTENT B12]`
 
 ## Naming & layout
+
 - ⚠ INTENDED enums: asset `format` {physical, pdf, epub, audiobook, braille, other} · annotation types
   {highlight, bookmark, quote} · plan `arrangement` {sequenced, parallel} · goal {manual, auto} ·
   mapping state {synced, pending, failed} · conflict rule {ask, source_of_truth, last_valid, photo_valid}.
@@ -42,6 +44,7 @@
   minutes for durations, soft delete on parents, `_sync_*`; enums = unions + CHECK + Zod. `[FACT: CLAUDE.md]`
 
 ## Local landmines / "never do"
+
 - **Never** link books to subjects through metadata JSON — the v1 `metadata.linked_courses` failure;
   `book_subjects` junction only (BK-13). `[FACT: v1 BookDetailPage L89-92]`
 - **Never** conflate TOC with syllabus — the v1 conflation this reframe undoes (BK-9). `[INTENT B8]`
@@ -58,4 +61,5 @@
   AI1), never an AI4 agent (BK-14). `[INTENT; ADR-014 X1/X11; ADR-015 AI1]`
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] each claim

@@ -87,7 +87,8 @@ function serializeInline(nodes: EditorNode[] | undefined): string {
     if (n.type === 'text') {
       if ((n.text ?? '') === '') continue
       out += renderTextNode(n)
-    } else if (n.type === 'hardBreak') out += '  \n' // GFM hard break: two trailing spaces + newline (BR-E6-3)
+    } else if (n.type === 'hardBreak')
+      out += '  \n' // GFM hard break: two trailing spaces + newline (BR-E6-3)
     else out += '' // no other inline nodes in the E1–E5 schema
   }
   return out
@@ -197,9 +198,7 @@ function serializeBlock(node: EditorNode): string {
       return `${'#'.repeat(level)} ${serializeInline(node.content)}`
     }
     case 'bulletList':
-      return (node.content ?? [])
-        .map((item) => indent(serializeListItemChildren(item.content), '  ', '- '))
-        .join('\n')
+      return (node.content ?? []).map((item) => indent(serializeListItemChildren(item.content), '  ', '- ')).join('\n')
     case 'orderedList': {
       const start = Number(node.attrs?.start ?? 1)
       return (node.content ?? [])
@@ -259,9 +258,7 @@ function serializeBlock(node: EditorNode): string {
  */
 export function toMarkdown(doc: EditorDocument, options: MarkdownSerializeOptions): string {
   currentOptions = options
-  const blocks = (doc.content ?? [])
-    .map((n) => serializeBlock(n))
-    .filter((s, _i, arr) => !(s === '' && arr.length > 1)) // drop skipped integration blocks; keep a lone empty paragraph
+  const blocks = (doc.content ?? []).map((n) => serializeBlock(n)).filter((s, _i, arr) => !(s === '' && arr.length > 1)) // drop skipped integration blocks; keep a lone empty paragraph
   const body = blocks.join('\n\n')
   const fm = options.include_frontmatter && options.frontmatter ? renderFrontmatter(options.frontmatter) : ''
   return `${fm}${body}\n`

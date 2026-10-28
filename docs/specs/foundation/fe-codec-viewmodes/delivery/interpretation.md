@@ -18,35 +18,35 @@ Knowledge/Finance/Calendar all inherit it) [FACT: decomposition.md:20-24 §1.1].
 
 **This unit builds the 2 members that are missing**, completing the spine:
 
-| canonical view-mode | status | home |
-|---|---|---|
-| `list` · `gallery` · `timeline` · `calendar` · `graph` | ✅ shipped (ui-2 V1·V2·V3·V4·V7) | `@vida/ui/components/` |
-| **`table`** | ❌ **NET-NEW (this unit)** | `@vida/ui/components/table-view.tsx` |
-| **`board`** | ❌ **NET-NEW (this unit)** | `@vida/ui/components/board-view.tsx` |
+| canonical view-mode                                    | status                           | home                                 |
+| ------------------------------------------------------ | -------------------------------- | ------------------------------------ |
+| `list` · `gallery` · `timeline` · `calendar` · `graph` | ✅ shipped (ui-2 V1·V2·V3·V4·V7) | `@vida/ui/components/`               |
+| **`table`**                                            | ❌ **NET-NEW (this unit)**       | `@vida/ui/components/table-view.tsx` |
+| **`board`**                                            | ❌ **NET-NEW (this unit)**       | `@vida/ui/components/board-view.tsx` |
 
 > **A view-mode renderer is a READ-ONLY LENS (load-bearing — governs every scope line below).** ADR-007 models a view
-> as *"filter × layout × grouping/sort … rendered how"*; `@vida/ui`'s view components are *"the **renderers** a view
-> selects"* and ADR-007 *"does **not** design each layout's visual/**interaction** spec"* [FACT: ADR-007:16-21,45-46,94].
-> The quality bar draws the line sharply: a **classic View** is a *"one pattern; **read-only lens**"* **vs** a
-> **Capability block** which is *"the mixture — combined patterns, **interactive**"* — *"the mix lives in the capability;
-> **classic views stay simple**"* [FACT: frontend-quality-bar/_index.md:120-123 §4.3]. Capabilities are *"the OS's
-> **interactive** units"* that *"write only through the module's documented write API — never a direct table write
-> (INT-2)"* [FACT: ADR-008:15,71-72 §3]. **So these two renderers render; they do not write and do not own the
+> as _"filter × layout × grouping/sort … rendered how"_; `@vida/ui`'s view components are _"the **renderers** a view
+> selects"_ and ADR-007 _"does **not** design each layout's visual/**interaction** spec"_ [FACT: ADR-007:16-21,45-46,94].
+> The quality bar draws the line sharply: a **classic View** is a _"one pattern; **read-only lens**"_ **vs** a
+> **Capability block** which is _"the mixture — combined patterns, **interactive**"_ — _"the mix lives in the capability;
+> **classic views stay simple**"_ [FACT: frontend-quality-bar/_index.md:120-123 §4.3]. Capabilities are _"the OS's
+> **interactive** units"_ that _"write only through the module's documented write API — never a direct table write
+> (INT-2)"_ [FACT: ADR-008:15,71-72 §3]. **So these two renderers render; they do not write and do not own the
 > interactive mixture.** Interaction that mutates (board drag-to-move) is a Capability, homed away (§5 O1, §6 R5).
 
-> **Scope-precision note.** The goal line reads *"add table + board to the shipped 7."* Two different sevens exist: the
+> **Scope-precision note.** The goal line reads _"add table + board to the shipped 7."_ Two different sevens exist: the
 > canonical **7 view-modes** above, and ui-2's **"7 views shipped"** [FACT: packages/ui/src/CLAUDE.md:218] which counts
 > `pomodoro-widget` + `export-dialog` (neither a view-mode). Real shipped view-mode count = **5**; this unit adds the
-> **2 missing** → the reshape ledger states it exactly: *"extend → add **table · board**"* [FACT: g6-edge-ledger.md:46].
+> **2 missing** → the reshape ledger states it exactly: _"extend → add **table · board**"_ [FACT: g6-edge-ledger.md:46].
 
 ---
 
 ## 1. DEPENDENCIES (frozen contracts — this unit builds ON, never patches around)
 
 - **`VIEW_LAYOUT` canon** — the FIXED 7-member tuple + `type ViewLayout`; `table`/`board` are already canonical members.
-  This unit builds the *renderers* the layout picks; it does not touch the tuple [FACT: packages/types/src/view.ts:14-26].
+  This unit builds the _renderers_ the layout picks; it does not touch the tuple [FACT: packages/types/src/view.ts:14-26].
 - **The ui-2 data-view spine** (`packages/ui/src/internal/data-view.tsx`) — `type ViewState = 'loading'|'empty'|'error'|
-  'success'` (the canonical home) · `Message` (the muted `role="status"` copy) · `warnMissingName(name,aL,aLby)` ·
+'success'` (the canonical home) · `Message` (the muted `role="status"` copy) · `warnMissingName(name,aL,aLby)` ·
   `resolveDataViewState({state,itemCount,…}) → {role:'list'|'status', effectiveEmpty}` (role + self-heal + 3 dev-warns)
   [FACT: packages/ui/src/internal/data-view.tsx:9,15,26,36-68].
 - **`calendar-view` — the DIVERGENCE precedent (build `table` against it).** A 2D grid → **`role="table"`**, reuses spine
@@ -65,6 +65,7 @@ Knowledge/Finance/Calendar all inherit it) [FACT: decomposition.md:20-24 §1.1].
 - **ADR-008 Capability** — the interactive-unit tier (board drag-to-move homes here); writes via INT-2 [FACT: ADR-008:15,71-72].
 
 ### THE boundary that governs every home (load-bearing)
+
 **`@vida/ui` CANNOT import `@vida/core`** — Tamagui-only deps. Both renderers live in `@vida/ui`, mirror terminal state
 **structurally** (reuse `ViewState` from `internal/data-view`), and take `state` as a **PROP** (default `'success'`); the
 app derives + passes it — BR-2, the package→app boundary [FACT: CLAUDE.md:125; list-view.tsx:15,34-35].
@@ -72,11 +73,11 @@ app derives + passes it — BR-2, the package→app boundary [FACT: CLAUDE.md:12
 ## 2. NEEDS (what the unit must deliver — read-only renderers)
 
 1. **`TableView<T>`** — a **read-only** `role="table"` renderer: a caller-declared **column set** (`{key, header,
-   render(item), width?, align?, sort?}`) over generic `items` + `getKey`; header row (`role="columnheader"`, `aria-sort`
+render(item), width?, align?, sort?}`) over generic `items` + `getKey`; header row (`role="columnheader"`, `aria-sort`
    DISPLAY indicator reflecting the view's current sort), body rows (`role="row"`/`role="cell"`). The 4 rendered terminal
    states; horizontal-scroll wrapper for narrow viewports (the calendar `minWidth + overflowX:auto` precedent). **No
    write, no view-config mutation** — cell interactivity (click-to-open) is the consumer's `render` (LV-5); toggling the
-   *sort* is the Collection shell's, not the bare renderer's (§5 O2).
+   _sort_ is the Collection shell's, not the bare renderer's (§5 O2).
 2. **`BoardView<T>`** — a **read-only** grouped-column (kanban) renderer over **already-grouped** data (grouping is
    provider-delegated — §1 ADR-007): a `role="group"` of **columns**, each a titled list of cards via a consumer
    `renderCard`, with group header + per-group count + per-column empty. Each column reuses the list-shaped spine
@@ -101,6 +102,7 @@ docs/specs/components/ui-2-platform-views/v8-table-view.md · v9-board-view.md �
 — OUT of this unit (homed by the docs): board drag-to-move Capability (ADR-008) · the Collection view-chrome controls
   (sort toggle / layout switch / filter) · the move WRITE (module write API, INT-2)
 ```
+
 > Home split = BR-2: both renderers are presentational → `@vida/ui`, `state` as a prop. Slice order (table first;
 > shared extraction y/n) is ratified at Step 2.
 
@@ -124,15 +126,18 @@ docs/specs/components/ui-2-platform-views/v8-table-view.md · v9-board-view.md �
 ## 5. THE 3-LENS AUDIT
 
 ### WRONG — contradicts a standard or a bar decision
-- *(none found.)* `table`/`board` are already `VIEW_LAYOUT` members; the read-only-lens model + the token boundary +
+
+- _(none found.)_ `table`/`board` are already `VIEW_LAYOUT` members; the read-only-lens model + the token boundary +
   BR-2 are consistent with the canon. The only corrections are **framing fixes**: the "7" scope-precision note (§0) and
   removing the earlier mis-homes (drag as a view-renderer deliverable — see §6 R5).
 
 ### MISSING — the spine requires it, nothing exists
+
 - **M1** **No `table` renderer** — `VIEW_LAYOUT` admits `table`, but `@vida/ui` ships no `TableView` [FACT: view.ts:19; index.ts].
 - **M2** **No `board` renderer** — same, for `board` (the kanban/grouped layout) [FACT: view.ts:20; decomposition.md:86].
 
 ### OVERFLOWING — past this read-only view-renderer's job (homed by the docs, NOT deferred)
+
 - **O1** **Board drag-to-move** (and any interactive card move/reorder across columns) = an interactive write → a
   **Capability** (ADR-008), writing via the module write API (INT-2). Homed to the capability tier / module ② consumer,
   NOT this renderer [FACT: quality-bar §4.3:120-123; ADR-008:15,71-72; surface-map.md:140 is the systemic reduced-motion
@@ -140,7 +145,7 @@ docs/specs/components/ui-2-platform-views/v8-table-view.md · v9-board-view.md �
 - **O2** **View-chrome controls** (sort toggle, layout switch, filter editing) = the **Collection shell** (decomposition
   §1.2), which composes the renderer; the bare renderer only renders the current sort as an `aria-sort` display [FACT: decomposition.md:29 §1.2].
 - **O3** **Filter / group / sort LOGIC** → the View Engine / provider (ADR-007 §3.3) [FACT: ADR-007 §3.3:65-69].
-- **O4** **Module layout *variants*** (Tasks' 12) → the owning module's ② track [FACT: decomposition.md:22-23].
+- **O4** **Module layout _variants_** (Tasks' 12) → the owning module's ② track [FACT: decomposition.md:22-23].
 - **O5** **The Vision-board / Calendar-grid CANVAS** → `fe-codec-canvas-board` (#10, a later unit) — the immersive
   Canvas archetype, NOT the `board` view-mode [FACT: g6-reshape-runbook.md:40; g6-edge-ledger.md:52].
 
@@ -163,7 +168,8 @@ docs/specs/components/ui-2-platform-views/v8-table-view.md · v9-board-view.md �
 - **R6 — Tokens via DIRECT semantic tokens + the token scale for dimensions** (DEF-U8-h); no hard-coded palette [FACT: CLAUDE.md:271-278].
 
 ### One precision kept (not a silent decision)
-**Within-column manual reorder** *could* read as a View **sort** change (view-config, not an entity write) rather than a
+
+**Within-column manual reorder** _could_ read as a View **sort** change (view-config, not an entity write) rather than a
 capability; **cross-column move is unambiguously an entity write → a Capability.** This unit ships the renderers read-only
 either way; whether an in-renderer manual-sort affordance is ever wanted is a Collection-shell / sort question (O2), not a
 blocker here — flagged, not silently decided.
@@ -176,9 +182,9 @@ grouping-logic + layout-variants + the Vision-board Canvas are each homed elsewh
 
 ## 8. Envision Gate (Step 1.5) — SKIP (doc-grounded; the trigger fails)
 
-§3.75 one-question test — *"a user affordance whose UI answer isn't obvious from an existing shipped surface?"* — is **NO**
+§3.75 one-question test — _"a user affordance whose UI answer isn't obvious from an existing shipped surface?"_ — is **NO**
 for both renderers: as **read-only lenses** (R5) they reuse shipped patterns — `table` = the shipped `calendar-view`
-`role="table"` grid; `board` = the shipped `list-view` spine per column. The one affordance that *would* have triggered
+`role="table"` grid; `board` = the shipped `list-view` spine per column. The one affordance that _would_ have triggered
 the gate (drag-to-move) is **not in this unit** — it's a Capability (O1). No novel interaction surface remains → **SKIP**,
 stated not silently omitted. The per-slice **Visual Gate (Step 10)** still verifies each rendered renderer (every state ×
 light/dark × 375/768/1440 + a11y) against the ui-2 sibling specimens [FACT: entity-delivery-flow.md §3.75:104-107].

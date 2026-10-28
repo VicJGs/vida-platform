@@ -50,7 +50,13 @@ export function GuidedSetupInvitation({ onStart, onSkip }: { onStart: () => void
  * its own EmptyState's `guidedSetup` slot; pressing it opens the same flow. (Consumption by each module surface lands
  * with those surfaces; S4 ships the reusable entry + registers the path.)
  */
-export function GuidedSetupSlotButton({ onStart, label = 'Set up your modules' }: { onStart: () => void; label?: string }) {
+export function GuidedSetupSlotButton({
+  onStart,
+  label = 'Set up your modules',
+}: {
+  onStart: () => void
+  label?: string
+}) {
   return (
     <Button intent="secondary" size="md" onPress={onStart}>
       {label}

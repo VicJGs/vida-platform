@@ -9,32 +9,44 @@
 
 ```ts
 // LOCAL unions (no @vida/core / @vida/types import — structural typing makes core values assignable).
-type ReaderState = 'loading' | 'empty' | 'error' | 'unavailable' | 'success'   // extends ViewState with 'unavailable' (access, IR-NEEDS-4)
-type Nature      = 'highlight' | 'bookmark' | 'quote'
-type ListenMode  = 'idle' | 'playing' | 'unavailable'                          // IR-7 (TTS deny-safe)
+type ReaderState = 'loading' | 'empty' | 'error' | 'unavailable' | 'success' // extends ViewState with 'unavailable' (access, IR-NEEDS-4)
+type Nature = 'highlight' | 'bookmark' | 'quote'
+type ListenMode = 'idle' | 'playing' | 'unavailable' // IR-7 (TTS deny-safe)
 
-interface ReaderChapter { id: string; number: number; title: ReactNode; pageRef?: ReactNode; done?: boolean; current?: boolean }
+interface ReaderChapter {
+  id: string
+  number: number
+  title: ReactNode
+  pageRef?: ReactNode
+  done?: boolean
+  current?: boolean
+}
 // location is ALREADY RESOLVED by the adapter (S6) — the shell only renders it (EC-14; no parsing in @vida/ui).
-interface ReaderAnnotation { id: string; nature: Nature; text: ReactNode; location: ReactNode }
+interface ReaderAnnotation {
+  id: string
+  nature: Nature
+  text: ReactNode
+  location: ReactNode
+}
 
 interface CanvasReaderProps {
   // ── header (S1) ──
   title: string
-  context?: ReactNode            // ONE plain-language location line (EC-2; no middle-dot meta-string)
-  progress?: number              // 0..1 reading fraction → HonestProgress bar (derived if omitted)
+  context?: ReactNode // ONE plain-language location line (EC-2; no middle-dot meta-string)
+  progress?: number // 0..1 reading fraction → HonestProgress bar (derived if omitted)
   progressLabel?: string
-  saveStatus?: ReactNode         // a SyncStatus slot
-  action?: ReactNode             // the ⋯ slot
-  positionNote?: ReactNode       // the honest not-synced line (IR-3); rendered only when provided
+  saveStatus?: ReactNode // a SyncStatus slot
+  action?: ReactNode // the ⋯ slot
+  positionNote?: ReactNode // the honest not-synced line (IR-3); rendered only when provided
 
   // ── reading column (S1 / S4) ──
-  state?: ReaderState            // BR-2 state-as-prop; shell owns loading/empty/error/unavailable; renderContent only on 'success'
+  state?: ReaderState // BR-2 state-as-prop; shell owns loading/empty/error/unavailable; renderContent only on 'success'
   renderContent?: () => ReactNode // the format-agnostic reading body (the consumer supplies it — the renderStage precedent)
 
   // ── Contents panel (S2) ──
-  summary?: ReactNode            // the book summary (from a book-level Notes page — decision 1)
+  summary?: ReactNode // the book summary (from a book-level Notes page — decision 1)
   chapters?: ReaderChapter[]
-  contentsOpen?: boolean         // toggleable; app owns the state (R5, the collection switcher precedent)
+  contentsOpen?: boolean // toggleable; app owns the state (R5, the collection switcher precedent)
   onToggleContents?: () => void
   onJumpToChapter?: (chapterId: string) => void
 
@@ -43,7 +55,7 @@ interface CanvasReaderProps {
   annotationsState?: ReaderState // BR-2; empty → teaching EmptyState
   railOpen?: boolean
   onToggleRail?: () => void
-  onAddNote?: (annotationId: string) => void       // SHELL ENFORCES IR-1: never offered on a highlight row
+  onAddNote?: (annotationId: string) => void // SHELL ENFORCES IR-1: never offered on a highlight row
   onLinkAnnotation?: (annotationId: string) => void // ditto — bookmark & quote only
 
   // ── selection (S4) ── the action set; the shell emits intents, never writes
@@ -54,17 +66,18 @@ interface CanvasReaderProps {
 
   // ── listen (S5) ──
   listen?: ListenMode
-  listenProgress?: number        // 0..1 when playing
+  listenProgress?: number // 0..1 when playing
   listenLabel?: ReactNode
   onListenToggle?: () => void
 
   'aria-label'?: string
   'aria-labelledby'?: string
-  ref?: Ref<HTMLDivElement>      // React-19 ref-as-prop → the region element
+  ref?: Ref<HTMLDivElement> // React-19 ref-as-prop → the region element
 }
 ```
 
 **Contract rules (from the IRs / ECs):**
+
 - **IR-1 is shell-enforced** (EC-5): a `nature:'highlight'` row renders **no** Add-note/Link affordance, regardless of
   whether `onAddNote`/`onLinkAnnotation` are passed. The gate FAILS if a highlight shows one.
 - **State-as-prop (BR-2):** the app derives `state`/`annotationsState`/`listen` + threads them; the shell owns the

@@ -118,7 +118,14 @@ export function CommandBar() {
         id,
         row
           ? { ...row, is_pinned: pinned ? 1 : 0 }
-          : { command_key: id, command_label: id, command_category: null, use_count: 0, last_used_at: null, is_pinned: pinned ? 1 : 0 },
+          : {
+              command_key: id,
+              command_label: id,
+              command_category: null,
+              use_count: 0,
+              last_used_at: null,
+              is_pinned: pinned ? 1 : 0,
+            },
       )
     }
     return [...byKey.values()]
@@ -127,9 +134,7 @@ export function CommandBar() {
     const registry = createCommandRegistry()
     registry.register(createNavProvider(prefs))
     registry.register(shellActionsProvider)
-    return registry
-      .collect(ranking, Date.now())
-      .filter((c) => c.visibleWhen == null || isFeatureEnabled(c.visibleWhen))
+    return registry.collect(ranking, Date.now()).filter((c) => c.visibleWhen == null || isFeatureEnabled(c.visibleWhen))
   }, [prefs, ranking])
   const isPinned = useCallback(
     (id: string) => ranking.some((r) => r.command_key === id && r.is_pinned === 1),
@@ -193,9 +198,12 @@ export function CommandBar() {
     if (announceTimer.current) clearTimeout(announceTimer.current)
     setAnnouncement('')
   }, [isOpen])
-  useEffect(() => () => {
-    if (announceTimer.current) clearTimeout(announceTimer.current)
-  }, [])
+  useEffect(
+    () => () => {
+      if (announceTimer.current) clearTimeout(announceTimer.current)
+    },
+    [],
+  )
 
   async function togglePin(command: Command) {
     const pinned = pendingPins.get(command.id) ?? isPinned(command.id)

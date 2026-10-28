@@ -1,11 +1,4 @@
-import {
-  forwardRef,
-  useCallback,
-  useLayoutEffect,
-  useRef,
-  type InputHTMLAttributes,
-  type ReactNode,
-} from 'react'
+import { forwardRef, useCallback, useLayoutEffect, useRef, type InputHTMLAttributes, type ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { ensureInteractionStyles } from '../internal/interaction-styles'
 import { ensureCheckboxStyles } from '../internal/checkbox-styles'
@@ -96,11 +89,10 @@ function Dash({ size }: { size: number }) {
   )
 }
 
-export interface CheckboxProps
-  extends Omit<
-    InputHTMLAttributes<HTMLInputElement>,
-    'size' | 'onChange' | 'checked' | 'defaultChecked' | 'type'
-  > {
+export interface CheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size' | 'onChange' | 'checked' | 'defaultChecked' | 'type'
+> {
   /** Controlled checked state. */
   checked?: boolean
   /** Uncontrolled initial checked state. */

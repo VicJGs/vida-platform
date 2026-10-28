@@ -83,7 +83,10 @@ describe('ModulesPane (fe-settings S5 — EC-4/EC-8/EC-12; persisted since prefe
     fireEvent.change(input, { target: { value: '  Todo  ' } })
     fireEvent.click(screen.getByLabelText(`Save name for ${tasks.label}`))
     await preferencesWriter.flushAll()
-    expect(testPreferences.state.user?.dashboard_layout).toMatchObject({ theme: 'reader', moduleNames: { tasks: 'Todo' } })
+    expect(testPreferences.state.user?.dashboard_layout).toMatchObject({
+      theme: 'reader',
+      moduleNames: { tasks: 'Todo' },
+    })
   })
 
   it('EC-12 — Enter saves, Esc cancels, an empty name writes nothing', async () => {

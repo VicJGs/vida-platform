@@ -1,6 +1,8 @@
 # Spec: component:db-7-migrations-runner
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented      <!-- draft → approved → implemented -->
+
+Status: implemented <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: list the session slug(s) that created/changed this spec in §7.
@@ -12,6 +14,7 @@ Sessions: list the session slug(s) that created/changed this spec in §7.
 -->
 
 ## 1. Identity
+
 The **migrations runner** for the local SQLite store: forward-only migrations, a schema-version store,
 and a dev-reset path, so the dogfood vault evolves its schema without data loss during Phase 1.
 [FACT: .claude/tasks/db-7-migrations-runner.md Goal; docs/roadmap/m1.0-delivery-plan.md §5 row DB-7 / LIF-69]
@@ -25,6 +28,7 @@ and a dev-reset path, so the dogfood vault evolves its schema without data loss 
   sync component; not drizzle-kit. [FACT: ADR-016 §3.2]
 
 ## 2. Business Rules
+
 - **BR-1 — `app_state` DDL carries the v1 shape.** `CREATE TABLE app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`.
   [FACT: ADR-002 §5.0; identical v1 shape at db/_legacy/001_initial.v1.ts:49-52]
 - **BR-2 — `app_state` is device-local, NOT synced.** No `baseColumns`/`syncColumns` (mirrors `sync_queue`'s infra
@@ -35,11 +39,11 @@ and a dev-reset path, so the dogfood vault evolves its schema without data loss 
   version store itself, so it cannot be version-gated (the runner reads the version from it before applying anything).
   Creation is idempotent (`CREATE TABLE IF NOT EXISTS`). [INTERP: forced by ADR-002 §9.1 + the runMigrations
   read-version-first contract at adapter.ts:248] — this **bootstrap-vs-versioned asymmetry** with `sync_queue`
-  (versioned migration 001) is mechanical/forced. (The directory *home* is a separate, discretionary call — BR-7.)
+  (versioned migration 001) is mechanical/forced. (The directory _home_ is a separate, discretionary call — BR-7.)
 - **BR-5 — this closes a real code-vs-doc gap (fail-loud at real boot).** `getSchemaVersion` swallows the missing table
-  and returns 0 (adapter.ts:210-221, try/catch) — so the *read* never throws. The failure is the first
+  and returns 0 (adapter.ts:210-221, try/catch) — so the _read_ never throws. The failure is the first
   `setSchemaVersion` **INSIDE the migration loop**: after applying migration 001 it runs `INSERT OR REPLACE INTO
-  app_state` (adapter.ts:231) against a table nothing created → throws `no such table: app_state`. The real caller is
+app_state` (adapter.ts:231) against a table nothing created → throws `no such table: app_state`. The real caller is
   `apps/web/src/db/worker.ts:23` (`migrate(driver)` at web boot; its "registry is empty → no-op" comment is stale — the
   registry now holds 001/002/003). Masked today only because **four** test files hand-create `app_state`.
   [FACT: adapter.ts:210-234; worker.ts:23; CREATE TABLE app_state grep → the 4 fixtures at
@@ -72,9 +76,10 @@ and a dev-reset path, so the dogfood vault evolves its schema without data loss 
   column. Benign for `schema_version` (always a non-null string) but it IS a semantic tightening, flagged. [FACT: the 4 test files]
 
 ## 3. Contract
+
 - **`schema/foundation/app-state.ts`** — Drizzle mirror: `appState = sqliteTable('app_state', { key: text('key').primaryKey(), value: text('value').notNull() })`. Not synced (BR-2). Re-export from `schema/index.ts` barrel, mirroring `sync-queue.ts`. [satisfies BR-1/BR-2/BR-7]
 - **Infra bootstrap** — an idempotent `ensureInfra(driver)` exported from `runner.ts`, issuing `CREATE TABLE IF NOT
-  EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`, invoked at the **start of `migrate()`** before
+EXISTS app_state (key TEXT PRIMARY KEY, value TEXT NOT NULL)`, invoked at the **start of `migrate()`** before
   `runMigrations`. Sufficiency: the only write path to `app_state` is `setSchemaVersion`, which runs only inside
   `runMigrations` (after `ensureInfra`); bare `getSchemaVersion` reads are already missing-table-safe (returns 0), so no
   other entry point needs the bootstrap. [satisfies BR-4/BR-5; FACT: getSchemaVersion/setSchemaVersion callers = index.ts barrel + migrate() only]
@@ -90,7 +95,9 @@ and a dev-reset path, so the dogfood vault evolves its schema without data loss 
 - **Error cases** — `ensureInfra` idempotent (no-op if table exists); migration failure throws `Error("Migration <v> (<name>) failed: …")` (existing, adapter.ts:264-268).
 
 ## 4. Acceptance
+
 Testable Definition of Done — automated Node contract tests use a real driver and do **NOT** pre-create `app_state`:
+
 - [ ] On a fresh DB, `migrate(driver)` creates `app_state` and persists `schema_version = LATEST_VERSION` — **without any fixture creating `app_state`** (proves BR-4/BR-5, the `worker.ts:23` boot path). [BR-4, BR-5]
 - [ ] `getSchemaVersion` returns the persisted version across a close/reopen (version survives). [BR-3]
 - [ ] Re-running `migrate()` when up-to-date is a no-op (`applied: 0`). [BR-6]
@@ -101,15 +108,18 @@ Testable Definition of Done — automated Node contract tests use a real driver 
 - [ ] `pnpm typecheck` 10/10; `@vida/core` + `@vida/web` suites green.
 
 Guard + review gates (not automatable — explicit reviewer checks, per [[gate-catches-aligned-by-omission]] don't-silently-skip):
+
 - [ ] **Review:** `resetDev` is NOT exported from the package barrel (`index.ts`) and/or is gated behind `import.meta.env.DEV`. [BR-8]
 - [ ] **Review:** `schema/foundation/app-state.ts` column set is byte-parity with the bootstrap DDL. [BR-7]
 
 Doc-currency (ship WITH the code — §XXIX):
+
 - [ ] Amend `storage-build-plan.md:38-39` — both infra rows `schema/infra.ts` → `schema/foundation/` (ledger stops lagging code). [BR-7]
 - [ ] Refresh the stale line in `packages/core/src/db/CLAUDE.md` ("registry is empty until per-feature migrations") — registry now holds 001/002/003 + the app_state bootstrap. [§XXIX]
 - [ ] Refresh `database-layer/current-{spec,business-rules}.md` for the app_state bootstrap + dev-reset. [§XXIX]
 
 ## 5. Implementation Prompt
+
 Ordered build sequence. Each step cites the §2/§3 rule it satisfies; nothing invented here. Done-check = §4.
 
 1. **`packages/core/src/db/schema/foundation/app-state.ts`** — author the Drizzle query-mirror:
@@ -142,8 +152,10 @@ Ordered build sequence. Each step cites the §2/§3 rule it satisfies; nothing i
    Then run the post-impl independent `/critique` + `victor:quality-gate-engineering`. → §4 is the done-check.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 **None architectural — the mechanism is fully documented; db-7 implements it, it does not decide it.**
 Baseline (Step 0) resolved every prior question against the docs + live floor:
+
 - **Reconcile+extend, NOT from-zero** — runner + engine already exist (`runner.ts`; `runMigrations`/`getSchemaVersion`/
   `setSchemaVersion` in `adapter.ts`) with migrations 001/002/003 live. [FACT: runner.ts; adapter.ts:244]
 - **`app_state` bootstrap is NOT an open call** — it is a documented ADR-002 §5.0 infra table; `storage-build-plan.md:38`
@@ -153,16 +165,17 @@ Baseline (Step 0) resolved every prior question against the docs + live floor:
   `repository.test.ts:33`). So `migrate()` would throw at real boot on the first `setSchemaVersion`. db-7 closes this
   by authoring the documented `app_state` migration + retiring the fixtures. [FACT: adapter.ts:210-234; grep of CREATE TABLE app_state]
 - **Resolved this gate (gate-1 critique, 2026-07-29):** (a) home drift `schema/infra.ts` → `schema/foundation/` decided
-  + ledger amendment added (BR-7, §4); (b) the fixture set corrected 3→4 and the failure mechanism restated
-  (setSchemaVersion INSIDE the loop, not a read — BR-5); (c) forward-only/no-`down()` divergence from ADR-002 §9.2
-  disclosed (BR-6); (d) `resetDev` signature + web-VFS + guard specified (BR-8, §3). No numbered migration for
-  `app_state` — it is the pre-loop infra bootstrap (BR-4), so "migration numbering" is not an open item.
+  - ledger amendment added (BR-7, §4); (b) the fixture set corrected 3→4 and the failure mechanism restated
+    (setSchemaVersion INSIDE the loop, not a read — BR-5); (c) forward-only/no-`down()` divergence from ADR-002 §9.2
+    disclosed (BR-6); (d) `resetDev` signature + web-VFS + guard specified (BR-8, §3). No numbered migration for
+    `app_state` — it is the pre-loop infra bootstrap (BR-4), so "migration numbering" is not an open item.
 - No open architectural decisions remain — the mechanism is documented; db-7 implements it.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-07-29 | 2026-07-29-db-7-migrations-runner | initial stub — home + §1 identity seed |
-| 2026-07-29 | 2026-07-29-db-7-migrations-runner | gate-1 PLAN drafted (§2–§4) — all rules doc-sourced + cited |
-| 2026-07-29 | 2026-07-29-db-7-migrations-runner | REVISE applied after independent critique: 4th fixture (web-adapter.test.ts:135), BR-5 mechanism, home-drift + ledger amend, forward-only/§9.2 divergence disclosed, resetDev fully specified, acceptance made testable, cites fixed |
+
+| Date       | Session                           | Change                                                                                                                                                                                                                                                                                                                         |
+| ---------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-07-29 | 2026-07-29-db-7-migrations-runner | initial stub — home + §1 identity seed                                                                                                                                                                                                                                                                                         |
+| 2026-07-29 | 2026-07-29-db-7-migrations-runner | gate-1 PLAN drafted (§2–§4) — all rules doc-sourced + cited                                                                                                                                                                                                                                                                    |
+| 2026-07-29 | 2026-07-29-db-7-migrations-runner | REVISE applied after independent critique: 4th fixture (web-adapter.test.ts:135), BR-5 mechanism, home-drift + ledger amend, forward-only/§9.2 divergence disclosed, resetDev fully specified, acceptance made testable, cites fixed                                                                                           |
 | 2026-07-29 | 2026-07-29-db-7-migrations-runner | Approval 1 → preflight PASSED → 2nd critique SHIP → §5 written → Approval 2 → IMPLEMENTED (8 steps + §XXIX docs). §XXVIII in-spirit refinement: import.meta.env.DEV read type-safely. Post-impl critique SHIP (2 NITs fixed). Verify: typecheck 10/10, @vida/core 131/131, @vida/web 6/6. Eng gate PASS. Status → implemented. |

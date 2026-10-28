@@ -3,13 +3,14 @@
      signatures (cited to code, current lines) are docs/modules/notes/current-spec.md; this doc is the intended
      surface. backend-intent NOT-* line cites refer to the eaf64f8^ text. -->
 
-# Contract — Notes & Pages  (level: Feature)
+# Contract — Notes & Pages (level: Feature)
 
 > **Status:** the ① `@vida/core` NotesService is BUILT (S1–S4, 2026-09-19; `writePageContent` 2026-10-20;
 > `ensureJournal` home-journal-go-live) and registered in the apps/web composition root. Intent items below that are
 > not yet built are marked ⚠ INTENDED. `[FACT: docs/modules/notes/current-spec.md]`
 
 ## Exposed surface (`@vida/core` NotesService)
+
 Notes & Pages is the **hub (in-degree 14)**. `[FACT: module-dependency-graph.md]`
 
 - **Page CRUD & queries** (return Drizzle `PageRow`):
@@ -47,12 +48,14 @@ Notes & Pages is the **hub (in-degree 14)**. `[FACT: module-dependency-graph.md]
   body (fe-sessions) (delivery/interpretation.md §5 #4).
 
 ## What it consumes
+
 Structurally nothing (Wave 0) beyond the Spaces foundation it sits on: AR-6 `SpacesService` (entity-link/tag writes,
 the taggable-type registry), AR-8 `BacklinkResolver` (entity-link reads), ADR-007 views, ADR-009 templates, ADR-008
 capability registry. `/summary` data and the NP-8 seed are read-only integration points, never direct table access.
 `[FACT: services/notes/types.ts:20-29; docs/core/business-rules.md INT-1 (L52)]`
 
 ## Surface intent (② — the page + collection surfaces)
+
 - **Per-type Overviews (EC-18):** each page type has a distinctive Overview, not a generic dashboard. `note` = clean
   freeform: properties · attachments · backlinks (EC-18f). `journal` = the daily OS dashboard: today's agenda ·
   streaks/stats · `/summary` across the OS · check-in (EC-18a — owned by the Journals module → journals-rescope; Notes provides
@@ -73,17 +76,19 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   (≤ 2048) or `attachment:<id>` (one of the page's attachments, rendered from its thumbnail only).
 - **Attachment upload (M1, plaintext pass-through):** file → blob + optional thumbnail, lazy thumbnails
   (performance-strategy.md:132). Picker UX, size limit and storage (DB blob vs OPFS): `[UNKNOWN — homed: the
-  attachments leg's slice PLAN / Envision Gate]`.
+attachments leg's slice PLAN / Envision Gate]`.
 - **View-config persistence:** layouts are ADR-007 `views` rows; whether `/notes` persists a global row
   (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": **RESOLVED (delivery/interpretation.md §5 #6): YES** — a global row; layout/filter/sort persist via `ViewsService`.
 - **Entity links from the editor (G6 creation half):** `/entity-link` block and entities as `[[` candidates — EC-10
   pins page candidates only → **RESOLVED (delivery/interpretation.md §5 #7):** `[[` candidates = every OS entity that is a page (pages + registered entity types); page → `page_links`, entity → `entity_links`; EC-10 re-pinned by Victor 2026-10-26.
 
 ## Contract error cases
+
 - journal clash → `JournalExistsError` (NP-2) · unregistered `entity_type` → `UnregisteredEntityTypeError` (NP-6)
 - duplicate link → idempotent no-op / revive (NP-5) · Zod failure → Promise rejection
 - update on an unknown id → repository `Error('Row not found')` (DB-11 `ServiceError` reconcile pending)
 - a `/summary` source unavailable → that section's typed empty/error; the rest render (G5)
 
 ## Completion checklist
+
 - [x] exposed + consumed surface · [x] errors · [x] integration via documented points · [x] built vs ⚠ INTENDED marked

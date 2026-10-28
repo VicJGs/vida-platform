@@ -78,7 +78,8 @@ describe('bindFlowIntents — the intent wiring against a SessionsPort', () => {
   it('onAttach → attach(...) to the consumer-resolved target (instance level); no-op when no target', () => {
     const port = mockPort()
     const intents = bindFlowIntents(port, 'sess-1', {
-      attachTarget: (stageId, kind) => (kind === 'audio' ? { entityType: 'note', entityId: `n-${stageId}` } : undefined),
+      attachTarget: (stageId, kind) =>
+        kind === 'audio' ? { entityType: 'note', entityId: `n-${stageId}` } : undefined,
     })
     intents.onAttach('s2', 'audio')
     expect(port.attach).toHaveBeenCalledWith('sess-1', 'note', 'n-s2', 'instance')

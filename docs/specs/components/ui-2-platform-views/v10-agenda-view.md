@@ -1,16 +1,19 @@
 # Spec: component:ui-2-platform-views · V10 — agenda-view
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) -->
+
 Status: **SHIPPED** (fe-calendar #19 S2, LIF-203, 2026-10-18) — promoted from the gated PLAN (§XXIX).
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md (shared BR-1..BR-6).
+Parent: docs/specs/components/ui-2-platform-views/\_index.md (shared BR-1..BR-6).
 Delivery: docs/specs/foundation/fe-calendar/delivery/ (interpretation · envision · slice-map · seam-contract ·
 PLAN-S2-agenda-renderer.md = the gate/audit record incl. deviations D-S2-DEV-1..3).
 
 ## 1. Identity
+
 V10 `agenda-view` — the renderer for the Global Calendar's **Agenda range** (#19): a multi-day, daypart-aware actionable
 schedule — the "another way" that solves the month grid's info-crush `[FACT: calendar-vision.md:17-18,57-59]`. EC-3 is
-its anchored checkpoint `[FACT: envision.md:25]`. **NOT a `VIEW_LAYOUT` renderer** (it is a calendar *range*, dispatched
+its anchored checkpoint `[FACT: envision.md:25]`. **NOT a `VIEW_LAYOUT` renderer** (it is a calendar _range_, dispatched
 by the #19 `CalendarSurface`, not by a saved view's `layout`).
 
 - **Presentational + read-only lens.** Items arrive **pre-dayparted and pre-ordered** (the `useCalendar` seam derives
@@ -20,7 +23,8 @@ by the #19 `CalendarSurface`, not by a saved view's `layout`).
   spine PIECES (`ViewState` · `Message` · `warnMissingName`), NOT `resolveDataViewState` (the outer region is a group of
   per-day lists, not one list — the calendar/board divergence) `[FACT: list-view.tsx:96-262; internal/data-view.tsx]`.
 
-## 2. Business Rules (BR-AV-*, = PLAN BR-CAL-S2-1..12 as built)
+## 2. Business Rules (BR-AV-\*, = PLAN BR-CAL-S2-1..12 as built)
+
 - **BR-AV-1 · Arrange, never derive.** No sorting, no daypart mapping; input order preserved within a partition. Daypart
   order fixed morning → afternoon → evening; an empty daypart renders nothing; a day with 0 items is skipped.
 - **BR-AV-2 · Temporal asymmetry.** ONLY the `today` day (string-equal `day.date === today`) renders daypart group
@@ -52,37 +56,60 @@ by the #19 `CalendarSurface`, not by a saved view's `layout`).
   the rail stacks ABOVE the items below ~352px of row width (title ≈180px at 375), side-by-side ≥768.
 
 ## 3. Contract (as shipped)
+
 ```ts
-export type Daypart = 'morning' | 'afternoon' | 'evening'   // LOCAL mirror of @vida/types DAYPART (structural)
-export interface AgendaItem { id: string; title: ReactNode; color?: string; time?: string; daypart: Daypart;
-                              weight?: 'must' | 'can'; done?: boolean }
-export interface AgendaDay { date: string; items: readonly AgendaItem[] }        // 'YYYY-MM-DD'
-export interface AgendaViewProps { days: readonly AgendaDay[]; today?: string; state?: ViewState
-  onToggleItem?: (id: string) => void; empty?: ReactNode; error?: ReactNode
-  ref?: Ref<HTMLDivElement>; 'aria-label'?: string; 'aria-labelledby'?: string }
-export function AgendaView(props: AgendaViewProps): ReactElement               // non-generic, React-19 ref-as-prop
+export type Daypart = 'morning' | 'afternoon' | 'evening' // LOCAL mirror of @vida/types DAYPART (structural)
+export interface AgendaItem {
+  id: string
+  title: ReactNode
+  color?: string
+  time?: string
+  daypart: Daypart
+  weight?: 'must' | 'can'
+  done?: boolean
+}
+export interface AgendaDay {
+  date: string
+  items: readonly AgendaItem[]
+} // 'YYYY-MM-DD'
+export interface AgendaViewProps {
+  days: readonly AgendaDay[]
+  today?: string
+  state?: ViewState
+  onToggleItem?: (id: string) => void
+  empty?: ReactNode
+  error?: ReactNode
+  ref?: Ref<HTMLDivElement>
+  'aria-label'?: string
+  'aria-labelledby'?: string
+}
+export function AgendaView(props: AgendaViewProps): ReactElement // non-generic, React-19 ref-as-prop
 ```
+
 Barrel: `AgendaView`, `AgendaViewProps`, `AgendaItem`, `AgendaDay`, `Daypart`. The canonical **`DAYPART`/`Daypart`**
 lives in `@vida/types` `common.ts` (slice-map D1; backs no column → no CHECK/enum-parity row/Zod). D1 mapping constants
 (applied by `useCalendar`, S7 — NOT this renderer): `<12:00` morning · `12:00–17:59` afternoon · `≥18:00` evening;
 all-day task → morning (configurable).
 
 ## 4. Acceptance (met)
+
 - [x] EC-3 anatomy · BR-AV-1..12 — jsdom 21/21 (`agenda-view.test.tsx`, TZ-forced America/Sao_Paulo) + stories
-  (`Playground` owned/intent · `ReadOnly` · `TerminalStates` · `Narrow`).
+      (`Playground` owned/intent · `ReadOnly` · `TerminalStates` · `Narrow`).
 - [x] Visual Gate PASS (Victor-reviewed 2026-10-18; Brave, real `CalendarSurface`, 3 presets × L/D × 375/768/1440 +
-  states): text AA min 4.94–6.53 incl. warm-dark, 0 fails · box 3:1 4.94–6.53 · 46×46 · ring + hover · real Space/Enter
-  toggle · Agenda region 0 overflow at 375 · axe 0 · 0 pageerrors.
+      states): text AA min 4.94–6.53 incl. warm-dark, 0 fails · box 3:1 4.94–6.53 · 46×46 · ring + hover · real Space/Enter
+      toggle · Agenda region 0 overflow at 375 · axe 0 · 0 pageerrors.
 
 ## 5. Deferred / homed
+
 - Live data (`useCalendar` ProviderRead fan-out + the D1 mapping) → S7. The owning completion capability → Tasks/Habits/
   Routines (ADR-008); until wired, the surface passes NO handler (D-S2-DEV-3).
 - Dense-day overflow treatments (vision §6) → Month/Agenda feel work (EC-F3), not V10's structure.
 - Range-transition motion (EC-F2) → the surface.
 
 ## 6. Change log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session            | Change                                                                                                                                                                                       |
+| ---------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-10-18 | fe-calendar #19 S2 | V10 authored at currency from the gated PLAN: BR-AV-1..12 + contract as shipped; deviations D-S2-DEV-1..3 (Victor-approved at the Visual Gate); gate-caught a11y fixes (border 3:1, hit 46). |
 
 - **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

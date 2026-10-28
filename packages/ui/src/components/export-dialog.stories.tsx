@@ -49,4 +49,6 @@ function Demo(props: { formats?: readonly ExportFormat[]; defaultFormat?: Export
 export const Playground: Story = { render: () => <Demo entityLabel="journal entry" /> }
 
 // A limited format set (e.g. a surface that only supports Markdown + PDF).
-export const LimitedFormats: Story = { render: () => <Demo formats={['md', 'pdf']} defaultFormat="pdf" entityLabel="note" /> }
+export const LimitedFormats: Story = {
+  render: () => <Demo formats={['md', 'pdf']} defaultFormat="pdf" entityLabel="note" />,
+}

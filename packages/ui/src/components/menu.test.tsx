@@ -18,14 +18,7 @@ function renderMenu(ui: React.ReactElement) {
 }
 
 function Basic(props: Partial<React.ComponentProps<typeof Menu>>) {
-  return (
-    <Menu
-      trigger={<button>Actions</button>}
-      items={ITEMS}
-      aria-label="Actions"
-      {...props}
-    />
-  )
+  return <Menu trigger={<button>Actions</button>} items={ITEMS} aria-label="Actions" {...props} />
 }
 
 const trigger = () => screen.getByRole('button', { name: 'Actions' })
@@ -228,12 +221,7 @@ describe('Menu — ref composition + dev warnings', () => {
     const menuRef = createRef<HTMLButtonElement>()
     const ownRef = createRef<HTMLButtonElement>()
     renderMenu(
-      <Menu
-        ref={menuRef}
-        trigger={<button ref={ownRef}>Actions</button>}
-        items={ITEMS}
-        aria-label="Actions"
-      />,
+      <Menu ref={menuRef} trigger={<button ref={ownRef}>Actions</button>} items={ITEMS} aria-label="Actions" />,
     )
     expect(menuRef.current?.tagName).toBe('BUTTON')
     expect(ownRef.current?.tagName).toBe('BUTTON')

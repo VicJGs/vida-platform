@@ -31,7 +31,10 @@ describe('NotesSearchView (S7) — state-as-prop', () => {
   })
 
   it('search-unavailable → a calm role=status line with VOICE copy, NOT the (DB-8) dev string (B2)', () => {
-    const { getByRole } = view({ status: 'search-unavailable', message: 'Search activates when the index is built (DB-8).' })
+    const { getByRole } = view({
+      status: 'search-unavailable',
+      message: 'Search activates when the index is built (DB-8).',
+    })
     const status = getByRole('status')
     expect(status.textContent).toMatch(/Search turns on once your notes are indexed\./)
     expect(status.textContent).not.toMatch(/DB-8/)
@@ -55,7 +58,12 @@ describe('NotesSearchView (S7) — state-as-prop', () => {
   it('results → a role=list of result titles (authored for the live swap)', () => {
     const { getByText, getByRole } = view({
       status: 'results',
-      groups: [{ entityType: 'page', results: [{ id: 'p1', entityType: 'page', title: 'Trip notes', routePath: '/notes/p1' }] }],
+      groups: [
+        {
+          entityType: 'page',
+          results: [{ id: 'p1', entityType: 'page', title: 'Trip notes', routePath: '/notes/p1' }],
+        },
+      ],
     })
     expect(getByRole('list')).not.toBeNull()
     expect(getByText('Trip notes')).not.toBeNull()
@@ -63,14 +71,18 @@ describe('NotesSearchView (S7) — state-as-prop', () => {
 
   it('typing in the box fires onQueryChange', () => {
     const onQueryChange = vi.fn()
-    const { getByRole } = renderUI(<NotesSearchView query="" onQueryChange={onQueryChange} outcome={{ status: 'idle' }} />)
+    const { getByRole } = renderUI(
+      <NotesSearchView query="" onQueryChange={onQueryChange} outcome={{ status: 'idle' }} />,
+    )
     fireEvent.change(getByRole('textbox', { name: 'Search notes' }), { target: { value: 'tax' } })
     expect(onQueryChange).toHaveBeenCalledWith('tax')
   })
 
   it('Esc clears the query (D-S7-9)', () => {
     const onQueryChange = vi.fn()
-    const { getByRole } = renderUI(<NotesSearchView query="tax" onQueryChange={onQueryChange} outcome={{ status: 'search-unavailable' }} />)
+    const { getByRole } = renderUI(
+      <NotesSearchView query="tax" onQueryChange={onQueryChange} outcome={{ status: 'search-unavailable' }} />,
+    )
     fireEvent.keyDown(getByRole('textbox', { name: 'Search notes' }), { key: 'Escape' })
     expect(onQueryChange).toHaveBeenCalledWith('')
   })
@@ -93,7 +105,9 @@ describe('useNotesSearch (S7) — data seam reusing useCommandSearch', () => {
     const fake: SearchProvider = {
       search: async (): Promise<SearchOutcome> => ({
         status: 'results',
-        groups: [{ entityType: 'page', results: [{ id: 'p1', entityType: 'page', title: 'Hit', routePath: '/notes/p1' }] }],
+        groups: [
+          { entityType: 'page', results: [{ id: 'p1', entityType: 'page', title: 'Hit', routePath: '/notes/p1' }] },
+        ],
       }),
     }
     const { result } = renderHook(() => useNotesSearch(fake))

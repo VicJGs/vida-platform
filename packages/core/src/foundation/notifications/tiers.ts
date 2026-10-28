@@ -6,13 +6,7 @@
 // enforcer, no egress, no ports, no I/O. Twin of ai/modes.ts.
 // ============================================================================
 
-import type {
-  DeliveryChannel,
-  DeliveryMode,
-  DeliveryTier,
-  NotificationNature,
-  Platform,
-} from './types'
+import type { DeliveryChannel, DeliveryMode, DeliveryTier, NotificationNature, Platform } from './types'
 
 // The off-device/scheduled tier — one of `local_scheduled` | `wake_signal`. In-app
 // is NOT selected here: it is the unconditional baseline (DEL-5) always present at

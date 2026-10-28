@@ -14,8 +14,21 @@ import { VISIBILITY_KEYS } from '../preferences/preferences-writer'
 // preferences-rescope R5 (PLAN-R5 R5-BR-2/3/4) — the ONE nav filter both readers (dock + ⌘K) use.
 
 const DOCK_KEYS = [
-  'notes', 'tasks', 'habits', 'projects', 'routines', 'learning', 'books', 'knowledge', 'skills', 'sessions',
-  'purposes', 'health', 'finance', 'relationships', 'gamification',
+  'notes',
+  'tasks',
+  'habits',
+  'projects',
+  'routines',
+  'learning',
+  'books',
+  'knowledge',
+  'skills',
+  'sessions',
+  'purposes',
+  'health',
+  'finance',
+  'relationships',
+  'gamification',
 ]
 
 const prefs = (visibility: Record<string, boolean> = {}, names: Record<string, string> = {}): NavPrefs => ({

@@ -30,7 +30,11 @@ const DESCRIPTIONS: Record<string, string> = {
   s5: 'Final proof, then close.',
 }
 const renderStage = (s: FlowStage) =>
-  DESCRIPTIONS[s.id] ? <Text fontSize="$body" color="$colorTextMuted">{DESCRIPTIONS[s.id]}</Text> : null
+  DESCRIPTIONS[s.id] ? (
+    <Text fontSize="$body" color="$colorTextMuted">
+      {DESCRIPTIONS[s.id]}
+    </Text>
+  ) : null
 
 const noop = () => {}
 
@@ -64,7 +68,11 @@ export const FlowSingleStage: Story = {
     title: 'Evening check-in',
     context: 'Today',
     saveStatus: <SyncStatus status="saved" />,
-    renderStage: () => <Text fontSize="$body" color="$colorTextMuted">Mood, energy, one gratitude, one reflection.</Text>,
+    renderStage: () => (
+      <Text fontSize="$body" color="$colorTextMuted">
+        Mood, energy, one gratitude, one reflection.
+      </Text>
+    ),
     onMarkDone: noop,
     stages: [{ id: 'only', label: 'Today', title: 'Evening check-in', status: 'current' }],
     effects: [],

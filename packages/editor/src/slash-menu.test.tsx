@@ -40,8 +40,7 @@ function press(ref: React.RefObject<SlashMenuHandle | null>, key: string): boole
   })
   return handled
 }
-const selectedId = () =>
-  screen.getAllByRole('option').find((o) => o.getAttribute('aria-selected') === 'true')?.id
+const selectedId = () => screen.getAllByRole('option').find((o) => o.getAttribute('aria-selected') === 'true')?.id
 
 describe('SlashMenu — structure & a11y (§5)', () => {
   it('renders a role=listbox with a named panel + one option per item', () => {

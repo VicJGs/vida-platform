@@ -28,7 +28,9 @@ describe('CoverPickerDialog', () => {
   it('a valid link writes it and closes', () => {
     const onChoose = vi.fn()
     const onOpenChange = vi.fn()
-    const r = renderUI(<CoverPickerDialog open onOpenChange={onOpenChange} pageId="p1" current={null} onChoose={onChoose} />)
+    const r = renderUI(
+      <CoverPickerDialog open onOpenChange={onOpenChange} pageId="p1" current={null} onChoose={onChoose} />,
+    )
     fireEvent.change(r.getByRole('textbox', { name: 'Image link' }), { target: { value: ' https://e.com/c.png ' } })
     fireEvent.click(r.getByRole('button', { name: 'Use link' }))
     expect(onChoose).toHaveBeenCalledWith('https://e.com/c.png')
@@ -42,9 +44,15 @@ describe('CoverPickerDialog', () => {
 
   it('"Remove cover" only when set, and it writes null', () => {
     const onChoose = vi.fn()
-    expect(renderUI(<CoverPickerDialog open onOpenChange={vi.fn()} pageId="p1" current={null} onChoose={onChoose} />).queryByRole('button', { name: 'Remove cover' })).toBeNull()
+    expect(
+      renderUI(
+        <CoverPickerDialog open onOpenChange={vi.fn()} pageId="p1" current={null} onChoose={onChoose} />,
+      ).queryByRole('button', { name: 'Remove cover' }),
+    ).toBeNull()
     cleanup()
-    const r = renderUI(<CoverPickerDialog open onOpenChange={vi.fn()} pageId="p1" current="https://e.com/c.png" onChoose={onChoose} />)
+    const r = renderUI(
+      <CoverPickerDialog open onOpenChange={vi.fn()} pageId="p1" current="https://e.com/c.png" onChoose={onChoose} />,
+    )
     fireEvent.click(r.getByRole('button', { name: 'Remove cover' }))
     expect(onChoose).toHaveBeenCalledWith(null)
   })

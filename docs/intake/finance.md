@@ -1,11 +1,15 @@
 # Intake: Finance
+
 <!-- /documentation Phase 1 (Intake). Harvest from 3 sources → gap map. No-Guessing: every claim cited. -->
+
 Context: features/finance (Wave 1 — independent domain; feeds Journal /summary + Purpose metrics + Gamification)
 Sources: v2 (ADR-002 §5.8 + @vida/types/finance.ts + CLAUDE.md §1) · v1 (life-os src/features/finances + types/finances.ts + API.md) · user intent
 Session: 2026-06-27 · documentation-blueprint
 
 ## A. WHAT EXISTS — v2 (current, authoritative)
+
 **Data model — 6 tables** `[FACT: ADR-002 §5.8 L1997-2189; finance.ts]`:
+
 - `accounts`: `name`[E], `account_type`{checking,savings,credit_card,investment,cash,digital_wallet,other}, `institution`[E], `currency` (default USD), `current_balance`[E] cents, `credit_limit`[E], `interest_rate`[E] basis-points, `is_active`, `color`, `icon`, soft-delete. `[FACT: L2000-2027]`
 - `transactions`: `account_id` (CASCADE), `transfer_to_account_id` (SET NULL), `transaction_type`{income,expense,transfer}, `amount`[E] cents, `currency`, `category`[E], `subcategory`[E], `description`[E], `date` YYYY-MM-DD, `is_recurring`, `recurring_frequency`{daily,weekly,biweekly,monthly,quarterly,yearly}, `tags`[E] JSON. Indexed on account/date/category. `[FACT: L2033-2066]`
 - `assets`: `name`[E], `asset_type`{real_estate,vehicle,electronics,jewelry,collectible,other}, `purchase_date`, `purchase_price`[E], `current_value`[E], `depreciation_rate`[E] bp/yr, `location`[E]. `[FACT: L2071-2094]`
@@ -18,7 +22,9 @@ Session: 2026-06-27 · documentation-blueprint
 **Cross-cutting:** monetary values are INTEGER cents `[FACT: CLAUDE.md Conventions]`; `interest_rate`/`depreciation_rate` are basis points (`BasisPoints`) `[FACT: finance.ts L6]`; `transaction` is a valid `entity_links` note target `[FACT: ADR-002 L3811]`.
 
 ## B. WHAT v1 DID — life-os finances (legacy, for intent + lessons)
+
 `[FACT: life-os src/types/finances.ts + features/finances/API.md]`
+
 - **Full feature**: 9 pages (Dashboard, Finances, Accounts, AccountDetail, Transactions, Assets, Liabilities, Investments, IncomeStreams) + 6 entity forms + sidebar. `[FACT: features/finances/pages]`
 - **`useFinanceOverview`** → derived `FinanceOverview` {totalBalance, totalAssets, totalLiabilities, **netWorth**, monthlyIncome, monthlyExpenses}. `[FACT: API.md L357-368]`
 - **Paginated transactions** (`usePaginatedTransactions`, page/pageSize) + filters (account, type, dateRange). `[FACT: API.md L135-148]`
@@ -32,6 +38,7 @@ Session: 2026-06-27 · documentation-blueprint
 - v1 transaction: had `title` (required) separate from `description`; `recurrence_rule` as JSON object. `[FACT: types/finances.ts L28,33]`
 
 ### Key v1→v2 deltas (what changed, why it matters)
+
 1. v2 **encrypts all monetary values** (`amount`, balances, prices `[E]`) — v1 stored them plaintext. ZK upgrade. `[FACT: ADR-002 §5.8 [E] marks]`
 2. v2 **money is INTEGER cents + basis points** for rates — v1 used floats. Precision upgrade. `[FACT: CLAUDE.md Conventions; finance.ts]`
 3. v2 **drops v1's denormalized investment math** (`cost_basis`/`current_value`/`gain_loss_*`/`dividends`) → must be **derived** from `quantity`×price. `[FACT: finance.ts L142-156 omits them]`
@@ -41,6 +48,7 @@ Session: 2026-06-27 · documentation-blueprint
 7. **CSV/OFX import + conciliation** (CLAUDE.md §1) has **no schema in either version** — entirely INTENDED, biggest unbuilt surface. `[FACT: no import tables in ADR-002]`
 
 ## C. GAP MAP — genuine unknowns (need Victor's intent; not answerable from sources)
+
 G1 — **Scope / views**: full v1 (assumed). View set: **Finance dashboard** (net worth + totals + analytics charts) · per-entity list pages (Accounts · Transactions · Assets · Liabilities · Investments · Income) · **Account detail page** · per-entity standalone pages? Confirm the set + which get standalone pages.
 G2 — **CSV/OFX import + conciliation** (the headline, no schema yet): how should it work? Proposed flow — import file → parse client-side → **staging** of parsed rows → **auto-match** against existing manual transactions (by date+amount±tolerance) → user reviews/merges/confirms → committed. Needs: a staging table? dedup/match rules? Does parsing happen 100% client-side (ZK)? This is a **candidate ADR** + new tables.
 G3 — **Derived aggregates**: confirm `netWorth` = Σ account balances + Σ asset current_value − Σ liability current_balance, and investment `current_value`/`gain_loss` are **computed client-side** (not stored, per delta #3). Monthly income/expense derived from transactions. Confirm all derived, none persisted.
@@ -55,10 +63,11 @@ G11 — **Analytics charts**: which charts in v1 scope (Chart.js)? Proposed: spe
 G12 — **Notes via pages**: confirm finance entities link notes via `pages`/`entity_links` (`transaction` is already a valid target). Which entities get notes — transactions only, or accounts/assets/investments too?
 
 ## Resolution
+
 `[INTENT: Victor, 2026-06-27]` — **IN PROGRESS** (G1–G3 captured; G4–G12 pending). Marked WHOLE only when all gaps answered.
 
 - **G1 — Views.** `[INTENT]`
-  - **Top dashboard is switchable:** *Financial Dashboard* ⇄ *Accounts Dashboard* (accounts, liabilities, assets, net worth, balance, etc.).
+  - **Top dashboard is switchable:** _Financial Dashboard_ ⇄ _Accounts Dashboard_ (accounts, liabilities, assets, net worth, balance, etc.).
   - **Account standalone pages** with **nested, account-scoped views** (read-only within that account's reach): Account's Transactions · Account's Assets · Account's Liabilities · Account's Investments.
   - **All-Transactions Dashboard** + **All-Transactions page** for consulting over a timeframe (default = current month's reach, e.g. 01/06–30/06).
   - **All-Assets page** — view pattern emphasizing detail (value increase / decrease).
@@ -73,6 +82,7 @@ G12 — **Notes via pages**: confirm finance entities link notes via `pages`/`en
 - **G_meta — Onboarding (parked, cross-module).** `[INTENT]` Personalization surface is growing across modules → Victor expects **per-module onboarding + one global onboarding**. Not a Finance-only concern; park as a **platform-level** item (candidate: an Onboarding feature / Preferences extension), revisit after Wave 1.
 
 ### ⚠⚠ CONSTITUTIONAL TENSION (victor:triage — sources contradict) — must resolve via ADR
+
 Intent "connect to banks/investment companies to garner information" vs CORE invariant "**server never sees plaintext**" (`[[authoritative-docs]]`, ADR-001/002 zero-knowledge). ZK survives ONLY if the connection is **device→bank direct** (client-side); an **aggregator** (Plaid/Belvo/Open Finance Brasil) means a **third party sees plaintext** (a deliberate, documented dent — not pure ZK); a **server-proxied** fetch **breaks ZK outright**. → **Candidate ADR: "External financial data ingestion under zero-knowledge."** Until decided, bank-connection features are documented as ⚠ INTENDED + TENTATIVE only; the verified-real surface is manual entry + (client-side) CSV/OFX import.
 
 - **G4 — Account balance = derived (ledger/hybrid).** `[INTENT]` `current_balance` is computed from
@@ -85,7 +95,7 @@ Intent "connect to banks/investment companies to garner information" vs CORE inv
 - **G7 — Pricing/FX: client-side, user's responsibility; future opt-in anonymized service.** `[INTENT]`
   Not a ZK problem because the fetch can be done **on the user's end** (device-side) — the user maintains his
   own security (the whole point of the system). The user **chooses** the method. A **future paid service**
-  (full-maturity stage only) would let Vida fetch *selected* data **anonymously, no leaks** — Victor likened
+  (full-maturity stage only) would let Vida fetch _selected_ data **anonymously, no leaks** — Victor likened
   it to "as a blockchain may work." ⚠ NOTE: the correct primitive is an **anonymizing/oblivious fetch**
   (proxy / mixnet / trusted-enclave / PIR), not a blockchain per se — flagged as a research item for that
   stage. Default now = manual/device-side; the anonymized service is ⚠ INTENDED + DEFERRED (advanced).
@@ -108,14 +118,16 @@ Intent "connect to banks/investment companies to garner information" vs CORE inv
   `entity_links` target). Highest value: investment (thesis) + asset (receipts) + transaction (context).
 
 ### ⚠ BUDGETING — NOW IN SCOPE (Victor at G12: "we will need a budgeting") — INTENDED, needs its own design pass
+
 Neither v2 nor v1 has a budget model. Victor wants **budgeting** in Vida. It is **large enough to need its own
-mini-intake** before it can be specced — open design questions: budget *period* (monthly/custom?), per-**category**
+mini-intake** before it can be specced — open design questions: budget _period_ (monthly/custom?), per-**category**
 limits (ties to G10 managed categories), **rollover** of unspent, **alerts/thresholds**, and whether it integrates
 with **Purpose & Goals** targets. ⚠ DECISION DEFERRED: document as an INTENDED Finance capability now; it may
 **graduate to its own feature context** (own manifest row) when designed. NOT invented here — only the intent +
 the open questions are recorded. → candidate ADR + new table(s).
 
 ### ⚠ LIABILITY PAYMENT VIEW — IN SCOPE (Victor at G12: "a tab for the liability payment")
+
 A **liability payment tab/view** on the liability standalone page: upcoming + made payments, schedule from the
 restored fields (G9: `payment_frequency`/`next_payment_date`/`interest_type`/`payoff_date`). ⚠ Open: tracking
 **actual payments made** needs either linking transactions→liability or a `liability_payments` ledger — design
@@ -126,10 +138,11 @@ decision deferred (candidate ADR-002 amendment). Documented as INTENDED.
 ## Status: intake WHOLE (2026-06-27). All G1–G12 resolved. INTENDED surface (bank-connection/import [ADR], multi-currency+FX, recurring auto-gen option, G9 restored fields, budgeting [needs design], liability-payment view, derived-storage opt-in) flagged for the build phase — NOT documented as shipped.
 
 ## EXPANSION — Commitments (Wave R, 2026-07-15) `[INTENT: Victor 2026-07-15]`
+
 Recovered from the v1 audit (`_scope-reconciliation-v1.md` #2: v1 first-class `Commitment` + OR-007 auto-txn + NR-006
-due). **Resolved as a management SUB-CONTEXT/LAYER inside Finance — NOT a new entity** (Victor: *"a management
+due). **Resolved as a management SUB-CONTEXT/LAYER inside Finance — NOT a new entity** (Victor: _"a management
 sub-context in the Financial module… not another entity, but a layer… the OS is already complex enough and able to
-handle that"*).
+handle that"_).
 
 - **What it is:** a management layer over the OS's **committed / recurring / long-term cash flows** — monthly
   subscriptions & payments, **lending/receivables tracked to a total** (receive back over the long run in varying
@@ -147,8 +160,9 @@ handle that"*).
   or personal-lending/receivable representation → the **Commitments/liability-payment/budgeting design-pass**.
 
 ## Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-06-27 | documentation-blueprint | intake harvested (v2 ADR-002 §5.8 6 tables + finance.ts + CLAUDE.md §1 · v1 life-os finances 9-page feature + API.md); gap map G1–G12 raised. Headline INTENDED surface: CSV/OFX import + conciliation (no schema in either version). |
+
+| Date       | Session                 | Change                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------- | ----------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-27 | documentation-blueprint | intake harvested (v2 ADR-002 §5.8 6 tables + finance.ts + CLAUDE.md §1 · v1 life-os finances 9-page feature + API.md); gap map G1–G12 raised. Headline INTENDED surface: CSV/OFX import + conciliation (no schema in either version).                                                                                                                                                                                        |
 | 2026-06-27 | documentation-blueprint | G1–G12 resolved with Victor; intake WHOLE. Flagged: ⚠ constitutional ZK tension on bank/investment-API connections → candidate ADR; budgeting NOW in scope (needs own design pass, may graduate to its own feature); liability-payment view in scope; multi-currency YES (FX device-side/private); balance = ledger-derived; G9 restore 4 liability fields + income next_payment_date; tags→shared, categories→managed list. |
-| 2026-07-15 | documentation-blueprint | EXPANSION Commitments (Wave R): resolved as a management SUB-CONTEXT/LAYER in Finance (NOT a new entity) — derives committed/recurring/long-term flows from existing 6 entities; bidirectional + derived progress-to-total; composes dueIn/Notifications/FN-5. Threaded into 4 aspect docs (identity, FN-14, structure-data, contract). |
+| 2026-07-15 | documentation-blueprint | EXPANSION Commitments (Wave R): resolved as a management SUB-CONTEXT/LAYER in Finance (NOT a new entity) — derives committed/recurring/long-term flows from existing 6 entities; bidirectional + derived progress-to-total; composes dueIn/Notifications/FN-5. Threaded into 4 aspect docs (identity, FN-14, structure-data, contract).                                                                                      |

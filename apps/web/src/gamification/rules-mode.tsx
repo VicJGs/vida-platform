@@ -46,7 +46,12 @@ function RuleRow({ rule, onToggle, onRemove }: { rule: Rule; onToggle: () => voi
         </Text>
       </View>
       <View flexDirection="row" alignItems="center" gap="$8">
-        <Button intent={rule.isEnabled ? 'secondary' : 'ghost'} size="small" aria-pressed={rule.isEnabled} onPress={onToggle}>
+        <Button
+          intent={rule.isEnabled ? 'secondary' : 'ghost'}
+          size="small"
+          aria-pressed={rule.isEnabled}
+          onPress={onToggle}
+        >
           {rule.isEnabled ? 'Enabled' : 'Disabled'}
         </Button>
         <Button intent="ghost" size="small" onPress={onRemove} aria-label={`Delete ${rule.name}`}>
@@ -70,7 +75,9 @@ export function RulesMode() {
   const renderView = (_layout: ViewLayout, state: ViewState) => (
     <ListView<Rule>
       items={data.rules}
-      renderItem={(rule) => <RuleRow rule={rule} onToggle={() => data.toggle(rule.id)} onRemove={() => data.remove(rule.id)} />}
+      renderItem={(rule) => (
+        <RuleRow rule={rule} onToggle={() => data.toggle(rule.id)} onRemove={() => data.remove(rule.id)} />
+      )}
       getKey={(rule) => rule.id}
       state={state}
       aria-label={copy.rules}

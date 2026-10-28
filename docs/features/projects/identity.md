@@ -1,6 +1,6 @@
 <!-- Identity — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · @vida/types/project.ts · CLAUDE.md §2 · docs/intake/projects.md -->
 
-# Identity — Projects  (level: Feature)
+# Identity — Projects (level: Feature)
 
 **What it is.** Structured project management with a real **four-level hierarchy — Project > Milestone >
 Deliverable > Task** — plus a **vision/mission** layer, a confidential **document vault**, auto-rolled-up
@@ -8,12 +8,13 @@ Deliverable > Task** — plus a **vision/mission** layer, a confidential **docum
 `binding_mode` under the **ADR-011** universal-measurability contract) that draws signals from across the OS
 to give a deep picture of how a project is actually developing. `[FACT: CLAUDE.md §2; ADR-002 §5.4; INTENT: ADR-011 §3.1/§3.5]`
 
-**The desire behind it.** The user wants to **run real projects** — personal, professional, academic — and *see
-how they're truly progressing*, not just a manual percent bar: money moved, content shipped, outreach done,
+**The desire behind it.** The user wants to **run real projects** — personal, professional, academic — and _see
+how they're truly progressing_, not just a manual percent bar: money moved, content shipped, outreach done,
 artifacts delivered. He wants the big picture pulled from the whole OS, his confidential project info protected
 in a vault, and his goals/people/finances connected to the work — all on a zero-knowledge core. `[INTENT: Victor 2026-06-29]`
 
 **Scope — full v1 + major expansions.** `[INTENT G1–G11]`
+
 - Owns **3 tables today**: `projects`, `milestones` (nested), `project_documents`. `[FACT: ADR-002 §5.4]`
 - **⚠ INTENDED `deliverables` table (G2)** — the real level between milestones and tasks, an ADR-011 **pursuable**:
   each deliverable carries **`measurement_kind`** (M1) + **`binding_mode`** (M2); its source (financial account ·
@@ -28,9 +29,10 @@ in a vault, and his goals/people/finances connected to the work — all on a zer
   roles**, **project events**, Check-in reviews.
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules + constitution]`
+
 - **Not the owner of tasks.** Tasks live in **Tasks**; a "project task" is a Tasks entity surfaced through a
   **dedicated Tasks→Projects API** with a project-scoped UI (G7). `[INTENT G7]`
-- **Not the owner of goals/people/money.** Projects *links* purposes, contacts, accounts via junctions/
+- **Not the owner of goals/people/money.** Projects _links_ purposes, contacts, accounts via junctions/
   integration points; those modules own the data (§6). `[INTENT G8]`
 - **Not a generic file dump.** `project_documents` is a **secure vault** (confidential, encrypted), not casual
   attachments. `[INTENT G6]`
@@ -42,7 +44,7 @@ in a vault, and his goals/people/finances connected to the work — all on a zer
 - **Not the owner of a "research/investigation" entity.** A research/investigation is a **`deliverable`
   (`measurement_kind='milestone'` + `binding_mode='manual'` — an artifact deliverable)** backed by a **Knowledge Lab
   investigation** (linked via `entity_links`) — the
-  distinction is *explore vs execute*: Projects tracks the deliverable, **Knowledge** holds the open-ended
+  distinction is _explore vs execute_: Projects tracks the deliverable, **Knowledge** holds the open-ended
   exploration. No `investigations` table. `[INTENT: Victor 2026-07-15]`
 
 > **Governing principle (→ core constitution `[[../../core/business-rules]]`):** adding integrations never changes
@@ -51,4 +53,5 @@ in a vault, and his goals/people/finances connected to the work — all on a zer
 > (**ADR-015**). `[INTENT: Victor 2026-06-29; ADR-014/015]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

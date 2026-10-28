@@ -13,7 +13,8 @@ afterEach(() => {
   cleanup()
   setSearch('')
 })
-const renderUI = (ui: React.ReactNode, selection?: ThemeSelection) => render(<UIProvider selection={selection}>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode, selection?: ThemeSelection) =>
+  render(<UIProvider selection={selection}>{ui}</UIProvider>)
 
 describe('useAchievements (data seam)', () => {
   it('honest M1 default = empty (nothing seeded until app init)', () => {

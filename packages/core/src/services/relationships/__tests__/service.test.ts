@@ -74,7 +74,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -271,7 +274,11 @@ describe('mod-relationships S2 — interactions ledger + derived stats', () => {
     expect((await h.svc.getContact(b.id))?.next_contact_date).toBe('2026-10-08') // +7
 
     // days takes precedence over frequency
-    const d = await h.svc.createContact({ first_name: 'Both', stay_in_touch_days: 3, stay_in_touch_frequency: 'yearly' })
+    const d = await h.svc.createContact({
+      first_name: 'Both',
+      stay_in_touch_days: 3,
+      stay_in_touch_frequency: 'yearly',
+    })
     await h.svc.logInteraction({ contact_id: d.id, interaction_type: 'call', date: '2026-10-01' })
     expect((await h.svc.getContact(d.id))?.next_contact_date).toBe('2026-10-04') // +3, not +365
 
@@ -369,7 +376,9 @@ describe('mod-relationships S3 — events', () => {
     )
     const live = await h.svc.createContact({ first_name: 'Live' })
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    await expect(h.svc.createEvent({ contact_id: live.id, event_date: '01-01', event_type: 'nope' as any })).rejects.toThrow()
+    await expect(
+      h.svc.createEvent({ contact_id: live.id, event_date: '01-01', event_type: 'nope' as any }),
+    ).rejects.toThrow()
   })
 
   it('getAllEvents returns every event, event_date asc', async () => {
@@ -460,7 +469,9 @@ describe('mod-relationships S4 — reminders, groups, and the dueIn producer', (
     const c = await h.svc.createContact({ first_name: 'Due', stay_in_touch_days: 7 })
     await h.svc.logInteraction({ contact_id: c.id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-08
     const r = await h.svc.createReminder({ contact_id: c.id, title: 'call back', reminder_date: '2026-10-15' })
-    await h.svc.createReminder({ contact_id: c.id, title: 'done one', reminder_date: '2026-10-16' }).then((x) => h.svc.completeReminder(x.id))
+    await h.svc
+      .createReminder({ contact_id: c.id, title: 'done one', reminder_date: '2026-10-16' })
+      .then((x) => h.svc.completeReminder(x.id))
 
     const due = await h.svc.getDueReminders({ start: ms('2026-10-01'), end: ms('2026-10-31') })
     const refs = due.map((d) => d.ref_id)
@@ -597,9 +608,19 @@ describe('mod-relationships S6 — derived health engine', () => {
   })
 
   it('closeness onion: an inner-tier (family+favorite) contact is penalized MORE than an acquaintance at the same daysOverdue', async () => {
-    const fam = await h.svc.createContact({ first_name: 'Mom', relationship_type: 'family', is_favorite: true, stay_in_touch_days: 10 })
-    const acq = await h.svc.createContact({ first_name: 'Guy', relationship_type: 'acquaintance', stay_in_touch_days: 10 })
-    for (const id of [fam.id, acq.id]) await h.svc.logInteraction({ contact_id: id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-11
+    const fam = await h.svc.createContact({
+      first_name: 'Mom',
+      relationship_type: 'family',
+      is_favorite: true,
+      stay_in_touch_days: 10,
+    })
+    const acq = await h.svc.createContact({
+      first_name: 'Guy',
+      relationship_type: 'acquaintance',
+      stay_in_touch_days: 10,
+    })
+    for (const id of [fam.id, acq.id])
+      await h.svc.logInteraction({ contact_id: id, interaction_type: 'call', date: '2026-10-01' }) // next = 2026-10-11
     const famH = await h.svc.getContactHealth(fam.id, '2026-10-16') // 5 days over
     const acqH = await h.svc.getContactHealth(acq.id, '2026-10-16') // 5 days over
     expect(famH.score! < acqH.score!).toBe(true) // inner tier scores lower
@@ -610,13 +631,23 @@ describe('mod-relationships S6 — derived health engine', () => {
 
   it('recent sentiment shifts band/score (negative → at_risk even when not overdue)', async () => {
     const neg = await h.svc.createContact({ first_name: 'Neg', stay_in_touch_days: 30 })
-    await h.svc.logInteraction({ contact_id: neg.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'negative' })
+    await h.svc.logInteraction({
+      contact_id: neg.id,
+      interaction_type: 'call',
+      date: '2026-10-01',
+      sentiment: 'negative',
+    })
     const negH = await h.svc.getContactHealth(neg.id, '2026-10-15') // daysOverdue 0 (next 2026-10-31)
     expect(negH.band).toBe('at_risk')
     expect(negH.factors.recentSentiment).toBe(-1)
 
     const pos = await h.svc.createContact({ first_name: 'Pos', stay_in_touch_days: 30 })
-    await h.svc.logInteraction({ contact_id: pos.id, interaction_type: 'call', date: '2026-10-01', sentiment: 'positive' })
+    await h.svc.logInteraction({
+      contact_id: pos.id,
+      interaction_type: 'call',
+      date: '2026-10-01',
+      sentiment: 'positive',
+    })
     const posH = await h.svc.getContactHealth(pos.id, '2026-10-15')
     expect(posH.band).toBe('healthy')
     expect(posH.score! > negH.score!).toBe(true)
@@ -773,7 +804,9 @@ describe('mod-relationships S9 — Journal /summary + DueProvider fan-out', () =
     await h.svc.createEvent({ contact_id: c.id, event_type: 'birthday', event_date: '10-15' }) // recurring, today's MM-DD
     await h.svc.createEvent({ contact_id: c.id, event_type: 'custom', event_date: '2026-10-15', is_recurring: false }) // one-time today
     await h.svc.createReminder({ contact_id: c.id, title: 'due', reminder_date: '2026-10-15' })
-    await h.svc.createReminder({ contact_id: c.id, title: 'done', reminder_date: '2026-10-15' }).then((r) => h.svc.completeReminder(r.id))
+    await h.svc
+      .createReminder({ contact_id: c.id, title: 'done', reminder_date: '2026-10-15' })
+      .then((r) => h.svc.completeReminder(r.id))
 
     const digest = await h.svc.getDayRelationshipsDigest('2026-10-15')
     expect(digest.interactionsToday).toBe(1)
@@ -799,7 +832,13 @@ describe('mod-relationships S9 — Journal /summary + DueProvider fan-out', () =
     const entityRegistry = createTaggableTypeRegistry()
     const sessionRegistry = createSessionRegistry(h.db, DEVICE)
     const rail = createEffectRail(h.db, createEffectRegistry())
-    const sessions = createSessionsService({ db: h.db, deviceId: DEVICE, registry: sessionRegistry, rail, entityRegistry })
+    const sessions = createSessionsService({
+      db: h.db,
+      deviceId: DEVICE,
+      registry: sessionRegistry,
+      rail,
+      entityRegistry,
+    })
     registerRelationshipsDueProvider(sessions, h.svc)
 
     const c = await h.svc.createContact({ first_name: 'Due' })

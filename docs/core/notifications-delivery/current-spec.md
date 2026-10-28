@@ -6,6 +6,7 @@
 > NO schema. 17 legs (XCU-01…12, 14–18; XCU-13 device-registry = ADR-003). Rules: `current-business-rules.md`.
 
 ## Files
+
 - `types.ts` — tiers/natures/platforms/channels/modes; `RoutingMeta`/`WakePayload` + `FORBIDDEN_PAYLOAD_KEYS` +
   `PayloadNotContentFree`; S2 (`QuietHours`/`DueOccurrence`/`QuietHoursResult`/`RegisteredReminder`/`ReschedulePlan`/`DedupSource`);
   S3 (`DeliveryDecision`/`DeliveryResult`/`ScheduleRequest`/`ScheduleResult`/ports/`NotificationDeliveryEngine`).
@@ -17,6 +18,7 @@
 - `index.ts` — barrel; re-exported from `@vida/core` (`packages/core/src/index.ts`).
 
 ## Public API (the seam MOD-notifications + Sessions consume)
+
 ```
 selectTier(nature: NotificationNature, platform: Platform): PrimaryTier            // XCU-01
 channelsFor(tier: DeliveryTier, mode: DeliveryMode): DeliveryChannel[]             // XCU-12/17
@@ -33,9 +35,11 @@ createNotificationDeliveryEngine(ports?: NotificationPorts): NotificationDeliver
 ```
 
 ## Ports (M1 deny-safe → M2 real, no signature change)
+
 `osScheduler` (Expo/Tauri) · `wakeRelay` (Hono server relay / Web Push) · `email` (generic nudge). Absent/default →
 no network call, `{scheduled:false}`/`{delivered:false}` → in-app fallback.
 
 ## Verification
+
 All slices pure/in-memory (no DB/schema at M1 → no live-store; spy + deny-safe port doubles). @vida/core 1166/1166
 (+38), tsc 0, eslint 0.

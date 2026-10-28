@@ -25,7 +25,9 @@ import { CoverBanner } from './page-metadata'
 const renderUI = (ui: React.ReactNode) =>
   render(
     <UIProvider>
-      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>{ui}</QueryClientProvider>
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        {ui}
+      </QueryClientProvider>
     </UIProvider>,
   )
 
@@ -91,4 +93,3 @@ describe('CoverImage', () => {
     expect(r.container.querySelector('img')?.getAttribute('src')).toBe('https://e.com/good.png')
   })
 })
-

@@ -1,4 +1,5 @@
 # Spec: feature:ui-4-app-shell-components / S1 — Shell scaffold
+
 Status: implemented
 Source-repo: apps/web/src/shell, apps/web/src/App.tsx, packages/ui/src/tamagui.config.ts
 No-Guessing: every claim is [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X]. Inherits the umbrella §2 BR-1..7.
@@ -9,9 +10,11 @@ Sessions: 2026-08-16-ui-4-app-shell-components
 > content only — S2 (nav), S3 (command-bar), S4 (onboarding) fill the slots. First unit → the head.
 
 ## 1. Identity
+
 A React component `AppShell` (`apps/web/src/shell/app-shell.tsx`) that renders the **five persistent regions**
 (`moduleDock · globalBar · spacesBar · content · overlayHost`) in the documented responsive layout, plus the
 root provider mounts and the reactive-breakpoint wiring.
+
 - [FACT: regions.ts:7-114] the region set, reflow states, visibility, and layering it renders.
 - [FACT: shell-layout.md:28-39,149-151] the region contract + the three UI-4 seams (media config, store extend, render).
 
@@ -20,6 +23,7 @@ onboarding screens (S4), not route wiring (S5). S1 renders each region as a labe
 FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` component (BR-1).
 
 ## 2. Business Rules (S1 refinements of the umbrella BR-1..7)
+
 - **S1-BR-a** [FACT: regions.ts:44-50] region presence follows `REGION_VISIBILITY` — `spacesBar` hidden on mobile;
   all others present at every breakpoint. Read via `isRegionVisibleAt(region, bp)`, never hard-coded.
 - **S1-BR-b** [FACT: regions.ts:16-38] the dock renders `DOCK_STATE[bp]` (drawer/rail/sidebar), the overlay host
@@ -31,7 +35,7 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
   augmentation (tamagui.d.ts:4-7; `VidaConfig = typeof config`) — **no `.d.ts` edit needed** (gate-1 finding 3).
 - **S1-BR-d** [FACT: shell-layout.md:149 + @tamagui/web@2.6.2 API] add a **plain `media` object** to `createTamagui`
   in `packages/ui/src/tamagui.config.ts`: `createTamagui({ …, media: { tablet:{minWidth:768},
-  desktop:{minWidth:1440}, wide:{minWidth:1920} } })`. **NOT `createMedia(...)`** — that was a Tamagui **v1** helper,
+desktop:{minWidth:1440}, wide:{minWidth:1920} } })`. **NOT `createMedia(...)`** — that was a Tamagui **v1** helper,
   removed in v2 (the installed core exports only `createMediaStyle`; `CreateTamaguiProps.media` is a plain
   `Record<MediaQueryKey, MediaQueryObject>`). `breakpoints.ts:62-67` already flags itself "NOT a `createMedia`
   call"; shell-layout.md:149's "createMedia" is intent-language, not an API (gate-1 finding 1). **SSOT direction:**
@@ -57,8 +61,9 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
   until S3 populates it (an empty landmark would announce falsely) (gate-1 finding 7).
 
 ## 3. Contract
+
 - **`AppShell`** (`apps/web/src/shell/app-shell.tsx`): `interface AppShellProps { children?: ReactNode; __bp?:
-  Breakpoint }` — `children` renders into the `content` region (the router `<Outlet/>` is passed here — see the
+Breakpoint }` — `children` renders into the `content` region (the router `<Outlet/>` is passed here — see the
   mount rule below). Internally resolves the active breakpoint from `useMedia()` (or `__bp` when provided — the
   test/story override, gate-1 finding 6, so jsdom tests can assert region present/absent per breakpoint without a
   `matchMedia` polyfill), then resolves each region via `regions.ts` predicates and renders a Tamagui flex frame
@@ -79,6 +84,7 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
   S1's placeholders are static.
 
 ## 4. Acceptance (S1 DoD — includes the component Visual Gate)
+
 - [ ] `AppShell` renders all 5 regions; `spacesBar` **unmounted** at 375 (not `display:none`), present at 768+ (S1-BR-a,h)
 - [ ] Reflow observable at 375/768/1440/1920: dock drawer→rail→sidebar; overlay host sheet→centered; global bar
       condensed→full (S1-BR-b) — **verified in a real browser (Visual Gate)**
@@ -94,8 +100,9 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
       `packages/ui` boundary intact (no `apps/web` import); dist barrel imports clean (first runtime consumer)
 
 ## 5. Implementation Prompt (ordered; each step cites §2/§3)
+
 1. `packages/ui/src/tamagui.config.ts` — add a plain `media: { tablet:{minWidth:768}, desktop:{minWidth:1440},
-   wide:{minWidth:1920} }` object to the `createTamagui({ … })` call (NOT `createMedia` — S1-BR-d); ensure it's
+wide:{minWidth:1920} }` object to the `createTamagui({ … })` call (NOT `createMedia` — S1-BR-d); ensure it's
    readable for the parity test (export or via `config.media`). Source-of-truth comment → mirrors
    `apps/web/src/shell/breakpoints.ts` `TAMAGUI_MEDIA`. **No `tamagui.d.ts` edit** — `useMedia()` typing flows from
    `TamaguiCustomConfig extends VidaConfig` (S1-BR-c). Satisfies S1-BR-d.
@@ -109,7 +116,7 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
    tokens only. Placeholder labeled slots. Satisfies §3, S1-BR-a,b,g,h. +test (jsdom via `__bp`: regions
    present/absent per breakpoint; roles present; overlayHost unlabeled).
 5. `apps/web/src/App.tsx` — wrap the `dbReady` branch's `<QueryClientProvider>` tree in `<UIProvider theme='light'>
-   <ToastProvider>…</ToastProvider></UIProvider>` (providers only — they need no Outlet). **Do NOT mount AppShell
+<ToastProvider>…</ToastProvider></UIProvider>` (providers only — they need no Outlet). **Do NOT mount AppShell
    here** (S1-BR-f + mount rule).
 6. `apps/web/src/routes.tsx` — change `RootComponent` to return `<AppShell><Outlet/></AppShell>` (replacing the
    placeholder `<nav>…<Outlet/>`), so the chrome wraps the routed content from inside the router (gate-1 finding 2).
@@ -125,14 +132,16 @@ FRAME reflows correctly; the slots are filled by later units. No new `@vida/ui` 
    (preflight FOLD-2).
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - None. The packages/ui↔apps/web media duplication is resolved by S1-BR-d (author-in-config + parity-test,
   `config.media` = runtime SSOT); the AppShell mount point is resolved by the mount rule (§3); the jsdom media
   test seam by `__bp` (§3). All gate-1 findings folded in (Rev 2).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | S1 detailed spec authored (scaffold: frame + media + store + providers) |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | **Rev 2 — gate-1 critique folded** (7 findings): F1 `createMedia`→plain `media` object (v1 API removed in v2); F2 AppShell mounts in `routes.tsx` `RootComponent` wrapping `<Outlet/>`, NOT above `RouterProvider`; F3 drop `tamagui.d.ts` edit (typing auto-flows); F4 `config.media`=SSOT, `TAMAGUI_MEDIA`=guard; F5 dark via harness only; F6 `__bp` test seam; F7 unmount invisible regions + overlayHost unlabeled |
-| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | **Rev 3 — preflight PASSED (2 folds) + gate-2**: FOLD-1 Visual Gate = running app (`pnpm dev` @ 375/768/1440, render-table:45) not Storybook (`apps/web` has none); FOLD-2 AppShell jsdom test needs `// @vitest-environment jsdom`. gate-2 scrubbed 2 residual `createMedia` mentions (intro + Identity). Spec coherent → Approval 2. |
+
+| Date       | Session                              | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | S1 detailed spec authored (scaffold: frame + media + store + providers)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | **Rev 2 — gate-1 critique folded** (7 findings): F1 `createMedia`→plain `media` object (v1 API removed in v2); F2 AppShell mounts in `routes.tsx` `RootComponent` wrapping `<Outlet/>`, NOT above `RouterProvider`; F3 drop `tamagui.d.ts` edit (typing auto-flows); F4 `config.media`=SSOT, `TAMAGUI_MEDIA`=guard; F5 dark via harness only; F6 `__bp` test seam; F7 unmount invisible regions + overlayHost unlabeled                                                                                                                                                                                                                                                                                       |
+| 2026-08-16 | 2026-08-16-ui-4-app-shell-components | **Rev 3 — preflight PASSED (2 folds) + gate-2**: FOLD-1 Visual Gate = running app (`pnpm dev` @ 375/768/1440, render-table:45) not Storybook (`apps/web` has none); FOLD-2 AppShell jsdom test needs `// @vitest-environment jsdom`. gate-2 scrubbed 2 residual `createMedia` mentions (intro + Identity). Spec coherent → Approval 2.                                                                                                                                                                                                                                                                                                                                                                        |
 | 2026-08-16 | 2026-08-16-ui-4-app-shell-components | **IMPLEMENTED + Visual Gate SHIP.** apps/web became the first `@vida/ui` consumer (+`@vida/ui`/`@tamagui/core@2.6.2` deps). Landmarks via `styled(View,{render:'nav'})` (runtime `tag` not honoured). **The Visual Gate (real Brave) caught 2 bugs jsdom couldn't:** (1) `process is not defined` — untamed-Tamagui runtime `process.env.*` → blank page → the UI-1-U0 `index.html` shim; (2) shell didn't fill the viewport (`minHeight:100%` collapsed) → `index.css` reset + `minHeight:100vh`. Barrel-eval sigma WebGL crash → `setupFiles` stub (the @vida/editor precedent). Green: web typecheck + 96 tests + lint 0 + build · ui 317. Reflow + theme-crossing confirmed at 375/768/1440 × light/dark. |

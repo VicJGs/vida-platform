@@ -5,6 +5,7 @@
 > states / a11y / motion from this. No-Guessing: additions are [INTERP] from the §Interpretation facts.
 
 ## The boundary (unchanged)
+
 [FACT: neural-graph.tsx:10-11] PRESENTATIONAL — `nodes`/`edges` are props the app provides (AR-8 graph-prep,
 uncrossable). The renderer never fetches or shapes graph data. All new types stay LOCAL to `@vida/ui`
 (Tamagui-only boundary, [FACT: CLAUDE.md ViewState note]).
@@ -17,9 +18,9 @@ export interface NeuralGraphProps {
   nodes: readonly GraphNode[]
   edges: readonly GraphEdge[]
   onNodeClick?: (nodeId: string) => void
-  state?: ViewState                 // 'loading' | 'error' | 'empty' | 'success'
-  height?: number                   // default 400
-  layoutIterations?: number         // default 200
+  state?: ViewState // 'loading' | 'error' | 'empty' | 'success'
+  height?: number // default 400
+  layoutIterations?: number // default 200
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
 
@@ -39,6 +40,7 @@ export interface NeuralGraphProps {
   default). This matches the house slot pattern (collection/dashboard shell-owned-vs-consumer-override).
 
 ## Ink voice — the color seam (finding #1, internal, not a new prop)
+
 [FACT: CLAUDE.md pomodoro P1] node/edge DEFAULT colors are resolved from the live theme via
 `useTheme().get('web')` (NOT a `$token` string — Sigma renders that colorless). [INTERP] the token mapping
 (which semantic → node, which → edge) is proposed at `/contract` and locked at the Visual Gate; candidates
@@ -46,11 +48,13 @@ from existing tokens only (token-pure): node ≈ ink/brand, edge ≈ a muted/bor
 new palette.
 
 ## Reduced-motion — the layout seam (finding #3, internal, not a new prop)
+
 [FACT: neural-graph.tsx:139 + CLAUDE.md hooks/] `useReducedMotion()` gates the `forceAtlas2.assign`
 iteration count: reduced → settle-instant (minimal/zero iterations, graph still laid out deterministically
 from the circular seed); normal → current `layoutIterations`. No new prop.
 
 ## Invariants the contract MUST preserve (from interpretation §4)
+
 - [FACT: neural-graph.tsx:12-15] effect stays keyed on `graphKey` (content signature), never array refs —
   the WebGL-context-thrash guard. A theme color read must not thrash the context on an unrelated re-render.
   [FACT: neural-graph.tsx:132,139-146] TODAY colors are read ONCE inside the effect body at mount
@@ -64,6 +68,7 @@ from the circular seed); normal → current `layoutIterations`. No new prop.
   fallback) preserved untouched.
 
 ## Consumer-facing change summary
+
 A consumer gets: (a) a graph that inherits the active preset's ink voice automatically (no blue SaaS
 default), (b) three optional slots to compose richer terminal states, (c) reduced-motion-correct layout —
 all with zero breaking changes to the existing call sites (`apps/web/src/app/graph/index.tsx` keeps working).

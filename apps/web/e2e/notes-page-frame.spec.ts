@@ -81,7 +81,19 @@ test('notes-rescope R1 — every page type opens with its editor, named, one sav
     // The ensureEntityNote shape: title NULL, the parent's title as the body's H1 (NP-8), linked to its entity.
     await db.exec(
       'INSERT INTO pages (id, created_at, updated_at, _sync_id, _sync_device_id, _sync_lww_ts, type, title, content, entity_type, entity_id) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-      [s.id, t, t, randomUUID(), 'e2e', t, s.type, null, JSON.stringify({ type: 'doc', content: [h1(s.parent), para('seed')] }), s.entityType, randomUUID()],
+      [
+        s.id,
+        t,
+        t,
+        randomUUID(),
+        'e2e',
+        t,
+        s.type,
+        null,
+        JSON.stringify({ type: 'doc', content: [h1(s.parent), para('seed')] }),
+        s.entityType,
+        randomUUID(),
+      ],
     )
   }
   await db.exec(
@@ -131,7 +143,17 @@ test('notes-rescope R1 — ?readerror: the read error + Retry recovers in place 
   const t = Date.now()
   await db.exec(
     'INSERT INTO pages (id, created_at, updated_at, _sync_id, _sync_device_id, _sync_lww_ts, type, title, content) VALUES (?,?,?,?,?,?,?,?,?)',
-    [note.id, t, t, randomUUID(), 'e2e', t, 'note', note.title, JSON.stringify({ type: 'doc', content: [para('body')] })],
+    [
+      note.id,
+      t,
+      t,
+      randomUUID(),
+      'e2e',
+      t,
+      'note',
+      note.title,
+      JSON.stringify({ type: 'doc', content: [para('body')] }),
+    ],
   )
   await db.close()
 

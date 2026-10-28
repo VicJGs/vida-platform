@@ -1,6 +1,6 @@
 <!-- Contract — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 · ADR-005 · Knowledge contract (study_methods/method_bindings/review_events) · docs/intake/flashcards.md -->
 
-# Contract — Flashcards  (level: Feature / Knowledge sub-context)
+# Contract — Flashcards (level: Feature / Knowledge sub-context)
 
 > ⚠ INTENDED — the v2 surface is schema-only (0 logic; `models/learning.ts` wc -l = 0). Signatures are the
 > documented target, not enforced reality. Flashcards implements the **ADR-005** service anatomy.
@@ -21,6 +21,7 @@
    review is scored). `[INTENT: F6]`
 
 ## What it consumes (external — via documented integration points, never direct tables)
+
 - **Knowledge (the generic engine):** `study_methods` (register) · `method_bindings` (bind curve + caps) ·
   `review_curves` (SM-2 default) · `review_events` (emit) · mastery derivation (KN-10) · the user's
   object/container hierarchy (grouping) + `entity_links` graph. `[FACT: knowledge/structure-data.md]`
@@ -33,12 +34,14 @@
 - **Gamification / Journal:** via `review_session` effects (XP, daily Journal) — ADR-004, not owned here.
 
 ## Contract error cases (typed)
+
 - `CardNotBound` — card has no `method_binding`; excluded from queues until bound (FC-2, not an error state).
 - `GenerateSourceUnreadable(source)` — gather failed; partial results surfaced, never a silent no-op.
 - `ReviewEmitFailed(card)` — `review_event` emit failed → queued/retried (never dropped; mastery depends on it).
 - `InvalidCardType(type)` / `MalformedCloze` — author-time typed validation; never a broken drill.
 
 ## Completion checklist
+
 - [x] exposed surface (content · registration · run · gather · types) + consumed (Knowledge/Sessions/Notes/
-  Education) · [x] types/errors · [x] integration via documented points, no direct table access (§6) ·
-  [x] [FACT]/[INTENT] on each claim
+      Education) · [x] types/errors · [x] integration via documented points, no direct table access (§6) ·
+      [x] [FACT]/[INTENT] on each claim

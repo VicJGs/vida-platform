@@ -14,14 +14,7 @@
 
 import { EgressDenied, type EgressGuard } from '../egress'
 import { buildAiDisclosure, resolveMode } from './modes'
-import {
-  AiDenied,
-  type AiDecision,
-  type AiPorts,
-  type AiRequest,
-  type AiResponse,
-  type AiService,
-} from './types'
+import { AiDenied, type AiDecision, type AiPorts, type AiRequest, type AiResponse, type AiService } from './types'
 
 // NB: no `enforcer` param — unlike the ingestion twin, the AI service never consults
 // the enforcer directly: the cloud path delegates the whole gate (external_out +

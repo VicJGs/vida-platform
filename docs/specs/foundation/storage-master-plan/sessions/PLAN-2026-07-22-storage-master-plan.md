@@ -1,7 +1,9 @@
-# PLAN — storage-master-plan (ADR-016 + master build plan)   (session: 2026-07-22-storage-master-plan · language: Markdown/English)
+# PLAN — storage-master-plan (ADR-016 + master build plan) (session: 2026-07-22-storage-master-plan · language: Markdown/English)
+
 > Executive summary (Human Gate 1). Read to approve the DIRECTION. No-Guessing: every claim [FACT]/[INTERP]/[UNKNOWN].
 
 ## 1. Contexto & demanda
+
 DB-1 shipped the storage primitives (commit b234e85). The from-zero rebuild now needs its two **governing artifacts**
 before more tables are authored: a durable decision record (**ADR-016**) and a living **master plan** (the table
 ledger + phase sequence + per-table-gate template). Without them, DB-2…DB-11 and the ~130 per-table gates run with no
@@ -10,7 +12,9 @@ locked plan — the exact drift the campaign exists to prevent. The strategy int
 Affected: the entire storage rebuild + the AR-1 topology decision. `[FACT: storage-rebuild-strategy.md; DB-1 close-out]`
 
 ## 2. O que muda e por quê
+
 **IN:**
+
 - **ADR-016** (`docs/core/decisions/ADR-016-storage-layer-rebuild-from-zero.md`) — the decision: why from-zero · the
   `schema/` topology · the locked patterns (DB-1 primitives + enum model + systemic-gap fixes) · the per-table gating
   protocol · **RESOLVES the DDL-generation fork**. Registered in the ADR index + `architecture.md`.
@@ -24,6 +28,7 @@ re-scope → a follow-up informed by this; DB-2 sync columns; per-table column e
 **Why now:** it is the plan every subsequent DB gate reads; locking it stops 130 gates from drifting. `[FACT: roadmap ① Database Layer]`
 
 ## 3. Regras de negócio relevantes (funcional)
+
 - **[FACT]** The documented DDL model is **hand-written SQL migrations** (ADR-002 §5) + Zod (DB-9); Drizzle is
   query-only; no drizzle-kit installed. ADR-016 must either **ratify** this or **consciously deviate**.
   `[FACT: ADR-002 §2.3/§5; DB-1 finding; storage-rebuild-strategy.md "Open decisions"]`
@@ -39,10 +44,11 @@ re-scope → a follow-up informed by this; DB-2 sync columns; per-table column e
 - **[FACT]** **FK-dependency order** — a table is gated only after its referenced parents are authored; the ledger
   encodes this so gates can't run out of order.
 - **[INTERP]** The master plan enumerates table **names + deps + phase + readiness**, NOT full columns — column
-  detail is each table's own gate. Enumerating every column now would *be* the build; the ledger defers that per the
+  detail is each table's own gate. Enumerating every column now would _be_ the build; the ledger defers that per the
   per-table model.
 
 ## 4. Aceitação (funcional)
+
 - [ ] **ADR-016** exists, follows `.adr/ADR-000-template.md`, and: states the from-zero decision + rationale (cited);
       defines the `schema/` topology; lists the locked patterns; specifies the per-table gating protocol; **resolves
       the DDL-generation fork** with rationale.
@@ -56,6 +62,7 @@ re-scope → a follow-up informed by this; DB-2 sync columns; per-table column e
 - [ ] Both artifacts cross-reference; ADR-016 registered in the ADR index + `architecture.md`.
 
 ## 5. Questões em aberto / decisões pendentes
+
 - **[DECISION — Victor, in this gate] The DDL-generation fork.** (A) **Ratify hand-written SQL migrations** — the
   documented model (ADR-002 §5); dual-authoring (Drizzle object + SQL migration per table); reversible. (B) **Adopt a
   drizzle-kit-generate hybrid** — Drizzle objects as source → `drizzle-kit generate` → the existing custom runner
@@ -74,6 +81,7 @@ re-scope → a follow-up informed by this; DB-2 sync columns; per-table column e
   extensions, `store`) have shapes decided at their own gate — the ledger tags them ⏳; it does not resolve them.
 
 ## 6. Aprovação 1 (direção)
+
 **APPROVED — Victor, 2026-07-22.** Direction + method approved. **DDL-generation fork resolved: (A) ratify
 hand-written SQL migrations** (documented model; dual-authoring; reversible) — ADR-016 records A and logs B's revisit
 trigger. Gate trail: /critique REVISE (miscite §5.20 19≠24 + method gaps) → fixed → /preflight PASSED.

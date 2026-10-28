@@ -1,6 +1,6 @@
 <!-- CURRENT-SPEC · module: notifications · the living contract (§XXIX Currency Rule) · never lags the code -->
 
-# Notifications — CURRENT SPEC  (`@vida/core` `services/notifications`)
+# Notifications — CURRENT SPEC (`@vida/core` `services/notifications`)
 
 > The durable per-context spec `/critique` + `/preflight` + the §XXVII Session Path consult as ground truth.
 > Born at mod-notifications ① S1 (LIF-132, #53). Promoted per slice. Inherits `docs/core/*`.
@@ -44,7 +44,7 @@ M3/DB-5); NO `deleted_at` (read→archive→expire→purge lifecycle).
   purged. `[code: service.ts purgeExpired]`
 - `deliver(id, ctx?: DeliverContext) → DeliveryResult` (S2) — gates the row against Preferences (NF-5), routes
   via `engine.deliver(decision)`, persists the `delivered_{in_app,push,email}` audit. `ctx = { platform?,
-  nowMinuteOfDay?, routing? }` — all caller-supplied; platform defaults `'web'`, absent `routing` ⇒ external
+nowMinuteOfDay?, routing? }` — all caller-supplied; platform defaults `'web'`, absent `routing` ⇒ external
   folds to in-app (M1 content-blind). `[code: service.ts deliver/gateChannels]`
 
 **S2 gating (NF-5, the module owns it; the engine routes an already-gated decision):** in-app NEVER gated
@@ -70,7 +70,7 @@ fidelity-max; the module gates it DOWN.
   row (NF-3); already-materialized ⇒ skip (in-service dedup, NF-8); else `fire` (reuses the S2 gate+deliver+
   audit) then `engine.scheduleLocal(occ, quietHours)` to arm the OS alert (deny-safe M1). A dispatcher fire is
   `type:'reminder'`, links `(entity_type=source_module, entity_id=ref_id)`, carries `metadata =
-  {occurrenceId, hard_deadline}`. **Failure-isolated:** a throwing `dueIn` ⇒ zeroed `SignalUnavailable`
+{occurrenceId, hard_deadline}`. **Failure-isolated:** a throwing `dueIn` ⇒ zeroed `SignalUnavailable`
   result; a bad item is caught + skipped. `TickResult {evaluated, fired, suppressed, skipped}` is disjoint
   (`fired+suppressed` = new rows). `minuteOfDay` is a UTC M1 approximation (device TZ = M2). `[code: service.ts tick]`
 

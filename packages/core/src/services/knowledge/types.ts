@@ -115,9 +115,7 @@ export type CompoundSetSpec = Record<string, unknown>
 
 /** S6 (KNO-33) — the deny-safe AI-assist outcome. `ai-unavailable` is the M1 default (no `ai` dep) OR a caught
  *  `AiDenied` (askModel throws on every deny path). `suggestion` = `AiResponse.content`. */
-export type AiAssistResult =
-  | { status: 'ready'; suggestion: string }
-  | { status: 'ai-unavailable'; reason?: string }
+export type AiAssistResult = { status: 'ready'; suggestion: string } | { status: 'ai-unavailable'; reason?: string }
 
 /** S6 (KNO-37) — the DB-8 search seam. FTS5 `fts_knowledge` is unbuilt → a loud typed unavailable state (the
  *  platform-wide `'search-unavailable'` convention, apps/web command-bar), never a silent empty list. Extends when

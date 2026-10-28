@@ -12,10 +12,7 @@ import { eq } from 'drizzle-orm'
 import { EFFECT_TYPE, RENDER_TARGET } from '@vida/types'
 import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
-import {
-  capabilityDefinitions,
-  type CapabilityDefinitionRow,
-} from '../../db/schema/foundation/capability'
+import { capabilityDefinitions, type CapabilityDefinitionRow } from '../../db/schema/foundation/capability'
 import {
   TERMINAL_STATE,
   type CapabilityDefinition,
@@ -69,9 +66,7 @@ function rowToDef(row: CapabilityDefinitionRow): CapabilityDefinition {
 }
 
 export function createCapabilityRegistry(db: DrizzleDb, deviceId: string): CapabilityRegistry {
-  const shipped = new Map<string, CapabilityDefinition>(
-    SHIPPED_CAPABILITIES.map((d) => [d.id, d]),
-  )
+  const shipped = new Map<string, CapabilityDefinition>(SHIPPED_CAPABILITIES.map((d) => [d.id, d]))
   // The union of every shipped def's effects + bindings — the ceiling a user def
   // may not exceed (BR-5 / A4.5). Single-level: a def has no separate internal envelope.
   const shippedEnvelope = new Set<string>([

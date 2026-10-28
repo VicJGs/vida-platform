@@ -16,12 +16,7 @@
 
 // One import point for the web layer — re-export the terminal canon through here too
 // (BR-S1-6), so a consumer imports the whole state vocabulary from one module.
-export {
-  TERMINAL_STATE,
-  type TerminalState,
-  type QueryResultLike,
-  deriveTerminalState,
-} from './terminal-state'
+export { TERMINAL_STATE, type TerminalState, type QueryResultLike, deriveTerminalState } from './terminal-state'
 
 import { type QueryResultLike, type TerminalState, deriveTerminalState } from './terminal-state'
 

@@ -6,13 +6,16 @@ Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser
 `@vida/ui`-consuming component).
 
 ## Shipped (notes-rescope R0 — always-on content check, LIF-245)
+
 - `enableContentCheck: true` + `onContentError` in `useEditor`. A schema-rejected doc → read-only, toolbar hidden, zero
   `onChange` (ref-guarded `onUpdate`; `setEditable(false, false)`). New optional prop `onInvalidContent?(error)`. The
   valid path keeps the one mount echo. `setContent(invalid)` throws and leaves the mount intact (pinned test). Docs: `docs/editor/current-*`
   (BR-E1-7). Tests: `editor.test.tsx` "content check" + the 6b schema table.
 
 ## Shipped (fe-codec-canvas-editor #7 · S1 — `chrome` prop + dark-text bind)
+
 Minimal extension so a host can present `<VidaEditor>` as a page surface + the content is readable in dark:
+
 - **`chrome?: 'framed' | 'bare'`** on `VidaEditorProps` (default `'framed'` = back-compat). An `EditorFrame`
   Tamagui `variants.chrome`: `bare` zeroes border/bg/radius/padding so the HOST supplies the surface (the
   Canvas: Editor notebook page). The `.vida-editor-frame` class is kept in BOTH treatments, so the injected
@@ -26,9 +29,11 @@ Minimal extension so a host can present `<VidaEditor>` as a page surface + the c
   framed + bare × light/dark, text readable both modes. The apps/web composition is `apps/web/src/canvas-editor/`.
 
 ## Shipped (E8 — DOCX serializer)
+
 The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip.** The LAST serializer —
 the suite (md · PDF · DOCX) is COMPLETE. Durable: `docs/editor/serialization-spec.md`. **v0.8.0.** ONE new top-level
 runtime dep `docx` (+ `jszip` **test-only devDep** for the OOXML unzip assertions).
+
 - `serializers/to-docx.ts` — a **pure descriptor-AST builder** `documentToDocxBlocks(doc, options): DocxBlock[]` (the
   exhaustive unit-test surface) + a thin mechanical **adapter** (`blockToDocx`/`runsToChildren`/`buildNumbering`) + the
   internal `buildDocxDocument(doc, options): Document` (exported for OOXML tests) + `toDocx(doc, options): Promise<Blob>`
@@ -55,8 +60,10 @@ runtime dep `docx` (+ `jszip` **test-only devDep** for the OOXML unzip assertion
   Boundary unchanged (no `@vida/core`). **224 total.** Spec `docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md`.
 
 ## Shipped (E7 — PDF serializer)
+
 The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer@4.6.1`, **web/desktop**; mobile=`expo-print` OUT of UI-3 scope).
 **Emit-only, no round-trip.** Durable: `docs/editor/serialization-spec.md`. **v0.7.0.** The ONE new top-level runtime dep.
+
 - `serializers/to-pdf.tsx` — the pure `documentToPdfTree(doc, options): ReactElement<DocumentProps>` (total tree-walk over
   `EditorNode` → react-pdf `Document/Page/Text/View/Image/Link`; exhaustively testable on `element.type` = the imported
   CLASS identity) + the thin async `toPdf(doc, options): Promise<Blob>` (`pdf(tree).toBlob()` — the only IO seam;
@@ -74,14 +81,16 @@ The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer@4.6.1`, **web/deskt
   Gate**. Boundary unchanged (no `@vida/core`). **188 total.** Spec `docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md`.
 
 ## Shipped (E6 — markdown serializers)
+
 The custom **TipTap-JSON ↔ Markdown** serializer (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
 no DOM), barrel-exported. NO off-the-shelf bridge (`@tiptap/markdown`/`turndown` reopen ADR-001 / drop the E5
 `rendered:false` config). Durable: `docs/editor/serialization-spec.md`. **v0.6.0.**
+
 - `serializers/to-markdown.ts` — the canonical emitter. Defines ONE spelling per node/mark so the round-trip grammar is
   CLOSED. Italic→`_` (bold+italic `**_x_**` unambiguous, bold always OUTER — dissolves the `*`/`**` ambiguity);
   code/code-fence **variable-length** (longest inner run + 1); callout→`<div data-type="callout" data-variant>` HTML
   carrier; integration→`<!-- vida:integration type config -->` comment (config straight from `node.attrs` — the E5
-  `rendered:false` codec lands here); hardBreak→two-space+`\n`; inline escaping of `` \ ` * _ [ ] < > ~ `` + per-line
+  `rendered:false` codec lands here); hardBreak→two-space+`\n`; inline escaping of ``\ ` * _ [ ] < > ~`` + per-line
   block-marker guard (a literal `---` paragraph ≠ HR).
 - `serializers/from-markdown.ts` — the exact INVERSE over the closed grammar. Line-classed block tokenizer (fixed
   precedence: frontmatter → fence → integration-comment → callout-div → heading → **task-before-bullet** → lists →
@@ -100,9 +109,11 @@ no DOM), barrel-exported. NO off-the-shelf bridge (`@tiptap/markdown`/`turndown`
   unchanged (no `@vida/core`); **no new runtime dep**. **155 total.**
 
 ## Shipped (E5 — integration-block registry)
+
 The editor's **`inline` render surface for the ADR-008 capability registry** — the "TipTap re-home" AR-7 deferred to
 UI-3 #29 (`docs/core/capability/current-business-rules.md:26`). Durable: `docs/editor/block-registry.md`. The editor is
 the `inline` renderer (ADR-008 §3.4), NOT the definition owner (that's AR-7's `CapabilityRegistry` in `@vida/core`).
+
 - `extensions/integration-blocks.tsx` — `createIntegrationBlockNode(def)` builds one atom `Node` per
   `INTEGRATION_BLOCK_TYPE` (11) over `INLINE_BLOCK_DEFS` (E1's command data + a per-type `configSchema`);
   `INTEGRATION_BLOCK_EXTENSIONS` is spread into `useEditor` after the standard blocks. `AVAILABLE_INTEGRATION_BLOCKS`
@@ -111,33 +122,35 @@ the `inline` renderer (ADR-008 §3.4), NOT the definition owner (that's AR-7's `
 - **Config = node attrs per `config_schema` (CB2 "inline = editor-node attrs").** The 7 TYPED capabilities declare their
   `@vida/types` interface (`DailySummaryBlockAttrs {date,sections}`, `EntityLinkBlockAttrs`, `ChartBlockAttrs`,
   `TimelineBlockAttrs`, `PomodoroBlockAttrs`, `HabitsBlockAttrs`, `TaskChecklistBlockAttrs`) as attrs — each `{default,
-  rendered:false}` (JSON-only; the HTML per-attr codec is deferred to E6). The `CONFIG_SCHEMAS` map is `satisfies
-  Record<keyof …Attrs, AttrSpec>` — a COMPILE-TIME drift guard (interfaces are erased → no runtime key test). Config
+rendered:false}` (JSON-only; the HTML per-attr codec is deferred to E6). The `CONFIG_SCHEMAS` map is `satisfies
+Record<keyof …Attrs, AttrSpec>` — a COMPILE-TIME drift guard (interfaces are erased → no runtime key test). Config
   round-trips losslessly for the declared schema (`nodeFromJSON→toJSON`). The 4 schema-less types
-  (`eventsBlock`/`classesBlock`/`backlink`/`milestoneBlock`) register attr-less — their MOD-* authors the schema.
+  (`eventsBlock`/`classesBlock`/`backlink`/`milestoneBlock`) register attr-less — their MOD-\* authors the schema.
 - **`IntegrationBlockPlaceholder` — the FIRST React node-view in the editor.** `addNodeView →
-  ReactNodeViewRenderer(IntegrationBlockPlaceholder)` → `NodeViewWrapper` + a Tamagui card on BASE tokens
+ReactNodeViewRenderer(IntegrationBlockPlaceholder)` → `NodeViewWrapper` + a Tamagui card on BASE tokens
   (`$colorSurfaceSecondary`/`$colorBorderDefault`/`$colorTextPrimary`/`$colorTextMuted`), `contentEditable={false}`,
   `role="note"` + accessible name, label + description + a muted "Available when its module ships" — the inline
-  `empty/unavailable` terminal state (CB6). MOD-* replaces it with the real body. `⚠ .tsx` (JSX) — unlike E2's callout
+  `empty/unavailable` terminal state (CB6). MOD-\* replaces it with the real body. `⚠ .tsx` (JSX) — unlike E2's callout
   (injected CSS, `.ts`). Mutable (object/array) attr defaults are FUNCTION defaults (`() => []`) — TipTap invokes them
   per schema build, so each editor owns its array instead of one module-global shared reference (the shared-mutable
   footgun; a cross-editor isolation test locks it). ProseMirror attrs stay immutable-by-convention.
 - **HTML contract + per-node `getAttrs` discriminator.** `renderHTML` → `<div data-type="integration-block"
-  data-block-type="<name>">` (atom, no content hole); `parseHTML` `getAttrs` returns `false` unless `data-block-type ===
-  name` (all 11 share one tag → without it the first-registered node claims every div). The E6 detection seam.
+data-block-type="<name>">` (atom, no content hole); `parseHTML` `getAttrs` returns `false` unless `data-block-type ===
+name` (all 11 share one tag → without it the first-registered node claims every div). The E6 detection seam.
 - **Never crashes, degrades:** an undeclared attr → raw PM `checkAttrs` throws, but TipTap's lenient content-load
   (neither `enableContentCheck` nor `errorOnInvalidContent` set in editor.tsx) catches → warns → empty. Tests:
   `extensions/integration-blocks.test.tsx` (schema path + `<VidaEditor>` RTL for the node-view mount). **120 total.**
   Story "Integration blocks (placeholders)". Boundary unchanged (no `@vida/core`); no new dep. **v0.5.0.**
 
 ## Shipped (E4 — slash menu)
+
 The `/`-triggered block palette. Type `/` → a caret-anchored, filterable popup; ↑/↓/Enter/Esc drive it while **focus
 stays in the editor** (a WAI-ARIA **combobox**, NOT a UI-1 `Menu`/`Popover` mount — those are trigger-anchored + move
 focus in). Built on `@tiptap/suggestion` (new dep) + `@tiptap/react` `ReactRenderer`. No new public prop (a built-in of
 the editing surface; inert until `/` typed → no read-only gate). Durable: `docs/editor/slash-menu-spec.md`.
+
 - `extensions/slash-command.ts` — the `Extension` → `Suggestion({char:'/', allowSpaces:false, startOfLine:false,
-  allow:!isActive('codeBlock'), items, command, render})`. `render()` drives a `ReactRenderer(SlashMenu)`: `onStart` +
+allow:!isActive('codeBlock'), items, command, render})`. `render()` drives a `ReactRenderer(SlashMenu)`: `onStart` +
   `props.mount()` (v3 managed positioning — no floating-ui import), `onKeyDown` forwards to the popup handle (`Escape`/
   `Tab` → `exitSuggestion`), `onExit` unmount+destroy. `command({editor,range,props}) → props.run?.(editor,range)`.
   Exports `slashActive(state)` + **`slashComboboxAttrs(active)`** — the host combobox ARIA merged into editor.tsx's
@@ -163,10 +176,12 @@ the editing surface; inert until `/` typed → no read-only gate). Durable: `doc
   proof: `insertContent('/')` → `slashActive` true). **102 total.** Stories "Slash menu (popup)"/"(live)".
 
 ## Shipped (E3 — toolbar)
+
 The formatting chrome for `<VidaEditor>`. `<VidaEditor>` gains an additive **`toolbar?: boolean` (default true)**; the
 toolbar renders inside the frame ABOVE `<EditorContent>` only when `toolbar && editable && editor != null` (the
 null-editor gate — `useEditor` is `Editor|null` under `immediatelyRender:false`). The raw `Editor` never leaks
 (E1's curated handle unchanged); `EditorToolbar` is internal (not barrel-exported).
+
 - `toolbar.tsx` — `EditorToolbar` (`role="toolbar"`, aria-label `Formatting`, `aria-orientation`) with a **roving
   tabindex** controller: a single tab stop, `←/→/Home/End` move between controls, and it owns ONLY horizontal+Home/End
   (never `↓/↑`, which the Menus bind to open — M2). The roving order is the LIVE ENABLED set; a **reconcile effect**
@@ -178,7 +193,7 @@ null-editor gate — `useEditor` is `Editor|null` under `immediatelyRender:false
   label reflects the active block), an insert `Menu` (Table `{3×3,header}`/Callout/Divider — callout disabled inside a
   callout), Undo/Redo (`can()`-gated). Image + Link excluded (need URL/attachment UI).
 - `internal/toolbar-state.ts` — `useToolbarState` → `useEditorState({editor, selector})` reflects `{marks, can,
-  activeBlock}` (re-renders only on a reflected-value change; the selector's per-transaction `isActive`/`can()` probes
+activeBlock}` (re-renders only on a reflected-value change; the selector's per-transaction `isActive`/`can()` probes
   are real compute — the dedup gates the render, not the compute). `resolveActiveBlock` (taskList before the generic
   list checks; N3).
 - `extensions/callout.ts` (E3 additions) — `calloutInsertContent(variant?)` (the canonical insert payload) +
@@ -188,15 +203,17 @@ null-editor gate — `useEditor` is `Editor|null` under `immediatelyRender:false
   `internal/toolbar-state.test.ts` (**60 total**); stories "Toolbar" + "No toolbar".
 
 ## Shipped (E2 — standard blocks)
+
 Completes the `STANDARD_BLOCK_TYPE` set (11). StarterKit (E1) provides 7; E2 adds the 4 it lacks via
 `extensions/standard-blocks.ts` (`STANDARD_BLOCK_EXTENSIONS`, spread into `editor.tsx`'s `useEditor` array after
 StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
+
 - `extensions/standard-blocks.ts` — `taskList`/`taskItem` (`@tiptap/extension-list`, already installed — inherits
   StarterKit's `listKeymap`), `image` (`@tiptap/extension-image`, `inline:false, allowBase64:true` — **presentational
   only**, attachment pipeline deferred BR-E2-5), `table` (`TableKit` from `@tiptap/extension-table`, one dep bundles
   Table+Row+Cell+Header, `resizable:false`), `Callout`. **No double-registration** of codeBlock/horizontalRule (BR-E2-2).
 - `extensions/callout.ts` — bespoke `Node` (`group:'block'`, `content:'block+'`, `defining:true`), attr `variant ∈
-  {info,success,danger}` (default `info` — EXACTLY `ToastIntent`, so each binds an existing accent token; no `warn`).
+{info,success,danger}` (default `info` — EXACTLY `ToastIntent`, so each binds an existing accent token; no `warn`).
   Renders/parses `<div data-type="callout" data-variant>`; out-of-set/absent variant → `info`. Styled by injected CSS,
   NOT a React node-view (the editor-styles precedent).
 - `internal/editor-styles.ts` extended — token-var CSS for taskList/table/callout(×3)/image/code/divider; tints via
@@ -206,6 +223,7 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `<VidaEditor>`. Story: `editor.stories.tsx` "Standard blocks". **30 tests** total.
 
 ## Shipped (E1 — editor core spine)
+
 - `editor.tsx` — **`<VidaEditor>`**: a headless Tiptap v3 React editor (`useEditor` + `<EditorContent>`) in a Tamagui
   `@tamagui/core` styled frame. **UNCONTROLLED + imperative reset (BR-E1-1):** `defaultValue` seeds the doc ONCE;
   edits emit via `onChange` (`onUpdate → getJSON`); external resets go through the `forwardRef` handle
@@ -240,24 +258,28 @@ StarterKit+Placeholder). Catalog: `docs/editor/extension-catalog.md`.
   `INTEGRATION_BLOCK_COMMANDS` + re-exported `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand` types.
 
 ## Deferred (later units)
+
 The serializer suite (E6 md + E7 PDF + E8 DOCX) is COMPLETE — all SHIPPED, see their sections above. Remaining deferred:
 Integration-block
-**REAL bodies** (MOD-* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
+**REAL bodies** (MOD-\* phases replace each placeholder node-view) + wiring AR-7's `CapabilityRegistry` into the editor
 (MOD-notes #31). **Yjs/`y-prosemirror` = a deferred SEAM, no dep** (BR-2, M4/AR-9b): `pages.content` is a TipTap-JSON
 snapshot that renders locally without a Y.Doc; E1's shell keeps the content source swappable so M4 can invert authority
 (JSON→Yjs-derived) without a rewrite. (E5's placeholder node-views are SHIPPED — see the E5 section above; the 9 stale
 per-type skeleton stubs were retired, `tag-extension.ts` kept.)
 
 ## Boundary (BR-1 / BR-E1-2)
+
 `@vida/editor` is PRESENTATIONAL: it emits `EditorDocument` JSON and touches NO SQLite / `@vida/core` (the export-dialog
 precedent). The app wires `onChange` → `pages.content` + persistence. E1 imports only `UIProvider`/`config`/tokens from
 `@vida/ui` (the Tamagui context + base sub-theme) — it composes NO UI-1 primitive yet (Menu/Button arrive at E3/E4).
 
 ## Types
+
 `EditorDocument`/`EditorNode`/`EditorMark`/`SlashCommand`/`INTEGRATION_BLOCK_TYPE` are owned by **`@vida/types`**
 (`editor.ts`) and NEVER redefined here (BR-7).
 
 ## Verify
+
 `pnpm --filter @vida/editor typecheck && build && test`. Component Visual Gate: `pnpm --filter @vida/editor storybook`
 (or `build-storybook`) — the decorator paints the theme page surface so the caret/placeholder/frame are reviewable in
 both themes. Tiptap v3 packages: `@tiptap/react` + `@tiptap/pm` (ProseMirror bundle) + `@tiptap/starter-kit` +

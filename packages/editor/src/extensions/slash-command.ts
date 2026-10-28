@@ -5,11 +5,7 @@
 // Spec: docs/specs/features/ui-3-vida-editor/e4-slash-menu.md · BR-E4-1/6/10, §5, §7 B3.
 import { Extension, ReactRenderer } from '@tiptap/react'
 import { PluginKey, type EditorState } from '@tiptap/pm/state'
-import Suggestion, {
-  exitSuggestion,
-  type SuggestionKeyDownProps,
-  type SuggestionProps,
-} from '@tiptap/suggestion'
+import Suggestion, { exitSuggestion, type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion'
 import { SLASH_MENU_ITEMS, filterSlashItems, type SlashMenuItem } from '../slash-commands'
 import { SLASH_LISTBOX_ID, SlashMenu, type SlashMenuHandle, type SlashMenuProps } from '../slash-menu'
 

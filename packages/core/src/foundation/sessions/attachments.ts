@@ -28,11 +28,7 @@ export interface ResolvedTarget {
  * (XCU-10 · ADR-004 §3.2.1.)
  */
 export async function resolveTargets(db: DrizzleDb, sessionId: string): Promise<ResolvedTarget[]> {
-  const rows = await db
-    .select()
-    .from(sessionAttachments)
-    .where(eq(sessionAttachments.session_id, sessionId))
-    .all()
+  const rows = await db.select().from(sessionAttachments).where(eq(sessionAttachments.session_id, sessionId)).all()
 
   return rows.map((r) => ({
     entityType: r.entity_type,

@@ -4,10 +4,12 @@
 # PLAN S3 — Shell mount
 
 ## §1 Context
+
 The closing slice: the HUD enters the REAL shell via the shipped `hudSlot`, the gate harness is torn down,
 and F-HUD-1 is filed. Blocking real-shell Visual Gate (Victor-reviewed) closes the unit.
 
-## §2 Business rules (BR-HUD-S3-*)
+## §2 Business rules (BR-HUD-S3-\*)
+
 - **BR-HUD-S3-1** `routes.tsx` `RootComponent` mounts `hudSlot={<SessionHudSurface/>}` — the surface is a
   thin composition of `useActiveSession` + `SessionHud` living in `session-hud/` (routes.tsx stays wiring-only,
   the GlobalBar1 precedent).
@@ -25,6 +27,7 @@ and F-HUD-1 is filed. Blocking real-shell Visual Gate (Victor-reviewed) closes t
   countdown) — NOTED, not assumed.
 
 ## §3 Files
+
 - `apps/web/src/session-hud/session-hud-surface.tsx` (NEW, ~10 lines) + `routes.tsx` edit (hudSlot wire).
 - `apps/web/src/session-hud/session-hud-surface.test.tsx` (NEW) — the integration leg.
 - `docs/specs/foundation/fe-session-hud/delivery/findings.md` (NEW) — F-HUD-1.
@@ -32,6 +35,7 @@ and F-HUD-1 is filed. Blocking real-shell Visual Gate (Victor-reviewed) closes t
 - `apps/web/src/session-hud/CLAUDE.md` + delivery docs refreshed (§XXIX currency at close).
 
 ## §4 Acceptance
+
 1. tsc 0 · eslint 0 · session-hud suite green · **full @vida/web suite green** (the mount touches the root).
 2. Integration: no `?sample` → `RootComponent` strip has NO hudSlot content; `?sample=focus` → pill present;
    clicking the pill navigates the real router to `/sessions/sample-session?sample=focus`.
@@ -42,6 +46,7 @@ and F-HUD-1 is filed. Blocking real-shell Visual Gate (Victor-reviewed) closes t
    sampled session).
 
 ## §4b Deviations + gate catches (§XXVIII record)
+
 - **D-S3-1 (Victor-approved 2026-10-18) — the 375 strip-budget redistribution.** Victor's Visual-Gate review
   caught the ring overlapping the Search icon at 375 (editorial): with the HUD filling the previously-empty
   hudSlot, the strip's content overcommits ~80px (measured: Bar-1 `scrollWidth 179` vs `clientWidth 87` —
@@ -57,5 +62,6 @@ and F-HUD-1 is filed. Blocking real-shell Visual Gate (Victor-reviewed) closes t
   from the contrast probe (unrendered text, WCAG n/a).
 
 ## §5 Implementation prompt
+
 Surface → routes wire → integration tests → teardown → findings.md → gates. The real-app gate rides the
 first-run gating: seed the onboarding-done flag before navigation (the App.tsx branch), then drive `/`.

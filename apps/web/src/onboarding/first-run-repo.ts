@@ -10,10 +10,9 @@ import { FIRST_RUN_COMPLETE_KEY, FIRST_RUN_COMPLETE_VALUE, isFirstRun } from './
  * `exists()` — they disagree on first launch by design).
  */
 export async function readFirstRunComplete(): Promise<boolean> {
-  const rows = await getDbClient().driver.query<{ value: string }>(
-    'SELECT value FROM app_state WHERE key = ?',
-    [FIRST_RUN_COMPLETE_KEY],
-  )
+  const rows = await getDbClient().driver.query<{ value: string }>('SELECT value FROM app_state WHERE key = ?', [
+    FIRST_RUN_COMPLETE_KEY,
+  ])
   // Defensive `?.`: the row is absent on a fresh device. (getSchemaVersion uses a bare `rows[0].value`, which
   // compiles only without noUncheckedIndexedAccess — the `?.` is correct regardless of that parked flip.)
   return !isFirstRun(rows[0]?.value)

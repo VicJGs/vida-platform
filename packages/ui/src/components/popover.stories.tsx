@@ -99,20 +99,17 @@ export const Placements: Story = {
   render: () => (
     <View height={560} justifyContent="center" paddingHorizontal={64}>
       <View flexDirection="row" flexWrap="wrap" gap={56}>
-        {(['top', 'bottom', 'left', 'right', 'bottom-start', 'bottom-end', 'top-start', 'top-end'] as const).map((p) => (
-          <Popover
-            key={p}
-            placement={p}
-            aria-label={p}
-            trigger={<Button intent="secondary">{p} ▾</Button>}
-          >
-            <View width={180}>
-              <Text fontSize={13} color="$colorTextPrimary">
-                placement=&quot;{p}&quot;
-              </Text>
-            </View>
-          </Popover>
-        ))}
+        {(['top', 'bottom', 'left', 'right', 'bottom-start', 'bottom-end', 'top-start', 'top-end'] as const).map(
+          (p) => (
+            <Popover key={p} placement={p} aria-label={p} trigger={<Button intent="secondary">{p} ▾</Button>}>
+              <View width={180}>
+                <Text fontSize={13} color="$colorTextPrimary">
+                  placement=&quot;{p}&quot;
+                </Text>
+              </View>
+            </Popover>
+          ),
+        )}
       </View>
     </View>
   ),

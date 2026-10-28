@@ -1,6 +1,6 @@
 <!-- Structure & Data — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 flashcard_decks L2628-2650 / flashcards L2656-2688 / flashcard_reviews L2693-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · Knowledge structure-data · docs/intake/flashcards.md -->
 
-# Structure & Data — Flashcards  (level: Feature / Knowledge sub-context)
+# Structure & Data — Flashcards (level: Feature / Knowledge sub-context)
 
 > ⚠ **Mostly RETIREMENT + one lean entity.** The v2 FACT base is 3 schema-only tables (0 logic); under ADR-005
 > two are retired outright and the third shrinks to a content-only entity. This is the sharpest case of the
@@ -9,6 +9,7 @@
 ## Data model
 
 ### FACT base today (3 tables, 0 logic) — mostly RETIRED
+
 - **`flashcard_decks`** `[FACT: ADR-002 L2628-2650]` → **RETIRED.** Grouping → a user-defined Knowledge
   object/container below a Topic (`parent_object_id`); `new_cards_per_day`/`reviews_per_day` → the
   `method_binding`; `resource_type`(course/book/topic CHECK) + `resource_id` → `entity_links` (any resource).
@@ -19,14 +20,16 @@
 - **`flashcard_reviews`** `[FACT: ADR-002 L2693-2710]` → **RETIRED** → generic `review_events` (Knowledge).
 
 ### INTENDED shape — the one lean entity (→ ADR-002 amendment)
+
 - **`flashcards`** (content-only, Flashcards owns): `id · front[E] · back[E] · hint[E] · explanation[E] ·
-  card_type (basic|reversed|cloze|image_occlusion) · media (image/audio refs — restore v1) · is_suspended ·
-  sort_order · sync`. Registered as a **reviewable** with Knowledge's engine (no scheduling columns).
+card_type (basic|reversed|cloze|image_occlusion) · media (image/audio refs — restore v1) · is_suspended ·
+sort_order · sync`. Registered as a **reviewable** with Knowledge's engine (no scheduling columns).
   `[INTENT: F6; FACT restore v1 media — entities.ts L1258-1260]`
 - **No Flashcards-owned deck / review / schedule tables** — all generic (Knowledge). Tags via the shared
   **`entity_tags`** primitive (`tag_id, entity_type, entity_id`, SP1; the card registers `entity_type='flashcard'` in the open registry, SP2) — **not** `page_tags`; note/source links + grouping via `entity_links` (SP4, distinct from tags). `[INTENT: ADR-006 SP1/SP2; ADR-005 §3.1(6), §3.2]`
 
 ## Dependencies / graph
+
 - **Position:** a **sub-context under Knowledge** — it does not sit in the dep graph as a standalone; it plugs
   into Knowledge's engine. `[FACT: reframe — Learning drops to Education only]`
 - **In-edges:** Knowledge (`study_methods` registration; the engine schedules its cards) · gather sources
@@ -37,6 +40,7 @@
   standalone surface — the opposite of a god-feature.
 
 ## ADRs / structural decisions
+
 - **[ADR-005 — Study-Method Service framework](../../../core/decisions/ADR-005-study-method-service-framework.md)**
   (Accepted 2026-07-12) — Flashcards is the reference implementation. `[FACT: ADR-005]`
 - **[ADR-004 — Session Framework](../../../core/decisions/ADR-004-session-framework.md)** — `review_session`
@@ -46,12 +50,14 @@
   the fixed SM-2 columns — same decision). `[FACT: knowledge intake — RETIRE fixed SM-2 cols]`
 
 ## Single source of truth (constitution §3)
+
 - **Scheduling/curve/mastery/review-log** — Knowledge's generic engine (never duplicated here).
 - **Grouping ("deck")** — the user's Knowledge object hierarchy.
 - **Tags** — the shared `entity_tags` primitive (SP1). **Note/source/resource links** — `entity_links` (SP4).
 - **`card_type` enum** — canonical Zod validator in `@vida/core`, TEXT+CHECK in SQL.
 
 ## Completion checklist
+
 - [x] data model (FACT base → retirements + the one lean entity) · [x] dep graph within budget (rides Knowledge) ·
-  [x] ADRs (005/004 + ADR-002 amendment) · [x] single source per cross-cutting concept · [x] [FACT]/[INTENT] +
-  supersessions flagged loud
+      [x] ADRs (005/004 + ADR-002 amendment) · [x] single source per cross-cutting concept · [x] [FACT]/[INTENT] +
+      supersessions flagged loud

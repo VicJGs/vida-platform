@@ -2,21 +2,25 @@
 
 > **Slice:** S1 of 3 (slice-map.md). **Context:** `@vida/ui` → `packages/ui/src/themes/` (ds-2). **Gate:** §XXVI
 > (PLAN → /critique → Approval 1 → /preflight → /critique → Approval 2 → build). **Baseline:** token-pipeline
-> current-spec/current-business-rules (B1–B12), build-tokens.mjs, tokens/*.json. **No-Guessing:** `[FACT: src]`.
+> current-spec/current-business-rules (B1–B12), build-tokens.mjs, tokens/\*.json. **No-Guessing:** `[FACT: src]`.
 
 ## 1. Objective (S1 only)
+
 Extend the token layer from **one placeholder family (light/dark)** to **3 preset families × light/dark = 6 themes**,
 each carrying its own palette + font-family, plus a **2-level density scale** — all emitted from the seed by
 `build-tokens.mjs`, preserving every invariant B1–B12. **S1 authors tokens + emitter + tests only.** `createFont`/
 `createTamagui` wiring + real font serving = **S2**; provider/density application + app rewire = **S3**.
 
 ## 2. Mechanism (doc-fixed) + the chosen seed architecture (proposed, technical)
+
 Doc-fixed: presets = **Tamagui sub-themes → N theme families** [FACT: decisions.md:9]. Dark = the **B7 overlay**,
 generalized per preset [FACT: build-tokens.mjs:191-209 + current-business-rules B7].
 
 > ### 2a. Preflight resolution — Tamagui **2.6.2** (installed), scheme-first naming [RESOLVED — grounds the names below]
+>
 > Verified against the **installed** `@tamagui/core@2.6.2` resolver (`@tamagui/web/dist/cjs/hooks/useThemeState.cjs`),
 > per the verify-against-installed-lib rule. (Spec originally cited 2.5.1 — corrected to the installed 2.6.2.)
+>
 > - **A theme's light/dark SCHEME is its FIRST `_`-segment, and ONLY `light`/`dark` are valid schemes** —
 >   `const validSchemes = { light, dark }` [:312]; `getScheme = name.split('_')[0]` [:317]. So `editorial_dark`
 >   reads as scheme **`editorial`** → `undefined` (NOT dark) → breaks inversion (`isInverse` :267), `reset` (:339),
@@ -44,6 +48,7 @@ font-family.** The semantic STRUCTURE is identical across presets (`surface/text
 `space.inset`, `radius`) — only the values behind it change (R1: color + font only).
 
 **Chosen architecture — generalize the proven overlay pattern (reuses B7, least-invasive to checkLayers/B1):**
+
 - **primitive.json** gains **per-preset ramps**, namespaced: `color.reader.{paper,ink.50..900,accent.50..900}`,
   `color.editorial.{…}`, `color.quietDesk.{…}`. Shared `signal.{success,danger}` + `white` stay global. Aux
   `fontFamily.{reader,editorial,quietDesk}.{display,body,chrome}` (the 6 faces across 3 presets).
@@ -58,16 +63,17 @@ font-family.** The semantic STRUCTURE is identical across presets (`surface/text
     `checkLayers`/B2**. The emitter MUST apply the same inline overlay-validation the dark overlay already gets
     (`:198-200`: each entry isRef + resolves to a loaded primitive, else fail loud), extended to per-preset files.
     **Merge precedence is explicit: base < `semantic.<preset>.json` < `semantic.<preset>.dark.json`.**
-- **density:** authoring the density token *shape* is **deferred to S3** (gate-1 fix) — its consuming mechanism (how
+- **density:** authoring the density token _shape_ is **deferred to S3** (gate-1 fix) — its consuming mechanism (how
   calm/dense maps to Tamagui tokens) is an explicit S3/preflight open seam, and authoring the shape before the mechanism
   risks a wrong shape. S1 does **not** add density tokens; S3 authors them co-located with its mechanism. (`space.inset`
   `compact/default/loose/spacious` already exists and is untouched here.)
 
 **Alternative considered + rejected:** parameterizing semantic refs inside the emitter (e.g. `surface→color.$preset.surface`)
 — a deeper emitter rewrite that breaks the "overlay loaded by filename" model + checkLayers' static ref-resolution.
-The overlay approach keeps B1/B2 intact and each preset auditable as a file. *(Final call confirmed at /preflight.)*
+The overlay approach keeps B1/B2 intact and each preset auditable as a file. _(Final call confirmed at /preflight.)_
 
 ## 3. Emitter changes (`build-tokens.mjs`)
+
 - Generalize the single `light`/`dark` emission into a **preset loop** over `P ∈ {editorial, reader, quietDesk}`,
   emitting **scheme-first names** (§2a NAMING LAW): the **default `editorial`** → bare **`light`** (`semantic.json`) and
   **`dark`** (`semantic.json` + `semantic.dark.json`) — today's emission path, unchanged; each non-default `P` →
@@ -87,8 +93,9 @@ The overlay approach keeps B1/B2 intact and each preset auditable as a file. *(F
 - Keep: 3-layer check (B2), 4pt grid (B8), determinism/sort (B4), GENERATED banners (B5), aux-skip (B9).
 
 ## 4. Generated output shape (after build) — scheme-first (§2a)
+
 - `themes.ts`: 6 base themes — `light, dark` (editorial default, **unchanged**) + `light_reader, dark_reader,
-  light_quietDesk, dark_quietDesk` — plus ~60 sub-themes `light[_P]_<Comp>`/`dark[_P]_<Comp>` (editorial's 20 bare
+light_quietDesk, dark_quietDesk` — plus ~60 sub-themes `light[_P]_<Comp>`/`dark[_P]_<Comp>` (editorial's 20 bare
   `light_<Comp>`/`dark_<Comp>` **unchanged** + 40 net-new). Each a flat key→`tokens.*` object. **`tamagui.config.ts`'s
   existing `import { light, dark, light_Button, … }` stays resolvable** (editorial = today's export NAMES) → S1 touches
   no config; S2 adds the reader/quietDesk base+sub-themes to `createTamagui`. (editorial's theme VALUES repoint to the
@@ -102,7 +109,9 @@ The overlay approach keeps B1/B2 intact and each preset auditable as a file. *(F
   tokens at S1** (density = a provider CSS data-attr scale, S3 — §2a/§8); the existing `space.inset` scale is untouched.
 
 ## 5. Values (from the P1 record — FACT, not invented)
+
 Per-preset light palettes + type from the P1 specimen [FACT: p1-identity-specimen.html:49-104]:
+
 - **reader** paper `#faf7f0` · ink `#211d17`/`#2c2820` · accent oxblood `#9a2a2a` · Fraunces/Newsreader/Inter.
 - **editorial** paper `#fbfbfa` · ink `#16181d`/`#3a3f48` · accent ink-blue `#1d4ed8` · Spectral/Spectral/Inter.
 - **quietDesk** paper `#f4f2ec` · ink `#26251f`/`#423f36` · accent olive `#5a6b3f` · Source Serif 4/Source Serif 4/IBM Plex Sans.
@@ -115,6 +124,7 @@ Per-preset light palettes + type from the P1 specimen [FACT: p1-identity-specime
   re-run the matrix, not just eyeball the light mode (this is the symmetric partner of the DS-2 white-on-`brand.500`→`.600` caveat).
 
 ## 6. Tests (`build-tokens.test.ts`, extend the 31)
+
 - **Scheme-first names (§2a):** base set === `{light, dark, light_reader, dark_reader, light_quietDesk, dark_quietDesk}`;
   **every name's first `_`-segment ∈ {light,dark}** (the Tamagui scheme law — a `*_dark` or bare-preset name FAILS).
 - **Backward-compat (S1 typecheck guard):** `light`/`dark` + the 20 editorial `light_<Comp>`/`dark_<Comp>` still export
@@ -127,6 +137,7 @@ Per-preset light palettes + type from the P1 specimen [FACT: p1-identity-specime
 - Contrast AA per preset × mode (B10).
 
 ## 7. Verification (Step 8–10 for S1 — non-visual slice)
+
 `pnpm --filter @vida/ui tokens:build` deterministic · `build-tokens.test.ts` green · `pnpm --filter @vida/ui typecheck`
 0 · root typecheck green · no hard-coded palette · GENERATED banners intact. **Typecheck-green by construction** —
 editorial keeps the bare `light`/`dark` names so `tamagui.config.ts` + `provider.tsx` are untouched at S1 (config
@@ -134,6 +145,7 @@ rewire = S2, provider = S3). **No Visual Gate at S1** (no rendered surface; the 
 is **S3**).
 
 ## 8. Risks / seams
+
 - **Density mechanism** — **preflight-RESOLVED (§2a):** NOT a Tamagui theme/token-swap (DEF-U8-h — dimension props read
   the global token scale, theme swaps color only); it is a **provider CSS data-attr scale**, owned by **S3**. S1 authors
   **no density tokens** (gate-1 fix confirmed); the existing `space.inset` compact/default/loose/spacious is untouched.
@@ -142,5 +154,6 @@ is **S3**).
 - **Emitter blast radius** — the loop refactor touches the most load-bearing format; mitigated by the regression fixtures (B2/B4/B8) + determinism test.
 
 ## 9. §XXIX currency (on S1 done)
+
 Refresh `docs/ui/token-pipeline/current-spec.md` + `current-business-rules.md` — new B-rule: **B-codec-1** N-preset
 families via per-preset overlays (generalizes B7); density scales authored. Promote with the code.

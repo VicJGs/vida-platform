@@ -29,7 +29,16 @@ describe('DS-4 tamagui.config (runtime)', () => {
   })
 
   it('fe-codec S2 — all 8 scheme-first base themes resolve on config.themes', () => {
-    for (const name of ['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk', 'light_game', 'dark_game']) {
+    for (const name of [
+      'light',
+      'dark',
+      'light_reader',
+      'dark_reader',
+      'light_quietDesk',
+      'dark_quietDesk',
+      'light_game',
+      'dark_game',
+    ]) {
       expect(c.themes?.[name], name).toBeDefined()
       expect(val(c.themes[name].colorSurfacePrimary)).toMatch(/^#/) // a real resolved color
     }

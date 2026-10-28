@@ -7,6 +7,7 @@
 > COMPLETE). Forward specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
 
 ## Package
+
 `@vida/editor` **v0.8.0** — the TipTap block editor at the heart of Notes & Journals (ADR-001 §8). Built on Tiptap
 **v3** (`@tiptap/react` + `@tiptap/pm` + `@tiptap/starter-kit` + `@tiptap/extension-placeholder` + **E2:**
 `@tiptap/extension-image` + `@tiptap/extension-table` + `@tiptap/extension-list` + **E4:** `@tiptap/suggestion`,
@@ -15,6 +16,7 @@ family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + **E7:** `@react-pdf/renderer@
 `[FACT: packages/editor/package.json]` Toolchain (Storybook 9 · vitest 3 · jsdom 30 · vite 6) mirrors `@vida/ui`.
 
 ## Public surface `[FACT: packages/editor/src/index.ts]`
+
 - `VidaEditor` (+ `VidaEditorProps`, `VidaEditorHandle`) — the editor component.
 - `assertEditorDocument(json): EditorDocument` — the runtime structural gate.
 - `INTEGRATION_BLOCK_COMMANDS`, `INTEGRATION_BLOCK_COMMAND_COUNT` — the slash-command type map.
@@ -22,20 +24,26 @@ family-pinned `^3.30.0`) + `@tamagui/core@2.6.2` + **E7:** `@react-pdf/renderer@
   redefined).
 
 ## `<VidaEditor>` contract `[FACT: packages/editor/src/editor.tsx]`
+
 ```ts
 interface VidaEditorProps {
-  defaultValue?: EditorDocument          // seeds the doc ONCE (uncontrolled)
+  defaultValue?: EditorDocument // seeds the doc ONCE (uncontrolled)
   onChange?: (doc: EditorDocument) => void // emitted on user edits (+ one benign mount echo)
-  editable?: boolean                     // default true; false = read-only, no caret
-  toolbar?: boolean                      // default true; ignored when editable=false (E3)
-  chrome?: 'framed' | 'bare'             // default 'framed'; 'bare' = host supplies the surface (#7 S1)
+  editable?: boolean // default true; false = read-only, no caret
+  toolbar?: boolean // default true; ignored when editable=false (E3)
+  chrome?: 'framed' | 'bare' // default 'framed'; 'bare' = host supplies the surface (#7 S1)
   onInvalidContent?: (error: Error) => void // notes-rescope R0: fired once at mount when the doc fails the schema
-  placeholder?: string                   // empty-state text
-  'aria-label'?: string                  // one of aria-label/-labelledby REQUIRED (dev-warns if neither)
+  placeholder?: string // empty-state text
+  'aria-label'?: string // one of aria-label/-labelledby REQUIRED (dev-warns if neither)
   'aria-labelledby'?: string
 }
-interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument(): EditorDocument }
+interface VidaEditorHandle {
+  setContent(doc): void
+  focus(): void
+  getDocument(): EditorDocument
+}
 ```
+
 - `forwardRef` (mandatory, §VII) carries the imperative handle.
 - **Content check — always on (notes-rescope R0, BR-E1-7).** `useEditor({ enableContentCheck: true, onContentError })`.
   A doc the schema rejects (unknown node/mark, empty `doc`, empty text node) raises `contentError` inside the Editor
@@ -47,12 +55,13 @@ interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument()
   `contentError` latch, still editable, nothing emitted (measured on 3.30.0, pinned by `editor.test.tsx`). Callers must
   catch; none exist in the app. [FACT: editor.tsx:139-215]
 - Built on `useEditor({ extensions:[StarterKit, Placeholder], content:defaultValue, editable,
-  immediatelyRender:false, editorProps:{attributes:{role:'textbox','aria-multiline':'true', <name>}}, onUpdate })`.
+immediatelyRender:false, editorProps:{attributes:{role:'textbox','aria-multiline':'true', <name>}}, onUpdate })`.
   `immediatelyRender:false` defers first render to a post-mount effect (StrictMode safety).
 - Editor created ONCE; `onChange` read via a ref (no recreation on parent re-render); `editable` synced via
   `setEditable` in a `[editor, editable]` effect.
 
 ## Chrome / tokens `[FACT: editor.tsx EditorFrame; internal/editor-styles.ts]`
+
 - Frame = an unnamed `@tamagui/core` `styled(View)` on BASE semantic tokens — `$colorSurfacePrimary` bg,
   `$colorBorderDefault` 1px border, `borderRadius:'$md'` (radius token SCALE, not a sub-theme key), `$12`/`$8` inset,
   `minHeight:120`. **No `light_/dark_Editor` sub-theme; `tamagui.config.ts` untouched** (base tokens suffice).
@@ -68,9 +77,11 @@ interface VidaEditorHandle { setContent(doc): void; focus(): void; getDocument()
   `[FACT: internal/editor-styles.ts:40-67]`
 
 ## Standard blocks (E2) `[FACT: src/extensions/standard-blocks.ts; src/extensions/callout.ts; editor.tsx extensions]`
+
 The full `STANDARD_BLOCK_TYPE` set (11) is registered. E1's StarterKit provides 7 (paragraph · heading · bulletList ·
 orderedList · blockquote · **codeBlock** · **horizontalRule**); **E2 adds the 4 StarterKit lacks**, spread into the
 `useEditor` extensions array via `STANDARD_BLOCK_EXTENSIONS`:
+
 - **`taskList`/`taskItem`** — `@tiptap/extension-list` (`TaskItem nested`); inherits StarterKit's bundled `listKeymap`.
 - **`image`** — `@tiptap/extension-image` (`inline:false, allowBase64:true`); **presentational only** — the encrypted
   `note_attachments` pipeline is deferred (BR-E2-5); `allowBase64` is a known-bad interim (a data-URI bloats the
@@ -83,10 +94,12 @@ orderedList · blockquote · **codeBlock** · **horizontalRule**); **E2 adds the
   test asserts every `STANDARD_BLOCK_TYPE` value ∈ `editor.schema.nodes`. Full catalog: `docs/editor/extension-catalog.md`.
 
 ## Toolbar (E3) `[FACT: src/toolbar.tsx; src/internal/toolbar-state.ts; editor.tsx toolbar mount]`
+
 `<VidaEditor>` gains an additive prop **`toolbar?: boolean` (default true)**; the formatting toolbar renders INSIDE
 the editor frame, above `<EditorContent>`, ONLY when `toolbar && editable && editor != null` (the null-editor gate —
 `useEditor` is `Editor|null` under `immediatelyRender:false`). The raw `Editor` never leaks (E1's curated handle
 unchanged). `EditorToolbar` is internal (not barrel-exported).
+
 - **`role="toolbar"`** (aria-label `Formatting`, `aria-orientation=horizontal`) with **roving tabindex** — a single
   tab stop; `←/→` move between controls, `Home/End` to ends; the controller owns ONLY horizontal+Home/End (never
   `↓/↑`, which the Menus bind to open). The roving order is the LIVE ENABLED set; a reconcile effect adopts the
@@ -104,11 +117,13 @@ unchanged). `EditorToolbar` is internal (not barrel-exported).
   "Insert"). No new dep; no injected CSS (fully Tamagui); no motion (Menu's open transition is UI-1's).
 
 ## Slash menu (E4) `[FACT: src/extensions/slash-command.ts; src/slash-menu.tsx; src/slash-commands.ts; editor.tsx]`
+
 A `/`-triggered block palette: type `/`, a caret-anchored popup lists filterable blocks; ↑/↓/Enter/Esc drive it while
 **focus stays in the editor** (a COMBOBOX, not a Menu). Built on `@tiptap/suggestion` (new dep) + `@tiptap/react`
 `ReactRenderer`, NOT a UI-1 `Menu`/`Popover` mount (those are trigger-anchored + move focus in). No new public prop —
 the menu is a built-in of the editing surface (parity with the default-on toolbar); inert until `/` typed, so read-only
 needs no gate.
+
 - **Mechanism** — `extensions/slash-command.ts` = an `Extension` whose `addProseMirrorPlugins` returns
   `Suggestion({ char:'/', allowSpaces:false, startOfLine:false, allow:!isActive('codeBlock'), items, command, render })`.
   `render()` drives a `ReactRenderer(SlashMenu)` — `onStart` calls `props.mount()` (v3 managed positioning), `onKeyDown`
@@ -117,7 +132,7 @@ needs no gate.
 - **Command set** — `slash-commands.ts` `SLASH_MENU_ITEMS`: an editor-local `SlashMenuItem` view-model (NOT
   `@vida/types.SlashCommand`, whose `block_type` is integration-only — BR-7 kept). **Standard blocks insert now**
   (Text·H1–3·bullet/numbered/task list·quote·code·divider·table·callout — each `run` = `chain().focus().deleteRange(range)
-  .<cmd>()`; heading uses `setNode` turn-into, deliberately NOT E3's toggle; Image EXCLUDED, no attachment UI). **The 11
+.<cmd>()`; heading uses `setNode` turn-into, deliberately NOT E3's toggle; Image EXCLUDED, no attachment UI). **The 11
   integration blocks are DERIVED from `INTEGRATION_BLOCK_COMMANDS`, shown DISABLED** (`available:false`, skipped by ↑/↓,
   no-op on select) via the `isBlockAvailable` seam (empty in M1.0; E5 flips them on). `filterSlashItems` = case-insensitive
   substring over title+keywords (empty→full; no match→a disabled "No blocks" row).
@@ -130,14 +145,17 @@ needs no gate.
   set raw by the popup (not PM-managed → survives). Focus never leaves the editor.
 
 ## States (§VIII applicable subset) `[FACT: editor.tsx; editor.stories.tsx]`
+
 `default` (resting/focusable) · `focus` (frame ring) · `disabled` (`editable=false`, no caret) · `empty` (placeholder).
 No loading/error at E1 (the app's terminal-state wrapper owns those, UX-4).
 
 ## Integration-block registry (E5) `[FACT: src/extensions/integration-blocks.tsx; editor.tsx; slash-commands.ts]`
+
 The editor's **`inline` render surface for the ADR-008 capability registry** — the TipTap re-home AR-7 deferred to UI-3
 #29 `[FACT: ADR-008 §3.4:104-109; docs/core/capability/current-business-rules.md:26]`. `INTEGRATION_BLOCK_EXTENSIONS` =
 one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBlockNode(def)` over `INLINE_BLOCK_DEFS`
 (E1's command data joined to a per-type config schema), spread into `useEditor` after the standard blocks.
+
 - **Config = node attrs per `config_schema` (CB2).** The 7 typed capabilities declare `addAttributes()` from their
   `@vida/types` interface (each attr `{default, rendered:false}`); a `satisfies Record<keyof …Attrs, AttrSpec>` guards
   drift at COMPILE time. Config round-trips losslessly for the declared schema via `nodeFromJSON→toJSON`; it stays out
@@ -145,8 +163,8 @@ one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBl
   `backlink`/`milestoneBlock`) register attr-less (schema pending, per-module).
 - **Placeholder node-view (the FIRST React node-view).** `addNodeView → ReactNodeViewRenderer(IntegrationBlockPlaceholder)`
   → `NodeViewWrapper` + a Tamagui card on BASE tokens, `contentEditable={false}`, `role="note"` + accessible name, label
-  + description + a muted "Available when its module ships" — the inline `empty/unavailable` terminal state (CB6). MOD-*
-  replaces this with the real body.
+  - description + a muted "Available when its module ships" — the inline `empty/unavailable` terminal state (CB6). MOD-\*
+    replaces this with the real body.
 - **Never-crash (degrade).** The node type is in-schema so any doc parses; an undeclared attr degrades via TipTap's
   lenient content-load (warn + empty), not a crash.
 - **HTML contract + discriminator.** `renderHTML` → `<div data-type="integration-block" data-block-type="<name>">`;
@@ -156,10 +174,12 @@ one atom `Node` per `INTEGRATION_BLOCK_TYPE` (11), built by `createIntegrationBl
   BlockType-union re-home UI-3 owns); MOD-notes #31 wires AR-7's real `CapabilityRegistry`.
 
 ## DOCX serializer (E8) `[FACT: src/serializers/to-docx.ts; src/serializers/docx-theme.ts; index.ts]`
+
 The **DOCX serializer** (ADR-001:102 — `docx@9.7.1`, Node + browser). **Emit-only, no round-trip** (BR-5 is E6's) — the
 LAST serializer; the suite is complete. Barrel-exported `toDocx(doc, options: DocxSerializeOptions): Promise<Blob>` +
 the internal `buildDocxDocument(doc, options): Document` (for OOXML tests) + the pure `documentToDocxBlocks(doc,
 options): DocxBlock[]`. Full mapping: `docs/editor/serialization-spec.md`.
+
 - **Descriptor-AST testability split (BR-E8-7):** `docx`'s `Paragraph`/`TextRun`/`Table` hold a **private `properties`**
   field (not introspectable like react-pdf's plain elements), so the pure walk emits a plain `DocxBlock` descriptor AST
   (deep-equal testable), a mechanical adapter maps 1:1 to `docx` instances, proven by an unzipped `word/document.xml`
@@ -174,10 +194,12 @@ options): DocxBlock[]`. Full mapping: `docs/editor/serialization-spec.md`.
   test-only devDep for the OOXML unzip). No component surface → **no Visual Gate**.
 
 ## PDF serializer (E7) `[FACT: src/serializers/to-pdf.tsx; src/serializers/pdf-theme.ts; index.ts]`
+
 The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer`, web/desktop; mobile=`expo-print` OUT of UI-3 scope).
 **Emit-only, no round-trip** (BR-5 is E6's). Barrel-exported `toPdf(doc, options: PdfSerializeOptions): Promise<Blob>` +
 the internal pure `documentToPdfTree(doc, options): ReactElement<DocumentProps>` (exported for tests). Full mapping:
 `docs/editor/serialization-spec.md`.
+
 - **Split for testability:** `documentToPdfTree` is a pure/deterministic tree-walk (all 11 `STANDARD_BLOCK_TYPE` + every
   registered mark + `hardBreak` → react-pdf `Document/Page/Text/View/Image/Link`); `toPdf` is the thin async seam
   (`pdf(tree).toBlob()`). Async+binary is engine-intrinsic (Yoga layout → byte stream).
@@ -192,9 +214,11 @@ the internal pure `documentToPdfTree(doc, options): ReactElement<DocumentProps>`
   `PdfSerializeOptions` in `@vida/types`. Tests: `to-pdf.test.tsx` (33). No component surface → **no Visual Gate**.
 
 ## Markdown serializers (E6) `[FACT: src/serializers/to-markdown.ts; src/serializers/from-markdown.ts; index.ts]`
+
 The **custom TipTap-JSON ↔ Markdown serializer** (ADR-001 §8) — two pure, headless, deterministic functions (no `Editor`,
 no DOM), barrel-exported: `toMarkdown(doc, options): string` + `fromMarkdown(md, options?): MarkdownParseResult`. NO
 off-the-shelf markdown bridge. Full mapping table: `docs/editor/serialization-spec.md`.
+
 - **Lossless invariant** = JSON→md→JSON: `fromMarkdown(toMarkdown(doc)).document ≡ doc` over the live schema. `toMarkdown`
   emits ONE canonical spelling; `fromMarkdown` parses that CLOSED grammar and DEGRADES (never throws) on anything else —
   so no general-GFM lexer, **zero new runtime dep**. Canonical choices: italic→`_` (bold+italic `**_x_**` unambiguous),
@@ -208,10 +232,12 @@ off-the-shelf markdown bridge. Full mapping table: `docs/editor/serialization-sp
   mark + hardBreak + 7 stress cases, + modes + frontmatter + degradation). No component surface → no Visual Gate.
 
 ## Integration-block command map `[FACT: commands.ts]`
+
 `INTEGRATION_BLOCK_COMMANDS` = one `SlashCommand` per `INTEGRATION_BLOCK_TYPE` (11), all 7 required fields populated,
 `category ∈ {platform, embed}`. E1 ships the DATA; E4's slash menu LISTS them; E5 built the node-views (placeholders).
 
 ## File map `[FACT: packages/editor/src]`
+
 `editor.tsx` (VidaEditor + assertEditorDocument + toolbar mount + E4 host-combobox editorProps) · `commands.ts` ·
 **`toolbar.tsx`** (E3 — `EditorToolbar` + `ToolbarButton`) · **`internal/toolbar-state.ts`** (E3) ·
 `internal/editor-styles.ts` (E1 chrome + E2 block CSS) · **`extensions/standard-blocks.ts`** (E2) ·
@@ -234,4 +260,5 @@ adapter + `toDocx`) · `serializers/docx-theme.ts` (quarantined literals) · `se
 Yjs = a deferred seam, no dep (BR-2/M4).
 
 ## Verify
+
 `pnpm --filter @vida/editor typecheck && build && test` (188 tests) · Visual Gate `pnpm --filter @vida/editor storybook`.

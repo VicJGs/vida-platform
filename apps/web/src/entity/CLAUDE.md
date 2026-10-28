@@ -1,11 +1,13 @@
 # apps/web/src/entity — the Entity↔EntityView adapter (fe-codec-entity-facet S2)
 
 ## What this is
+
 The `apps/web` plane of the CODEC Entity shell (#6). The ONLY place `@vida/core`'s page-ability registry
 (`schema.isEntityType` / `ENTITY_TYPES`, ADR-006 SP2) meets `@vida/ui`'s presentational `EntityView` — the Tamagui-only
 boundary forbids this in `@vida/ui` (BR-2). The collection/dashboard adapter precedent.
 
 ## Pattern in use
+
 - **`offersEditor(entityType, hasPage)`** — the "registry-gated editor" gate: page-able IFF the type is registered AND a
   page exists. `@vida/ui` can't consult the registry, so the gate lives here and resolves to `editor`-slot presence.
 - **`offersPageEditor(pageType)`** (notes-rescope R1, NP-10) — the PAGE-surface gate: every `PAGE_TYPE` member offers the
@@ -23,9 +25,11 @@ boundary forbids this in `@vida/ui` (BR-2). The collection/dashboard adapter pre
 - **Deferred:** a generic `useEntity(entityType, entityId)` hook for MODULE entity pages is built at their first consumer.
 
 ## Imports
+
 - `schema` (namespace) from `@vida/core` — `@vida/core` exposes the schema/registry as `export * as schema` (barrel), so
   `schema.isEntityType`, `type schema.EntityType`. NOT a bare named import.
 - `EntityViewProps` / `FacetMode` / `Facet` from `@vida/ui` (the shell's Seam A).
 
 ## Spec
+
 `docs/specs/components/ui-2-platform-views/entity-view.md` · delivery `docs/specs/foundation/fe-codec-entity-facet/`.

@@ -34,17 +34,33 @@ const ToggleChip = styled(View, {
 // Decorative only — the on/off STATE is carried by the chip's `aria-pressed`; aria-hidden keeps the ✓ out of the
 // button's accessible name (which must stay the bare module label).
 function ChipMarker({ on }: { on: boolean }) {
-  const base = { width: 16, height: 16, borderRadius: '$full' as const, alignItems: 'center' as const, justifyContent: 'center' as const }
+  const base = {
+    width: 16,
+    height: 16,
+    borderRadius: '$full' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  }
   if (on)
     return (
       <View {...base} aria-hidden borderWidth={1} borderColor="$colorTextInverse">
-        <Text fontSize={10} lineHeight={10} color="$colorTextInverse">✓</Text>
+        <Text fontSize={10} lineHeight={10} color="$colorTextInverse">
+          ✓
+        </Text>
       </View>
     )
   return <View {...base} aria-hidden borderWidth={2} borderColor="$colorBorderDefault" />
 }
 
-function ModuleToggle({ module, on, onToggle }: { module: { key: string; label: string }; on: boolean; onToggle: (key: string) => void }) {
+function ModuleToggle({
+  module,
+  on,
+  onToggle,
+}: {
+  module: { key: string; label: string }
+  on: boolean
+  onToggle: (key: string) => void
+}) {
   return (
     <ToggleChip type="button" on={on} aria-pressed={on} onPress={() => onToggle(module.key)}>
       <ChipMarker on={on} />
@@ -55,11 +71,26 @@ function ModuleToggle({ module, on, onToggle }: { module: { key: string; label: 
   )
 }
 
-function ModuleGroupSection({ group, enabled, onToggle }: { group: DockModuleGroup; enabled: Record<string, boolean>; onToggle: (key: string) => void }) {
+function ModuleGroupSection({
+  group,
+  enabled,
+  onToggle,
+}: {
+  group: DockModuleGroup
+  enabled: Record<string, boolean>
+  onToggle: (key: string) => void
+}) {
   const headingId = useId()
   return (
     <View role="group" aria-labelledby={headingId} gap="$12">
-      <Text id={headingId} fontSize="$caption" fontWeight="600" color="$colorTextMuted" textTransform="uppercase" letterSpacing={0.4}>
+      <Text
+        id={headingId}
+        fontSize="$caption"
+        fontWeight="600"
+        color="$colorTextMuted"
+        textTransform="uppercase"
+        letterSpacing={0.4}
+      >
         {group.label}
       </Text>
       <View flexDirection="row" flexWrap="wrap" gap="$8">
@@ -82,7 +113,12 @@ export interface ModulePickerViewProps {
 }
 
 /** Pure, state-as-prop — grouped toggle chips. S4 can lift `enabled`/`onToggle` to the flow or the live seam. */
-export function ModulePickerView({ groups, enabled, onToggle, 'aria-label': ariaLabel = 'Modules to enable' }: ModulePickerViewProps) {
+export function ModulePickerView({
+  groups,
+  enabled,
+  onToggle,
+  'aria-label': ariaLabel = 'Modules to enable',
+}: ModulePickerViewProps) {
   return (
     <View role="group" aria-label={ariaLabel} gap="$24">
       {groups.map((g) => (

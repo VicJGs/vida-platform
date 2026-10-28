@@ -14,7 +14,13 @@
 import type { QueryClient } from '@tanstack/react-query'
 import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { getServices } from '../db/composition-root'
-import { COMMANDS_KEY, NAV_PREFS_KEY, PREFERENCES_GC_MS, PREFERENCES_STALE_MS, USER_PREFS_KEY } from './preferences-keys'
+import {
+  COMMANDS_KEY,
+  NAV_PREFS_KEY,
+  PREFERENCES_GC_MS,
+  PREFERENCES_STALE_MS,
+  USER_PREFS_KEY,
+} from './preferences-keys'
 import type { CommandHistoryEntry } from '../command-bar/types'
 import { toHistoryEntry } from './command-history'
 import type { PreferencesTable } from './preferences-writer'
@@ -29,7 +35,10 @@ const readCount: Record<PreferencesTable, number> = { user: 0, nav: 0 }
  *  lets the first read per table succeed and fails later ones (→ the "last loaded" state, via a write's refetch). */
 function forcedReadFailure(t: PreferencesTable): void {
   readCount[t]++
-  if (FORCED_PREFS_FAILURE === 'prefs-read-error' || (FORCED_PREFS_FAILURE === 'prefs-refetch-error' && readCount[t] > 1)) {
+  if (
+    FORCED_PREFS_FAILURE === 'prefs-read-error' ||
+    (FORCED_PREFS_FAILURE === 'prefs-refetch-error' && readCount[t] > 1)
+  ) {
     throw new Error(`forced: ${FORCED_PREFS_FAILURE}`)
   }
 }

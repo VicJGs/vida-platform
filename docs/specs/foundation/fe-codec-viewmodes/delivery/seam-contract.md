@@ -18,14 +18,15 @@ Saved View (filter × layout × grouping/sort, ADR-007 §3.3)
   · drag-to-move / reorder (a write)          → a Capability (ADR-008), writes via the module API (INT-2) — O1
   · sort toggle / layout switch / filter edit → the Collection shell (view chrome) — O2
 ```
+
 A renderer **renders what it is given**. It does not filter, group, sort, write, or own the interactive mixture. Absent a
-declared field (table columns / board group-by), the layout is *unavailable/degraded* upstream — a declared, non-error
+declared field (table columns / board group-by), the layout is _unavailable/degraded_ upstream — a declared, non-error
 outcome [FACT: ADR-007 §3.3:60-69; interpretation R5, O1-O3].
 
 ## A. `TableView<T>` — `@vida/ui/components/table-view.tsx` (S1) · READ-ONLY
 
 ```ts
-import { type ViewState } from '../internal/data-view'   // reuse the spine type — NO @vida/core import (BR-2)
+import { type ViewState } from '../internal/data-view' // reuse the spine type — NO @vida/core import (BR-2)
 
 type Density = 'compact' | 'default' | 'spacious'
 
@@ -35,7 +36,7 @@ interface Column<T> {
   /** Renders one cell's CONTENT (TableView owns the role="cell" wrapper). Compose an interactive control here when a
    *  cell is clickable (the LV-5 boundary — the renderer doesn't re-solve interactivity). */
   render: (item: T, index: number) => ReactNode
-  width?: number | string          // a LAYOUT number (the tabs/gallery `style=` precedent), not a token
+  width?: number | string // a LAYOUT number (the tabs/gallery `style=` precedent), not a token
   align?: 'start' | 'center' | 'end'
   /** DISPLAY-only: the view's current sort for this column → drives aria-sort on the columnheader. The renderer does
    *  NOT toggle sort (that's the Collection shell, O2); it only reflects the resolved sort. */
@@ -43,23 +44,24 @@ interface Column<T> {
 }
 
 interface TableViewProps<T> {
-  items: readonly T[]                                     // already filtered + sorted upstream (View Engine)
+  items: readonly T[] // already filtered + sorted upstream (View Engine)
   columns: readonly Column<T>[]
-  getKey: (item: T, index: number) => string              // stable UUIDv7 id — never an index
-  state?: ViewState                                        // the app derives + passes (BR-2); default 'success'
-  empty?: ReactNode                                        // richer empty slot (EmptyState); else a designed empty row
+  getKey: (item: T, index: number) => string // stable UUIDv7 id — never an index
+  state?: ViewState // the app derives + passes (BR-2); default 'success'
+  empty?: ReactNode // richer empty slot (EmptyState); else a designed empty row
   error?: ReactNode
-  loadingCount?: number                                    // skeleton row count; default 5
-  density?: Density                                        // row rhythm via the $space scale (the list-view precedent)
-  ref?: Ref<HTMLDivElement>                                // React-19 ref-as-prop (no forwardRef — erases <T>)
-  'aria-label'?: string                                    // required when the table renders (dev-warn via warnMissingName)
+  loadingCount?: number // skeleton row count; default 5
+  density?: Density // row rhythm via the $space scale (the list-view precedent)
+  ref?: Ref<HTMLDivElement> // React-19 ref-as-prop (no forwardRef — erases <T>)
+  'aria-label'?: string // required when the table renders (dev-warn via warnMissingName)
   'aria-labelledby'?: string
 }
 ```
+
 - Renders `role="table"` → `role="row"` → `role="columnheader"`/`role="cell"` (the `calendar-view` divergence; NOT
   `resolveDataViewState` — a grid's empty is designed). Horizontal overflow = `minWidth` table in an `overflowX:auto`
   wrapper (calendar precedent). Base semantic tokens; dimensions via the token scale (DEF-U8-h). **No `onSortChange`** —
-  sort toggling is view-chrome (O2); the renderer only *reflects* `column.sort` via `aria-sort`.
+  sort toggling is view-chrome (O2); the renderer only _reflects_ `column.sort` via `aria-sort`.
 
 ## B. `BoardView<T>` — `@vida/ui/components/board-view.tsx` (S2) · READ-ONLY
 
@@ -67,9 +69,9 @@ interface TableViewProps<T> {
 import { type ViewState } from '../internal/data-view'
 
 interface BoardGroup<T> {
-  id: string                       // the group-by value (provider-resolved)
+  id: string // the group-by value (provider-resolved)
   title: ReactNode
-  items: readonly T[]              // PRE-GROUPED by the provider (ADR-007 §3.3) — the renderer never groups
+  items: readonly T[] // PRE-GROUPED by the provider (ADR-007 §3.3) — the renderer never groups
   // count is derived from items.length (not passed)
 }
 
@@ -78,8 +80,8 @@ interface BoardViewProps<T> {
   /** Renders one card's CONTENT (BoardView owns the column listitem). Compose an interactive Card here (LV-5). */
   renderCard: (item: T, group: BoardGroup<T>) => ReactNode
   getKey: (item: T) => string
-  state?: ViewState                                        // board-level state (loading/error/empty/success); default 'success'
-  empty?: ReactNode                                        // board-level empty (no groups / all-empty)
+  state?: ViewState // board-level state (loading/error/empty/success); default 'success'
+  empty?: ReactNode // board-level empty (no groups / all-empty)
   error?: ReactNode
   density?: Density
   ref?: Ref<HTMLDivElement>
@@ -87,11 +89,13 @@ interface BoardViewProps<T> {
   'aria-labelledby'?: string
 }
 ```
+
 - Renders a `role="group"` (named) of **columns**; each column reuses the list-shaped spine (`resolveDataViewState` →
   `role="list"`/`status`, per-column empty/warn). Cards are listitems via `renderCard`. **No `onItemMove`, no drag** —
   the interactive move is a Capability (O1); this renderer is a read-only lens. Base tokens; dimensions via the token scale.
 
 ## Consumption
+
 - **Surfaces (every `fe-*` picking `table`/`board`):** pass provider-resolved `items`/`groups` + the app-derived `state`;
   compose click-to-open cells/cards in `render`/`renderCard`. **No surface re-implements the grid, the columns, or the
   terminal states.** Interactive move/sort/filter are wired by the Collection shell + a Capability, not by passing
@@ -99,6 +103,7 @@ interface BoardViewProps<T> {
 - **Module layout variants** (Tasks' 12) compose these base renderers; they do not fork them (O4).
 
 ## Invariants (contract-level)
+
 - **Read-only lens** — no filter/group/sort/write; the renderer renders resolved data (interpretation R5) [FACT: quality-bar §4.3:120-123; ADR-007:94].
 - **State is a prop across the boundary** — `@vida/ui` never derives; the app derives + passes (BR-2).
 - **`table` diverges to `role="table"`** (not `resolveDataViewState`); **`board` reuses the list spine per column**

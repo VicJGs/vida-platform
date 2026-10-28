@@ -5,6 +5,7 @@
 > Kept current with `packages/core/src/foundation/egress/`. Spec: `docs/specs/foundation/xs-egress-guard/`.
 
 ## What it is
+
 The per-target egress-mediation service — the STRICTEST grant in the system. `external_out_ok=true` (decided by
 the CapabilityEnforcer #31) is NECESSARY but NOT sufficient: on top of it this service enforces per-target
 consent + union-of-consents + never-auto-transmit and produces the audit record. It DECIDES + RECORDS; it holds
@@ -12,6 +13,7 @@ no credentials, makes no network call, and authors **no schema** — the durable
 is M2 (behind the ports). XCU-06 (egress guard) + XCU-08 (compositional treat-fetch-as-egress).
 
 ## Surface
+
 - **`createEgressGuard(enforcer: CapabilityEnforcer, ports?): EgressGuard`** (`foundation/egress/service.ts`),
   factory-of-closures (no `this`). `ports = { consent?: EgressConsentPort; audit?: EgressAuditPort }`.
   - `assertEgressPermitted(act: EgressAct) → EgressAuditRecord` (XCU-06) — throws `EgressDenied(defId, reason)` on
@@ -31,12 +33,14 @@ is M2 (behind the ports). XCU-06 (egress guard) + XCU-08 (compositional treat-fe
   consent); audit = **no-op** sink. M2 swaps a real store (field-encrypted `[E]` + append-only, IR-8/IR-9).
 
 ## Delegated (not owned here)
+
 `external_out` boolean + in/out union across action checks → CapabilityEnforcer #31 · per-source layer →
 XS-ingestion #44 · credential injection + provider call → mediator (XCU-09) · the model call → XS-ai #45 /
 ADR-015 · durable audit + per-target-consent STORE + real targets → M2 (port adapters) · audit VIEW + consent UX
 → P6 (XCU-06u).
 
 ## Tests
+
 `foundation/egress/__tests__/service.test.ts` (14 — live-store smoke on real `capability_grants` via
 `createCapabilityEnforcer`): never-auto-transmit · target-unresolved · external_out boolean · sensitive-union ·
 per-target consent (deny-safe default) · permit + unionConsented · PF-1 check-is-pure · `EgressDenied(defId)` ·

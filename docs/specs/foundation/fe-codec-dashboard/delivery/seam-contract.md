@@ -16,25 +16,25 @@ type BlockState = 'loading' | 'empty' | 'error' | 'success'
 
 interface DashboardBlock {
   id: string
-  title: string                    // the cell header label
-  size: CellSize                   // the span (EC-1/EC-6) — resolved by the app (Seam B), a placement attr
-  state: BlockState                // this block's OWN terminal state (EC-3) — the app derives (8-state), passes it
-  action?: ReactNode               // the ⋯ block-action SLOT (a Menu trigger etc.); the shell renders the slot, not a menu
+  title: string // the cell header label
+  size: CellSize // the span (EC-1/EC-6) — resolved by the app (Seam B), a placement attr
+  state: BlockState // this block's OWN terminal state (EC-3) — the app derives (8-state), passes it
+  action?: ReactNode // the ⋯ block-action SLOT (a Menu trigger etc.); the shell renders the slot, not a menu
 }
 
 interface DashboardViewProps {
-  title: string                                  // names the region + the heading
+  title: string // names the region + the heading
   blocks: readonly DashboardBlock[]
-  renderBlock: (block: DashboardBlock) => ReactNode   // the SUCCESS body only (see the ownership rule below)
+  renderBlock: (block: DashboardBlock) => ReactNode // the SUCCESS body only (see the ownership rule below)
   // ── slots + a11y ───────────────────────────────────────────────────────────────────────
-  empty?: ReactNode                              // empty-DASHBOARD override (default = EmptyState, EC-5)
-  emptyAction?: ReactNode                        // the add affordance inside the empty-dashboard state
+  empty?: ReactNode // empty-DASHBOARD override (default = EmptyState, EC-5)
+  emptyAction?: ReactNode // the add affordance inside the empty-dashboard state
   blockLoading?: (block: DashboardBlock) => ReactNode // optional per-block skeleton override (default = generic skeleton rows)
-  blockEmpty?: (block: DashboardBlock) => ReactNode   // optional per-block empty override (default = Message/EmptyState)
-  blockError?: (block: DashboardBlock) => ReactNode   // optional per-block error override (default = role="status" Message)
+  blockEmpty?: (block: DashboardBlock) => ReactNode // optional per-block empty override (default = Message/EmptyState)
+  blockError?: (block: DashboardBlock) => ReactNode // optional per-block error override (default = role="status" Message)
   'aria-label'?: string
   'aria-labelledby'?: string
-  ref?: Ref<HTMLDivElement>                      // React-19 ref-as-prop (no forwardRef; non-generic shell)
+  ref?: Ref<HTMLDivElement> // React-19 ref-as-prop (no forwardRef; non-generic shell)
 }
 ```
 
@@ -44,10 +44,10 @@ interface DashboardViewProps {
 // per-span flex cell — flexShrink:1 EXPLICIT (RNW defaults 0); minWidth = mobile-safe floor; maxWidth = the CAP that
 // stops a lone non-`full` cell growing to full (EC-6). full = fills the row.
 const SPAN: Record<CellSize, { grow: number; basis: string; min: number; max?: number }> = {
-  sm:   { grow: 1, basis: '25%',  min: 200, max: 360 },
-  md:   { grow: 2, basis: '42%',  min: 280, max: 520 },
-  lg:   { grow: 3, basis: '60%',  min: 320, max: 760 },  // min < 375 content width (EC-8)
-  full: { grow: 4, basis: '100%', min: 280 },            // no cap — fills
+  sm: { grow: 1, basis: '25%', min: 200, max: 360 },
+  md: { grow: 2, basis: '42%', min: 280, max: 520 },
+  lg: { grow: 3, basis: '60%', min: 320, max: 760 }, // min < 375 content width (EC-8)
+  full: { grow: 4, basis: '100%', min: 280 }, // no cap — fills
 }
 ```
 
@@ -78,26 +78,22 @@ tokens · reduced-motion honored.
 // imports @vida/core/@vida/types — lives in apps/web (the Tamagui-only boundary forbids this in @vida/ui).
 // ⚠ the DB row type ships, but the @vida/core barrel exposes the schema as a NAMESPACE (index.ts:62 `export * as schema`),
 // so it is `schema.BlockInstanceRow`, NOT a bare named import. The capability registry/service IS flat-exported (index.ts:124).
-import { schema, type CapabilityRegistry } from '@vida/core'    // schema.blockInstances/BlockInstanceRow + the registry
-import type { RenderTarget } from '@vida/types'                 // capability.ts: 'inline' | 'standalone'
-type BlockInstanceRow = schema.BlockInstanceRow                 // ≡ the shipped row (capability.ts:66)
+import { schema, type CapabilityRegistry } from '@vida/core' // schema.blockInstances/BlockInstanceRow + the registry
+import type { RenderTarget } from '@vida/types' // capability.ts: 'inline' | 'standalone'
+type BlockInstanceRow = schema.BlockInstanceRow // ≡ the shipped row (capability.ts:66)
 
 // a capability definition's dashboard-relevant face — structurally ≡ the shipped `CapabilityDefinition` (registry.ts:60-62),
 // kept local for decoupling (the adapter only needs id/title/render_targets).
 interface CapabilityDefLike {
   id: string
   title: string
-  render_targets: readonly RenderTarget[]      // must include 'standalone' to live on a dashboard
+  render_targets: readonly RenderTarget[] // must include 'standalone' to live on a dashboard
 }
 
 // THE pure mapping (ships now, S2): a standalone block_instances row + its PRE-RESOLVED def → a DashboardView cell
 // descriptor. `size` is a PLACEMENT attr read from the instance `config` JSON (capability.ts:39-41; ADR-008:122-124) with a
 // per-def default; `state` is derived by the 8-state machine from the block's own data load, passed as a prop (BR-2).
-function toCellDescriptor(
-  instance: BlockInstanceRow,
-  def: CapabilityDefLike,
-  state: BlockState,
-): DashboardBlock
+function toCellDescriptor(instance: BlockInstanceRow, def: CapabilityDefLike, state: BlockState): DashboardBlock
 
 // THE CONVENTION (shape, not a shipped hook — R3): a module/Space composes this to drive DashboardView.
 interface DashboardAdapter {
@@ -112,7 +108,7 @@ interface DashboardAdapter {
 }
 ```
 
-**Why pure-pieces + convention, not a live hook (R3):** no *built* consumer of the Dashboard exists yet — Home #18 /
+**Why pure-pieces + convention, not a live hook (R3):** no _built_ consumer of the Dashboard exists yet — Home #18 /
 Finance / Health / the modules all ship after #5 (grep clean; all surface dirs `.gitkeep`). The Collection adapter is the
 exact precedent — it ships real pure code (`toCollectionChrome`, `bindViewConfigWrites`, …) + types + convention, and
 defers only the live `useCollection` React-Query hook [FACT: apps/web/src/collection/adapter.ts:36-92]. So S2 ships
@@ -125,6 +121,7 @@ Query over the per-block providers + `block_instances`) is built at the first co
 placement writes are a Capability (O1), never this adapter.
 
 ## What this contract does NOT cover (homed elsewhere — slice-map "Out of scope")
+
 Placement edit / `block_instances` writes (a Capability, O1) · the 11 `standalone` block widgets + registry wiring (O2) ·
 per-module/per-Space block sets + live data wiring + the live `useDashboard` hook (module ② track / first consumer, O3) ·
 the Home arrangement toggle (O4) · the Spaces page (O5) · the other archetype shells (O6).

@@ -3,7 +3,7 @@
 > ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
 > [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
 
-# Business Rules — Routines  (level: Feature)
+# Business Rules — Routines (level: Feature)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3, SU-1, INT-1. Every rule
 > below complies. **Altitude note:** the v2 surface is 2 tables of individual `routine_actions`; the sequence /
@@ -29,7 +29,7 @@
   then completed. `[INTENT Q1; composes intake/tasks.md + Scheduler]`
 - **RT-5 — Completion is a USER-CONFIGURABLE policy; partial is ALWAYS recorded.** At the timeframe's end the
   routine computes **what was done vs not**, and that partial record is **never discarded** and is surfaced
-  **positively** (→ Journal / meaning-spine). Whether the routine counts as *done* is the **user's policy**:
+  **positively** (→ Journal / meaning-spine). Whether the routine counts as _done_ is the **user's policy**:
   **all-or-nothing** · **required-node** (a specific step must be done) · **threshold/partial**. Ships a default;
   fully editable. `[INTENT Q2]`
 - **RT-6 — Miss policy + acceptance window are user-configurable; routine has a lifecycle.** The user controls **how
@@ -48,7 +48,7 @@
   streak follows the miss policy (RT-6): a planned skip is neutral by default; an unplanned no-show counts per
   policy. `[FACT: ADR-002 L1724, L1749-1750; INTENT Q3]`
 - **RT-9 — Habit↔Routine boundary.** A **Habit** is one tracked behavior (build/break, quantified); a **Routine** is
-  the orchestrator that sequences steps (which may *be* habits/tasks/sessions). They are never merged; a habit-step
+  the orchestrator that sequences steps (which may _be_ habits/tasks/sessions). They are never merged; a habit-step
   drives the Habit, it does not re-define it. `[INTENT G5]`
 - **RT-10 — Step-scoping (shared repeatable actions).** A repeatable action may be scoped to **all routines · one
   routine · a subset** — one action, many routine memberships (⚠ INTENDED task↔routine membership; internals =
@@ -59,19 +59,19 @@
 - **RT-12 — Purpose contribution (⚠ INTENDED).** A routine **contributes to** a linked purpose's progress/metric via
   the polymorphic weighted **`contributions`** primitive (ADR-011 M7 — retires the As-is `purpose_routines` junction),
   its laddering weight `contributions.contribution_percentage` (M4-up); the metric is owned by **Purpose & Goals** (the
-  mapping is a contract Purpose defines). *(The routine→**step** rollup is the `completion_policy` (RT-5), NOT the M4
-  fractal Σ(child×weight) — only the up-edge to Purpose is weighted.)* `[INTENT G8; FACT: project.ts purpose_routines
-  (As-is); ADR-011 M4/M7]`
+  mapping is a contract Purpose defines). _(The routine→**step** rollup is the `completion_policy` (RT-5), NOT the M4
+  fractal Σ(child×weight) — only the up-edge to Purpose is weighted.)_ `[INTENT G8; FACT: project.ts purpose_routines
+(As-is); ADR-011 M4/M7]`
 - **RT-13 — Provider registration (⚠ INTENDED).** Routines **registers as a provider**: it exposes scheduled
   occurrences via **`dueIn()`** (→ Global Calendar + Journal agenda) and a **`summary(date)`** (→ Journal daily
   dashboard), and emits completion events (→ Gamification). Aggregator pattern — no mirroring. `[INTENT G8; FACT:
-  journals docs provider registry; sessions dueIn]`
+journals docs provider registry; sessions dueIn]`
 - **RT-14 — Analytics derive from the completions ledger (no denormalized counters).** Streaks, completion rate,
   ranking, and time-period comparison recompute deterministically from `routine_completions` — unlike Habits,
   Routines keeps **no cached streak columns**. `[FACT: ADR-002 §5.6 has none; INTENT G7]`
 - **RT-15 — Notes via `pages`, at routine and step level.** Notes attach through a linked `pages` row
   (`entity_type='routine_action'` reserved; routine-group level = ⚠ INTENDED extension), never inline. `[FACT:
-  ADR-002 L1344; INTENT G9]`
+ADR-002 L1344; INTENT G9]`
 - **RT-16 — Tags via `entity_tags` (⚠ INTENDED).** `routine_actions` has no tags column today (As-is); the go-forward
   primitive is **`entity_tags`** (`tag_id, entity_type, entity_id`, ADR-006 SP1) — the shared/universal tag system
   owned by **Spaces**; routines registers `entity_type='routine_action'` as a consumer, never a bespoke Routines tag
@@ -91,6 +91,7 @@
   the `dueIn`/`summary` provider seam (RT-13). `[INTENT; ADR-011 M1/M2/M3]`
 
 ## Validation & edge cases
+
 - Enum CHECKs (v2): `action_type`∈{habit,task,focus} (⚠ superseded by the polymorphic `step_type` taxonomy),
   `time_of_day`∈{morning,afternoon,evening}, `recurrence_frequency`∈{daily,weekdays,weekends,custom};
   `recurrence_days` JSON[0-6]. `[FACT: ADR-002 §5.6]`
@@ -104,17 +105,19 @@
   `[INTENT G7]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Today's routine to-do (by time_of_day) | skeleton | "nothing scheduled" | typed read error, retry | steps grouped, each showing its entity's live state |
-| Run a step (drive entity) | entity/session loading | — | driven-entity error → typed state, step stays open | entity advanced/completed; step reflects it |
-| Actionable step (alarm) | — | — | missed the timeframe → **not done**; reschedule fails → typed toast | checked in timeframe → done, or moved to an open slot |
-| Compute routine completion | computing from ledger | "not started" | ledger read error → show partial + flag | policy-evaluated done/partial %, "what was done" recorded |
-| Skip / reschedule step | — | — | outside acceptance window → typed toast, no change | planned/logged skip recorded; streak per policy |
-| Per-routine standalone page | skeleton | "no data yet" | typed error, retry | streak/trend/calendar + ranking/time-comparison |
-| Provider (dueIn / summary) | — | no occurrences in range | provider error → flagged, other providers unaffected | occurrences surfaced on Calendar + Journal |
+
+| Capability                             | loading                | empty                   | error                                                               | success                                                   |
+| -------------------------------------- | ---------------------- | ----------------------- | ------------------------------------------------------------------- | --------------------------------------------------------- |
+| Today's routine to-do (by time_of_day) | skeleton               | "nothing scheduled"     | typed read error, retry                                             | steps grouped, each showing its entity's live state       |
+| Run a step (drive entity)              | entity/session loading | —                       | driven-entity error → typed state, step stays open                  | entity advanced/completed; step reflects it               |
+| Actionable step (alarm)                | —                      | —                       | missed the timeframe → **not done**; reschedule fails → typed toast | checked in timeframe → done, or moved to an open slot     |
+| Compute routine completion             | computing from ledger  | "not started"           | ledger read error → show partial + flag                             | policy-evaluated done/partial %, "what was done" recorded |
+| Skip / reschedule step                 | —                      | —                       | outside acceptance window → typed toast, no change                  | planned/logged skip recorded; streak per policy           |
+| Per-routine standalone page            | skeleton               | "no data yet"           | typed error, retry                                                  | streak/trend/calendar + ranking/time-comparison           |
+| Provider (dueIn / summary)             | —                      | no occurrences in range | provider error → flagged, other providers unaffected                | occurrences surfaced on Calendar + Journal                |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A driven-entity failure (RT-3) surfaces a **typed error on the step**; the step is **never silently marked done**
   and never writes a parallel record. `[INTENT Q1; FACT §5]`
 - A miss/skip outside the acceptance window is **rejected with a typed error** (RT-6), not silently absorbed.
@@ -124,6 +127,7 @@
 - Partial completion is **always persisted** even on interruption — never discarded (RT-5). `[INTENT Q2]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 INTENDED, not in ADR-002 §5.6 / `routine.ts` today (→ consolidate into the ADR-002 amendment + a **Routines
 design-pass**): **RT-2** `routines` + `routine_step` (named ordered sequence); **RT-3** polymorphic `step_type` +
 entity ref (supersedes `action_type`{habit,task,focus} + `linked_habit_id`/`linked_task_id`); **RT-5/RT-6**
@@ -137,4 +141,5 @@ name `entity_tags` (SP1). Live invariants today: RT-1, RT-8, RT-9, RT-14 (derive
 RT-17, RT-18. `[FACT: ADR-002 §5.6; INTENT §E; ADR-011/012/006]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT/INTERP] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

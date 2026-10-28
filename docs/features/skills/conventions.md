@@ -31,7 +31,8 @@ inline `notes` · enums = SQL CHECK + Zod). Skills specifics:
   device-mediated / BYO-key (X1/AI1, server-blind — a server-plaintext fetch is refused, not downgraded); the
   template export is user-consented X4 egress, never a silent community push (SK-3). The economy emit is
   `grant_currency(XP)` (E2) — skills emits the signal, **never writes XP directly**. `[INTENT; ADR-014 X1/X4; ADR-015
-  AI1; ADR-012 E2]`
+AI1; ADR-012 E2]`
 
 ## Completion checklist
+
 - [x] platform baselines · [x] Skills specifics · [x] [FACT/INTENT] · [x] no `{{…}}`

@@ -5,6 +5,7 @@
 > books-S10 deny-safe-port precedent.
 
 ## §1. Context
+
 Importing phone contacts is **X1 device-mediated** (RL-11): the device parses/normalizes/encrypts on-device; a
 server-plaintext path is **refused, not downgraded** (ZK-1); the merge uses **X8 `import_staging`** (match against
 existing → per-row status → **commit on user confirm** → never a silent overwrite). The `foundation/ingestion`
@@ -15,6 +16,7 @@ durable `import_staging` store, and the full ingestion-guard grant (X2/X5 via en
 fetch to guard until the device bridge lands). Deps unchanged (the device port is a METHOD param, not a service dep).
 
 ## §2. Business Rules (S7)
+
 - **BR-RL-S7-1 (REL-07/10/11, X1)** — `importDeviceContacts(device?)`: **deny-safe** — an ABSENT device port ⇒
   `ContactsPermissionError` (no device/permission; no partial silent import, REL-10). A PRESENT port supplies
   on-device-parsed `RawContact[]` (the device already did the ZK-safe parse/normalize/encrypt — a server-plaintext
@@ -33,10 +35,12 @@ fetch to guard until the device bridge lands). Deps unchanged (the device port i
   lands; at M1 the device port's PRESENCE is the opt-in proxy (absent ⇒ refused). Documented, not invented.
 
 ## §3. Surface (S7)
+
 ```ts
 importDeviceContacts(device?: DeviceContactsPort): Promise<ContactImportResult>   // ContactsPermissionError if absent
 commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>        // commit-on-confirm; no overwrite
 ```
+
 - `RawContact = { sourceRowId: string; first_name: string; last_name?/email?/phone?/company? : string | null }`.
 - `ImportRowStatus = 'new' | 'matched' | 'parse_error'`; `StagedContact = { sourceRowId, raw, status, matchId?, error? }`.
 - `ContactImportResult = { staged: StagedContact[] }`; `ContactCommitResult = { created: string[]; matched: string[]; skipped: string[] }`.
@@ -44,6 +48,7 @@ commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>      
 - Error: `ContactsPermissionError` (new). `stageContacts` exported (pure, testable).
 
 ## §4. Acceptance
+
 - [ ] `importDeviceContacts()` with no port → `ContactsPermissionError`.
 - [ ] with a port: a row matching an existing contact's email → `matched` (matchId); a new row → `new`; a row with no first_name → `parse_error`.
 - [ ] phone match + exact-name match also mark `matched`; case-insensitive email match.
@@ -52,6 +57,7 @@ commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>      
 - [ ] tsc 0 · eslint 0 · live-store green.
 
 ## §5. Implementation prompt
+
 1. **types.ts** — `RawContact`, `ImportRowStatus`, `StagedContact`, `ContactImportResult`, `ContactCommitResult`,
    `DeviceContactsPort`; 2 methods; `ContactsPermissionError`.
 2. **service.ts** — `stageContacts(incoming, existing)` pure closure (natural-key match, case-fold email). Methods:
@@ -59,8 +65,9 @@ commitContactImport(staged: StagedContact[]): Promise<ContactCommitResult>      
    `contactsRepo.findAll()` → `{staged}`); `commitContactImport(staged)` (new → createContact via the S1 path;
    matched/parse_error skipped; partition the result). Reuse the S1 `createContact` closure (hoist if needed).
 3. **tests** — S7 describe block covering §4 (a stub `DeviceContactsPort` returning fixture rows).
-4. Verification Gate → inline g2 → currency BR-RL-S7-* → commit.
+4. Verification Gate → inline g2 → currency BR-RL-S7-\* → commit.
 
 ## Open calls (resolved, No-Guessing)
+
 - **M1 = pure pipeline + deny-safe port; device bridge/store/grant = M2** ([[XS security services share a deny-safe-port build shape]]). The finance-shaped `foundation/ingestion` reconcile doesn't fit contacts → a contact natural-key matcher here (honors the substrate's status/commit-on-confirm structure).
 - **matched rows never overwritten** (X8 "never a silent overwrite") — commit writes only `new`; merge is a P6/M2 concern.

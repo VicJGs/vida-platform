@@ -3,13 +3,7 @@
 // index (`/`) + notes (`/notes`) mirror the real registered routes so an unregistered target (`/tasks`) is exercised.
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from '@tanstack/react-router'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { UIProvider } from '@vida/ui'
 import { StickyNote } from 'lucide-react'
 import { NavLink } from './nav-link'

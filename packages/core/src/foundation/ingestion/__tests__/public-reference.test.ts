@@ -11,12 +11,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { createPublicReferenceEngine } from '../public-reference'
-import {
-  PublicRefDenied,
-  type DatasetFetchPort,
-  type DatasetVerifierPort,
-  type PublicDataset,
-} from '../types'
+import { PublicRefDenied, type DatasetFetchPort, type DatasetVerifierPort, type PublicDataset } from '../types'
 
 const dataset = (over: Partial<PublicDataset> = {}): PublicDataset => ({
   datasetId: 'br-tax-2026',
@@ -26,8 +21,16 @@ const dataset = (over: Partial<PublicDataset> = {}): PublicDataset => ({
   payload: { rules: [] },
   ...over,
 })
-const fetchOK = (ds: PublicDataset): DatasetFetchPort => ({ async fetchWhole() { return ds } })
-const verifyTrue: DatasetVerifierPort = { async verify() { return true } }
+const fetchOK = (ds: PublicDataset): DatasetFetchPort => ({
+  async fetchWhole() {
+    return ds
+  },
+})
+const verifyTrue: DatasetVerifierPort = {
+  async verify() {
+    return true
+  },
+}
 
 describe('createPublicReferenceEngine — S4 (XCU-04/05)', () => {
   it('XCU-04: a scoped/subset refresh is refused (re-leaks the category)', async () => {

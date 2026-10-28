@@ -24,14 +24,7 @@ export type AccountType = (typeof ACCOUNT_TYPE)[number]
 export const TRANSACTION_TYPE = ['income', 'expense', 'transfer'] as const
 export type TransactionType = (typeof TRANSACTION_TYPE)[number]
 
-export const ASSET_TYPE = [
-  'real_estate',
-  'vehicle',
-  'electronics',
-  'jewelry',
-  'collectible',
-  'other',
-] as const
+export const ASSET_TYPE = ['real_estate', 'vehicle', 'electronics', 'jewelry', 'collectible', 'other'] as const
 export type AssetType = (typeof ASSET_TYPE)[number]
 
 export const LIABILITY_TYPE = [

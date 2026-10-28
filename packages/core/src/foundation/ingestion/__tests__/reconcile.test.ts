@@ -54,7 +54,10 @@ describe('autoMatch (XCU-10) — by date± / amount± tolerance', () => {
 
 describe('commitStaged (XCU-10) — user is final authority; idempotent; fail-loud', () => {
   it('commits confirmed non-error rows', () => {
-    const res = commitStaged([row({ sourceRowId: 'a', status: 'auto_matched' }), row({ sourceRowId: 'b', status: 'unmatched' })])
+    const res = commitStaged([
+      row({ sourceRowId: 'a', status: 'auto_matched' }),
+      row({ sourceRowId: 'b', status: 'unmatched' }),
+    ])
     expect(res.committed).toEqual(['a', 'b'])
     expect(res.rejected).toEqual([])
   })
@@ -78,7 +81,13 @@ describe('commitStaged (XCU-10) — user is final authority; idempotent; fail-lo
 describe('dedupeFeed (XCU-11) — add-only, by (feedId, uid), mark is_ignored, never delete', () => {
   it('marks a duplicate is_ignored and keeps the row (no deletion)', () => {
     const seen = [{ feedId: 'ics-1', uid: 'evt-100' }]
-    const out = dedupeFeed([{ feedId: 'ics-1', uid: 'evt-100' }, { feedId: 'ics-1', uid: 'evt-200' }], seen)
+    const out = dedupeFeed(
+      [
+        { feedId: 'ics-1', uid: 'evt-100' },
+        { feedId: 'ics-1', uid: 'evt-200' },
+      ],
+      seen,
+    )
     expect(out).toHaveLength(2) // nothing deleted
     expect(out[0].isIgnored).toBe(true)
     expect(out[1].isIgnored).toBe(false)

@@ -60,7 +60,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -95,7 +98,13 @@ async function setup(): Promise<Harness> {
   const review = createReviewEngine(db, DEVICE, { capability })
   const sessionRegistry = createSessionRegistry(db, DEVICE)
   const rail = createEffectRail(db, createEffectRegistry())
-  const sessions = createSessionsService({ db, deviceId: DEVICE, registry: sessionRegistry, rail, entityRegistry: registry })
+  const sessions = createSessionsService({
+    db,
+    deviceId: DEVICE,
+    registry: sessionRegistry,
+    rail,
+    entityRegistry: registry,
+  })
   const deps: FlashcardsServiceDeps = { db, deviceId: DEVICE, review, spaces, backlinks, sessions, sessionRegistry }
   const svc = createFlashcardsService(deps)
   await svc.registerFlashcards() // most tests need the study_method + the 'review' sub-type
@@ -125,9 +134,9 @@ describe('mod-knowledge S7 — flashcards sub-service', () => {
   })
 
   it('a cloze card without a {{…}} mask → MalformedCloze; with a mask → ok (FC-05)', async () => {
-    await expect(
-      h.svc.createCard({ front: 'plain text', back: 'A', card_type: 'cloze' }),
-    ).rejects.toBeInstanceOf(MalformedCloze)
+    await expect(h.svc.createCard({ front: 'plain text', back: 'A', card_type: 'cloze' })).rejects.toBeInstanceOf(
+      MalformedCloze,
+    )
     const ok = await h.svc.createCard({ front: 'The {{capital}} of France', back: 'Paris', card_type: 'cloze' })
     expect(ok.card_type).toBe('cloze')
   })

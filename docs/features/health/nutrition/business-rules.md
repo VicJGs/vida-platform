@@ -3,7 +3,7 @@
 
 # Business Rules — Health: Nutrition
 
-Invariants for the Nutrition pillar. Inherits all Core rules (HC-*). Mostly `[INTENT]` (recovered domain, no v2 code).
+Invariants for the Nutrition pillar. Inherits all Core rules (HC-\*). Mostly `[INTENT]` (recovered domain, no v2 code).
 
 - **HN-1 — Compositional macros.** Ingredients hold atomic macros; a Dish's macros = sum of its ingredients; a
   Meal's macros = its dishes/items. **Calories = protein×4 + carbs×4 + fat×9** (CR-006); day total = sum of meals. `[FACT CR-006]`
@@ -59,9 +59,11 @@ Invariants for the Nutrition pillar. Inherits all Core rules (HC-*). Mostly `[IN
   tool-wielding actor; **no new grant column/table** — `external_*_ok` are existing ADR-010 fields (X5). `[INTENT: ADR-014 X1/X2/X3/X4/X5/X9/X11; ADR-015 AI1/AI3/AI5/AI6; ADR-006 SP1; AI4 N/A]`
 
 ## Terminal states
+
 Ingredient/Dish library (empty) · Plan (planning · active · on-hold · completed) · Daily plan (planning · assigned ·
 in-progress · completed · **modified**) · Meal (planned · confirmed · completed · **skipped/substituted**) · Shopping
 (needed · ordered · purchased · **cancelled/substituted**) · AI-generation (**fail→manual**) · Photo (analyzing · **fail→manual**).
 
 ## Completion checklist
+
 - [x] rules + [FACT/INTENT] · [x] terminal states · [x] Core inheritance · [x] no `{{…}}`

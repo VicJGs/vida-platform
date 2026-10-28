@@ -1,6 +1,8 @@
 # Spec: component:ds-2-foundations
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: implemented   <!-- draft → approved → implemented -->  (built + verified 20/20 · typecheck 10/10 · Frontend Visual Gate PASS provisional 2026-08-03; ⚠ palette is a placeholder, not brand — §6)
+
+Status: implemented <!-- draft → approved → implemented --> (built + verified 20/20 · typecheck 10/10 · Frontend Visual Gate PASS provisional 2026-08-03; ⚠ palette is a placeholder, not brand — §6)
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Linear: LIF-82 · Project M1 — Whole Manual OS · Milestone M1.0 — Boot & Connective Base.
@@ -14,6 +16,7 @@ Depends on: DS-1 (token pipeline, IMPLEMENTED on main ab5966c). Blocks: DS-3 (mo
 -->
 
 ## 0. Source model (direction — 2026-08-03)
+
 The frontend's source of truth is the **documented intent** (ADRs, specs, design.md), realized **code-first**: the
 hand-authored `tokens/*.json` seed is the authored source during M1. The community-forkable **Figma file is built
 later** — once products exist — as a faithful reflection, synced via **Figma MCP + a scripter + docs** (NOT Tokens
@@ -41,21 +44,23 @@ Home: `packages/ui/src/themes/` (same as DS-1). `[FACT: reconstructed-structure 
 
 **Two pipeline extensions DS-2 introduces** (approved 2026-08-03) — both minimal, both additive to DS-1:
 
-| Extension | Why | Shape |
-|---|---|---|
-| **Aux namespaces** (typography + shadow) | Fonts & shadows are **not** `createTokens` categories (`color/space/size/radius/zIndex`); a font/shadow primitive would fail DS-1's B3 fail-loud in **both** the `tokens.ts` emitter (primitive → `tamaguiRef`) **and** the `themes.ts` emitter (any semantic resolving through `toPrimitivePath` → `tamaguiRef`). `[FACT: build-tokens.mjs:105 tamaguiRef throws on non-category; reached from :130 tokens format AND :154/:158 themes format]` `[FACT: Tamagui fonts = createFont, separate from createTokens — @tamagui/core@2.5.1 CATEGORIES has no font category, build-tokens.mjs:23]` | Route the `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/shadow` namespaces to **`variables.css` + a typed data export (`fonts.ts`)**; **skip** them in **both** the `tokens.ts` and `themes.ts` createTokens/`tamaguiRef` paths — including semantic tokens that *reference* an aux primitive (B9). The `vida/css-vars` format is already namespace-agnostic (build-tokens.mjs:111–121 never calls `tamaguiRef`) → fonts/shadows emit to CSS with no format change. `createFont`/`createTamagui` wiring = DS-4. |
-| **Dark overlay** | Encode real parallel dark values (design.md §XI) without rewriting DS-1's `{value,type}` leaf + validation. | A thin dark override set (only tokens that differ in dark). **It must NOT sit in Style Dictionary's `source` glob** — `source: [TOKENS_DIR/*.json]` (build-tokens.mjs:181) would sweep it in as a phantom layer (`rankOfFile` → −1 → mis-emit into `:root` + same-path deep-merge collision). **Fix: change `source` to the explicit 3-file list** (`primitive/semantic/component.json`) and load the overlay **separately** by filename in the `themes.ts` emitter (mirroring `validate()`'s filename read, build-tokens.mjs:85–88). `light` = `semantic.json`; `dark` = `semantic.json` + overlay. `checkLayers` (which already reads by explicit filename, :85) never sees it — no B1 duplicate-path trip. Maps 1:1 to Figma modes. |
+| Extension                                | Why                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | Shape                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Aux namespaces** (typography + shadow) | Fonts & shadows are **not** `createTokens` categories (`color/space/size/radius/zIndex`); a font/shadow primitive would fail DS-1's B3 fail-loud in **both** the `tokens.ts` emitter (primitive → `tamaguiRef`) **and** the `themes.ts` emitter (any semantic resolving through `toPrimitivePath` → `tamaguiRef`). `[FACT: build-tokens.mjs:105 tamaguiRef throws on non-category; reached from :130 tokens format AND :154/:158 themes format]` `[FACT: Tamagui fonts = createFont, separate from createTokens — @tamagui/core@2.5.1 CATEGORIES has no font category, build-tokens.mjs:23]` | Route the `fontFamily/fontSize/fontWeight/lineHeight/letterSpacing/shadow` namespaces to **`variables.css` + a typed data export (`fonts.ts`)**; **skip** them in **both** the `tokens.ts` and `themes.ts` createTokens/`tamaguiRef` paths — including semantic tokens that _reference_ an aux primitive (B9). The `vida/css-vars` format is already namespace-agnostic (build-tokens.mjs:111–121 never calls `tamaguiRef`) → fonts/shadows emit to CSS with no format change. `createFont`/`createTamagui` wiring = DS-4.                                                                                                                                                                                                             |
+| **Dark overlay**                         | Encode real parallel dark values (design.md §XI) without rewriting DS-1's `{value,type}` leaf + validation.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | A thin dark override set (only tokens that differ in dark). **It must NOT sit in Style Dictionary's `source` glob** — `source: [TOKENS_DIR/*.json]` (build-tokens.mjs:181) would sweep it in as a phantom layer (`rankOfFile` → −1 → mis-emit into `:root` + same-path deep-merge collision). **Fix: change `source` to the explicit 3-file list** (`primitive/semantic/component.json`) and load the overlay **separately** by filename in the `themes.ts` emitter (mirroring `validate()`'s filename read, build-tokens.mjs:85–88). `light` = `semantic.json`; `dark` = `semantic.json` + overlay. `checkLayers` (which already reads by explicit filename, :85) never sees it — no B1 duplicate-path trip. Maps 1:1 to Figma modes. |
 
 **What it is NOT.**
+
 - NOT the dark **mechanism** — `createTamagui({ themes })` theme-switching + web CSS-var reconciliation are **DS-4**.
-  DS-2 supplies the dark *values* only. `[FACT: roadmap.md:89 "DS-4 Tamagui + dark mode"; reconstructed #19]`
+  DS-2 supplies the dark _values_ only. `[FACT: roadmap.md:89 "DS-4 Tamagui + dark mode"; reconstructed #19]`
 - NOT motion tokens — timing/easing/duration are **DS-3**. `[FACT: reconstructed #18]`
-- NOT `createFont`/`createTamagui` config — DS-2 emits the font *values* + `fonts.ts` data DS-4 feeds to `createFont`.
+- NOT `createFont`/`createTamagui` config — DS-2 emits the font _values_ + `fonts.ts` data DS-4 feeds to `createFont`.
 - NOT primitive component contracts — button/input/etc. component tokens beyond DS-1's proof are firmed at **DS-5**.
   `[FACT: reconstructed #20]`
 - NOT a Figma dependency — code-first per §0.
 
 ## 2. Business Rules
+
 DS-2 **inherits** DS-1's invariants B1–B5 (single source; three-layer indirection never skipped; determinism;
 generated-never-edited; fail-loud). `[FACT: docs/ui/token-pipeline/current-business-rules.md]` It adds:
 
@@ -83,6 +88,7 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
 ## 3. Contract (data/format)
 
 ### 3.1 Input — seed additions (classic Style Dictionary `{ "value", "type" }`, refs `{group.name}`)
+
 > Format note: the **live** pipeline uses `value`/`type` (not `$value`/`$type`); DS-2 matches the live code.
 > `[FACT: tokens/*.json on main]`
 
@@ -90,7 +96,7 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
   scale; `size` scale (mirrors space where needed); `radius` `sm/md/lg/xl/full`; `zIndex` levels; **aux**:
   `fontFamily`, `fontSize` (7), `fontWeight`, `lineHeight`, `letterSpacing`, `shadow` (3).
 - **`semantic.json`** (light, default mode): `color/surface/{primary,secondary,inverse}`, `color/text/{primary,
-  muted,inverse}`, `color/brand/primary`, `color/focus/ring`, `color/border/default`, `color/success`,
+muted,inverse}`, `color/brand/primary`, `color/focus/ring`, `color/border/default`, `color/success`,
   `color/danger`; `space/inset/{compact,default,loose,spacious}`; `radius/control`; `shadow/{resting,raised,overlay}`.
   `[FACT: design.md §II semantic examples, §IV component padding, §V]`
 - **dark overlay** (NEW) — only tokens whose value differs in dark (e.g. `surface/primary → {color.neutral.900}`,
@@ -101,19 +107,22 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
 - **`component.json`**: unchanged shape (references semantic only) — DS-2 keeps DS-1's button proof; full set = DS-5.
 
 ### 3.2 Output targets (extends DS-1)
-| File | Change | Shape |
-|------|--------|-------|
-| `variables.css` | **+aux namespaces** | now also emits `--fontSize-body`, `--shadow-resting`, … (design.md §XII naming); dark overlay NOT in `:root` here (DS-4 owns the web dark-mode selector) |
-| `tokens.ts` | **skip aux** (B9) | `createTokens` over the 5 categories only; font/shadow primitives skipped, no B3 fail |
-| `themes.ts` | **+dark overlay** (B7) **+ skip aux-referencing semantics** (B9) | `light` from `semantic.json`; `dark` from `semantic.json` + the filename-loaded overlay; `light_<Comp>`/`dark_<Comp>` as before; semantics resolving to an aux primitive (e.g. `shadow/resting`) are skipped, not B3-failed |
-| `build-tokens.mjs` `source` | glob → **explicit 3-file list** | `source: [primitive, semantic, component].json` so the dark overlay is not swept in as a phantom layer (`rankOfFile` −1 bug) |
-| `fonts.ts` | **NEW** | typed plain-data export of the typography tokens (family/size/weight/lineHeight/letterSpacing) for DS-4's `createFont`; GENERATED banner |
+
+| File                        | Change                                                           | Shape                                                                                                                                                                                                                       |
+| --------------------------- | ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `variables.css`             | **+aux namespaces**                                              | now also emits `--fontSize-body`, `--shadow-resting`, … (design.md §XII naming); dark overlay NOT in `:root` here (DS-4 owns the web dark-mode selector)                                                                    |
+| `tokens.ts`                 | **skip aux** (B9)                                                | `createTokens` over the 5 categories only; font/shadow primitives skipped, no B3 fail                                                                                                                                       |
+| `themes.ts`                 | **+dark overlay** (B7) **+ skip aux-referencing semantics** (B9) | `light` from `semantic.json`; `dark` from `semantic.json` + the filename-loaded overlay; `light_<Comp>`/`dark_<Comp>` as before; semantics resolving to an aux primitive (e.g. `shadow/resting`) are skipped, not B3-failed |
+| `build-tokens.mjs` `source` | glob → **explicit 3-file list**                                  | `source: [primitive, semantic, component].json` so the dark overlay is not swept in as a phantom layer (`rankOfFile` −1 bug)                                                                                                |
+| `fonts.ts`                  | **NEW**                                                          | typed plain-data export of the typography tokens (family/size/weight/lineHeight/letterSpacing) for DS-4's `createFont`; GENERATED banner                                                                                    |
 
 ### 3.3 Build interface (unchanged)
+
 `pnpm --filter @vida/ui tokens:build` → exit 0 on success; non-zero + named cause on B2/B8 violation.
 `packages/ui/src/index.ts` re-exports `tokens`, `light`, `dark`, `light_<Comp>`, and `fonts`.
 
 ## 4. Acceptance (testable DoD)
+
 - [x] Seed defines the four scale families per §3.1 with **no arbitrary values** (B6): color 10-step ramps,
       7 type sizes, 4pt spacing set, 5 radii, 3 shadows.
 - [x] dark overlay exists **outside the SD source glob**; `source` is the explicit 3-file list; `themes.ts` `dark`
@@ -134,7 +143,9 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
 - [x] `[C]` `current-spec.md` + `current-business-rules.md` refreshed for the themes context; `[L]` layer-doc updated.
 
 ## 5. Implementation Prompt
+
 <!-- Ordered; each step cites a §2/§3 rule. Brand hue + typefaces are §6 UNKNOWNs — resolved in Step 2 before this runs. -->
+
 1. **Extend the pipeline** (`build-tokens.mjs`): (a) switch `source` from the `*.json` glob to the explicit
    `[primitive, semantic, component].json` list (removes the overlay phantom-layer bug); (b) define the aux
    namespace set; make **both** the `tokens.ts` emitter (aux primitives) and the `themes.ts` emitter
@@ -154,6 +165,7 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
 7. **Done-check:** run every §4 checkbox; regenerate outputs; refresh `[C]`/`[L]` docs.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - **⚠ INTENDED-IMMATURE — the token VALUES are a functional placeholder palette, not a brand.** (Victor,
   2026-08-03, at Visual-Gate approval.) The current values — indigo brand, slate neutral, emerald/red signals,
   Space Grotesk/Inter — are accessible + coherent but deliberately **generic**; they will be **replaced when Vida's
@@ -172,9 +184,10 @@ dangling-ref / layer-skip / empty-layer / **off-grid spacing (B8)** — no parti
   Carried from DS-1 §6. `[INTENT: DS-4]`
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-03 | 2026-08-03-ds-2-foundations | initial forward spec: §0 source model, §1 identity + 2 pipeline extensions, §2 B6–B10, §3 data/format contract, §4 acceptance, §5 impl prompt, §6 UNKNOWNs. Structural approach approved (aux namespaces + dark overlay). |
-| 2026-08-03 | 2026-08-03-ds-2-foundations | REVISE (independent critique): F1 dark overlay collided with SD `source:['*.json']` glob (phantom rank −1 layer) → `source`→explicit 3-file list + filename-load overlay in themes emitter; F2 B8 scoped to `space.*` only (radius `full:9999`/line-heights excluded); F3 B9 aux-skip must cover the `themes.ts` emitter path (aux-referencing semantics), not just `tokens.ts`. |
-| 2026-08-03 | 2026-08-03-ds-2-foundations | **Inheritance rule (frontend source-of-truth Step 5):** this spec's `## 0. Source model` pointer is REQUIRED on every forward frontend spec (DS-3/4/5, UI-*), enforced mechanically by `pnpm check:frontend-source-model`. Next spec author: keep §0. See `docs/specs/foundation/frontend-source-of-truth.md`. |
+
+| Date       | Session                     | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-03 | 2026-08-03-ds-2-foundations | initial forward spec: §0 source model, §1 identity + 2 pipeline extensions, §2 B6–B10, §3 data/format contract, §4 acceptance, §5 impl prompt, §6 UNKNOWNs. Structural approach approved (aux namespaces + dark overlay).                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 2026-08-03 | 2026-08-03-ds-2-foundations | REVISE (independent critique): F1 dark overlay collided with SD `source:['*.json']` glob (phantom rank −1 layer) → `source`→explicit 3-file list + filename-load overlay in themes emitter; F2 B8 scoped to `space.*` only (radius `full:9999`/line-heights excluded); F3 B9 aux-skip must cover the `themes.ts` emitter path (aux-referencing semantics), not just `tokens.ts`.                                                                                                                                                                                                                                                                                                                     |
+| 2026-08-03 | 2026-08-03-ds-2-foundations | **Inheritance rule (frontend source-of-truth Step 5):** this spec's `## 0. Source model` pointer is REQUIRED on every forward frontend spec (DS-3/4/5, UI-\*), enforced mechanically by `pnpm check:frontend-source-model`. Next spec author: keep §0. See `docs/specs/foundation/frontend-source-of-truth.md`.                                                                                                                                                                                                                                                                                                                                                                                      |
 | 2026-08-03 | 2026-08-03-ds-2-foundations | **Step 2 BUILT.** Pipeline extended (source→3-file list · aux-skip both emitters · `fonts.ts` · B8 space-scoped · dark-overlay loader + `tokenRef` bracket-notation fix). Seed authored: indigo brand + slate neutral + emerald/red signals (10-step ramps); 4pt space + size; radius sm–full; zIndex; type scale (7 sizes + families/weights/line-heights via `fonts.ts`); shadow ×3; `semantic.dark.json` (10 parallel dark overrides). Verify: build ✓ deterministic · `@vida/ui` **20/20** (13 DS-1 + B7/B8/B9) · root typecheck **10/10**. Contrast AA both modes (caveat: white-on-brand.500 = 4.47 → components use brand.600 for filled buttons). **Awaiting Visual Gate stage 4 (Victor).** |

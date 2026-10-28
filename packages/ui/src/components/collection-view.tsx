@@ -150,9 +150,7 @@ export function CollectionView({
   let body: ReactNode
   if (state === 'empty' && !designedEmpty) {
     // Consistent collection-level teaching-invitation empty (EC-3) — consumer override wins; else a generic default.
-    body = empty ?? (
-      <EmptyState title="Nothing here yet">Items you add will show up here.</EmptyState>
-    )
+    body = empty ?? <EmptyState title="Nothing here yet">Items you add will show up here.</EmptyState>
   } else if (state === 'error' && error != null) {
     body = error // consumer error override; else the renderer owns its own error (calm role="status", degrade-never-crash)
   } else {
@@ -161,16 +159,18 @@ export function CollectionView({
   }
 
   return (
-    <CollectionRoot
-      ref={ref}
-      role="region"
-      aria-label={ariaLabel}
-      aria-labelledby={resolvedLabelledby}
-    >
+    <CollectionRoot ref={ref} role="region" aria-label={ariaLabel} aria-labelledby={resolvedLabelledby}>
       {/* chrome row 1 — title + honest count (left) · the view-config entry points (right, S2) */}
       <ChromeRow>
         <TitleGroup>
-          <Text id={titleId} ref={titleRef as never} tabIndex={-1} fontFamily="$display" fontSize="$h3" color="$colorTextPrimary">
+          <Text
+            id={titleId}
+            ref={titleRef as never}
+            tabIndex={-1}
+            fontFamily="$display"
+            fontSize="$h3"
+            color="$colorTextPrimary"
+          >
             {title}
           </Text>
           <Text fontSize="$small" color="$colorTextMuted">

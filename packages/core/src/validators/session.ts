@@ -37,10 +37,10 @@ export const CreateSessionSchema = z
     distraction_count: z.number().int().min(0).nullish(),
     key_learnings: z.string().nullish(),
   })
-  .refine(
-    (d) => d.started_at == null || d.ended_at == null || d.ended_at >= d.started_at,
-    { message: 'ended_at must be >= started_at', path: ['ended_at'] },
-  )
+  .refine((d) => d.started_at == null || d.ended_at == null || d.ended_at >= d.started_at, {
+    message: 'ended_at must be >= started_at',
+    path: ['ended_at'],
+  })
 
 // Routines S6 (R1 first-consumer-pull) — planned_blocks write (SS-7/SS-8 intent). Unix-ms slot, end > start when given;
 // sub_type/target_type are OPEN (no SQL CHECK) and registry-validated in the service; status FIXED → the enum tuple.
@@ -84,10 +84,10 @@ const AvailabilityFields = z.object({
 })
 // Create: both times required + end > start (a real window). is_available:false = a valid blackout window
 // (orthogonal — never rejected). No uniqueness/overlap check (SS-9/G5 input — stored as-is).
-export const AvailabilitySchema = AvailabilityFields.refine(
-  (d) => d.end_time > d.start_time,
-  { message: 'end_time must be > start_time', path: ['end_time'] },
-)
+export const AvailabilitySchema = AvailabilityFields.refine((d) => d.end_time > d.start_time, {
+  message: 'end_time must be > start_time',
+  path: ['end_time'],
+})
 // Patch: every field optional; the end>start check is applied in the service when both are present.
 export const AvailabilityPatchSchema = AvailabilityFields.partial()
 

@@ -65,7 +65,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -101,11 +104,7 @@ const userDef = (over: Partial<CapabilityDefinition> = {}): CapabilityDefinition
   ...over,
 })
 
-async function seedGrant(
-  db: Awaited<ReturnType<typeof harness>>['db'],
-  defId: string,
-  env: Partial<GrantEnvelope>,
-) {
+async function seedGrant(db: Awaited<ReturnType<typeof harness>>['db'], defId: string, env: Partial<GrantEnvelope>) {
   const repo = createRepository(db, capabilityGrants, { deviceId: 'device-1', encryptedFields: [], softDelete: true })
   await repo.create({
     capability_def_id: defId,
@@ -126,10 +125,21 @@ const cloud = (over: Partial<AiRequest> = {}): AiRequest =>
   ({ defId: 'ai_agent', mode: 'cloud', target: MODEL, slice: SLICE, userInitiation: INIT, ...over }) as AiRequest
 const onDeviceReq: AiOnDeviceRequest = { defId: 'ai_agent', mode: 'on_device' }
 
-const yesConsent: EgressConsentPort = { async hasTargetConsent() { return true } }
+const yesConsent: EgressConsentPort = {
+  async hasTargetConsent() {
+    return true
+  },
+}
 function spyAudit(): { port: EgressAuditPort; records: EgressAuditRecord[] } {
   const records: EgressAuditRecord[] = []
-  return { port: { async record(e) { records.push(e) } }, records }
+  return {
+    port: {
+      async record(e) {
+        records.push(e)
+      },
+    },
+    records,
+  }
 }
 
 beforeAll(async () => {
@@ -244,7 +254,11 @@ describe('createAiService — S2 (XCU-22/19/27/26) · live store', () => {
   it('wired on-device runtime dispatches without any egress', async () => {
     const { enforcer } = await harness()
     const audit = spyAudit()
-    const onDevice: OnDeviceRuntimePort = { async run() { return { content: 'local answer' } } }
+    const onDevice: OnDeviceRuntimePort = {
+      async run() {
+        return { content: 'local answer' }
+      },
+    }
     const ports: AiPorts = { onDevice }
     const ai = createAiService(createEgressGuard(enforcer, { audit: audit.port }), ports)
     const res = await ai.askModel(onDeviceReq)
@@ -255,6 +269,8 @@ describe('createAiService — S2 (XCU-22/19/27/26) · live store', () => {
   it('a garbage mode fails loud (UnknownAiMode propagates, not a policy deny)', async () => {
     const { enforcer } = await harness()
     const ai = createAiService(createEgressGuard(enforcer))
-    await expect(ai.checkModelCall({ defId: 'ai_agent', mode: 'hybrid' } as unknown as AiRequest)).rejects.toMatchObject({ name: 'UnknownAiMode' })
+    await expect(
+      ai.checkModelCall({ defId: 'ai_agent', mode: 'hybrid' } as unknown as AiRequest),
+    ).rejects.toMatchObject({ name: 'UnknownAiMode' })
   })
 })

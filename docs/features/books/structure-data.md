@@ -1,31 +1,32 @@
 <!-- Structure & Data — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · schema.ts · docs/intake/books.md -->
 
-# Structure & Data — Books  (level: Feature / own module)
+# Structure & Data — Books (level: Feature / own module)
 
 ## Data model — FACT base: 2 tables `[FACT: ADR-002 L2409-2469; schema.ts L641-674; learning.ts L131-171]`
 
-| Table | Purpose | `[E]` fields | Key constraints |
-|---|---|---|---|
-| `books` | the work (today: work+copy merged) | title, author, isbn, review, cover_url, genre, **tags** (inline `[E]` — As-is floor → `entity_tags`, SP1) | `format` CHECK(3); `status` CHECK(4); **`progress` `NOT NULL DEFAULT 0`** (As-is floor → nullable override, M3); `rating` 1-5; soft delete |
-| `book_chapters` | flat TOC | title | `book_id` CASCADE; **UNIQUE(book_id, chapter_number)**; est/actual reading minutes; `is_completed`; no soft delete |
+| Table           | Purpose                            | `[E]` fields                                                                                              | Key constraints                                                                                                                            |
+| --------------- | ---------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `books`         | the work (today: work+copy merged) | title, author, isbn, review, cover_url, genre, **tags** (inline `[E]` — As-is floor → `entity_tags`, SP1) | `format` CHECK(3); `status` CHECK(4); **`progress` `NOT NULL DEFAULT 0`** (As-is floor → nullable override, M3); `rating` 1-5; soft delete |
+| `book_chapters` | flat TOC                           | title                                                                                                     | `book_id` CASCADE; **UNIQUE(book_id, chapter_number)**; est/actual reading minutes; `is_completed`; no soft delete                         |
 
 - ⚠ Three FACT columns are **superseded by the reframe** (reconcile in the amendment): `books.format` (single →
   per-asset), `books.current_page`/`progress` (single position → per-asset native position + a **nullable-override
   derived `progress`**, M3, BK-3), `books.genre`/`tags` (columns → **`entity_tags`**, SP1, BK-16). `[INTENT B2/B11;
-  ADR-006 SP1; ADR-011 M3]`
+ADR-006 SP1; ADR-011 M3]`
 
 ### ⚠ INTENDED model (module extraction — 2nd-largest ADR-002 amendment after Education) `[INTENT: B1–B16]`
-| New entity | Role | Key points |
-|---|---|---|
-| `book_assets` | per-format copies | 0..n per book; format ∈ {physical, pdf, epub, audiobook, braille, other}; digital → encrypted file ref (R2) + native position (page · location · timestamp); physical/braille → manual position (BK-2) |
-| mapping/anchor data | cross-format sync | transcription + TOC-anchor matches per asset-pair; states: synced · pending · failed (BK-4); design pass required |
-| `book_bookmarks` | position markers | work-anchored (BK-5); label; notes via `pages`; inter-links (BK-6) |
-| `book_highlights` | light span markers | digital content spans; deliberately no notes/inter-links (BK-6) |
-| `book_quotes` | first-class quotes | per book; text `[E]`; position?; notes via `pages`; inter-links; embeddable platform-wide under toggles (BK-7) |
-| `reading_sessions` | base `sessions` `sub_type='reading'` + Books-owned 1:1 extension (`session_id`, S1) | mode-adaptive capture (BK-10) = the extension columns; time, pages/position delta, statistics; photo attachments (encrypted → daily Journal); shared timer/scheduling rides the base |
-| `reading_plans` (+ plan↔books) | the Quota Planner | arrangement sequenced\|parallel (BK-11); goal manual\|auto; target date·weekday·day-of-month; quota distribution + recalculation state; holds target_completion_date (B11) |
-| `book_subjects` | Education partition junction | many-to-many; replaces v1's `metadata.linked_courses` hack (BK-13) |
-| conflict/resolution state | BK-8 | pending clashes + preset rule (rule itself lives in Preferences) |
+
+| New entity                     | Role                                                                                | Key points                                                                                                                                                                                             |
+| ------------------------------ | ----------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `book_assets`                  | per-format copies                                                                   | 0..n per book; format ∈ {physical, pdf, epub, audiobook, braille, other}; digital → encrypted file ref (R2) + native position (page · location · timestamp); physical/braille → manual position (BK-2) |
+| mapping/anchor data            | cross-format sync                                                                   | transcription + TOC-anchor matches per asset-pair; states: synced · pending · failed (BK-4); design pass required                                                                                      |
+| `book_bookmarks`               | position markers                                                                    | work-anchored (BK-5); label; notes via `pages`; inter-links (BK-6)                                                                                                                                     |
+| `book_highlights`              | light span markers                                                                  | digital content spans; deliberately no notes/inter-links (BK-6)                                                                                                                                        |
+| `book_quotes`                  | first-class quotes                                                                  | per book; text `[E]`; position?; notes via `pages`; inter-links; embeddable platform-wide under toggles (BK-7)                                                                                         |
+| `reading_sessions`             | base `sessions` `sub_type='reading'` + Books-owned 1:1 extension (`session_id`, S1) | mode-adaptive capture (BK-10) = the extension columns; time, pages/position delta, statistics; photo attachments (encrypted → daily Journal); shared timer/scheduling rides the base                   |
+| `reading_plans` (+ plan↔books) | the Quota Planner                                                                   | arrangement sequenced\|parallel (BK-11); goal manual\|auto; target date·weekday·day-of-month; quota distribution + recalculation state; holds target_completion_date (B11)                             |
+| `book_subjects`                | Education partition junction                                                        | many-to-many; replaces v1's `metadata.linked_courses` hack (BK-13)                                                                                                                                     |
+| conflict/resolution state      | BK-8                                                                                | pending clashes + preset rule (rule itself lives in Preferences)                                                                                                                                       |
 
 - ⚠ Cross-cutting at build: `entity_links` gains annotation entity types; quote-embed block in `@vida/editor`;
   `pages` targets for bookmark/quote notes; Preferences keys (toggles, conflict rule, reader defaults).
@@ -34,6 +35,7 @@
   rows (mapped position, extracted TOC) carry `source=ai` (AI6). `[INTENT; ADR-014/015]`
 
 ## State management map `[FACT: ADR-001 State]`
+
 - **React Query** owns work/asset/TOC/annotation/plan/session reads + optimistic writes; **derived** unified
   progress (invalidate on any asset-position/session write); quota computations + projections; conflict queue.
 - **Zustand** owns ephemeral UI: reader state (mode, open asset, playback), companion session draft (timer,
@@ -41,6 +43,7 @@
 - Unified progress, pace-status, and quota state are **derived** (BK-3/BK-11/BK-13) — never hand-maintained.
 
 ## Page / route map `[INTENT B12 — approved 2026-07-05, double-critique gate]`
+
 - **Reading Hub** — currently-reading, today's quotas (on-pace|behind|ahead), resume→Reader, recent
   bookmarks/quotes, statistics, plan alerts (recalc proposals).
 - **Bookshelf / All Books** — gallery|list|table; tags grouping; status shelves; format filter; TOC-only
@@ -59,13 +62,15 @@
   prompts in context.
 
 ## Dependencies / graph
+
 - **Own module (extracted from Learning 2026-07-03).** In-edges: Knowledge (topic↔book/chapter `[FACT:
-  L2559-2561]`), Flashcards (decks `[FACT: L2631]`), Study Planner (consumes plans/sessions), daily Journal
-  (quotas + photos), Education Subject Hub (partition), Calendar *(forward dep)*, Skills/Purposes *(theirs)*.
+L2559-2561]`), Flashcards (decks `[FACT: L2631]`), Study Planner (consumes plans/sessions), daily Journal
+  (quotas + photos), Education Subject Hub (partition), Calendar _(forward dep)_, Skills/Purposes _(theirs)_.
   Out-edges: Notes/pages + entity_links, shared tags, R2 attachments, Preferences, Education contract
   (schedules/assessments via partition), extension layer (BK-14). No direct cross-module table reads (§6).
 
 ## Single source of truth (constitution §3)
+
 - **Native position:** each asset owns exactly one; **unified progress** derives (BK-3) — the conflict rule
   (BK-8) arbitrates, never a second stored truth.
 - **Quotes:** stored once per book; every embed references (BK-7) — never copied text.
@@ -76,6 +81,7 @@
 - Enums as string-literal unions + CHECK + Zod, declared once. `[FACT: learning.ts; conventions]`
 
 ## ADRs / structural decisions
+
 - **ADR-002 §Books** — FACT base. **ADR-001** — RQ+Zustand, R2, hybrid mobile editor/reader. **ADR-003** —
   LWW + attachment pipeline.
 - **Driver ADRs (Part 1.2):** **ADR-004** (`reading_sessions` = base `sessions` sub-type + extension, S1) ·
@@ -89,4 +95,5 @@
   spec (Notes & Pages side). `[INTENT]`
 
 ## Completion checklist
+
 - [x] data model (FACT 2 + INTENDED family) · [x] dep graph (own module) · [x] state + route map · [x] ADRs · [x] single source per concern · [x] [FACT/INTENT/INTERP] each claim

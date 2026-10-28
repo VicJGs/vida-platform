@@ -74,31 +74,58 @@ describe('layoutDay (BR-7/8)', () => {
   const lanesOf = (out: ReturnType<typeof layoutDay>) => out.map((o) => [o.lane, o.lanes])
 
   it('no overlap → one lane each, full width', () => {
-    expect(lanesOf(layoutDay([span(9, 10), span(10, 11)], W))).toEqual([[0, 1], [0, 1]])
+    expect(lanesOf(layoutDay([span(9, 10), span(10, 11)], W))).toEqual([
+      [0, 1],
+      [0, 1],
+    ])
   })
   it('an overlapping pair → 2 lanes', () => {
-    expect(lanesOf(layoutDay([span(9, 11), span(10, 12)], W))).toEqual([[0, 2], [1, 2]])
+    expect(lanesOf(layoutDay([span(9, 11), span(10, 12)], W))).toEqual([
+      [0, 2],
+      [1, 2],
+    ])
   })
   it('a chain A∩B, B∩C, A∌C → 2 lanes, C reuses lane 0', () => {
-    expect(lanesOf(layoutDay([span(9, 10.5), span(10, 12), span(11, 12)], W))).toEqual([[0, 2], [1, 2], [0, 2]])
+    expect(lanesOf(layoutDay([span(9, 10.5), span(10, 12), span(11, 12)], W))).toEqual([
+      [0, 2],
+      [1, 2],
+      [0, 2],
+    ])
   })
   it('a cluster ends where overlap ends — a later lone block is full width again', () => {
-    expect(lanesOf(layoutDay([span(9, 10), span(9.5, 10.5), span(15, 16)], W))).toEqual([[0, 2], [1, 2], [0, 1]])
+    expect(lanesOf(layoutDay([span(9, 10), span(9.5, 10.5), span(15, 16)], W))).toEqual([
+      [0, 2],
+      [1, 2],
+      [0, 1],
+    ])
   })
   it('a 3-way mutual overlap → 3 lanes', () => {
-    expect(lanesOf(layoutDay([span(9, 11), span(9.5, 11), span(10, 11)], W))).toEqual([[0, 3], [1, 3], [2, 3]])
+    expect(lanesOf(layoutDay([span(9, 11), span(9.5, 11), span(10, 11)], W))).toEqual([
+      [0, 3],
+      [1, 3],
+      [2, 3],
+    ])
   })
   it('identical starts → longer first lane-wise, input order preserved in the output', () => {
     const out = layoutDay([span(9, 9.5), span(9, 11)], W)
     expect(out.map((o) => o.item.end)).toEqual([9.5, 11])
-    expect(lanesOf(out)).toEqual([[1, 2], [0, 2]])
+    expect(lanesOf(out)).toEqual([
+      [1, 2],
+      [0, 2],
+    ])
   })
   it('drawn extent: a 09:00–09:15 block (drawn 24px) and a 09:15 block → 2 lanes', () => {
-    expect(lanesOf(layoutDay([span(9, 9.25), span(9.25, 10)], W))).toEqual([[0, 2], [1, 2]])
+    expect(lanesOf(layoutDay([span(9, 9.25), span(9.25, 10)], W))).toEqual([
+      [0, 2],
+      [1, 2],
+    ])
   })
   it('late clamp BEFORE clustering: 23:15–23:45 + 23:50 → 2 lanes, both inside the grid', () => {
     const out = layoutDay([span(23.25, 23.75), span(23 + 50 / 60, 24)], [8, 24])
-    expect(lanesOf(out)).toEqual([[0, 2], [1, 2]])
+    expect(lanesOf(out)).toEqual([
+      [0, 2],
+      [1, 2],
+    ])
     const gridH = (24 - 8) * HOUR_PX
     for (const o of out) expect(o.top + o.height).toBeLessThanOrEqual(gridH)
   })

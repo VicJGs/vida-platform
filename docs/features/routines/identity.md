@@ -3,24 +3,25 @@
 > ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
 > [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
 
-# Identity — Routines  (level: Feature)
+# Identity — Routines (level: Feature)
 
 **What it is.** The OS's **cross-module orchestration cockpit**: a **named, ordered, recurring sequence** of
-**steps**, where each step *drives* a real entity somewhere else in the OS (a workout Session, a task, a habit, a
+**steps**, where each step _drives_ a real entity somewhere else in the OS (a workout Session, a task, a habit, a
 recurrent action). It is the **active** counterpart to the **passive** Global Calendar — the Calendar shows what's
-due; a Routine is the place the user actually *runs* a block of life, step by step, on its cadence. `[FACT: CLAUDE.md
+due; a Routine is the place the user actually _runs_ a block of life, step by step, on its cadence. `[FACT: CLAUDE.md
 §5; ADR-002 §5.6]` `[INTENT: reframe Victor 2026-06-30; §E 2026-07-14]`
 
 **The desire behind it.** The user wants to **compose a recurring schedule that integrates steps from across the
 WHOLE OS** — exercises, habits, recurrent tasks, study periods, project-focus time, "and many others" — into a
-single interactive sequence he can run and track. The v2 shipped a *deliberately limited proof-of-concept* ("less
+single interactive sequence he can run and track. The v2 shipped a _deliberately limited proof-of-concept_ ("less
 powerful, less integrated, just to see it work"); the real idealization is a **deeply personalizable** layer where
-the user defines *what* a routine contains, *how* completion is judged, *how* misses count, and can even extend the
+the user defines _what_ a routine contains, _how_ completion is judged, _how_ misses count, and can even extend the
 kinds of steps it holds. And crucially: it must **always record and celebrate what was done** — partial progress is
 never discarded, because "it is very important to be grateful and happy about what was done." `[INTENT: Victor
 2026-06-30; §E Q1/Q2 2026-07-14]`
 
 **Scope — the orchestration reframe (NOT the 2-table v2 POC).** `[INTENT §E]`
+
 - A routine is a **named ordered sequence** of steps (⚠ INTENDED `routines` + `routine_step`), scheduled **broadly**
   — a specific day · day + timeframe of the week · day + time of the month · day + time of the year. `[INTENT Q2]`
 - **Steps are polymorphic and COMPOSE, never duplicate.** A step's interactive "do-it-in-place" mode = **drive the
@@ -40,16 +41,17 @@ never discarded, because "it is very important to be grateful and happy about wh
   membership). **User-extensible** step/session types + segments ride **Spaces**. `[INTENT Q1]`
 
 **What it is NOT.** `[INTENT; FACT: CLAUDE.md modules; docs/features/*]`
-- **Not a behavior tracker.** Single build/break behaviors with streaks are **Habits**; a Routine *sequences* steps
-  (which may *be* habits). Habits' own identity already cedes "action-list cadence" to Routines. `[FACT:
-  habits/identity.md L26]`
-- **Not a deadline tool.** Deadline recurrence (obligations) is a **Tasks** type; a routine can *contain* such a
+
+- **Not a behavior tracker.** Single build/break behaviors with streaks are **Habits**; a Routine _sequences_ steps
+  (which may _be_ habits). Habits' own identity already cedes "action-list cadence" to Routines. `[FACT:
+habits/identity.md L26]`
+- **Not a deadline tool.** Deadline recurrence (obligations) is a **Tasks** type; a routine can _contain_ such a
   task, it doesn't own the concept. `[FACT: intake/tasks.md ADDENDUM]`
 - **Not a session engine.** Runtimes (timers, rest/energy capture) are **Sessions & Scheduling** (ADR-004); Routines
-  *launches* sub-types, never re-implements them. `[FACT: sessions/identity.md]`
+  _launches_ sub-types, never re-implements them. `[FACT: sessions/identity.md]`
 - **Not its own scheduler.** Cadence, availability, `dueIn`, reschedule-to-open-slot come from the **Scheduler**.
   `[FACT: sessions/contract.md]`
-- **Not a duplicator.** A step never writes a parallel completion record — completing the step *is* completing the
+- **Not a duplicator.** A step never writes a parallel completion record — completing the step _is_ completing the
   driven entity. `[INTENT Q1 — single source of truth]`
 - **Not the Gamification engine.** Routine outcomes **feed** the economy: a routine-completion event fires the
   **`grant_currency(XP)`** feeder effect (ADR-012 E2) that **Gamification applies**, writing to
@@ -59,7 +61,8 @@ never discarded, because "it is very important to be grateful and happy about wh
   **`contributions`** primitive (ADR-011 M7 — retires the forward `purpose_routines` junction); the metric is owned
   by **Purpose & Goals**. `[FACT: project.ts purpose_routines (As-is); INTENT: ADR-011 M7 → contributions]`
 - **Not a notes store.** Notes live in linked `pages` (`entity_type='routine_action'`), never inline. `[FACT:
-  ADR-002 L1344]`
+ADR-002 L1344]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT/INTERP] · [x] no `{{…}}` remaining

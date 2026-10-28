@@ -1,15 +1,17 @@
-# Current Business Rules — finance   (level: Module · tier: STANDARD)
-> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S7 of 8; fiscal-legal S8 (guarded) NOT built. 
+# Current Business Rules — finance (level: Module · tier: STANDARD)
+
+> Coverage: schema (`020_finance`, full) + colocated `@vida/types` + validators + service tier S1–S7 of 8; fiscal-legal S8 (guarded) NOT built.
 > Inherits: docs/core/business-rules.md (ZK-1/2/3, LF-1/2/3). Finance holds money data → ZK-1 governs `[E]` fields; the M1.0 `[E]` set is EMPTY (pass-through, M3 target). A child rule contradicting a parent is a CONFLICT — flagged, never overridden.
-> Last refreshed: 2026-09-22-mod-finance-S7  ·  Source of truth = the code (Currency Rule §XXIX).
+> Last refreshed: 2026-09-22-mod-finance-S7 · Source of truth = the code (Currency Rule §XXIX).
 
 ## 1. Invariants — what is ALWAYS / NEVER true
 
 ### Realized (S1–S2 — CRUD + ledger)
+
 - **FN-2 — Money is integer cents.** Every monetary column is `money` (INTEGER cents); rates are basis points.
   Validators enforce cents/bp at the boundary. `[FACT: schema/finance.ts money(); validators/finance.ts]`
 - **FN-3 — Balance is DERIVED, never stored-authoritative.** `getBalance(accountId)` = `opening_balance +
-  Σ signed ledger` (income +, expense −, outgoing transfer −, incoming transfer +), recomputed live on every
+Σ signed ledger` (income +, expense −, outgoing transfer −, incoming transfer +), recomputed live on every
   read; **no balance-column write on transaction mutation**. `[FACT: service.ts getBalance]`
 - **FN-4 — A transfer is ONE row, distinct destination.** `transaction_type='transfer'` requires a distinct
   `transfer_to_account_id`; a non-transfer must leave it null; source ≠ destination (fail-loud
@@ -22,8 +24,9 @@
 - **FN-12 — Local-first.** Every create/edit/transfer succeeds locally first; LWW on structured columns. `[FACT: LF-2; ADR-003]`
 
 ### Realized (S3 — derived analytics)
+
 - **BR-S3-1 (FN-7) — Net worth = SIMPLE sum.** `netWorth = Σ account balances (derived) + Σ asset current_value
-  − Σ liability current_balance`. **NOT** the deferred store tree (FIN-18); **investments are not a net-worth
+− Σ liability current_balance`. **NOT** the deferred store tree (FIN-18); **investments are not a net-worth
   term** by FN-7's definition (they enter via wrappers when the store tree lands — avoids double-count). `[FACT: service.ts getOverview; business-rules.md:31-32]`
 - **BR-S3-2 (FN-6) — Aggregates are COMPUTED, never stored.** overview / investment value / charts recompute on
   read; no persistence (opt-in persisted-aggregates is FIN-25/S5). ADR-012 §3.3 house rule. `[FACT: service.ts §S3]`
@@ -41,6 +44,7 @@
   conversion + `FxRateMissingError` is S5/FIN-21 (needs the deferred Preferences base-currency port). `[FACT: slice-map.md:18,38]`
 
 ### Realized (S4 — move_money effect handler)
+
 - **BR-S4-1 (FN-16 / ADR-012 E4).** Finance EXECUTES `move_money` as a **ledger movement** — a `transactions`
   transfer row co-written through the rail's tx via `createInTx` (a documented effect handler, never a direct
   cross-module write). `[FACT: services/finance/effects.ts move_money]`
@@ -58,6 +62,7 @@
     only trusted in-process callers. `[FACT: ADR-010 PC-3; ADR-017; effects/CLAUDE.md]`
 
 ### Realized (S5 — external / ingestion / config seams; deny-safe over deferred stores)
+
 - **BR-S5-1 (FN-5).** Recurring = **forecast-by-default** (`forecastRecurring` projects occurrences, creates NO
   row; computed by index from the anchor → month-end clamped, no day-drift). Materialize is opt-in via a deferred
   `RecurringModePort` (default forecast-only → `materializeDue` returns `[]`, never auto-writes). `[FACT: service.ts forecastRecurring/materializeDue]`
@@ -77,6 +82,7 @@
   path fails loud, never a silent default. `[FACT: types.ts]`
 
 ### Realized (S6 — cross-module providers + delegates)
+
 - **BR-S6-1 (FIN-31).** A transaction create is the achievement-FEED point (Gamification owns achievements). M1
   emits **nothing concrete** — achievements PULL finance's `net_worth` via the ADR-011 §3.6 seam (`getNetWorth`);
   the emit + `effects` dep are wired at #48. `grant_currency` would be the wrong effect (a currency award, and would
@@ -96,6 +102,7 @@
   unregistered type (its contract, not swallowed). `Transaction.tags` stays `[]` (DB-11); this is the real read. `[FACT: service.ts getEntityTags]`
 
 ### Realized (S7 — fiscal-legal SITUATE; the always-available, no-external-dep spine)
+
 - **BR-S7-1 (FL-4/FL-1).** `createFiscalLegalService` is a Finance **sub-context** — residency + legal-entity CRUD +
   money-touch, all on-device over `[E]` data, **needs no external integration**. Returns Row types (no `@vida/types`
   fiscal interface, DB-11). `[FACT: services/finance/fiscal-legal.ts]`
@@ -112,6 +119,7 @@
   INFORM/DERIVE/ADVISE ones. `[FACT: fiscal-legal.ts]`
 
 ### Realized (S8 — fiscal-legal INFORM / DERIVE / ADVISE, guarded)
+
 - **BR-S8-1 (FL-04/X5).** `rulePack(jurisdiction)` grant-gates `external_in` (fail-closed) then reads the ADR-014
   public-reference layer via the BUILT `createPublicReferenceEngine`; M1 deny-safe fetch → `RulePackUnverified`, no
   grant → `ExternalGrantMissing`. `RulePack = {jurisdiction_code, version, verified}` (version required by
@@ -141,11 +149,13 @@
   encryption of obligation/scenario text (M1 `encryptedFields:[]` pass-through). Each behind a zero-signature-change port.
 
 ### Pending / INTENDED (later — not yet realized)
+
 - **FN-13/14 (FIN-36/38/39)** Commitments/budgeting/liability-payment (undesigned) · **FN-15 (FIN-18/23/24)**
   store-tree net worth + lock-box · **FIN-31 concrete emit** (#48) · **materialize write path · durable stores**
   (FX/base-currency, managed-category, persisted-aggregates, import_staging) — all M2 via the S5/S6 deny-safe ports/seams.
 
 ## 3. Rule inventory — explicit · implicit · invented
+
 - **EXPLICIT (schema/service-realized):** FN-2/3/4/10/11 (S1–S2), BR-S3-1…6 (S3) — all cited to `service.ts`/`schema/finance.ts`.
 - **IMPLICIT (enforced in service):** enum validation at the boundary (invalid enum rejects); soft-delete hides
   from `getBalance`/lists (explicit `isNull(deleted_at)` on `findWhere` — the repository-findwhere seam); newest-first stable sort on ledger reads.
@@ -157,6 +167,7 @@
   can go stale; **no reader should trust it — use `getBalance`.** A future DB-11 pass drops or derives-caches it. `[FACT: service.ts getBalance; effects.ts move_money]`
 
 ## 4. Validation & edge cases
+
 - Enum CHECKs (SQL, from the tuples): `account_type`(7), `transaction_type`{income,expense,transfer},
   `recurring_frequency`(6), `asset_type`(6), `liability_type`(7), `investment_type`(8), `income_type`(8). `[FACT: business-rules.md:91-92]`
 - `getOverview` month defaults to the current calendar month; caller may pin `{month}` (tests pin for determinism).
@@ -166,16 +177,19 @@
 - Equal-total chart rows sort with a stable secondary key (category/type) — findWhere/findAll issue no ORDER BY.
 
 ## 5. Terminal states
+
 Dashboard/overview · account balance · all-transactions · investment value · charts — each loading/empty/error/
 success per `docs/features/finance/business-rules.md:105`. A derive error → flagged partial (BR-S3-4), never a
 wrong number as correct.
 
 ## 6. Failure behavior (fail loud — constitution §5)
+
 - A failed save/transfer reverts + surfaces a typed error (`InvalidTransferError`) — never silent money loss. `[FACT: service.ts]`
 - A compute error (balance/net worth/gain-loss) shows a flagged partial (`partial`/`degraded[]`), never a wrong number. `[FACT: service.ts getOverview, getChartDatasets]`
 - Validating methods reject asynchronously (factory-service convention). `[FACT: memory factory-service-no-this-for-intra-calls]`
 
 ## Completion checklist
+
 - [x] §1 invariants with [FACT] (S1–S2 + S3 realized; S4–S8 INTENDED flagged, no internals assumed)
 - [x] §3 inventory (explicit/implicit/INVENTED) · [x] §4 validation/edge · [x] §5 states · [x] §6 fail-loud
 - [x] inherits docs/core; no child rule contradicts a parent

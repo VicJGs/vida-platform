@@ -7,6 +7,7 @@ v2 floor: `skills` (kept, extended) + `skill_resources` (**RETIRED** → `entity
 **ADR-002 additions**. Platform baselines apply (UUIDv7 · Unix-ms · `_sync_*` · soft-delete · no inline notes).
 
 ## Entities (Skills-owned)
+
 - **`skills`** — the capability. `id` · `domain` P (6) · `name` **E** · `description` **E** · `why_important` **E** ·
   `parent_skill_id` P (→ graph grouping, kept from v2) · `ladder_template` P (nullable) · `current_level` P
   (**derived**) · `progress` P (**derived**) · `mastery_override` P (nullable, flagged) · `status` P · `priority` P
@@ -38,12 +39,14 @@ v2 floor: `skills` (kept, extended) + `skill_resources` (**RETIRED** → `entity
   `[INTENT CI-1; ADR-014 X1/X2/X3/X4/X5/X11; ADR-015 AI6]`
 
 ## Composed / emitted (NOT Skills tables)
+
 - Base session row + scheduler → **Sessions**. Theory/mastery + insights + SRS review-curve → **Knowledge**.
   Project-activities → **Projects**. Target-Mastery ladder → **Purposes** (the pursuable target + its `measurement_kind`/
   `binding_mode`, M1/M2). Evidence → **pages/attachments**. Tags/views/tree → **Spaces** (tags = the `entity_tags`
   primitive, ADR-006 SP1; `entity_type='skill'`). `[FACT/INTENT reshape; ADR-011 M1/M2; ADR-006 SP1]`
 
 ## ADR-002 changes
+
 **RETIRE** `skill_resources` (CHECK 'course','book') → `entity_links` (broad cross-domain). **ADD** the tables above +
 `entity_type` extensions: `skill_level` · `skill_activity` · `skill_action` · `skill_dev_log` · `skill_dependency` ·
 `skill_definition` (`skill` already reserved). Consolidate into the standing ADR-002 amendment. Named-ADR set for this module now spans **014/015/011/006/012**
@@ -51,4 +54,5 @@ v2 floor: `skills` (kept, extended) + `skill_resources` (**RETIRED** → `entity
 stated above). `[INTENT SK7/HL10; ADR-014/015/011/006/012]`
 
 ## Completion checklist
+
 - [x] entities + P/E · [x] composed-vs-owned · [x] ADR-002 changes (retire + add) · [x] no `{{…}}`

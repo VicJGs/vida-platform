@@ -37,7 +37,10 @@ function keyOf(y: number, m: number, d: number): string {
 /** A usable 4-digit year, else `now`'s year + a warning (BR-10). Pure — the component injects `new Date()`. */
 export function resolveYear(year: number, now: Date): { year: number; warning?: string } {
   if (Number.isInteger(year) && year >= 1000 && year <= 9999) return { year }
-  return { year: now.getFullYear(), warning: `year ${String(year)} is not a 4-digit integer; showing ${now.getFullYear()}` }
+  return {
+    year: now.getFullYear(),
+    warning: `year ${String(year)} is not a 4-digit integer; showing ${now.getFullYear()}`,
+  }
 }
 
 export function buildYear(year: number, weekStartsOn: 0 | 1): MiniMonth[] {
@@ -47,7 +50,13 @@ export function buildYear(year: number, weekStartsOn: 0 | 1): MiniMonth[] {
     const slots: YearSlot[] = Array.from({ length: offset }, () => ({ kind: 'spacer' }) as const)
     for (let day = 1; day <= days; day++) {
       const i = offset + day - 1
-      slots.push({ kind: 'day', key: keyOf(year, month, day), day, col: (i % 7) + 1, weekday: localDate(year, month, day).getDay() })
+      slots.push({
+        kind: 'day',
+        key: keyOf(year, month, day),
+        day,
+        col: (i % 7) + 1,
+        weekday: localDate(year, month, day).getDay(),
+      })
     }
     while (slots.length % 7 !== 0) slots.push({ kind: 'spacer' })
     const rows: YearSlot[][] = []

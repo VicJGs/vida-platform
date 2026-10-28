@@ -6,13 +6,7 @@ import { SETTINGS_COPY } from './settings-copy'
 // (label · description · keywords) are the SEARCHABLE INDEX that both the search box and the section grouping consume
 // (conventions.md:16 G7 — one index drives both). S4 filters SETTINGS_INDEX; S3 renders the rail + Appearance pane.
 
-export type SettingsCategoryId =
-  | 'appearance'
-  | 'locale'
-  | 'notifications'
-  | 'modules'
-  | 'data'
-  | 'account'
+export type SettingsCategoryId = 'appearance' | 'locale' | 'notifications' | 'modules' | 'data' | 'account'
 
 export interface SettingsCategory {
   id: SettingsCategoryId
@@ -99,7 +93,17 @@ export const SETTINGS_INDEX: readonly SettingIndexEntry[] = [
     category: 'appearance',
     label: SETTINGS_COPY.personaLabel,
     description: SETTINGS_COPY.personaDescription,
-    keywords: ['persona', 'role', 'student', 'professional', 'entrepreneur', 'creative', 'parent', 'retiree', 'rewards'],
+    keywords: [
+      'persona',
+      'role',
+      'student',
+      'professional',
+      'entrepreneur',
+      'creative',
+      'parent',
+      'retiree',
+      'rewards',
+    ],
   },
   {
     id: 'reduce-motion',

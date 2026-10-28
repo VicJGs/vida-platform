@@ -7,7 +7,12 @@ import { useCollection } from './use-collection'
 
 afterEach(cleanup)
 const LAYOUTS: readonly ViewLayout[] = ['list', 'gallery', 'calendar', 'graph']
-const resolved = (rows: unknown[], state: ResolvedView['state']): ResolvedView => ({ rows, groups: [], state, degraded: [] })
+const resolved = (rows: unknown[], state: ResolvedView['state']): ResolvedView => ({
+  rows,
+  groups: [],
+  state,
+  degraded: [],
+})
 
 describe('useCollection (S1 — first Collection consumer)', () => {
   it('defaults layout to the first available + maps chrome from the resolved set', () => {

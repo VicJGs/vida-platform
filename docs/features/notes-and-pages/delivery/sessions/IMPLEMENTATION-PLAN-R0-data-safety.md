@@ -9,7 +9,7 @@
 
 - **R-1 · No `cancelQueries` — a generation re-read instead (refines G13 / BR-R0-8b clause 3).** FACT (query-core 5.101.4):
   `cancelQueries` defaults to `revert:true` [queryClient.js:141-142], but a manual `setQueryData` also replaces the revert
-  snapshot [query.js:373], so cancel-then-set would be *safe* for a warm entry. The cancel is still dropped because it only
+  snapshot [query.js:373], so cancel-then-set would be _safe_ for a warm entry. The cancel is still dropped because it only
   covers half the race. It needs the "warm entries only" condition (cancelling a cold first fetch strands it in pending),
   and it does nothing for a read whose query function is already past the barrier (e.g. a first fetch that started just
   before the writer's flush). One mechanism covers both: every body read goes through `readAfterWrites(keys, read)`, which
@@ -32,11 +32,12 @@
 ## 1. Build steps
 
 ### Step 1 — core: content guard + seed fix (tests 4, 5)
+
 - `packages/core/src/validators/editor.ts`: `export function isEditorDocument(x: unknown): x is EditorDocument`: same rule
   as `@vida/editor` `assertEditorDocument` (doc root, `content` array, each item an object with a string `type`). Also
   `export function isEditorDocumentJson(s: string): boolean` (`JSON.parse` in try → `isEditorDocument`).
 - `packages/core/src/validators/note.ts`: `createPageSchema.content` → `z.string().nullish().refine(c => c == null ||
-  isEditorDocumentJson(c), { message: 'content must be a serialized EditorDocument' })`.
+isEditorDocumentJson(c), { message: 'content must be a serialized EditorDocument' })`.
 - `services/notes/service.ts` `seedContent`: heading only when `seed.title != null && seed.title !== ''`; when `content` ends
   up empty, push `{ type: 'paragraph' }`.
 - Tests: `validators/__tests__/editor.test.ts` (or the existing validators test file, matching its pattern):
@@ -44,6 +45,7 @@
   `ensureEntityNote` with seeds `{}`, `{title:''}`, `{title:'x'}`, full seed → stored doc has ≥1 block and no `text:''` node.
 
 ### Step 2 — core: live-page guard + typed errors (tests 1–3)
+
 - `services/notes/types.ts`: `PageNotFoundError(id)` (`name='PageNotFoundError'`, `pageId`), `InvalidPageContentError(id)`
   (`name='InvalidPageContentError'`, `pageId`), following the `TaskNotFoundError` shape; `index.ts` re-exports both (the
   root barrel already does `export * from './services/notes'`, core/src/index.ts:175).
@@ -56,13 +58,14 @@
 - Docs: `docs/modules/notes/current-business-rules.md` BR-7c → superseded by BR-R0-5/6 (done in step 7 with the rest).
 
 ### Step 3 — editor: always-on content check (tests 6, 6b, 7, 7b)
+
 - `packages/editor/src/editor.tsx`:
   - prop `onInvalidContent?: (error: Error) => void` (doc comment: fires once at mount when the stored doc fails the
     schema; the editor is then read-only and emits nothing).
   - `const invalidRef = useRef(false)`, `const [invalid, setInvalid] = useState(false)`, `onInvalidContentRef` (the
     `onChangeRef` pattern).
   - `useEditor({ …, enableContentCheck: true, onContentError: ({ error }) => { invalidRef.current = true; setInvalid(true);
-    onInvalidContentRef.current?.(error) }, onUpdate: ({ editor }) => { if (invalidRef.current) return; … } })`.
+onInvalidContentRef.current?.(error) }, onUpdate: ({ editor }) => { if (invalidRef.current) return; … } })`.
   - Sync effect: `const effective = editable && !invalid`;
     `editor?.setEditable(effective && !invalidRef.current, !invalidRef.current)`, deps `[editor, editable, invalid]`.
   - Toolbar gate: `toolbar && editable && !invalid && editor`.
@@ -74,17 +77,19 @@
   `docs/editor/current-business-rules.md` BR-E1-7 (= BR-R0-3), `packages/editor/src/CLAUDE.md` "Shipped" entry.
 
 ### Step 4 — web: tagged parse + entity fields (tests 8, 11)
+
 - `apps/web/src/notes/live-mappers.ts`: `export type ContentParse = { status:'absent' } | { status:'ok'; doc:
-  EditorDocument } | { status:'malformed'; raw: string }`; `parseContentResult(c)`: `null`/`''` → absent; `JSON.parse` throw
+EditorDocument } | { status:'malformed'; raw: string }`; `parseContentResult(c)`: `null`/`''` → absent; `JSON.parse` throw
   or `!isEditorDocument` → malformed (raw kept); strip `{type:'text', text:''}` recursively; `content.length===0` → absent.
   `parseContent(c)` = `ok ? doc : null` (doc comment rewritten). `toNoteEntity` adds `contentStatus` + `rawContent:
-  p.content ?? null`.
+p.content ?? null`.
 - `use-note-entity.ts`: `NoteEntityData` += `contentStatus: 'ok' | 'absent' | 'malformed'`, `rawContent: string | null`;
   `sampleFor` + `home/use-journal-entry.ts` `sampleJournal` fill them, as do the test literals in `note-entity.test.tsx:32`
   and `home/journal-page-region.test.tsx:29` (required fields → typecheck). Header :3-9 rewritten (live, not "M1 DEFAULT").
 - Tests: `live-mappers.test.ts` (new): the parse table + wrapper parity + `toNoteEntity` mapping.
 
 ### Step 5 — web: barrier + write seam (tests 9, 9b, 9c)
+
 - New `apps/web/src/notes/body-writes.ts` (pure module, no React):
   - `trackBodyWrite(keys: string[], write: Promise<unknown>): void`: for each key, chain
     `next = Promise.all([prev, write.then(noop, noop)]).then(noop)`, bump `generation[key]`, store `next`, and
@@ -99,8 +104,8 @@
   - `locked` ref initialised to `page.contentStatus === 'malformed'`; `lock()` sets it + clears pending/timer; `save` is a
     no-op when locked.
   - `flush()`: clear the timer; take `pending`; **write-through** (sync): `qc.setQueryData(['pages',id], row => row &&
-    {...row, content: serialized})`; journal → `qc.setQueryData(['journal',date], e => e && {...e, content: doc,
-    contentStatus:'ok', rawContent: serialized})`; build `write = getServices().then(s => s.notes.writePageContent(id, doc))`;
+{...row, content: serialized})`; journal → `qc.setQueryData(['journal',date], e => e && {...e, content: doc,
+contentStatus:'ok', rawContent: serialized})`; build `write = getServices().then(s => s.notes.writePageContent(id, doc))`;
     `trackBodyWrite(bodyWriteKeys(id, date), write)`; then `write.then(onOk, onErr)`. `onOk`: promote `lastSaved`, `saved`
     if mounted, invalidate `['pages',id]` · `['notes','pages']` · journal: `['journal',date]` + `['calendar','journal']`.
     `onErr`: console error; `error` if mounted; re-queue `{doc, serialized}` into `pending` only if `pending` is empty and
@@ -119,16 +124,17 @@
   write held open by a deferred).
 
 ### Step 6 — web: EC-33 notice + exports (test 10)
+
 - New `apps/web/src/notes/export-copy.ts`: `downloadText(filename, text, mime)` (Blob → object URL → `<a download>` click →
   revoke); `copyFilename(title, ext)` (title or `untitled`, path-unsafe characters → `-`).
 - `note-editor-body.tsx`: `const { save, saveState, lock } = useNoteContent(page)`;
   `const [invalid, setInvalid] = useState(page.contentStatus === 'malformed')`; editor gets
   `onInvalidContent={() => { lock(); setInvalid(true) }}`. `invalid` → (no editor)
   `<View role="status"><EmptyState title="This page can't be opened for editing" action={<>Button secondary "Export a
-  copy" (raw → .json) · when parseContentResult(raw) is ok-or-parses-to-a-doc, Button ghost "Export as Markdown"
-  (toMarkdown(doc, {include_frontmatter:false}) → .md, computed in a try/catch at render: on throw the button is not
-  offered — BR-E6-9 covers unknown nodes/marks only, and `isEditorDocument` is top-level, so malformed children can throw)</>}>It contains content this version of Vida can't read. Nothing
-  will be overwritten.</EmptyState></View>`. "Export as Markdown" uses the **unnormalized** parsed doc when the raw is a
+copy" (raw → .json) · when parseContentResult(raw) is ok-or-parses-to-a-doc, Button ghost "Export as Markdown"
+(toMarkdown(doc, {include_frontmatter:false}) → .md, computed in a try/catch at render: on throw the button is not
+offered — BR-E6-9 covers unknown nodes/marks only, and `isEditorDocument` is top-level, so malformed children can throw)</>}>It contains content this version of Vida can't read. Nothing
+will be overwritten.</EmptyState></View>`. "Export as Markdown" uses the **unnormalized** parsed doc when the raw is a
   doc (status may be ok-but-schema-invalid); hidden when the raw doesn't parse.
 - Headers: `note-editor-body.tsx` (:1-11), `home/journal-page-region.tsx` (:9-11).
 - Tests: `note-editor-body.test.tsx` (new): malformed → status + heading + both/one export buttons + no editor + no write;
@@ -136,9 +142,10 @@
   nothing); export click → `downloadText` called with `.json` raw / `.md` markdown.
 
 ### Step 7 — verification, live leg, currency
+
 - Rebuild `@vida/core` **and** `@vida/editor` dists (both resolve `exports → ./dist`) before the web typecheck/tests ·
   `pnpm typecheck` · `pnpm lint` · `pnpm --filter @vida/core test` · `--filter @vida/editor test` · `--filter @vida/web
-  test` (Heavy Tamagui shell tests flake under concurrent load → re-run the failing file alone before triage, per memory).
+test` (Heavy Tamagui shell tests flake under concurrent load → re-run the failing file alone before triage, per memory).
 - **Venue (FACT: this Mac is macOS 12.7.6; Playwright's Chromium needs 13+ — `apps/web/e2e/CLAUDE.md:44-45`; CI is dark
   on Actions billing).** The live leg + Visual Gate run **locally** the way the repo's gates have run: a playwright-core
   script driving **system Brave** (`executablePath`, the visual-gate playbook) against `pnpm dev:app` (real wa-sqlite/OPFS
@@ -170,14 +177,15 @@
 
 ## 2. Files
 
-| Plane | Files |
-|---|---|
-| core | `validators/editor.ts` · `validators/note.ts` · `services/notes/{service,types,index}.ts` · tests |
-| editor | `src/editor.tsx` · `src/editor.test.tsx` · `src/extensions/integration-blocks.test.tsx` (comment) · `src/CLAUDE.md` |
-| web | `notes/{live-mappers,use-note-entity,use-note-content,note-editor-body,body-writes,export-copy}.ts(x)` · `home/{use-journal-entry,journal-page-region}.ts(x)` · tests · `e2e/notes-data-safety.spec.ts` |
-| docs | notes · editor · journals current-* · home + editor CLAUDE.md · PLAN §6 · reconciliation |
+| Plane  | Files                                                                                                                                                                                                   |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| core   | `validators/editor.ts` · `validators/note.ts` · `services/notes/{service,types,index}.ts` · tests                                                                                                       |
+| editor | `src/editor.tsx` · `src/editor.test.tsx` · `src/extensions/integration-blocks.test.tsx` (comment) · `src/CLAUDE.md`                                                                                     |
+| web    | `notes/{live-mappers,use-note-entity,use-note-content,note-editor-body,body-writes,export-copy}.ts(x)` · `home/{use-journal-entry,journal-page-region}.ts(x)` · tests · `e2e/notes-data-safety.spec.ts` |
+| docs   | notes · editor · journals current-\* · home + editor CLAUDE.md · PLAN §6 · reconciliation                                                                                                               |
 
 ## 3. Preflight (2026-10-26) — PASSED
+
 Layers: **core service** (typed errors, guarded ops, seed — §1 steps 1–2) · **DB** (no schema change; `pages`,
 `note_attachments`, `page_links`, `entity_links` via AR-6 — reads/updates only) · **editor** (prop + mechanism — step 3) ·
 **web data** (parse, barrier, write seam, readers — steps 4–5) · **web UI** (notice states: malformed-at-load ·
@@ -187,6 +195,7 @@ root → `NotesService` → DB-6 repository → worker). Auth: N/A (M1 single-us
 against `docs/modules/notes/current-business-rules.md` + journals: no contradiction left unnamed (the 5 amendments are listed
 in step 7).
 Assumptions made explicit (each verified, or given a STOP):
+
 1. `getServices()` is a cached singleton promise [FACT: db/composition-root.ts:61,134], so `.then` registration in `flush()`
    is synchronous.
 2. The e2e harness can re-open `'vida'` in the same tab after the app releases it. Unverified → step 7 STOP rule.
@@ -198,6 +207,7 @@ Assumptions made explicit (each verified, or given a STOP):
 7. `@vida/core` and `@vida/editor` dists rebuilt before the web typecheck/tests (both resolve `exports → ./dist`).
 
 ## 4. Risks
+
 - `@vida/core` and `@vida/editor` dists must be rebuilt before `apps/web` sees the new exports.
 - `enableContentCheck` makes **every** `<VidaEditor>` stricter: any shipped fixture/story with an invalid doc (e.g. an
   empty `{doc,content:[]}` `defaultValue`) now renders read-only. Step 3 greps `packages/editor`, `packages/ui`, and
@@ -206,6 +216,7 @@ Assumptions made explicit (each verified, or given a STOP):
   reintroduce the stale read.
 
 ## 5. Change log
+
 - rev 1 (2026-10-26) — gate-2 draft; preflight PASSED.
 - rev 2 (2026-10-26) — gate-2 critique round 1 = REVISE (2 blocking, 5 advisory). Blocking: **G2-B1** `readAfterWrites`
   snapshotted the generation after waiting, so a write registering mid-wait was missed → snapshot before the wait + a
@@ -221,6 +232,7 @@ Assumptions made explicit (each verified, or given a STOP):
 ## 5a. Deviation record (§XXVIII)
 
 ### DEV-R0-1 · Write-through at flush time is too late for a warm cache (B-53 still reproduces) — STOPPED, pending approval
+
 **Found:** step 7 live leg (Brave, real OPFS, 2026-10-26). Check "B-53 warm: Home shows the note-page edit" FAILED: Home
 showed `OLD` after an edit on `/notes/$id`. Then typing on Home wrote `OLD HOME` over `OLD NEW` (the later "NEW" wait timed
 out) — **the B-53 data loss, live.** Steps 1–6 otherwise pass (core 57/57 R0, editor 237/237, web 811/811; the 5 live
@@ -236,6 +248,7 @@ mechanism is ordered wrong; a symptom patch, e.g. re-seeding the editor on prop 
 
 **Proposed revision — rev 2 (deviation critique r1 = REVISE folded in; for preflight → Victor's approval):**
 a module-level **latest-body overlay** written synchronously by `save()` and read **at the editor's seed point**.
+
 - Why the seed point, not the reader hooks (critique r1 B1, verified): the editor body also remounts WITHOUT a new read.
   Switching merged ⇄ tabbed, or a tab switch in tabbed mode (only the active panel mounts), re-renders
   `NoteEntityView` with the SAME `page` prop from `NoteEntity`'s last render [FACT: note-entity.tsx:99,104-115;
@@ -271,6 +284,7 @@ a module-level **latest-body overlay** written synchronously by `save()` and rea
   ownership re-save. No BR removed.
 
 **Deviation critique round 2 = SHIP** (2026-10-26). Advisories folded into rev 2:
+
 - `NoteEditorBody`'s `invalid` and the hook's `locked` derive from the SAME seed object (one source; can't diverge).
 - Terminal errors: `InvalidPageContentError` clears **by gen** (an older terminal write never drops a newer `save()`);
   `PageNotFoundError` clears unconditionally.
@@ -281,10 +295,11 @@ a module-level **latest-body overlay** written synchronously by `save()` and rea
 - Tests (h)–(l) added: (h) a retryable failure after unmount, then remount → re-save succeeds, overlay clears;
   (i) gen race: gen-2 echo before the gen-1 success → survives gen 1, clears on gen 2; (j) exactly one redundant write
   under StrictMode; (k) a terminal `InvalidPageContentError` on an older gen keeps a newer entry; (l) (b) under StrictMode.
-**Status: AWAITING Victor's approval (§XXVIII step 4).**
+  **Status: AWAITING Victor's approval (§XXVIII step 4).**
 - **DEV-R0-1 APPROVED — Victor, 2026-10-26.** Implementing (§XXVIII step 5).
 
 ### DEV-R0-2 · Undo-to-stored within the debounce writes the intermediate doc (pre-existing) — STOPPED, pending approval
+
 **Found** while implementing DEV-R0-1 in `useNoteContent.save()`. **Reproduced:** `use-note-content.test.ts` — an
 `it.fails` case (`DEV-R0-2`) passes, i.e. the defect is real: `save(edited)` then `save(loaded)` (undo back to the stored
 body, inside 500 ms) → the dedupe `return` skips the second call but leaves the FIRST pending edit armed → the timer
@@ -294,6 +309,7 @@ original hook had the same branch); squarely R0 scope (silent wrong content).
 **Proposed fix:** in the dedupe branch, if an edit is pending, drop it (`clearTimer` + `pending = null`), clear this
 writer's overlay (`clearLatestBody(id, {owner})` — the stored body is current again) and set save-state `saved`. Test:
 flip the `it.fails` to `it` + assert no write at all + overlay cleared. Classification: ISOLATED (one branch, one cause).
+
 - **DEV-R0-2 APPROVED — Victor, 2026-10-26; DONE.** The dedupe branch now drops a pending edit + this writer's overlay
   and sets `saved`; the `it.fails` test flipped to `it` (no write, overlay cleared, `saved`). Notes suite 169/169.
 - **Step 7 gates (2026-10-26):** live OPFS (Brave) 18/18 · Visual Gate automated 18/18 (axe 0 light/dark on all 3
@@ -319,4 +335,3 @@ flip the `it.fails` to `it` + assert no write at all + overlay cleared. Classifi
   debounce can't cancel the ownership re-save (test added; red → green). A2 recorded as a stated limit (in-order worker).
   BR-NEU-5 reworded to the `expected` dedupe. Re-runs after the r1 fixes: live OPFS 18/18 · Visual Gate 18/18 (new a11y
   structure: sentence = live region, no controls in it, heading L2).
-

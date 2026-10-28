@@ -1,10 +1,12 @@
-# IMPLEMENTATION-PLAN — UX-3 Shell Layout + Responsive   (session: 2026-08-09-ux-3-shell-layout-responsive · language: English)
+# IMPLEMENTATION-PLAN — UX-3 Shell Layout + Responsive (session: 2026-08-09-ux-3-shell-layout-responsive · language: English)
+
 > Human gate 2: read to catch a wrong / missing / destructive step BEFORE code. Self-sufficient build prompt; each
 > step cites the PLAN rule + the design.md standard it satisfies. Derived from the APPROVED PLAN Rev 4 (§6 Approval 1,
 > 2026-08-09 — no open decisions; direction fully doc-determined). No step imports an unbuilt system; no step edits a
 > DS-owned or another-issue's file. FULL variant — the `apps/web/src/shell/` artifact is code.
 
 ## 1. Full context
+
 - **Deliverable (2 artifacts, dual home):** (1) a shell-layout **design doc**; (2) a declarative **layout model**
   code artifact. `[FACT: PLAN §2 IN.1/IN.2]`
 - **What it is:** the shell frame's region composition + **the responsive reflow model** (dock drawer→rail→sidebar,
@@ -22,14 +24,16 @@
 - **Homes (VERIFIED):** doc → `docs/core/architecture/shell-layout.md` (sibling of information-architecture.md /
   command-bar-and-search.md); code → **`apps/web/src/shell/`** — a NEW non-component data dir, sibling of `nav/` and
   `command-bar/`, **NOT** under `components/` (UI-4's render dir) `[FACT: PLAN §2 IN.2; nav/CLAUDE.md "Data, not
-  chrome"]`. **Issue Home = `apps/web/src` ONLY** → NO edit to `packages/ui` (D5) `[FACT: m1.0-delivery-plan.md:210]`.
+chrome"]`. **Issue Home = `apps/web/src` ONLY** → NO edit to `packages/ui` (D5) `[FACT: m1.0-delivery-plan.md:210]`.
 - **Ground-truth floors:** design.md §IV/§V/§X values `[FACT: design.md:158-227]`; the 4pt token scale + z-scale
   `[FACT: tokens.ts:6-9]`; the store is NOT modified — the reserved shape is a typed contract UI-4 implements
   `[FACT: PLAN §2g; app-shell-ui-store.ts]`; **test env = `node` by default, tests are pure → NO jsdom pragma**
   `[FACT: apps/web/vite.config.ts:26-27]`; **no feature barrels** `[FACT: STANDARDS §XX; nav/ precedent]`.
 
 ## 2. Scope of changes
+
 **Files touched (all NEW except the one doc-index row):**
+
 1. `docs/core/architecture/shell-layout.md` — NEW doc (IN.1)
 2. `docs/core/architecture/README.md` — EDIT: add one index row for the new doc
 3. `apps/web/src/shell/breakpoints.ts` + `breakpoints.test.ts` — NEW
@@ -52,7 +56,9 @@
 ## 3. Exact changes
 
 ### 3.1 — `apps/web/src/shell/breakpoints.ts` (NEW) — satisfies PLAN §2b/d, applies design.md §X
+
 The breakpoint + container SSOT. Plain data + types, NO `@tamagui` import:
+
 - `export type Breakpoint = 'mobile' | 'tablet' | 'desktop' | 'wide'`.
 - `export const BREAKPOINTS` — mobile-first **min-width** thresholds `[FACT: design.md §X:202-205]`:
   `{ mobile: { minWidth: 0 }, tablet: { minWidth: 768 }, desktop: { minWidth: 1440 }, wide: { minWidth: 1920 } } as const`.
@@ -73,7 +79,9 @@ The breakpoint + container SSOT. Plain data + types, NO `@tamagui` import:
   keys and its minWidths match; container/padding constants equal the design.md numbers (guards accidental drift).
 
 ### 3.2 — `apps/web/src/shell/regions.ts` (NEW) — satisfies PLAN §2a/c/e/g (UX-3's novel design content)
+
 The declarative region + reflow model. Imports ONLY `./breakpoints` (same dir):
+
 - `export type ShellRegion = 'moduleDock' | 'globalBar' | 'spacesBar' | 'content' | 'overlayHost'`.
 - `export type DockState = 'drawer' | 'rail' | 'sidebar'` · `export type OverlayMode = 'sheet' | 'centered'`.
 - `export const DOCK_STATE: Record<Breakpoint, DockState>` = `{ mobile:'drawer', tablet:'rail', desktop:'sidebar', wide:'sidebar' }` `[PLAN §2b table]`.
@@ -99,13 +107,16 @@ The declarative region + reflow model. Imports ONLY `./breakpoints` (same dir):
   `elevation==='level-3'` (a wrong literal here is invisible to typecheck — the only drift-guard for these strings).
 
 ### 3.3 — `apps/web/src/shell/CLAUDE.md` (NEW layer doc — ADR-018 §3.6)
+
 What lives here (breakpoint SSOT + region/reflow model + reserved createMedia config + reserved store contract, NOT
 chrome). Rules: data-not-chrome (rendering is UI-4); **values APPLY design.md §X/§IV/§V — never invent/override**;
 no `@tamagui` import (the createMedia config is plain data UI-4 wires); no store modification (UX-3 specifies the
 shape); no `MODULE_MAP` import; no barrel; the D5 seam (UI-4 registers `TAMAGUI_MEDIA` into `createMedia`).
 
 ### 3.4 — `docs/core/architecture/shell-layout.md` (NEW doc — IN.1) — satisfies PLAN §2a-g
+
 The layout model prose, sibling of the IA + command-bar docs. Sections:
+
 - Intro + audience + governs + **Scope (what this is NOT)** — the UX-3 layout / UX-2 interaction / UI-4 render seam
   `[FACT: ia.md:16-18,153-154]`.
 - **§1 Frame anatomy** — the 5 regions (module dock ⇒ **left sidebar**, the region `isSidebarOpen` governs; global
@@ -127,17 +138,20 @@ The layout model prose, sibling of the IA + command-bar docs. Sections:
   M1.1+ surface renders inside this frame. References.
 
 ### 3.5 — `docs/core/architecture/README.md` (EDIT) — add one index row for `shell-layout.md`
+
 Format: `| [shell-layout.md](shell-layout.md) | The shell frame layout + responsive model — 5 regions, breakpoints
 (375/768/1440/1920, applied from design.md §X), per-region reflow, density, layering; the experience-track layout (UX-3) |`.
 
 ## 4. Build order & done-check
+
 1. `breakpoints.ts`(+test) → 2. `regions.ts`(+test) → 3. `shell/CLAUDE.md` → 4. `shell-layout.md` doc + README row.
-**Done = PLAN §4 acceptance:** typecheck + lint green; `pnpm --filter @vida/web test` green (new pure tests pass);
-the breakpoint/container/density/radius values equal design.md §X/§IV/§V (guard tests); NO `@tamagui` import, NO
-`packages/ui` edit, NO store edit, NO component; doc promoted to `docs/core/architecture/` + README row. Then →
-`victor:quality-gate` (router → design/components; screen Visual Gate deferred to UI-4 per frontend-visual-gate.md:45)
-→ commit/PR. Currency §XXIX: the doc IS the durable home (no separate current-* for a from-zero shell context).
+   **Done = PLAN §4 acceptance:** typecheck + lint green; `pnpm --filter @vida/web test` green (new pure tests pass);
+   the breakpoint/container/density/radius values equal design.md §X/§IV/§V (guard tests); NO `@tamagui` import, NO
+   `packages/ui` edit, NO store edit, NO component; doc promoted to `docs/core/architecture/` + README row. Then →
+   `victor:quality-gate` (router → design/components; screen Visual Gate deferred to UI-4 per frontend-visual-gate.md:45)
+   → commit/PR. Currency §XXIX: the doc IS the durable home (no separate current-\* for a from-zero shell context).
 
 ## 5. Open UNKNOWNs
+
 - none blocking. Sub-detail confirmed at build: `tablet` dock = `rail` (design detail within design.md's frame).
   The exact frecency-style scoring has no analog here — the region model is fully enumerated data, not a formula.

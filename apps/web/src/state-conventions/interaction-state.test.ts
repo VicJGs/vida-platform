@@ -69,9 +69,7 @@ describe('deriveInteractionState — non-input call === deriveTerminalState lift
   })
 
   it('preserves isPending-first precedence (the empty-vs-loading race guard)', () => {
-    expect(
-      deriveInteractionState(result<number[]>({ isPending: true, data: [] }), isEmptyList),
-    ).toBe('loading')
+    expect(deriveInteractionState(result<number[]>({ isPending: true, data: [] }), isEmptyList)).toBe('loading')
   })
 })
 
@@ -79,21 +77,15 @@ describe('deriveInteractionState — the input dimension (idle/typing/results)',
   it('empty query → idle, keyed on the query ALONE (not focus) — even while pending', () => {
     // An unfocused/blank input is still idle; it must NOT fall through to loading/empty.
     expect(deriveInteractionState(result<number[]>({ data: [] }), isEmptyList, { query: '' })).toBe('idle')
-    expect(
-      deriveInteractionState(result<number[]>({ isPending: true }), isEmptyList, { query: '' }),
-    ).toBe('idle')
+    expect(deriveInteractionState(result<number[]>({ isPending: true }), isEmptyList, { query: '' })).toBe('idle')
   })
 
   it('pending with a non-empty query → typing', () => {
-    expect(
-      deriveInteractionState(result<number[]>({ isPending: true }), isEmptyList, { query: 'ab' }),
-    ).toBe('typing')
+    expect(deriveInteractionState(result<number[]>({ isPending: true }), isEmptyList, { query: 'ab' })).toBe('typing')
   })
 
   it('resolved non-empty result for a non-empty query → results (not success)', () => {
-    expect(
-      deriveInteractionState(result<number[]>({ data: [1, 2] }), isEmptyList, { query: 'ab' }),
-    ).toBe('results')
+    expect(deriveInteractionState(result<number[]>({ data: [1, 2] }), isEmptyList, { query: 'ab' })).toBe('results')
   })
 
   it('resolved empty result for a non-empty query → empty ("no matches")', () => {
@@ -101,9 +93,7 @@ describe('deriveInteractionState — the input dimension (idle/typing/results)',
   })
 
   it('error for a non-empty query → error', () => {
-    expect(
-      deriveInteractionState(result<number[]>({ isError: true }), isEmptyList, { query: 'ab' }),
-    ).toBe('error')
+    expect(deriveInteractionState(result<number[]>({ isError: true }), isEmptyList, { query: 'ab' })).toBe('error')
   })
 
   it('NEVER emits unavailable (producer-path only, not derivable from a result)', () => {

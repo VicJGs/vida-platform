@@ -17,7 +17,15 @@ export interface MarginLensProps {
   onArchive: (id: string) => void
 }
 
-function TimeLabel({ children, color = '$colorTextMuted', width = 68 }: { children: string; color?: string; width?: number }) {
+function TimeLabel({
+  children,
+  color = '$colorTextMuted',
+  width = 68,
+}: {
+  children: string
+  color?: string
+  width?: number
+}) {
   return (
     <Text width={width} textAlign="right" fontSize={11} letterSpacing={1.3} textTransform="uppercase" color={color}>
       {children}
@@ -27,7 +35,11 @@ function TimeLabel({ children, color = '$colorTextMuted', width = 68 }: { childr
 
 function WarmGlyph({ entry }: { entry: AttentionEntry }) {
   if (!entry.warm) return null
-  return <View color={entry.marker}>{entry.type === 'error' ? <AlertCircle size={13} aria-hidden /> : <AlertTriangle size={13} aria-hidden />}</View>
+  return (
+    <View color={entry.marker}>
+      {entry.type === 'error' ? <AlertCircle size={13} aria-hidden /> : <AlertTriangle size={13} aria-hidden />}
+    </View>
+  )
 }
 
 function Marker({ entry }: { entry: AttentionEntry }) {
@@ -35,7 +47,15 @@ function Marker({ entry }: { entry: AttentionEntry }) {
     <View width={16} alignSelf="stretch" alignItems="center">
       <View position="absolute" top={0} bottom={0} width={1} backgroundColor="$colorBorderDefault" />
       {entry.anticipated ? (
-        <View width={9} height={9} borderRadius={99} borderWidth={1.5} borderColor={entry.marker} backgroundColor="$colorSurfacePrimary" marginTop={5} />
+        <View
+          width={9}
+          height={9}
+          borderRadius={99}
+          borderWidth={1.5}
+          borderColor={entry.marker}
+          backgroundColor="$colorSurfacePrimary"
+          marginTop={5}
+        />
       ) : (
         <View width={9} height={9} borderRadius={99} backgroundColor={entry.marker} marginTop={5} />
       )}
@@ -43,7 +63,15 @@ function Marker({ entry }: { entry: AttentionEntry }) {
   )
 }
 
-function SpineRow({ entry, onMarkRead, onArchive }: { entry: AttentionEntry; onMarkRead: (id: string) => void; onArchive: (id: string) => void }) {
+function SpineRow({
+  entry,
+  onMarkRead,
+  onArchive,
+}: {
+  entry: AttentionEntry
+  onMarkRead: (id: string) => void
+  onArchive: (id: string) => void
+}) {
   return (
     <View flexDirection="row" alignItems="flex-start" gap="$12" opacity={entry.anticipated ? 0.55 : 1}>
       <TimeLabel>{entry.relTime}</TimeLabel>
@@ -72,7 +100,13 @@ function SpineRow({ entry, onMarkRead, onArchive }: { entry: AttentionEntry; onM
             </Text>
           ) : null}
           {entry.entity && entry.entity !== 'General' ? (
-            <View borderWidth={1} borderColor="$colorBorderDefault" borderRadius={99} paddingHorizontal="$8" paddingVertical={1}>
+            <View
+              borderWidth={1}
+              borderColor="$colorBorderDefault"
+              borderRadius={99}
+              paddingHorizontal="$8"
+              paddingVertical={1}
+            >
               <Text fontSize={11} color="$colorTextMuted">
                 {entry.entity}
               </Text>
@@ -105,10 +139,24 @@ export function MarginLens({ model, nowLabel, onMarkRead, onArchive }: MarginLen
       ))}
 
       {/* the signature: the living now-line */}
-      <View flexDirection="row" alignItems="center" gap="$12" paddingVertical="$8" role="separator" aria-label={`Now, ${nowLabel}`}>
+      <View
+        flexDirection="row"
+        alignItems="center"
+        gap="$12"
+        paddingVertical="$8"
+        role="separator"
+        aria-label={`Now, ${nowLabel}`}
+      >
         <TimeLabel color="$colorBrandPrimary">now</TimeLabel>
         <View width={16} alignItems="center">
-          <View width={13} height={13} borderRadius={99} borderWidth={2} borderColor="$colorBrandPrimary" backgroundColor="$colorSurfacePrimary" />
+          <View
+            width={13}
+            height={13}
+            borderRadius={99}
+            borderWidth={2}
+            borderColor="$colorBrandPrimary"
+            backgroundColor="$colorSurfacePrimary"
+          />
         </View>
         <View flex={1} flexDirection="row" alignItems="center" gap="$8">
           <View flex={1} height={1} backgroundColor="$colorBrandPrimary" opacity={0.5} />

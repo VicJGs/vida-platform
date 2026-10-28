@@ -23,22 +23,29 @@ those are app/Settings, a later unit [FACT: seam-contract.md:5-6; interpretation
 The exported surface is **doc-fixed** [FACT: seam-contract.md:9-38] — S3 implements it verbatim, no net-new API:
 
 ```ts
-type ThemePreset  = 'reader' | 'editorial' | 'quietDesk'
-type ThemeMode    = 'light' | 'dark'
+type ThemePreset = 'reader' | 'editorial' | 'quietDesk'
+type ThemeMode = 'light' | 'dark'
 type ThemeDensity = 'calm' | 'dense'
-interface ThemeSelection { preset: ThemePreset; mode: ThemeMode; density: ThemeDensity }
-type ThemeName = ThemeMode | `${ThemeMode}_reader` | `${ThemeMode}_quietDesk`   // scheme-first (G1)
+interface ThemeSelection {
+  preset: ThemePreset
+  mode: ThemeMode
+  density: ThemeDensity
+}
+type ThemeName = ThemeMode | `${ThemeMode}_reader` | `${ThemeMode}_quietDesk` // scheme-first (G1)
 
-const THEME_DEFAULT: ThemeSelection          // { editorial, light, calm } — cold-start (R2/R6)
-const THEME_PRESETS: readonly ThemePreset[]   // ['reader','editorial','quietDesk']
+const THEME_DEFAULT: ThemeSelection // { editorial, light, calm } — cold-start (R2/R6)
+const THEME_PRESETS: readonly ThemePreset[] // ['reader','editorial','quietDesk']
 
 function resolveTheme(sel: ThemeSelection): { themeName: ThemeName; density: ThemeDensity }
-interface UIProviderProps extends Omit<TamaguiProviderProps,'config'|'defaultTheme'> { selection?: ThemeSelection }
+interface UIProviderProps extends Omit<TamaguiProviderProps, 'config' | 'defaultTheme'> {
+  selection?: ThemeSelection
+}
 function UIProvider(props: UIProviderProps): JSX.Element
-export { useVidaTheme }  // unchanged
+export { useVidaTheme } // unchanged
 ```
 
 Three mechanisms converge on **one provider-owned CSS layer on the theme root**:
+
 1. **Theme name** → `TamaguiProvider defaultTheme` (the existing re-root mechanism; color only) [FACT: provider.tsx:20-24].
 2. **Font family** → set `--vida-font-body` / `--vida-font-display` per preset (the S2 seam; editorial = no override =
    the baked fallback) [FACT: tamagui.config.ts:46-49].
@@ -48,10 +55,11 @@ Three mechanisms converge on **one provider-owned CSS layer on the theme root**:
 
 ```ts
 function resolveTheme(sel: ThemeSelection) {
-  const themeName = sel.preset === 'editorial' ? sel.mode : `${sel.mode}_${sel.preset}` as ThemeName
+  const themeName = sel.preset === 'editorial' ? sel.mode : (`${sel.mode}_${sel.preset}` as ThemeName)
   return { themeName, density: sel.density }
 }
 ```
+
 [FACT: seam-contract.md:26-29]. Scheme-first is **law** (Tamagui 2.6.2: a theme's scheme = first `_`-segment, only
 `light`/`dark` valid; `${preset}_dark` breaks inversion/reset) [FACT: current-business-rules.md:96-100; slice-map.md:54].
 `editorial` keeps the bare `light`/`dark`; `reader`/`quietDesk` prefix `${mode}_${preset}`. Exhaustive: the 6 `(preset×mode)`
@@ -67,7 +75,7 @@ inputs map 1:1 to the 6 base theme names that exist on `config.themes` [FACT: th
 - **Mount point = `document.documentElement` (`<html>`), via a layout effect (G1).** The font + density vars must reach
   **portalled** content too: Select/Menu/Dialog/Popover/Toast portal to `document.body` [FACT: packages/ui/src/CLAUDE.md].
   A wrapper `<div>` inside `TamaguiProvider` is **not** an ancestor of body-portals → a Dialog in dense/reader would render
-  calm/editorial. Theme *color* crosses to portals only because the theme class is on `<html>` (`addThemeClassName:'html'`
+  calm/editorial. Theme _color_ crosses to portals only because the theme class is on `<html>` (`addThemeClassName:'html'`
   [FACT: tamagui.config.ts:83]) + portals re-wrap in `<Theme name>`; but font/density vars are **not theme values**, so a
   `<Theme>` re-wrap won't carry them (Tamagui docs: fonts are global, not per-theme — [FACT: tamagui.dev/docs/core/configuration
   "No documented support for swapping fonts per theme"]). ∴ the vars MUST sit on an ancestor of BOTH the app and the
@@ -83,7 +91,7 @@ inputs map 1:1 to the 6 base theme names that exist on `config.themes` [FACT: th
     carrier. The values ride `setProperty`; there is **no attribute-selector stylesheet** (it can't be authored against
     runtime-only var names — §6/G4). (If a CSS-selector form is ever wanted, it must be a runtime-injected `<style>` built
     from the `getToken` names — out of scope here.)
-  So fonts and density share the identical `setProperty`/`removeProperty` path; editorial+calm = the clean base state.
+    So fonts and density share the identical `setProperty`/`removeProperty` path; editorial+calm = the clean base state.
 - **Effect deps + idempotency (N1):** deps = `[themeName, preset, density]` (not every render). `setProperty`/`removeProperty`
   are idempotent → the StrictMode double-invoke is safe. The root provider never unmounts, so cleanup-on-unmount is optional
   (stated, not relied on).
@@ -136,10 +144,11 @@ one `setProperty` mechanism, no attribute-selector stylesheet). **Arg-form dev-a
 (the live-gate class, [[visual-gate-catches-worker-rpc-bugs-unit-tests-bypass]]).
 
 **No first-class density variant in 2.6.2 (ruled out, grounded):** a newer Tamagui pattern (`theme.activeVariants.density`
-+ token `variantKey`) exists in forks/later work, but **does NOT exist in installed 2.6.2** [FACT: grep `activeVariants|variantKey`
-over @tamagui/{core,web}@2.6.2 dist = 0 occurrences]. The `data-vida-density` CSS-var remap is the correct version-safe
-mechanism — and real-world projects ship exactly this `[data-density]`→remap-spacing-vars pattern [FACT: WebSearch —
-foam-foundation/foam3#5620, hirobius/hds#336].
+
+- token `variantKey`) exists in forks/later work, but **does NOT exist in installed 2.6.2** [FACT: grep `activeVariants|variantKey`
+  over @tamagui/{core,web}@2.6.2 dist = 0 occurrences]. The `data-vida-density` CSS-var remap is the correct version-safe
+  mechanism — and real-world projects ship exactly this `[data-density]`→remap-spacing-vars pattern [FACT: WebSearch —
+  foam-foundation/foam3#5620, hirobius/hds#336].
 
 **Type-ramp density (G2 — co-scale + accessor caveat):** font-size is NOT a `createTokens` group, so `getToken(...,'size')`
 does not cover it — font-size/line-height vars live under `getConfig().fontsParsed[fam].{size,lineHeight}[$key].variable`
@@ -173,7 +182,7 @@ as the historical decision record:
 
 The LEAD is strongly preferred (orthogonal, zero per-component work, scales both type AND spacing). The
 component-`size`-prop path is **explicitly rejected** (B1 — it breaks orthogonality); if neither LEAD nor FALLBACK-A can
-deliver *spacing* density orthogonally, S3 ships **type-ramp density + the `data-vida-density` signal**, documents the
+deliver _spacing_ density orthogonally, S3 ships **type-ramp density + the `data-vida-density` signal**, documents the
 spacing limitation, and homes orthogonal spacing-density as a follow-up — rather than leaking density into consumers.
 **No Victor decision on the mechanism** — the spike + this eligibility rule resolve it; the only escalation is if the
 only viable path requires a contract deviation (then §XXVIII).
@@ -189,6 +198,7 @@ construction. Verify: toggling selection repaints with no tween; reduced-motion 
 ## 8. §4 Acceptance = the blocking Visual Gate (Step 10) — the FULL matrix
 
 Done = **all** of:
+
 - `resolveTheme` unit tests: 6 `(preset×mode)` → correct scheme-first name; density passthrough; exhaustive.
 - Provider: `selection` re-roots theme + sets the right font vars + `data-vida-density`; bare `<UIProvider>` = `THEME_DEFAULT`.
 - **Runtime selection-change (B2) — the codec's reason to exist:** changing the `selection` prop at runtime (not a fresh
@@ -239,12 +249,13 @@ it works for **space** (`--t-space-*` not redeclared → the html override casca
 for type-ramp**: Tamagui's generated `:root .font_body`/`.font_display` classes **redeclare `--f-size-*`/`--f-lineHeight-*`
 as element-level literals** (`--f-size-body:16px`), shadowing the inherited html override [FACT: Visual-Gate probe — rule
 `:root .font_body{…--f-size-body:16px…}`; computed `font-size` stayed 16px with html `--f-size-body:15px`]. This is the G2
-residual risk realized. (Font-family still swaps because the class sets `--f-family: var(--vida-font-body,…)` — a *nested*
+residual risk realized. (Font-family still swaps because the class sets `--f-family: var(--vida-font-body,…)` — a _nested_
 seam my html var resolves into; space works; only type-size was shadowed.)
 
 **Resolution — A-prime (Victor-approved, full delivery over the escape):** density is a **single injected, attribute-toggled
 stylesheet** `#vida-density-scale`, appended last so it wins by **source order at equal specificity** against Tamagui's
 `:root …` rules:
+
 - `[data-vida-density="dense"]{ --t-space-8:…; --t-space-12:…; --t-space-16:…; --t-space-24:… }` (space band; (0,1,0) ties `:root`)
 - `[data-vida-density="dense"] .font_body,[data-vida-density="dense"] .font_display{ --f-size-*:…; --f-lineHeight-*:… }`
   (type; (0,2,0) ties `:root .font_body` → later rule wins, beating the literal redeclare)
@@ -255,6 +266,7 @@ cleaner single density mechanism than the html-setProperty mix, still provider-o
 **Re-gated** after the change. §XXVIII: STOP→diagnose→Victor-approve A-prime→re-impl→re-gate.
 
 ### §XXVIII DEVIATION #2 — theme application: flat `defaultTheme={themeName}` → scheme-on-`<html>` + preset-on-`<body>`
+
 The Visual Gate next showed the **preset neutrals/surfaces didn't apply** (reader/quietDesk rendered light/default). Root
 cause: Tamagui emits sub-theme vars under a **nested** selector `:root.t_<mode> .t_<preset>`, so the spec's flat
 `defaultTheme="<mode>_<preset>"` (one `t_<mode>_<preset>` class on `<html>`) matches nothing. **Fix (B-codec-3):**
@@ -263,12 +275,13 @@ Re-gated → all 12 cells' neutrals/surfaces/text correct incl. dark sub-themes 
 only the application (S3 provider) changed.
 
 ### §XXVIII DEVIATION #3 — preset ACCENT (+ neutrals) on component sub-themes: RESOLVED (Option A, 2026-10-03)
+
 The Gate's final finding: accent (and the neutral component-keys) didn't reach components that own a sub-theme (buttons
 rendered editorial in every preset). Triaged STRUCTURAL (`docs/specs/fixes/preset-accent-component-subthemes/`): component
 sub-themes BAKE every key to the scheme base at Tamagui config time; the emitter-inherit fix is unviable (Tamagui bakes
 `var(--…)` theme values). **Fix (Victor-approved Option A, full scope):** the 21 preset-sensitive component-sub-theme-key
 usages across the 10 primitives now consume DIRECT semantic tokens (which inherit the preset at component scope — a
-*component* sub-theme emits only its own keys, so the semantic vars still cascade from the B-codec-3 `<body>` preset class);
+_component_ sub-theme emits only its own keys, so the semantic vars still cascade from the B-codec-3 `<body>` preset class);
 signal keys stay baked (preset-invariant); per-preset component sub-themes retired (themes 66 → 26). Re-gated: accent +
 neutrals swap per preset across all 12 cells (reader oxblood, quietDesk olive). Currency B-codec-6. **§8 acceptance now
 FULLY met — nothing deferred.**
@@ -280,7 +293,7 @@ source** + a live call-site grep:
 
 - **G1 — mount point = `<html>` via layout effect** (portals force it; §4). Reverses the inline-style-on-wrapper draft.
 - **G2 — type density co-scales font-size + line-height**; accessor = `getConfig().fontsParsed` (§6). Lead = approach (A).
-- **G3 — dense magnitudes [→ IMPLEMENTATION-PLAN]:** §6 fixes *which* tokens scale, not *to what*. The impl-plan sets the
+- **G3 — dense magnitudes [→ IMPLEMENTATION-PLAN]:** §6 fixes _which_ tokens scale, not _to what_. The impl-plan sets the
   dense values grounded in the P1 "two airs" / `compact_mode` intent [FACT: interpretation R3/R8; specimen:268,288], marked
   Visual-Gate-tunable. (Runtime density overrides are CSS-var values, not JSON tokens, so B8's 4pt rule doesn't bind them —
   but keep them sane; prefer stepping the inset band down one sensible notch + a single type-ramp ratio.)
@@ -297,8 +310,8 @@ source** + a live call-site grep:
   `THEME_DEFAULT` default, **zero edits**; no `theme="dark"` usage to migrate. Only App.tsx:71 changes (→ `selection={THEME_DEFAULT}`).
 - **New seam — `shouldAddPrefersColorThemes` defaults `true`** [FACT: tamagui.dev/docs/core/configuration]; our config omits
   it [FACT: tamagui.config.ts:83] → Tamagui emits `@media (prefers-color-scheme)` theme fallbacks. The explicit theme class
-  on `<html>` (driven by `defaultTheme`) should win, but **verify at the Visual Gate** that an explicit *light* selection is
-  not overridden by an OS *dark* preference; if it conflicts, set `shouldAddPrefersColorThemes:false` (the app owns mode —
+  on `<html>` (driven by `defaultTheme`) should win, but **verify at the Visual Gate** that an explicit _light_ selection is
+  not overridden by an OS _dark_ preference; if it conflicts, set `shouldAddPrefersColorThemes:false` (the app owns mode —
   light primary, user-controlled) as a one-line config tweak (R2/R5).
 - **Fonts are global, confirmed** [FACT: docs/core/configuration "No documented support for swapping fonts per theme"] →
   the S2 CSS-var seam is the right/only mechanism (B-codec-2 validated); `face` (weight→file map) is native-only, not needed

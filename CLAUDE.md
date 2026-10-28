@@ -16,6 +16,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 ## Modules & Features
 
 ### 1. Financial Management
+
 - Transaction import from bank statements (CSV/OFX) for conciliation with manually added transactions
 - Assets tracker (real estate, vehicles, valuables with depreciation)
 - Liabilities tracker (loans, debts with interest rates and payment schedules)
@@ -25,6 +26,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - Analytics charts for financial visualization (embedded via Chart.js)
 
 ### 2. Project Management
+
 - Document storage for projects (encrypted blobs stored locally)
 - Milestone tracker from tasks and deliverables
 - Vision statement and mission statement (in markdown via TipTap editor)
@@ -32,6 +34,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - Hierarchical structure: Project > Milestones > Deliverables > Tasks
 
 ### 3. Task Management
+
 - Full tasks view aggregated from other modules (projects, learning, language, relationships)
 - Task creation with relationships and linking to parent modules
 - Sub-tasks via `parent_task_id` self-referencing
@@ -40,6 +43,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - Task time logs for actual time tracking
 
 ### 4. Habits Management
+
 - Habits with recurrence and to-do list view for completion (separated by morning, evening, afternoon, all day)
 - Single entity standalone page for each habit
 - Analytics graphs and charts on each habit's standalone page (streaks, completion rates, mood tracking)
@@ -48,6 +52,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - Domains: health, career, finance, relationships, personal growth, spiritual, recreation, environment
 
 ### 5. Routine Management
+
 - Routines with recurrence and to-do list view for completion (separated by morning, evening, afternoon)
 - Single entity standalone page for each routine
 - Analytics graphs and charts on each routine's standalone page
@@ -55,6 +60,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - Skip tracking with reason capture
 
 ### 6. Relationship Management (CRM)
+
 - People registration with full contact details (name, email, phone, company, job title, location)
 - Standalone page per person with description and management
 - Interaction log per person on standalone page (type, date, duration, sentiment, follow-up)
@@ -70,6 +76,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - All events (for relationships only) standalone page
 
 ### 7. Learning Management
+
 - **Classes**: Registration for college and online classes with `course_type` discriminator
 - **ICS Feed Sync**: Calendar feed sync via `ical.js` — user adds ICS URLs, relates them to courses, auto-syncs events
 - **Weekly Schedule**: Schedule view for classes from synced ICS events
@@ -110,6 +117,7 @@ Vida is a comprehensive life management platform that puts user privacy first. A
 - **Flashcards**: SM-2 spaced repetition algorithm with decks linked to any resource type
 
 ### 8. Notes & Journals (Integration Layer)
+
 This is NOT just another module — it is the **unifying layer** of the entire platform. Every other module produces data that flows into notes and journals.
 
 - **Journal**: One per day, dynamic daily dashboard aggregating data from all modules
@@ -129,6 +137,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **Pomodoro Timer**: Embedded in notes, linked to tasks/classes/study sessions
 
 ### 9. Additional Domains
+
 - **Purpose & Goals**: Life purposes with vision/why, measurable targets, metrics, dreams, reviews
 - **Check-ins**: Daily morning/evening check-ins with mood, energy, gratitude, reflection (customizable templates)
 - **Bucket List**: Items linked to purposes and projects with steps, cost, location
@@ -143,12 +152,14 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **React**: 19.x
 
 ### Packages
+
 - `@vida/types` — Shared TypeScript types, Zod schemas, editor types
 - `@vida/core` — Business logic, encryption (libsodium), sync engine, DB abstraction (Drizzle ORM), services (journal, pomodoro, backlinks, study planner, reminder engine, analytics, search, export)
 - `@vida/editor` — TipTap block editor with custom extensions, slash menu, serializers (markdown, PDF, DOCX)
 - `@vida/ui` — Shared UI components via Tamagui (calendar, gallery, list, neural graph, pomodoro widget, timeline, export dialog)
 
 ### Apps
+
 - `@vida/web` — Vite + React SPA, TanStack Router, wa-sqlite + OPFS (with SQLCipher WASM), Chart.js + Sigma.js
 - `@vida/mobile` — Expo (React Native), Expo Router, expo-sqlite (with SQLCipher), WebView for editor/charts/graphs, expo-print for PDF
 - `@vida/desktop` — Tauri v2 + React (shares web codebase), native SQLite + SQLCipher via Tauri plugin
@@ -157,6 +168,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 ## Key Technical Decisions (ADRs)
 
 ### ADR-001: Tech Stack
+
 - **Local-first**: SQLite on all platforms (wa-sqlite/OPFS for web, expo-sqlite for mobile, Tauri plugin for desktop)
 - **Zero-knowledge**: All data encrypted client-side with libsodium (XChaCha20-Poly1305), server stores only opaque blobs
 - **Auth**: SRP (Secure Remote Password) — server never sees passwords
@@ -175,6 +187,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **Mobile editor**: Hybrid — TipTap in WebView + native RN toolbar/chrome
 
 ### ADR-002: Data Model
+
 - **Database**: SQLite (not PostgreSQL) — single-user local DB, no RLS needed
 - **Three-layer encryption**: L1 SQLCipher (full DB at rest), L2 field-level libsodium (sensitive fields marked `-- [E]`), L3 sync blob (entire row encrypted for transit/server)
 - **~60 tables** across 12 domains (Notes, Tasks, Projects, Habits, Routines, Purpose, Finance, Relationships, Learning, Language, Check-ins, Gamification)
@@ -183,6 +196,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 - **FTS5** virtual tables for full-text search (rebuilt on vault unlock)
 
 ### ADR-003: Sync Protocol
+
 - **Structured data**: LWW (Last-Writer-Wins) with logical timestamps — a **hybrid logical clock (HLC)** (causal ordering, device-id tie-break), not raw wall-clock, so cross-device skew can't silently drop writes — sufficient for single-user multi-device
 - **Editor content**: Yjs CRDT per page for conflict-free offline merge
 - **Transport**: Encrypted blob push/pull over WebSocket (with polling fallback)
@@ -245,27 +259,27 @@ vida-platform/
 > capability-framework anti-signal applied (ADRs 004–017); the authoritative schema is owned by ADR-002 + the
 > per-table build phase (DB-3/DB-4). Rows not yet swept against every ADR may still lag.
 
-| Domain | Key Tables |
-|--------|-----------|
-| Notes & Pages | `pages`, `page_links`, `entity_links`, `tags`, `entity_tags`, `note_attachments` (pomodoro is now a `sessions` sub-type — ADR-004) |
-| Tasks | `tasks`, `task_time_logs` |
-| Projects | `projects`, `milestones`, `project_documents` |
-| Habits | `habits`, `habit_completions` |
-| Routines | `routine_actions`, `routine_completions` |
-| Purpose & Goals | `purposes`, `targets`, `purpose_metrics`, `purpose_metric_values`, `target_reviews`, `dreams` |
-| Finance | `accounts`, `transactions`, `assets`, `liabilities`, `investments`, `income_streams` |
-| Relationships | `contacts`, `contact_events`, `interactions`, `contact_reminders`, `reminder_groups`, `reminder_group_contacts` |
-| Learning | `courses`, `books`, `book_chapters`, `skills`, `skill_resources`, `study_sessions`, `study_topics`, `topic_reviews`, `review_events`, `method_bindings`, `review_curves`, `knowledge_notes` (flashcard_* retired → generic review engine, ADR-005) |
-| Study Planner | `study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates` |
-| Language | `languages`, `language_practice_sessions`, `language_vocabulary`, `language_daily_sessions`, `language_daily_progress`, `language_recordings`, `language_weekly_plans`, `language_base_words`, `language_video_playlists` |
-| Check-ins | `daily_check_ins`, `check_in_templates`, `check_in_template_questions` |
-| Bucket List | `bucket_list_items` |
-| Gamification | `user_profile`, `achievements`, `user_achievements`, `currencies`, `consequence_ledger` (xp_history retired → derived-balance ledger, ADR-012) |
-| Notifications | `notifications` |
-| Preferences | `user_preferences`, `nav_preferences`, `command_bar_history` |
-| ICS Sync | `ics_feed_configs`, `ics_synced_events` |
-| System (local-only) | `app_state`, `sync_queue` |
-| Cross-domain junctions | `contributions` (weighted, polymorphic — supersedes `purpose_habits`/`purpose_routines`/`purpose_projects`, ADR-011), `project_habits` |
+| Domain                 | Key Tables                                                                                                                                                                                                                                           |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Notes & Pages          | `pages`, `page_links`, `entity_links`, `tags`, `entity_tags`, `note_attachments` (pomodoro is now a `sessions` sub-type — ADR-004)                                                                                                                   |
+| Tasks                  | `tasks`, `task_time_logs`                                                                                                                                                                                                                            |
+| Projects               | `projects`, `milestones`, `project_documents`                                                                                                                                                                                                        |
+| Habits                 | `habits`, `habit_completions`                                                                                                                                                                                                                        |
+| Routines               | `routine_actions`, `routine_completions`                                                                                                                                                                                                             |
+| Purpose & Goals        | `purposes`, `targets`, `purpose_metrics`, `purpose_metric_values`, `target_reviews`, `dreams`                                                                                                                                                        |
+| Finance                | `accounts`, `transactions`, `assets`, `liabilities`, `investments`, `income_streams`                                                                                                                                                                 |
+| Relationships          | `contacts`, `contact_events`, `interactions`, `contact_reminders`, `reminder_groups`, `reminder_group_contacts`                                                                                                                                      |
+| Learning               | `courses`, `books`, `book_chapters`, `skills`, `skill_resources`, `study_sessions`, `study_topics`, `topic_reviews`, `review_events`, `method_bindings`, `review_curves`, `knowledge_notes` (flashcard\_\* retired → generic review engine, ADR-005) |
+| Study Planner          | `study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates`                                                                                                                               |
+| Language               | `languages`, `language_practice_sessions`, `language_vocabulary`, `language_daily_sessions`, `language_daily_progress`, `language_recordings`, `language_weekly_plans`, `language_base_words`, `language_video_playlists`                            |
+| Check-ins              | `daily_check_ins`, `check_in_templates`, `check_in_template_questions`                                                                                                                                                                               |
+| Bucket List            | `bucket_list_items`                                                                                                                                                                                                                                  |
+| Gamification           | `user_profile`, `achievements`, `user_achievements`, `currencies`, `consequence_ledger` (xp_history retired → derived-balance ledger, ADR-012)                                                                                                       |
+| Notifications          | `notifications`                                                                                                                                                                                                                                      |
+| Preferences            | `user_preferences`, `nav_preferences`, `command_bar_history`                                                                                                                                                                                         |
+| ICS Sync               | `ics_feed_configs`, `ics_synced_events`                                                                                                                                                                                                              |
+| System (local-only)    | `app_state`, `sync_queue`                                                                                                                                                                                                                            |
+| Cross-domain junctions | `contributions` (weighted, polymorphic — supersedes `purpose_habits`/`purpose_routines`/`purpose_projects`, ADR-011), `project_habits`                                                                                                               |
 
 ## Reference Documents
 

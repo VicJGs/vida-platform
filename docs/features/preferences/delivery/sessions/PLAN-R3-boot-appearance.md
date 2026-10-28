@@ -14,6 +14,7 @@
 > (refreshed by R1/R2 and by the fe-calendar merge `f796c34`). Both describe the code as read for this plan.
 
 ## 1. Problem (as-built, after R2)
+
 - **The theme is in-session only.** `theme-store` boots at `THEME_DEFAULT` and the Appearance controls call its setters
   directly `[FACT: stores/theme-store.ts:26-33; settings/appearance-pane.tsx:35-38,62,74,86]`. Nothing persists a preset,
   mode or density, and nothing hydrates them (D7). R2's mirror deliberately excluded the theme `[FACT: preferences/preferences-bridge.tsx:21-33]`.
@@ -33,6 +34,7 @@
   `PERSONA_UNSET` sentinel `[FACT: preferences/preferences-view.ts:22-24,91,117]`.
 
 ## 2. Business rules (after R3)
+
 - **R3-BR-1 · One query definition, two callers.** The two read definitions (key + `queryFn` + the writer's
   `epoch`/`noteConfirmed` reconcile) move from `use-preferences.ts` into `preferences-queries.ts`. The hook and the boot
   seed both use them, so there is exactly one read path and one cache entry per table.
@@ -53,7 +55,7 @@
     false about the library.
   - **Known limits of the failed-seed path, recorded:** (1) with a hint for a dark theme, the frames run hint-dark → default
     light → persisted dark if a refetch later succeeds; (2) `getServices()` memoizes its build promise (`buildPromise ??=`,
-    `composition-root.ts:145-147`), so a failure *inside* `build()` (e.g. `initVault`) never recovers by refetch. A plain
+    `composition-root.ts:145-147`), so a failure _inside_ `build()` (e.g. `initVault`) never recovers by refetch. A plain
     read failure does. (2) is the data plane's (LIF-250's area), recorded as an edge, not fixed here.
   - **Stated cost (N6), framed exactly:** R2's bridge already calls `getServices()` as soon as the provider mounts
     (`preferences-bridge.tsx:41` → `use-preferences.ts:36`). R3 moves that **before first paint**, so `initVault` +
@@ -86,9 +88,9 @@
     type error, not a runtime gap. Storing resolved colours keeps the inline script token-free (no palette in `index.html`).
   - **Written only from DB truth:** the writer gains an `onConfirmed(table, row)` option. It fires when `confirmed`
     changes from an **accepted read** (`noteConfirmed`) or a **successful batch** — never on enqueue (optimistic), never on
-    a failed batch. So a C5 revert can never leave a stale hint. *(The slice-map says "written only from a settled
+    a failed batch. So a C5 revert can never leave a stale hint. _(The slice-map says "written only from a settled
     persist"; an accepted read is DB truth of the same kind, and without it a device whose hint is missing or stale would
-    stay wrong until the next write `[INTERP — grounded: B6 "a convenience mirror, never a source"]`.)*
+    stay wrong until the next write `[INTERP — grounded: B6 "a convenience mirror, never a source"]`.)_
   - **Read only by the inline `index.html` script**, in `<head>` right after the process shim: parse in `try/catch`, set
     `documentElement` `background-color`, `color` and `color-scheme`. Blocked or corrupt storage → nothing painted → the
     browser default, as today. Nothing in the app reads the hint, so it is never a source (BR-RT-7 / PR-5 intact).
@@ -142,6 +144,7 @@
       Retry button. Without a Retry press, no focus moves (§3: a same-surface refetch never steals focus).
     - **No unhandled rejection:** `retry()` fires `refetch()` without awaiting; `refetch` defaults to
       `throwOnError: false`, so it resolves with the error result, and the call adds `.catch(() => {})` as a guard.
+
   - **DEV gate hook** (off in prod; the `?force=` precedent, `gamification/use-currencies.ts:16,88`):
     `?force=prefs-read-error` makes the reads reject **from boot** (the seed included) → the first-read state;
     `?force=prefs-refetch-error` (rev 2.1) lets the first read per key succeed and rejects later ones → the "last loaded"
@@ -150,6 +153,7 @@
   - **success** → the panes, editable.
   - Read-only reaches the panes through one `SettingsContext` (`{ readOnly, update }`) provided by the surface, so no pane
     threads props and R5/R6 plug into the same context.
+
 - **R3-BR-7 · Save feedback (C5 UI half, EC-7).** The surface owns the one `useUpdatePreferences()` and shares `update`
   through `SettingsContext`, so one status reflects every pane.
   - **The shipped CODEC primitive, not a new line:** `<SyncStatus state="saved">` under the search box after a save,
@@ -157,16 +161,16 @@
     revert toast reports the failure once, so a polite `SyncStatus` error would announce it twice, and a stale "Saved"
     would be false. **No "Saving…" state:** writes are instant on-device,
     and the P4 copy-honesty contract says the indicator only ever says "Saved on this device" `[FACT:
-    packages/ui/src/components/sync-status.tsx:7-10,20]`; fe-settings EC-7 pins the same (`envision.md:38`). While a save
+packages/ui/src/components/sync-status.tsx:7-10,20]`; fe-settings EC-7 pins the same (`envision.md:38`). While a save
     is pending the previous status simply stays.
   - **One revert toast per failed batch, fired by the writer, not the hook.** `writer-instance.ts` passes an
     `onFailed(table, error)` option that the writer calls from `onSettled` when `!outcome.ok`, which is exactly once per
     failed batch. It calls `toast({ intent: 'danger', title: 'Couldn’t save that change', description: 'It’s back to how it
-    was. Your data is safe on this device.' })`. This is independent of which component is mounted (a save that fails after
+was. Your data is safe on this device.' })`. This is independent of which component is mounted (a save that fails after
     leaving Settings still reports, PR-4 "never silently dropped", `business-rules.md:39`) and of React batching the hook's
     `saveState`. It also covers every other writer (onboarding R7, R5, R6) with no further code. The revert itself is the
     writer's (R2-BR-4). `intent: 'danger'` routes to the assertive live region `[FACT:
-    packages/ui/src/internal/toast-store.ts:21]`; `ToastProvider` is mounted `[FACT: App.tsx:141]`. First `toast()`
+packages/ui/src/internal/toast-store.ts:21]`; `ToastProvider` is mounted `[FACT: App.tsx:141]`. First `toast()`
     caller in `apps/web`.
 - **R3-BR-8 · Appearance persists (D6, D7, D10, D4).** preset → `dashboard_layout.theme` · mode → `theme` (light|dark only,
   D5) · density → `compact_mode` · arrangement → `dashboard_layout.arrangement` · persona → `persona`, each through
@@ -183,32 +187,35 @@
   `lintCopy` over every entry (no cloud/ZK claim, no dead end).
 
 ## 3. Design
-| File | Change |
-|---|---|
-| `preferences/preferences-queries.ts` (new) | `userPreferencesQuery` / `navPreferencesQuery` (key + `queryFn` with the epoch/noteConfirmed reconcile) · `seedPreferences(qc)` (both `fetchQuery`, `retry: 0`, resolves on failure) · `retryOnMount: false` (rev 2.2) · reads the DEV force flag from `force-flag.ts` |
-| `preferences/use-preferences.ts` | `usePreferences` uses the two definitions + returns `hasData` |
-| `preferences/preferences-view.ts` | owns `HomeArrangement` (moved from the store as the field leaves; `preferences-store` re-exports nothing new) |
-| `preferences/preferences-writer.ts` | `onConfirmed?(t, row)` (from `noteConfirmed`'s accept branch, `:168`, and `onSettled` when `outcome.ok`, `:125`) · `onFailed?(t, error)` (from `onSettled` when `!outcome.ok`) |
-| `preferences/theme-hint.ts` (new) | `toThemeHint(selection)` (pure, the explicit `ThemeName` map) · `writeThemeHint(row)` (try/catch storage) · `paintRoot(hint)` (the three `<html>` styles) · the storage key |
-| `preferences/writer-instance.ts` | wires `onConfirmed` → `writeThemeHint` (user table) · `onFailed` → the revert toast · the DEV `?force=prefs-write-error` hook |
-| `index.html` | the inline hint script in `<head>`, right after the process shim |
-| `stores/theme-store.ts` | derived: `{ persisted, previewPreset, selection }` + `setPreview(preset \| null)`; the one cache subscription (reads the current entry at install · `'removed'` → `THEME_DEFAULT`; no HMR dispose — IMPL-PLAN rev 3 B2 uses the house `process.env.NODE_ENV` + `typeof window` pattern) · `resetThemeStoreForTests()` |
-| `App.tsx` | boot gate: `seedPreferences` as the third condition · `previewPreset` → `setPreview` · clear the preview when `guidedPhase` is `'none'` · a layout effect `paintRoot(toThemeHint(selection))` · stale comments (X5) |
-| `settings/settings-context.tsx` (new) | `SettingsContext` `{ readOnly, update }` + `useSettings()`, **with a default** (editable + the writer-backed update) so a pane rendered alone (its own tests) still works |
-| `settings/settings-surface.tsx` | the 3 states (two error strings), `SyncStatus`, the provider |
-| `settings/settings-skeleton.tsx` (new) | the §3.1 pane skeleton |
-| `settings/appearance-pane.tsx` | reads `usePreferences().view`, writes `update`; the persona row; reduce motion still on the mirror; `disabled` when read-only |
-| `settings/{modules,locale,notifications}-pane.tsx` | `disabled` (and rename hidden) when read-only — no other change |
-| `settings/settings-model.ts` | the `persona` index entry |
-| `settings/settings-copy.ts` (new) | the copy module |
-| `home/home-surface.tsx` | `useHomeArrangement` → the view |
-| `stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` | `arrangement` removed |
+
+| File                                                                 | Change                                                                                                                                                                                                                                                                                                                |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `preferences/preferences-queries.ts` (new)                           | `userPreferencesQuery` / `navPreferencesQuery` (key + `queryFn` with the epoch/noteConfirmed reconcile) · `seedPreferences(qc)` (both `fetchQuery`, `retry: 0`, resolves on failure) · `retryOnMount: false` (rev 2.2) · reads the DEV force flag from `force-flag.ts`                                                |
+| `preferences/use-preferences.ts`                                     | `usePreferences` uses the two definitions + returns `hasData`                                                                                                                                                                                                                                                         |
+| `preferences/preferences-view.ts`                                    | owns `HomeArrangement` (moved from the store as the field leaves; `preferences-store` re-exports nothing new)                                                                                                                                                                                                         |
+| `preferences/preferences-writer.ts`                                  | `onConfirmed?(t, row)` (from `noteConfirmed`'s accept branch, `:168`, and `onSettled` when `outcome.ok`, `:125`) · `onFailed?(t, error)` (from `onSettled` when `!outcome.ok`)                                                                                                                                        |
+| `preferences/theme-hint.ts` (new)                                    | `toThemeHint(selection)` (pure, the explicit `ThemeName` map) · `writeThemeHint(row)` (try/catch storage) · `paintRoot(hint)` (the three `<html>` styles) · the storage key                                                                                                                                           |
+| `preferences/writer-instance.ts`                                     | wires `onConfirmed` → `writeThemeHint` (user table) · `onFailed` → the revert toast · the DEV `?force=prefs-write-error` hook                                                                                                                                                                                         |
+| `index.html`                                                         | the inline hint script in `<head>`, right after the process shim                                                                                                                                                                                                                                                      |
+| `stores/theme-store.ts`                                              | derived: `{ persisted, previewPreset, selection }` + `setPreview(preset \| null)`; the one cache subscription (reads the current entry at install · `'removed'` → `THEME_DEFAULT`; no HMR dispose — IMPL-PLAN rev 3 B2 uses the house `process.env.NODE_ENV` + `typeof window` pattern) · `resetThemeStoreForTests()` |
+| `App.tsx`                                                            | boot gate: `seedPreferences` as the third condition · `previewPreset` → `setPreview` · clear the preview when `guidedPhase` is `'none'` · a layout effect `paintRoot(toThemeHint(selection))` · stale comments (X5)                                                                                                   |
+| `settings/settings-context.tsx` (new)                                | `SettingsContext` `{ readOnly, update }` + `useSettings()`, **with a default** (editable + the writer-backed update) so a pane rendered alone (its own tests) still works                                                                                                                                             |
+| `settings/settings-surface.tsx`                                      | the 3 states (two error strings), `SyncStatus`, the provider                                                                                                                                                                                                                                                          |
+| `settings/settings-skeleton.tsx` (new)                               | the §3.1 pane skeleton                                                                                                                                                                                                                                                                                                |
+| `settings/appearance-pane.tsx`                                       | reads `usePreferences().view`, writes `update`; the persona row; reduce motion still on the mirror; `disabled` when read-only                                                                                                                                                                                         |
+| `settings/{modules,locale,notifications}-pane.tsx`                   | `disabled` (and rename hidden) when read-only — no other change                                                                                                                                                                                                                                                       |
+| `settings/settings-model.ts`                                         | the `persona` index entry                                                                                                                                                                                                                                                                                             |
+| `settings/settings-copy.ts` (new)                                    | the copy module                                                                                                                                                                                                                                                                                                       |
+| `home/home-surface.tsx`                                              | `useHomeArrangement` → the view                                                                                                                                                                                                                                                                                       |
+| `stores/preferences-store.ts` · `preferences/preferences-bridge.tsx` | `arrangement` removed                                                                                                                                                                                                                                                                                                 |
 
 ## 4. Acceptance
+
 **Verification Gate (Vitest)**
+
 1. **Seed:** success puts both keys in the cache before `App` renders the provider tree. A rejecting read resolves the seed;
    `App` leaves Loading (no stuck gate), the defaults render, and Settings shows `error` with no extra read (rev 2.2).
-1b. **No refetch loop (rev 2.2):** after a failed first read, mounting readers (the surface + its panes, and a second
+   1b. **No refetch loop (rev 2.2):** after a failed first read, mounting readers (the surface + its panes, and a second
    `usePreferences` reader) leaves the fake's read count **flat** over time (sampled across ≥ 2 s). Retry → exactly one
    more read per errored key → `loading` → `success` when the fake recovers, or the same error copy. The second reader is
    `renderHook(() => usePreferences())` inside the same `QueryClientProvider`; Retry is found by
@@ -220,12 +227,12 @@
    batch (optimistic dark → fail → the hint stays light). Blocked storage throws nowhere. The inline script, extracted from
    `index.html` and run in jsdom: a valid hint sets the three styles; a corrupt one sets nothing and does not throw.
    `App`'s layout effect repaints `<html>` on a selection change. Every `ThemeName` has a map entry (type-checked).
-3b. **Preview:** preview → close (each of finish / skip / close) → `selection.preset` is the persisted one; then a Settings
+   3b. **Preview:** preview → close (each of finish / skip / close) → `selection.preset` is the persisted one; then a Settings
    preset change → `selection.preset` changes. A cache update during an active preview leaves the preview in place.
 4. **Settings states:** loading → skeleton + `aria-busy`; first-read error → every control `disabled` + the "showing
    defaults" line; later error (data kept) → `disabled` + the "last loaded" line; success → editable. A save →
    `SyncStatus` "Saved on this device" (no "Saving…" ever rendered). A rejected save → the control shows the reverted value.
-4b. **Toast (writer):** one failed batch carrying two edits → exactly one toast; two failures in sequence → two toasts; a
+   4b. **Toast (writer):** one failed batch carrying two edits → exactly one toast; two failures in sequence → two toasts; a
    failure after the Settings surface unmounted → still one toast.
 5. **Persona:** the row lists `Not set` + 6; choosing one writes `persona`; `Not set` writes `null`; search "persona" finds it.
 6. **Home:** a seeded `dashboardFirst` → the **first** render is Dashboard-first, asserted with a render log (not `waitFor`,
@@ -236,38 +243,33 @@
    the hint → test 3 fails; render the router before the seed settles → test 6 fails; skip the preview clear on close →
    test 3b fails.
 
-**Visual Gate (real browser, the running app on real OPFS)**
-9. **No flash (IR-4, EC-5 feel, fe-home EC-9), with a method proven able to fail.** An init script (Playwright
-   `addInitScript`, runs before any page script) samples `getComputedStyle` background of `<html>` and `<body>` plus the
-   first app frame's on **every `requestAnimationFrame`** from navigation until route content is visible, plus a
-   performance trace with screenshots on reload. **Negative control first:** dark persisted, hint storage cleared → the
-   method must record the light/white frame; if it can't, it proves nothing and the check is redesigned. Then with the
-   hint: every sample through the boot frame **and the router-suspend window** is the persisted dark surface, with no
-   default→persisted flip.
-10. **Arrangement (fe-home EC-2):** persist `dashboardFirst` → reload → no Journal-first frame.
-11. **States** (DEV `?force=` hooks): `?force=prefs-read-error` → boot completes, Settings shows the **first-read** read-only
-    state + its line; a later-error case (read OK, then forced) → the "last loaded" line; a write → "Saved on this device";
-    `?force=prefs-write-error` → the control reverts + one toast.
-12. **Matrix:** Settings default / skeleton / read-only / saved / toast / persona open, × 3 presets × light/dark ×
-    375/768/1440: AA text ≥ 4.5 (incl. warm-dark), graphics ≥ 3:1, axe 0, 0 overflow. EC-1, 2, 3, 4 (Appearance), 5, 7,
-    10, 11 + the persona-row MUST. **Disabled controls are exempt from the contrast minimum** (WCAG 1.4.3 "inactive user
-    interface components"; `Select`/`Switch` go to opacity 0.5, `select.tsx:82`, `switch.tsx:36`); the read-only status
-    line itself must pass AA.
-13. **Live persistence (ELC-7 preview):** change all five Appearance controls + persona → reload → all persisted; row count
-    == 1; reopen Settings → no write (IR-1); console clean.
-14. **Measured boot cost:** Loading duration **and** time-to-shell on `main` vs R3, 5 reloads each, at a recorded `uptime`.
-15. Stage-4: Victor's recorded `visual-approved`.
+**Visual Gate (real browser, the running app on real OPFS)** 9. **No flash (IR-4, EC-5 feel, fe-home EC-9), with a method proven able to fail.** An init script (Playwright
+`addInitScript`, runs before any page script) samples `getComputedStyle` background of `<html>` and `<body>` plus the
+first app frame's on **every `requestAnimationFrame`** from navigation until route content is visible, plus a
+performance trace with screenshots on reload. **Negative control first:** dark persisted, hint storage cleared → the
+method must record the light/white frame; if it can't, it proves nothing and the check is redesigned. Then with the
+hint: every sample through the boot frame **and the router-suspend window** is the persisted dark surface, with no
+default→persisted flip. 10. **Arrangement (fe-home EC-2):** persist `dashboardFirst` → reload → no Journal-first frame. 11. **States** (DEV `?force=` hooks): `?force=prefs-read-error` → boot completes, Settings shows the **first-read** read-only
+state + its line; a later-error case (read OK, then forced) → the "last loaded" line; a write → "Saved on this device";
+`?force=prefs-write-error` → the control reverts + one toast. 12. **Matrix:** Settings default / skeleton / read-only / saved / toast / persona open, × 3 presets × light/dark ×
+375/768/1440: AA text ≥ 4.5 (incl. warm-dark), graphics ≥ 3:1, axe 0, 0 overflow. EC-1, 2, 3, 4 (Appearance), 5, 7,
+10, 11 + the persona-row MUST. **Disabled controls are exempt from the contrast minimum** (WCAG 1.4.3 "inactive user
+interface components"; `Select`/`Switch` go to opacity 0.5, `select.tsx:82`, `switch.tsx:36`); the read-only status
+line itself must pass AA. 13. **Live persistence (ELC-7 preview):** change all five Appearance controls + persona → reload → all persisted; row count
+== 1; reopen Settings → no write (IR-1); console clean. 14. **Measured boot cost:** Loading duration **and** time-to-shell on `main` vs R3, 5 reloads each, at a recorded `uptime`. 15. Stage-4: Victor's recorded `visual-approved`.
 
 **Docs (§XXIX, same commit):** `docs/modules/preferences/current-*` · web-client-runtime BR-RT-BOOT (the seed),
 BR-RT-COMPROOT (eager at boot), BR-RT-7 (theme-store derived cache + the hint) · `preferences/CLAUDE.md` ·
 `settings/CLAUDE.md` · `home/CLAUDE.md` · `stores` comments · reconciliation row status · X5 comments in every file touched.
 
 ## 5. Out of scope (owned elsewhere, unchanged)
+
 Reduce motion persist + gating (R4) · Modules/⌘K persist (R5) · Locale/Notifications persist + the store's deletion (R6) ·
 onboarding commit/revert + the `game` picker fix (R7) · the transition preference (R-T) · the live persona **read**
 (gamification-rescope, G3-E6).
 
 ## 6. Risks
+
 - **Eager boot cost (R3-BR-2):** measured in the gate. If it is material, the fallback is to seed only `user` (the theme
   table) and let `nav` load lazily. That would be a §XXVIII deviation, not a silent change.
 - **Removing the theme setters** touches every caller: `App.tsx` (preview) and `appearance-pane.tsx`. Grep confirms no
@@ -281,6 +283,7 @@ onboarding commit/revert + the `game` picker fix (R7) · the transition preferen
   boot cost on a load the machine can't sustain; check `uptime` first.
 
 ## 7. Gate record
+
 - **rev 2.2 (2026-10-26, Victor-approved):** build step 16's first-read-error test exposed an unbounded refetch loop; rev
   2.1's R3-BR-2 premise ("`useQuery` refetches once on mount") contradicted the library source and the governing
   `state-conventions.md` §3 (recovery = an explicit Retry → `refetch()`). Corrected to the doc: `retryOnMount: false` on
@@ -310,7 +313,7 @@ onboarding commit/revert + the `game` picker fix (R7) · the transition preferen
     variable names).
   - B3 "Saving…" contradicted the P4 copy contract and a hand-rolled line rebuilt `SyncStatus` → the primitive, saved|error.
   - B4 one read-only string was false on a later error, and the forced check only hit that path → two strings + `hasData`
-    + a DEV `?force=prefs-read-error` that fails the boot read.
+    - a DEV `?force=prefs-read-error` that fails the boot read.
   - B5 the no-flash measurement couldn't be shown to fail → per-rAF sampling + a trace, with a negative control first,
     through the router-suspend window.
   - B6 "one toast per failed save" had no reliable trigger → fired by the writer per failed batch (`onFailed`).

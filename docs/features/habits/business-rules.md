@@ -1,6 +1,6 @@
 <!-- Business Rules — features/habits · /documentation Phase 2 · sources: ADR-002 §5.5 · habit.ts · intake -->
 
-# Business Rules — Habits  (level: Feature)
+# Business Rules — Habits (level: Feature)
 
 > Inherits the CORE constitution `[[../../core/business-rules]]` — ZK-1/2/3, LF-1/2/3. Every rule below complies.
 
@@ -10,7 +10,7 @@
   ZK-1); `habit_type`, `frequency`, `days_of_week`, `domain`, `time_of_day`, counts/streak cache are plaintext
   config. `[FACT: ADR-002 §5.5; habit.ts @encrypted]`
 - **HB-2 — Streak = consecutive scheduled occurrences; a miss resets to 0 (no grace).** For `daily` that is every
-  day; for `weekly`/`biweekly`/`monthly`/`custom` + `days_of_week` it is each *scheduled* occurrence. Missing a
+  day; for `weekly`/`biweekly`/`monthly`/`custom` + `days_of_week` it is each _scheduled_ occurrence. Missing a
   scheduled occurrence resets `current_streak` to 0. `current_streak`/`longest_streak`/`total_completions`
   **recompute deterministically from the `habit_completions` ledger** — the denormalized columns are a cache,
   never the source. `[INTENT G2]`
@@ -54,6 +54,7 @@
   already derived-from-ledger (HB-2); there is no stored `progress` slot to reframe. `[INTENT; ADR-011 M1/M2/M3]`
 
 ## Validation & edge cases
+
 - Enum CHECKs: `habit_type`∈{build,break}; `frequency`∈{daily,weekly,biweekly,monthly,custom}; `time_of_day`∈
   {morning,afternoon,evening,anytime,whole_day}; `domain`∈8 values; ratings 1–5. `[FACT: ADR-002 §5.5]`
 - `custom` frequency requires `days_of_week` (else it has no schedule → never appears in the today-list, HB-6).
@@ -65,17 +66,19 @@
   cache by hand. `[INTENT G2]`
 
 ## Terminal states (enumerated before build)
-| Capability | loading | empty | error | success |
-|---|---|---|---|---|
-| Today's to-do list | skeleton | "nothing due today" | typed read error, retry | grouped due habits (by time_of_day) |
-| Dashboard / All-Habits | skeleton | "no habits — create one" + CTA | typed read error, retry | rendered habit set + streak badges |
-| Log completion (quick) | — | — | save fails → revert, typed toast | persisted, optimistic; streak recomputed |
-| Detailed log (mood/qty) | — | — | validation (rating out of 1–5) inline | completion + mood/quantity persisted |
-| Streak / analytics | computing from ledger | "no completions yet" | ledger read error → show partial + flag | streak, completion-rate, mood charts |
-| Backfill past date | — | — | beyond-window or save error → typed toast, no change | completion logged; counters re-derived |
-| Per-habit standalone page | skeleton | "no data yet" | typed error, retry | analytics + calendar of completions |
+
+| Capability                | loading               | empty                          | error                                                | success                                  |
+| ------------------------- | --------------------- | ------------------------------ | ---------------------------------------------------- | ---------------------------------------- |
+| Today's to-do list        | skeleton              | "nothing due today"            | typed read error, retry                              | grouped due habits (by time_of_day)      |
+| Dashboard / All-Habits    | skeleton              | "no habits — create one" + CTA | typed read error, retry                              | rendered habit set + streak badges       |
+| Log completion (quick)    | —                     | —                              | save fails → revert, typed toast                     | persisted, optimistic; streak recomputed |
+| Detailed log (mood/qty)   | —                     | —                              | validation (rating out of 1–5) inline                | completion + mood/quantity persisted     |
+| Streak / analytics        | computing from ledger | "no completions yet"           | ledger read error → show partial + flag              | streak, completion-rate, mood charts     |
+| Backfill past date        | —                     | —                              | beyond-window or save error → typed toast, no change | completion logged; counters re-derived   |
+| Per-habit standalone page | skeleton              | "no data yet"                  | typed error, retry                                   | analytics + calendar of completions      |
 
 ## Failure behavior (fail loud — constitution §5)
+
 - A failed completion/backfill reverts the optimistic state and surfaces a typed error — never silent data loss.
   `[INTENT G4; FACT §5]`
 - If the purpose-metric contribution (HB-8) fails, the **completion still succeeds** and the contribution is
@@ -84,9 +87,11 @@
   trusting the cache (HB-2). `[INTENT G2]`
 
 ## ⚠ Flagged delta (spec must not outrun code — constitution §8)
+
 The following are **INTENDED**, not in ADR-002 §5.5 / `habit.ts` today. **As-is FACT floor** = the 2 tables + inline
 `habits.tags` + the streak cache; the retired tokens `purpose_habits` (`schema.ts:413`) / `page_tags` (`:121`) /
 `xp_history` (`:1213`) are **live FACTs** recorded then retired in `[INTENT]` (R6 two-tier):
+
 - **HB-8** purpose contribution via **`contributions`** (M7) + the S4 `contribute_purpose_metric` effect (Purpose-owned).
 - **HB-9** economy feed via the `award_xp` S4 effect → **`grant_currency(XP)`** (E2) → **`consequence_ledger`** (E3), not `xp_history`.
 - **HB-13** measurability — `measurement_kind`/`binding_mode` on the habit (M1/M2).
@@ -94,7 +99,8 @@ The following are **INTENDED**, not in ADR-002 §5.5 / `habit.ts` today. **As-is
 - **G8 restored v1 fields** — `success_criteria`, `difficulty` (on `habits`), completion `location` + completion
   `time` (on `habit_completions`) — to be re-added (candidate **ADR-002 amendment**).
 - **G1** the 4 view surfaces are UI-level (no schema change).
-Until amended, the live invariants are HB-1..HB-7, HB-11, HB-12. `[FACT: ADR-002 §5.5; INTENT G1,G2,G7,G8,G9,G-M/E/SP]`
+  Until amended, the live invariants are HB-1..HB-7, HB-11, HB-12. `[FACT: ADR-002 §5.5; INTENT G1,G2,G7,G8,G9,G-M/E/SP]`
 
 ## Completion checklist
+
 - [x] invariants with [FACT/INTENT] · [x] all terminal states enumerated · [x] failure is loud · [x] inherits constitution · [x] spec/code drift flagged

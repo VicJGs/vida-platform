@@ -47,75 +47,75 @@ foundations. See `docs/specs/foundation/capability-framework.md` for the full su
 
 ### Foundation Substrates (cross-cutting)
 
-| Substrate | Owning ADR | What it provides |
-|-----------|-----------|-------------------|
-| **Spaces & Tags** | ADR-006 | `spaces` tier + `entity_tags` universal tagging above every module (open registry) |
-| **Sessions** | ADR-004 | `sessions` table-per-type supertype for all timed activity (pomodoro/study/reading), with a shared effect catalogue + idempotency rail |
-| **Measurability** | ADR-011 | Universal progress (`measurement_kind` × `binding_mode`, nullable-derive) + `contributions` weighted rollup |
-| **Points Economy** | ADR-012 | Multi-currency economy via a rule→consequence engine; `grant_currency` effect + `consequence_ledger` |
-| **Saved Views** | ADR-007 | One `views` primitive (filter × layout × grouping), Space-owned or global |
-| **Review Engine** | ADR-005 | Generic review engine for study methods (`review_events` / `method_bindings`), mastery-derived |
-| **Capability Registry** | ADR-008 / ADR-010 | Open capability-block registry under a declare→grant→enforce authoring sandbox |
-| **Ingestion & AI** | ADR-014 / ADR-015 | Device-mediated external-data guard (server blind) + on-device/cloud AI layer |
+| Substrate               | Owning ADR        | What it provides                                                                                                                       |
+| ----------------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Spaces & Tags**       | ADR-006           | `spaces` tier + `entity_tags` universal tagging above every module (open registry)                                                     |
+| **Sessions**            | ADR-004           | `sessions` table-per-type supertype for all timed activity (pomodoro/study/reading), with a shared effect catalogue + idempotency rail |
+| **Measurability**       | ADR-011           | Universal progress (`measurement_kind` × `binding_mode`, nullable-derive) + `contributions` weighted rollup                            |
+| **Points Economy**      | ADR-012           | Multi-currency economy via a rule→consequence engine; `grant_currency` effect + `consequence_ledger`                                   |
+| **Saved Views**         | ADR-007           | One `views` primitive (filter × layout × grouping), Space-owned or global                                                              |
+| **Review Engine**       | ADR-005           | Generic review engine for study methods (`review_events` / `method_bindings`), mastery-derived                                         |
+| **Capability Registry** | ADR-008 / ADR-010 | Open capability-block registry under a declare→grant→enforce authoring sandbox                                                         |
+| **Ingestion & AI**      | ADR-014 / ADR-015 | Device-mediated external-data guard (server blind) + on-device/cloud AI layer                                                          |
 
 ### Integration Layer
 
 The unifying interface that surfaces data from every other module.
 
-| Module | Description |
-|--------|-------------|
+| Module            | Description                                                                                                                                                                                                                                                                                |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **Notes & Pages** | The integration hub. Every module's entities can have linked pages. Supports wiki-style `[[entity links]]`, bidirectional backlinks, tags, and attachments. The `pages` table with its polymorphic `entity_type`/`entity_id` pattern is how all modules connect to the note-taking system. |
-| **Journals** | One page per day. The daily summary block (`/summary`) auto-populates from Habits, Tasks, Routines, Learning, Finance, and Relationships. Journals are the user's daily dashboard — a snapshot of everything that happened. |
+| **Journals**      | One page per day. The daily summary block (`/summary`) auto-populates from Habits, Tasks, Routines, Learning, Finance, and Relationships. Journals are the user's daily dashboard — a snapshot of everything that happened.                                                                |
 
 ### Productivity
 
 Day-to-day task execution, habit building, and focus.
 
-| Module | Description |
-|--------|-------------|
-| **Tasks** | Task management with sub-tasks, priority, difficulty, due dates, time logging, and cross-module links (projects, milestones, courses, contacts). Task notes are full pages with the TipTap editor. |
-| **Habits** | Build or break habits with daily/weekly/monthly frequency. Tracks streaks, completion counts, mood before/after, cue/reward patterns. Completable from the journal's `/habits` block. |
-| **Routines** | Daily routine actions (morning, afternoon, evening) with recurrence patterns. Can link to habits and tasks. Tracks actual vs estimated duration. |
+| Module       | Description                                                                                                                                                                                                                                                      |
+| ------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Tasks**    | Task management with sub-tasks, priority, difficulty, due dates, time logging, and cross-module links (projects, milestones, courses, contacts). Task notes are full pages with the TipTap editor.                                                               |
+| **Habits**   | Build or break habits with daily/weekly/monthly frequency. Tracks streaks, completion counts, mood before/after, cue/reward patterns. Completable from the journal's `/habits` block.                                                                            |
+| **Routines** | Daily routine actions (morning, afternoon, evening) with recurrence patterns. Can link to habits and tasks. Tracks actual vs estimated duration.                                                                                                                 |
 | **Projects** | Project management with milestones, deliverables, and documents. Progress is **derived** through the measurability rollup (ADR-011); aggregates tasks and links to habits via the `project_habits` junction (kept). Contributes to purposes via `contributions`. |
-| **Pomodoro** | Focus timing — a **sub-type of the `sessions` supertype** (ADR-004), not a standalone table. Links to its subject (task, note, study session), rides the shared session lifecycle + effect rail, and surfaces as a capability block in the editor. |
+| **Pomodoro** | Focus timing — a **sub-type of the `sessions` supertype** (ADR-004), not a standalone table. Links to its subject (task, note, study session), rides the shared session lifecycle + effect rail, and surfaces as a capability block in the editor.               |
 
 ### Knowledge
 
 Learning, studying, and language acquisition.
 
-| Module | Description |
-|--------|-------------|
-| **Learning** | Courses, books (with chapter-level tracking), skills, study sessions, knowledge notes, and a study planner that schedules sessions based on availability and urgency. Spaced repetition runs on the generic **review engine** (ADR-005 — `review_events` / `method_bindings`, mastery-derived), not bespoke flashcard tables. ICS calendar sync imports class schedules via the device-mediated ingestion guard (ADR-014). |
-| **Languages** | Language learning with proficiency tracking (A1-C2), vocabulary management, daily structured sessions (grammar, conversation, music, bible study), audio recordings for pronunciation practice, and weekly plans. |
+| Module        | Description                                                                                                                                                                                                                                                                                                                                                                                                                |
+| ------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Learning**  | Courses, books (with chapter-level tracking), skills, study sessions, knowledge notes, and a study planner that schedules sessions based on availability and urgency. Spaced repetition runs on the generic **review engine** (ADR-005 — `review_events` / `method_bindings`, mastery-derived), not bespoke flashcard tables. ICS calendar sync imports class schedules via the device-mediated ingestion guard (ADR-014). |
+| **Languages** | Language learning with proficiency tracking (A1-C2), vocabulary management, daily structured sessions (grammar, conversation, music, bible study), audio recordings for pronunciation practice, and weekly plans.                                                                                                                                                                                                          |
 
 ### Personal Growth
 
 Self-reflection, goal setting, and life aspirations.
 
-| Module | Description |
-|--------|-------------|
+| Module               | Description                                                                                                                                                                                                                                                                                                         |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Purposes & Goals** | Life purposes with vision/why statements, quantitative/qualitative targets, metrics with time-series tracking, and review cycles. Habits, routines, and projects feed a purpose through `contributions` (weighted, polymorphic — ADR-011 M7); aggregated progress is **derived** via the measurability rollup (M4). |
-| **Check-ins** | Daily morning/evening check-ins with mood (1-10), energy level, intentions, wins, gratitude, challenges, and reflection. Customizable templates with user-defined questions. |
-| **Bucket List** | Life aspirations with categories, progress steps, estimated costs, target dates, and inspiration links. Can link to purposes and projects. |
+| **Check-ins**        | Daily morning/evening check-ins with mood (1-10), energy level, intentions, wins, gratitude, challenges, and reflection. Customizable templates with user-defined questions.                                                                                                                                        |
+| **Bucket List**      | Life aspirations with categories, progress steps, estimated costs, target dates, and inspiration links. Can link to purposes and projects.                                                                                                                                                                          |
 
 ### Life Management
 
 Finance and relationships.
 
-| Module | Description |
-|--------|-------------|
-| **Finance** | Accounts (checking, savings, credit, investment), transactions with categories, assets with depreciation, liabilities with payment tracking, investments with price tracking, and income streams. All financial amounts are encrypted. |
-| **Relationships** | Contact CRM with interaction logging (calls, texts, meetings), sentiment tracking, stay-in-touch reminders, birthday/anniversary events, and grouped reminder templates. Contact PII (name, email, phone) is encrypted. |
+| Module            | Description                                                                                                                                                                                                                            |
+| ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Finance**       | Accounts (checking, savings, credit, investment), transactions with categories, assets with depreciation, liabilities with payment tracking, investments with price tracking, and income streams. All financial amounts are encrypted. |
+| **Relationships** | Contact CRM with interaction logging (calls, texts, meetings), sentiment tracking, stay-in-touch reminders, birthday/anniversary events, and grouped reminder templates. Contact PII (name, email, phone) is encrypted.                |
 
 ### Platform Services
 
 Cross-cutting services that enhance all modules.
 
-| Module | Description |
-|--------|-------------|
-| **Gamification** | The user-facing surface of the **Points Economy** substrate (ADR-012) — currencies, levels, achievements — driven by a rule→consequence engine. Modules emit `grant_currency` (and related) effects on the shared effect rail; the engine derives balances from `consequence_ledger` and evaluates achievements as consequence rules. Applied exactly once via the idempotency rail (R1). |
+| Module            | Description                                                                                                                                                                                                                                                                                                                                                                                                     |
+| ----------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Gamification**  | The user-facing surface of the **Points Economy** substrate (ADR-012) — currencies, levels, achievements — driven by a rule→consequence engine. Modules emit `grant_currency` (and related) effects on the shared effect rail; the engine derives balances from `consequence_ledger` and evaluates achievements as consequence rules. Applied exactly once via the idempotency rail (R1).                       |
 | **Notifications** | Alerts from all modules — task reminders, streak warnings, check-in prompts, achievement alerts, study-plan due dates, recurring-transaction reminders. Delivered under **zero-knowledge** via three tiers (ADR-013): local-scheduled OS alerts, a content-free cross-device wake-signal, and in-app. The server never sees notification content; per-category control and quiet hours are applied **locally**. |
-| **Preferences** | User settings: theme (light/dark/system), date/time formats, currency, session durations, notification toggles, module enable/disable, dashboard layout, quiet hours. Read by every module. |
+| **Preferences**   | User settings: theme (light/dark/system), date/time formats, currency, session durations, notification toggles, module enable/disable, dashboard layout, quiet hours. Read by every module.                                                                                                                                                                                                                     |
 
 ---
 
@@ -216,6 +216,7 @@ Points Economy, Views, Review-engine, Capability-registry) introduced by ADRs 00
 (conceptual home) and consumed by many modules; see `module-dependency-graph.md` §2 and the capability framework.
 
 **Core Infrastructure** — Shared foundation that every module depends on:
+
 - **Encryption** — Three-layer model: SQLCipher (L1, full DB), libsodium field-level (L2, sensitive fields), sync blob (L3, transport). See `security-model.md`.
 - **Sync** — Field-level LWW for structured data, Yjs CRDT for editor content. See `docs/infrastructure/sync-implementation.md`.
 - **SQLite** — Local-first database via platform-specific adapters (wa-sqlite, expo-sqlite, Tauri plugin). See `platform-strategy.md`.
@@ -230,12 +231,12 @@ Points Economy, Views, Review-engine, Capability-registry) introduced by ADRs 00
 
 Vida runs on web, mobile, and desktop from a single TypeScript monorepo. All business logic, encryption, and sync code lives in shared packages. Each platform provides only a database adapter and platform-specific UI.
 
-| Platform | Technology | Database | Status |
-|----------|-----------|----------|--------|
-| **Web** | React 19 + Vite (SPA) | wa-sqlite + OPFS (SQLCipher WASM) | Active |
-| **Mobile** | Expo (React Native) | expo-sqlite (or alternative with SQLCipher) | Phase 3 |
-| **Desktop** | Tauri v2 + React | Tauri SQLite plugin + SQLCipher | Phase 6 |
-| **Server** | Hono on Cloudflare Workers | N/A (zero-knowledge blob relay) | Active |
+| Platform    | Technology                 | Database                                    | Status  |
+| ----------- | -------------------------- | ------------------------------------------- | ------- |
+| **Web**     | React 19 + Vite (SPA)      | wa-sqlite + OPFS (SQLCipher WASM)           | Active  |
+| **Mobile**  | Expo (React Native)        | expo-sqlite (or alternative with SQLCipher) | Phase 3 |
+| **Desktop** | Tauri v2 + React           | Tauri SQLite plugin + SQLCipher             | Phase 6 |
+| **Server**  | Hono on Cloudflare Workers | N/A (zero-knowledge blob relay)             | Active  |
 
 For the complete code sharing matrix, platform-specific features, and build pipeline, see `platform-strategy.md`.
 
@@ -249,25 +250,25 @@ For the complete code sharing matrix, platform-specific features, and build pipe
 
 ### Shared Across All Platforms
 
-| Package | Contents |
-|---------|----------|
-| `packages/types` | TypeScript interfaces, Zod validation schemas, enums. Zero runtime platform dependencies. |
-| `packages/core` | Business logic, encryption (libsodium), the database layer (**hand-written SQL migrations** as the schema source; **Drizzle is the query-only type mirror** — ADR-016), repository, services, sync engine. Platform-agnostic via the `DatabaseAdapter` interface. |
+| Package          | Contents                                                                                                                                                                                                                                                          |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `packages/types` | TypeScript interfaces, Zod validation schemas, enums. Zero runtime platform dependencies.                                                                                                                                                                         |
+| `packages/core`  | Business logic, encryption (libsodium), the database layer (**hand-written SQL migrations** as the schema source; **Drizzle is the query-only type mirror** — ADR-016), repository, services, sync engine. Platform-agnostic via the `DatabaseAdapter` interface. |
 
 ### Shared with Adaptation
 
-| Package | Web/Desktop | Mobile |
-|---------|-------------|--------|
-| `packages/editor` | TipTap runs natively in the DOM | TipTap runs in a WebView; native toolbar/slash menu |
-| `packages/ui` | Tamagui compiles to optimized CSS | Tamagui renders as React Native views |
+| Package           | Web/Desktop                       | Mobile                                              |
+| ----------------- | --------------------------------- | --------------------------------------------------- |
+| `packages/editor` | TipTap runs natively in the DOM   | TipTap runs in a WebView; native toolbar/slash menu |
+| `packages/ui`     | Tamagui compiles to optimized CSS | Tamagui renders as React Native views               |
 
 ### Platform-Specific
 
-| Concern | Where It Lives |
-|---------|---------------|
-| Database adapter | `apps/web/src/db/`, `apps/mobile/db/`, `apps/desktop/src-tauri/` |
-| App shell, routing, layouts | Per-app `src/` directory |
-| Platform features (tray, push notifications, biometrics) | Per-app |
+| Concern                                                  | Where It Lives                                                   |
+| -------------------------------------------------------- | ---------------------------------------------------------------- |
+| Database adapter                                         | `apps/web/src/db/`, `apps/mobile/db/`, `apps/desktop/src-tauri/` |
+| App shell, routing, layouts                              | Per-app `src/` directory                                         |
+| Platform features (tray, push notifications, biometrics) | Per-app                                                          |
 
 ---
 
@@ -277,78 +278,78 @@ The complete technology stack is defined in **ADR-001**. Below is a summary with
 
 ### Core
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
+| Concern      | Choice                   | Rationale                                                                                                        |
+| ------------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------- |
 | **Language** | TypeScript (strict mode) | One language across all platforms. Shared business logic, encryption, data models, and sync engine written once. |
-| **Monorepo** | Turborepo + pnpm 9.x | Task caching, dependency graph orchestration, workspace support. |
-| **Node.js** | 22 LTS | Active support until 2027. Required for tooling and build. |
+| **Monorepo** | Turborepo + pnpm 9.x     | Task caching, dependency graph orchestration, workspace support.                                                 |
+| **Node.js**  | 22 LTS                   | Active support until 2027. Required for tooling and build.                                                       |
 
 ### Database
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **DB access** | Drizzle ORM (query-only type mirror) | Type-safe queries across all platforms. **DDL is hand-written SQL migrations**, not drizzle-kit — the migrations are the schema source of truth (ADR-016). |
-| **Web DB** | wa-sqlite + OPFS | True persistent storage via Origin Private File System. Custom WASM build with SQLCipher for full DB encryption at rest. |
-| **Mobile DB** | expo-sqlite (with SQLCipher) | Native SQLite on iOS/Android. Exact approach deferred to Phase 3. |
-| **Desktop DB** | Tauri SQLite plugin + SQLCipher | Native SQLite with encryption at rest via Rust backend. |
+| Concern        | Choice                               | Rationale                                                                                                                                                  |
+| -------------- | ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **DB access**  | Drizzle ORM (query-only type mirror) | Type-safe queries across all platforms. **DDL is hand-written SQL migrations**, not drizzle-kit — the migrations are the schema source of truth (ADR-016). |
+| **Web DB**     | wa-sqlite + OPFS                     | True persistent storage via Origin Private File System. Custom WASM build with SQLCipher for full DB encryption at rest.                                   |
+| **Mobile DB**  | expo-sqlite (with SQLCipher)         | Native SQLite on iOS/Android. Exact approach deferred to Phase 3.                                                                                          |
+| **Desktop DB** | Tauri SQLite plugin + SQLCipher      | Native SQLite with encryption at rest via Rust backend.                                                                                                    |
 
 ### Encryption & Auth
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **E2E Encryption** | libsodium.js | XChaCha20-Poly1305 for data, Argon2id for key derivation, BLAKE2b-256 for vault key. Industry-standard, audited. Client-side only — server never encrypts or decrypts. |
-| **Authentication** | SRP (Secure Remote Password) | Zero-knowledge — server never sees passwords. Stores only salt + SRP verifier. |
-| **Key Model** | Vault Key = BLAKE2b-256(Master Key, Account Key) | Master Key derived from password via Argon2id. Account Key is user's recovery key (shown once). |
+| Concern            | Choice                                           | Rationale                                                                                                                                                              |
+| ------------------ | ------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **E2E Encryption** | libsodium.js                                     | XChaCha20-Poly1305 for data, Argon2id for key derivation, BLAKE2b-256 for vault key. Industry-standard, audited. Client-side only — server never encrypts or decrypts. |
+| **Authentication** | SRP (Secure Remote Password)                     | Zero-knowledge — server never sees passwords. Stores only salt + SRP verifier.                                                                                         |
+| **Key Model**      | Vault Key = BLAKE2b-256(Master Key, Account Key) | Master Key derived from password via Argon2id. Account Key is user's recovery key (shown once).                                                                        |
 
 ### Editor
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **Block Editor** | TipTap (ProseMirror-based) | Yjs-native CRDT sync, extensible custom blocks, React-first, headless, battle-tested. |
-| **CRDT** | Yjs via y-prosemirror | First-class TipTap integration for offline merge of editor content. |
-| **PDF Export** | @react-pdf/renderer (web/desktop), expo-print (mobile) | Cross-platform document generation. |
-| **DOCX Export** | docx (npm) | Word document generation from TipTap JSON. |
+| Concern          | Choice                                                 | Rationale                                                                             |
+| ---------------- | ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| **Block Editor** | TipTap (ProseMirror-based)                             | Yjs-native CRDT sync, extensible custom blocks, React-first, headless, battle-tested. |
+| **CRDT**         | Yjs via y-prosemirror                                  | First-class TipTap integration for offline merge of editor content.                   |
+| **PDF Export**   | @react-pdf/renderer (web/desktop), expo-print (mobile) | Cross-platform document generation.                                                   |
+| **DOCX Export**  | docx (npm)                                             | Word document generation from TipTap JSON.                                            |
 
 ### UI & Visualization
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **Components** | Tamagui | Universal — single API for web + React Native + desktop. Built-in animation system. Replaces shadcn/ui (web-only). |
-| **Icons** | Lucide React / lucide-react-native | Clean, consistent, tree-shakeable. Works on web + RN. |
-| **Charts** | Chart.js + react-chartjs-2 | Canvas-based, handles large datasets (years of habits, thousands of transactions). Built-in data decimation. ~60KB. |
-| **Graph** | Sigma.js + @sigma/react | WebGL-rendered, handles 10K+ nodes for note/relationship graphs. ~50KB. |
+| Concern        | Choice                             | Rationale                                                                                                           |
+| -------------- | ---------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| **Components** | Tamagui                            | Universal — single API for web + React Native + desktop. Built-in animation system. Replaces shadcn/ui (web-only).  |
+| **Icons**      | Lucide React / lucide-react-native | Clean, consistent, tree-shakeable. Works on web + RN.                                                               |
+| **Charts**     | Chart.js + react-chartjs-2         | Canvas-based, handles large datasets (years of habits, thousands of transactions). Built-in data decimation. ~60KB. |
+| **Graph**      | Sigma.js + @sigma/react            | WebGL-rendered, handles 10K+ nodes for note/relationship graphs. ~50KB.                                             |
 
 ### State & Routing
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **Data Cache** | React Query (TanStack Query) v5 | Caches local SQLite reads, manages loading/error states, auto-invalidates on writes. Sole cache for all entity data. |
-| **UI State** | Zustand | Lightweight, works across web/RN. Holds only ephemeral UI state (filters, view mode, selections). No entity data. |
-| **Validation** | Zod | TypeScript-first. Used for forms, API payloads, service input validation. Schemas co-located in `packages/types`. |
-| **Forms** | TanStack Form + Zod | Framework-agnostic (web + RN). Integrates with Zod for validation. |
-| **Web/Desktop Routing** | TanStack Router | Fully type-safe routes with Zod search param validation. |
-| **Mobile Routing** | Expo Router | File-based routing native to Expo/React Native. |
+| Concern                 | Choice                          | Rationale                                                                                                            |
+| ----------------------- | ------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Data Cache**          | React Query (TanStack Query) v5 | Caches local SQLite reads, manages loading/error states, auto-invalidates on writes. Sole cache for all entity data. |
+| **UI State**            | Zustand                         | Lightweight, works across web/RN. Holds only ephemeral UI state (filters, view mode, selections). No entity data.    |
+| **Validation**          | Zod                             | TypeScript-first. Used for forms, API payloads, service input validation. Schemas co-located in `packages/types`.    |
+| **Forms**               | TanStack Form + Zod             | Framework-agnostic (web + RN). Integrates with Zod for validation.                                                   |
+| **Web/Desktop Routing** | TanStack Router                 | Fully type-safe routes with Zod search param validation.                                                             |
+| **Mobile Routing**      | Expo Router                     | File-based routing native to Expo/React Native.                                                                      |
 
 ### Sync & Transport
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **Structured Data Sync** | Field-level LWW (Last-Writer-Wins) | Custom implementation with per-field timestamps. Sufficient for single-user multi-device. |
-| **Editor Content Sync** | Yjs CRDT | Conflict-free merge of text edits via y-prosemirror. |
-| **Transport** | WebSocket (primary) + HTTP polling (fallback) | Real-time push via WebSocket, with graceful degradation. |
-| **HTTP Client** | Native `fetch` | Built into all runtimes. Zero dependency. |
-| **Server** | Hono on Cloudflare Workers | Fast, lightweight, edge-native. Runtime-agnostic (portable to Node/Bun/Deno for self-hosting). |
+| Concern                  | Choice                                        | Rationale                                                                                      |
+| ------------------------ | --------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| **Structured Data Sync** | Field-level LWW (Last-Writer-Wins)            | Custom implementation with per-field timestamps. Sufficient for single-user multi-device.      |
+| **Editor Content Sync**  | Yjs CRDT                                      | Conflict-free merge of text edits via y-prosemirror.                                           |
+| **Transport**            | WebSocket (primary) + HTTP polling (fallback) | Real-time push via WebSocket, with graceful degradation.                                       |
+| **HTTP Client**          | Native `fetch`                                | Built into all runtimes. Zero dependency.                                                      |
+| **Server**               | Hono on Cloudflare Workers                    | Fast, lightweight, edge-native. Runtime-agnostic (portable to Node/Bun/Deno for self-hosting). |
 
 ### Infrastructure
 
-| Concern | Choice | Rationale |
-|---------|--------|-----------|
-| **Web Hosting** | Cloudflare Pages | Free tier, pairs with Workers. Auto-deploy on merge. |
-| **Blob Storage** | Cloudflare R2 | S3-compatible, stores encrypted sync blobs and attachments. |
-| **CI/CD** | GitHub Actions | Lint, typecheck, test on push. Deploy on merge. EAS Build for mobile, Tauri matrix for desktop. |
-| **Testing** | Vitest + Testing Library + Playwright | Unit/integration (Vitest), component (Testing Library), E2E (Playwright). |
-| **Date Library** | date-fns | Tree-shakeable, immutable, pure functions. |
-| **ICS Parsing** | ical.js | Calendar feed parsing for Learning module class schedules. |
+| Concern          | Choice                                | Rationale                                                                                       |
+| ---------------- | ------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| **Web Hosting**  | Cloudflare Pages                      | Free tier, pairs with Workers. Auto-deploy on merge.                                            |
+| **Blob Storage** | Cloudflare R2                         | S3-compatible, stores encrypted sync blobs and attachments.                                     |
+| **CI/CD**        | GitHub Actions                        | Lint, typecheck, test on push. Deploy on merge. EAS Build for mobile, Tauri matrix for desktop. |
+| **Testing**      | Vitest + Testing Library + Playwright | Unit/integration (Vitest), component (Testing Library), E2E (Playwright).                       |
+| **Date Library** | date-fns                              | Tree-shakeable, immutable, pure functions.                                                      |
+| **ICS Parsing**  | ical.js                               | Calendar feed parsing for Learning module class schedules.                                      |
 
 ---
 

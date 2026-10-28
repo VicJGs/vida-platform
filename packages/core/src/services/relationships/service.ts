@@ -102,8 +102,7 @@ const TYPE_WEIGHT: Record<RelationshipType, number> = {
   acquaintance: 0.75,
   other: 0.75,
 }
-const closenessWeight = (type: RelationshipType, favorite: boolean): number =>
-  TYPE_WEIGHT[type] + (favorite ? 0.5 : 0)
+const closenessWeight = (type: RelationshipType, favorite: boolean): number => TYPE_WEIGHT[type] + (favorite ? 0.5 : 0)
 const SENTIMENT_SCORE: Record<Sentiment, number> = { positive: 1, neutral: 0, negative: -1 }
 const BAND_RANK: Record<HealthBand, number> = { new: 0, healthy: 1, at_risk: 2, overdue: 3 }
 /** Whole days from `a` to `b` (both YYYY-MM-DD; UTC-day-parsed). */
@@ -158,8 +157,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
   const networkGroupContactsRepo = createRepository(db, networkGroupContacts, { encryptedFields: [], deviceId })
 
   // --- social_links JSON boundary (BR-RL-S1-4) -------------------------------
-  const serializeLinks = (v: SocialLinks | null | undefined): string | null =>
-    v != null ? JSON.stringify(v) : null
+  const serializeLinks = (v: SocialLinks | null | undefined): string | null => (v != null ? JSON.stringify(v) : null)
   function toView(row: ContactRow): ContactView {
     const { social_links, ...rest } = row
     return { ...rest, social_links: social_links != null ? (JSON.parse(social_links) as SocialLinks) : null }
@@ -235,7 +233,11 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     const tracked = c.next_contact_date != null
     if (c.interaction_count === 0) {
       // no baseline → `new`, never "overdue" (REL-23)
-      return { band: 'new', score: null, factors: { daysOverdue: 0, tracked, closenessWeight: weight, recentSentiment: null } }
+      return {
+        band: 'new',
+        score: null,
+        factors: { daysOverdue: 0, tracked, closenessWeight: weight, recentSentiment: null },
+      }
     }
     const today = asOf ?? new Date(Date.now()).toISOString().slice(0, 10)
     const daysOverdue = c.next_contact_date != null ? Math.max(0, daysBetweenISO(c.next_contact_date, today)) : 0
@@ -246,9 +248,13 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     const score = clamp(raw, 0, 100)
     const negative = sentiment != null && sentiment < 0
     const band: HealthBand = !tracked
-      ? negative ? 'at_risk' : 'healthy' // untracked → sentiment-only, never overdue
+      ? negative
+        ? 'at_risk'
+        : 'healthy' // untracked → sentiment-only, never overdue
       : daysOverdue === 0
-        ? negative ? 'at_risk' : 'healthy'
+        ? negative
+          ? 'at_risk'
+          : 'healthy'
         : daysOverdue <= Math.ceil(7 / weight) // grace — shorter for inner tiers (onion)
           ? 'at_risk'
           : 'overdue'
@@ -358,9 +364,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     // --- REL-16 getTimeline (date desc, created_at desc tiebreak) ------------
     getTimeline: async (contactId) => {
       const rows = await interactionsRepo.findWhere(eq(interactions.contact_id, contactId))
-      return rows.sort((a, b) =>
-        a.date === b.date ? b.created_at - a.created_at : a.date < b.date ? 1 : -1,
-      )
+      return rows.sort((a, b) => (a.date === b.date ? b.created_at - a.created_at : a.date < b.date ? 1 : -1))
     },
 
     // --- REL-26 createEvent (RL-8; read-surfaced, never auto-completes/spawns) ---
@@ -451,9 +455,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     addMembers: async (groupId, contactIds) => {
       const group = await reminderGroupsRepo.findById(groupId)
       if (!group) throw new ReminderGroupNotFoundError(groupId)
-      const existing = await reminderGroupContactsRepo.findWhere(
-        eq(reminderGroupContacts.reminder_group_id, groupId),
-      )
+      const existing = await reminderGroupContactsRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, groupId))
       const have = new Set(existing.map((m) => m.contact_id))
       for (const cid of contactIds) {
         if (have.has(cid)) continue // skip existing (idempotent)
@@ -466,9 +468,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       const group = await reminderGroupsRepo.findById(groupId)
       if (!group) throw new ReminderGroupNotFoundError(groupId)
       const drop = new Set(contactIds)
-      const existing = await reminderGroupContactsRepo.findWhere(
-        eq(reminderGroupContacts.reminder_group_id, groupId),
-      )
+      const existing = await reminderGroupContactsRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, groupId))
       for (const m of existing) {
         if (drop.has(m.contact_id)) await reminderGroupContactsRepo.hardDelete(m.id)
       }
@@ -492,9 +492,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       // the reminder survives, ungrouped (RL-2/REL-34 SET NULL)
       const grouped = await remindersRepo.findWhere(eq(contactReminders.reminder_group_id, groupId))
       for (const r of grouped) await remindersRepo.update(r.id, { reminder_group_id: null })
-      const junctions = await reminderGroupContactsRepo.findWhere(
-        eq(reminderGroupContacts.reminder_group_id, groupId),
-      )
+      const junctions = await reminderGroupContactsRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, groupId))
       for (const j of junctions) await reminderGroupContactsRepo.hardDelete(j.id)
       await reminderGroupsRepo.hardDelete(groupId)
     },
@@ -535,9 +533,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       const groups = await reminderGroupsRepo.findAll()
       for (const g of groups) {
         if (!g.is_active) continue
-        const members = await reminderGroupContactsRepo.findWhere(
-          eq(reminderGroupContacts.reminder_group_id, g.id),
-        )
+        const members = await reminderGroupContactsRepo.findWhere(eq(reminderGroupContacts.reminder_group_id, g.id))
         if (g.anchor_type === 'birthday') {
           const before = g.anchor_days_before ?? 0
           for (const m of members) {
@@ -617,9 +613,7 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
     getNetworkHealth: async (networkId, asOf) => {
       const network = await networkGroupsRepo.findById(networkId)
       if (!network) throw new NetworkNotFoundError(networkId)
-      const members = await networkGroupContactsRepo.findWhere(
-        eq(networkGroupContacts.network_group_id, networkId),
-      )
+      const members = await networkGroupContactsRepo.findWhere(eq(networkGroupContacts.network_group_id, networkId))
       const counts: Record<HealthBand, number> = { new: 0, healthy: 0, at_risk: 0, overdue: 0 }
       const scores: number[] = []
       let worst: HealthBand = 'new'
@@ -688,7 +682,10 @@ export function createRelationshipsService(deps: RelationshipsServiceDeps): Rela
       const c = await contactsRepo.findById(contactId)
       if (!c) throw new ContactNotFoundError(contactId)
       const existing = (await notes.getPagesForEntity('contact', contactId)).find((p) => p.type === 'note')
-      return existing ?? notes.createPage({ type: 'note', title: c.first_name, entity_type: 'contact', entity_id: contactId })
+      return (
+        existing ??
+        notes.createPage({ type: 'note', title: c.first_name, entity_type: 'contact', entity_id: contactId })
+      )
     },
     ensureNetworkNote: async (networkId) => {
       const n = await networkGroupsRepo.findById(networkId)

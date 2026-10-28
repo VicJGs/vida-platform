@@ -1,11 +1,14 @@
 # Spec: component:ui-2-platform-views · V1 — list-view
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) -->
+
 Status: implemented + Visual Gate PASS (Victor, 2026-08-10) — DONE
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md (shared BR-1..BR-6).
+Parent: docs/specs/components/ui-2-platform-views/\_index.md (shared BR-1..BR-6).
 
 ## 1. Identity
+
 V1 `list-view` — the renderer for the `list` VIEW_LAYOUT `[FACT: packages/types/src/view.ts:18]`. A vertical,
 data-driven list of rows over a heterogeneous item set. **This unit establishes the shared data-view spine**
 (generic `items<T>` + `renderItem` + `getKey` + the 4 rendered terminal states) that V2–V4 reuse. Currently a
@@ -17,6 +20,7 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
   selection, grouping, or virtualization (§6 deferrals). NOT a `<table>` (that's the `table` layout, unshipped).
 
 ## 2. Business Rules (V1 — instantiating the umbrella BR-1..BR-6)
+
 - **LV-1 · Generic + slot-rendered (BR-1).** `items: readonly T[]` + `renderItem(item, index) => ReactNode` +
   `getKey(item, index) => string`. list-view maps items → row wrappers; the consumer owns row content. No entity
   shape is hard-coded. `getKey` is REQUIRED (stable UUIDv7 ids exist — conventions; never index keys).
@@ -24,8 +28,8 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
   `state?: ViewState` (default `'success'`):
   - `loading` → container `role="list"` + `aria-busy="true"`; render `loadingCount` (default 5) **static skeleton
     rows** as `role="listitem"` with `aria-hidden` content (token-styled placeholder bar: `$colorSurfaceSecondary`
-    + `$md` radius, NO shimmer — the UX-4 §3.1 recipe; the shared Skeleton component was superseded, DEF-U5-a).
-    `[FACT: state-conventions.md §3.1]`
+    - `$md` radius, NO shimmer — the UX-4 §3.1 recipe; the shared Skeleton component was superseded, DEF-U5-a).
+      `[FACT: state-conventions.md §3.1]`
   - `empty` → **container `role="status"`** (NOT a `role="list"` with zero items — that trips axe "list has no
     items"): the `empty` slot, else a default muted "Nothing here yet." Empty is a first-class rendered state.
     `[FACT: ADR-007:91-92 "empty … is a first-class rendered state"]`
@@ -35,10 +39,10 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
     first-class rendered state; never a crash. `[FACT: ADR-007:91-92; §3.3.4; toast live-region precedent]`
   - `success` → container `role="list"` of `role="listitem"` rows via `renderItem`. (Empty `items[]` with
     `state==='success'` self-heals to the empty render + a dev-warn — LV-7; the app should pass `state='empty'`.)
-  The four are the `deriveTerminalState` outputs; **only `empty` + provider-`error` are ADR-labeled "first-class
-  rendered states"** (loading/success are states but not so labeled — ADR-007:91-92). `state` is typed by a LOCAL
-  `ViewState` union (LV-3a), assignable from the app's `deriveTerminalState(...): TerminalState` by structural
-  compatibility — the app derives, list-view renders (the package→app boundary, BR-2). `[FACT: terminal-state.ts:50]`
+    The four are the `deriveTerminalState` outputs; **only `empty` + provider-`error` are ADR-labeled "first-class
+    rendered states"** (loading/success are states but not so labeled — ADR-007:91-92). `state` is typed by a LOCAL
+    `ViewState` union (LV-3a), assignable from the app's `deriveTerminalState(...): TerminalState` by structural
+    compatibility — the app derives, list-view renders (the package→app boundary, BR-2). `[FACT: terminal-state.ts:50]`
 - **LV-3a · `state` is a LOCAL `ViewState` union — NO cross-package import (B1 fix, boundary-correct).**
   `type ViewState = 'loading' | 'empty' | 'error' | 'success'` declared in `@vida/ui`. The canon `TERMINAL_STATE`/
   `TerminalState` lives in `@vida/core` (`foundation/capability/types.ts:13`), but `@vida/ui` depends on **only
@@ -49,7 +53,7 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
   is declared as `TerminalState`/views `ViewState`/`SearchStatus`). The proper canon→`@vida/types` consolidation
   (DB-9 convention: canonical enum tuples belong in `@vida/types`) is UX-4's **already-flagged owed cleanup** — NOT
   pulled into V1. `[FACT: packages/ui/package.json:44-46; packages/core/src/foundation/capability/types.ts:13;
-  packages/types/src/CLAUDE.md DB-9]`
+packages/types/src/CLAUDE.md DB-9]`
 - **LV-3 · Compose tokens, base theme — NO bespoke sub-theme (refines umbrella §4).** Dividers = `$colorBorderDefault`;
   skeleton = `$colorSurfaceSecondary`; density insets = the `$space` scale. list-view needs **no view-specific color
   keys**, so it registers **no `light_/dark_ListView` sub-theme** (a sub-theme would require extending DS-5's
@@ -58,7 +62,7 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
 - **LV-4 · Density + dividers.** `density?: 'compact'|'default'|'spacious'` sets the **between-row GAP** on the list
   container (`gap: $8|$12|$24`, mirroring Card's padding scale) — **NOT per-row padding** (a row's inset is owned by
   its `renderItem` content, e.g. a Card's own padding; list-view adding row padding would double-pad). `dividers?:
-  boolean` → each row `borderBottomWidth: 1` + `$colorBorderDefault` hairline (last row's border is cosmetically
+boolean` → each row `borderBottomWidth: 1` + `$colorBorderDefault` hairline (last row's border is cosmetically
   harmless; no special-case). Defaults: `default`, `false`. Skeleton-row height = a fixed `$24`-tall bar per row
   (density affects the gap, not the skeleton bar height — a stable placeholder). `[FACT: card.tsx:42-44 padding scale]`
 - **LV-5 · A11y (BR-6).** Container role is state-dependent (LV-2): `list` in list/loading states, `status` (polite)
@@ -74,6 +78,7 @@ data-driven list of rows over a heterogeneous item set. **This unit establishes 
   advisory; DCE'd in prod. `[FACT: card.tsx:118-139 dev-guard precedent]`
 
 ## 3. Contract
+
 ```ts
 // Local, boundary-pure (LV-3a). Structurally assignable from @vida/core's TerminalState.
 export type ViewState = 'loading' | 'empty' | 'error' | 'success'
@@ -108,6 +113,7 @@ export interface ListViewProps<T> {
 // A plain GENERIC function component — preserves <T> (forwardRef would erase it). React 19 spreads `ref` as a prop.
 export function ListView<T>(props: ListViewProps<T>): ReactElement
 ```
+
 - **8-state matrix (§VIII) — all 8 named, each covered or n/a-with-reason:**
   | State | Coverage |
   |-------|----------|
@@ -123,6 +129,7 @@ export function ListView<T>(props: ListViewProps<T>): ReactElement
 - Sub-theme: none (LV-3). Exported from `index.ts`. `*.test.tsx` (jsdom) + `*.stories.tsx` (Visual-Gate surface).
 
 ## 4. Acceptance
+
 - [ ] `ListView<T>` generic; `items`/`renderItem`/`getKey` render a `role="list"` of `role="listitem"` rows.
 - [ ] All 4 terminal states render per LV-2 (loading skeleton ×N + aria-busy; empty slot/default; error slot/default;
       success items). A jsdom test asserts each.
@@ -133,6 +140,7 @@ export function ListView<T>(props: ListViewProps<T>): ReactElement
 - [ ] §XXIX: `packages/ui/src/CLAUDE.md` gains the list-view paragraph + the data-view-spine note.
 
 ## 5. Implementation Prompt (ordered)
+
 1. **Types** — local `type ViewState`; `ListViewProps<T>` (incl. `ref?: Ref<HTMLDivElement>`); plain generic
    `function ListView<T>` (NO forwardRef — B2). No cross-package import (LV-3a).
 2. **styled hosts** — `ListRoot` (**`role` set per state**: `list` for loading/success, `status` for empty AND
@@ -152,16 +160,18 @@ export function ListView<T>(props: ListViewProps<T>): ReactElement
 7. **Export** + CLAUDE.md paragraph.
 
 ## 6. Deferred (documented — NOT built in V1, added when a consumer needs them)
+
 - **Selection** (`selectedKeys`/`onSelect` + `role="listbox"`/`option` + roving) — a distinct interaction model; add
   when a module needs multi-select.
 - **Grouping** (ADR-007 §3.3.3 group-by) — applied after filter, independent of layout; a `sections?` prop later.
 - **Virtualization** — for very long lists (years of transactions); a perf seam. V1 renders all rows; the saved-view
   layer paginates/limits. Flag if a consumer hits a perf wall. `[INTERP: ADR-001:124 chose canvas for large charts;
-  lists rely on the query limit]`
+lists rely on the query limit]`
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-09 | ui-2-platform-views | V1 sub-spec authored at PLAN (establishes the data-view spine; gate-1 next) |
-| 2026-08-09 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed: B1 (local `ViewState`, no `@vida/core` edge), B2 (React-19 ref-prop, no forwardRef), M1 (8-state matrix explicit), M2 (state-dependent container role), M3 (ADR paraphrase tightened), N1 (umbrella §4 conditional sub-theme), N3 (LV-7 dev-warn) |
+
+| Date       | Session             | Change                                                                                                                                                                                                                                                                                                           |
+| ---------- | ------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-09 | ui-2-platform-views | V1 sub-spec authored at PLAN (establishes the data-view spine; gate-1 next)                                                                                                                                                                                                                                      |
+| 2026-08-09 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed: B1 (local `ViewState`, no `@vida/core` edge), B2 (React-19 ref-prop, no forwardRef), M1 (8-state matrix explicit), M2 (state-dependent container role), M3 (ADR paraphrase tightened), N1 (umbrella §4 conditional sub-theme), N3 (LV-7 dev-warn)                          |
 | 2026-08-09 | ui-2-platform-views | preflight PASSED +2 folds (density=between-row gap not padding; skeleton fixed `$24`); tokens verified emitted. Gate-2 critique **SHIP** +3 minors folded: error role `alert`→`status` (statically-rendered, not live), §5 skeleton-height wording, noUncheckedIndexedAccess guard note. **Approval 2 pending.** |

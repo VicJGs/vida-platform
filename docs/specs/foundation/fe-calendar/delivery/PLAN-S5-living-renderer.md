@@ -30,7 +30,7 @@
      period title (S1 `periodLabel` already renders "This week · Oct 5 – Oct 11, 2026" for living — honest "This week"
      only on the current week [FACT: index.tsx periodLabel]).
 
-## 2. Business rules (BR-CAL-S5-*)
+## 2. Business rules (BR-CAL-S5-\*)
 
 1. **BR-CAL-S5-1 · Arrange, never derive.** Every value arrives pre-derived and pre-ordered by S7 `useCalendar` (thread
    states, streak label, hours, fraction, record line, slip flag, open block). The renderer never sorts, counts or computes
@@ -108,7 +108,7 @@
    `[name · minWidth 120] [nodes · flex:1, 7 equal cells ≥24] [streak · minWidth 120, right-aligned]` with `flexWrap` so at 375 the streak drops
    below. (c) the 7 day Cards sit in a row inside a **keyboard-reachable scroll region** (`tabIndex 0`, `role="region"`,
    "Week columns", 2px ring, `position:relative` — the BR-WV-12 lesson) with each Card `minWidth: 140` → `7×140 + 6×8 =
-   1028`: fits 1440 (content 1136), **the region scrolls at 768 and 375, the page never** [FACT: envision.md:32 "grow/
+1028`: fits 1440 (content 1136), **the region scrolls at 768 and 375, the page never** [FACT: envision.md:32 "grow/
    scroll"; week-view BR-WV-12]. 140 is the narrowest a record line reads (≈ 3 words a line) — a live-gate feel check.
    **Shadow (gate-1 F8):** the region is `overflowX:auto` (which forces `overflowY` to clip), so it carries `paddingVertical:'$8'` +
    `paddingHorizontal:'$4'` inside (a full `$8` would inset the day Cards from the lane Cards' edges; the shadow blur is
@@ -128,11 +128,11 @@
     eyebrow id (Card spreads `rest` before `role`, so it passes through); each day holds a `role="list"` of its items (record/intent/focus are text before/after the list; the open block is a list item).
     Empty lists are omitted (axe). Glyphs, dots, bars, nodes `aria-hidden`.
 12. **BR-CAL-S5-12 · Terminal states (EC-11), state-as-prop.** `loading` → the 3-part layout with skeleton bars in each card
-    + 7 skeleton day Cards, `aria-busy` · `error` → `role="status"` `Message` (or slot) · `empty` (explicit, or success where
-    every day has no content AND both lanes are absent/empty) → the designed layout (lanes with their honest lines + 7
-    bare day Cards) + sr "Nothing this week." (or the `empty?` slot, which replaces the layout). Dev-warns: success-with-
-    nothing · loading-with-data · empty-with-content (not rendered) · `days.length !== 7` · two `today` days · a thread
-    whose `days` length ≠ the day count.
+    - 7 skeleton day Cards, `aria-busy` · `error` → `role="status"` `Message` (or slot) · `empty` (explicit, or success where
+      every day has no content AND both lanes are absent/empty) → the designed layout (lanes with their honest lines + 7
+      bare day Cards) + sr "Nothing this week." (or the `empty?` slot, which replaces the layout). Dev-warns: success-with-
+      nothing · loading-with-data · empty-with-content (not rendered) · `days.length !== 7` · two `today` days · a thread
+      whose `days` length ≠ the day count.
 13. **BR-CAL-S5-13 · Tokens/theming (EC-13/14).** DIRECT semantic tokens, no sub-theme, no new dep/token. Purpose colours
     are USER DATA hex (dots, nodes, connector). Text on `faded` (secondary) paper is measured (P5: muted 4.52 min). **AA
     risk pre-authorized:** any muted text < 4.5 on faded paper → `$colorTextPrimary` (no §XXVIII stop; §5a).
@@ -145,7 +145,7 @@
     **Motion (gate-1 F13):** S5 is STATIC — no today-pulse / thread-draw; EC-F2 motion is a later feel item (reduced-motion
     gated when it lands, NEEDS-6).
 16. **BR-CAL-S5-16 · Surface wiring (apps/web).** `range === 'living'` → `<LivingView {...livingFixture(focused,
-    weekStartsOn)} weekLabel={…} aria-label="Living" />` (no `onSlotOpenTime` — deny-safe). `livingFixture` = the greybox
+weekStartsOn)} weekLabel={…} aria-label="Living" />` (no `onSlotOpenTime` — deny-safe). `livingFixture` = the greybox
     week over `weekKeys(focused, weekStartsOn)`: kinds from `today` (past < today < future by key string compare); when
     today is outside the focused week every day is past or future (correct asymmetry). The S1 placeholder + its copy are
     removed (all 6 ranges live) — `calendar-surface.test.tsx:127-131` (asserts the S5 placeholder copy) is REWRITTEN to
@@ -170,7 +170,7 @@
     - **Hours (G5):** `!Number.isFinite(hours) || hours < 0` → dev-warn + render as unmeasured; `fraction` clamped [0,1] +
       warn; `stale` ignored when `hours === null`; minutes zero-padded ("2h05"); a positive value rounding to 0 min → "0h"
       WITHOUT the flag (the flag keys on `hours === 0`). SR text: "6 hours" · "1 hour" · "2 hours 30 minutes" · ", none yet"
-      · ", as of last read". Bar fill = inline `style={{ width: `${f * 100}%` }}` (testable; the lane-geometry precedent).
+      · ", as of last read". Bar fill = inline `style={{ width: `${f \* 100}%` }}` (testable; the lane-geometry precedent).
     - **Effective empty (G6):** only a lane passed as `[]` counts as "nothing"; an ABSENT lane is unknown (unavailable) and
       never makes the view "empty" or trips success-with-nothing.
     - **Open-time button (G7):** explicit `aria-label={`${label}, ${hint}`}` (content-derived names join blocks without a
@@ -192,31 +192,51 @@
 
 ```ts
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
-import type { CalChip } from './week-view'                 // intra-package reuse (S3 minted it for S5)
+import type { CalChip } from './week-view' // intra-package reuse (S3 minted it for S5)
 
-export interface PurposeBudget { id: string; name: ReactNode; color: string
-                                 hours: number | null        // null ⇒ unmeasured (honest-null, EC-6)
-                                 fraction: number | null     // 0..1 of the bar; null ⇒ no fill
-                                 stale?: boolean }           // outage: last-known + "as of last read" (ADR-011 §3.6)
+export interface PurposeBudget {
+  id: string
+  name: ReactNode
+  color: string
+  hours: number | null // null ⇒ unmeasured (honest-null, EC-6)
+  fraction: number | null // 0..1 of the bar; null ⇒ no fill
+  stale?: boolean
+} // outage: last-known + "as of last read" (ADR-011 §3.6)
 export type ThreadState = 'kept' | 'missed' | 'today' | 'future'
-export interface HabitThread { id: string; name: string; color: string; days: readonly ThreadState[]; streak?: ReactNode }
-export interface LivingItem extends CalChip { time?: string; slipping?: boolean }   // R1
-export type TodayEntry = { kind: 'item'; item: LivingItem }
-                       | { kind: 'open'; label: string; hint: string }               // R2
+export interface HabitThread {
+  id: string
+  name: string
+  color: string
+  days: readonly ThreadState[]
+  streak?: ReactNode
+}
+export interface LivingItem extends CalChip {
+  time?: string
+  slipping?: boolean
+} // R1
+export type TodayEntry = { kind: 'item'; item: LivingItem } | { kind: 'open'; label: string; hint: string } // R2
 export interface LivingDay {
-  date: string; kind: 'past' | 'today' | 'future'
-  record?: ReactNode; done?: readonly LivingItem[]; focus?: ReactNode               // past
-  entries?: readonly TodayEntry[]                                                    // today (R2)
-  intent?: ReactNode; plan?: readonly LivingItem[]                                   // future
+  date: string
+  kind: 'past' | 'today' | 'future'
+  record?: ReactNode
+  done?: readonly LivingItem[]
+  focus?: ReactNode // past
+  entries?: readonly TodayEntry[] // today (R2)
+  intent?: ReactNode
+  plan?: readonly LivingItem[] // future
 }
 export interface LivingViewProps {
-  days: readonly LivingDay[]                    // 7, display order (week start applied upstream)
-  weekLabel?: string                            // "This week" | "Oct 12 – Oct 18, 2026" — the budget header suffix
-  budget?: readonly PurposeBudget[]             // absent ⇒ lane "…is unavailable right now"
-  threads?: readonly HabitThread[]              // absent ⇒ lane "…are unavailable right now"
-  onSlotOpenTime?: (date: string) => void       // INTENT (EC-9); M1 passes none
-  state?: ViewState; empty?: ReactNode; error?: ReactNode
-  ref?: Ref<HTMLDivElement>; 'aria-label'?: string; 'aria-labelledby'?: string
+  days: readonly LivingDay[] // 7, display order (week start applied upstream)
+  weekLabel?: string // "This week" | "Oct 12 – Oct 18, 2026" — the budget header suffix
+  budget?: readonly PurposeBudget[] // absent ⇒ lane "…is unavailable right now"
+  threads?: readonly HabitThread[] // absent ⇒ lane "…are unavailable right now"
+  onSlotOpenTime?: (date: string) => void // INTENT (EC-9); M1 passes none
+  state?: ViewState
+  empty?: ReactNode
+  error?: ReactNode
+  ref?: Ref<HTMLDivElement>
+  'aria-label'?: string
+  'aria-labelledby'?: string
 }
 export function LivingView(props: LivingViewProps): ReactElement
 ```
@@ -231,6 +251,7 @@ arrays · `empty?`/`error?` · `aria-labelledby` (S2–S4). **R5** `weekLabel` =
 ## 4. Acceptance
 
 _[VG] = proven in the Visual Gate only; jsdom size/colour/line-height checks use reference-element atomic classes._
+
 - [ ] Layout: budget Card · threads Card · 7 day Cards; eyebrow headers + divider; "Purpose budget · This week".
 - [ ] Budget: hours "6h" · zero → "0h · none yet" + name/hours `$colorBrandEmphasis`, no glyph · null → "unmeasured", no fill · bar fill width = fraction
       (style) · entry accessible text · absent lane / `[]` honest lines.
@@ -284,17 +305,18 @@ _[VG] = proven in the Visual Gate only; jsdom size/colour/line-height checks use
 
 _(none — no deviation is pre-recorded.)_ **Conformance note (doc-resolved, not a deviation):** the greybox's red flag text
 (zero-budget entry, "SLIPPING") is `$colorSignalDanger`, which fails AA as text; EC-13 (AA = per-slice MUST, envision.md:35)
-+ decisions.md:127 resolve it to the unit's emphasised-tag token `$colorBrandEmphasis` (S2 BR-CAL-S2-4); the ⤻ glyph keeps
-danger graphically. Same class as the S2 control-border and P5 today-number AA fixes.
+
+- decisions.md:127 resolve it to the unit's emphasised-tag token `$colorBrandEmphasis` (S2 BR-CAL-S2-4); the ⤻ glyph keeps
+  danger graphically. Same class as the S2 control-border and P5 today-number AA fixes.
 
 ## 6. Change log
 
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-10-20 | fe-calendar S5 | PLAN authored (gate 1). Grounded in slice-map:38, seam §A/§B (:47-58, :83, :110-113), envision EC-6..10/11-14 (+:40 alive-hooks, :44-54 fidelity), interpretation NEEDS-5 (:49-51 per-lane degrade), calendar-vision §1.3, concept board (CSS + data + legend), greybox living.png, Card alive-hooks (card.tsx), decisions.md:127 (danger-as-text fails AA), ADR-011 §3.6/:44 (unmeasured ≠ 0), WeekView BR-WV-12 (scroll region), PLAN-S3 §5.2 (rule-of-three extraction). |
-| 2026-10-20 | fe-calendar S5 | gate-1 independent critique **REVISE → 14 folded** (0 blockers; citations verified): **F1** connector re-stated as a DERIVED call (concept 2px purpose hex @ .33; EC-F4 weight) · **F2** ONE fidelity rule (greybox governs where it shows; concept fills gaps; connector = the recorded exception) · **F3** nodes spread across a flex:1 area, streak right-aligned · **F4** nodes/connectors = user hex → no contrast gate (S2 rule), info-only · **F5** ◆ zero glyph DROPPED (an ADD); red→primary recorded as **D-S5-DEV-1** · **F6** ADR-011 §3.6 outage → `stale?` + "as of last read"; :44 re-tagged INTERPRETATION · **F7** lane copy says "unavailable" for an outage (derived copy) · **F8** region `$8` inner padding (shadows); today off-screen at 375 NOT auto-scrolled (WeekView parity) — gate observation · **F9** extraction scope exact · **F10** surface: test :127-131 rewritten, EmptyState import removed, weekLabel reuses periodLabel, fixture derives per kind · **F11** hours format "6h"/"2h30" + fraction-null warn · **F12** day/lane Cards named via aria-labelledby · **F13** S5 static, no motion · **F14** acceptance + VG cells. (superseded by the grounding pass below) |
-| 2026-10-20 | fe-calendar S5 | **Grounding pass (Victor: "there should be no calls for me — check the documentation").** Both items I had framed as calls are doc-resolved: **connector** = DOC-FIXED (calendar-vision:22 + concept legend :161 + EC-F4 :39 name the line; envision:54 lists thread ink among what the greybox DEFERRED, so its omission is silence, not a ruling) · **flag colour** = doc-resolved (EC-13 AA MUST :35 + decisions.md:127 → the unit's shipped emphasised-tag token `$colorBrandEmphasis`, S2 BR-CAL-S2-4; no weight added; D-S5-DEV-1 withdrawn). The fidelity rule now names envision:54's deferral explicitly. No open calls remain. |
-| 2026-10-20 | fe-calendar S5 | re-check **REVISE → 8 folded** (0 blockers): BR-9 thread nodes `flex:1` (matches F3) · acceptance zero entry = no glyph · **record left rule DROPPED** (no greybox frame draws it — the fidelity rule) · §3 comments synced · `stale?` tagged FORWARD VOCABULARY + derived copy · ~~D-S5-DEV-1 states weight 600 replaces the red~~ (superseded — withdrawn by the grounding pass) · future-ring dark legibility → EC-F4 row · region padding vertical `$8` / horizontal `$4` (edge alignment) · EC-F2 struck (S5 static) · step 1 names the conditional `Eyebrow`. **Awaiting Approval 1.** |
-| 2026-10-20 | fe-calendar S5 | **Approval 1 (Victor).** Preflight: every cited line verified on disk (envision :35/:39/:54 · calendar-vision :22 · concept legend :161 · ranges mockup `.must` :66 · PLAN-S2 :44-46/:60 · decisions :127 · ADR-011 :66 · interpretation :145 · seam :113 · week-view :228 · index.tsx :297 EmptyState · surface test :127 · `CalChip` + `Card` exported). **5 concept-board line fixes** (:56 connector · :61 future .4 · :52 grid · :88 open · :75 rec). **Preflight PASSED.** |
-| 2026-10-20 | fe-calendar S5 | gate-2 independent critique **REVISE → 14 folded** (0 blockers; Card API fit, extraction, no cycles, surface timeout confirmed on disk) as **BR-CAL-S5-17** — every fix from a shipped precedent, none needing an owner call: G1 day Card flex sizing (DayCol) · G2 region inset sized to `shadow.resting` + negative margin · G3 opaque hollow nodes + concept `::before` connector geometry (6/row) · G4 connector opacity, no hex maths · G5 hours guards/padding/SR strings + inline bar width · G6 absent lane ≠ empty · G7 explicit open-time aria-label + MonthButton reset · G8 sibling-space sr suffixes + aria-hidden SLIPPING · G9 Eyebrow NOT extracted (definitions differ) · G10 `weekSpan` helper · G11 wording · G12 jsdom/[VG] tags + state classes + explicit borderWidth · G13 skeleton aria-hidden, 9 warns, 10 named groups · G14 superseded change-log phrase. **Awaiting Approval 2.** |
+| Date       | Session        | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-20 | fe-calendar S5 | PLAN authored (gate 1). Grounded in slice-map:38, seam §A/§B (:47-58, :83, :110-113), envision EC-6..10/11-14 (+:40 alive-hooks, :44-54 fidelity), interpretation NEEDS-5 (:49-51 per-lane degrade), calendar-vision §1.3, concept board (CSS + data + legend), greybox living.png, Card alive-hooks (card.tsx), decisions.md:127 (danger-as-text fails AA), ADR-011 §3.6/:44 (unmeasured ≠ 0), WeekView BR-WV-12 (scroll region), PLAN-S3 §5.2 (rule-of-three extraction).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 2026-10-20 | fe-calendar S5 | gate-1 independent critique **REVISE → 14 folded** (0 blockers; citations verified): **F1** connector re-stated as a DERIVED call (concept 2px purpose hex @ .33; EC-F4 weight) · **F2** ONE fidelity rule (greybox governs where it shows; concept fills gaps; connector = the recorded exception) · **F3** nodes spread across a flex:1 area, streak right-aligned · **F4** nodes/connectors = user hex → no contrast gate (S2 rule), info-only · **F5** ◆ zero glyph DROPPED (an ADD); red→primary recorded as **D-S5-DEV-1** · **F6** ADR-011 §3.6 outage → `stale?` + "as of last read"; :44 re-tagged INTERPRETATION · **F7** lane copy says "unavailable" for an outage (derived copy) · **F8** region `$8` inner padding (shadows); today off-screen at 375 NOT auto-scrolled (WeekView parity) — gate observation · **F9** extraction scope exact · **F10** surface: test :127-131 rewritten, EmptyState import removed, weekLabel reuses periodLabel, fixture derives per kind · **F11** hours format "6h"/"2h30" + fraction-null warn · **F12** day/lane Cards named via aria-labelledby · **F13** S5 static, no motion · **F14** acceptance + VG cells. (superseded by the grounding pass below)                                         |
+| 2026-10-20 | fe-calendar S5 | **Grounding pass (Victor: "there should be no calls for me — check the documentation").** Both items I had framed as calls are doc-resolved: **connector** = DOC-FIXED (calendar-vision:22 + concept legend :161 + EC-F4 :39 name the line; envision:54 lists thread ink among what the greybox DEFERRED, so its omission is silence, not a ruling) · **flag colour** = doc-resolved (EC-13 AA MUST :35 + decisions.md:127 → the unit's shipped emphasised-tag token `$colorBrandEmphasis`, S2 BR-CAL-S2-4; no weight added; D-S5-DEV-1 withdrawn). The fidelity rule now names envision:54's deferral explicitly. No open calls remain.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 2026-10-20 | fe-calendar S5 | re-check **REVISE → 8 folded** (0 blockers): BR-9 thread nodes `flex:1` (matches F3) · acceptance zero entry = no glyph · **record left rule DROPPED** (no greybox frame draws it — the fidelity rule) · §3 comments synced · `stale?` tagged FORWARD VOCABULARY + derived copy · ~~D-S5-DEV-1 states weight 600 replaces the red~~ (superseded — withdrawn by the grounding pass) · future-ring dark legibility → EC-F4 row · region padding vertical `$8` / horizontal `$4` (edge alignment) · EC-F2 struck (S5 static) · step 1 names the conditional `Eyebrow`. **Awaiting Approval 1.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-10-20 | fe-calendar S5 | **Approval 1 (Victor).** Preflight: every cited line verified on disk (envision :35/:39/:54 · calendar-vision :22 · concept legend :161 · ranges mockup `.must` :66 · PLAN-S2 :44-46/:60 · decisions :127 · ADR-011 :66 · interpretation :145 · seam :113 · week-view :228 · index.tsx :297 EmptyState · surface test :127 · `CalChip` + `Card` exported). **5 concept-board line fixes** (:56 connector · :61 future .4 · :52 grid · :88 open · :75 rec). **Preflight PASSED.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-10-20 | fe-calendar S5 | gate-2 independent critique **REVISE → 14 folded** (0 blockers; Card API fit, extraction, no cycles, surface timeout confirmed on disk) as **BR-CAL-S5-17** — every fix from a shipped precedent, none needing an owner call: G1 day Card flex sizing (DayCol) · G2 region inset sized to `shadow.resting` + negative margin · G3 opaque hollow nodes + concept `::before` connector geometry (6/row) · G4 connector opacity, no hex maths · G5 hours guards/padding/SR strings + inline bar width · G6 absent lane ≠ empty · G7 explicit open-time aria-label + MonthButton reset · G8 sibling-space sr suffixes + aria-hidden SLIPPING · G9 Eyebrow NOT extracted (definitions differ) · G10 `weekSpan` helper · G11 wording · G12 jsdom/[VG] tags + state classes + explicit borderWidth · G13 skeleton aria-hidden, 9 warns, 10 named groups · G14 superseded change-log phrase. **Awaiting Approval 2.**                                                                                                                                                                                                                                                                                                                                        |
 | 2026-10-21 | fe-calendar S5 | **Approval 2 → BUILT → Visual Gate PASS (Victor, "Proceed", 2026-10-21; no deviations).** TDD: calendar-shared extraction (agenda/week/year 104/104 unchanged) → `living-format` 4 → LivingView 26 → surface +5. Mutation: dropping the absent-lane guard fails the "ABSENT lane never makes the view empty" test (killed; restored from a copy). g2 code review REVISE → 9 folded (sr suffixes moved INSIDE the inline label — a flex-level space is dropped by browsers · lanes never blanked by `state` · NaN-fraction guard · list labels dropped (no double name) · empty-sentence guard · fixture streak names the real missed weekday · PastWeek/FutureWeek stories · + coverage tests). Visual Gate (26 cells): text AA ≥ 4.52 · graphics ≥ 3.36 · 0 page overflow · 0 clipped · axe 0; gate-caught: thread nodes crowded (streak grew) → streak hugs right · the review's "no tab stop while loading" broke axe scrollable-region-focusable → reverted (tabIndex 0 always). tsc 0 · eslint 0 (changed; 2 pre-existing agenda warnings) · @vida/ui **666/666** · @vida/web **687/687**. Currency → v13 spec + `_index` V13 · ui CLAUDE.md · web-client-runtime current-spec · slice-map S5 · seam-contract §A + §B · decisions · components. |

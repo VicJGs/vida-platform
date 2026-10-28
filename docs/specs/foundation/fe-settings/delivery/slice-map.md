@@ -7,31 +7,31 @@
 
 ## Slices
 
-| # | Slice | Plane | Delivers (ECs) | Gate |
-|---|---|---|---|---|
-| **S1** | **`Switch` primitive** (`@vida/ui`) | shared | Net-new pill-toggle UI-1 primitive (contract · 8 states · APG `role="switch"` + a11y · reduced-motion). The boolean control for all of Settings. **EC-3.** | Visual Gate |
-| **S2** | **App theme store + `App.tsx` rewire** (`apps/web`) | frontend | A Zustand `{preset,mode,density}` store, hydrated from `getMergedPreferences`, feeding `UIProvider selection` (replaces the `THEME_DEFAULT` constant, `App.tsx:72`); setters persist via `updatePreferences`. Renders the SAME as today (defaults) → no visible change yet. **EC-5 (mechanism).** | Verification Gate (renders-nothing-new) |
-| **S3** | **Settings shell + route + Appearance pane** (`apps/web`) | frontend | Two-pane System layout (category rail + search-topped pane + option-row pattern) · `/settings` lazy route · the **Appearance** controls: theme-preset/mode/density (drive the S2 store = **live apply**) · reduce-motion (S1 Switch) · home-arrangement (`dashboard_layout`). The honest-state scaffold (loading/read-error→defaults-read-only/optimistic+revert). **EC-1, EC-2, EC-5 (live), EC-7, EC-8 (route+reach), EC-10.** | Visual Gate |
-| **S4** | **Searchable index** (`apps/web`) | frontend | One index (label·description·keywords) driving BOTH the search box (filter across all categories) AND the section grouping; no-match → calm `role="status"` + hint. **EC-6.** | Visual Gate |
-| **S5** | **Modules pane** (`apps/web`) | frontend | Per-module show/hide (S1 Switch + `setModuleVisibility`) · inline **rename** (pencil → inline edit w/ save/cancel; `dashboard_layout.moduleNames`) · **Surfaces** subsection: Feature Atlas + Sync-log visibility toggles. Escape-hatch: visibility can never hide Settings. **EC-4 (rem), EC-8 (escape hatch), EC-12.** | Visual Gate |
-| **S6** | **Locale · Notifications · delegated panes** (`apps/web`) | frontend | Locale (date/time-format/week-start) + Notifications (channels/quiet-hours) over EXISTING prefs; Account/Security + Data import-export as calm "a later release" placeholders (owners M3/M4). **EC-4 (locale/notif), EC-9.** | Visual Gate |
+| #      | Slice                                                     | Plane    | Delivers (ECs)                                                                                                                                                                                                                                                                                                                                                                                                                   | Gate                                    |
+| ------ | --------------------------------------------------------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| **S1** | **`Switch` primitive** (`@vida/ui`)                       | shared   | Net-new pill-toggle UI-1 primitive (contract · 8 states · APG `role="switch"` + a11y · reduced-motion). The boolean control for all of Settings. **EC-3.**                                                                                                                                                                                                                                                                       | Visual Gate                             |
+| **S2** | **App theme store + `App.tsx` rewire** (`apps/web`)       | frontend | A Zustand `{preset,mode,density}` store, hydrated from `getMergedPreferences`, feeding `UIProvider selection` (replaces the `THEME_DEFAULT` constant, `App.tsx:72`); setters persist via `updatePreferences`. Renders the SAME as today (defaults) → no visible change yet. **EC-5 (mechanism).**                                                                                                                                | Verification Gate (renders-nothing-new) |
+| **S3** | **Settings shell + route + Appearance pane** (`apps/web`) | frontend | Two-pane System layout (category rail + search-topped pane + option-row pattern) · `/settings` lazy route · the **Appearance** controls: theme-preset/mode/density (drive the S2 store = **live apply**) · reduce-motion (S1 Switch) · home-arrangement (`dashboard_layout`). The honest-state scaffold (loading/read-error→defaults-read-only/optimistic+revert). **EC-1, EC-2, EC-5 (live), EC-7, EC-8 (route+reach), EC-10.** | Visual Gate                             |
+| **S4** | **Searchable index** (`apps/web`)                         | frontend | One index (label·description·keywords) driving BOTH the search box (filter across all categories) AND the section grouping; no-match → calm `role="status"` + hint. **EC-6.**                                                                                                                                                                                                                                                    | Visual Gate                             |
+| **S5** | **Modules pane** (`apps/web`)                             | frontend | Per-module show/hide (S1 Switch + `setModuleVisibility`) · inline **rename** (pencil → inline edit w/ save/cancel; `dashboard_layout.moduleNames`) · **Surfaces** subsection: Feature Atlas + Sync-log visibility toggles. Escape-hatch: visibility can never hide Settings. **EC-4 (rem), EC-8 (escape hatch), EC-12.**                                                                                                         | Visual Gate                             |
+| **S6** | **Locale · Notifications · delegated panes** (`apps/web`) | frontend | Locale (date/time-format/week-start) + Notifications (channels/quiet-hours) over EXISTING prefs; Account/Security + Data import-export as calm "a later release" placeholders (owners M3/M4). **EC-4 (locale/notif), EC-9.**                                                                                                                                                                                                     | Visual Gate                             |
 
 ## EC → slice coverage (every structural EC maps to ≥1 slice; plane-aware)
 
-| EC | Type | Slice(s) | Visual-Gate MUST |
-|---|---|---|---|
-| EC-1 two-pane layout | structural | S3 | ✓ |
-| EC-2 option-row pattern | structural | S3 (then every pane) | ✓ |
-| EC-3 Switch primitive | structural | **S1** | ✓ |
-| EC-4 all 7 controls wired | structural | S3 (Appearance 5) · S5 (Modules 2 + rename) · S6 (locale/notif) | ✓ |
-| EC-5 theme keystone live apply | structural (feel: instant) | S2 (store) · **S3 (live)** | ✓ (S3) |
-| EC-6 searchable index | structural | **S4** | ✓ |
-| EC-7 honest states | structural | S3 (scaffold) · reused S4–S6 | ✓ |
-| EC-8 reachability + escape hatch | structural | S3 (route+shell/⌘K reach) · S5 (escape hatch) | ✓ |
-| EC-9 delegated placeholders | structural | **S6** | ✓ |
-| EC-10 responsive 375 | structural | S3 (then every pane) | ✓ |
-| EC-11 editorial voice | feel | every slice | live Visual Gate |
-| EC-12 inline rename feel | feel | S5 | live Visual Gate |
+| EC                               | Type                       | Slice(s)                                                        | Visual-Gate MUST |
+| -------------------------------- | -------------------------- | --------------------------------------------------------------- | ---------------- |
+| EC-1 two-pane layout             | structural                 | S3                                                              | ✓                |
+| EC-2 option-row pattern          | structural                 | S3 (then every pane)                                            | ✓                |
+| EC-3 Switch primitive            | structural                 | **S1**                                                          | ✓                |
+| EC-4 all 7 controls wired        | structural                 | S3 (Appearance 5) · S5 (Modules 2 + rename) · S6 (locale/notif) | ✓                |
+| EC-5 theme keystone live apply   | structural (feel: instant) | S2 (store) · **S3 (live)**                                      | ✓ (S3)           |
+| EC-6 searchable index            | structural                 | **S4**                                                          | ✓                |
+| EC-7 honest states               | structural                 | S3 (scaffold) · reused S4–S6                                    | ✓                |
+| EC-8 reachability + escape hatch | structural                 | S3 (route+shell/⌘K reach) · S5 (escape hatch)                   | ✓                |
+| EC-9 delegated placeholders      | structural                 | **S6**                                                          | ✓                |
+| EC-10 responsive 375             | structural                 | S3 (then every pane)                                            | ✓                |
+| EC-11 editorial voice            | feel                       | every slice                                                     | live Visual Gate |
+| EC-12 inline rename feel         | feel                       | S5                                                              | live Visual Gate |
 
 **No structural EC unhomed. No slice without an EC.** S1 is `shared` (DS primitive → its own Visual Gate); S2 is logic-only (Verification Gate, EC-5 proven visible at S3); S3–S6 are `frontend` surface slices each with a blocking Visual Gate.
 
@@ -43,6 +43,7 @@ S1 (Switch) → S2 (theme store) → S3 (shell+Appearance, consumes S1+S2) → S
 
 Independent adversarial critic verified the seam-contract line-by-line vs the shipped service (exact match), the
 no-schema-change claim, the theme-store keystone, and the Switch contract — all PASS. Folded:
+
 - **#1 (S3)** — S3 ALSO activates the home-arrangement READ seam (`useHomeArrangement()` is a hardcoded return today);
   the write is inert otherwise. ~2-line touch in `home/home-surface.tsx` (the S2 App.tsx-rewire precedent). seam §C.
 - **#2 (S3+S5)** — `dashboard_layout` is a whole-column replace → a shared `patchDashboardLayout()` read-merge-write
@@ -53,18 +54,18 @@ no-schema-change claim, the theme-store keystone, and the Switch contract — al
 
 ## ✅ BUILD COMPLETE (2026-10-12) — all 6 slices shipped, each gate-passed
 
-| # | Slice | Commit | Gate |
-|---|---|---|---|
-| S1 | `Switch` primitive (@vida/ui) | `445894d` | Visual 9/9 + g2 SHIP |
-| S2 | theme store + App.tsx rewire | `f8df47c` | Verification |
-| S3 | Settings shell + /settings route + Appearance (live apply) | `e919309` | Visual PASS |
-| S4 | searchable index | `8eec9ae` | Visual PASS |
-| S5 | Modules pane (show/hide · rename · Surfaces · escape-hatch) | `9af6381` | Visual PASS |
-| S6 | Locale · Notifications · delegated Account/Data | `16414b1` | Visual PASS |
+| #   | Slice                                                       | Commit    | Gate                 |
+| --- | ----------------------------------------------------------- | --------- | -------------------- |
+| S1  | `Switch` primitive (@vida/ui)                               | `445894d` | Visual 9/9 + g2 SHIP |
+| S2  | theme store + App.tsx rewire                                | `f8df47c` | Verification         |
+| S3  | Settings shell + /settings route + Appearance (live apply)  | `e919309` | Visual PASS          |
+| S4  | searchable index                                            | `8eec9ae` | Visual PASS          |
+| S5  | Modules pane (show/hide · rename · Surfaces · escape-hatch) | `9af6381` | Visual PASS          |
+| S6  | Locale · Notifications · delegated Account/Data             | `16414b1` | Visual PASS          |
 
 All 12 ECs delivered (EC-5 theme live-apply proven in the real app; EC-3 Switch; EC-6 search; EC-8 escape hatch;
 EC-9 delegated placeholders; EC-11/12 feel confirmed at the live Visual Gates). Persistence = the deferred worker-`values`
-seam (§A0), consistent with every fe-* surface. apps/web typecheck 0 · eslint clean · settings/stores tests green
+seam (§A0), consistent with every fe-\* surface. apps/web typecheck 0 · eslint clean · settings/stores tests green
 (isolated) · axe 0 across presets × light/dark incl. warm reader-dark.
 
 ## Out of scope (homed)

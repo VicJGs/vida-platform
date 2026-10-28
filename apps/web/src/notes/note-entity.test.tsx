@@ -97,13 +97,17 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
   )
 
   it('E-3 — an untitled task_note is named "Task note" (H1 + editor accname), never empty', () => {
-    const { getByText, getByTestId } = renderUI(<NoteEntityView page={{ ...notePage, id: 't9', type: 'task_note', title: '' }} />)
+    const { getByText, getByTestId } = renderUI(
+      <NoteEntityView page={{ ...notePage, id: 't9', type: 'task_note', title: '' }} />,
+    )
     expect(getByText('Task note')).not.toBeNull()
     expect(getByTestId('editor-probe').getAttribute('aria-label')).toBe('Task note editor')
   })
 
   it('EC-19 — merged mode on a task_note renders the Overview sections above the editor', () => {
-    const { getByRole, getByText, getByTestId } = renderUI(<NoteEntityView page={{ ...notePage, id: 't8', type: 'task_note' }} />)
+    const { getByRole, getByText, getByTestId } = renderUI(
+      <NoteEntityView page={{ ...notePage, id: 't8', type: 'task_note' }} />,
+    )
     fireEvent.click(getByRole('button', { name: 'Merged' }))
     const attachments = getByText('Attachments')
     const editor = getByTestId('editor-probe')
@@ -125,7 +129,10 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
     writeSpy.mockRejectedValueOnce(new Error('disk busy'))
     const errSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
     const { getByRole, findByText } = renderUI(<NoteEntityView page={{ ...notePage, id: 'a5' }} />)
-    const edited: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }] }
+    const edited: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'x' }] }],
+    }
     const echo: EditorDocument = { type: 'doc', content: [{ type: 'paragraph' }] }
     act(() => seeds.at(-1)?.onChange?.(echo)) // a blank page: the first emit is the mount echo, adopted (BR-NEU-5)
     act(() => seeds.at(-1)?.onChange?.(edited)) // the real edit, pending
@@ -136,7 +143,9 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
   })
 
   it('R3 G10 — the cover sits at the TOP of the tabbed Overview too (the greybox), above the metadata controls', () => {
-    const { getByRole, container } = renderUI(<NoteEntityView page={{ ...notePage, id: 'cv', cover: 'https://e.com/c.png' }} />)
+    const { getByRole, container } = renderUI(
+      <NoteEntityView page={{ ...notePage, id: 'cv', cover: 'https://e.com/c.png' }} />,
+    )
     fireEvent.click(getByRole('tab', { name: 'Overview' }))
     const img = container.querySelector('img[src="https://e.com/c.png"]')
     expect(img).not.toBeNull()
@@ -167,7 +176,9 @@ describe('NoteEntityView (S2 — the note-entity frame)', () => {
 
   it('R3 EC-25 — ⋯ → Rename opens a dialog seeded with the RAW title; Save runs the same mutation', async () => {
     updateSpy.mockClear()
-    const { getByRole, findByRole } = renderUI(<NoteEntityView page={{ ...notePage, id: 'rn2', type: 'task_note', title: '' }} />)
+    const { getByRole, findByRole } = renderUI(
+      <NoteEntityView page={{ ...notePage, id: 'rn2', type: 'task_note', title: '' }} />,
+    )
     fireEvent.click(getByRole('button', { name: 'Page actions' }))
     fireEvent.click(await findByRole('menuitem', { name: 'Rename' }))
     const dialog = await findByRole('dialog', { name: 'Rename page' })
@@ -218,9 +229,21 @@ describe('NoteEntityView — facet remount keeps the unsaved edit (DEV-R0-1)', (
   it('type → Overview tab → back to Note within 500 ms → the editor seeds the edit; the next write carries it', async () => {
     seeds.length = 0
     writeSpy.mockClear()
-    const OLD: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'OLD' }] }] }
-    const NEW: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }] }
-    const page = { ...notePage, id: 'facet-1', content: OLD, contentStatus: 'ok' as const, rawContent: JSON.stringify(OLD) }
+    const OLD: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'OLD' }] }],
+    }
+    const NEW: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }],
+    }
+    const page = {
+      ...notePage,
+      id: 'facet-1',
+      content: OLD,
+      contentStatus: 'ok' as const,
+      rawContent: JSON.stringify(OLD),
+    }
     const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
     const { getByRole } = render(
       <StrictMode>
@@ -245,7 +268,10 @@ describe('NoteEntityView — facet remount keeps the unsaved edit (DEV-R0-1)', (
     const remounted = seeds.slice(before)
     expect(remounted.length).toBeGreaterThan(0)
     expect(remounted.every((s) => JSON.stringify(s.seed) === JSON.stringify(NEW))).toBe(true)
-    const NEWER: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW!' }] }] }
+    const NEWER: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW!' }] }],
+    }
     act(() => remounted.at(-1)!.onChange?.(NEWER))
     await act(async () => {
       await new Promise((r) => setTimeout(r, 700))

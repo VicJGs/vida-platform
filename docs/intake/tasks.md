@@ -1,11 +1,15 @@
 # Intake: Tasks
+
 <!-- /documentation Phase 1 (Intake). Harvest from 3 sources → gap map. No-Guessing: every claim cited. -->
+
 Context: features/tasks (Wave 1 — first independent domain; an AGGREGATOR — points out to 4 parent modules)
 Sources: v2 (ADR-002 §5.3 + @vida/types/task.ts + CLAUDE.md §3) · v1 (life-os src/features/tasks + types/tasks.ts) · user intent (gap map)
 Session: 2026-06-18 · documentation-blueprint
 
 ## A. WHAT EXISTS — v2 (current, authoritative)
+
 **Data model — 2 tables** `[FACT: ADR-002 §5.3 L1462-1525; @vida/types/task.ts]`:
+
 - `tasks`:
   - Parent links (all nullable, `SET NULL`): `project_id`, `milestone_id`, `course_id`, `contact_id` — a task may belong to a project / milestone / course / contact. `[FACT: ADR-002 L1466-1470]`
   - `parent_task_id` → self-ref, **`ON DELETE CASCADE`** (sub-tasks; deleting a parent deletes its children). `[FACT: ADR-002 L1471]`
@@ -14,15 +18,18 @@ Session: 2026-06-18 · documentation-blueprint
   - `due_date` (YYYY-MM-DD), `estimated_minutes`, `actual_minutes`, `sort_order`, soft-delete, `_sync_*`. `[FACT: ADR-002 L1482-1490]`
 - `task_time_logs`: `task_id` (`CASCADE`), `start_time`, `end_time`, `duration_minutes`. `[FACT: ADR-002 L1511-1525]`
 - Indexes on all 4 parent FKs + parent_task + partial (status, due_date) where not deleted. `[FACT: ADR-002 L1501-1507]`
-**Intent (CLAUDE.md §3)** `[FACT: CLAUDE.md §3 Task Management]`: full tasks view **aggregated from other modules** (projects, learning, language, relationships); creation with linking to parent modules; sub-tasks; priority/difficulty/status/due/time estimation + tracking; task notes (a linked `pages` row per task — already specced in Notes & Pages); task time logs.
+  **Intent (CLAUDE.md §3)** `[FACT: CLAUDE.md §3 Task Management]`: full tasks view **aggregated from other modules** (projects, learning, language, relationships); creation with linking to parent modules; sub-tasks; priority/difficulty/status/due/time estimation + tracking; task notes (a linked `pages` row per task — already specced in Notes & Pages); task time logs.
 
 ## B. WHAT v1 DID — life-os tasks (legacy, for intent + lessons)
+
 `[FACT: life-os src/types/tasks.ts + src/features/tasks/{API.md, components, hooks, pages}]`
+
 - v1 `Task`: `title`, `description`, `priority`, `status` {todo, in_progress, completed, cancelled}, `due_date`, **`scheduled_date`**, **`is_completed`** bool, **`completed_at`**, `estimated_hours`, `tags: string[]`. `[FACT: types/tasks.ts]`
 - Features: `useTasks(filters)` + `usePaginatedTasks` (RQ, optimistic), filtering by priority/status/completion; **focus mode support**; `TaskCard`/`TaskForm`/`TasksList`/`SubtaskList` components; **offline** hooks (`useOfflineTasksData`, `useTasksOffline`). `[FACT: tasks/API.md + components + hooks]`
 - v1 had a `SubtaskList` component but **no `parent_task_id`** in the Task type — sub-tasks were UI-only / unmodeled. `[FACT: types/tasks.ts has no parent field]`
 
 ### Key v1→v2 deltas (what changed, why it matters)
+
 1. v2 **adds the aggregator FKs** (`project_id`/`milestone_id`/`course_id`/`contact_id`) — v1 tasks were standalone. This is what enables "one tasks view across modules." `[FACT: ADR-002 vs v1]`
 2. v2 **adds real sub-tasks** (`parent_task_id` CASCADE) + `difficulty` + `task_time_logs` (proper time tracking) + `sort_order` (manual ordering). `[FACT: ADR-002]`
 3. v2 `status` adds **`on_hold`** (5 vs 4); v2 `priority` is 5-value (critical…none) vs v1's `Priority`. `[FACT: ADR-002 CHECK]`
@@ -32,6 +39,7 @@ Session: 2026-06-18 · documentation-blueprint
 7. v2 `tags` is an **inline [E] JSON array on the task**, separate from the shared `tags`/`page_tags` system used by Notes. `[FACT: ADR-002 L1483 vs §5.2]`
 
 ## C. GAP MAP — genuine unknowns (need Victor's intent; not answerable from sources)
+
 G1 — **Scope / views**: full v1 (assumed). Which task views? (flat list · grouped-by-module aggregated view · board/kanban by status · calendar by due_date · "today"). Confirm the set.
 G2 — **Aggregation semantics**: the 4 parent FKs — is a task linked to **at most one** parent module (mutually exclusive), or can it have several (e.g. project + contact)? How does the aggregated "all tasks" view group/filter, and how are **standalone tasks** (no parent) shown?
 G3 — **Sub-tasks**: depth — single level (parent→child) or arbitrary nesting? Does parent **status/progress roll up** from children (e.g. all children done ⇒ parent done)? Confirm cascade-delete (delete parent ⇒ delete children) is intended.
@@ -47,6 +55,7 @@ G9 — **Focus mode**: v1 had "focus mode." How should starting focus on a task 
 > **SCOPE:** complete v1 (not MVP). Tasks is the cross-module **aggregator** + a **personalizable view system**.
 
 **G1 — All 12 base layouts + a saveable view-builder.** `[INTENT G1]`
+
 - Base layouts (all in): List · Grouped list · Board/Kanban · Calendar · Today/Agenda · Table/Spreadsheet · Timeline/Gantt · Tree/Outline · Matrix/Eisenhower · Swimlanes · Focus/Now · Gallery/Cards.
 - **View-builder:** a view = a saved configuration of {base layout + grouping + filter + sort + visible fields + color/styling}, **named, reorderable, pinnable**, user-created. Ships with presets (Today, Board, All-by-project) but all editable.
 - ⚠ **INTENDED:** requires **saved-views persistence** (e.g. a `task_views` table or JSON store) — does NOT exist in ADR-002. Build-phase schema + candidate ADR.
@@ -63,11 +72,12 @@ G9 — **Focus mode**: v1 had "focus mode." How should starting focus on a task 
 
 **G7 — Migrate to the shared tag system.** Tasks use the shared `tags`/`page_tags`-style system (one cross-app tag vocabulary, §3), **deprecating** the inline `tasks.tags` JSON. ⚠ **Contradicts ADR-002** (which has inline `tasks.tags [E]`) — build-phase migration + candidate ADR amendment. `[INTENT G7; FACT: ADR-002 L1483]`
 
-**G8 — Option A: recurring obligations via a dedicated classifier.** Tasks gain a **recurrence rule**; **obligations** (taxes, license renewal — recurring deadlines) are marked by a first-class **`obligation` classifier** (a `kind` discriminator, e.g. `kind ∈ {standard, obligation}`), NOT a freeform tag, because it drives behavior. Completing an obligation **regenerates the next occurrence** with the next due date. ⚠ **INTENDED schema addition** (recurrence fields + `kind`). Boundary: *behavior* recurrence → Habits/Routines; *deadline* recurrence → Tasks (obligations). `[INTENT G8]`
+**G8 — Option A: recurring obligations via a dedicated classifier.** Tasks gain a **recurrence rule**; **obligations** (taxes, license renewal — recurring deadlines) are marked by a first-class **`obligation` classifier** (a `kind` discriminator, e.g. `kind ∈ {standard, obligation}`), NOT a freeform tag, because it drives behavior. Completing an obligation **regenerates the next occurrence** with the next due date. ⚠ **INTENDED schema addition** (recurrence fields + `kind`). Boundary: _behavior_ recurrence → Habits/Routines; _deadline_ recurrence → Tasks (obligations). `[INTENT G8]`
 
 **G9 — Focus mode.** Starting focus on a task opens the **pomodoro widget bound to the task**, sets it `in_progress`, and writes a `task_time_log` on session end (ties to G4). `[INTENT G9]`
 
 ### Intake status: ✅ WHOLE. Open carry-forwards (all ⚠ INTENDED → one ADR-002 amendment in build phase):
+
 1. `completed_at` (G5) · 2. `scheduled_date` (G6) · 3. recurrence rule + `kind`/`obligation` classifier (G8) · 4. saved-views persistence `task_views` (G1) · 5. shared-tags migration, deprecate inline `tasks.tags` (G7).
 
 ## ADDENDUM — Task TYPES & presets (Duties dissolution, 2026-07-14) `[INTENT: Victor 2026-07-14]`
@@ -83,7 +93,7 @@ are TASK TYPES surfaced as PRESETS.** This generalizes G8 and composes with G1. 
     tracked. Composes Scheduler `dueIn`/recurrence for cycle-gen — **no bespoke Master→Instance engine** (Duties D3).
   - **`obligation` type = a non-negotiable deadline** (unchanged G8 lineage): external consequence, binary
     compliance, unmovable in scheduling conflicts. The 4-axis Duty-vs-Obligation distinction (see `intake/duties.md`)
-    is the differentiation *between the two types*, not between two modules.
+    is the differentiation _between the two types_, not between two modules.
 - **Presets (the "thin tab" — via Spaces).** Each task type gets a **preset**: a saved View (G1 / Spaces SP3) +
   its **own UI/UX tab** + default fields/deliverables (+ optional starter Template, Spaces SP5). "Duties" and
   "Obligations" are each a preset tab over the Tasks entity — distinct surfaces, one entity. Home of the preset
@@ -92,8 +102,9 @@ are TASK TYPES surfaced as PRESETS.** This generalizes G8 and composes with G1. 
   user-extensible type registry + per-type preset/UI config. Revisit alongside the `task_views` persistence (G1).
 
 ## Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-06-18 | documentation-blueprint | intake harvested (v2 ADR-002 §5.3 + v1 life-os tasks); gap map G1–G9 raised |
-| 2026-06-18 | documentation-blueprint | gaps resolved (Victor); G1 all-layouts+view-builder, G2–G4/G9 confirmed, G5/G6/G8 schema additions, G7 shared-tags migration; intake WHOLE; 5 INTENDED deltas → ADR-002 amendment |
+
+| Date       | Session                 | Change                                                                                                                                                                                                                                                 |
+| ---------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 2026-06-18 | documentation-blueprint | intake harvested (v2 ADR-002 §5.3 + v1 life-os tasks); gap map G1–G9 raised                                                                                                                                                                            |
+| 2026-06-18 | documentation-blueprint | gaps resolved (Victor); G1 all-layouts+view-builder, G2–G4/G9 confirmed, G5/G6/G8 schema additions, G7 shared-tags migration; intake WHOLE; 5 INTENDED deltas → ADR-002 amendment                                                                      |
 | 2026-07-14 | documentation-blueprint | ADDENDUM: Duties dissolved into Tasks + Spaces → G8 `kind` generalized to a user-extensible task **type** (`standard\|obligation\|duty\|…`); Duty/Obligation = 2 shipped types+presets w/ own patterns/deliverables + UI/UX tab (preset home = Spaces) |

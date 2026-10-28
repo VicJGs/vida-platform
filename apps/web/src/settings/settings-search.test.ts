@@ -42,7 +42,6 @@ describe('groupResults', () => {
   it('empty input → no groups', () => {
     expect(groupResults([])).toEqual([])
   })
-
 })
 
 describe('searchSettings — R3 index entries', () => {

@@ -32,7 +32,13 @@ function PencilIcon() {
 function CheckIcon() {
   return (
     <svg width={16} height={16} viewBox="0 0 24 24" fill="none" aria-hidden="true">
-      <path d="M5 12.5 10 17.5 19 7" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path
+        d="M5 12.5 10 17.5 19 7"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
     </svg>
   )
 }
@@ -90,8 +96,20 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
               else if (e.key === 'Escape') cancel()
             }}
           />
-          <Button size="lg" intent="ghost" aria-label={`Save name for ${displayName}`} leading={<CheckIcon />} onPress={save} />
-          <Button size="lg" intent="ghost" aria-label={`Cancel renaming ${displayName}`} leading={<XIcon />} onPress={cancel} />
+          <Button
+            size="lg"
+            intent="ghost"
+            aria-label={`Save name for ${displayName}`}
+            leading={<CheckIcon />}
+            onPress={save}
+          />
+          <Button
+            size="lg"
+            intent="ghost"
+            aria-label={`Cancel renaming ${displayName}`}
+            leading={<XIcon />}
+            onPress={cancel}
+          />
         </View>
       ) : (
         <Text flexShrink={1} fontFamily="$body" fontSize="$body" color="$colorTextPrimary">
@@ -101,7 +119,13 @@ function ModuleRow({ module, last }: { module: HideableModule; last: boolean }) 
       <View flexDirection="row" alignItems="center" gap="$8" flexShrink={0}>
         {/* R3 (EC-7): read-only hides rename (an inline editor can't be "disabled" meaningfully) and disables the switch. */}
         {!editing && !readOnly && (
-          <Button size="lg" intent="ghost" aria-label={`Rename ${displayName}`} leading={<PencilIcon />} onPress={startEdit} />
+          <Button
+            size="lg"
+            intent="ghost"
+            aria-label={`Rename ${displayName}`}
+            leading={<PencilIcon />}
+            onPress={startEdit}
+          />
         )}
         <Switch
           size="lg"

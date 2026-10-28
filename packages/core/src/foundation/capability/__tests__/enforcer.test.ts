@@ -47,7 +47,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -152,9 +155,7 @@ describe('CapabilityEnforcer — decision core (S1)', () => {
 
   it('an unresolvable defId throws CapabilityNotFound (a bug, not a policy deny)', async () => {
     const { enforcer } = await harness()
-    await expect(
-      enforcer.checkAction('nope', { type: 'media' }),
-    ).rejects.toBeInstanceOf(CapabilityNotFound)
+    await expect(enforcer.checkAction('nope', { type: 'media' })).rejects.toBeInstanceOf(CapabilityNotFound)
   })
 
   it('effect: in granted set → allow; outside → not_in_envelope', async () => {
@@ -202,22 +203,18 @@ describe('CapabilityEnforcer — decision core (S1)', () => {
     const { db, registry, enforcer } = await harness()
     const def = userDef()
     await registry.register(def)
-    await seedGrant(
-      db,
-      'my_widget',
-      { consented_sensitive_modules: ['health'] },
-      canonicalEnvelopeHash(def),
-    )
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'health' }),
-    ).toEqual({ allowed: true })
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'finance' }),
-    ).toEqual({ allowed: false, reason: 'sensitive_consent_missing' })
+    await seedGrant(db, 'my_widget', { consented_sensitive_modules: ['health'] }, canonicalEnvelopeHash(def))
+    expect(await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'health' })).toEqual({
+      allowed: true,
+    })
+    expect(await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'finance' })).toEqual({
+      allowed: false,
+      reason: 'sensitive_consent_missing',
+    })
     // 'projects' is not a sensitive class → no consent gate.
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'projects' }),
-    ).toEqual({ allowed: true })
+    expect(await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'projects' })).toEqual({
+      allowed: true,
+    })
   })
 
   it('external: boolean gate (in/out); INV-5 union present when sensitive + external both consented', async () => {
@@ -231,16 +228,18 @@ describe('CapabilityEnforcer — decision core (S1)', () => {
       { external_out_ok: true, external_in_ok: false, consented_sensitive_modules: ['health'] },
       canonicalEnvelopeHash(def),
     )
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'external_out', target: 'https://x' }),
-    ).toEqual({ allowed: true }) // union present → allowed
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'external_in', source: 'https://y' }),
-    ).toEqual({ allowed: false, reason: 'not_in_envelope' }) // external_in not granted
+    expect(await enforcer.checkAction('my_widget', { type: 'external_out', target: 'https://x' })).toEqual({
+      allowed: true,
+    }) // union present → allowed
+    expect(await enforcer.checkAction('my_widget', { type: 'external_in', source: 'https://y' })).toEqual({
+      allowed: false,
+      reason: 'not_in_envelope',
+    }) // external_in not granted
     // The sensitive read still needs its own consent — the union is enforced across the two checks.
-    expect(
-      await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'finance' }),
-    ).toEqual({ allowed: false, reason: 'sensitive_consent_missing' })
+    expect(await enforcer.checkAction('my_widget', { type: 'sensitive', moduleClass: 'finance' })).toEqual({
+      allowed: false,
+      reason: 'sensitive_consent_missing',
+    })
   })
 
   it('INV-6: a stale envelope hash → envelope_changed (fail closed until re-grant)', async () => {
@@ -293,15 +292,14 @@ describe('CapabilityEnforcer — decision core (S1)', () => {
     await registry.register(def)
     await seedGrant(db, 'my_widget', { granted_effects: ['award_xp'] }, canonicalEnvelopeHash(def))
 
-    await expect(
-      enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'award_xp' }),
-    ).resolves.toBeUndefined()
-    await expect(
-      enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'log_time' }),
-    ).rejects.toMatchObject({ name: 'CapabilityDenied', reason: 'not_in_envelope' })
-    await expect(
-      enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'log_time' }),
-    ).rejects.toBeInstanceOf(CapabilityDenied)
+    await expect(enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'award_xp' })).resolves.toBeUndefined()
+    await expect(enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'log_time' })).rejects.toMatchObject({
+      name: 'CapabilityDenied',
+      reason: 'not_in_envelope',
+    })
+    await expect(enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'log_time' })).rejects.toBeInstanceOf(
+      CapabilityDenied,
+    )
   })
 
   it('P1: an unrecognized action fails closed (deny), never crashes', async () => {
@@ -310,10 +308,7 @@ describe('CapabilityEnforcer — decision core (S1)', () => {
     await registry.register(def)
     await seedGrant(db, 'my_widget', { granted_effects: ['award_xp'] }, canonicalEnvelopeHash(def))
     // A malformed action arriving from an untyped boundary must deny, not throw a TypeError.
-    const d = await enforcer.checkAction(
-      'my_widget',
-      { type: 'bogus' } as unknown as CapabilityAction,
-    )
+    const d = await enforcer.checkAction('my_widget', { type: 'bogus' } as unknown as CapabilityAction)
     expect(d).toEqual({ allowed: false, reason: 'not_in_envelope' })
   })
 })
@@ -343,11 +338,7 @@ describe('CapabilityEnforcer — grant lifecycle (S2)', () => {
     const { db, registry, enforcer } = await harness()
     await registry.register(userDef())
     await enforcer.grant('my_widget', { ...envelope, granted_effects: ['award_xp'] })
-    const queued = await db
-      .select()
-      .from(syncQueue)
-      .where(eq(syncQueue.table_name, 'capability_grants'))
-      .all()
+    const queued = await db.select().from(syncQueue).where(eq(syncQueue.table_name, 'capability_grants')).all()
     expect(queued).toHaveLength(1)
   })
 
@@ -364,9 +355,9 @@ describe('CapabilityEnforcer — grant lifecycle (S2)', () => {
 
   it('grant on an unknown def → CapabilityNotFound', async () => {
     const { enforcer } = await harness()
-    await expect(
-      enforcer.grant('nope', { ...envelope, granted_effects: ['award_xp'] }),
-    ).rejects.toBeInstanceOf(CapabilityNotFound)
+    await expect(enforcer.grant('nope', { ...envelope, granted_effects: ['award_xp'] })).rejects.toBeInstanceOf(
+      CapabilityNotFound,
+    )
   })
 
   it('end-to-end: grant → checkAction allows the granted action', async () => {
@@ -379,9 +370,7 @@ describe('CapabilityEnforcer — grant lifecycle (S2)', () => {
     })
     await enforcer.grant('my_widget', { ...envelope, granted_effects: ['award_xp'] })
     // Now allowed.
-    await expect(
-      enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'award_xp' }),
-    ).resolves.toBeUndefined()
+    await expect(enforcer.assertPermitted('my_widget', { type: 'effect', effect: 'award_xp' })).resolves.toBeUndefined()
   })
 
   it('revoke: next check fails closed (no_grant); getGrant → null; idempotent', async () => {

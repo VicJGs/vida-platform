@@ -42,7 +42,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -186,9 +189,7 @@ describe('AR-8 · BacklinkResolver — R7 read-seam conformance (INT-1, BL-7)', 
     const { resolver, driver } = await setup()
     const surface = Object.keys(resolver).sort()
     expect(surface).toEqual(['getBacklinksTo', 'getLinksFrom', 'resolveLink'])
-    const mutators = surface.filter((k) =>
-      /^(create|update|delete|remove|write|mutate|set|insert|upsert)/i.test(k),
-    )
+    const mutators = surface.filter((k) => /^(create|update|delete|remove|write|mutate|set|insert|upsert)/i.test(k))
     expect(mutators).toEqual([])
     await driver.close()
   })

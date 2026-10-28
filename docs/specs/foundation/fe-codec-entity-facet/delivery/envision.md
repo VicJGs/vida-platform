@@ -22,16 +22,16 @@ shells (`DashboardView` #5, `CollectionView` #4) + fake data, envisioning the En
 
 ## Anchored checkpoints (PROPOSED — pin/edit at review)
 
-| EC | Screen / state | Assertion (the vision) | Type | Slice(s) | Gate assertion |
-|----|----------------|------------------------|------|----------|----------------|
-| EC-1 | Merged | Layout + Editor facets stack on ONE surface, a clear divider between; the Layout facet reads top-to-bottom as summary → dashboard → views | structural | S-frame · S-merged | Visual-Gate MUST |
-| EC-2 | Tabbed | Home/Content tabs; Home = Layout · Content = Editor; only the active panel's content shows; roving-tab + indicator (ui-1 Tabs) | structural | S-frame · S-tabbed | Visual-Gate MUST |
-| EC-3 | Page-less | a page-less entity shows NO Editor facet AND no Content tab; the Layout facet stands alone (never a broken/empty editor); header signals "no page" | structural | S-gate | Visual-Gate MUST |
-| EC-4 | Header | the merged⇄tabbed mode toggle is a visible, `aria-pressed` control; (placement = a flagged precision — proposed: entity-header chrome) | structural | S-frame | Visual-Gate MUST |
-| EC-5 | any facet | each facet threads its OWN loading/empty/error independently; an empty/errored facet is calm (teaching empty · `role="status"`), the shell degrades-never-crashes | structural | S-state | Visual-Gate MUST |
-| EC-6 | 375 → 1440 | both modes reflow with no 375 overflow; content column max-width centered on desktop; Tabs usable at 375 | structural | S-frame | Visual-Gate MUST |
-| EC-7 | all · dark | header title serif `$display`; DIRECT semantic tokens; dark mode designed (not inverted); preset identity flips (editorial/reader/quietDesk) | structural | S-frame | Visual-Gate MUST |
-| EC-8 | mode switch | switching merged⇄tabbed and Home⇄Content feels immediate; the Editor facet reads as a borderless document (a notebook), not a form | feel | S-tabbed · (editor #7) | live Visual Gate (feel) |
+| EC   | Screen / state | Assertion (the vision)                                                                                                                                            | Type       | Slice(s)               | Gate assertion          |
+| ---- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- | ---------------------- | ----------------------- |
+| EC-1 | Merged         | Layout + Editor facets stack on ONE surface, a clear divider between; the Layout facet reads top-to-bottom as summary → dashboard → views                         | structural | S-frame · S-merged     | Visual-Gate MUST        |
+| EC-2 | Tabbed         | Home/Content tabs; Home = Layout · Content = Editor; only the active panel's content shows; roving-tab + indicator (ui-1 Tabs)                                    | structural | S-frame · S-tabbed     | Visual-Gate MUST        |
+| EC-3 | Page-less      | a page-less entity shows NO Editor facet AND no Content tab; the Layout facet stands alone (never a broken/empty editor); header signals "no page"                | structural | S-gate                 | Visual-Gate MUST        |
+| EC-4 | Header         | the merged⇄tabbed mode toggle is a visible, `aria-pressed` control; (placement = a flagged precision — proposed: entity-header chrome)                            | structural | S-frame                | Visual-Gate MUST        |
+| EC-5 | any facet      | each facet threads its OWN loading/empty/error independently; an empty/errored facet is calm (teaching empty · `role="status"`), the shell degrades-never-crashes | structural | S-state                | Visual-Gate MUST        |
+| EC-6 | 375 → 1440     | both modes reflow with no 375 overflow; content column max-width centered on desktop; Tabs usable at 375                                                          | structural | S-frame                | Visual-Gate MUST        |
+| EC-7 | all · dark     | header title serif `$display`; DIRECT semantic tokens; dark mode designed (not inverted); preset identity flips (editorial/reader/quietDesk)                      | structural | S-frame                | Visual-Gate MUST        |
+| EC-8 | mode switch    | switching merged⇄tabbed and Home⇄Content feels immediate; the Editor facet reads as a borderless document (a notebook), not a form                                | feel       | S-tabbed · (editor #7) | live Visual Gate (feel) |
 
 > Slice ids (S-frame · S-merged · S-tabbed · S-gate · S-state) are PROPOSED names for Step-2 decomposition — the coverage
 > check maps every `structural` EC to ≥1 slice there.

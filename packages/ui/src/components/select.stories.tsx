@@ -113,7 +113,13 @@ export const Controlled: Story = {
       const [v, setV] = useState<string | undefined>(undefined)
       return (
         <View gap={8} width={220}>
-          <Select options={FRUITS} value={v} onValueChange={setV} placeholder="Pick one" aria-label="Controlled fruit" />
+          <Select
+            options={FRUITS}
+            value={v}
+            onValueChange={setV}
+            placeholder="Pick one"
+            aria-label="Controlled fruit"
+          />
           <Text fontSize={12} color="$colorTextMuted">
             value: {v ?? '(none)'}
           </Text>

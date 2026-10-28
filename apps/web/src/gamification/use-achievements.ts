@@ -43,7 +43,17 @@ export interface AchievementsData {
   state: InteractionState
 }
 
-const CATEGORY_ORDER: readonly AchievementCategory[] = ['onboarding', 'habits', 'learning', 'projects', 'financial', 'social', 'checkin', 'purpose', 'general']
+const CATEGORY_ORDER: readonly AchievementCategory[] = [
+  'onboarding',
+  'habits',
+  'learning',
+  'projects',
+  'financial',
+  'social',
+  'checkin',
+  'purpose',
+  'general',
+]
 const CATEGORY_LABEL: Record<AchievementCategory, string> = {
   onboarding: 'Getting started',
   habits: 'Habits',
@@ -59,8 +69,26 @@ const TIER_RANK: Record<AchievementTier, number> = { bronze: 0, silver: 1, gold:
 
 const NOW_REF = 1_760_000_000_000
 
-function ach(key: string, category: AchievementCategory, tier: AchievementTier, title: string, xp: number): Achievement {
-  return { id: `a-${key}`, key, category, tier, title, description: null, icon: null, xp_reward: xp, condition: null, is_secret: false, created_at: NOW_REF - 30 * 86_400_000 }
+function ach(
+  key: string,
+  category: AchievementCategory,
+  tier: AchievementTier,
+  title: string,
+  xp: number,
+): Achievement {
+  return {
+    id: `a-${key}`,
+    key,
+    category,
+    tier,
+    title,
+    description: null,
+    icon: null,
+    xp_reward: xp,
+    condition: null,
+    is_secret: false,
+    created_at: NOW_REF - 30 * 86_400_000,
+  }
 }
 function earnedRow(a: Achievement, hoursAgo: number): AchievementRow {
   return { achievement: a, earned: true, earnedAt: NOW_REF - hoursAgo * 3_600_000, progress: null }
@@ -81,7 +109,11 @@ const SAMPLE_ROWS: readonly AchievementRow[] = [
 ]
 
 function devFlag(name: string): boolean {
-  return process.env.NODE_ENV !== 'production' && typeof window !== 'undefined' && new URLSearchParams(window.location.search).has(name)
+  return (
+    process.env.NODE_ENV !== 'production' &&
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).has(name)
+  )
 }
 function forcedState(): InteractionState | null {
   if (process.env.NODE_ENV === 'production' || typeof window === 'undefined') return null
@@ -96,7 +128,11 @@ function sortRows(rows: readonly AchievementRow[]): AchievementRow[] {
   })
 }
 function groupByCategory(rows: readonly AchievementRow[]): AchievementCategoryGroup[] {
-  return CATEGORY_ORDER.map((category) => ({ category, label: CATEGORY_LABEL[category], rows: rows.filter((r) => r.achievement.category === category) })).filter((g) => g.rows.length > 0)
+  return CATEGORY_ORDER.map((category) => ({
+    category,
+    label: CATEGORY_LABEL[category],
+    rows: rows.filter((r) => r.achievement.category === category),
+  })).filter((g) => g.rows.length > 0)
 }
 
 export function useAchievements(): AchievementsData {
@@ -104,6 +140,9 @@ export function useAchievements(): AchievementsData {
   const base = forced === 'empty' ? [] : devFlag('sample') ? SAMPLE_ROWS : []
   const rows = useMemo(() => sortRows(base), [base])
   const groups = useMemo(() => groupByCategory(rows), [rows])
-  const state: InteractionState = forced === 'loading' || forced === 'error' ? forced : deriveInteractionState({ isPending: false, isError: false, data: rows }, (d) => d.length === 0)
+  const state: InteractionState =
+    forced === 'loading' || forced === 'error'
+      ? forced
+      : deriveInteractionState({ isPending: false, isError: false, data: rows }, (d) => d.length === 0)
   return { rows, groups, total: rows.length, earnedCount: rows.filter((r) => r.earned).length, state }
 }

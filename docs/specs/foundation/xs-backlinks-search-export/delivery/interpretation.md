@@ -9,6 +9,7 @@
 > homed OUT (DB-8 · UI-3 · AR-8#2/Views · Notes). This is a **ratify + pattern-invariant** unit.
 
 ## DEPENDENCIES
+
 Every upstream this unit's owned legs rest on.
 
 - **AR-6 `entity_links` substrate** — the table this service reads; owned by `foundation/spaces`.
@@ -25,6 +26,7 @@ Every upstream this unit's owned legs rest on.
   `[FACT: capability-framework.md:66 (R7)]` · `[FACT: ADR-011 §3.6 L66]` · `[FACT: ADR-007 §3.4 L20,81]`.
 
 ## NEEDS
+
 Preconditions to function.
 
 - **A migrated DB with `entity_links` present** (AR-6 migration run). `[FACT: current-spec.md:11]`.
@@ -40,6 +42,7 @@ Preconditions to function.
   `[FACT: current-business-rules.md:16-17 (BL-6)]`. This is a forward-compat coupling, not a today-only choice.
 
 ## ORGANIZATION
+
 Ownership boundaries — OWNS vs CONSUMES vs DELEGATES.
 
 - **OWNS** — the read/resolve surface `getBacklinksTo · getLinksFrom · resolveLink`
@@ -57,6 +60,7 @@ Ownership boundaries — OWNS vs CONSUMES vs DELEGATES.
     Measurement/Views `[FACT: corpus:56-58 (XCU-BSE-25..27)]`.
 
 ## IMPLICIT RULES
+
 Hidden invariants the docs imply but never state — the teeth of this layer.
 
 1. **`findWhere` runs the predicate VERBATIM** — it does NOT auto-apply `notDeleted()` the way
@@ -79,6 +83,7 @@ Hidden invariants the docs imply but never state — the teeth of this layer.
    read) — not new code.
 
 ## UNKNOWNs (this issue's scope)
+
 - **None.** The corpus's 4 UNKNOWNs (merged-backlinks compose-home · graph schema · export split-home · FTS5
   ranking) each land on legs homed OUT of #42 (XCU-BSE-11/23/19-22/14). Documentation-Gate SHIP confirmed
   #42's own scope carries zero unresolved UNKNOWNs. `[FACT: Documentation Gate verdict 2026-09-20, claim C]`.

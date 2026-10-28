@@ -1,6 +1,6 @@
 <!-- Business Rules — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 (review_session) · ADR-005 (service framework) · Knowledge KN-4/KN-5/KN-8/KN-10 · docs/intake/flashcards.md -->
 
-# Business Rules — Flashcards  (level: Feature / Knowledge sub-context)
+# Business Rules — Flashcards (level: Feature / Knowledge sub-context)
 
 > Inherits the CORE constitution (ZK-1, LF-2), Knowledge's rules (KN-5/KN-8 pluggable methods & curves;
 > KN-10 mastery), ADR-004 (Sessions), and **[ADR-005](../../../core/decisions/ADR-005-study-method-service-framework.md)**
@@ -35,6 +35,7 @@
   not define roles or add integration points (those are ADR-005's, extensible). `[FACT: ADR-005]`
 
 ## Validation & edge cases
+
 - Generating a card from a source whose object is later deleted → the card survives; its `entity_links` source
   ref no-ops loudly (never resurrects, never errors the card). `[INTENT]`
 - A card bound to no curve → not scheduled; it appears in browse/manage but never in a due-queue until bound
@@ -45,19 +46,22 @@
   drill. `[INTENT]`
 
 ## Terminal states (before any build — constitution §2)
+
 - **A card:** empty (authored, no content yet) · active (bound, scheduled) · suspended (excluded from queues) ·
-  mastered (a *derived* Knowledge state, not a card flag). `[FACT: v2 had is_mastered/is_suspended — is_mastered now derived, KN-10]`
+  mastered (a _derived_ Knowledge state, not a card flag). `[FACT: v2 had is_mastered/is_suspended — is_mastered now derived, KN-10]`
 - **A drill (`review_session`):** loading (queue resolving) · empty (nothing due → "all caught up", anti-lost) ·
   in_progress · completed (emits `review_events`) · error (typed; a failed emit is retried, never silently lost).
 - **Gather/generate:** ok · empty (no eligible source items) · error (source unreadable → explicit, partial
   results surfaced, never a silent no-op).
 
 ## Failure behaviour (fail loud — constitution §5)
+
 - A failed `review_event` emit is queued/retried and surfaced; a review is never silently dropped (mastery
   depends on it).
 - Flashcards NEVER writes scheduling/mastery to "recover" from an engine gap — it flags the gap (that would
   re-create the rigid model ADR-005 retired).
 
 ## Completion checklist
+
 - [x] invariants with [FACT]/[INTENT] · [x] all terminal states enumerated · [x] failure is loud ·
-  [x] inherits Knowledge + ADR-004 + ADR-005 · [x] retirements flagged loud
+      [x] inherits Knowledge + ADR-004 + ADR-005 · [x] retirements flagged loud

@@ -2,9 +2,10 @@
 <!-- Restored 2026-10-26 (notes-rescope LIF-245, Documentation Gate) from eaf64f8^ and realigned. Companion backing doc
      (no current-* equivalent). -->
 
-# Conventions — Notes & Pages  (level: Feature)
+# Conventions — Notes & Pages (level: Feature)
 
 ## How to build here
+
 - **Notes are always pages.** Attach a note to any entity with a `pages` row (`entity_type`/`entity_id`) via
   `ensureEntityNote` — never an inline `notes` column (NP-1).
 - **Body vs metadata.** The editor body goes through `writePageContent` (debounced, deduped against the loaded doc so
@@ -28,12 +29,14 @@
   for the Visual Gate. `[FACT: golive-replan process.md ELC-4]`
 
 ## Naming & layout
+
 - Page kinds = the 6 `PAGE_TYPE` literals; entity attachment uses string `entity_type` + `entity_id`.
 - Platform conventions: UUIDv7 TEXT PKs, Unix-ms timestamps, 0/1 booleans, JSON as TEXT, `YYYY-MM-DD` dates, soft
   delete via `deleted_at`, `_sync_*` metadata, `[E]` markers. `[FACT: CLAUDE.md Conventions]`
 - Enums: string-literal unions in `@vida/types`, SQL CHECK + Zod in `@vida/core`.
 
 ## Local landmines / "never do"
+
 - **Never** add an inline rich-text notes column to another table (NP-1).
 - **Never** own a page-only tag junction — tags are the universal `entity_tags` (ADR-006).
 - **Never** validate `entity_type` against a fixed enum — use the open registry (NP-6).
@@ -47,4 +50,5 @@
 - **Never** spec the extra `JournalSummaryConfig` sections as shipped (G5).
 
 ## Completion checklist
+
 - [x] patterns in use · [x] naming & layout · [x] landmines · [x] [FACT/INTENT] on each claim

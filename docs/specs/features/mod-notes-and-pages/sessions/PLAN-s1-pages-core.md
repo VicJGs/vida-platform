@@ -8,8 +8,10 @@ Gate: §XXVI Per-Step Build Gate, gate-1 = THIS spec. Authority: backend-intent/
 Slice contract: docs/features/notes-and-pages/delivery/{slice-map,seam-contract,interpretation}.md.
 
 ## 1. Identity
+
 The `@vida/core` **Notes & Pages service — Slice 1**: the factory/DI shell + the `pages`-table CRUD surface.
 Home: `packages/core/src/services/notes/{types.ts, service.ts, index.ts}` (clean create — service ABSENT on main).
+
 - **What it is:** `createNotesService(deps)` returning a `NotesService` object literal exposing page CRUD, NP-2
   journal uniqueness, `entity_type` registry validation on create, metadata/`summary_config`/`word_count`
   storage, soft-delete — all over the finished `pages` table (`schema/notes.ts:42-73`).
@@ -19,6 +21,7 @@ Home: `packages/core/src/services/notes/{types.ts, service.ts, index.ts}` (clean
 - **Rows:** NOT-01…10 · 20(createPage half) · 21 · 32(storage) · 39 · 40 · 41 · 42 · 43 · 44 · 45 · 46 · 47.
 
 ## 2. Business Rules
+
 - **BR-S1-1 (NP-2, in-service):** `createPage({type:'journal', journal_date})` MUST call `getPageByJournalDate(date)`
   first; a live (non-soft-deleted) row for that date → throw `JournalExistsError(date)`, never overwrite. The SQL
   partial-UNIQUE is a migration-only backstop, not the enforcement path. [FACT: notes-and-pages.md:23 (NOT-09); schema/notes.ts:71]
@@ -33,7 +36,7 @@ Home: `packages/core/src/services/notes/{types.ts, service.ts, index.ts}` (clean
 - **BR-S1-5 (async rejection):** `createPage`/`updatePage` are `async`; a Zod/registry failure is a Promise rejection,
   never a sync throw. [FACT: notes-and-pages.md:56 (NOT-42); memory factory-service-no-this]
 - **BR-S1-6 (soft-delete, NP-9):** `softDeletePage` → `pageRepo.delete(id)` (repo `softDelete:true` sets `deleted_at`
-  + enqueues `operation:'update'`). Hard-delete + cascade mechanics DEFERRED (Part 2). [FACT: notes-and-pages.md:18,53 (NOT-04/NOT-39); repository.ts:206]
+  - enqueues `operation:'update'`). Hard-delete + cascade mechanics DEFERRED (Part 2). [FACT: notes-and-pages.md:18,53 (NOT-04/NOT-39); repository.ts:206]
 - **BR-S1-7 (findWhere soft-delete filter):** every custom-predicate read (`getPageByJournalDate`,
   `getPagesByType`, `getPagesForEntity`, `listPages`) MUST append `isNull(pages.deleted_at)` — `findWhere` runs the
   clause verbatim (unlike `findById`/`findAll`). [FACT: repository.ts:213 "findWhere"; memory repository-findwhere-skips-softdelete-filter]
@@ -57,11 +60,14 @@ Home: `packages/core/src/services/notes/{types.ts, service.ts, index.ts}` (clean
 get/list → `PageRow`/`PageRow[]`/`null` (never throws on absence, returns null/[]). Fail loud on invalid input.
 
 ## 3. Contract
+
 Deps + interface per `seam-contract.md` (S1 methods only). Construction:
+
 ```ts
-const { db, deviceId, registry } = deps          // spaces/backlinks injected but UNUSED in S1
+const { db, deviceId, registry } = deps // spaces/backlinks injected but UNUSED in S1
 const pageRepo = createRepository(db, pages, { deviceId, encryptedFields: [], softDelete: true })
 ```
+
 S1 methods (returns Drizzle `PageRow` = `typeof pages.$inferSelect` [FACT: schema/notes.ts:110]):
 `createPage(input: CreatePageInput): Promise<PageRow>` · `getPage(id): Promise<PageRow|null>` ·
 `updatePage(id, patch: UpdatePageInput): Promise<PageRow>` · `softDeletePage(id): Promise<void>` ·
@@ -72,6 +78,7 @@ Errors (`types.ts`, bespoke `extends Error`, stable `.name`): `JournalExistsErro
 Input types: `CreatePageInput = z.infer<typeof createPageSchema>`, `UpdatePageInput = z.infer<typeof updatePageSchema>`.
 
 ## 4. Acceptance
+
 - [ ] `packages/core/src/services/notes/{types.ts,service.ts,index.ts}` created; `index.ts` barrel exports `createNotesService` + the two error classes + input types.
 - [ ] All 8 S1 methods implemented per §3, returning `PageRow`(s).
 - [ ] `createPage`: validates via `createPageSchema`; NP-2 pre-check throws `JournalExistsError` on live clash (BR-S1-1); `entity_type` non-null validated via `registry.isRegistered` → `UnregisteredEntityTypeError` (BR-S1-3); async rejection (BR-S1-5).
@@ -84,6 +91,7 @@ Input types: `CreatePageInput = z.infer<typeof createPageSchema>`, `UpdatePageIn
 - [ ] **Verification Gate:** Vitest unit (happy + ≥2 failure paths per method incl. JournalExists, UnregisteredEntityType, strict-reject) + typed-error asserts + **live-store smoke** (real SQLite: create→getByJournalDate clash→soft-delete→re-query excludes it; entity_type validation against a seeded registry). All @vida/core tests stay green (currently 965).
 
 ## 5. Implementation Prompt
+
 1. `types.ts` — declare `NotesServiceDeps` ({db, deviceId, spaces: SpacesService, backlinks: BacklinkResolver, registry: TaggableTypeRegistry}), the `NotesService` interface (S1 methods now; S2–S4 appended per slice), `CreatePageInput`/`UpdatePageInput` (z.infer), and the two error classes (`extends Error`, set `.name`). Satisfies §3, BR-S1-10/BR-S1-5. Import `PageRow` from `../../db/schema/notes`, registry/spaces/backlink types from their foundation modules.
 2. `service.ts` — `import { and, eq, isNull } from 'drizzle-orm'`; `import type { DrizzleDb } from '../../db/adapter'`; `createRepository` from `../../db/repository`; `pages` from `../../db/schema/notes`; `createPageSchema`/`updatePageSchema` from `../../validators/note`. Construct `pageRepo` per §3 (BR-S1-11). Mirror `services/journals/service.ts:43-119` exactly (hoisted closures, object-literal return).
 3. Hoisted helper `assertRegistered(entityType: string|null|undefined)`: if non-null and `!registry.isRegistered(entityType)` → throw `UnregisteredEntityTypeError`. Satisfies BR-S1-3 (reused by S4 later).
@@ -96,10 +104,12 @@ Input types: `CreatePageInput = z.infer<typeof createPageSchema>`, `UpdatePageIn
 **Exact dep-import paths (no guessing):** `SpacesService` ← `../../foundation/spaces/service`; `BacklinkResolver` ← `../../services/search/backlink-resolver`; `TaggableTypeRegistry` ← `../../foundation/spaces/types`; `DrizzleDb` ← `../../db/adapter`; `createRepository` ← `../../db/repository`; `pages`/`PageRow` ← `../../db/schema/notes`; `createPageSchema`/`updatePageSchema` ← `../../validators/note`; `and`/`eq`/`isNull` ← `drizzle-orm`.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - None blocking. `word_count` RESOLVED (BR-S1-8, doc/code-grounded). `entity_type` registry method RESOLVED (`isRegistered`).
   `EntityNoteSeed`/`NewAttachment` input types belong to S2 (not S1). G6 merge + `focus_sessions` value = S4/Sessions, not S1.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                  | Change                                                              |
+| ---------- | ------------------------ | ------------------------------------------------------------------- |
 | 2026-09-19 | mod-notes-and-pages (S1) | initial draft — gate-1 artifact after Decomposition Gate Approval 1 |

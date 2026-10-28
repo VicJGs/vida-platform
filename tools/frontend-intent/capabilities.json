@@ -17,503 +17,297 @@
     {
       "id": "goto-home",
       "label": "Go to Home/Journal",
-      "paths": [
-        "global-bar",
-        "cmdk",
-        "dock"
-      ]
+      "paths": ["global-bar", "cmdk", "dock"]
     },
     {
       "id": "goto-calendar",
       "label": "Open Global Calendar",
-      "paths": [
-        "global-bar",
-        "cmdk"
-      ]
+      "paths": ["global-bar", "cmdk"]
     },
     {
       "id": "goto-graph",
       "label": "Open the Graph",
-      "paths": [
-        "global-bar",
-        "cmdk"
-      ]
+      "paths": ["global-bar", "cmdk"]
     },
     {
       "id": "goto-notifications",
       "label": "Open Notifications",
-      "paths": [
-        "global-bar",
-        "cmdk"
-      ]
+      "paths": ["global-bar", "cmdk"]
     },
     {
       "id": "goto-settings",
       "label": "Open Settings",
-      "paths": [
-        "global-bar",
-        "cmdk"
-      ]
+      "paths": ["global-bar", "cmdk"]
     },
     {
       "id": "search",
       "label": "Search across data",
-      "paths": [
-        "global-bar",
-        "cmdk"
-      ]
+      "paths": ["global-bar", "cmdk"]
     },
     {
       "id": "goto-spaces-page",
       "label": "Open the Spaces page",
-      "paths": [
-        "scope-selector",
-        "cmdk"
-      ]
+      "paths": ["scope-selector", "cmdk"]
     },
     {
       "id": "scope-to-space",
       "label": "Scope the OS to a Space",
-      "paths": [
-        "scope-selector",
-        "cmdk"
-      ]
+      "paths": ["scope-selector", "cmdk"]
     },
     {
       "id": "goto-sync-log",
       "label": "Open Sync & Activity Log",
-      "paths": [
-        "global-bar",
-        "cmdk",
-        "contextual"
-      ]
+      "paths": ["global-bar", "cmdk", "contextual"]
     },
     {
       "id": "goto-feature-atlas",
       "label": "Open the Feature Atlas",
-      "paths": [
-        "cmdk",
-        "contextual"
-      ]
+      "paths": ["cmdk", "contextual"]
     },
     {
       "id": "start-session",
       "label": "Start a session",
-      "paths": [
-        "dock",
-        "cmdk",
-        "contextual",
-        "calendar"
-      ]
+      "paths": ["dock", "cmdk", "contextual", "calendar"]
     },
     {
       "id": "work-session-stage",
       "label": "Work a session stage / attach deliverable",
-      "paths": [
-        "session-hud",
-        "contextual",
-        "calendar"
-      ]
+      "paths": ["session-hud", "contextual", "calendar"]
     },
     {
       "id": "start-checkin",
       "label": "Start a check-in",
-      "paths": [
-        "home-quick",
-        "cmdk",
-        "dock"
-      ]
+      "paths": ["home-quick", "cmdk", "dock"]
     },
     {
       "id": "goto-notes",
       "label": "Go to Notes",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "create-note",
       "label": "Create a note",
-      "paths": [
-        "dock",
-        "cmdk",
-        "home-quick"
-      ]
+      "paths": ["dock", "cmdk", "home-quick"]
     },
     {
       "id": "open-entity-via-link",
       "label": "Open an entity via [[link]]",
-      "paths": [
-        "link",
-        "cmdk",
-        "cross-module"
-      ]
+      "paths": ["link", "cmdk", "cross-module"]
     },
     {
       "id": "goto-tasks",
       "label": "Go to Tasks",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "create-task",
       "label": "Create a task",
-      "paths": [
-        "dock",
-        "cmdk",
-        "home-quick",
-        "contextual"
-      ]
+      "paths": ["dock", "cmdk", "home-quick", "contextual"]
     },
     {
       "id": "complete-task",
       "label": "Complete a task",
-      "paths": [
-        "home-quick",
-        "contextual",
-        "calendar",
-        "cross-module"
-      ]
+      "paths": ["home-quick", "contextual", "calendar", "cross-module"]
     },
     {
       "id": "open-task",
       "label": "Open a task",
-      "paths": [
-        "dock",
-        "cmdk",
-        "link",
-        "cross-module"
-      ]
+      "paths": ["dock", "cmdk", "link", "cross-module"]
     },
     {
       "id": "goto-habits",
       "label": "Go to Habits",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "check-habit",
       "label": "Check off a habit",
-      "paths": [
-        "home-quick",
-        "dock",
-        "calendar"
-      ]
+      "paths": ["home-quick", "dock", "calendar"]
     },
     {
       "id": "goto-projects",
       "label": "Go to Projects",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "open-project",
       "label": "Open a project",
-      "paths": [
-        "dock",
-        "cmdk",
-        "link"
-      ]
+      "paths": ["dock", "cmdk", "link"]
     },
     {
       "id": "goto-routines",
       "label": "Go to Routines",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "run-routine",
       "label": "Run a routine (step flow)",
-      "paths": [
-        "dock",
-        "home-quick",
-        "calendar"
-      ]
+      "paths": ["dock", "home-quick", "calendar"]
     },
     {
       "id": "goto-learning",
       "label": "Go to Learning",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "open-subject",
       "label": "Open a subject",
-      "paths": [
-        "dock",
-        "cmdk",
-        "calendar"
-      ]
+      "paths": ["dock", "cmdk", "calendar"]
     },
     {
       "id": "grading-builder",
       "label": "Build a grading system",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-books",
       "label": "Go to Books",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "open-reader",
       "label": "Open the Reader",
-      "paths": [
-        "contextual",
-        "cmdk",
-        "home-quick"
-      ]
+      "paths": ["contextual", "cmdk", "home-quick"]
     },
     {
       "id": "physical-companion",
       "label": "Physical-companion reading mode",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-knowledge",
       "label": "Go to Knowledge",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "review-flashcards",
       "label": "Review flashcards",
-      "paths": [
-        "contextual",
-        "cmdk",
-        "calendar"
-      ]
+      "paths": ["contextual", "cmdk", "calendar"]
     },
     {
       "id": "knowledge-search",
       "label": "Search Knowledge (FTS)",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "compound-set-builder",
       "label": "Build a Knowledge compound-set",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-skills",
       "label": "Go to Skills (landing)",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "open-skill-graph",
       "label": "Open the Skill Graph",
-      "paths": [
-        "dock",
-        "cmdk",
-        "contextual"
-      ]
+      "paths": ["dock", "cmdk", "contextual"]
     },
     {
       "id": "goto-sessions",
       "label": "Go to Sessions/Agenda",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "set-availability",
       "label": "Set availability",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "config-session-type",
       "label": "Configure a session type",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-purposes",
       "label": "Go to Purposes & Goals",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "open-dreams-board",
       "label": "Open the Dreams vision-board",
-      "paths": [
-        "dock",
-        "cmdk",
-        "space"
-      ]
+      "paths": ["dock", "cmdk", "space"]
     },
     {
       "id": "review-goal",
       "label": "Review a goal",
-      "paths": [
-        "contextual",
-        "calendar",
-        "cmdk"
-      ]
+      "paths": ["contextual", "calendar", "cmdk"]
     },
     {
       "id": "goto-health",
       "label": "Go to Health",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "log-workout",
       "label": "Log a workout",
-      "paths": [
-        "home-quick",
-        "calendar",
-        "contextual"
-      ]
+      "paths": ["home-quick", "calendar", "contextual"]
     },
     {
       "id": "open-medical-profile",
       "label": "Open Medical Profile",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-finance",
       "label": "Go to Finance",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "log-expense",
       "label": "Log an expense",
-      "paths": [
-        "dock",
-        "cmdk",
-        "home-quick",
-        "contextual"
-      ]
+      "paths": ["dock", "cmdk", "home-quick", "contextual"]
     },
     {
       "id": "import-statement",
       "label": "Import a bank statement",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "open-store-tree",
       "label": "Open the net-worth Store tree",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-relationships",
       "label": "Go to Relationships",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "add-contact",
       "label": "Add a contact",
-      "paths": [
-        "dock",
-        "cmdk",
-        "home-quick"
-      ]
+      "paths": ["dock", "cmdk", "home-quick"]
     },
     {
       "id": "open-contact",
       "label": "Open a contact",
-      "paths": [
-        "dock",
-        "cmdk",
-        "link",
-        "cross-module"
-      ]
+      "paths": ["dock", "cmdk", "link", "cross-module"]
     },
     {
       "id": "open-network",
       "label": "Open a network",
-      "paths": [
-        "dock",
-        "contextual"
-      ]
+      "paths": ["dock", "contextual"]
     },
     {
       "id": "manage-reminders",
       "label": "Manage relationship reminders",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "goto-gamification",
       "label": "Open the System (Gamification)",
-      "paths": [
-        "dock",
-        "cmdk"
-      ]
+      "paths": ["dock", "cmdk"]
     },
     {
       "id": "author-rule",
       "label": "Author a gamification rule",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     },
     {
       "id": "notification-channels",
       "label": "Configure notification channels",
-      "paths": [
-        "contextual",
-        "cmdk"
-      ]
+      "paths": ["contextual", "cmdk"]
     }
   ]
 }

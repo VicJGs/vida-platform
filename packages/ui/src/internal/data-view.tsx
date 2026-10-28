@@ -54,10 +54,13 @@ export function resolveDataViewState(args: {
       console.warn(`[vida/ui] ${name}: state="success" with empty \`items\` — pass state="empty" (the app derives it).`)
     if (state === 'loading' && itemCount > 0)
       // eslint-disable-next-line no-console
-      console.warn(`[vida/ui] ${name}: state="loading" with \`items\` present — a stale render (loading should have no items).`)
+      console.warn(
+        `[vida/ui] ${name}: state="loading" with \`items\` present — a stale render (loading should have no items).`,
+      )
     // State gate STAYS here (a name is required only when a list/loading region actually renders); warnMissingName
     // does the null-name check + warn. Extracting the gate too would fire in empty/error and break the no-warn tests.
-    if (state === 'loading' || (state === 'success' && !effectiveEmpty)) warnMissingName(name, ariaLabel, ariaLabelledby)
+    if (state === 'loading' || (state === 'success' && !effectiveEmpty))
+      warnMissingName(name, ariaLabel, ariaLabelledby)
   }
 
   // empty + error render as a polite role="status" region (a role="list" with zero items trips axe); error is polite

@@ -155,9 +155,7 @@ export interface ReschedulePlan {
 // `effectEventId` (NF-8 Additive) — passed THROUGH, never re-hashed (the effect rail
 // owns the key, N3). A time-based fire is keyed by its `dueIn` occurrence id.
 // `[FACT: NF-8 business-rules:39-42; ADR-012 §3.1; xcut-notifications.md:41]`
-export type DedupSource =
-  | { kind: 'event'; effectEventId: string }
-  | { kind: 'due'; occurrenceId: string }
+export type DedupSource = { kind: 'event'; effectEventId: string } | { kind: 'due'; occurrenceId: string }
 
 // ─── S3 — delivery dispatch: deny-safe ports · fallback→in-app · opt-out (XCU-03,06,07,09,10,11,15,16,17) ───
 

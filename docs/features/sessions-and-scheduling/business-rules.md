@@ -1,6 +1,6 @@
 <!-- Business Rules — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 · §5.11 planner L2743-2882 · pomodoro_sessions L1432-1440,L1435 · dep graph L3751-3757 · Books BK-10/BK-12 · Education contract L42 · Knowledge KN-10 · docs/intake/sessions-and-scheduling.md -->
 
-# Business Rules — Sessions & Scheduling  (level: Foundation / OWN MODULE)
+# Business Rules — Sessions & Scheduling (level: Foundation / OWN MODULE)
 
 > These invariants inherit the CORE constitution (ZK-1 zero-knowledge, LF-2 local-first) and the surfaced
 > **extension-model principle** (guarded opt-in integrations). **[ADR-004](../../core/decisions/ADR-004-session-framework.md)**
@@ -10,9 +10,10 @@
 ## Invariants (what is ALWAYS / NEVER true)
 
 **The Session framework**
+
 - **SS-1 — One Session supertype, many sub-types.** A session is exactly one sub-type (`sub_type`
   discriminator) over a shared spine (`id · sub_type · purpose · scheduling_mode · planned_block_id? ·
-  started_at · ended_at · status · focus metrics · key_learnings[E] · sync`). Sub-types today: `study` ·
+started_at · ended_at · status · focus metrics · key_learnings[E] · sync`). Sub-types today: `study` ·
   `class` · `focus` · `reading` · `practice` · `daily` · `review` · `workout` · `work` (+ user long-tail).
   `pomodoro` is **not** a sub-type — it is the runtime (SS-11). `[INTENT G3; FACT roster from OS-wide sweep — study_sessions L2524, language_practice_sessions L2933, language_daily_sessions L2999, pomodoro_sessions L1432, v1 WorkoutSession, Books reading_session]`
 - **SS-2 — Two orthogonal axes.** `sub_type` (the tool-family + owner module) is independent of `purpose`
@@ -39,11 +40,12 @@
   `[INTENT S3-dim4 + R1; FACT: ADR-004 §3.2.5, INT-2; inherits extension-model principle]`
 
 **The Scheduling engine**
+
 - **SS-7 — Aggregator, never duplicator.** The engine owns `planned_blocks` and its own generated sessions,
   but **never stores a copy** of another module's scheduled work. Module-owned due-work is read **live** via
   `dueIn(range)`; the agenda = own blocks ∪ live provider reads. A `planned_block` for module work **points**
   at the owner's item, it does not mirror it. `[INTENT G2/G2-shape; honors Books BK-12 — docs/features/books/business-rules.md]`
-- **SS-8 — `planned_block` ↔ session is intent ↔ reality.** A block records the *plan* (when/duration/window);
+- **SS-8 — `planned_block` ↔ session is intent ↔ reality.** A block records the _plan_ (when/duration/window);
   completing it calls the owner's `createSession()`, which instantiates the sub-type carrying
   `planned_block_id`. The block is never itself the log. This restores the FK v2 dropped (v2 split
   `scheduled_study_sessions` + `study_sessions` with no link). `[INTENT G4; FACT v2 study_sessions has no batch/scheduled FK — L2524-2551; v1 MERGED them into one row — entities.ts L1677-1711]`
@@ -57,6 +59,7 @@
   never a domain measure (single-ownership; prevents drift). `[INTENT G10; FACT Knowledge KN-10]`
 
 **Runtime & analytics**
+
 - **SS-11 — Pomodoro is the runtime of the `focus` sub-type, owned in THIS realm (⚠ REFRAMED 2026-07-15).**
   The timer runs a `focus` Session and attaches to a **`session_id`** — not a Notes entity. This module owns
   its templates (richer fields + interruption/pause tracking) as `focus` presets; the Notes `/pomodoro` block
@@ -69,6 +72,7 @@
   aggregate tables; a slow view caches device-locally only. `[INTENT G8]`
 
 ## Validation & edge cases
+
 - A `planned_block` whose target due-work vanished before it ran (deck emptied, reading plan recalced away) →
   the block resolves to **empty** and is auto-dropped/flagged, never a dangling row (SS-7 live-read makes this
   natural). `[INTENT]`
@@ -80,7 +84,9 @@
   (logged), never resurrects or errors the whole completion (SS-6 scoping). `[INTENT]`
 
 ## Terminal states (before any build — constitution §2)
+
 Enumerated per capability, since "the missing tail is where bugs live":
+
 - **A session (any sub-type):** scheduled/planned → in_progress → **completed** | **skipped** | **missed**
   (attended only) | **rescheduled**; plus **empty** (started, no data yet), **error** (failed effect, typed).
 - **The agenda/queue:** loading (providers resolving) · empty (nothing due + no blocks → anti-lost prompt) ·
@@ -91,11 +97,13 @@ Enumerated per capability, since "the missing tail is where bugs live":
   unaffected — SS-7). `[INTENT]`
 
 ## Failure behaviour (fail loud — constitution §5)
+
 - A provider or effect NEVER fails silently: typed errors, explicit "not supported"/"couldn't load" states.
 - The engine NEVER writes another module's schedule to "recover" from a failed live read (that reintroduces
   the v1 staleness the whole model exists to kill — SS-7).
 - A permission violation (SS-6) is a hard, logged rejection, not a best-effort partial effect.
 
 ## Completion checklist
+
 - [x] invariants with [FACT]/[INTENT] · [x] all terminal states enumerated · [x] failure is loud ·
-  [x] inherits the core constitution + extension-model principle · [x] references ADR-004 (Session Framework)
+      [x] inherits the core constitution + extension-model principle · [x] references ADR-004 (Session Framework)

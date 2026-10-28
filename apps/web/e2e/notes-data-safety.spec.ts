@@ -76,12 +76,19 @@ test('notes-rescope R0 — unreadable bodies are never written; B-53 + tab remou
   page,
 }) => {
   test.setTimeout(180_000)
-  const unknownNode = seed('note', 'R0 unknown node', JSON.stringify({ type: 'doc', content: [para('keep'), { type: 'futureBlock' }] }))
+  const unknownNode = seed(
+    'note',
+    'R0 unknown node',
+    JSON.stringify({ type: 'doc', content: [para('keep'), { type: 'futureBlock' }] }),
+  )
   const notJson = seed('note', 'R0 not json', '{not json')
   const emptyText = seed(
     'note',
     'R0 empty text',
-    JSON.stringify({ type: 'doc', content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: '' }] }, para('body')] }),
+    JSON.stringify({
+      type: 'doc',
+      content: [{ type: 'heading', attrs: { level: 1 }, content: [{ type: 'text', text: '' }] }, para('body')],
+    }),
   )
   const tabPage = seed('note', 'R0 tab switch', JSON.stringify({ type: 'doc', content: [para('base')] }))
   const today = localToday()

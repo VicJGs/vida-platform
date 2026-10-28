@@ -1,6 +1,8 @@
 # Spec: feature:ar-4-state-routing-forms
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: draft            <!-- draft → approved → implemented -->
+
+Status: draft <!-- draft → approved → implemented -->
 Source-repo: apps/web/src/{stores,router,forms}
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-07-29-ar-4-state-routing-forms (see §7)
@@ -12,6 +14,7 @@ Sessions: 2026-07-29-ar-4-state-routing-forms (see §7)
 -->
 
 ## 1. Identity
+
 [FACT: docs/roadmap/m1.0-delivery-plan.md §149 (LIF-75)] AR-4 wires the `apps/web` client runtime per ADR-001:
 Zustand (client state), React Query v5 (async/DB state), TanStack Router (web routing), and TanStack Form + Zod
 (validated forms). Home: `apps/web/src/{stores,router,forms}`.
@@ -24,25 +27,31 @@ local-first ZK app, so React Query reads the local SQLite repository (db-6), not
 runtime (web only). [UNKNOWN: grain — full working wiring vs spine/scaffold — resolved at PLAN from §149 flags.]
 
 ## 2. Business Rules
+
 [UNKNOWN: needs the Step 0 baseline + PLAN] — invariants (Zustand = global client only; React Query = all
 server/DB state; useState = local per §XVII), query-key conventions, form validation via Zod, terminal states.
 
 ## 3. Contract
+
 [UNKNOWN: needs PLAN] — the store shapes, query-client config, router tree/route-registration API, form
 factory/adapter signatures.
 
 ## 4. Acceptance
+
 - [ ] [UNKNOWN: filled at PLAN — testable DoD per ADR-001 + engineering §XV–XVIII]
 
 ## 5. Implementation Prompt
+
 [UNKNOWN: filled at the IMPL-PLAN gate (§XXVI g2) after Approval 1] — numbered build sequence citing §1–§4.
 
 ## 6. Open UNKNOWNs / Decisions Needed
+
 - [UNKNOWN: needs PLAN] GRAIN — all four planes as working wired infra, or spine/scaffold grain (cf. AR-5/AR-6).
 - [UNKNOWN: needs PLAN] Router shape — single root tree vs lazy per-module registration seam.
 - [UNKNOWN: needs PLAN] React Query queryFn source = local repository (db-6), confirm the local-first read model.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session                             | Change                               |
+| ---------- | ----------------------------------- | ------------------------------------ |
 | 2026-07-29 | 2026-07-29-ar-4-state-routing-forms | initial stub scaffolded by /task-new |

@@ -18,6 +18,7 @@ the SM-2 columns) are **retired** (ADR-005 §3.2). S7 is a **net-new service** a
 
 **#1 — A card reviews a KNOWLEDGE OBJECT; the binding/schedule lives on that object, never on the card.** This is the
 crux and it is doc-forced, not chosen:
+
 - `METHOD_BINDING_TARGET_TYPE = area|subject|unit|topic|kind` (`@vida/types/knowledge.ts:86`) — **there is NO `card`/
   `flashcard` target level** (frozen at DB-4). ADR-005 §3.1.3: the user "binds it (`method_bindings`) to any knowledge
   object/container, choosing a curve." §3.2: grouping ("deck") = "a user-defined Knowledge object/container below a
@@ -31,10 +32,10 @@ crux and it is doc-forced, not chosen:
   reverse-resolution is ambiguous and unimplementable. The card→object `entity_link` still records **provenance**
   (FC-7, from `generateCards`), but the review TARGET is an explicit arg (mirrors `recordReview.objectId` already being
   explicit). `[FACT: knowledge.ts:86; ADR-005 §3.1.1; backlink-resolver.getLinksFrom (undifferentiated); review
-  recordReview objectId explicit no-FK]`
+recordReview objectId explicit no-FK]`
 - **CardNotBound (FC-7)** = the supplied reviewed object has **no `method_binding`** (via `review.listBindings`) → the
   card is excluded from the due-queue (explicit, not a silent drop). `[FACT: knowledge.ts:86 (no card target); ADR-005
-  §3.1.3,§3.2; FC-2/FC-7; review.listBindings/dueIn (current-spec S4)]`
+§3.1.3,§3.2; FC-2/FC-7; review.listBindings/dueIn (current-spec S4)]`
   > ⚠ The S7 recon initially asserted `method_bindings.target_type='flashcard'` — that value does **not** exist; this
   > headline is the corrected, enum-grounded model. Confirm the card→object review-target model at Approval 1.
 
@@ -85,6 +86,7 @@ spaces.createLink]` (Confirm the decoupled shape vs a knowledge-reader dep at Ap
 ## §2. Business rules (S7-scoped, cited)
 
 **Card content (FC-01/FC-05/FC-12):**
+
 - **BR-S7-1** — `createCard/updateCard/getCard/listCards/deleteCard` over `flashcards`; `front`/`back` `[E]` notNull,
   `hint`/`explanation` `[E]` nullable, `media` = `json<string[]>` (serialize/parse at the boundary — the key_concepts
   precedent), `is_suspended` notNull default false (faithful-echo backfill), `sort_order` default 0, `softDelete:true`.
@@ -97,16 +99,18 @@ spaces.createLink]` (Confirm the decoupled shape vs a knowledge-reader dep at Ap
   DERIVED Knowledge state, never a card column (FC-6/KN-10). `[FACT: FC-12; structure-data.md]`
 
 **Registration (FC-02):**
+
 - **BR-S7-4** — `registerFlashcards()` (call-once, wiring): (a) `review.registerMethod({id:FLASHCARDS_METHOD_ID,
-  config_schema:{roles:['retention','gathering']}})` (kind='study_method', empty envelope; dup → `DuplicateCapabilityId`
+config_schema:{roles:['retention','gathering']}})` (kind='study_method', empty envelope; dup → `DuplicateCapabilityId`
   from the capability registry); (b) register the `review` Session sub-type via the injected `SessionRegistry`
   (`owner_module:'flashcards'`, `effects:[]`, `permissions:{allowed_effects:[]}` — envelope-legal per headline #2; a
   minimal `lifecycle` scheduled→in_progress→completed; dup → `DuplicateSubType` from the SESSION registry — two
   registries, two dup errors). `registerFlashcards` guards BOTH. XP/Journal completion effects = deferred seam
   (foundation envelope widening). `[FACT: FC-2; ADR-005 §3.1.3; review.registerMethod; sessions/registry.ts:94-105
-  (envelope check + DuplicateSubType); capability/types.ts:53 (DuplicateCapabilityId); headline #2/#3]`
+(envelope check + DuplicateSubType); capability/types.ts:53 (DuplicateCapabilityId); headline #2/#3]`
 
 **Run (FC-03) + emit (FC-06):**
+
 - **BR-S7-5** — `startReview(cardIds)` creates a `review` session (`sessions.createSession`, sub_type='review') over the
   supplied due cards; `completeReview(sessionId, outcomes:[{cardId, objectId, quality}])` emits **one `review_event` per
   card** via `review.recordReview({objectId, methodId:FLASHCARDS_METHOD_ID, quality})` (the reviewed `objectId` supplied
@@ -119,21 +123,24 @@ spaces.createLink]` (Confirm the decoupled shape vs a knowledge-reader dep at Ap
   `[FACT: FC-10; recordReview co-tx; ADR-003]`
 
 **Due-queue (FC-07/FC-09):**
+
 - **BR-S7-8** — flashcards does NOT own a scheduler; it reads Knowledge's provider. `dueCards(items:[{cardId,
-  objectId}], at?)` calls `review.dueIn(objectId, at)` per item (the reviewed object supplied explicitly, B2) — a card
+objectId}], at?)` calls `review.dueIn(objectId, at)` per item (the reviewed object supplied explicitly, B2) — a card
   whose object has no binding is **CardNotBound** (excluded, explicit); a suspended card is excluded. `[FACT: FC-9/FC-7;
-  review.dueIn; headline #1]`
+review.dueIn; headline #1]`
 
 **Universal citizen (FC-11) + gather (FC-04/FC-08):**
+
 - **BR-S7-9 (FC-11)** — `tagCard(cardId, tagId)` → `spaces.tagEntity(tagId,'flashcard',cardId)` (guard tag resolves —
   the S2 blind-insert guard); `linkCard(cardId, targetRef)` → `spaces.createLink(cardId, …)`; `listCardLinks(cardId)` →
   `backlinks.getLinksFrom(cardId)`. `flashcard` is pre-registered in ENTITY_TYPES (`_registry.ts:83`). `[FACT: FC-8/FC-11;
-  ADR-006 SP1; _registry.ts:83; [[spaces-junctions-split-read-write-tagentity-blind-inserts]]]`
+ADR-006 SP1; _registry.ts:83; [[spaces-junctions-split-read-write-tagentity-blind-inserts]]]`
 - **BR-S7-10 (FC-04/FC-08)** — `generateCards({sourceRef, items})` creates cards + links each to `sourceRef` via
   `spaces.createLink`; `GenerateSourceUnreadable` on a failed gather (partial surfaced). A later source delete leaves the
   link dangling (FC-8, no-op loud). `[FACT: ADR-005 §3.1.4; FC-7/FC-8; headline #5]`
 
 **Constitution:**
+
 - **BR-S7-11** — typed errors only (`InvalidCardType`/`MalformedCloze`/`ReviewEmitFailed`/
   `GenerateSourceUnreadable`/`FlashcardNotFoundError`); **`CardNotBound` is an exclusion CONDITION, not a thrown error**
   (`contract.md:36` "not an error state" — `dueCards` drops unbound cards, still visible in browse; §XXVIII impl
@@ -147,16 +154,19 @@ Validators in `validators/knowledge.ts` (the module's shared validator file) or 
 propose colocating in `validators/knowledge.ts` (flashcards is a knowledge sub-context).
 
 **Deps (`FlashcardsServiceDeps`):**
+
 ```ts
-db: DrizzleDb; deviceId: string
-review: ReviewEngine          // recordReview / dueIn / listBindings / registerMethod (S3/S4)
-spaces: SpacesService         // createLink / tagEntity (writes)
-backlinks: BacklinkResolver   // getLinksFrom (reads)
-sessions: SessionsService     // review-session run (create/complete)
+db: DrizzleDb
+deviceId: string
+review: ReviewEngine // recordReview / dueIn / listBindings / registerMethod (S3/S4)
+spaces: SpacesService // createLink / tagEntity (writes)
+backlinks: BacklinkResolver // getLinksFrom (reads)
+sessions: SessionsService // review-session run (create/complete)
 sessionRegistry: SessionRegistry // register the 'review' sub-type (SS-5)
 ```
 
 **Methods (`FlashcardsService`):**
+
 ```ts
 registerFlashcards(): Promise<void>                       // FC-02 wiring: study_method capability + 'review' sub-type
 createCard(input): Promise<Flashcard>                     // FC-01/05 (validated; media json boundary)
@@ -172,6 +182,7 @@ startReview(cardIds): Promise<Session>                    // FC-03 create 'revie
 completeReview(sessionId, outcomes: {cardId, objectId, quality}[]): Promise<ReviewEvent[]> // FC-03/06 one review_event/card (objectId explicit, B2) + complete session
 dueCards(items: {cardId, objectId}[], at?): Promise<Flashcard[]> // FC-07/09 via review.dueIn(objectId) per item; unbound object → excluded (CardNotBound)
 ```
+
 Result/error types (service-layer): `InvalidCardType`, `MalformedCloze`, `ReviewEmitFailed`,
 `GenerateSourceUnreadable`, `FlashcardNotFoundError`. Validators: `CreateCardSchema`, `UpdateCardSchema`,
 `GenerateCardsSchema`. Constant `FLASHCARDS_METHOD_ID='flashcards'`, `REVIEW_SESSION_SUB_TYPE='review'`.
@@ -182,10 +193,11 @@ input types (`ReviewOutcome={cardId,objectId,quality}`, `CardSourceRef`) live in
 knowledge service import (`services/knowledge/service.ts:366,376,390`); `SessionRegistry` from `../../foundation/sessions`.
 
 ## §4. Acceptance (Verification Gate — live-store, Node 24)
+
 1. Card CRUD + faithful echo + `media` JSON round-trip + soft-delete + `card_type` filter.
 2. FC-05: `basic` ok; `cloze` without `{{…}}` → `MalformedCloze`; unknown type → `InvalidCardType`.
 3. FC-02: `registerFlashcards` registers the study_method capability (`review.listMethods` shows it, `config_schema.roles`)
-   + the `review` sub-type (a `review` session can be created).
+   - the `review` sub-type (a `review` session can be created).
 4. FC-03/06: `startReview`→`completeReview` emits one `review_event` per card keyed to the card's reviewed object
    (`review.recordReview`), then completes the session; a card with no reviewed-object link → excluded/typed.
 5. FC-07/09: `dueCards` — a card whose reviewed object has a binding + is due → included; an unbound object → excluded
@@ -193,9 +205,10 @@ knowledge service import (`services/knowledge/service.ts:366,376,390`); `Session
 6. FC-11: `tagCard`/`linkCard`/`listCardLinks` round-trip (real spaces/backlinks; `entity_type='flashcard'`); tag-guard.
 7. FC-04/08: `generateCards` creates cards + links to source; source delete leaves a dangling link (card survives).
 8. FC-10: a forced `recordReview` failure → `ReviewEmitFailed` (surfaced). sync_queue enqueue on card create.
-Gate: full `@vida/core` suite green (≥1413 + new), tsc 0, eslint 0, gitleaks clean. §XXIX currency.
+   Gate: full `@vida/core` suite green (≥1413 + new), tsc 0, eslint 0, gitleaks clean. §XXIX currency.
 
 ## §5. Implementation prompt (build steps)
+
 1. `validators/knowledge.ts` — `CreateCardSchema`/`UpdateCardSchema` (card_type enum; cloze-mask refine → MalformedCloze),
    `GenerateCardsSchema`.
 2. `services/flashcards/types.ts` — `FlashcardsServiceDeps`, `FlashcardsService`, the 6 errors, service-layer input types,
@@ -209,6 +222,7 @@ Gate: full `@vida/core` suite green (≥1413 + new), tsc 0, eslint 0, gitleaks c
    `docs/modules/knowledge/current-*` (propose the latter — flashcards is a knowledge sub-context). Commit together.
 
 ## Open items for the gate (confirm at Approval 1)
+
 - **Headline #1** — the card→knowledge_object review-target model (binding on the object, not the card; enum-forced).
   **Gate-1 CONFIRMED correct + doc-forced** — the load-bearing interpretation holds; the reviewed `objectId` is now
   supplied explicitly per card (B2), not reverse-resolved.
@@ -218,6 +232,7 @@ Gate: full `@vida/core` suite green (≥1413 + new), tsc 0, eslint 0, gitleaks c
   (propose the former — flashcards is a knowledge sub-context).
 
 ## Gate-1 status
+
 - **Verdict: REVISE → folded (2026-09-29).** Independent critic CONFIRMED headline #1 (card→object review model) as
   correct + doc-forced, headlines #3/#5 sound, all 12 legs homed (no phantom/double), `flashcard` pre-registered, home
   `services/flashcards/` sound. Folded 3 blockers + 2 NITs:
@@ -229,13 +244,14 @@ Gate: full `@vida/core` suite green (≥1413 + new), tsc 0, eslint 0, gitleaks c
     reviewed object can't be reverse-resolved. → thread `objectId` explicitly per card (`completeReview` outcomes +
     `dueCards` items). Headline #1 mechanics + BR-S7-5/8 + §3 updated.
     - **B3** — `decomposition.md:102` homes FC-10 "via the effect rail"; `recordReview` has no rail dep → decomposition
-    drift, FC-10 re-homed to the direct co-tx path + ADR-003/M4. Headline #4 flags it.
+      drift, FC-10 re-homed to the direct co-tx path + ADR-003/M4. Headline #4 flags it.
   - **N2** — `Session` imports from `@vida/core` sessions types, not `@vida/types`. **N4** — two registries → two dup
     errors (`DuplicateCapabilityId` + `DuplicateSubType`); `registerFlashcards` guards both.
 - Confirmed-sound vs disk: `METHOD_BINDING_TARGET_TYPE` has no card level (`knowledge.ts:86`); `recordReview` objectId
   no-FK direct write (`engine.ts:220-230`); `flashcard` in ENTITY_TYPES (`_registry.ts:83`); schema cols 1:1 (`:136-151`).
 
 ## Preflight + Gate-2 status
+
 - **Preflight PASSED (2026-09-29).** All substrate shapes + enum values resolve: `CreateSessionInput` requires
   `sub_type`+`scheduling_mode`(SCHEDULING_MODE=attended|planned|ad_hoc)+`status`(SESSION_STATUS); `startReview` passes
   `{sub_type:'review', scheduling_mode:'ad_hoc', status:'in_progress'}`, NO extension (extension is focus|study only →

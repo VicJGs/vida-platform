@@ -3,16 +3,17 @@
 > ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
 > [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
 
-# Conventions — Routines  (level: Feature)
+# Conventions — Routines (level: Feature)
 
 ## How to build here
-- **Compose, never duplicate.** A routine step *drives* an existing entity through its documented contract — launch
+
+- **Compose, never duplicate.** A routine step _drives_ an existing entity through its documented contract — launch
   its Session sub-type (`SessionRegistry.createSession`) or the entity's native completion. **Never** create a
   Routines-local runtime, scheduler, or completion record where a foundation already provides one. `[INTENT RT-3;
-  FACT: sessions/contract.md]`
+FACT: sessions/contract.md]`
 - **Policies are configuration, not code.** Completion / miss / acceptance-window semantics are **read from
   user settings** (Preferences/Spaces), never hardcoded. Ship a sensible default; the user owns the policy. `[INTENT
-  RT-5, RT-6]`
+RT-5, RT-6]`
 - **Derive, don't cache.** Streaks, completion rate, ranking, time-period comparison **recompute from
   `routine_completions`**. Routines keeps no denormalized streak columns (unlike Habits). As a pursuable, the routine
   carries `measurement_kind` (`rate`) × `binding_mode` (`derived-pull`); `progress()` derives on read — no stored
@@ -24,16 +25,18 @@
   `_sync_*` on every syncable table · soft delete via `deleted_at`. `[FACT: CLAUDE.md Conventions; ADR-002 §5.6]`
 
 ## Naming & layout
+
 - Aspect docs = the canonical 5 (`identity · business-rules · contract · structure-data · conventions`), matching
   every documented feature. `[FACT: docs/features/habits/]`
 - Invariants are `RT-N`; steps referenced by `step_type` + `entity_ref` (not the retired `action_type` +
   `linked_*_id`). `[INTENT structure-data]`
 - Notes target `entity_type='routine_action'` in `pages`; tags via the **`entity_tags`** primitive (ADR-006 SP1) —
   the Spaces universal vocabulary; routines registers `entity_type='routine_action'` as a consumer. `[FACT:
-  ADR-002 L1344; ADR-006 SP1; intake/spaces.md SP2]`
+ADR-002 L1344; ADR-006 SP1; intake/spaces.md SP2]`
 
 ## Pitfalls / local "never do"
-- **Never write a parallel completion record for a step** — completing the step *is* completing the driven entity
+
+- **Never write a parallel completion record for a step** — completing the step _is_ completing the driven entity
   (double-counting is the failure RT-3 exists to prevent). `[INTENT RT-3]`
 - **Never assume the Habits streak rule** — routine streaks are **policy-derived** (RT-7); Gamification must read the
   policy result (a `derived-pull` measure), not reimplement "consecutive scheduled, no grace." **Never write XP from
@@ -49,4 +52,5 @@
   `purpose_routines`), Purpose-owned; there is no `project_routines` junction. `[FACT: constitution §6; ADR-011 M7]`
 
 ## Completion checklist
+
 - [x] patterns in use (enforced, not aspiration) · [x] naming/layout · [x] pitfalls · [x] [FACT/INTENT] on each claim

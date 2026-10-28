@@ -229,26 +229,26 @@ function ToastItem({
       >
         <ToastAccent aria-hidden backgroundColor={ACCENT[intent]} />
 
-      <View flexGrow={1} flexShrink={1} minWidth={0} gap="$4">
-        <Text fontFamily="$body" fontSize="$small" fontWeight="600" color="$colorTextPrimary">
-          {title}
-        </Text>
-        {description != null && (
-          <Text fontFamily="$body" fontSize="$caption" color="$colorTextMuted">
-            {description}
+        <View flexGrow={1} flexShrink={1} minWidth={0} gap="$4">
+          <Text fontFamily="$body" fontSize="$small" fontWeight="600" color="$colorTextPrimary">
+            {title}
           </Text>
+          {description != null && (
+            <Text fontFamily="$body" fontSize="$caption" color="$colorTextMuted">
+              {description}
+            </Text>
+          )}
+        </View>
+
+        {action != null && (
+          <Button intent="ghost" size="sm" onPress={action.onPress}>
+            {action.label}
+          </Button>
         )}
-      </View>
 
-      {action != null && (
-        <Button intent="ghost" size="sm" onPress={action.onPress}>
-          {action.label}
+        <Button intent="ghost" size="sm" aria-label="Dismiss" onPress={() => dismissToast(id)}>
+          ✕
         </Button>
-      )}
-
-      <Button intent="ghost" size="sm" aria-label="Dismiss" onPress={() => dismissToast(id)}>
-        ✕
-      </Button>
       </ToastPanel>
     </ToastWrapper>
   )

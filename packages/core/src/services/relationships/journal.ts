@@ -35,8 +35,7 @@ export function createRelationshipsJournalContribution(svc: RelationshipsService
     async summary(date: string): Promise<SectionData> {
       const d = await svc.getDayRelationshipsDigest(date)
       // Any activity (an interaction, an event, or a reminder due today) ⇒ success; a genuinely idle day ⇒ empty.
-      const state: TerminalState =
-        d.interactionsToday + d.eventsToday + d.remindersDue > 0 ? 'success' : 'empty'
+      const state: TerminalState = d.interactionsToday + d.eventsToday + d.remindersDue > 0 ? 'success' : 'empty'
       return {
         sectionKey: 'summary',
         module: 'relationships',

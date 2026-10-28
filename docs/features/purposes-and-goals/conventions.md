@@ -1,18 +1,19 @@
 <!-- Conventions — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 · project.ts · docs/intake/purposes-and-goals.md RESOLUTION · CLAUDE.md Conventions -->
 
-# Conventions — Purposes & Goals  (level: Feature — CAPSTONE)
+# Conventions — Purposes & Goals (level: Feature — CAPSTONE)
 
 ## How to build here
+
 - **Derive, don't store.** Progress/rollups recompute on read; `purposes.progress` / `targets.current_value` are
   **override slots** (NULL = derive), never the source of truth. No denormalized progress/streak counters. `[INTENT
-  PG4/PG17; FACT: sessions SS-12]`
-- **Compose, never duplicate.** A goal *links* Tasks/Projects for action and *reads* each contributor's own
+PG4/PG17; FACT: sessions SS-12]`
+- **Compose, never duplicate.** A goal _links_ Tasks/Projects for action and _reads_ each contributor's own
   `progress()`; `contributions` stores only the **weight**, never a copied value. Purpose builds no task/session/
   scheduler machinery. `[INTENT PG5/PG10]`
 - **Measurability is a CORE contract, not a Purpose feature.** `measurement_kind` + `binding_mode` + `progress()`
   belong to the capstone ADR and land on every pursuable module — implement the interface, don't Purpose-localize the
   fields. `[INTENT PG2/PG3]`
-- **Bindings ride the `INT-2` rail.** An `event-trigger` writes through the *owning* module's single service method,
+- **Bindings ride the `INT-2` rail.** An `event-trigger` writes through the _owning_ module's single service method,
   idempotent per `effect_event_id`; a `derived-pull` READS a measurement-source seam. Never a bespoke event bus.
   `[FACT: core INT-2; ADR-004 §3.2.5]`
 - **Aggregate through the provider seam.** Surface goals/reviews to Journal/Calendar via `summary(date)` + `dueIn`
@@ -23,9 +24,10 @@
   `deleted_at`. `[FACT: CLAUDE.md Conventions; ADR-002 §5.7]`
 
 ## Naming & layout
+
 - Invariants are `PG-N`; aspect docs = the canonical 5 (`identity · business-rules · contract · structure-data ·
-  conventions`) — this replaces the off-standard stub set (`module-spec`/`page-map`/…). `[FACT: docs/features/*]`
-- **`binding_mode`** {manual,derived-pull,event-trigger} = *how a measurable is fed*; distinct from a value's
+conventions`) — this replaces the off-standard stub set (`module-spec`/`page-map`/…). `[FACT: docs/features/*]`
+- **`binding_mode`** {manual,derived-pull,event-trigger} = _how a measurable is fed_; distinct from a value's
   provenance **`source`** {manual,auto} (matches Health's axis). Never conflate the two. `[INTENT PG6/PG15]`
 - **`contributions`** = the Purpose-domain weighted edge (goal ← contributor + weight). NOT `entity_links` /
   `entity_tags` (the two universal Spaces primitives, INT-1a). `[FACT: core INT-1a]`
@@ -33,6 +35,7 @@
   ⚠ INTENDED**, PG-18); tags come from the Spaces universal vocabulary. `[FACT: ADR-002 L1363-1372; ADR-006]`
 
 ## Pitfalls / local "never do"
+
 - **Never trust a stored progress column as truth** — it's an override slot; the derived value wins unless explicitly
   overridden. `[INTENT PG4]`
 - **Never copy a contributor's value into `contributions`** — hold the weight only; read the live `progress()`.
@@ -50,4 +53,5 @@
   `[FACT: constitution §6; INT-1]`
 
 ## Completion checklist
+
 - [x] patterns in use (enforced, not aspiration) · [x] naming/layout · [x] pitfalls · [x] [FACT/INTENT] on each claim

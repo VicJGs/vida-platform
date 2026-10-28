@@ -15,20 +15,20 @@
 
 ## DEPENDENCIES — every upstream
 
-| Upstream | What it gives the Calendar | Cite |
-|---|---|---|
-| `@vida/ui` `CalendarView<T>` (**CONSUMED** — the shipped month grid) | the Month range, already LIF-230-refined + **TZ-safe** (`'YYYY-MM-DD'` string key, never `new Date(str)`); controlled `month`/`onMonthChange`, `maxPerDay` "+K more", `ViewState` | `[FACT: packages/ui/src/components/calendar-view.tsx:23-48]` |
-| `@vida/ui` `CanvasView` immersive frame (**CONSUMED** — hosts #19) | the surface shell the multi-range calendar renders inside | `[FACT: packages/ui/src/components/canvas-view.tsx; docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md]` |
-| `@vida/ui` primitives + pattern-kit | `Card`/`Text`/`View`/`Button` · `EmptyState` · `ViewState`+`warnMissingName` (`internal/data-view`) · `useReducedMotion` | `[FACT: packages/ui/src/components/calendar-view.tsx:4; hooks/use-reduced-motion.ts]` |
-| Theme / preset tokens | the editorial "book/journal" voice (serif title, tabular figures, hairline grid, accent-dot chips) | `[FACT: calendar-view.tsx (LIF-230 P5); packages/ui/src/provider.tsx]` |
-| **ProviderRead convention** (`apps/web`) | `type ProviderRead<T> = () => Promise<T>` — the "no direct cross-module tables" read seam; consumed via `useQuery({queryFn: provider})` | `[FACT: apps/web/src/providers/provider-read.ts:15]` |
-| **Canvas adapter** (`apps/web`) | `toCanvasHeader` · `resolveMeasureProgress` + the **DEFERRED `useCalendar(spaceId)` hook #19 builds (first consumer)** | `[FACT: apps/web/src/canvas/adapter.ts:44,81; :22-24 (useCalendar deferred to first consumer)]` |
-| Review foundation (**CONSUMED, never imported into @vida/ui**) | `getDue(range, opts?) → ReviewDueItem[]` + `dueIn(objectId, at?) → boolean`; `DueRange {from,to}` Unix-ms inclusive | `[FACT: packages/core/src/foundation/review/types.ts:41,47,115,117; engine.ts:232]` |
-| **Journals `buildDashboard`** (**CONSUMED — the agenda fan-out already exists**) | per-module **`dueIn({from:date,to:date})`** cross-module fan-out → `{summary, agenda}`, per-section degrade (IR-d) | `[FACT: packages/core/src/services/journals/dashboard.ts:41,51-56]` |
-| `habit_completions` (move ②) | `completed_date` (YYYY-MM-DD) · `UNIQUE(habit_id, completed_date)` · indexed — the habit-thread source | `[FACT: packages/core/src/db/schema/habits.ts:93-112,136]` |
-| `study_availability` (move ③) | `day_of_week` 0–6 · `start_time`/`end_time` HH:MM — the open-time source | `[FACT: packages/core/src/db/schema/foundation/scheduling.ts:44-55]` |
-| `contributions` (move ④) | `goal_type` · `contributor_type` (polymorphic) · `contribution_percentage` 0–100 — a **WEIGHT only, never a copied value (PG-10)** | `[FACT: packages/core/src/db/schema/foundation/purpose.ts:33-41]` |
-| `tasks` (Agenda + move ⑤) | `due_date` (calendarDate, **no clock time**) · `scheduled_date` · `completed_at` · `kind` | `[FACT: packages/core/src/db/schema/tasks.ts:60,64,27]` |
+| Upstream                                                                         | What it gives the Calendar                                                                                                                                                        | Cite                                                                                                                |
+| -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `@vida/ui` `CalendarView<T>` (**CONSUMED** — the shipped month grid)             | the Month range, already LIF-230-refined + **TZ-safe** (`'YYYY-MM-DD'` string key, never `new Date(str)`); controlled `month`/`onMonthChange`, `maxPerDay` "+K more", `ViewState` | `[FACT: packages/ui/src/components/calendar-view.tsx:23-48]`                                                        |
+| `@vida/ui` `CanvasView` immersive frame (**CONSUMED** — hosts #19)               | the surface shell the multi-range calendar renders inside                                                                                                                         | `[FACT: packages/ui/src/components/canvas-view.tsx; docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md]` |
+| `@vida/ui` primitives + pattern-kit                                              | `Card`/`Text`/`View`/`Button` · `EmptyState` · `ViewState`+`warnMissingName` (`internal/data-view`) · `useReducedMotion`                                                          | `[FACT: packages/ui/src/components/calendar-view.tsx:4; hooks/use-reduced-motion.ts]`                               |
+| Theme / preset tokens                                                            | the editorial "book/journal" voice (serif title, tabular figures, hairline grid, accent-dot chips)                                                                                | `[FACT: calendar-view.tsx (LIF-230 P5); packages/ui/src/provider.tsx]`                                              |
+| **ProviderRead convention** (`apps/web`)                                         | `type ProviderRead<T> = () => Promise<T>` — the "no direct cross-module tables" read seam; consumed via `useQuery({queryFn: provider})`                                           | `[FACT: apps/web/src/providers/provider-read.ts:15]`                                                                |
+| **Canvas adapter** (`apps/web`)                                                  | `toCanvasHeader` · `resolveMeasureProgress` + the **DEFERRED `useCalendar(spaceId)` hook #19 builds (first consumer)**                                                            | `[FACT: apps/web/src/canvas/adapter.ts:44,81; :22-24 (useCalendar deferred to first consumer)]`                     |
+| Review foundation (**CONSUMED, never imported into @vida/ui**)                   | `getDue(range, opts?) → ReviewDueItem[]` + `dueIn(objectId, at?) → boolean`; `DueRange {from,to}` Unix-ms inclusive                                                               | `[FACT: packages/core/src/foundation/review/types.ts:41,47,115,117; engine.ts:232]`                                 |
+| **Journals `buildDashboard`** (**CONSUMED — the agenda fan-out already exists**) | per-module **`dueIn({from:date,to:date})`** cross-module fan-out → `{summary, agenda}`, per-section degrade (IR-d)                                                                | `[FACT: packages/core/src/services/journals/dashboard.ts:41,51-56]`                                                 |
+| `habit_completions` (move ②)                                                     | `completed_date` (YYYY-MM-DD) · `UNIQUE(habit_id, completed_date)` · indexed — the habit-thread source                                                                            | `[FACT: packages/core/src/db/schema/habits.ts:93-112,136]`                                                          |
+| `study_availability` (move ③)                                                    | `day_of_week` 0–6 · `start_time`/`end_time` HH:MM — the open-time source                                                                                                          | `[FACT: packages/core/src/db/schema/foundation/scheduling.ts:44-55]`                                                |
+| `contributions` (move ④)                                                         | `goal_type` · `contributor_type` (polymorphic) · `contribution_percentage` 0–100 — a **WEIGHT only, never a copied value (PG-10)**                                                | `[FACT: packages/core/src/db/schema/foundation/purpose.ts:33-41]`                                                   |
+| `tasks` (Agenda + move ⑤)                                                        | `due_date` (calendarDate, **no clock time**) · `scheduled_date` · `completed_at` · `kind`                                                                                         | `[FACT: packages/core/src/db/schema/tasks.ts:60,64,27]`                                                             |
 
 ---
 
@@ -44,7 +44,7 @@
    slot-open-time = a **write = the owning module's capability (ADR-008)**, composed in. The calendar **emits
    intents**, the module mutates. `[FACT: calendar-vision.md:28-30]`
 4. **TZ-safe dates everywhere.** Every range inherits `CalendarView`'s B1 pattern — a `'YYYY-MM-DD'` string key
-   used as-is; a `Date` formatted *locally* to `yyyy-MM-dd`. Never `new Date('YYYY-MM-DD')` (UTC-midnight
+   used as-is; a `Date` formatted _locally_ to `yyyy-MM-dd`. Never `new Date('YYYY-MM-DD')` (UTC-midnight
    off-by-one in Brasília UTC−3). `[FACT: calendar-view.tsx (B1 TZ-safe keying)]`
 5. **Per-section honest degrade.** `buildDashboard` already degrades a failing module's agenda section without
    failing the day (IR-d). The Living lens — 5 independent cross-module moves — must degrade **per move**: one
@@ -114,18 +114,18 @@
   Agenda-range design input — read-only reveals only; any write stays an owning-module capability.
   `[FACT: calendar-vision.md:57-69]`
 - **IR-10 · Switcher state is UI-only (Zustand), not persisted here.** Active range + focused date are ephemeral UI
-  state (the AR-4 pattern) — a `calendar-ui-store`. A *saved* default range would be a `user_preferences`/saved-view
+  state (the AR-4 pattern) — a `calendar-ui-store`. A _saved_ default range would be a `user_preferences`/saved-view
   write = owning capability, not this lens. `[FACT: docs/infrastructure/web-client-runtime/current-spec.md:52-54 (Zustand UI-only)]`
 
 ---
 
 ## Envision §3.75 determination (for Step 1.5)
 
-**Trigger test:** *"Is there a user affordance whose UI answer isn't already obvious from an existing shipped
-surface?"* → **FIRE (strongly).** This is the archetypal design-led surface: *how does the range switcher read and
+**Trigger test:** _"Is there a user affordance whose UI answer isn't already obvious from an existing shipped
+surface?"_ → **FIRE (strongly).** This is the archetypal design-led surface: _how does the range switcher read and
 transition? how does the Agenda daypart-group timed + all-day + Must/Can? how does a habit thread draw across days
 (kept vs missed)? how does open time surface and offer "slot it" without being a write? how do purpose dots and the
-drift flag read? how does temporal asymmetry (record/live/intention) look in one grid? how does a dense day unfurl?*
+drift flag read? how does temporal asymmetry (record/live/intention) look in one grid? how does a dense day unfurl?_
 No shipped surface answers these — the view renderers are read-only single-layout lenses; the Month grid is one of
 six ranges; the Living lens is five net-new cross-module moves. This is a **novel interaction surface** (and a
 module-hub-class flagship) → **Envision greybox + human approval is required before Decomposition.**
@@ -133,7 +133,7 @@ module-hub-class flagship) → **Envision greybox + human approval is required b
 
 ### Gate-owed decisions — RESOLVED-BY-DOCS (checked 2026-10-10) + carried to Step 2
 
-**1. Move ⑤ (drift flag) — RESOLVED by ADR-007/008 boundary (split form).** The full *"pushed N× count"*
+**1. Move ⑤ (drift flag) — RESOLVED by ADR-007/008 boundary (split form).** The full _"pushed N× count"_
 needs a reschedule-**history ledger** = a Tasks write-path = ADR-008 owning-module backend → **deferred** (outside
 this ② read-only unit). A **reduced drift signal IS read-derivable now** from shipped columns (`scheduled_date` vs
 `due_date` vs `completed_at`) — "slipping/overdue" needs no history → **M1 drift = the derived slip-flag, IN the
@@ -146,11 +146,8 @@ is shipped (`source-registry.ts:2-7`): advertise + query, no table access, honor
 sanctioned read-only derivation: Purpose advertises the measure, **#19 is the first UI consumer**, an absent measure
 renders honestly-null (deny-safe absent-port precedent). **IN the greybox.** `[FACT: packages/core/src/foundation/measurement/source-registry.ts:2-7; ADR-011 §3.6; purposes/__tests__/service.test.ts:500]`
 
-**Carried to Step 2 (Decomposition — mechanical, not greybox-blocking; greybox uses fixtures):**
-3. **Multi-day agenda** — per-day `buildDashboard` ×N vs a new `buildDashboardRange` (backend). *(IR-2)*
-4. **Daypart** — define canonical `Daypart` enum (`@vida/types`) vs derive from clock time; greybox uses the common
-   `['morning','afternoon','evening']` subset for grouping. *(IR-5)*
-5. **Provider methods** — enumerate the thin backend reads #19 adds as first consumer (habit-completions slice ·
-   study-availability · the measurement-source budget advertise on Purpose). *(IR-8)*
+**Carried to Step 2 (Decomposition — mechanical, not greybox-blocking; greybox uses fixtures):** 3. **Multi-day agenda** — per-day `buildDashboard` ×N vs a new `buildDashboardRange` (backend). _(IR-2)_ 4. **Daypart** — define canonical `Daypart` enum (`@vida/types`) vs derive from clock time; greybox uses the common
+`['morning','afternoon','evening']` subset for grouping. _(IR-5)_ 5. **Provider methods** — enumerate the thin backend reads #19 adds as first consumer (habit-completions slice ·
+study-availability · the measurement-source budget advertise on Purpose). _(IR-8)_
 
 > **S7 note (2026-10-22):** IR-2's "reuse `buildDashboard`" (:27, :71, :80-84) is SUPERSEDED for the due-work feed by D-S7-DEV-1 — the Calendar is the dueIn aggregator (IA §4) and reads `sessions.dueIn`; see PLAN-S7-entity-close.md G1.

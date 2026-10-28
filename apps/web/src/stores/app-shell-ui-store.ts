@@ -40,7 +40,8 @@ export const useAppShellUIStore = create<AppShellUIState>()((set) => ({
   toggleMobileNav: () => set((s) => ({ isMobileNavOpen: !s.isMobileNavOpen })),
   setMobileNavOpen: (open) => set({ isMobileNavOpen: open }),
   placement: DEFAULT_PLACEMENT,
-  togglePanel: (id) => set((s) => ({ placement: { ...s.placement, [id]: { ...s.placement[id], open: !s.placement[id].open } } })),
+  togglePanel: (id) =>
+    set((s) => ({ placement: { ...s.placement, [id]: { ...s.placement[id], open: !s.placement[id].open } } })),
   setPanelMode: (id, mode) => set((s) => ({ placement: { ...s.placement, [id]: { ...s.placement[id], mode } } })),
   setPanelEdge: (id, edge) => set((s) => ({ placement: { ...s.placement, [id]: { ...s.placement[id], edge } } })),
   setPlacement: (placement) => set({ placement }),

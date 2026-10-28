@@ -44,10 +44,7 @@ export function bakeQuietHours(occ: DueOccurrence, quietHours: QuietHours): Quie
 // occurrence is no longer desired, register the newly-desired ones. Diffed by dedup `key`
 // so an unchanged occurrence is neither cancelled nor re-registered (stable across a
 // reschedule). `[FACT: ADR-013 §3.2 L49 "device reschedules (cancel + re-register)"]`
-export function reschedulePlan(
-  prev: RegisteredReminder[],
-  next: RegisteredReminder[],
-): ReschedulePlan {
+export function reschedulePlan(prev: RegisteredReminder[], next: RegisteredReminder[]): ReschedulePlan {
   const prevKeys = new Set(prev.map((r) => r.key))
   const nextKeys = new Set(next.map((r) => r.key))
   return {
@@ -61,9 +58,7 @@ export function reschedulePlan(
 // owns it — do not re-hash, N3); the due branch keys by the `dueIn` occurrence id. Both
 // namespaced so the two sources never collide. `[FACT: NF-8 business-rules:39-42; ADR-012 §3.1]`
 export function dedupKey(source: DedupSource): string {
-  return source.kind === 'event'
-    ? `event:${source.effectEventId}`
-    : `due:${source.occurrenceId}`
+  return source.kind === 'event' ? `event:${source.effectEventId}` : `due:${source.occurrenceId}`
 }
 
 // XCU-18 — a durable `notifications` row materializes ONLY at fire time (never pre-written

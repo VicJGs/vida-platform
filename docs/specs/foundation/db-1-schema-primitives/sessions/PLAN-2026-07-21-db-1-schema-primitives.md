@@ -1,4 +1,5 @@
-# PLAN — DB-1 · schema primitives   (session: 2026-07-21-db-1-schema-primitives · language: TypeScript/English)
+# PLAN — DB-1 · schema primitives (session: 2026-07-21-db-1-schema-primitives · language: TypeScript/English)
+
 > Executive summary (Human Gate 1). Read to approve the DIRECTION. Functional WHAT/WHY — not the technical build
 > detail (that is the IMPLEMENTATION-PLAN). No-Guessing: every claim [FACT]/[INTERP]/[UNKNOWN].
 >
@@ -8,6 +9,7 @@
 > gate-1 audit record; the authoritative surface is the IMPLEMENTATION-PLAN §5 + `current-spec.md`.
 
 ## 1. Contexto & demanda
+
 The storage layer (`packages/core/src/db/schema.ts`) is the **v1 pre-consolidation** schema. This session's
 reconciliation proved it is ~60% misaligned with the documented v2 target — retire ~22 · missing ~90-110 · divergent
 ~9 · carry-forward ~40 — with **five systemic gaps** (zero CHECK constraints, missing sync column, flattened partial
@@ -21,7 +23,9 @@ v1 systemic gaps would recur one table at a time. Affected: all of `@vida/core`'
 (DB-2…DB-11), and the AR-1 topology decision. `[FACT: roadmap.md ① Database Layer]`
 
 ## 2. O que muda e por quê
+
 **IN** — purely additive, breaks nothing:
+
 - New `packages/core/src/db/schema/` directory + `index.ts` barrel (the public surface **for the new primitives**;
   the monolith's `./db/schema` export path stays untouched until consumers migrate at DB-6/7).
 - `_shared.ts` — canonical primitives: `baseColumns`, `syncColumns`, typed column helpers, an enum/CHECK helper.
@@ -36,18 +40,19 @@ storage-rebuild follow-up. The v1 `schema.ts` stays as **reference-only** and ke
 and being correct. `[FACT: roadmap.md — "Database Layer leads"]`
 
 ## 3. Regras de negócio relevantes (funcional)
+
 - **[FACT]** Every syncable entity carries `id` (UUIDv7 TEXT, client-generated) + `created_at` + `updated_at`
   (unix-ms INTEGER) + the 6 sync columns — expressed once as `baseColumns`, never hand-repeated.
   `[FACT: schema.ts:35-40; ADR-002 §2-§3]`
 - **[FACT]** `syncColumns` = exactly the current 6 (`_sync_id · _sync_version · _sync_device_id · _sync_lww_ts ·
-  _sync_status · _sync_hash`). The 7th (`_sync_field_ts`) is **DB-2's**, deliberately NOT added here — but the
+_sync_status · _sync_hash`). The 7th (`_sync_field_ts`) is **DB-2's**, deliberately NOT added here — but the
   shape must let DB-2 add it cleanly. `[FACT: schema.ts:22-28; roadmap.md DB-2]`
 - **[FACT]** The six conventions are canonical and must be **enforced by reusable helpers**, not repeated by hand:
   UUIDv7 TEXT PK · unix-ms INTEGER timestamps · 0/1 INTEGER booleans · INTEGER-cents money · `YYYY-MM-DD` TEXT dates ·
   JSON-as-TEXT. `[FACT: CLAUDE.md conventions; ADR-002 §2]`
 - **[NEW]** Enums must be expressible as **SQL CHECK + canonical Zod** via a reusable enum/CHECK primitive — this
   closes the systemic zero-CHECK gap the reconciliation found. `[FACT: CLAUDE.md "Enums: TEXT + CHECK + Zod";
-  reconciliation §E.1]`
+reconciliation §E.1]`
 - **[NEW]** Polymorphic `entity_type` values (used by `pages`, `entity_links`, and the future `entity_tags`) must
   derive from **one registry** so cross-table references stay consistent. Today `entity_links.entity_type` is a bare
   `text` with **no CHECK**, which the reconciliation flags for a registry-derived CHECK.
@@ -61,6 +66,7 @@ and being correct. `[FACT: roadmap.md — "Database Layer leads"]`
   `[FACT: index.ts:59 & adapter.ts:16 import './db/schema'; grep confirms no consumer imports the dir yet]`
 
 ## 4. Aceitação (funcional)
+
 - [ ] `packages/core/src/db/schema/` exists with `_shared.ts`, `_registry.ts`, `index.ts`.
 - [ ] `_shared.ts` exports `baseColumns` + `syncColumns` (semantics identical to today's) **plus** typed helpers
       (`uuidPk`, `timestampMs`, `money`, `calendarDate`, `boolInt`, `json<T>`) and an enum/CHECK helper. <!-- enum/CHECK helper superseded — see banner -->
@@ -73,6 +79,7 @@ and being correct. `[FACT: roadmap.md — "Database Layer leads"]`
 - [ ] The six conventions are documented in-file (doc-comments) mirroring ADR-002 §2 / CLAUDE.md.
 
 ## 5. Questões em aberto / decisões pendentes
+
 - **[RESOLVED — FACT]** drizzle-orm 0.45.1 exports `check(name, value: SQL): CheckBuilder` from
   `drizzle-orm/sqlite-core` (`checks.d.ts`, re-exported via the barrel). The enum/CHECK helper composes
   `text({ enum })` (TS typing) + `check()` (SQL constraint) + the canonical Zod validator. No longer a gate-2 blocker.
@@ -82,4 +89,5 @@ and being correct. `[FACT: roadmap.md — "Database Layer leads"]`
   P1 foundation tables will need, vs an exhaustive list now. Recommendation: **minimal + extensible**.
 
 ## 6. Aprovação 1 (direção)
+
 Pending — awaiting Victor after `/critique` + `/preflight`.

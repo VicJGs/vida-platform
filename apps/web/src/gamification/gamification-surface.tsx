@@ -33,7 +33,14 @@ function OverviewSkeleton() {
       <View height={132} width={132} borderRadius={99} backgroundColor="$colorSurfaceSecondary" alignSelf="center" />
       <View flexDirection="row" gap="$16" flexWrap="wrap">
         {[0, 1].map((i) => (
-          <View key={i} flex={1} minWidth={220} height={120} borderRadius="$lg" backgroundColor="$colorSurfaceSecondary" />
+          <View
+            key={i}
+            flex={1}
+            minWidth={220}
+            height={120}
+            borderRadius="$lg"
+            backgroundColor="$colorSurfaceSecondary"
+          />
         ))}
       </View>
     </View>

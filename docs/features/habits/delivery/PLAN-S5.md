@@ -1,8 +1,11 @@
 # PLAN — S5 · Effect fan-out + cross-module seams + journal registration
+
 # Spec: feature:mod-habits · slice S5 (§XXVI g1) · Status: draft
+
 # No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded per Victor's standing directive.
 
 ## 1. Identity
+
 S5 is the cross-module surface — the completion effect fan-out (HAB-16) + purpose contribution (HAB-17) + economy
 feed (HAB-18) + fail-loud isolation (HAB-19) + entity_tags consumer (HAB-21) + pages seam (HAB-22) + sync ride
 (HAB-25) + project_habits association (HAB-27) + reminder-schedule expose (HAB-06) + `registerHabitsJournal`.
@@ -11,6 +14,7 @@ Habits is an effect **PRODUCER** — it EMITS via the rail; the WRITES (purpose 
 owned by Purpose/Gamification handlers (M2/deferred). No `registerHabitsEffects` (owns no handler).
 
 ## 2. Business Rules (S5 slice)
+
 - **BR-S5-1 · Completion effect fan-out is POST-COMMIT + guarded + idempotent, on ANY done-leaving mutation (HAB-16).**
   After a completion is persisted + the cache recomputed, if the row is DONE (`count>=target`) fire — each guarded
   (`registry.resolve(type)` else no-op) — `complete_habit_occurrence` · `contribute_purpose_metric` · `award_xp` on
@@ -58,6 +62,7 @@ owned by Purpose/Gamification handlers (M2/deferred). No `registerHabitsEffects`
   registration, the page linking itself is ②/Notes. `[FACT: parts/habits.md:16,25,32,35; conventions.md:23]`
 
 ## 3. Contract (S5 — appended)
+
 ```
 contributeToPurposeMetrics(habitId: string, completion: HabitCompletion): Promise<void>   // emit; throws MetricContributionError
 getEntityTags(entityType: string, entityId: string): Promise<TagAssociation[]>             // finance FIN-35 sig; deny-safe → []
@@ -69,10 +74,12 @@ export function registerHabitsJournal(registry: JournalRegistry, svc: HabitsServ
 export const HABIT_ENTITY_TYPE = 'habit'
 export class MetricContributionError extends Error
 ```
-+ `HabitsServiceDeps.effects?: EffectsPort` + `associations?: AssociationResolver` (both deny-safe/dormant).
-`[FACT: checkins/types.ts:33-46 (EffectsPort); finance/types.ts:50 (associations)]`
+
+- `HabitsServiceDeps.effects?: EffectsPort` + `associations?: AssociationResolver` (both deny-safe/dormant).
+  `[FACT: checkins/types.ts:33-46 (EffectsPort); finance/types.ts:50 (associations)]`
 
 ## 4. Acceptance (✓live)
+
 - [ ] with no `effects` port, a done `logCompletion` persists + fires NOTHING (dormant) ✓live
 - [ ] with a stub rail+registry resolving the 3 types, a done completion fires each once; a re-log of the same date does not double-fire (idempotent key) ✓live
 - [ ] an `editCompletion` that flips a partial→done fires the 3 effects once; a re-edit does not double-fire (B1) ✓live
@@ -85,15 +92,16 @@ export class MetricContributionError extends Error
 - [ ] `tsc` 0 · eslint 0 · full `@vida/core` suite green
 
 ## 5. Implementation Prompt (ordered; cites §2)
+
 1. **`services/habits/types.ts`** — add `EffectsPort` import (from foundation/effects) or a local `{rail,registry}`;
    `effects?`, `associations?` on deps; `MetricContributionError` (`.name`); the 5 method sigs; `HABIT_ENTITY_TYPE`.
    Import `TagAssociation`/`AssociationResolver` (foundation/spaces), `JournalContribution`/`JournalRegistry`/
    `SectionData`/`DataPoint` (../journals), `ProjectHabit` (@vida/types).
 2. **`services/habits/service.ts`** — add `projectHabitsRepo` (softDelete:true). Add `emitCompletionEffects(habit,
-   completion)`: if `completion.count >= habit.target_count`, for each of the 3 effectTypes: `if (effects &&
-   effects.registry.resolve(t)) { try { await effects.rail.applyEffect({subjectNaturalKey: habit.id, transition:
-   'completed:'+completion.completed_date, effectType: t, targetRef: habit.id}) } catch { /* post-commit, isolated
-   (BR-S5-2) */ } }`. **Call it after the recompute in a shared post-mutation step used by log/detailed/backfill AND
+completion)`: if `completion.count >= habit.target_count`, for each of the 3 effectTypes: `if (effects &&
+effects.registry.resolve(t)) { try { await effects.rail.applyEffect({subjectNaturalKey: habit.id, transition:
+'completed:'+completion.completed_date, effectType: t, targetRef: habit.id}) } catch { /* post-commit, isolated
+(BR-S5-2) */ } }`. **Call it after the recompute in a shared post-mutation step used by log/detailed/backfill AND
    `editCompletion`** (B1 — gate on the derived done-state, not the method; the idempotent key makes a re-fire safe).
    `deleteCompletion` fires nothing + does not reverse (BR-S5-1b). Add `contributeToPurposeMetrics` (guarded emit;
    throw `MetricContributionError` on failure). `getEntityTags(entityType, entityId)` (finance FIN-35 shape;
@@ -109,10 +117,12 @@ export class MetricContributionError extends Error
 6. Run typecheck + `test -- habits` (Node 24) + eslint. Done = §4 green → S5 Verification Gate.
 
 ## 6. Open UNKNOWNs
+
 - [UNKNOWN → read at impl] the exact `EffectRail`/`EffectRegistry` import path + `resolve` return shape (foundation/
   effects barrel); the `AssociationResolver.resolveAssociations` signature (foundation/spaces) — mirror finance FIN-35.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session               | Change                                                                                                                                                                          |
+| ---------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-23 | 2026-09-23-mod-habits | S5 PLAN — emit-only producer (fan-out guarded/idempotent/post-commit/isolated); entity_tags + project_habits + journal contribution; no registerHabitsEffects (owns no handler) |

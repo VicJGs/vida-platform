@@ -44,12 +44,7 @@ export interface SpacesService {
   tagEntity(tagId: string, entityType: string, entityId: string): Promise<EntityTagRow>
   untagEntity(tagId: string, entityType: string, entityId: string): Promise<void>
   // entity_links (SP4) — idempotent write / resolve-then-soft-delete
-  createLink(
-    pageId: string,
-    entityType: string,
-    entityId: string,
-    context?: string | null,
-  ): Promise<EntityLinkRow>
+  createLink(pageId: string, entityType: string, entityId: string, context?: string | null): Promise<EntityLinkRow>
   removeLink(pageId: string, entityType: string, entityId: string): Promise<void>
   // spaces (SP5)
   createSpace(input: CreateSpaceInput): Promise<SpaceRow>
@@ -60,11 +55,7 @@ export interface SpacesService {
   removeEnabledBlock(spaceId: string, capabilityDefId: string): Promise<void>
 }
 
-export function createSpacesService(
-  db: DrizzleDb,
-  deviceId: string,
-  registry: TaggableTypeRegistry,
-): SpacesService {
+export function createSpacesService(db: DrizzleDb, deviceId: string, registry: TaggableTypeRegistry): SpacesService {
   // M1.0 pass-through: empty [E] set; syncable soft-delete on every table (BR-13/BR-15).
   const cfg = { deviceId, encryptedFields: [] as string[], softDelete: true }
   const tagRepo = createRepository(db, tags, cfg)
@@ -128,11 +119,7 @@ export function createSpacesService(
     async tagEntity(tagId, entityType, entityId) {
       assertRegistered(entityType)
       const existing = await entityTagRepo.findWhere(
-        and(
-          eq(entityTags.tag_id, tagId),
-          eq(entityTags.entity_type, entityType),
-          eq(entityTags.entity_id, entityId),
-        )!,
+        and(eq(entityTags.tag_id, tagId), eq(entityTags.entity_type, entityType), eq(entityTags.entity_id, entityId))!,
       )
       if (existing.length > 0) {
         const row = existing[0]
@@ -144,11 +131,7 @@ export function createSpacesService(
 
     async untagEntity(tagId, entityType, entityId) {
       const existing = await entityTagRepo.findWhere(
-        and(
-          eq(entityTags.tag_id, tagId),
-          eq(entityTags.entity_type, entityType),
-          eq(entityTags.entity_id, entityId),
-        )!,
+        and(eq(entityTags.tag_id, tagId), eq(entityTags.entity_type, entityType), eq(entityTags.entity_id, entityId))!,
       )
       const live = existing.find((r) => r.deleted_at == null)
       if (live) await entityTagRepo.delete(live.id) // soft-delete → syncs as operation:'update'
@@ -214,10 +197,7 @@ export function createSpacesService(
     // --- enabled_blocks palette (idempotent junction) ------------------------
     async addEnabledBlock(spaceId, capabilityDefId) {
       const existing = await enabledBlockRepo.findWhere(
-        and(
-          eq(spaceEnabledBlocks.space_id, spaceId),
-          eq(spaceEnabledBlocks.capability_def_id, capabilityDefId),
-        )!,
+        and(eq(spaceEnabledBlocks.space_id, spaceId), eq(spaceEnabledBlocks.capability_def_id, capabilityDefId))!,
       )
       if (existing.length > 0) {
         const row = existing[0]
@@ -229,10 +209,7 @@ export function createSpacesService(
 
     async removeEnabledBlock(spaceId, capabilityDefId) {
       const existing = await enabledBlockRepo.findWhere(
-        and(
-          eq(spaceEnabledBlocks.space_id, spaceId),
-          eq(spaceEnabledBlocks.capability_def_id, capabilityDefId),
-        )!,
+        and(eq(spaceEnabledBlocks.space_id, spaceId), eq(spaceEnabledBlocks.capability_def_id, capabilityDefId))!,
       )
       const live = existing.find((r) => r.deleted_at == null)
       if (live) await enabledBlockRepo.delete(live.id)

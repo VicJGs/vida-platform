@@ -53,8 +53,7 @@ async function introspectAsync(table: string): Promise<PragmaCol[]> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mirrorCols = (t: any): Record<string, SQLiteColumn> =>
-  getTableColumns(t) as Record<string, SQLiteColumn>
+const mirrorCols = (t: any): Record<string, SQLiteColumn> => getTableColumns(t) as Record<string, SQLiteColumn>
 
 const CASES: ReadonlyArray<{ name: string; table: unknown }> = [
   { name: 'health_metrics', table: healthMetrics },
@@ -121,10 +120,9 @@ describe('DB-4 group #17 — DDL-introspection parity (SQL ↔ Drizzle mirror)',
       for (const col of Object.values(mirror)) {
         const p = byName.get(col.name)!
         const sqlDefault = p.dflt_value == null ? null : String(p.dflt_value)
-        expect(
-          sqlDefault,
-          `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`,
-        ).toBe(norm(col))
+        expect(sqlDefault, `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`).toBe(
+          norm(col),
+        )
       }
     })
   }

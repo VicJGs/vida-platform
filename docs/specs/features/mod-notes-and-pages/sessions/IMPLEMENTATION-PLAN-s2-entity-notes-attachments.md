@@ -4,6 +4,7 @@ Gate: §XXVI gate-2. Spec: `PLAN-s2-entity-notes-attachments.md` (Approval 1 ✅
 Builds on S1 (`ef8c1ed`). No `this.`; hoisted closures; every read filters `isNull(deleted_at)` via `allOf`.
 
 ## Build order
+
 - [ ] **B1 — `types.ts`.** Append `EntityNoteSeed` (`{title?; type?; status?; [k]: string|number|boolean|null|undefined}`) + `NewAttachment` (`{filename; mimeType; encryptedBlob: Uint8Array; thumbnailBlob?: Uint8Array; sizeBytes: number}`); add the 4 method sigs to `NotesService` (§3). Import `NoteAttachmentRow` from `../../db/schema/notes`.
 - [ ] **B2 — `validators/note.ts`.** APPEND `newAttachmentSchema` ONLY (R2), keys matching the CAMELCASE public `NewAttachment` type: `z.object({ filename: z.string().min(1), mimeType: z.string().min(1), encryptedBlob: z.instanceof(Uint8Array), thumbnailBlob: z.instanceof(Uint8Array).optional(), sizeBytes: z.number().int().nonnegative() })`. The method (B6) maps camelCase → snake_case columns. Do NOT touch existing exports; do NOT add `entityNoteSeedSchema`.
 - [ ] **B3 — `service.ts` attachRepo.** `const attachRepo = createRepository(db, noteAttachments, { deviceId, encryptedFields: [], softDelete: true })` (BR-S2-5). Import `noteAttachments` + `newAttachmentSchema`.
@@ -15,4 +16,5 @@ Builds on S1 (`ef8c1ed`). No `this.`; hoisted closures; every read filters `isNu
 - [ ] **B9 — gates.** typecheck 0 · `@vida/core` suite green (≥979 + new) · enum-parity green · eslint 0 · Verification Gate · post-impl `/critique` · §XXIX refresh `docs/modules/notes/current-*` (add S2 rows) → commit.
 
 ## On divergence
+
 Any wrong/missing step → STOP → §XXVIII (critique → preflight → Approval → re-impl); update this plan + task Build Steps + Route History.

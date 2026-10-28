@@ -39,7 +39,11 @@ describe('WeekView', () => {
     const region = getByRole('region', { name: 'Week grid' })
     expect(region.getAttribute('tabindex')).toBe('0')
     const allDay = getByRole('list', { name: 'All day' })
-    expect(within(allDay).getAllByRole('listitem').map((li) => li.textContent)).toEqual(['Spanish session', 'Read ch. 4'])
+    expect(
+      within(allDay)
+        .getAllByRole('listitem')
+        .map((li) => li.textContent),
+    ).toEqual(['Spanish session', 'Read ch. 4'])
     // one list per day WITH blocks (Mon · Thu · Fri) + the all-day list
     expect(getAllByRole('list')).toHaveLength(4)
   })
@@ -73,7 +77,9 @@ describe('WeekView', () => {
   })
 
   it('Day + today → underline mark + sr ", today"', () => {
-    const { container, getByRole } = renderUI(<WeekView days={[TODAY]} blocks={BLOCKS} today={TODAY} aria-label="Day" />)
+    const { container, getByRole } = renderUI(
+      <WeekView days={[TODAY]} blocks={BLOCKS} today={TODAY} aria-label="Day" />,
+    )
     expect(container.querySelector('.vida-week-today')).toBeTruthy()
     expect(getByRole('list', { name: /, today/ })).toBeTruthy()
   })
@@ -107,7 +113,9 @@ describe('WeekView', () => {
 
   it('timeFormat="12h" formats gutter and block labels', () => {
     const blocks: TimedBlock[] = [{ id: 'a', title: 'Lunch', day: TODAY, startHour: 12.5, endHour: 13.5 }]
-    const { getByRole, getByText } = renderUI(<WeekView days={[TODAY]} blocks={blocks} timeFormat="12h" aria-label="Day" />)
+    const { getByRole, getByText } = renderUI(
+      <WeekView days={[TODAY]} blocks={blocks} timeFormat="12h" aria-label="Day" />,
+    )
     expect(getByRole('listitem').textContent).toBe('12:30 pm–1:30 pm Lunch')
     expect(getByText('8 am')).toBeTruthy()
     expect(getByText('12 pm')).toBeTruthy()
@@ -141,13 +149,17 @@ describe('WeekView', () => {
 
   it('invalid `hours` → the default window + a dev-warn', () => {
     const spy = vi.spyOn(console, 'warn').mockImplementation(() => {})
-    const { getByText } = renderUI(<WeekView days={[TODAY]} blocks={[]} allDay={CHIPS} hours={[8.5, 20]} aria-label="Day" />)
+    const { getByText } = renderUI(
+      <WeekView days={[TODAY]} blocks={[]} allDay={CHIPS} hours={[8.5, 20]} aria-label="Day" />,
+    )
     expect(getByText('08:00')).toBeTruthy()
     expect(spy.mock.calls.some((c) => String(c[0]).includes('`hours`'))).toBe(true)
   })
 
   it('states: loading → aria-busy skeleton, no listitems', () => {
-    const { getByRole, queryAllByRole } = renderUI(<WeekView days={WEEK} blocks={[]} state="loading" aria-label="Week" />)
+    const { getByRole, queryAllByRole } = renderUI(
+      <WeekView days={WEEK} blocks={[]} state="loading" aria-label="Week" />,
+    )
     expect(getByRole('group', { name: 'Week' }).getAttribute('aria-busy')).toBe('true')
     expect(queryAllByRole('listitem')).toHaveLength(0)
   })
@@ -218,7 +230,11 @@ describe('WeekView', () => {
 
   it('TZ-safe: a month-boundary YYYY-MM-DD renders its LOCAL weekday/number under America/Sao_Paulo', () => {
     const { getByRole } = renderUI(
-      <WeekView days={['2026-11-01']} blocks={[{ id: 'a', title: 'A', day: '2026-11-01', startHour: 9 }]} aria-label="Day" />,
+      <WeekView
+        days={['2026-11-01']}
+        blocks={[{ id: 'a', title: 'A', day: '2026-11-01', startHour: 9 }]}
+        aria-label="Day"
+      />,
     )
     // 2026-11-01 is a Sunday; new Date('2026-11-01') would be Oct 31 (Sat) in UTC−3.
     expect(getByRole('list', { name: 'Sun 1' })).toBeTruthy()

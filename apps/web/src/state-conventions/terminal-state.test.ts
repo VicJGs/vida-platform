@@ -3,12 +3,7 @@
 // no-data branch. Locks that the web layer maps onto the `@vida/core` canon.
 import { describe, expect, it } from 'vitest'
 
-import {
-  deriveTerminalState,
-  type QueryResultLike,
-  TERMINAL_STATE,
-  type TerminalState,
-} from './terminal-state'
+import { deriveTerminalState, type QueryResultLike, TERMINAL_STATE, type TerminalState } from './terminal-state'
 
 // A list `isEmpty`: empty when zero-length.
 const isEmptyList = (rows: readonly unknown[]) => rows.length === 0
@@ -25,16 +20,12 @@ describe('deriveTerminalState — the four canonical states', () => {
 
   it('pending wins over an empty payload → loading (the empty-vs-loading race guard)', () => {
     // First paint can carry data:[] while still pending; must read as loading, never empty.
-    expect(
-      deriveTerminalState(result<number[]>({ isPending: true, data: [] }), isEmptyList),
-    ).toBe('loading')
+    expect(deriveTerminalState(result<number[]>({ isPending: true, data: [] }), isEmptyList)).toBe('loading')
   })
 
   it('error → error (even with a stale previous value)', () => {
     // React Query may retain a prior successful `data` on error (placeholderData) — error still wins.
-    expect(
-      deriveTerminalState(result<number[]>({ isError: true, data: [1, 2] }), isEmptyList),
-    ).toBe('error')
+    expect(deriveTerminalState(result<number[]>({ isError: true, data: [1, 2] }), isEmptyList)).toBe('error')
   })
 
   it('resolved + empty payload → empty', () => {
@@ -52,9 +43,9 @@ describe('deriveTerminalState — the four canonical states', () => {
 
 describe('deriveTerminalState — precedence order is stable', () => {
   it('pending outranks error and empty', () => {
-    expect(
-      deriveTerminalState(result<number[]>({ isPending: true, isError: true, data: [] }), isEmptyList),
-    ).toBe('loading')
+    expect(deriveTerminalState(result<number[]>({ isPending: true, isError: true, data: [] }), isEmptyList)).toBe(
+      'loading',
+    )
   })
 
   it('works with a non-array entity via an injected isEmpty', () => {

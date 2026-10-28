@@ -164,10 +164,7 @@ export function createReviewEngine(db: DrizzleDb, deviceId: string, deps: Review
     return toBinding(row)
   }
 
-  async function listBindings(
-    targetType: MethodBindingTargetType,
-    targetId: string,
-  ): Promise<MethodBinding[]> {
+  async function listBindings(targetType: MethodBindingTargetType, targetId: string): Promise<MethodBinding[]> {
     const rows = await bindingsRepo.findWhere(
       and(
         eq(methodBindings.target_type, targetType),
@@ -229,10 +226,7 @@ export function createReviewEngine(db: DrizzleDb, deviceId: string, deps: Review
     return toReviewEvent(row)
   }
 
-  async function getDue(
-    range: DueRange,
-    opts: { level?: MethodBindingTargetType } = {},
-  ): Promise<ReviewDueItem[]> {
+  async function getDue(range: DueRange, opts: { level?: MethodBindingTargetType } = {}): Promise<ReviewDueItem[]> {
     const now = Date.now()
     const where =
       opts.level !== undefined

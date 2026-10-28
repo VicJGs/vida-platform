@@ -21,15 +21,15 @@
   the view. Fail-loud on bad input. `[FACT: service.ts:305-312]`
 - **Sessions `dueIn(range: TimeRange): Promise<DueItem[]>`** — aggregates own `planned_blocks` in range +
   live provider lanes (empty at M1.1). A `planned_block` yields `DueItem { source_module:'sessions', ref_id,
-  label, est_minutes, urgency, hard_deadline?: scheduled_end ?? undefined }`. A throwing provider lane is
+label, est_minutes, urgency, hard_deadline?: scheduled_end ?? undefined }`. A throwing provider lane is
   skipped internally (never fatal). `[FACT: services/sessions/service.ts:689-718; types.ts:219-232]`
 - **`DueItem.hard_deadline?: number`** — OPTIONAL. Present ⇔ the block has a `scheduled_end` (a device-stable
   UTC-ms fire instant). Absent ⇒ no stable fire instant. `[FACT: sessions/types.ts:231; service.ts:706]`
 - **Engine `scheduleLocal(occ: DueOccurrence, q: QuietHours): Promise<ScheduleResult>`** — bakes quiet-hours
   (`bakeQuietHours`: schedule | shift | suppress) then registers with the OS scheduler (**deny-safe M1 →
   `scheduled:false`, no OS call**). `DueOccurrence = { occurrenceId, at, minuteOfDay }`; `QuietHours =
-  { enabled, startMinute, endMinute, policy:'shift'|'suppress' }`; `ScheduleResult = { action, scheduled,
-  at?, id? }`. `[FACT: foundation/notifications/service.ts:74-92; types.ts:115-132,195-201,238]`
+{ enabled, startMinute, endMinute, policy:'shift'|'suppress' }`; `ScheduleResult = { action, scheduled,
+at?, id? }`. `[FACT: foundation/notifications/service.ts:74-92; types.ts:115-132,195-201,238]`
 - **`shouldMaterialize(occurrenceAt, now): boolean`** = `occurrenceAt <= now`. `[FACT: scheduling.ts:72]`
 - **`dedupKey({kind:'due', occurrenceId})`** → `due:${occurrenceId}` (the engine/OS-scheduler key).
   `[FACT: scheduling.ts:63-67]`
@@ -38,7 +38,7 @@
   = **dispatcher service**". `entity_type` is OPEN (no CHECK, registry-validated); links the subject (NF-10
   link-don't-copy). `[FACT: db/schema/notifications.ts:18-20,42,56,62-67]`
 
-## §2 — Business Rules (candidate BR-NT-S4-*, promoted at §XXIX on ship)
+## §2 — Business Rules (candidate BR-NT-S4-\*, promoted at §XXIX on ship)
 
 - **BR-NT-S4-1 (time path / NF-2)** — `tick(range?, now?)` is the time half of the single write path; it
   materializes rows ONLY through the existing `fire` time entry (no new insert site). `[NF-2; conventions.md:6]`
@@ -93,8 +93,8 @@
   but no policy field was found. Default `policy: 'suppress'` (matches S2's suppress-external semantics).
   `[FACT: service.ts:91-103 reads no policy]` → **[UNKNOWN]** a user-chosen shift-vs-suppress → M2 pref; default suppress.
 - **[FACT]** fired `FireInput` = `{ type:'reminder', title: item.label, entity_type: item.source_module,
-  entity_id: item.ref_id, metadata: JSON.stringify({ occurrenceId, hard_deadline }) }`. `reminder ∈
-  NOTIFICATION_TYPE`; `title` non-empty (label) — satisfies `fire`'s fail-loud guards. `[FACT: NOTIFICATION_TYPE; service.ts:306-307]`
+entity_id: item.ref_id, metadata: JSON.stringify({ occurrenceId, hard_deadline }) }`. `reminder ∈
+NOTIFICATION_TYPE`; `title` non-empty (label) — satisfies `fire`'s fail-loud guards. `[FACT: NOTIFICATION_TYPE; service.ts:306-307]`
 - **[FACT]** `entity_type='sessions'` is valid — `entity_type` is OPEN (no CHECK). `[FACT: schema:42]`
 - **[INTERP]** the slice-map sequences "gate (S2) → `fire` → `scheduleLocal`". `fire` already runs S2's gate
   internally (`deliver`); so `tick` = dedup-check → `fire(input, ctx)` → `scheduleLocal(occ, quietHours)`.
@@ -139,7 +139,7 @@
    - `utcMinuteOfDay(t): number`;
    - `occurrenceOf(item): string` = `${source_module}:${ref_id}:${hard_deadline}`;
    - `alreadyMaterialized(item): Promise<boolean>` = `findWhere(and(eq(entity_type, source_module),
-     eq(entity_id, ref_id), isNull(effect_event_id)))` non-empty (g1 NIT-1: the `isNull` clause confines
+eq(entity_id, ref_id), isNull(effect_event_id)))` non-empty (g1 NIT-1: the `isNull` clause confines
      dedup to prior DISPATCHER time rows — an event-path row on the same subject never false-skips); add
      `isNull` to the drizzle-orm import;
    - `tick(range?, now = Date.now())`: `const window = range ?? {start:0,end:now}` (body-level default so
@@ -148,7 +148,7 @@
      `!shouldMaterialize(hd, now)` ⇒ `skipped++`; `await alreadyMaterialized` ⇒ `skipped++`; else build
      `FireInput`, then **an inner try around `fire`** (`catch ⇒ skipped++; continue` — no row materialized),
      then — once the row is materialized — **a separate best-effort try around `engine.scheduleLocal({
-     occurrenceId, at: hd, minuteOfDay: utcMinuteOfDay(hd) }, quietHours)`** whose THROW is swallowed (the OS
+occurrenceId, at: hd, minuteOfDay: utcMinuteOfDay(hd) }, quietHours)`** whose THROW is swallowed (the OS
      arm is best-effort; a materialized row must never be recounted `skipped` — g2 finding, BR-NT-S4-9);
      `alertSuppressed = sr.action === 'suppress'`; `alertSuppressed ? suppressed++ : fired++`.
    - add `tick` to the returned object.
@@ -158,6 +158,7 @@
    to shipped in `current-spec.md`. Commit docs WITH code.
 
 ## Out of scope (unchanged homing)
+
 - Real OS scheduler / wake-relay / email reach → **M2** (deny-safe ports, zero-sig swap).
 - Device TZ resolution for `minuteOfDay` → **M2** (UTC approximation at M1).
 - Digest/batching → **M2** (NF-15). Inbox render → **② fe-notifications**. `[E]` encryption → **M3**.

@@ -2,12 +2,15 @@
 
 **Owning issues:** UX-6 Home = Journal daily dashboard (LIF-95, the design model) + **fe-home #18 (LIF-187, the
 rendered surface — Phase-1b)** · **Authority:** new-feature / add-frontend-component · intent `docs/features/journals`
-+ ADR-004 provider-registry pattern + ADR-008 render-targets. Full model:
-`docs/core/architecture/home-journal-dashboard.md`; fe-home delivery: `docs/specs/foundation/fe-home/delivery/`.
+
+- ADR-004 provider-registry pattern + ADR-008 render-targets. Full model:
+  `docs/core/architecture/home-journal-dashboard.md`; fe-home delivery: `docs/specs/foundation/fe-home/delivery/`.
 
 ## The rendered Home surface (fe-home #18 — Phase-1b, SHIPPED)
+
 The `/` landing surface, rendered inside the UI-4 shell `<Outlet/>` (`routes.tsx` index route). COMPOSES two distinct
 entities (ADR-008 render-targets) — it owns no block body and no live data (all cross-layer reads are SEAMS):
+
 - `home-dashboard.tsx` — **HomeDashboard** (S1, EC-4/EC-5): a personalized grid of **standalone** integration-block
   widgets (summary·finance·tasks·habits·projects·purposes·dreams·schedule) over the shipped `@vida/ui` `DashboardView`.
   `renderHomeWidget` = the standalone widget SUCCESS-body seam (M1 placeholder; real bodies ship per-capability).
@@ -19,7 +22,7 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   (debounced `writePageContent`, mount-echo deduped incl. blank pages — BR-NEU-5). Data safety (notes-rescope R0): the
   body seeds from the latest-body overlay (an edit made on `/notes/$id` a moment ago survives the route swap — B-53),
   the read waits for in-flight writes (`readAfterWrites(['journal:<date>'])`), and an unreadable body shows the EC-33
-  read-only notice. Rules: `docs/modules/notes/current-business-rules.md` BR-R0-*. `today` is a **local** `YYYY-MM-DD`
+  read-only notice. Rules: `docs/modules/notes/current-business-rules.md` BR-R0-\*. `today` is a **local** `YYYY-MM-DD`
   (never `toISOString()`/UTC). Shell owns the terminal frames (loading/empty/error); `editorState?` is a test/gate override.
   Inline integration-block node-views (`/dailySummary`, …) remain the deferred #31 seam INSIDE the editor; multi-device
   CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — they land with each entity's live close / HARD-1 providers).
@@ -36,6 +39,7 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   (`opacity:0.6` on muted `/type` labels → 2.26; fixed to plain `$colorTextMuted`), [[visual-gate-must-assert-measurement-and-composite-opacity]].
 
 ## What lives here (UX-6 design model — the data/logic layer fe-home consumes)
+
 The **design model** of the daily Journal Home — central DATA/logic the render layer consumes. UX-6 designs the shape;
 fe-home renders it. **The UX-6 model files below stay JSX-free** (the rendered surface is the `*-surface`/`*-dashboard`/
 `*-page-region` files above).
@@ -50,6 +54,7 @@ fe-home renders it. **The UX-6 model files below stay JSX-free** (the rendered s
   `get/setSelection` storage seams.
 
 ## Rules (do not violate)
+
 - **The UX-6 MODEL files are data/logic, not chrome.** `section-model.ts` · `journal-contribution.ts` ·
   `section-state.ts` · `selection.ts` stay JSX-free (no components, no rendering). The rendered surface lives in the
   `home-surface`/`home-dashboard`/`journal-page-region` `.tsx` files (fe-home #18, Phase-1b) — which DO render + wire `/`.
@@ -61,9 +66,10 @@ fe-home renders it. **The UX-6 model files below stay JSX-free** (the rendered s
   engine (MOD-journals #33, M1.1) + storage (Preferences/MOD-journals) fill them. Follows the AR-9 precedent.
 
 ## Downstream homes (fenced OUT of UX-6)
+
 - Aggregation engine (`journal-service.ts`, `buildDashboard`/`captureSnapshot`/`getJournal`/`buildReview`) →
   **MOD-journals #33** (M1.1; "0 lines INTENDED").
-- Real module `summary(date)`/`dueIn` providers → each **MOD-*** (M1.1+).
+- Real module `summary(date)`/`dueIn` providers → each **MOD-\*** (M1.1+).
 - The journal `pages` row + `/summary` block + TipTap entry → **Notes & Pages** (owns them; `entry` here is a seam).
 - Snapshot + Wrapped-style temporal review engine → **design-pass / Wave 3-4**.
 - The rendered React screen + `/` route wiring → **Phase-1b**.

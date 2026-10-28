@@ -3,10 +3,11 @@
 
 # Tasks — Current Business Rules (enforced)
 
-> The rules the shipped code **actually enforces**, traced to the feature invariants (TK-*) + backend-intent (TAS-*).
+> The rules the shipped code **actually enforces**, traced to the feature invariants (TK-_) + backend-intent (TAS-_).
 > Design-but-not-yet-built rules live in `docs/features/tasks/business-rules.md`, not here.
 
 ## S1 — Foundation (BUILT 2026-10-14)
+
 - **BR-TK-S1-1 (≤1 parent module, TK-2/TAS-34).** A task sets at most one of `project_id`/`milestone_id`/`course_id`/
   `contact_id`; >1 ⇒ `MultipleParentError`, on create AND on the merged set at update. `parent_task_id` is a separate
   (sub-task) axis and is NOT counted. Enforced: `service.ts` `assertSingleParent` + `PARENT_MODULE_KEYS`.
@@ -32,6 +33,7 @@
   field encryption is M3/DB-5. The seam is present but dormant.
 
 ## S2 — Sub-tasks + M4 rollup (BUILT 2026-10-14)
+
 - **BR-TK-S2-1 (single-level nesting, TK-3).** `addSubtask(parentId, …)` requires the parent to be top-level
   (`parent.parent_task_id == null`) else `SubtaskNestingError`; a missing parent ⇒ `TaskNotFoundError`. A sub-task may
   still carry one parent-module FK (a different axis — the S1 ≤1 guard still runs via the delegated create).
@@ -51,6 +53,7 @@
   leaf reads completion status.
 
 ## S3 — Completion + effect fan-out (BUILT 2026-10-14)
+
 - **BR-TK-S3-1 (completion = status + timestamp, repo-written, TK-6).** `completeTask(id)` sets `status='completed'` +
   `completed_at=Date.now()` via the **repo primitive `tasksRepo.update`**, NOT the service `updateTask` (which has no
   `completed_at` path — BR-TK-S1-5). `completeTask`/`reopenTask` are `completed_at`'s sole writers. A missing/soft-deleted
@@ -79,6 +82,7 @@
   (recorded as a decision, not an oversight).
 
 ## S4 — Timer + log_time + actual_minutes (BUILT 2026-10-15) — the decided model (G-S1/G-S4/C4)
+
 - **BR-TK-S4-1 (timer IS a `'work'` sessions sub-type, G-S1/TK-5).** `startTimer(taskId)` opens a `'work'` session
   (`in_progress`) and attaches the task (`entity_type='task'`, instance level) — the timed-run reference, **not** a
   bespoke task timer. `'work'` is a tasks-registered sub-type (`WORK_SESSION_TYPE`, `effects:[]`, spine-only), via
@@ -90,7 +94,7 @@
 - **BR-TK-S4-3 (ledger written ONLY via the `log_time` rail handler, G-S4 — never direct, TAS-16/XCU-23).** `stopTimer`
   is **fire-first, commit-last**: fire `log_time` through the rail (`payload:{started_at,ended_at}`, `targetRef`=the
   attached task) → the tasks-owned handler writes one `task_time_logs` row `{task_id, start_time, end_time,
-  duration_minutes=max(0, round((end−start)/60000))}` → **then** `completeSession`. A crash between leaves the session
+duration_minutes=max(0, round((end−start)/60000))}` → **then** `completeSession`. A crash between leaves the session
   `in_progress` → a re-`stopTimer` retries; the rail dedups the written row (grain = session id ‖ `'time_logged'`).
   `stopTimer` on an already-completed session ⇒ idempotent no-op.
 - **BR-TK-S4-4 (`actual_minutes` derives on read, TAS-15/C6).** `getActualMinutes(taskId)` = SUM of the task's
@@ -107,6 +111,7 @@
   `SessionTypeNotFound` — both low, deferred.)
 
 ## S5 — Obligations + recurrence (BUILT 2026-10-15)
+
 - **BR-TK-S5-1 (obligation-only recurrence, TK-7/TAS-21, enforced at EVERY write path).** A non-null `recurrence_rule`
   requires `kind='obligation'` — `createTask`/`updateTask`/`setRecurrence` all reject it on a non-obligation
   (`RecurrenceNotAllowedError`; `assertRecurrenceAllowed`). `updateTask` checks the MERGED kind/rule (flipping an
@@ -137,6 +142,7 @@
   accepted for M1 (g2-reviewed), a spawn-dedup is deferred. The ② UI should avoid/guard the reopen-obligation path.
 
 ## S6 — Measurability axes + contribution (BUILT 2026-10-15) — TAS-25/26
+
 - **BR-TK-S6-1 (`getTaskProgress` = the pursuable `progress()` contract, derived-on-read, TAS-25/XCU-08/BR-8).** A task's
   OWN progress ∈ [0,1] | null is computed on read; no stored progress column (C6). Tasks has **no override slot**, so it
   always derives (Projects-faithful): a **parent** (has sub-tasks) ⇒ the M4 `getRollup().progress` (container rollup
@@ -154,7 +160,7 @@
   task has no stored value, so it derives the milestone leaf like any other. No `manual⇒null` rule is fabricated; once the
   override column lands, `resolveProgress` will give a stored `manual` value precedence.
 - **BR-TK-S6-5 (not-found ≠ unmeasured).** `getTaskProgress` on a missing/soft-deleted id ⇒ `TaskNotFoundError`, never
-  `null` — `null` is reserved for the *unmeasured* measure (BR-2); the two signals never collide.
+  `null` — `null` is reserved for the _unmeasured_ measure (BR-2); the two signals never collide.
 - **BR-TK-S6-6 (pure read — C2 guard).** `getTaskProgress` writes nothing (no row/`_sync_version`/ledger change); tasks
   owns no Purpose-apex table (`contributions`/`values`/`purpose_reviews`/`plan_steps` are Purpose-domain, §3.8).
 - **BR-TK-S6-7 (not an M5 source — C1 guard, by construction).** `TasksServiceDeps` holds no `MeasurementSourceRegistry`,
@@ -165,6 +171,7 @@
   Projects/Habits convention (the event-trigger write IS the effect, ADR-011 §3.5 / XCU-09).
 
 ## S7 — Aggregation, R7 fan-out over the shared seam (BUILT 2026-10-16) — TAS-05/32
+
 - **BR-TK-S7-1 (own table only — TK-9/C5).** `getAggregatedTasks` reads ONLY the own `tasks` table (the soft-delete-
   filtered `listTasks` path) and partitions in JS. It never reads a cross-module table; every cross-module parent
   comes through the `providers` seam. The 4 parent FKs stay the aggregator mechanism (C5 — untouched).
@@ -205,6 +212,7 @@
   not N serial round-trips. One table (`PARENT_MODULES`) drives both the ≤1-parent guard and the aggregator axis (g2 F3).
 
 ## S8 — Tags · Notes · Views · the tasks ReadProvider (BUILT 2026-10-18) — TAS-27/28/30/31 · XCU-07/08
+
 - **BR-TK-S8-1 (tags ride the shared primitive — TK-8 / SP1 / SP2).** Tag WRITES go ONLY through `SpacesService`
   (`tagEntity`/`untagEntity`: idempotent BR-14, resolve-then-soft-delete BR-15, `entity_type` registry-validated BR-2).
   `'task'` is pre-seeded in `_registry.ts` ⇒ no tasks `register()`, no `registry` dep. Tasks never writes `entity_tags`
@@ -217,7 +225,7 @@
   `entity_tags` `findWhere(entity_type='task' ∧ entity_id ∧ isNull(deleted_at))` (BR-TK-S1-4 discipline); unknown task
   ⇒ `[]`; no dep needed.
 - **BR-TK-S8-4 (ONE guiding note per task — TAS-31).** `getTaskNote` = `notes.ensureEntityNote('task_note','task',id,
-  { title })`: the dedicated `PAGE_TYPE` member, `entity_type='task'`; idempotent (second call ⇒ same page id); the seed
+{ title })`: the dedicated `PAGE_TYPE` member, `entity_type='task'`; idempotent (second call ⇒ same page id); the seed
   is CREATION-ONLY (title → the content H1; `pages.title` NULL; a rename does not retitle). Task-exists guard first.
 - **BR-TK-S8-5 (task-view identity = `entity_types` EXACTLY `['task']`, stamped — ADR-007 §3.5).** `saveView` always
   writes `filter.entity_types = ['task']`; `SaveTaskViewSchema` is a `strictObject` so a caller-supplied `entity_types`
@@ -256,13 +264,14 @@
   here by design, not a gap.
 
 ## S9 — Journal summary + DueProvider, the ① closer (BUILT 2026-10-19) — TAS-19 (`surface_journal` PULL) · TAS-29/32/36
+
 - **BR-TK-S9-1 (the journal is PULL; S9 emits nothing — ADR-004 §3.2.5).** `surface_journal`/`surface_calendar` are
   projection effects ("writes no row — pull-aggregated at render"); tasks registers READERS (`registerTasksJournal`,
   `registerTasksDueProvider`) and never pushes either. Enforced: `service.ts` `COMPLETION_EFFECTS` unchanged; `journal.ts`.
 - **BR-TK-S9-2 (the summary CONTENT is the governing doc's row — `cross-module-integration.md` §2 ∘ `contract.md:32`).**
   `getDayTasksSummary(date)` = the SET of tasks `{ due_date = date ∨ scheduled_date = date ∨ utcDay(completed_at) =
-  date }` over EVERY live row (no grain filter — a sub-task completion is a completion), projected to `{ id, title,
-  status, priority, completedToday, dueToday }`. A set UNION: a task completed-on AND due-on the date is one member with
+date }` over EVERY live row (no grain filter — a sub-task completion is a completion), projected to `{ id, title,
+status, priority, completedToday, dueToday }`. A set UNION: a task completed-on AND due-on the date is one member with
   both flags; nothing is excluded for being completed (its `status` is carried). `completedToday` requires the
   TIMESTAMP (`completed_at != null`, TK-6) — a `status:'completed'` label with no timestamp is not "completed on date".
   Never throws for data; idle/malformed `date` ⇒ `[]`. Order: `sort_order` → `created_at` → `id` codepoint.
@@ -297,6 +306,7 @@
   `service.ts` adds one type-only `../sessions` import (no cycle) and still no other module's service or schema.
 
 ## Not yet enforced (designed, downstream)
+
 **① backend complete.** `pinView`/`reorderViews` = Preferences (first-consumer-pull gap filed). TAS-24 `duty`/open-vocab
 type registry = ADR-002 amendment (deferred). S7's provider REGISTRATION (projects/relationships/learning) + the
 composition root that CALLS `registerTasks{Timer,ReadProvider,Journal,DueProvider}` = UI-3 / M1.1+ (MVP-PATH:108-111;

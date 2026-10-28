@@ -36,7 +36,10 @@ describe('body-writes barrier', () => {
   it('a read waits for an in-flight write, then reads post-write data', async () => {
     let stored = 'old'
     const w = deferred()
-    trackBodyWrite(['page:p1'], w.promise.then(() => (stored = 'new')))
+    trackBodyWrite(
+      ['page:p1'],
+      w.promise.then(() => (stored = 'new')),
+    )
     const read = readAfterWrites(['page:p1'], async () => stored)
     w.resolve()
     await expect(read).resolves.toBe('new')
@@ -54,9 +57,15 @@ describe('body-writes barrier', () => {
     let stored = 'v0'
     const a = deferred()
     const b = deferred()
-    trackBodyWrite(['page:p1'], a.promise.then(() => (stored = 'vA')))
+    trackBodyWrite(
+      ['page:p1'],
+      a.promise.then(() => (stored = 'vA')),
+    )
     const read = readAfterWrites(['page:p1'], async () => stored)
-    trackBodyWrite(['page:p1'], b.promise.then(() => (stored = 'vB'))) // registers while the reader waits on A
+    trackBodyWrite(
+      ['page:p1'],
+      b.promise.then(() => (stored = 'vB')),
+    ) // registers while the reader waits on A
     a.resolve()
     await Promise.resolve()
     b.resolve()
@@ -71,7 +80,10 @@ describe('body-writes barrier', () => {
     const read = readAfterWrites(['page:p1'], async () => {
       reads++
       if (reads === 1) {
-        trackBodyWrite(['page:p1'], w.promise.then(() => (stored = 'v1')))
+        trackBodyWrite(
+          ['page:p1'],
+          w.promise.then(() => (stored = 'v1')),
+        )
         const seen = stored
         await gate.promise
         return seen
@@ -88,8 +100,14 @@ describe('body-writes barrier', () => {
     let stored = 'v0'
     const a = deferred()
     const b = deferred()
-    trackBodyWrite(['page:p1'], a.promise.then(() => (stored = 'vA')))
-    trackBodyWrite(['page:p1'], b.promise.then(() => (stored = 'vB')))
+    trackBodyWrite(
+      ['page:p1'],
+      a.promise.then(() => (stored = 'vA')),
+    )
+    trackBodyWrite(
+      ['page:p1'],
+      b.promise.then(() => (stored = 'vB')),
+    )
     a.resolve()
     await new Promise((r) => setTimeout(r, 0))
     const read = readAfterWrites(['page:p1'], async () => stored)
@@ -100,7 +118,10 @@ describe('body-writes barrier', () => {
   it('a journal-keyed reader waits for a write registered under the page’s journal date (Home ⇄ note page)', async () => {
     let stored = 'old'
     const w = deferred()
-    trackBodyWrite(bodyWriteKeys('j1', '2026-10-26'), w.promise.then(() => (stored = 'new')))
+    trackBodyWrite(
+      bodyWriteKeys('j1', '2026-10-26'),
+      w.promise.then(() => (stored = 'new')),
+    )
     const read = readAfterWrites(['journal:2026-10-26'], async () => stored)
     w.resolve()
     await expect(read).resolves.toBe('new')

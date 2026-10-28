@@ -1,12 +1,5 @@
 import { z } from 'zod'
-import {
-  TASK_DIFFICULTY,
-  TASK_KIND,
-  STATUS,
-  PRIORITY,
-  MEASUREMENT_KIND,
-  BINDING_MODE,
-} from '@vida/types'
+import { TASK_DIFFICULTY, TASK_KIND, STATUS, PRIORITY, MEASUREMENT_KIND, BINDING_MODE } from '@vida/types'
 import { ViewLayoutSchema } from './view'
 
 export const TaskDifficultySchema = z.enum(TASK_DIFFICULTY)

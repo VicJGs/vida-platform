@@ -6,13 +6,7 @@
 // wiring are S2. Spec: docs/features/sessions-and-scheduling/service/S1-*.md
 // ============================================================================
 
-import type {
-  SchedulingMode,
-  SessionStatus,
-  PomodoroType,
-  PomodoroStatus,
-  StudySessionResourceType,
-} from '@vida/types'
+import type { SchedulingMode, SessionStatus, PomodoroType, PomodoroStatus, StudySessionResourceType } from '@vida/types'
 import type { PresetBlock } from '@vida/types'
 import type { SessionRow, SessionAttachmentRow } from '../../db/schema/foundation/sessions'
 import type { FocusSessionRow, StudySessionRow } from '../../db/schema/foundation/session-extensions'
@@ -93,9 +87,7 @@ export interface SessionPatch {
   energy_level?: number | null
   distraction_count?: number | null
   key_learnings?: string | null
-  extension?:
-    | Partial<Omit<FocusExtensionInput, 'kind'>>
-    | Partial<Omit<StudyExtensionInput, 'kind'>>
+  extension?: Partial<Omit<FocusExtensionInput, 'kind'>> | Partial<Omit<StudyExtensionInput, 'kind'>>
 }
 
 /** The composed read shape — spine + its extension row (never flat-merged: both carry baseColumns). */

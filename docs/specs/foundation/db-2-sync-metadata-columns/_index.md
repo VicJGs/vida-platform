@@ -7,6 +7,7 @@
 > **STUB** — scaffolded by /task-new 2026-07-22. Written for real by the PLAN step (/documentation-component).
 
 ## Identity
+
 - **What:** P0.5 of the from-zero storage rebuild — amend the shared `syncColumns` primitive
   (`packages/core/src/db/schema/_shared.ts`) to the FINAL sync-metadata set: add `_sync_field_ts`
   (per-field LWW, ADR-003 §17), settle the `effect_event_id` idempotency columns' home (ADR-004 F1),
@@ -19,21 +20,26 @@
 - **What it is NOT:** not a domain table (DB-3/DB-4); not the sync engine (Phase 2); not encryption (DB-5).
 
 ## Acceptance
+
 See the PLAN §4 (functional) and, after Approval 1, the IMPLEMENTATION-PLAN §Acceptance (technical/parity).
 
 ## Gate files (session split)
-- **Gate 1 — PLAN (direction):** `sessions/PLAN-2026-07-22-db-2-sync-metadata-columns.md` — *to be written*
-- **Gate 2 — IMPLEMENTATION-PLAN (build):** `sessions/IMPLEMENTATION-PLAN-2026-07-22-db-2-sync-metadata-columns.md` — *after Approval 1*
+
+- **Gate 1 — PLAN (direction):** `sessions/PLAN-2026-07-22-db-2-sync-metadata-columns.md` — _to be written_
+- **Gate 2 — IMPLEMENTATION-PLAN (build):** `sessions/IMPLEMENTATION-PLAN-2026-07-22-db-2-sync-metadata-columns.md` — _after Approval 1_
 
 ## Status
+
 **Draft (stub)** — task activated; loop not yet started. Next: `/document-context` baseline → PLAN.
 
 ## Ground truth
+
 `ADR-002 §5.20 owed-tables ledger (ADR-002-data-model.md:3790-3794)` — the consolidated scope · ADR-003 §17
 (`_sync_field_ts` + HLC) · ADR-004 §3.2.5 F1 (`effect_event_id` + UNIQUE-on-output) · ADR-016 (campaign) ·
 `docs/infrastructure/storage-build-plan.md` (ledger) · current primitive `packages/core/src/db/schema/_shared.ts:23-40`.
 
 ## Open UNKNOWNs / Decisions Needed
+
 - [F6/D4-d] HLC representation of `_sync_lww_ts` + `_sync_field_ts` (string / BigInt / two-column) +
   HLC-state home (`last_l`/`last_c`); `updated_at` stays wall-ms. Resolve against ADR-003 §17 in PLAN.
 - Scope of `effect_event_id`: NOT universal (effect-triggering + UNIQUE effect-output rows only) — decide

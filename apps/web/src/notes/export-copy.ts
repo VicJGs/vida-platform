@@ -6,7 +6,11 @@
 /** A filesystem-safe file name from a page title (`untitled` when empty). */
 export function copyFilename(title: string, ext: 'json' | 'md'): string {
   const printable = Array.from(title, (ch) => (ch.charCodeAt(0) < 32 ? '-' : ch)).join('')
-  const base = printable.trim().replace(/[\\/:*?"<>|]+/g, '-').slice(0, 120) || 'untitled'
+  const base =
+    printable
+      .trim()
+      .replace(/[\\/:*?"<>|]+/g, '-')
+      .slice(0, 120) || 'untitled'
   return `${base}.${ext}`
 }
 

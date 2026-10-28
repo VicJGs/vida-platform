@@ -75,7 +75,13 @@ export interface EntityViewProps {
 }
 
 // ── styled hosts (unnamed → base theme; no sub-theme — the LV-3 convention) ──────────────────────────────
-const EntityRoot = styled(View, { flexDirection: 'column', gap: '$16', width: '100%', maxWidth: 1136, marginHorizontal: 'auto' })
+const EntityRoot = styled(View, {
+  flexDirection: 'column',
+  gap: '$16',
+  width: '100%',
+  maxWidth: 1136,
+  marginHorizontal: 'auto',
+})
 const Header = styled(View, { flexDirection: 'column', gap: '$8' })
 // Wraps (notes-rescope R1, DEV-R1-1): when the title and the action slot don't both fit (375 px), the action drops below
 // the title instead of squeezing it into a narrow column; at 768/1440 they sit side by side.
@@ -94,7 +100,12 @@ const TitleGroup = styled(View, { flexShrink: 1, flexGrow: 1, flexBasis: 240, ga
 const ModeToolbar = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$4' })
 const MergedStack = styled(View, { flexDirection: 'column', gap: '$24' })
 const FacetDivider = styled(View, { height: 1, backgroundColor: '$colorBorderDefault' })
-const SkeletonRow = styled(View, { height: 14, borderRadius: '$sm', backgroundColor: '$colorSurfaceSecondary', marginBottom: 8 })
+const SkeletonRow = styled(View, {
+  height: 14,
+  borderRadius: '$sm',
+  backgroundColor: '$colorSurfaceSecondary',
+  marginBottom: 8,
+})
 
 // The shell-owned Editor-facet terminal states (EC-5) — the dashboard BlockBody precedent. renderBlock analog = `editor`,
 // called only for success; a block/page is CONTENT, not a self-stated component.
@@ -182,7 +193,12 @@ function EntityTitle({
     setEditing(false)
   }
 
-  const textStyle = { fontFamily: '$display', fontSize: '$display', lineHeight: '$display', color: '$colorTextPrimary' } as const
+  const textStyle = {
+    fontFamily: '$display',
+    fontSize: '$display',
+    lineHeight: '$display',
+    color: '$colorTextPrimary',
+  } as const
   let body: ReactNode
   if (onTitleCommit == null) {
     body = (
@@ -304,10 +320,20 @@ export function EntityView({
         {/* The merged⇄tabbed toggle — only when there IS a second facet to toggle to (BR-E-6). */}
         {hasEditor && (
           <ModeToolbar role="toolbar" aria-label="Facet mode">
-            <Button size="sm" intent={mode === 'merged' ? 'primary' : 'ghost'} aria-pressed={mode === 'merged'} onPress={() => onModeChange('merged')}>
+            <Button
+              size="sm"
+              intent={mode === 'merged' ? 'primary' : 'ghost'}
+              aria-pressed={mode === 'merged'}
+              onPress={() => onModeChange('merged')}
+            >
               Merged
             </Button>
-            <Button size="sm" intent={mode === 'tabbed' ? 'primary' : 'ghost'} aria-pressed={mode === 'tabbed'} onPress={() => onModeChange('tabbed')}>
+            <Button
+              size="sm"
+              intent={mode === 'tabbed' ? 'primary' : 'ghost'}
+              aria-pressed={mode === 'tabbed'}
+              onPress={() => onModeChange('tabbed')}
+            >
               Tabbed
             </Button>
           </ModeToolbar>

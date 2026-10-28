@@ -34,9 +34,7 @@ export function createIntegrationRegistry(): IntegrationRegistry {
 
   // Deterministic order (sorted by identity) — mirrors the built capability/effect registries' list().
   function list(): IngestionSource[] {
-    return [...entries.values()]
-      .map((e) => e.source)
-      .sort((a, b) => a.integrationId.localeCompare(b.integrationId))
+    return [...entries.values()].map((e) => e.source).sort((a, b) => a.integrationId.localeCompare(b.integrationId))
   }
 
   // XCU-15 / IR-11 — attach a native adapter to an EXISTING integration-identity: the source upgrades to the

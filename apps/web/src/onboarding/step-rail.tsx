@@ -34,11 +34,20 @@ const Row = styled(View, { flexDirection: 'row', alignItems: 'center', gap: '$8'
 
 // The marker disc — done=filled brand + check · current=ring in brand emphasis · upcoming=muted ring.
 function Marker({ status }: { status: StepStatus }) {
-  const base = { width: 20, height: 20, borderRadius: '$full' as const, alignItems: 'center' as const, justifyContent: 'center' as const, borderWidth: 2 }
+  const base = {
+    width: 20,
+    height: 20,
+    borderRadius: '$full' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    borderWidth: 2,
+  }
   if (status === 'done')
     return (
       <View {...base} backgroundColor="$colorBrandPrimary" borderColor="$colorBrandPrimary">
-        <Text fontSize={11} lineHeight={11} color="$colorTextInverse">✓</Text>
+        <Text fontSize={11} lineHeight={11} color="$colorTextInverse">
+          ✓
+        </Text>
       </View>
     )
   if (status === 'current')
@@ -46,7 +55,12 @@ function Marker({ status }: { status: StepStatus }) {
   return <View {...base} borderColor="$colorBorderDefault" backgroundColor="$colorSurfacePrimary" />
 }
 
-export function StepRail({ steps, currentIndex, orientation = 'vertical', 'aria-label': ariaLabel = 'Setup progress' }: StepRailProps) {
+export function StepRail({
+  steps,
+  currentIndex,
+  orientation = 'vertical',
+  'aria-label': ariaLabel = 'Setup progress',
+}: StepRailProps) {
   return (
     <Rail orientation={orientation} role="list" aria-label={ariaLabel}>
       {steps.map((s, i) => {

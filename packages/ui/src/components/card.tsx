@@ -1,10 +1,4 @@
-import {
-  forwardRef,
-  type ComponentRef,
-  type KeyboardEvent,
-  type MouseEvent,
-  type ReactNode,
-} from 'react'
+import { forwardRef, type ComponentRef, type KeyboardEvent, type MouseEvent, type ReactNode } from 'react'
 import { styled, View, type GetProps } from '@tamagui/core'
 import { ensureCardStyles } from '../internal/card-styles'
 
@@ -193,9 +187,7 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
         r['aria-labelledby'] != null
       if (!hasName) {
         // eslint-disable-next-line no-console
-        console.warn(
-          '[vida/ui] Card: an interactive card needs an accessible name (text content or `aria-label`).',
-        )
+        console.warn('[vida/ui] Card: an interactive card needs an accessible name (text content or `aria-label`).')
       }
     }
   }

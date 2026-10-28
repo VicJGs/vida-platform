@@ -5,12 +5,13 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Complete SQLite schema for local-first, zero-knowledge, multiplatform life management SaaS
 **Amended by:** (each entry is the amending ADR's own `Amends:` declaration)
-- [ADR-003](ADR-003-sync-protocol.md) — adds `_sync_field_ts` to **every** syncable table (per-field LWW). *Implicit schema edit — ratify formally at consolidation.*
-- [ADR-004](ADR-004-session-framework.md) (2026-07-12; **+ F1 §3.2.5, 2026-07-16**) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables. **F1 adds:** `applied_effects` (local-only dedup ledger, not synced — like `sync_queue`); a deterministic `effect_event_id` column on effect-triggering rows; a **UNIQUE** `effect_event_id` column on each effect *output* row (the cross-device convergence key).
+
+- [ADR-003](ADR-003-sync-protocol.md) — adds `_sync_field_ts` to **every** syncable table (per-field LWW). _Implicit schema edit — ratify formally at consolidation._
+- [ADR-004](ADR-004-session-framework.md) (2026-07-12; **+ F1 §3.2.5, 2026-07-16**) — replaces the Learning-only `study_sessions` + the §5.11 flat planner with the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables. **F1 adds:** `applied_effects` (local-only dedup ledger, not synced — like `sync_queue`); a deterministic `effect_event_id` column on effect-triggering rows; a **UNIQUE** `effect_event_id` column on each effect _output_ row (the cross-device convergence key).
 - [ADR-005](ADR-005-study-method-service-framework.md) (2026-07-12) — retires `flashcard_decks`, `flashcard_reviews`, and the SM-2 columns on `flashcards`; a reviewable becomes a lean content entity scheduled by Knowledge's generic engine.
 - [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (2026-07-15) — retires page-only `tags` + `page_tags` for a universal `entity_tags`; adds `parent_tag_id`, `spaces`; opens the `entity_links` `entity_type` CHECK to a registry.
 - [ADR-007](ADR-007-saved-views.md) (2026-07-15) — adds `views`; retires the INTENDED `task_views` (Tasks) and the per-module custom-views store (Preferences).
-- [ADR-008](ADR-008-capability-block-registry.md) (2026-07-15) — adds the capability registry (definition) + `block_instances`; opens the closed `editor.ts` `BlockType` union. *Exact tables settle at build.*
+- [ADR-008](ADR-008-capability-block-registry.md) (2026-07-15) — adds the capability registry (definition) + `block_instances`; opens the closed `editor.ts` `BlockType` union. _Exact tables settle at build._
 - [ADR-009](ADR-009-templates-fork-on-instantiate.md) (2026-07-15) — adds a light `templates` store (user-saved bundles).
 - [ADR-010](ADR-010-capability-authoring-security.md) (2026-07-15) — adds `capability_grants` (incl. `granted_envelope_hash`).
 - [ADR-011](ADR-011-universal-measurability-progress-propagation.md) (2026-07-17) — **cross-cutting measurability**: adds a `measurement_kind` + `binding_mode` pair to pursuable entities across 7+ modules; makes `purposes.progress` / `targets.current_value` **nullable** (`NULL = derive`); relaxes `targets.purpose_id` → nullable (SR-003); adds Purpose-domain `values` · `contributions` (retiring `purpose_habits/routines/projects`) · `purpose_reviews` · `plan_steps`; restores `is_higher_better` / `baseline_value` / `success_criteria` / `measurement_method`.
@@ -19,7 +20,7 @@
 - [ADR-013](ADR-013-zero-knowledge-notification-delivery.md) (2026-07-19) — **Zero-Knowledge Notification Delivery**: extends **ADR-003's §12 device registry** with `push_token` + `push_platform` columns (no new table); adds `notifications` **delivery-audit** columns. Three-tier delivery (in-app · native local-scheduled · content-free wake-signal); **also amends ADR-001** (resolves the Phase-6.7 push deferral) + **ADR-003** (wake-relay server responsibility).
 - [ADR-012](ADR-012-points-economy-consequence-engine.md) (2026-07-19) — **Points Economy & Consequence Engine** (Gamification "the System"): adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer) + a `rules` table (headless automation); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped ± earn/lock/spend/distribute; drops `xp_amount`/`action_type`/`level_before`/`level_after`); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠**); makes `achievements.condition` a measurable predicate (ADR-011 seam + event stream); `level` → derived (no table). **Also extends ADR-004 §3.2.2** with four Additive-class effects (`grant_currency` · `lock_currency` · `move_money` · `surface_notification`) and **ADR-011 §3.7** with consequence-edge cycle detection.
 
-**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. *(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)*
+**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. _(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)_
 
 ---
 
@@ -29,21 +30,21 @@ This document defines the **complete database schema** for the Vida Platform. Ev
 
 **Key differences from Life OS (Supabase/PostgreSQL):**
 
-| Concern | Life OS | Vida Platform |
-|---------|---------|---------------|
-| Database | PostgreSQL (Supabase) | SQLite (wa-sqlite/expo-sqlite/Tauri) |
-| Multi-tenancy | `user_id` FK on every table | No `user_id` — single-user local DB |
-| Primary Keys | UUID via `gen_random_uuid()` | UUIDv7 as TEXT (time-sortable) |
-| Timestamps | `TIMESTAMPTZ` | `INTEGER` (Unix milliseconds) |
-| Enums | PostgreSQL `CREATE TYPE` | `TEXT` with CHECK constraints (validated by Zod at app layer) |
-| Full-text search | `tsvector` + GIN indexes | SQLite FTS5 virtual tables |
-| Row-Level Security | RLS policies | Not needed — local DB |
-| Triggers/Functions | PL/pgSQL | Application-level logic (packages/core) |
-| Encryption at rest | None (Supabase managed) | SQLCipher (full DB) + libsodium (sensitive fields) |
-| Sync | Supabase Realtime | LWW blob sync via Hono server |
-| Arrays | PostgreSQL `TEXT[]`, `INTEGER[]` | JSON arrays as TEXT |
-| JSONB | Native JSONB | JSON stored as TEXT |
-| Soft deletes | `deleted_at TIMESTAMPTZ` | `deleted_at INTEGER` |
+| Concern            | Life OS                          | Vida Platform                                                 |
+| ------------------ | -------------------------------- | ------------------------------------------------------------- |
+| Database           | PostgreSQL (Supabase)            | SQLite (wa-sqlite/expo-sqlite/Tauri)                          |
+| Multi-tenancy      | `user_id` FK on every table      | No `user_id` — single-user local DB                           |
+| Primary Keys       | UUID via `gen_random_uuid()`     | UUIDv7 as TEXT (time-sortable)                                |
+| Timestamps         | `TIMESTAMPTZ`                    | `INTEGER` (Unix milliseconds)                                 |
+| Enums              | PostgreSQL `CREATE TYPE`         | `TEXT` with CHECK constraints (validated by Zod at app layer) |
+| Full-text search   | `tsvector` + GIN indexes         | SQLite FTS5 virtual tables                                    |
+| Row-Level Security | RLS policies                     | Not needed — local DB                                         |
+| Triggers/Functions | PL/pgSQL                         | Application-level logic (packages/core)                       |
+| Encryption at rest | None (Supabase managed)          | SQLCipher (full DB) + libsodium (sensitive fields)            |
+| Sync               | Supabase Realtime                | LWW blob sync via Hono server                                 |
+| Arrays             | PostgreSQL `TEXT[]`, `INTEGER[]` | JSON arrays as TEXT                                           |
+| JSONB              | Native JSONB                     | JSON stored as TEXT                                           |
+| Soft deletes       | `deleted_at TIMESTAMPTZ`         | `deleted_at INTEGER`                                          |
 
 ---
 
@@ -143,6 +144,7 @@ _sync_hash      TEXT                   -- SHA-256 of row content for change dete
 ```
 
 **How sync works:**
+
 1. On write: increment `_sync_version`, set `_sync_lww_ts = hlc.now()` (a **hybrid logical clock** stamp, not raw `Date.now()` — see ADR-003 §6.1; the current code stamps `Date.now()` as the interim v0 until the sync engine lands), set `_sync_status = 'pending'`, compute `_sync_hash`
 2. On push: serialize row to JSON, encrypt with Vault Key, send blob to server
 3. On pull: decrypt blob, compare `_sync_lww_ts` — **highest HLC stamp wins** (LWW); on an exact tie, the lexicographically-higher `_sync_device_id` wins (deterministic global tie-break, ADR-003 §6.1)
@@ -156,11 +158,11 @@ _sync_hash      TEXT                   -- SHA-256 of row content for change dete
 
 ### 4.1 Three-Layer Model
 
-| Layer | What it protects | When active | Implementation |
-|-------|-----------------|-------------|---------------|
-| **L1 — SQLCipher** | Entire `.db` file on disk | At rest (device locked, app closed) | SQLCipher transparent encryption. Key derived from Vault Key |
-| **L2 — Field-level** | Individual columns inside SQLite | At rest **and** in memory (fields stay encrypted until explicitly decrypted for display) | libsodium `crypto_secretbox` (XChaCha20-Poly1305). Ciphertext stored as base64 TEXT |
-| **L3 — Sync blob** | Rows in transit and on server | In transit + server at rest | Full row → LZ4 compress → libsodium `crypto_secretbox` → base64 blob. Server stores only opaque blobs |
+| Layer                | What it protects                 | When active                                                                              | Implementation                                                                                        |
+| -------------------- | -------------------------------- | ---------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **L1 — SQLCipher**   | Entire `.db` file on disk        | At rest (device locked, app closed)                                                      | SQLCipher transparent encryption. Key derived from Vault Key                                          |
+| **L2 — Field-level** | Individual columns inside SQLite | At rest **and** in memory (fields stay encrypted until explicitly decrypted for display) | libsodium `crypto_secretbox` (XChaCha20-Poly1305). Ciphertext stored as base64 TEXT                   |
+| **L3 — Sync blob**   | Rows in transit and on server    | In transit + server at rest                                                              | Full row → LZ4 compress → libsodium `crypto_secretbox` → base64 blob. Server stores only opaque blobs |
 
 **Key insight:** L1 (SQLCipher) protects everything when the device is locked. L2 adds defense-in-depth for the most sensitive fields — even if SQLCipher is unlocked (app running), these fields remain encrypted in the SQLite file until the app explicitly decrypts them for rendering. L3 ensures the sync server is zero-knowledge.
 
@@ -168,10 +170,10 @@ _sync_hash      TEXT                   -- SHA-256 of row content for change dete
 
 Every column falls into one of two categories:
 
-| Classification | Marker | Properties | Rule |
-|---------------|--------|-----------|------|
-| **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3) | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata |
-| **E — Encrypted** | `-- [E]` | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305 → not comparable/sortable/aggregatable). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run **only in the app after decrypt**: aggregation via **decrypt-in-memory**; equality lookup via an **equality-only blind index** (a keyed-BLAKE2b PRF of the plaintext in a P side column); full-text via a **plaintext-fed standalone FTS5** (rebuilt on unlock). Never SQL over ciphertext. | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity |
+| Classification    | Marker     | Properties                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | Rule                                                                                                                                               |
+| ----------------- | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **P — Plaintext** | (unmarked) | Queryable with `WHERE`/`ORDER BY`/`JOIN`. Indexed. Still encrypted at rest by SQLCipher (L1) and in sync blobs (L3)                                                                                                                                                                                                                                                                                                                                                                  | Structural identifiers, foreign keys, enums/status values, timestamps, booleans, sort orders, numeric aggregates needed for queries, sync metadata |
+| **E — Encrypted** | `-- [E]`   | Opaque ciphertext in SQLite (random-nonce XChaCha20-Poly1305 → not comparable/sortable/aggregatable). **Cannot be queried, indexed, sorted, or aggregated with SQL.** Query features run **only in the app after decrypt**: aggregation via **decrypt-in-memory**; equality lookup via an **equality-only blind index** (a keyed-BLAKE2b PRF of the plaintext in a P side column); full-text via a **plaintext-fed standalone FTS5** (rebuilt on unlock). Never SQL over ciphertext. | All user-generated free text, PII, financial amounts, names, titles, descriptions, content, tags, URLs that reveal user activity                   |
 
 **Numeric aggregates — P vs E by sensitivity (the encryption-vs-query rule, F7/D7).** A number needed for a chart is
 **P only when it is non-sensitive** (streaks, word counts, progress, `interaction_count`, measured metric `value`,
@@ -184,6 +186,7 @@ monthly_payment), `investments` (quantity, purchase_price, current_price), `inco
 and aggregate in the `analytics` service — the DB never runs `SUM`/`GROUP BY` over these ciphertext columns.
 
 **Always Plaintext (P):**
+
 - `id` (primary key — needed for joins, lookups)
 - `*_id` (all foreign keys — needed for joins)
 - `created_at`, `updated_at`, `deleted_at` (needed for sort, sync, cleanup)
@@ -197,6 +200,7 @@ and aggregate in the `analytics` service — the DB never runs `SUM`/`GROUP BY` 
 - `currency` (structural)
 
 **Always Encrypted (E):**
+
 - All `title` / `name` fields (user-generated names)
 - All `description` / `content` / `vision` / `why` / `reflection` fields (free text)
 - All `summary` / `key_learnings` / `key_concepts` fields (free text)
@@ -218,65 +222,65 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`pages`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `parent_id` | P | PK / FK |
-| `type` | P | Filter: journal, note, task_note, etc. |
-| `title` | **E** | User-generated |
-| `content` | **E** | TipTap JSON document — core user content |
-| `entity_type`, `entity_id` | P | Polymorphic FK for queries |
-| `journal_date` | P | Calendar queries |
-| `is_favorite`, `is_archived`, `has_pomodoro` | P | Booleans for filtering |
-| `icon` | P | UI hint |
-| `cover_image` | **E** | User-chosen image URL |
-| `summary_config` | **E** | JSON config reveals which modules are active |
-| `word_count` | P | Numeric aggregate |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                        | P/E   | Rationale                                    |
+| -------------------------------------------- | ----- | -------------------------------------------- |
+| `id`, `parent_id`                            | P     | PK / FK                                      |
+| `type`                                       | P     | Filter: journal, note, task_note, etc.       |
+| `title`                                      | **E** | User-generated                               |
+| `content`                                    | **E** | TipTap JSON document — core user content     |
+| `entity_type`, `entity_id`                   | P     | Polymorphic FK for queries                   |
+| `journal_date`                               | P     | Calendar queries                             |
+| `is_favorite`, `is_archived`, `has_pomodoro` | P     | Booleans for filtering                       |
+| `icon`                                       | P     | UI hint                                      |
+| `cover_image`                                | **E** | User-chosen image URL                        |
+| `summary_config`                             | **E** | JSON config reveals which modules are active |
+| `word_count`                                 | P     | Numeric aggregate                            |
+| `created_at`, `updated_at`, `deleted_at`     | P     | Timestamps                                   |
+| `_sync_*`                                    | P     | Sync protocol                                |
 
 **`page_links`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `source_page_id`, `target_page_id` | P | PK / FKs |
-| `context` | **E** | Text snippet from user content |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                      |
+| ---------------------------------------- | ----- | ------------------------------ |
+| `id`, `source_page_id`, `target_page_id` | P     | PK / FKs                       |
+| `context`                                | **E** | Text snippet from user content |
+| `created_at`                             | P     | Timestamp                      |
+| `_sync_*`                                | P     | Sync protocol                  |
 
 **`entity_links`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `page_id` | P | PK / FK |
-| `entity_type`, `entity_id` | P | Polymorphic FK |
-| `context` | **E** | Text snippet from user content |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale                      |
+| -------------------------- | ----- | ------------------------------ |
+| `id`, `page_id`            | P     | PK / FK                        |
+| `entity_type`, `entity_id` | P     | Polymorphic FK                 |
+| `context`                  | **E** | Text snippet from user content |
+| `created_at`               | P     | Timestamp                      |
+| `_sync_*`                  | P     | Sync protocol                  |
 
 **`tags`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated label |
-| `color` | P | UI hint |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale            |
+| -------------------------- | ----- | -------------------- |
+| `id`                       | P     | PK                   |
+| `name`                     | **E** | User-generated label |
+| `color`                    | P     | UI hint              |
+| `created_at`, `updated_at` | P     | Timestamps           |
+| `_sync_*`                  | P     | Sync protocol        |
 
 **`page_tags`** — All P (FKs + sync metadata only)
 
 **`note_attachments`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `page_id` | P | PK / FK |
-| `filename` | **E** | User-generated name |
-| `mime_type` | P | Structural (needed for rendering) |
-| `encrypted_blob` | **E** | File content |
-| `thumbnail_blob` | **E** | Image content |
-| `size_bytes` | P | Numeric |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field            | P/E   | Rationale                         |
+| ---------------- | ----- | --------------------------------- |
+| `id`, `page_id`  | P     | PK / FK                           |
+| `filename`       | **E** | User-generated name               |
+| `mime_type`      | P     | Structural (needed for rendering) |
+| `encrypted_blob` | **E** | File content                      |
+| `thumbnail_blob` | **E** | Image content                     |
+| `size_bytes`     | P     | Numeric                           |
+| `created_at`     | P     | Timestamp                         |
+| `_sync_*`        | P     | Sync protocol                     |
 
 **`pomodoro_sessions`** — All P (structural/numeric only: timers, counts, status, FKs)
 
@@ -286,18 +290,18 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`tasks`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `project_id`, `milestone_id`, `course_id`, `contact_id`, `parent_task_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `status`, `priority`, `difficulty` | P | Enum filters |
-| `due_date` | P | Scheduling queries |
-| `estimated_minutes`, `actual_minutes` | P | Numeric aggregates |
-| `tags` | **E** | User-generated labels |
-| `sort_order` | P | Ordering |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                                           | P/E   | Rationale             |
+| ------------------------------------------------------------------------------- | ----- | --------------------- |
+| `id`, `project_id`, `milestone_id`, `course_id`, `contact_id`, `parent_task_id` | P     | PK / FKs              |
+| `title`                                                                         | **E** | User-generated        |
+| `description`                                                                   | **E** | Free text             |
+| `status`, `priority`, `difficulty`                                              | P     | Enum filters          |
+| `due_date`                                                                      | P     | Scheduling queries    |
+| `estimated_minutes`, `actual_minutes`                                           | P     | Numeric aggregates    |
+| `tags`                                                                          | **E** | User-generated labels |
+| `sort_order`                                                                    | P     | Ordering              |
+| `created_at`, `updated_at`, `deleted_at`                                        | P     | Timestamps            |
+| `_sync_*`                                                                       | P     | Sync protocol         |
 
 **`task_time_logs`** — All P (FKs, timestamps, duration — structural)
 
@@ -307,44 +311,44 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`projects`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title` | **E** | User-generated |
-| `description`, `vision` | **E** | Free text |
-| `scope`, `complexity`, `status`, `priority` | P | Enum filters |
-| `progress` | P | Numeric aggregate |
-| `start_date`, `target_end_date`, `actual_end_date` | P | Scheduling |
-| `estimated_hours`, `actual_hours` | P | Numeric |
-| `tags` | **E** | User-generated labels |
-| `color`, `icon` | P | UI hints |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                              | P/E   | Rationale             |
+| -------------------------------------------------- | ----- | --------------------- |
+| `id`                                               | P     | PK                    |
+| `title`                                            | **E** | User-generated        |
+| `description`, `vision`                            | **E** | Free text             |
+| `scope`, `complexity`, `status`, `priority`        | P     | Enum filters          |
+| `progress`                                         | P     | Numeric aggregate     |
+| `start_date`, `target_end_date`, `actual_end_date` | P     | Scheduling            |
+| `estimated_hours`, `actual_hours`                  | P     | Numeric               |
+| `tags`                                             | **E** | User-generated labels |
+| `color`, `icon`                                    | P     | UI hints              |
+| `created_at`, `updated_at`, `deleted_at`           | P     | Timestamps            |
+| `_sync_*`                                          | P     | Sync protocol         |
 
 **`milestones`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `project_id`, `parent_milestone_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `status` | P | Enum filter |
-| `progress`, `sort_order` | P | Numeric |
-| `due_date` | P | Scheduling |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                     | P/E   | Rationale      |
+| ----------------------------------------- | ----- | -------------- |
+| `id`, `project_id`, `parent_milestone_id` | P     | PK / FKs       |
+| `title`                                   | **E** | User-generated |
+| `description`                             | **E** | Free text      |
+| `status`                                  | P     | Enum filter    |
+| `progress`, `sort_order`                  | P     | Numeric        |
+| `due_date`                                | P     | Scheduling     |
+| `created_at`, `updated_at`, `deleted_at`  | P     | Timestamps     |
+| `_sync_*`                                 | P     | Sync protocol  |
 
 **`project_documents`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `project_id`, `milestone_id` | P | PK / FKs |
-| `name` | **E** | User-generated filename |
-| `file_type` | P | Structural |
-| `file_size` | P | Numeric |
-| `encrypted_blob` | **E** | File content |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                              | P/E   | Rationale               |
+| ---------------------------------- | ----- | ----------------------- |
+| `id`, `project_id`, `milestone_id` | P     | PK / FKs                |
+| `name`                             | **E** | User-generated filename |
+| `file_type`                        | P     | Structural              |
+| `file_size`                        | P     | Numeric                 |
+| `encrypted_blob`                   | **E** | File content            |
+| `created_at`, `updated_at`         | P     | Timestamps              |
+| `_sync_*`                          | P     | Sync protocol           |
 
 ---
 
@@ -352,36 +356,36 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`habits`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `habit_type`, `frequency`, `time_of_day` | P | Enum filters |
-| `days_of_week` | P | Scheduling structure |
-| `target_count` | P | Numeric |
-| `unit` | **E** | User-defined measurement (e.g., "glasses of water") |
-| `times_of_day` | P | Scheduling structure |
-| `cue` | **E** | Personal behavioral trigger |
-| `reward` | **E** | Personal reward description |
-| `domain` | P | Enum filter |
-| `tags` | **E** | User-generated labels |
-| `current_streak`, `longest_streak`, `total_completions` | P | Numeric aggregates |
-| `is_active`, `sort_order` | P | Structural |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                   | P/E   | Rationale                                           |
+| ------------------------------------------------------- | ----- | --------------------------------------------------- |
+| `id`                                                    | P     | PK                                                  |
+| `name`                                                  | **E** | User-generated                                      |
+| `description`                                           | **E** | Free text                                           |
+| `habit_type`, `frequency`, `time_of_day`                | P     | Enum filters                                        |
+| `days_of_week`                                          | P     | Scheduling structure                                |
+| `target_count`                                          | P     | Numeric                                             |
+| `unit`                                                  | **E** | User-defined measurement (e.g., "glasses of water") |
+| `times_of_day`                                          | P     | Scheduling structure                                |
+| `cue`                                                   | **E** | Personal behavioral trigger                         |
+| `reward`                                                | **E** | Personal reward description                         |
+| `domain`                                                | P     | Enum filter                                         |
+| `tags`                                                  | **E** | User-generated labels                               |
+| `current_streak`, `longest_streak`, `total_completions` | P     | Numeric aggregates                                  |
+| `is_active`, `sort_order`                               | P     | Structural                                          |
+| `created_at`, `updated_at`, `deleted_at`                | P     | Timestamps                                          |
+| `_sync_*`                                               | P     | Sync protocol                                       |
 
 **`habit_completions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `habit_id` | P | PK / FK |
-| `completed_date` | P | Calendar queries |
-| `count` | P | Numeric |
-| `value` | P | Measured value (needed for charts) |
-| `mood_before`, `mood_after`, `ease_rating`, `satisfaction` | P | Numeric ratings (1-5 scale, not free text) |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                                      | P/E | Rationale                                  |
+| ---------------------------------------------------------- | --- | ------------------------------------------ |
+| `id`, `habit_id`                                           | P   | PK / FK                                    |
+| `completed_date`                                           | P   | Calendar queries                           |
+| `count`                                                    | P   | Numeric                                    |
+| `value`                                                    | P   | Measured value (needed for charts)         |
+| `mood_before`, `mood_after`, `ease_rating`, `satisfaction` | P   | Numeric ratings (1-5 scale, not free text) |
+| `created_at`                                               | P   | Timestamp                                  |
+| `_sync_*`                                                  | P   | Sync protocol                              |
 
 ---
 
@@ -389,30 +393,30 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`routine_actions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `action_type`, `time_of_day`, `recurrence_frequency` | P | Enum filters |
-| `duration_minutes`, `sort_order` | P | Numeric |
-| `is_active` | P | Boolean |
-| `linked_habit_id`, `linked_task_id` | P | FKs |
-| `recurrence_days` | P | Scheduling structure |
-| `skip_dates` | P | Scheduling structure |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                | P/E   | Rationale            |
+| ---------------------------------------------------- | ----- | -------------------- |
+| `id`                                                 | P     | PK                   |
+| `title`                                              | **E** | User-generated       |
+| `description`                                        | **E** | Free text            |
+| `action_type`, `time_of_day`, `recurrence_frequency` | P     | Enum filters         |
+| `duration_minutes`, `sort_order`                     | P     | Numeric              |
+| `is_active`                                          | P     | Boolean              |
+| `linked_habit_id`, `linked_task_id`                  | P     | FKs                  |
+| `recurrence_days`                                    | P     | Scheduling structure |
+| `skip_dates`                                         | P     | Scheduling structure |
+| `created_at`, `updated_at`, `deleted_at`             | P     | Timestamps           |
+| `_sync_*`                                            | P     | Sync protocol        |
 
 **`routine_completions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `routine_action_id` | P | PK / FK |
-| `completed_date`, `completed_at` | P | Calendar / timestamp |
-| `skipped` | P | Boolean |
-| `skip_reason` | **E** | Free text |
-| `actual_duration_minutes` | P | Numeric |
-| `_sync_*` | P | Sync protocol |
+| Field                            | P/E   | Rationale            |
+| -------------------------------- | ----- | -------------------- |
+| `id`, `routine_action_id`        | P     | PK / FK              |
+| `completed_date`, `completed_at` | P     | Calendar / timestamp |
+| `skipped`                        | P     | Boolean              |
+| `skip_reason`                    | **E** | Free text            |
+| `actual_duration_minutes`        | P     | Numeric              |
+| `_sync_*`                        | P     | Sync protocol        |
 
 ---
 
@@ -420,72 +424,72 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`purposes`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title` | **E** | User-generated |
-| `description`, `vision`, `why` | **E** | Free text — deeply personal |
-| `domain`, `status` | P | Enum filters |
-| `progress` | P | Numeric |
-| `start_date`, `target_date` | P | Scheduling |
-| `is_primary`, `sort_order` | P | Structural |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                   |
+| ---------------------------------------- | ----- | --------------------------- |
+| `id`                                     | P     | PK                          |
+| `title`                                  | **E** | User-generated              |
+| `description`, `vision`, `why`           | **E** | Free text — deeply personal |
+| `domain`, `status`                       | P     | Enum filters                |
+| `progress`                               | P     | Numeric                     |
+| `start_date`, `target_date`              | P     | Scheduling                  |
+| `is_primary`, `sort_order`               | P     | Structural                  |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps                  |
+| `_sync_*`                                | P     | Sync protocol               |
 
 **`targets`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `purpose_id` | P | PK / FK |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `target_type`, `status`, `priority` | P | Enum filters |
-| `target_value`, `current_value` | P | Numeric (needed for progress charts) |
-| `unit` | **E** | User-defined measurement |
-| `start_date`, `target_date`, `next_review_date` | P | Scheduling |
-| `review_frequency` | P | Enum |
-| `sort_order` | P | Structural |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                           | P/E   | Rationale                            |
+| ----------------------------------------------- | ----- | ------------------------------------ |
+| `id`, `purpose_id`                              | P     | PK / FK                              |
+| `title`                                         | **E** | User-generated                       |
+| `description`                                   | **E** | Free text                            |
+| `target_type`, `status`, `priority`             | P     | Enum filters                         |
+| `target_value`, `current_value`                 | P     | Numeric (needed for progress charts) |
+| `unit`                                          | **E** | User-defined measurement             |
+| `start_date`, `target_date`, `next_review_date` | P     | Scheduling                           |
+| `review_frequency`                              | P     | Enum                                 |
+| `sort_order`                                    | P     | Structural                           |
+| `created_at`, `updated_at`, `deleted_at`        | P     | Timestamps                           |
+| `_sync_*`                                       | P     | Sync protocol                        |
 
 **`purpose_metrics`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `purpose_id` | P | PK / FK |
-| `name` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `unit` | **E** | User-defined measurement |
-| `target_value`, `current_value` | P | Numeric |
-| `calculation_method` | P | Enum |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                           | P/E   | Rationale                |
+| ------------------------------- | ----- | ------------------------ |
+| `id`, `purpose_id`              | P     | PK / FK                  |
+| `name`                          | **E** | User-generated           |
+| `description`                   | **E** | Free text                |
+| `unit`                          | **E** | User-defined measurement |
+| `target_value`, `current_value` | P     | Numeric                  |
+| `calculation_method`            | P     | Enum                     |
+| `created_at`, `updated_at`      | P     | Timestamps               |
+| `_sync_*`                       | P     | Sync protocol            |
 
 **`purpose_metric_values`** — All P (FK, numeric value, timestamp — structural)
 
 **`target_reviews`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `target_id` | P | PK / FK |
-| `progress_rating` | P | Numeric scale |
-| `reflection` | **E** | Free text — personal reflection |
-| `next_actions` | **E** | Free text — action items |
-| `reviewed_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field             | P/E   | Rationale                       |
+| ----------------- | ----- | ------------------------------- |
+| `id`, `target_id` | P     | PK / FK                         |
+| `progress_rating` | P     | Numeric scale                   |
+| `reflection`      | **E** | Free text — personal reflection |
+| `next_actions`    | **E** | Free text — action items        |
+| `reviewed_at`     | P     | Timestamp                       |
+| `_sync_*`         | P     | Sync protocol                   |
 
 **`dreams`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `purpose_id` | P | PK / FK |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `domain` | P | Enum filter |
-| `target_age` | P | Numeric |
-| `estimated_cost` | **E** | Financial amount |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale        |
+| ---------------------------------------- | ----- | ---------------- |
+| `id`, `purpose_id`                       | P     | PK / FK          |
+| `title`                                  | **E** | User-generated   |
+| `description`                            | **E** | Free text        |
+| `domain`                                 | P     | Enum filter      |
+| `target_age`                             | P     | Numeric          |
+| `estimated_cost`                         | **E** | Financial amount |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps       |
+| `_sync_*`                                | P     | Sync protocol    |
 
 **Junction tables** (`purpose_habits`, `purpose_routines`, `purpose_projects`, `project_habits`) — All P (FKs + sync metadata only)
 
@@ -495,94 +499,94 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`accounts`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | Account name (e.g., "Chase Checking") |
-| `account_type` | P | Enum filter |
-| `institution` | **E** | Bank/institution name |
-| `currency` | P | Structural |
-| `current_balance` | **E** | Financial amount |
-| `credit_limit` | **E** | Financial amount |
-| `interest_rate` | **E** | Financial detail |
-| `is_active` | P | Boolean |
-| `color`, `icon` | P | UI hints |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                             |
+| ---------------------------------------- | ----- | ------------------------------------- |
+| `id`                                     | P     | PK                                    |
+| `name`                                   | **E** | Account name (e.g., "Chase Checking") |
+| `account_type`                           | P     | Enum filter                           |
+| `institution`                            | **E** | Bank/institution name                 |
+| `currency`                               | P     | Structural                            |
+| `current_balance`                        | **E** | Financial amount                      |
+| `credit_limit`                           | **E** | Financial amount                      |
+| `interest_rate`                          | **E** | Financial detail                      |
+| `is_active`                              | P     | Boolean                               |
+| `color`, `icon`                          | P     | UI hints                              |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps                            |
+| `_sync_*`                                | P     | Sync protocol                         |
 
 **`transactions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `account_id`, `transfer_to_account_id` | P | PK / FKs |
-| `transaction_type` | P | Enum filter |
-| `amount` | **E** | Financial amount |
-| `currency` | P | Structural |
-| `category` | **E** | User-defined spending category |
-| `subcategory` | **E** | User-defined |
-| `description` | **E** | Free text |
-| `date` | P | Calendar queries |
-| `is_recurring` | P | Boolean |
-| `recurring_frequency` | P | Enum |
-| `tags` | **E** | User-generated labels |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                        | P/E   | Rationale                      |
+| -------------------------------------------- | ----- | ------------------------------ |
+| `id`, `account_id`, `transfer_to_account_id` | P     | PK / FKs                       |
+| `transaction_type`                           | P     | Enum filter                    |
+| `amount`                                     | **E** | Financial amount               |
+| `currency`                                   | P     | Structural                     |
+| `category`                                   | **E** | User-defined spending category |
+| `subcategory`                                | **E** | User-defined                   |
+| `description`                                | **E** | Free text                      |
+| `date`                                       | P     | Calendar queries               |
+| `is_recurring`                               | P     | Boolean                        |
+| `recurring_frequency`                        | P     | Enum                           |
+| `tags`                                       | **E** | User-generated labels          |
+| `created_at`, `updated_at`, `deleted_at`     | P     | Timestamps                     |
+| `_sync_*`                                    | P     | Sync protocol                  |
 
 **`assets`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `asset_type` | P | Enum filter |
-| `purchase_date` | P | Date |
-| `purchase_price`, `current_value` | **E** | Financial amounts |
-| `depreciation_rate` | **E** | Financial detail |
-| `location` | **E** | Physical location |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale         |
+| ---------------------------------------- | ----- | ----------------- |
+| `id`                                     | P     | PK                |
+| `name`                                   | **E** | User-generated    |
+| `asset_type`                             | P     | Enum filter       |
+| `purchase_date`                          | P     | Date              |
+| `purchase_price`, `current_value`        | **E** | Financial amounts |
+| `depreciation_rate`                      | **E** | Financial detail  |
+| `location`                               | **E** | Physical location |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps        |
+| `_sync_*`                                | P     | Sync protocol     |
 
 **`liabilities`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `liability_type` | P | Enum filter |
+| Field                                                   | P/E   | Rationale         |
+| ------------------------------------------------------- | ----- | ----------------- |
+| `id`                                                    | P     | PK                |
+| `name`                                                  | **E** | User-generated    |
+| `liability_type`                                        | P     | Enum filter       |
 | `original_amount`, `current_balance`, `monthly_payment` | **E** | Financial amounts |
-| `interest_rate` | **E** | Financial detail |
-| `due_date` | P | Scheduling |
-| `lender` | **E** | Institution name |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| `interest_rate`                                         | **E** | Financial detail  |
+| `due_date`                                              | P     | Scheduling        |
+| `lender`                                                | **E** | Institution name  |
+| `created_at`, `updated_at`, `deleted_at`                | P     | Timestamps        |
+| `_sync_*`                                               | P     | Sync protocol     |
 
 **`investments`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `account_id` | P | PK / FK |
-| `name` | **E** | User-generated |
-| `investment_type` | P | Enum filter |
-| `ticker_symbol` | **E** | Reveals portfolio holdings |
-| `quantity` | **E** | Financial detail |
-| `purchase_price`, `current_price` | **E** | Financial amounts |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                  |
+| ---------------------------------------- | ----- | -------------------------- |
+| `id`, `account_id`                       | P     | PK / FK                    |
+| `name`                                   | **E** | User-generated             |
+| `investment_type`                        | P     | Enum filter                |
+| `ticker_symbol`                          | **E** | Reveals portfolio holdings |
+| `quantity`                               | **E** | Financial detail           |
+| `purchase_price`, `current_price`        | **E** | Financial amounts          |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps                 |
+| `_sync_*`                                | P     | Sync protocol              |
 
 **`income_streams`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `income_type`, `work_type` | P | Enum filters |
-| `amount` | **E** | Financial amount |
-| `frequency` | P | Enum |
-| `is_active` | P | Boolean |
-| `employer` | **E** | Employer name — PII |
-| `start_date`, `end_date` | P | Dates |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale           |
+| ---------------------------------------- | ----- | ------------------- |
+| `id`                                     | P     | PK                  |
+| `name`                                   | **E** | User-generated      |
+| `income_type`, `work_type`               | P     | Enum filters        |
+| `amount`                                 | **E** | Financial amount    |
+| `frequency`                              | P     | Enum                |
+| `is_active`                              | P     | Boolean             |
+| `employer`                               | **E** | Employer name — PII |
+| `start_date`, `end_date`                 | P     | Dates               |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps          |
+| `_sync_*`                                | P     | Sync protocol       |
 
 ---
 
@@ -590,80 +594,80 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`contacts`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `first_name`, `last_name`, `nickname` | **E** | PII |
-| `relationship_type` | P | Enum filter |
-| `email`, `phone` | **E** | PII |
-| `avatar_url` | **E** | URL reveals identity |
-| `company`, `job_title`, `location` | **E** | PII |
-| `birthday` | **E** | PII |
-| `tags` | **E** | User-generated labels |
-| `social_links` | **E** | PII — social media handles |
-| `stay_in_touch_frequency` | P | Enum |
-| `stay_in_touch_days` | P | Numeric |
-| `last_interaction_date`, `next_contact_date` | P | Scheduling |
-| `interaction_count` | P | Numeric aggregate |
-| `is_favorite` | P | Boolean |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                        | P/E   | Rationale                  |
+| -------------------------------------------- | ----- | -------------------------- |
+| `id`                                         | P     | PK                         |
+| `first_name`, `last_name`, `nickname`        | **E** | PII                        |
+| `relationship_type`                          | P     | Enum filter                |
+| `email`, `phone`                             | **E** | PII                        |
+| `avatar_url`                                 | **E** | URL reveals identity       |
+| `company`, `job_title`, `location`           | **E** | PII                        |
+| `birthday`                                   | **E** | PII                        |
+| `tags`                                       | **E** | User-generated labels      |
+| `social_links`                               | **E** | PII — social media handles |
+| `stay_in_touch_frequency`                    | P     | Enum                       |
+| `stay_in_touch_days`                         | P     | Numeric                    |
+| `last_interaction_date`, `next_contact_date` | P     | Scheduling                 |
+| `interaction_count`                          | P     | Numeric aggregate          |
+| `is_favorite`                                | P     | Boolean                    |
+| `created_at`, `updated_at`, `deleted_at`     | P     | Timestamps                 |
+| `_sync_*`                                    | P     | Sync protocol              |
 
 **`contact_events`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `contact_id` | P | PK / FK |
-| `event_type` | P | Enum filter |
-| `event_date` | P | Calendar queries |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `is_recurring` | P | Boolean |
-| `reminder_days` | P | Scheduling structure |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale            |
+| -------------------------- | ----- | -------------------- |
+| `id`, `contact_id`         | P     | PK / FK              |
+| `event_type`               | P     | Enum filter          |
+| `event_date`               | P     | Calendar queries     |
+| `title`                    | **E** | User-generated       |
+| `description`              | **E** | Free text            |
+| `is_recurring`             | P     | Boolean              |
+| `reminder_days`            | P     | Scheduling structure |
+| `created_at`, `updated_at` | P     | Timestamps           |
+| `_sync_*`                  | P     | Sync protocol        |
 
 **`interactions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `contact_id` | P | PK / FK |
-| `interaction_type` | P | Enum filter |
-| `date` | P | Calendar queries |
-| `duration_minutes` | P | Numeric |
-| `summary` | **E** | Conversation content |
-| `sentiment` | P | Enum |
-| `follow_up_needed` | P | Boolean |
-| `follow_up_date` | P | Scheduling |
-| `follow_up_notes` | **E** | Free text |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale            |
+| -------------------------- | ----- | -------------------- |
+| `id`, `contact_id`         | P     | PK / FK              |
+| `interaction_type`         | P     | Enum filter          |
+| `date`                     | P     | Calendar queries     |
+| `duration_minutes`         | P     | Numeric              |
+| `summary`                  | **E** | Conversation content |
+| `sentiment`                | P     | Enum                 |
+| `follow_up_needed`         | P     | Boolean              |
+| `follow_up_date`           | P     | Scheduling           |
+| `follow_up_notes`          | **E** | Free text            |
+| `created_at`, `updated_at` | P     | Timestamps           |
+| `_sync_*`                  | P     | Sync protocol        |
 
 **`contact_reminders`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `contact_id`, `reminder_group_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `reminder_date` | P | Scheduling |
-| `is_recurring`, `is_completed` | P | Booleans |
-| `frequency` | P | Enum |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                   | P/E   | Rationale      |
+| --------------------------------------- | ----- | -------------- |
+| `id`, `contact_id`, `reminder_group_id` | P     | PK / FKs       |
+| `title`                                 | **E** | User-generated |
+| `reminder_date`                         | P     | Scheduling     |
+| `is_recurring`, `is_completed`          | P     | Booleans       |
+| `frequency`                             | P     | Enum           |
+| `created_at`, `updated_at`              | P     | Timestamps     |
+| `_sync_*`                               | P     | Sync protocol  |
 
 **`reminder_groups`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `message_template` | **E** | User-generated message content |
-| `time_of_day` | P | Scheduling |
-| `frequency` | P | Enum |
-| `days_of_week` | P | Scheduling structure |
-| `is_active` | P | Boolean |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale                      |
+| -------------------------- | ----- | ------------------------------ |
+| `id`                       | P     | PK                             |
+| `name`                     | **E** | User-generated                 |
+| `message_template`         | **E** | User-generated message content |
+| `time_of_day`              | P     | Scheduling                     |
+| `frequency`                | P     | Enum                           |
+| `days_of_week`             | P     | Scheduling structure           |
+| `is_active`                | P     | Boolean                        |
+| `created_at`, `updated_at` | P     | Timestamps                     |
+| `_sync_*`                  | P     | Sync protocol                  |
 
 **`reminder_group_contacts`** — All P (FKs + sync metadata only)
 
@@ -673,151 +677,151 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`courses`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `provider`, `instructor` | **E** | Reveals learning activity |
-| `url` | **E** | URL reveals activity |
-| `course_type`, `status` | P | Enum filters |
-| `progress`, `total_modules`, `completed_modules` | P | Numeric aggregates |
-| `start_date`, `end_date`, `target_completion` | P | Scheduling |
-| `estimated_hours` | P | Numeric |
-| `rating` | P | Numeric scale |
-| `tags` | **E** | User-generated labels |
-| `metadata` | **E** | JSON with arbitrary user content |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                            | P/E   | Rationale                        |
+| ------------------------------------------------ | ----- | -------------------------------- |
+| `id`                                             | P     | PK                               |
+| `title`                                          | **E** | User-generated                   |
+| `description`                                    | **E** | Free text                        |
+| `provider`, `instructor`                         | **E** | Reveals learning activity        |
+| `url`                                            | **E** | URL reveals activity             |
+| `course_type`, `status`                          | P     | Enum filters                     |
+| `progress`, `total_modules`, `completed_modules` | P     | Numeric aggregates               |
+| `start_date`, `end_date`, `target_completion`    | P     | Scheduling                       |
+| `estimated_hours`                                | P     | Numeric                          |
+| `rating`                                         | P     | Numeric scale                    |
+| `tags`                                           | **E** | User-generated labels            |
+| `metadata`                                       | **E** | JSON with arbitrary user content |
+| `created_at`, `updated_at`, `deleted_at`         | P     | Timestamps                       |
+| `_sync_*`                                        | P     | Sync protocol                    |
 
 **`books`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title`, `author` | **E** | Reveals reading habits |
-| `isbn` | **E** | Identifies specific books |
-| `format`, `status` | P | Enum filters |
-| `total_pages`, `current_page`, `progress` | P | Numeric |
-| `start_date`, `end_date` | P | Dates |
-| `rating` | P | Numeric scale |
-| `review` | **E** | Free text — personal opinion |
-| `cover_url` | **E** | URL |
-| `genre` | **E** | Reveals reading preferences |
-| `tags` | **E** | User-generated labels |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                     | P/E   | Rationale                    |
+| ----------------------------------------- | ----- | ---------------------------- |
+| `id`                                      | P     | PK                           |
+| `title`, `author`                         | **E** | Reveals reading habits       |
+| `isbn`                                    | **E** | Identifies specific books    |
+| `format`, `status`                        | P     | Enum filters                 |
+| `total_pages`, `current_page`, `progress` | P     | Numeric                      |
+| `start_date`, `end_date`                  | P     | Dates                        |
+| `rating`                                  | P     | Numeric scale                |
+| `review`                                  | **E** | Free text — personal opinion |
+| `cover_url`                               | **E** | URL                          |
+| `genre`                                   | **E** | Reveals reading preferences  |
+| `tags`                                    | **E** | User-generated labels        |
+| `created_at`, `updated_at`, `deleted_at`  | P     | Timestamps                   |
+| `_sync_*`                                 | P     | Sync protocol                |
 
 **`book_chapters`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `book_id` | P | PK / FK |
-| `title` | **E** | Chapter name |
-| `chapter_number`, `start_page`, `end_page` | P | Numeric |
-| `estimated_reading_minutes`, `actual_reading_minutes` | P | Numeric |
-| `is_completed` | P | Boolean |
-| `completed_at` | P | Timestamp |
-| `sort_order` | P | Structural |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                 | P/E   | Rationale     |
+| ----------------------------------------------------- | ----- | ------------- |
+| `id`, `book_id`                                       | P     | PK / FK       |
+| `title`                                               | **E** | Chapter name  |
+| `chapter_number`, `start_page`, `end_page`            | P     | Numeric       |
+| `estimated_reading_minutes`, `actual_reading_minutes` | P     | Numeric       |
+| `is_completed`                                        | P     | Boolean       |
+| `completed_at`                                        | P     | Timestamp     |
+| `sort_order`                                          | P     | Structural    |
+| `created_at`, `updated_at`                            | P     | Timestamps    |
+| `_sync_*`                                             | P     | Sync protocol |
 
 **`skills`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `parent_skill_id` | P | PK / FK |
-| `name` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `mastery_level` | P | Enum filter |
-| `practice_hours`, `proficiency_test_score` | P | Numeric |
-| `last_practiced` | P | Timestamp |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                      | P/E   | Rationale      |
+| ------------------------------------------ | ----- | -------------- |
+| `id`, `parent_skill_id`                    | P     | PK / FK        |
+| `name`                                     | **E** | User-generated |
+| `description`                              | **E** | Free text      |
+| `mastery_level`                            | P     | Enum filter    |
+| `practice_hours`, `proficiency_test_score` | P     | Numeric        |
+| `last_practiced`                           | P     | Timestamp      |
+| `created_at`, `updated_at`, `deleted_at`   | P     | Timestamps     |
+| `_sync_*`                                  | P     | Sync protocol  |
 
 **`skill_resources`** — All P (FKs + polymorphic refs + sync metadata)
 
 **`study_sessions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `resource_type`, `resource_id` | P | Polymorphic FK |
-| `duration_minutes`, `focus_rating`, `energy_level`, `distraction_count` | P | Numeric |
-| `pages_read`, `lessons_completed` | P | Numeric |
-| `key_learnings` | **E** | Free text — personal notes |
-| `started_at`, `ended_at` | P | Timestamps |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                                                   | P/E   | Rationale                  |
+| ----------------------------------------------------------------------- | ----- | -------------------------- |
+| `id`                                                                    | P     | PK                         |
+| `resource_type`, `resource_id`                                          | P     | Polymorphic FK             |
+| `duration_minutes`, `focus_rating`, `energy_level`, `distraction_count` | P     | Numeric                    |
+| `pages_read`, `lessons_completed`                                       | P     | Numeric                    |
+| `key_learnings`                                                         | **E** | Free text — personal notes |
+| `started_at`, `ended_at`                                                | P     | Timestamps                 |
+| `created_at`                                                            | P     | Timestamp                  |
+| `_sync_*`                                                               | P     | Sync protocol              |
 
 **`study_topics`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `course_id`, `linked_book_id`, `reading_chapter_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `status`, `difficulty` | P | Enum filters |
-| `mastery_level`, `study_time_minutes`, `estimated_study_minutes` | P | Numeric |
-| `due_date`, `class_date`, `next_review_date` | P | Scheduling |
-| `is_exam_topic` | P | Boolean |
-| `key_concepts` | **E** | User-generated content |
-| `resource_urls` | **E** | URLs reveal activity |
-| `sort_order` | P | Structural |
-| `easiness_factor`, `repetition_number`, `interval_days` | P | SM-2 algorithm state |
-| `last_reviewed_at` | P | Timestamp |
-| `reading_start_page`, `reading_end_page` | P | Numeric |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                            | P/E   | Rationale              |
+| ---------------------------------------------------------------- | ----- | ---------------------- |
+| `id`, `course_id`, `linked_book_id`, `reading_chapter_id`        | P     | PK / FKs               |
+| `title`                                                          | **E** | User-generated         |
+| `description`                                                    | **E** | Free text              |
+| `status`, `difficulty`                                           | P     | Enum filters           |
+| `mastery_level`, `study_time_minutes`, `estimated_study_minutes` | P     | Numeric                |
+| `due_date`, `class_date`, `next_review_date`                     | P     | Scheduling             |
+| `is_exam_topic`                                                  | P     | Boolean                |
+| `key_concepts`                                                   | **E** | User-generated content |
+| `resource_urls`                                                  | **E** | URLs reveal activity   |
+| `sort_order`                                                     | P     | Structural             |
+| `easiness_factor`, `repetition_number`, `interval_days`          | P     | SM-2 algorithm state   |
+| `last_reviewed_at`                                               | P     | Timestamp              |
+| `reading_start_page`, `reading_end_page`                         | P     | Numeric                |
+| `created_at`, `updated_at`, `deleted_at`                         | P     | Timestamps             |
+| `_sync_*`                                                        | P     | Sync protocol          |
 
 **`topic_reviews`** — All P (FK, quality score, response time, timestamp — structural)
 
 **`flashcard_decks`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `resource_type`, `resource_id` | P | Polymorphic FK |
-| `new_cards_per_day`, `reviews_per_day` | P | Settings |
-| `is_active` | P | Boolean |
-| `total_cards`, `mastered_cards` | P | Numeric aggregates |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale          |
+| ---------------------------------------- | ----- | ------------------ |
+| `id`                                     | P     | PK                 |
+| `title`                                  | **E** | User-generated     |
+| `description`                            | **E** | Free text          |
+| `resource_type`, `resource_id`           | P     | Polymorphic FK     |
+| `new_cards_per_day`, `reviews_per_day`   | P     | Settings           |
+| `is_active`                              | P     | Boolean            |
+| `total_cards`, `mastered_cards`          | P     | Numeric aggregates |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps         |
+| `_sync_*`                                | P     | Sync protocol      |
 
 **`flashcards`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `deck_id` | P | PK / FK |
-| `front` | **E** | User-generated content |
-| `back` | **E** | User-generated content |
-| `hint` | **E** | User-generated content |
-| `explanation` | **E** | User-generated content |
-| `easiness_factor`, `repetitions`, `interval_days` | P | SM-2 state |
-| `next_review_date` | P | Scheduling |
-| `last_reviewed_at` | P | Timestamp |
-| `times_reviewed`, `times_correct` | P | Numeric |
-| `is_mastered`, `is_suspended` | P | Booleans |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                             | P/E   | Rationale              |
+| ------------------------------------------------- | ----- | ---------------------- |
+| `id`, `deck_id`                                   | P     | PK / FK                |
+| `front`                                           | **E** | User-generated content |
+| `back`                                            | **E** | User-generated content |
+| `hint`                                            | **E** | User-generated content |
+| `explanation`                                     | **E** | User-generated content |
+| `easiness_factor`, `repetitions`, `interval_days` | P     | SM-2 state             |
+| `next_review_date`                                | P     | Scheduling             |
+| `last_reviewed_at`                                | P     | Timestamp              |
+| `times_reviewed`, `times_correct`                 | P     | Numeric                |
+| `is_mastered`, `is_suspended`                     | P     | Booleans               |
+| `created_at`, `updated_at`                        | P     | Timestamps             |
+| `_sync_*`                                         | P     | Sync protocol          |
 
 **`flashcard_reviews`** — All P (FK, quality score, response time, interval snapshots — structural)
 
 **`knowledge_notes`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `parent_note_id` | P | PK / FK |
-| `resource_type`, `resource_id` | P | Polymorphic FK |
-| `title` | **E** | User-generated |
-| `content` | **E** | Free text — study content |
-| `topic`, `subtopic` | **E** | User-generated categorization |
-| `tags` | **E** | User-generated labels |
-| `is_pinned`, `is_archived` | P | Booleans |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                     |
+| ---------------------------------------- | ----- | ----------------------------- |
+| `id`, `parent_note_id`                   | P     | PK / FK                       |
+| `resource_type`, `resource_id`           | P     | Polymorphic FK                |
+| `title`                                  | **E** | User-generated                |
+| `content`                                | **E** | Free text — study content     |
+| `topic`, `subtopic`                      | **E** | User-generated categorization |
+| `tags`                                   | **E** | User-generated labels         |
+| `is_pinned`, `is_archived`               | P     | Booleans                      |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps                    |
+| `_sync_*`                                | P     | Sync protocol                 |
 
 ---
 
@@ -827,40 +831,40 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`availability_exceptions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `exception_date` | P | Date |
-| `is_available` | P | Boolean |
-| `reason` | **E** | Free text — why unavailable |
-| `start_time`, `end_time` | P | Scheduling |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                    | P/E   | Rationale                   |
+| ------------------------ | ----- | --------------------------- |
+| `id`                     | P     | PK                          |
+| `exception_date`         | P     | Date                        |
+| `is_available`           | P     | Boolean                     |
+| `reason`                 | **E** | Free text — why unavailable |
+| `start_time`, `end_time` | P     | Scheduling                  |
+| `created_at`             | P     | Timestamp                   |
+| `_sync_*`                | P     | Sync protocol               |
 
 **`study_plan_batches`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `course_id` | P | PK / FK |
-| `name` | **E** | User-generated |
-| `status` | P | Enum filter |
-| `total_sessions` | P | Numeric |
-| `generated_at`, `approved_at` | P | Timestamps |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                         | P/E   | Rationale      |
+| ----------------------------- | ----- | -------------- |
+| `id`, `course_id`             | P     | PK / FK        |
+| `name`                        | **E** | User-generated |
+| `status`                      | P     | Enum filter    |
+| `total_sessions`              | P     | Numeric        |
+| `generated_at`, `approved_at` | P     | Timestamps     |
+| `created_at`, `updated_at`    | P     | Timestamps     |
+| `_sync_*`                     | P     | Sync protocol  |
 
 **`scheduled_study_sessions`** — All P (FKs, resource refs, status, dates, duration, urgency — structural)
 
 **`session_templates`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| All timing fields | P | Settings/numeric |
-| `is_default` | P | Boolean |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale        |
+| -------------------------- | ----- | ---------------- |
+| `id`                       | P     | PK               |
+| `name`                     | **E** | User-generated   |
+| All timing fields          | P     | Settings/numeric |
+| `is_default`               | P     | Boolean          |
+| `created_at`, `updated_at` | P     | Timestamps       |
+| `_sync_*`                  | P     | Sync protocol    |
 
 ---
 
@@ -868,128 +872,128 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`languages`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `language_name`, `language_code`, `flag_emoji` | P | Standard language identifiers — not user-generated |
-| All proficiency levels | P | Enum values |
-| `status` | P | Enum filter |
-| `start_date` | P | Date |
-| All goal/streak/count fields | P | Numeric aggregates |
-| `current_day_number`, `learning_phase` | P | Progress state |
-| `phase_started_at` | P | Timestamp |
-| `resources` | **E** | JSON with user-curated links |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                          | P/E   | Rationale                                          |
+| ---------------------------------------------- | ----- | -------------------------------------------------- |
+| `id`                                           | P     | PK                                                 |
+| `language_name`, `language_code`, `flag_emoji` | P     | Standard language identifiers — not user-generated |
+| All proficiency levels                         | P     | Enum values                                        |
+| `status`                                       | P     | Enum filter                                        |
+| `start_date`                                   | P     | Date                                               |
+| All goal/streak/count fields                   | P     | Numeric aggregates                                 |
+| `current_day_number`, `learning_phase`         | P     | Progress state                                     |
+| `phase_started_at`                             | P     | Timestamp                                          |
+| `resources`                                    | **E** | JSON with user-curated links                       |
+| `created_at`, `updated_at`, `deleted_at`       | P     | Timestamps                                         |
+| `_sync_*`                                      | P     | Sync protocol                                      |
 
 **`language_practice_sessions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id` | P | PK / FK |
-| `skill_type`, `activity_type` | P | Enum filters |
-| `duration_minutes`, `new_words_learned`, `accuracy_percentage` | P | Numeric |
-| `focus_rating`, `energy_level` | P | Numeric scales |
-| `content` | **E** | Free text — practice content |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                                          | P/E   | Rationale                    |
+| -------------------------------------------------------------- | ----- | ---------------------------- |
+| `id`, `language_id`                                            | P     | PK / FK                      |
+| `skill_type`, `activity_type`                                  | P     | Enum filters                 |
+| `duration_minutes`, `new_words_learned`, `accuracy_percentage` | P     | Numeric                      |
+| `focus_rating`, `energy_level`                                 | P     | Numeric scales               |
+| `content`                                                      | **E** | Free text — practice content |
+| `created_at`                                                   | P     | Timestamp                    |
+| `_sync_*`                                                      | P     | Sync protocol                |
 
 **`language_vocabulary`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id` | P | PK / FK |
-| `word` | **E** | User content |
-| `translation` | **E** | User content |
-| `pronunciation` | **E** | User content |
-| `part_of_speech` | P | Structural category |
-| `example_sentence` | **E** | User-generated |
-| `meaning_in_target_language` | **E** | User content |
-| `source_activity` | **E** | Reveals learning context |
-| `mastery` | P | Enum filter |
-| `review_count` | P | Numeric |
-| `next_review_date` | P | Scheduling |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                        | P/E   | Rationale                |
+| ---------------------------- | ----- | ------------------------ |
+| `id`, `language_id`          | P     | PK / FK                  |
+| `word`                       | **E** | User content             |
+| `translation`                | **E** | User content             |
+| `pronunciation`              | **E** | User content             |
+| `part_of_speech`             | P     | Structural category      |
+| `example_sentence`           | **E** | User-generated           |
+| `meaning_in_target_language` | **E** | User content             |
+| `source_activity`            | **E** | Reveals learning context |
+| `mastery`                    | P     | Enum filter              |
+| `review_count`               | P     | Numeric                  |
+| `next_review_date`           | P     | Scheduling               |
+| `created_at`, `updated_at`   | P     | Timestamps               |
+| `_sync_*`                    | P     | Sync protocol            |
 
 **`language_daily_sessions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id`, `weekly_plan_id` | P | PK / FKs |
-| `session_date` | P | Calendar queries |
-| `day_number` | P | Numeric |
-| `weekly_topic` | P | Enum |
-| All completion flags (`grammar_video` through `vocabulary_journal`) | P | Booleans |
+| Field                                                                 | P/E   | Rationale            |
+| --------------------------------------------------------------------- | ----- | -------------------- |
+| `id`, `language_id`, `weekly_plan_id`                                 | P     | PK / FKs             |
+| `session_date`                                                        | P     | Calendar queries     |
+| `day_number`                                                          | P     | Numeric              |
+| `weekly_topic`                                                        | P     | Enum                 |
+| All completion flags (`grammar_video` through `vocabulary_journal`)   | P     | Booleans             |
 | `grammar_video_url`, `vocabulary_video_url`, `conversation_video_url` | **E** | URLs reveal activity |
-| `song_day_number` | P | Numeric |
-| `bible_recording_id`, `song_recording_id` | P | FKs |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| `song_day_number`                                                     | P     | Numeric              |
+| `bible_recording_id`, `song_recording_id`                             | P     | FKs                  |
+| `created_at`, `updated_at`                                            | P     | Timestamps           |
+| `_sync_*`                                                             | P     | Sync protocol        |
 
 **`language_daily_progress`** — All P (FK, date, per-skill minutes, aggregates — structural)
 
 **`language_recordings`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id`, `compare_with_id`, `weekly_plan_id` | P | PK / FKs |
-| `recording_type` | P | Enum filter |
-| `title` | **E** | User-generated |
-| `audio_blob` | **E** | Audio content |
-| `duration_seconds` | P | Numeric |
-| `transcript` | **E** | User-generated text |
-| `metadata` | **E** | JSON with user content |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                                    | P/E   | Rationale              |
+| -------------------------------------------------------- | ----- | ---------------------- |
+| `id`, `language_id`, `compare_with_id`, `weekly_plan_id` | P     | PK / FKs               |
+| `recording_type`                                         | P     | Enum filter            |
+| `title`                                                  | **E** | User-generated         |
+| `audio_blob`                                             | **E** | Audio content          |
+| `duration_seconds`                                       | P     | Numeric                |
+| `transcript`                                             | **E** | User-generated text    |
+| `metadata`                                               | **E** | JSON with user content |
+| `created_at`                                             | P     | Timestamp              |
+| `_sync_*`                                                | P     | Sync protocol          |
 
 **`language_weekly_plans`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id` | P | PK / FK |
-| `week_start_date` | P | Calendar queries |
-| `week_number` | P | Numeric |
-| `is_planned` | P | Boolean |
-| `topic` | P | Enum |
-| `song_title`, `song_artist`, `song_url`, `song_lyrics` | **E** | User-curated music content |
-| `current_song_day` | P | Numeric |
-| `bible_book` | **E** | Religious content selection |
-| `bible_chapter`, `bible_verses_start`, `bible_verses_end` | P | Numeric references |
-| `planned_videos` | **E** | JSON with user-curated URLs |
-| `videos_watched`, `days_completed` | P | Numeric aggregates |
-| `weekly_reflection` | **E** | Free text — personal reflection |
-| `highlight_moments` | **E** | Free text list |
-| `challenges_faced` | **E** | Free text list |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                     | P/E   | Rationale                       |
+| --------------------------------------------------------- | ----- | ------------------------------- |
+| `id`, `language_id`                                       | P     | PK / FK                         |
+| `week_start_date`                                         | P     | Calendar queries                |
+| `week_number`                                             | P     | Numeric                         |
+| `is_planned`                                              | P     | Boolean                         |
+| `topic`                                                   | P     | Enum                            |
+| `song_title`, `song_artist`, `song_url`, `song_lyrics`    | **E** | User-curated music content      |
+| `current_song_day`                                        | P     | Numeric                         |
+| `bible_book`                                              | **E** | Religious content selection     |
+| `bible_chapter`, `bible_verses_start`, `bible_verses_end` | P     | Numeric references              |
+| `planned_videos`                                          | **E** | JSON with user-curated URLs     |
+| `videos_watched`, `days_completed`                        | P     | Numeric aggregates              |
+| `weekly_reflection`                                       | **E** | Free text — personal reflection |
+| `highlight_moments`                                       | **E** | Free text list                  |
+| `challenges_faced`                                        | **E** | Free text list                  |
+| `created_at`, `updated_at`                                | P     | Timestamps                      |
+| `_sync_*`                                                 | P     | Sync protocol                   |
 
 **`language_base_words`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id`, `linked_vocabulary_id` | P | PK / FKs |
-| `category` | P | Enum filter |
-| `english_word` | **E** | Vocabulary content |
-| `translation` | **E** | User content |
-| `meaning_in_target_language` | **E** | User content |
-| `pronunciation` | **E** | User content |
-| `is_learned` | P | Boolean |
-| `learned_at` | P | Timestamp |
-| `display_order` | P | Structural |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                       | P/E   | Rationale          |
+| ------------------------------------------- | ----- | ------------------ |
+| `id`, `language_id`, `linked_vocabulary_id` | P     | PK / FKs           |
+| `category`                                  | P     | Enum filter        |
+| `english_word`                              | **E** | Vocabulary content |
+| `translation`                               | **E** | User content       |
+| `meaning_in_target_language`                | **E** | User content       |
+| `pronunciation`                             | **E** | User content       |
+| `is_learned`                                | P     | Boolean            |
+| `learned_at`                                | P     | Timestamp          |
+| `display_order`                             | P     | Structural         |
+| `created_at`                                | P     | Timestamp          |
+| `_sync_*`                                   | P     | Sync protocol      |
 
 **`language_video_playlists`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `language_id` | P | PK / FK |
-| `playlist_url` | **E** | URL reveals activity |
-| `title` | **E** | User-generated / video title |
-| `total_videos`, `watched_count`, `current_video_index` | P | Numeric |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                                  | P/E   | Rationale                    |
+| ------------------------------------------------------ | ----- | ---------------------------- |
+| `id`, `language_id`                                    | P     | PK / FK                      |
+| `playlist_url`                                         | **E** | URL reveals activity         |
+| `title`                                                | **E** | User-generated / video title |
+| `total_videos`, `watched_count`, `current_video_index` | P     | Numeric                      |
+| `created_at`, `updated_at`                             | P     | Timestamps                   |
+| `_sync_*`                                              | P     | Sync protocol                |
 
 ---
 
@@ -997,51 +1001,51 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`daily_check_ins`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `template_id` | P | PK / FK |
-| `check_in_date` | P | Calendar queries |
-| `check_in_type` | P | Enum filter |
-| `mood_score`, `energy_level` | P | Numeric scales (needed for trend charts) |
-| `top_intentions` | **E** | User-generated list |
-| `wins` | **E** | User-generated list |
-| `gratitude` | **E** | User-generated list — deeply personal |
-| `challenges` | **E** | User-generated list |
-| `tomorrow_focus` | **E** | User-generated list |
-| `reflection` | **E** | Free text — deeply personal |
-| `custom_data` | **E** | JSON from template questions |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                        | P/E   | Rationale                                |
+| ---------------------------- | ----- | ---------------------------------------- |
+| `id`, `template_id`          | P     | PK / FK                                  |
+| `check_in_date`              | P     | Calendar queries                         |
+| `check_in_type`              | P     | Enum filter                              |
+| `mood_score`, `energy_level` | P     | Numeric scales (needed for trend charts) |
+| `top_intentions`             | **E** | User-generated list                      |
+| `wins`                       | **E** | User-generated list                      |
+| `gratitude`                  | **E** | User-generated list — deeply personal    |
+| `challenges`                 | **E** | User-generated list                      |
+| `tomorrow_focus`             | **E** | User-generated list                      |
+| `reflection`                 | **E** | Free text — deeply personal              |
+| `custom_data`                | **E** | JSON from template questions             |
+| `created_at`, `updated_at`   | P     | Timestamps                               |
+| `_sync_*`                    | P     | Sync protocol                            |
 
 **`check_in_templates`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `name` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `icon` | P | UI hint |
-| `is_default`, `is_active` | P | Booleans |
-| `schedule_type` | P | Enum |
-| `schedule_days` | P | Scheduling structure |
-| `preferred_time` | P | Enum |
-| `sort_order` | P | Structural |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale            |
+| -------------------------- | ----- | -------------------- |
+| `id`                       | P     | PK                   |
+| `name`                     | **E** | User-generated       |
+| `description`              | **E** | Free text            |
+| `icon`                     | P     | UI hint              |
+| `is_default`, `is_active`  | P     | Booleans             |
+| `schedule_type`            | P     | Enum                 |
+| `schedule_days`            | P     | Scheduling structure |
+| `preferred_time`           | P     | Enum                 |
+| `sort_order`               | P     | Structural           |
+| `created_at`, `updated_at` | P     | Timestamps           |
+| `_sync_*`                  | P     | Sync protocol        |
 
 **`check_in_template_questions`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `template_id` | P | PK / FK |
-| `field_key` | P | Structural identifier |
-| `label` | **E** | User-generated question text |
-| `field_type` | P | Enum |
-| `placeholder` | **E** | User-generated hint text |
-| `is_required` | P | Boolean |
-| `min_value`, `max_value` | P | Numeric constraints |
-| `sort_order` | P | Structural |
-| `_sync_*` | P | Sync protocol |
+| Field                    | P/E   | Rationale                    |
+| ------------------------ | ----- | ---------------------------- |
+| `id`, `template_id`      | P     | PK / FK                      |
+| `field_key`              | P     | Structural identifier        |
+| `label`                  | **E** | User-generated question text |
+| `field_type`             | P     | Enum                         |
+| `placeholder`            | **E** | User-generated hint text     |
+| `is_required`            | P     | Boolean                      |
+| `min_value`, `max_value` | P     | Numeric constraints          |
+| `sort_order`             | P     | Structural                   |
+| `_sync_*`                | P     | Sync protocol                |
 
 ---
 
@@ -1049,22 +1053,22 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`bucket_list_items`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `purpose_id`, `project_id` | P | PK / FKs |
-| `title` | **E** | User-generated |
-| `description` | **E** | Free text |
-| `category`, `status`, `priority` | P | Enum filters |
-| `target_date`, `completed_date` | P | Dates |
-| `estimated_cost` | **E** | Financial amount |
-| `location` | **E** | Physical location |
-| `image_url`, `cover_image_url` | **E** | URLs |
-| `tags` | **E** | User-generated labels |
-| `progress_percentage` | P | Numeric |
-| `steps` | **E** | JSON with user-generated content |
-| `inspiration_url` | **E** | URL reveals interests |
-| `created_at`, `updated_at`, `deleted_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                    | P/E   | Rationale                        |
+| ---------------------------------------- | ----- | -------------------------------- |
+| `id`, `purpose_id`, `project_id`         | P     | PK / FKs                         |
+| `title`                                  | **E** | User-generated                   |
+| `description`                            | **E** | Free text                        |
+| `category`, `status`, `priority`         | P     | Enum filters                     |
+| `target_date`, `completed_date`          | P     | Dates                            |
+| `estimated_cost`                         | **E** | Financial amount                 |
+| `location`                               | **E** | Physical location                |
+| `image_url`, `cover_image_url`           | **E** | URLs                             |
+| `tags`                                   | **E** | User-generated labels            |
+| `progress_percentage`                    | P     | Numeric                          |
+| `steps`                                  | **E** | JSON with user-generated content |
+| `inspiration_url`                        | **E** | URL reveals interests            |
+| `created_at`, `updated_at`, `deleted_at` | P     | Timestamps                       |
+| `_sync_*`                                | P     | Sync protocol                    |
 
 ---
 
@@ -1072,23 +1076,23 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`user_profile`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `persona`, `life_stage` | P | Enum values |
-| `focus_areas` | **E** | User-generated life priorities |
-| `motivation_style` | P | Enum |
-| `display_name` | **E** | User-generated — PII |
-| `avatar_url` | **E** | URL to user photo |
-| `birth_date` | **E** | PII |
-| `timezone` | P | Structural |
-| `total_xp`, `current_level` | P | Numeric |
-| `check_in_streak`, `longest_check_in_streak` | P | Numeric |
-| `last_check_in_date` | P | Date |
-| `onboarding_completed` | P | Boolean |
-| `skipped_modules`, `active_modules` | P | App config (module keys, not user text) |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                        | P/E   | Rationale                               |
+| -------------------------------------------- | ----- | --------------------------------------- |
+| `id`                                         | P     | PK                                      |
+| `persona`, `life_stage`                      | P     | Enum values                             |
+| `focus_areas`                                | **E** | User-generated life priorities          |
+| `motivation_style`                           | P     | Enum                                    |
+| `display_name`                               | **E** | User-generated — PII                    |
+| `avatar_url`                                 | **E** | URL to user photo                       |
+| `birth_date`                                 | **E** | PII                                     |
+| `timezone`                                   | P     | Structural                              |
+| `total_xp`, `current_level`                  | P     | Numeric                                 |
+| `check_in_streak`, `longest_check_in_streak` | P     | Numeric                                 |
+| `last_check_in_date`                         | P     | Date                                    |
+| `onboarding_completed`                       | P     | Boolean                                 |
+| `skipped_modules`, `active_modules`          | P     | App config (module keys, not user text) |
+| `created_at`, `updated_at`                   | P     | Timestamps                              |
+| `_sync_*`                                    | P     | Sync protocol                           |
 
 **`achievements`** — All P (app-defined static content, not user-generated)
 
@@ -1102,19 +1106,19 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`notifications`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `type` | P | Enum filter |
-| `title` | **E** | May contain entity names |
-| `message` | **E** | May contain user content |
-| `action_url` | P | Internal navigation route |
-| `action_label` | **E** | May contain entity names |
-| `entity_type`, `entity_id` | P | Polymorphic FK |
-| `is_read`, `is_archived` | P | Booleans |
-| `read_at`, `archived_at`, `expires_at` | P | Timestamps |
-| `created_at` | P | Timestamp |
-| `_sync_*` | P | Sync protocol |
+| Field                                  | P/E   | Rationale                 |
+| -------------------------------------- | ----- | ------------------------- |
+| `id`                                   | P     | PK                        |
+| `type`                                 | P     | Enum filter               |
+| `title`                                | **E** | May contain entity names  |
+| `message`                              | **E** | May contain user content  |
+| `action_url`                           | P     | Internal navigation route |
+| `action_label`                         | **E** | May contain entity names  |
+| `entity_type`, `entity_id`             | P     | Polymorphic FK            |
+| `is_read`, `is_archived`               | P     | Booleans                  |
+| `read_at`, `archived_at`, `expires_at` | P     | Timestamps                |
+| `created_at`                           | P     | Timestamp                 |
+| `_sync_*`                              | P     | Sync protocol             |
 
 ---
 
@@ -1132,49 +1136,49 @@ Legend: **E** = field-level encrypted, **P** = plaintext (indexable). Unmarked =
 
 **`ics_feed_configs`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id` | P | PK |
-| `feed_url` | **E** | URL reveals institutional affiliations |
-| `feed_name` | **E** | User-generated |
-| `is_active` | P | Boolean |
-| `auto_create_sessions` | P | Boolean |
-| `default_course_id` | P | FK |
-| `sync_interval_hours` | P | Setting |
-| `last_synced_at` | P | Timestamp |
-| `last_error` | **E** | May contain URL fragments |
-| `metadata` | **E** | JSON with feed details |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                      | P/E   | Rationale                              |
+| -------------------------- | ----- | -------------------------------------- |
+| `id`                       | P     | PK                                     |
+| `feed_url`                 | **E** | URL reveals institutional affiliations |
+| `feed_name`                | **E** | User-generated                         |
+| `is_active`                | P     | Boolean                                |
+| `auto_create_sessions`     | P     | Boolean                                |
+| `default_course_id`        | P     | FK                                     |
+| `sync_interval_hours`      | P     | Setting                                |
+| `last_synced_at`           | P     | Timestamp                              |
+| `last_error`               | **E** | May contain URL fragments              |
+| `metadata`                 | **E** | JSON with feed details                 |
+| `created_at`, `updated_at` | P     | Timestamps                             |
+| `_sync_*`                  | P     | Sync protocol                          |
 
 **`ics_synced_events`**
 
-| Field | P/E | Rationale |
-|-------|-----|-----------|
-| `id`, `feed_id`, `matched_course_id` | P | PK / FKs |
-| `uid` | P | ICS standard identifier |
-| `summary` | **E** | Event title — reveals schedule |
-| `description` | **E** | Free text |
-| `location` | **E** | Physical location |
-| `start_time`, `end_time` | P | Scheduling queries |
-| `recurrence_rule` | P | RRULE standard format |
-| `created_session_id` | P | FK |
-| `is_ignored` | P | Boolean |
-| `raw_event` | **E** | Full ICS event data |
-| `created_at`, `updated_at` | P | Timestamps |
-| `_sync_*` | P | Sync protocol |
+| Field                                | P/E   | Rationale                      |
+| ------------------------------------ | ----- | ------------------------------ |
+| `id`, `feed_id`, `matched_course_id` | P     | PK / FKs                       |
+| `uid`                                | P     | ICS standard identifier        |
+| `summary`                            | **E** | Event title — reveals schedule |
+| `description`                        | **E** | Free text                      |
+| `location`                           | **E** | Physical location              |
+| `start_time`, `end_time`             | P     | Scheduling queries             |
+| `recurrence_rule`                    | P     | RRULE standard format          |
+| `created_session_id`                 | P     | FK                             |
+| `is_ignored`                         | P     | Boolean                        |
+| `raw_event`                          | **E** | Full ICS event data            |
+| `created_at`, `updated_at`           | P     | Timestamps                     |
+| `_sync_*`                            | P     | Sync protocol                  |
 
 ---
 
 ### 4.4 Encryption Statistics Summary
 
-| Metric | Count |
-|--------|-------|
-| **Total fields across all tables** | ~520 |
-| **Plaintext (P) fields** | ~370 (71%) |
-| **Encrypted (E) fields** | ~150 (29%) |
-| **Tables with zero E fields** | ~20 (all-structural: pomodoro_sessions, junction tables, time logs, reviews, availability, preferences, achievements, xp_history, etc.) |
-| **Tables where majority of fields are E** | contacts, flashcards, language_vocabulary, daily_check_ins, bucket_list_items |
+| Metric                                    | Count                                                                                                                                   |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| **Total fields across all tables**        | ~520                                                                                                                                    |
+| **Plaintext (P) fields**                  | ~370 (71%)                                                                                                                              |
+| **Encrypted (E) fields**                  | ~150 (29%)                                                                                                                              |
+| **Tables with zero E fields**             | ~20 (all-structural: pomodoro_sessions, junction tables, time logs, reviews, availability, preferences, achievements, xp_history, etc.) |
+| **Tables where majority of fields are E** | contacts, flashcards, language_vocabulary, daily_check_ins, bucket_list_items                                                           |
 
 ### 4.5 Sync Blob Encryption (L3)
 
@@ -1212,15 +1216,15 @@ When a row is pushed to the sync server, the **entire row** (both P and E fields
 
 #### What the Server Knows (by Design)
 
-| Server can see | Server cannot see |
-|---------------|-------------------|
-| Table name | Any column values (title, description, amount, etc.) |
-| Row ID (UUIDv7) | What the row contains |
-| Sync version number | Whether a field is P or E — entire row is one blob |
-| LWW timestamp | Tags, categories, names, amounts, content |
-| Device ID | Relationships between entities (FKs are inside the blob) |
-| Operation type (create/update/delete) | |
-| Blob size | |
+| Server can see                        | Server cannot see                                        |
+| ------------------------------------- | -------------------------------------------------------- |
+| Table name                            | Any column values (title, description, amount, etc.)     |
+| Row ID (UUIDv7)                       | What the row contains                                    |
+| Sync version number                   | Whether a field is P or E — entire row is one blob       |
+| LWW timestamp                         | Tags, categories, names, amounts, content                |
+| Device ID                             | Relationships between entities (FKs are inside the blob) |
+| Operation type (create/update/delete) |                                                          |
+| Blob size                             |                                                          |
 
 #### Sync Flow
 
@@ -3749,7 +3753,7 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 > lines + the F1/F6/F7 build columns) — **fully enumerated below**; and **(ii)** the documentation-blueprint module
 > tier — the `[INTENT]`-marked owed amendments in **all 19 `docs/features/*/structure-data.md` docs** (the per-module
 > documented target schema) — **named below, not enumerated**, because table-by-table enumeration of the full v2 module
-> schema *is* the build-phase session this ledger defers.
+> schema _is_ the build-phase session this ledger defers.
 
 **Readiness legend:** ✓ fully-specified (drop-in) · ⏳ build-deferred (shape open in-source) · ↔ to-verify at build.
 
@@ -3758,75 +3762,75 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 **RETIRE** (superseded — remove from §5 at the build rewrite; reconcile every remaining reference: index, FK, §7
 count, §8 map):
 
-| Retire | Stale §5 location | Superseded by |
-|--------|-------------------|---------------|
-| flat `study_sessions` (Learning-only) | §5.10 (Study Sessions) | ADR-004 `sessions` spine + `study_sessions` **redefined** as a 1:1 extension |
-| §5.11 flat Study Planner (`study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates`) | §5.11 | ADR-004 `planned_blocks` + aggregator engine (↔ per-table disposition verified at build — some redefined, not dropped; ADR-004 §3.1) |
-| `flashcard_decks` | §5.10 | ADR-005 — reviewable becomes a lean content entity |
-| `flashcard_reviews` | §5.10 | ADR-005 — generic review engine (`review_events`) |
-| SM-2 columns on `flashcards` *(column-level)* | §5.10 | ADR-005 — scheduled by Knowledge's generic engine |
-| SM-2 columns on `study_topics` *(column-level; flag)* | §5.10 | ADR-005 review engine — reconcile (`study_topics` still carries its own SM-2 today) |
-| `page_tags` | §5.2 (Note Tags) | ADR-006 `entity_tags` (rows migrate) |
-| INTENDED `task_views` + Preferences per-module custom-views store | §5.3 / §5.17 | ADR-007 `views` |
-| `purpose_habits`, `purpose_routines`, `purpose_projects` (bare junctions) | §5.7 | ADR-011 first-class `contributions` (weighted edge) |
-| `xp_history` (XP-only ledger: `action_type`/`xp_amount`/`level_before`/`level_after`) | §5.15 | ADR-012 `consequence_ledger` (currency-scoped ± ledger; XP = one currency) |
+| Retire                                                                                                                                            | Stale §5 location      | Superseded by                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| flat `study_sessions` (Learning-only)                                                                                                             | §5.10 (Study Sessions) | ADR-004 `sessions` spine + `study_sessions` **redefined** as a 1:1 extension                                                         |
+| §5.11 flat Study Planner (`study_availability`, `availability_exceptions`, `study_plan_batches`, `scheduled_study_sessions`, `session_templates`) | §5.11                  | ADR-004 `planned_blocks` + aggregator engine (↔ per-table disposition verified at build — some redefined, not dropped; ADR-004 §3.1) |
+| `flashcard_decks`                                                                                                                                 | §5.10                  | ADR-005 — reviewable becomes a lean content entity                                                                                   |
+| `flashcard_reviews`                                                                                                                               | §5.10                  | ADR-005 — generic review engine (`review_events`)                                                                                    |
+| SM-2 columns on `flashcards` _(column-level)_                                                                                                     | §5.10                  | ADR-005 — scheduled by Knowledge's generic engine                                                                                    |
+| SM-2 columns on `study_topics` _(column-level; flag)_                                                                                             | §5.10                  | ADR-005 review engine — reconcile (`study_topics` still carries its own SM-2 today)                                                  |
+| `page_tags`                                                                                                                                       | §5.2 (Note Tags)       | ADR-006 `entity_tags` (rows migrate)                                                                                                 |
+| INTENDED `task_views` + Preferences per-module custom-views store                                                                                 | §5.3 / §5.17           | ADR-007 `views`                                                                                                                      |
+| `purpose_habits`, `purpose_routines`, `purpose_projects` (bare junctions)                                                                         | §5.7                   | ADR-011 first-class `contributions` (weighted edge)                                                                                  |
+| `xp_history` (XP-only ledger: `action_type`/`xp_amount`/`level_before`/`level_after`)                                                             | §5.15                  | ADR-012 `consequence_ledger` (currency-scoped ± ledger; XP = one currency)                                                           |
 
 **ADD** (new tables — existence/name decided by the amending ADR; readiness per legend):
 
-| Add | Source | Readiness · shape note |
-|-----|--------|------------------------|
-| `sessions` (spine) | ADR-004 §3.1 | ⏳ thin base row; shared spine |
-| `reading_sessions`, `class_sessions`, `workout_sessions`, `work_sessions`, `study_sessions` (redefined), `focus_sessions` | ADR-004 §3.1 | ⏳ 1:1 extension per sub-type keyed by `session_id`; set left at "…etc." — some settle at build |
-| `planned_blocks` | ADR-004 §3.1 | ⏳ aggregator-scheduled blocks |
-| `session_attachments` | ADR-004 §3.2.1 | ⏳ Integration-Contract polymorphic attachment |
-| `applied_effects` (**local-only, not synced**) | ADR-004 (F1) | ⏳ dedup ledger, like `sync_queue` |
-| `review_curves`, `method_bindings`, `review_events` | ADR-005 | ↔ Knowledge review-engine tables (confirm columns vs Knowledge structure-data at build) |
-| `entity_tags(tag_id, entity_type, entity_id)` | ADR-006 §3.2 | ✓ universal tag junction (replaces `page_tags`) |
-| `spaces` | ADR-006 §3 | ✓ lightweight first-class entity; membership spine = a root tag |
-| `space_enabled_blocks` (junction) | ADR-006 §3.4 (F3/D3) | ⏳ Space↔capability-**definition** palette (the *menu*); row-based; storage strategy → **F10** |
-| `views` | ADR-007 | ✓ saved views (filter × layout × grouping; `space_id` nullable) |
-| capability **registry (definition)** table | ADR-008 §3.1 | ⏳ id·kind·render-targets·bindings·effects·config; `kind` carries `study_method`; "Exact tables settle at build" (ADR-008) |
-| `block_instances` | ADR-008 §3.4 | ⏳ standalone **placements** (distinct from the `enabled_blocks` *menu*) |
-| `templates` | ADR-009 | ✓ `id · name [E] · serialized bundle [E]` — light store |
-| `capability_grants` | ADR-010 | ✓ `capability_def_id · granted_bindings · granted_effects · media_ok · external_in_ok · external_out_ok · consented_sensitive_modules · granted_envelope_hash` |
-| `values` | ADR-011 (PG4) | ✓ first-class core-beliefs layer above purposes (`name[E] · description[E] · sort_order`) |
-| `contributions` | ADR-011 (PG7/PG10) | ⏳ polymorphic weighted goal-edge (`goal_type · goal_id · contributor_type · contributor_id · contribution_percentage · contribution_notes[E]`); Purpose-domain, **not** a Spaces primitive |
-| `purpose_reviews` | ADR-011 (PG3) | ✓ restored alignment/fulfillment loop (`still_aligned · fulfillment_rating · clarity_rating · renewed_commitment · …[E]`) |
-| `plan_steps` | ADR-011 (PG5) | ⏳ lightweight DOC layer on task/target (`owner_type · owner_id · title[E] · note[E] · order · is_completed`); not a tracked entity |
-| `consequence_ledger` | ADR-012 | ⏳ generalizes `xp_history` (RETIRE above): `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id UNIQUE · at`; the 4 derived quantities recompute from it |
-| `currencies` | ADR-012 | ⏳ user-definable resource-currency: `name[E] · backing_kind{real-money,self-granted,measured-time} · unit · icon · pool/to-distribute ceiling config`; XP = one currency |
-| `store` (**Finance-owned**) | ADR-012 | ⏳ nestable Storage LAYER: `parent_id(self-nest) · node_kind{group,wrapper} · (wrapper) ref_type{account,investment,asset}/ref_id · name[E] · is_locked · dream_id?/purpose_id? · currency overlay`; canonical single-parent (no double-count); existing Finance entities UNTOUCHED |
-| `rules` | ADR-012 | ⏳ headless-automation primitive: ADR-011 binding-ref (condition) + typed-consequence set + (user-authored) ADR-010 grant; **shape open in-source**; NOT an ADR-008 render-Block |
+| Add                                                                                                                       | Source               | Readiness · shape note                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------------------------------------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `sessions` (spine)                                                                                                        | ADR-004 §3.1         | ⏳ thin base row; shared spine                                                                                                                                                                                                                                                      |
+| `reading_sessions`, `class_sessions`, `workout_sessions`, `work_sessions`, `study_sessions` (redefined), `focus_sessions` | ADR-004 §3.1         | ⏳ 1:1 extension per sub-type keyed by `session_id`; set left at "…etc." — some settle at build                                                                                                                                                                                     |
+| `planned_blocks`                                                                                                          | ADR-004 §3.1         | ⏳ aggregator-scheduled blocks                                                                                                                                                                                                                                                      |
+| `session_attachments`                                                                                                     | ADR-004 §3.2.1       | ⏳ Integration-Contract polymorphic attachment                                                                                                                                                                                                                                      |
+| `applied_effects` (**local-only, not synced**)                                                                            | ADR-004 (F1)         | ⏳ dedup ledger, like `sync_queue`                                                                                                                                                                                                                                                  |
+| `review_curves`, `method_bindings`, `review_events`                                                                       | ADR-005              | ↔ Knowledge review-engine tables (confirm columns vs Knowledge structure-data at build)                                                                                                                                                                                             |
+| `entity_tags(tag_id, entity_type, entity_id)`                                                                             | ADR-006 §3.2         | ✓ universal tag junction (replaces `page_tags`)                                                                                                                                                                                                                                     |
+| `spaces`                                                                                                                  | ADR-006 §3           | ✓ lightweight first-class entity; membership spine = a root tag                                                                                                                                                                                                                     |
+| `space_enabled_blocks` (junction)                                                                                         | ADR-006 §3.4 (F3/D3) | ⏳ Space↔capability-**definition** palette (the _menu_); row-based; storage strategy → **F10**                                                                                                                                                                                      |
+| `views`                                                                                                                   | ADR-007              | ✓ saved views (filter × layout × grouping; `space_id` nullable)                                                                                                                                                                                                                     |
+| capability **registry (definition)** table                                                                                | ADR-008 §3.1         | ⏳ id·kind·render-targets·bindings·effects·config; `kind` carries `study_method`; "Exact tables settle at build" (ADR-008)                                                                                                                                                          |
+| `block_instances`                                                                                                         | ADR-008 §3.4         | ⏳ standalone **placements** (distinct from the `enabled_blocks` _menu_)                                                                                                                                                                                                            |
+| `templates`                                                                                                               | ADR-009              | ✓ `id · name [E] · serialized bundle [E]` — light store                                                                                                                                                                                                                             |
+| `capability_grants`                                                                                                       | ADR-010              | ✓ `capability_def_id · granted_bindings · granted_effects · media_ok · external_in_ok · external_out_ok · consented_sensitive_modules · granted_envelope_hash`                                                                                                                      |
+| `values`                                                                                                                  | ADR-011 (PG4)        | ✓ first-class core-beliefs layer above purposes (`name[E] · description[E] · sort_order`)                                                                                                                                                                                           |
+| `contributions`                                                                                                           | ADR-011 (PG7/PG10)   | ⏳ polymorphic weighted goal-edge (`goal_type · goal_id · contributor_type · contributor_id · contribution_percentage · contribution_notes[E]`); Purpose-domain, **not** a Spaces primitive                                                                                         |
+| `purpose_reviews`                                                                                                         | ADR-011 (PG3)        | ✓ restored alignment/fulfillment loop (`still_aligned · fulfillment_rating · clarity_rating · renewed_commitment · …[E]`)                                                                                                                                                           |
+| `plan_steps`                                                                                                              | ADR-011 (PG5)        | ⏳ lightweight DOC layer on task/target (`owner_type · owner_id · title[E] · note[E] · order · is_completed`); not a tracked entity                                                                                                                                                 |
+| `consequence_ledger`                                                                                                      | ADR-012              | ⏳ generalizes `xp_history` (RETIRE above): `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id UNIQUE · at`; the 4 derived quantities recompute from it                                                                        |
+| `currencies`                                                                                                              | ADR-012              | ⏳ user-definable resource-currency: `name[E] · backing_kind{real-money,self-granted,measured-time} · unit · icon · pool/to-distribute ceiling config`; XP = one currency                                                                                                           |
+| `store` (**Finance-owned**)                                                                                               | ADR-012              | ⏳ nestable Storage LAYER: `parent_id(self-nest) · node_kind{group,wrapper} · (wrapper) ref_type{account,investment,asset}/ref_id · name[E] · is_locked · dream_id?/purpose_id? · currency overlay`; canonical single-parent (no double-count); existing Finance entities UNTOUCHED |
+| `rules`                                                                                                                   | ADR-012              | ⏳ headless-automation primitive: ADR-011 binding-ref (condition) + typed-consequence set + (user-authored) ADR-010 grant; **shape open in-source**; NOT an ADR-008 render-Block                                                                                                    |
 
-*Not a table (recorded to prevent re-litigation):* `study_methods` = the `kind='study_method'` partition of the ADR-008
+_Not a table (recorded to prevent re-litigation):_ `study_methods` = the `kind='study_method'` partition of the ADR-008
 registry (F2/D2), **not** a base table — queryable via a kind-partition read / optional view. **Inline** capability
 instances = ProseMirror nodes synced in the page's Yjs doc (ADR-008 §3.4) — **no table**.
 
 **AMEND** (column-level changes; F1/F6/F7 build columns stay build-phase but visible):
 
-| Amend | Source | Readiness · disposition |
-|-------|--------|-------------------------|
-| `_sync_field_ts TEXT` on **every** syncable table | ADR-003 §17 | ⏳ **formally ratified here** (was "implicit schema edit") |
-| open `entity_links.entity_type` CHECK enum → registry | ADR-006 §3.2 | ✓ CHECK relaxed to the same registry as `entity_tags` |
-| `parent_tag_id` on `tags` | ADR-006 §3.2 | ✓ tag nesting (`#a/b`) |
-| `effect_event_id` on effect-**triggering** rows; **UNIQUE** `effect_event_id` on effect-**output** rows | ADR-004 (F1) | ⏳ cross-device convergence key |
-| HLC **representation** of `_sync_lww_ts` + `_sync_field_ts` (string / BigInt / two-column) + HLC-state home (`last_l`/`last_c`); `updated_at` stays wall-ms | F6/D4-d | ⏳ build-phase; couples to wire header + `blob_index` → **F10** |
-| `category_bidx TEXT` (blind index) + `idx_transactions_category_bidx` | F7/D7 | ⏳ keyed-BLAKE2b domain-separated derivation |
-| new-domain FTS5 tables — e.g. `fts_knowledge` (Knowledge K11, "absent today") | Knowledge structure-data | ⏳ §5.19's F7 rewrite covered only the *existing* FTS tables (pages/tasks/contacts/courses); new searchable domains owe their own |
-| `measurement_kind` + `binding_mode` pair on **pursuable** entities (Tasks · Habits · Routines · Projects/Deliverables · Dreams · Health · Finance measurables) | ADR-011 §3.1/§3.5 | ⏳ **cross-cutting** — each module's `[INTENT]` note (Stream ii); the contract, not per-table DDL, is locked |
-| `purposes.progress` / `targets.current_value` (+ any pursuable's stored progress) → **nullable** (`NULL = derive`); today `NOT NULL DEFAULT 0` | ADR-011 §3.2 | ⏳ override-slot semantics |
-| `targets.purpose_id` → **nullable** (SR-003 relaxed; `ON DELETE SET NULL`) | ADR-011 (PG9) | ⏳ standalone targets |
-| restore `targets.success_criteria[E]` + `measurement_method`; `purpose_metrics.is_higher_better` + `baseline_value`; provenance `source{manual,auto}` on `purpose_metric_values`; optional per-child **nesting-weight** column | ADR-011 §3.1/§3.3/§3.6 | ⏳ measurement fields |
-| `user_profile` **SPLIT** by single-writer: System keeps per-currency total + level (DERIVED); `check_in_streak*` → Check-ins; `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences (**receiving amendment FULFILLED — DB-4 group #2, §5.17 `user_preferences`**); **PII (`display_name`/`avatar_url`/`birth_date`) STAYS ⚠** until an account/identity model exists | ADR-012 §3.10 | ✅ Preferences-side authored (§5.17); Gamification's `user_profile` (unbuilt) must omit these 4 + `check_in_streak*` |
-| `achievements.condition` → **measurable predicate** (evaluated on ADR-011 seam + event stream, not a bespoke checker); `level` → **derived** over a fixed non-linear curve config (**no table**) | ADR-012 §3.7/§3.8 | ⏳ engine-on-measurement |
-| **ADR-004 §3.2.2 catalogue** += `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key). `award_xp` = `grant_currency(XP)` (kept) | ADR-012 §3.1 (extends ADR-004) | ⏳ **also owed to ADR-004's `Amended:` block** at consolidation |
-| **ADR-011 §3.7 DAG guard** extended to count **consequence→source→condition** edges (a currency grant moving `net_worth` can feed another rule's `derived-pull`) | ADR-012 §3.1 (extends ADR-011) | ⏳ **also owed to ADR-011 §3.7** at consolidation |
-| `notifications` += **delivery-audit** (which channels a row fired on — `delivered_in_app`/`_push`/`_email` or a `delivered_channels` set; multi-device dedup) + optional `metadata` JSON `[E]` | Notifications structure-data (N4) → ADR-013 | ⏳ lean row + audit; `reminder-engine.ts` dispatcher owes a service, not a table |
-| `import_staging` (parsed-but-uncommitted rows + match metadata + per-row status) + encrypted `connection_config` (live-connection creds, L2/L3, mediator custody) + an **integration-identity** anchor & **per-source normalization contract** | ADR-014 §3.5/§3.8 | ⏳ reconcile-on-import; ingestion pipeline owes a service. Public-dataset **provenance/signature/version** verification owed too |
-| **ADR-010 `capability_grants`** `external_in_ok`/`external_out_ok` gain **external-data semantics** (per-source/per-target layer + data-scope) | ADR-014 §3.4 (semantics; fields ADR-010-owned) | ✓ no new column — meaning only |
-| `ai_connections` (per-provider: `mode{on_device,cloud} · provider · encrypted_key[L2/L3, mediator-custody] · default_scope · requested_no_train`) + encrypted `ai_conversations` (persisted chat turns) + `source = ai` provenance on generated rows | ADR-015 §3.5/§3.6 | ⏳ AI layer owes a service (`askModel` mediator primitive · on-device runtime · agentic tool-loop), not just tables |
-| **Fiscal & Legal** (Finance sub-context): `fiscal_residencies` (`owner{user,legal_entity} · jurisdiction · type · dates · notes[E]`) + `legal_entities` (↔ Projects; `name[E] · entity_type · jurisdiction`) + **jurisdiction link on Finance entities** (accounts/transactions/assets/income/investments — a tag, Finance untouched) + `fiscal_obligations` (derived: `jurisdiction · type · due_date · status · source_rulepack_version · linked_task_id?`) | Finance/fiscal-legal (FL-*) | ⏳ net-new; rule-packs = ADR-014 public layer (no table); advise = ADR-015 |
-| **ADR-003 §12 device registry** += `push_token` + `push_platform{apns,fcm,web}` columns (**not** a new table; registration rides existing `/api/devices/register`) | ADR-013 §3.6 (extends ADR-003) | ⏳ push-token custody for the wake-relay; server-side |
+| Amend                                                                                                                                                                                                                                                                                                                                                                                                                                                         | Source                                         | Readiness · disposition                                                                                                           |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| `_sync_field_ts TEXT` on **every** syncable table                                                                                                                                                                                                                                                                                                                                                                                                             | ADR-003 §17                                    | ⏳ **formally ratified here** (was "implicit schema edit")                                                                        |
+| open `entity_links.entity_type` CHECK enum → registry                                                                                                                                                                                                                                                                                                                                                                                                         | ADR-006 §3.2                                   | ✓ CHECK relaxed to the same registry as `entity_tags`                                                                             |
+| `parent_tag_id` on `tags`                                                                                                                                                                                                                                                                                                                                                                                                                                     | ADR-006 §3.2                                   | ✓ tag nesting (`#a/b`)                                                                                                            |
+| `effect_event_id` on effect-**triggering** rows; **UNIQUE** `effect_event_id` on effect-**output** rows                                                                                                                                                                                                                                                                                                                                                       | ADR-004 (F1)                                   | ⏳ cross-device convergence key                                                                                                   |
+| HLC **representation** of `_sync_lww_ts` + `_sync_field_ts` (string / BigInt / two-column) + HLC-state home (`last_l`/`last_c`); `updated_at` stays wall-ms                                                                                                                                                                                                                                                                                                   | F6/D4-d                                        | ⏳ build-phase; couples to wire header + `blob_index` → **F10**                                                                   |
+| `category_bidx TEXT` (blind index) + `idx_transactions_category_bidx`                                                                                                                                                                                                                                                                                                                                                                                         | F7/D7                                          | ⏳ keyed-BLAKE2b domain-separated derivation                                                                                      |
+| new-domain FTS5 tables — e.g. `fts_knowledge` (Knowledge K11, "absent today")                                                                                                                                                                                                                                                                                                                                                                                 | Knowledge structure-data                       | ⏳ §5.19's F7 rewrite covered only the _existing_ FTS tables (pages/tasks/contacts/courses); new searchable domains owe their own |
+| `measurement_kind` + `binding_mode` pair on **pursuable** entities (Tasks · Habits · Routines · Projects/Deliverables · Dreams · Health · Finance measurables)                                                                                                                                                                                                                                                                                                | ADR-011 §3.1/§3.5                              | ⏳ **cross-cutting** — each module's `[INTENT]` note (Stream ii); the contract, not per-table DDL, is locked                      |
+| `purposes.progress` / `targets.current_value` (+ any pursuable's stored progress) → **nullable** (`NULL = derive`); today `NOT NULL DEFAULT 0`                                                                                                                                                                                                                                                                                                                | ADR-011 §3.2                                   | ⏳ override-slot semantics                                                                                                        |
+| `targets.purpose_id` → **nullable** (SR-003 relaxed; `ON DELETE SET NULL`)                                                                                                                                                                                                                                                                                                                                                                                    | ADR-011 (PG9)                                  | ⏳ standalone targets                                                                                                             |
+| restore `targets.success_criteria[E]` + `measurement_method`; `purpose_metrics.is_higher_better` + `baseline_value`; provenance `source{manual,auto}` on `purpose_metric_values`; optional per-child **nesting-weight** column                                                                                                                                                                                                                                | ADR-011 §3.1/§3.3/§3.6                         | ⏳ measurement fields                                                                                                             |
+| `user_profile` **SPLIT** by single-writer: System keeps per-currency total + level (DERIVED); `check_in_streak*` → Check-ins; `persona`/`motivation_style`/`active_modules`/`onboarding_*` → Preferences (**receiving amendment FULFILLED — DB-4 group #2, §5.17 `user_preferences`**); **PII (`display_name`/`avatar_url`/`birth_date`) STAYS ⚠** until an account/identity model exists                                                                     | ADR-012 §3.10                                  | ✅ Preferences-side authored (§5.17); Gamification's `user_profile` (unbuilt) must omit these 4 + `check_in_streak*`              |
+| `achievements.condition` → **measurable predicate** (evaluated on ADR-011 seam + event stream, not a bespoke checker); `level` → **derived** over a fixed non-linear curve config (**no table**)                                                                                                                                                                                                                                                              | ADR-012 §3.7/§3.8                              | ⏳ engine-on-measurement                                                                                                          |
+| **ADR-004 §3.2.2 catalogue** += `grant_currency` · `lock_currency` · `move_money` · `surface_notification` — **all §3.2.5 Additive-class** (deterministic `effect_event_id` + UNIQUE on the output row; no domain natural key). `award_xp` = `grant_currency(XP)` (kept)                                                                                                                                                                                      | ADR-012 §3.1 (extends ADR-004)                 | ⏳ **also owed to ADR-004's `Amended:` block** at consolidation                                                                   |
+| **ADR-011 §3.7 DAG guard** extended to count **consequence→source→condition** edges (a currency grant moving `net_worth` can feed another rule's `derived-pull`)                                                                                                                                                                                                                                                                                              | ADR-012 §3.1 (extends ADR-011)                 | ⏳ **also owed to ADR-011 §3.7** at consolidation                                                                                 |
+| `notifications` += **delivery-audit** (which channels a row fired on — `delivered_in_app`/`_push`/`_email` or a `delivered_channels` set; multi-device dedup) + optional `metadata` JSON `[E]`                                                                                                                                                                                                                                                                | Notifications structure-data (N4) → ADR-013    | ⏳ lean row + audit; `reminder-engine.ts` dispatcher owes a service, not a table                                                  |
+| `import_staging` (parsed-but-uncommitted rows + match metadata + per-row status) + encrypted `connection_config` (live-connection creds, L2/L3, mediator custody) + an **integration-identity** anchor & **per-source normalization contract**                                                                                                                                                                                                                | ADR-014 §3.5/§3.8                              | ⏳ reconcile-on-import; ingestion pipeline owes a service. Public-dataset **provenance/signature/version** verification owed too  |
+| **ADR-010 `capability_grants`** `external_in_ok`/`external_out_ok` gain **external-data semantics** (per-source/per-target layer + data-scope)                                                                                                                                                                                                                                                                                                                | ADR-014 §3.4 (semantics; fields ADR-010-owned) | ✓ no new column — meaning only                                                                                                    |
+| `ai_connections` (per-provider: `mode{on_device,cloud} · provider · encrypted_key[L2/L3, mediator-custody] · default_scope · requested_no_train`) + encrypted `ai_conversations` (persisted chat turns) + `source = ai` provenance on generated rows                                                                                                                                                                                                          | ADR-015 §3.5/§3.6                              | ⏳ AI layer owes a service (`askModel` mediator primitive · on-device runtime · agentic tool-loop), not just tables               |
+| **Fiscal & Legal** (Finance sub-context): `fiscal_residencies` (`owner{user,legal_entity} · jurisdiction · type · dates · notes[E]`) + `legal_entities` (↔ Projects; `name[E] · entity_type · jurisdiction`) + **jurisdiction link on Finance entities** (accounts/transactions/assets/income/investments — a tag, Finance untouched) + `fiscal_obligations` (derived: `jurisdiction · type · due_date · status · source_rulepack_version · linked_task_id?`) | Finance/fiscal-legal (FL-\*)                   | ⏳ net-new; rule-packs = ADR-014 public layer (no table); advise = ADR-015                                                        |
+| **ADR-003 §12 device registry** += `push_token` + `push_platform{apns,fcm,web}` columns (**not** a new table; registration rides existing `/api/devices/register`)                                                                                                                                                                                                                                                                                            | ADR-013 §3.6 (extends ADR-003)                 | ⏳ push-token custody for the wake-relay; server-side                                                                             |
 
 #### Stream (ii) — the module-documentation tier (named, not enumerated)
 
@@ -3841,11 +3845,11 @@ itself** — this ledger names the complete input set so nothing is silently omi
 
 **Notable confirmed cross-module MOVES** (examples — the full set lives in the docs above):
 
-| Move | Kind | Source | ADR-002 site |
-|------|------|--------|--------------|
-| `bucket_list_items` → collapse into `dreams` (fields fold in) | RETIRE + AMEND | Bucket List dissolution (PG8) | §5.14 → `dreams` §5.7 |
-| `pomodoro_sessions` → re-home Notes → Sessions, keyed by `session_id` | AMEND (move) | Pomodoro reframe | §5.2 → Sessions realm |
-| `skill_resources` → `entity_links`; `knowledge_notes` / `resource_urls` superseded | RETIRE | Skills / Knowledge structure-data | §5.10 |
+| Move                                                                               | Kind           | Source                            | ADR-002 site          |
+| ---------------------------------------------------------------------------------- | -------------- | --------------------------------- | --------------------- |
+| `bucket_list_items` → collapse into `dreams` (fields fold in)                      | RETIRE + AMEND | Bucket List dissolution (PG8)     | §5.14 → `dreams` §5.7 |
+| `pomodoro_sessions` → re-home Notes → Sessions, keyed by `session_id`              | AMEND (move)   | Pomodoro reframe                  | §5.2 → Sessions realm |
+| `skill_resources` → `entity_links`; `knowledge_notes` / `resource_urls` superseded | RETIRE         | Skills / Knowledge structure-data | §5.10                 |
 
 > **Build-session checklist = Stream (i) tables above + every doc in the Stream (ii) list.** Both are inputs; §5 is
 > rewritten from them at the build-phase schema session, at which point §7 (count) and §8 (map) are reconciled.
@@ -3854,46 +3858,46 @@ itself** — this ledger names the complete input set so nothing is silently omi
 
 ## 6. Tables Dropped from Life OS
 
-| Life OS Table | Reason for Drop |
-|--------------|-----------------|
-| `master_routines` / `routine_sessions` | Replaced by simpler `routine_actions` / `routine_completions` model |
-| `master_duties` / `duty_sessions` | No TS types existed; functionality absorbed by tasks |
-| `master_obligations` / `obligation_sessions` | No TS types existed; functionality absorbed by tasks + contact reminders |
-| `activity_log` | Server-side audit trail — not needed in local-first (app analytics handled differently) |
-| `daily_productivity_scores` | Computed on-the-fly in application layer; no need to persist |
-| `guidance_tips` / `user_tip_interactions` | Shipped as app config/JSON, not DB rows |
-| `xp_action_rewards` | Shipped as app config/constants, not DB rows |
-| `onboarding_progress` | Merged into `user_profile.onboarding_completed` + app state |
-| `study_planner_sync_queue` | Replaced by the universal `sync_queue` table |
-| `user_devices` | Server-side concern — managed by the Hono sync server, not local DB |
+| Life OS Table                                | Reason for Drop                                                                         |
+| -------------------------------------------- | --------------------------------------------------------------------------------------- |
+| `master_routines` / `routine_sessions`       | Replaced by simpler `routine_actions` / `routine_completions` model                     |
+| `master_duties` / `duty_sessions`            | No TS types existed; functionality absorbed by tasks                                    |
+| `master_obligations` / `obligation_sessions` | No TS types existed; functionality absorbed by tasks + contact reminders                |
+| `activity_log`                               | Server-side audit trail — not needed in local-first (app analytics handled differently) |
+| `daily_productivity_scores`                  | Computed on-the-fly in application layer; no need to persist                            |
+| `guidance_tips` / `user_tip_interactions`    | Shipped as app config/JSON, not DB rows                                                 |
+| `xp_action_rewards`                          | Shipped as app config/constants, not DB rows                                            |
+| `onboarding_progress`                        | Merged into `user_profile.onboarding_completed` + app state                             |
+| `study_planner_sync_queue`                   | Replaced by the universal `sync_queue` table                                            |
+| `user_devices`                               | Server-side concern — managed by the Hono sync server, not local DB                     |
 
 ---
 
 ## 7. Table Count Summary
 
-| Domain | Tables | Syncable |
-|--------|--------|----------|
-| Infrastructure | 2 (app_state, sync_queue) | No |
-| Notes & Pages | 6 (pages, page_links, entity_links, tags, page_tags, note_attachments) | Yes |
-| Pomodoro | 1 | Yes |
-| Tasks | 2 (tasks, task_time_logs) | Yes |
-| Projects | 3 (projects, milestones, project_documents) | Yes |
-| Habits | 2 (habits, habit_completions) | Yes |
-| Routines | 2 (routine_actions, routine_completions) | Yes |
-| Purpose & Goals | 8 (purposes, targets, purpose_metrics, purpose_metric_values, target_reviews, dreams, + 4 junction tables) | Yes |
-| Financial | 5 (accounts, transactions, assets, liabilities, investments, income_streams) | Yes |
-| Relationships | 6 (contacts, contact_events, interactions, contact_reminders, reminder_groups, reminder_group_contacts) | Yes |
-| Learning | 11 (courses, books, book_chapters, skills, skill_resources, study_sessions, study_topics, topic_reviews, knowledge_notes, flashcard_decks, flashcards, flashcard_reviews) | Yes |
-| Study Planner | 5 (study_availability, availability_exceptions, study_plan_batches, scheduled_study_sessions, session_templates) | Yes |
-| Language Learning | 7 (languages, language_practice_sessions, language_vocabulary, language_daily_sessions, language_daily_progress, language_recordings, language_weekly_plans, language_base_words, language_video_playlists) | Yes |
-| Check-ins | 3 (daily_check_ins, check_in_templates, check_in_template_questions) | Yes |
-| Bucket List | 1 | Yes |
-| Gamification | 4 (user_profile, achievements, user_achievements, xp_history) | Yes |
-| Notifications | 1 | Yes |
-| Preferences | 3 (user_preferences, nav_preferences, command_bar_history) | Yes |
-| ICS Sync | 2 (ics_feed_configs, ics_synced_events) | Yes |
-| FTS (virtual) | 4 | No |
-| **Total** | **~72 tables** | **~66 syncable** |
+| Domain            | Tables                                                                                                                                                                                                      | Syncable         |
+| ----------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| Infrastructure    | 2 (app_state, sync_queue)                                                                                                                                                                                   | No               |
+| Notes & Pages     | 6 (pages, page_links, entity_links, tags, page_tags, note_attachments)                                                                                                                                      | Yes              |
+| Pomodoro          | 1                                                                                                                                                                                                           | Yes              |
+| Tasks             | 2 (tasks, task_time_logs)                                                                                                                                                                                   | Yes              |
+| Projects          | 3 (projects, milestones, project_documents)                                                                                                                                                                 | Yes              |
+| Habits            | 2 (habits, habit_completions)                                                                                                                                                                               | Yes              |
+| Routines          | 2 (routine_actions, routine_completions)                                                                                                                                                                    | Yes              |
+| Purpose & Goals   | 8 (purposes, targets, purpose_metrics, purpose_metric_values, target_reviews, dreams, + 4 junction tables)                                                                                                  | Yes              |
+| Financial         | 5 (accounts, transactions, assets, liabilities, investments, income_streams)                                                                                                                                | Yes              |
+| Relationships     | 6 (contacts, contact_events, interactions, contact_reminders, reminder_groups, reminder_group_contacts)                                                                                                     | Yes              |
+| Learning          | 11 (courses, books, book_chapters, skills, skill_resources, study_sessions, study_topics, topic_reviews, knowledge_notes, flashcard_decks, flashcards, flashcard_reviews)                                   | Yes              |
+| Study Planner     | 5 (study_availability, availability_exceptions, study_plan_batches, scheduled_study_sessions, session_templates)                                                                                            | Yes              |
+| Language Learning | 7 (languages, language_practice_sessions, language_vocabulary, language_daily_sessions, language_daily_progress, language_recordings, language_weekly_plans, language_base_words, language_video_playlists) | Yes              |
+| Check-ins         | 3 (daily_check_ins, check_in_templates, check_in_template_questions)                                                                                                                                        | Yes              |
+| Bucket List       | 1                                                                                                                                                                                                           | Yes              |
+| Gamification      | 4 (user_profile, achievements, user_achievements, xp_history)                                                                                                                                               | Yes              |
+| Notifications     | 1                                                                                                                                                                                                           | Yes              |
+| Preferences       | 3 (user_preferences, nav_preferences, command_bar_history)                                                                                                                                                  | Yes              |
+| ICS Sync          | 2 (ics_feed_configs, ics_synced_events)                                                                                                                                                                     | Yes              |
+| FTS (virtual)     | 4                                                                                                                                                                                                           | No               |
+| **Total**         | **~72 tables**                                                                                                                                                                                              | **~66 syncable** |
 
 > **⚠ This count is the pre-amendment v1 total.** It does **not** include the owed tables tracked in **§5.20**
 > (Stream (i) adds/retires + the 19-module Stream (ii) target schema). The consolidated count is reconciled at the
@@ -3988,13 +3992,13 @@ itself** — this ledger names the complete input set so nothing is silently omi
 
 ### Polymorphic Reference Points
 
-| Pattern | Used By | Entity Types |
-|---------|---------|-------------|
-| `entity_type` + `entity_id` | `entity_links` (notes) | task, project, milestone, contact, habit, course, book, language, purpose, bucket_list_item, transaction |
-| `entity_type` + `entity_id` | `pages` | Links a note to any entity |
-| `resource_type` + `resource_id` | `skill_resources`, `study_sessions`, `flashcard_decks`, `scheduled_study_sessions` | course, book, topic, homework, article, video, podcast |
-| `entity_type` + `entity_id` | `notifications`, `xp_history` | Any entity |
-| `entity_type` + `entity_id` | `pomodoro_sessions` | task, task_group, class_note, note, study_session |
+| Pattern                         | Used By                                                                            | Entity Types                                                                                             |
+| ------------------------------- | ---------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `entity_type` + `entity_id`     | `entity_links` (notes)                                                             | task, project, milestone, contact, habit, course, book, language, purpose, bucket_list_item, transaction |
+| `entity_type` + `entity_id`     | `pages`                                                                            | Links a note to any entity                                                                               |
+| `resource_type` + `resource_id` | `skill_resources`, `study_sessions`, `flashcard_decks`, `scheduled_study_sessions` | course, book, topic, homework, article, video, podcast                                                   |
+| `entity_type` + `entity_id`     | `notifications`, `xp_history`                                                      | Any entity                                                                                               |
+| `entity_type` + `entity_id`     | `pomodoro_sessions`                                                                | task, task_group, class_note, note, study_session                                                        |
 
 ---
 
@@ -4032,6 +4036,7 @@ The SQL schema defined in this ADR is the **source of truth**. Drizzle schema fi
 - Migration generation via `drizzle-kit`
 
 Schema files are organized by domain:
+
 ```
 packages/core/src/db/schema/
 ├── pages.ts
@@ -4056,4 +4061,4 @@ packages/core/src/db/schema/
 
 ---
 
-*This ADR is the single source of truth for the Vida Platform data model. Any schema changes require updating this document.*
+_This ADR is the single source of truth for the Vida Platform data model. Any schema changes require updating this document._

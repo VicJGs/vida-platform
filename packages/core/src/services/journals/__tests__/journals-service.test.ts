@@ -36,7 +36,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -117,8 +120,16 @@ describe('mod-journals Slice 3 — journals service (live store)', () => {
 
   it('two snapshots for one date → getJournal returns the LATEST captured_at (BR-S3-4 / IR-f)', async () => {
     const repo = createRepository(h.db, journalSnapshots, { deviceId: 'test-device', encryptedFields: [] })
-    await repo.create({ snapshot_date: '2026-09-17', sections_data: JSON.stringify([section('a', 'summary', ['old'])]), captured_at: 100 })
-    await repo.create({ snapshot_date: '2026-09-17', sections_data: JSON.stringify([section('b', 'summary', ['new'])]), captured_at: 200 })
+    await repo.create({
+      snapshot_date: '2026-09-17',
+      sections_data: JSON.stringify([section('a', 'summary', ['old'])]),
+      captured_at: 100,
+    })
+    await repo.create({
+      snapshot_date: '2026-09-17',
+      sections_data: JSON.stringify([section('b', 'summary', ['new'])]),
+      captured_at: 200,
+    })
     const view = await h.svc.getJournal('2026-09-17')
     expect(view.source).toBe('snapshot')
     expect(view.capturedAt).toBe(200)
@@ -205,6 +216,8 @@ describe('mod-journals Slice 4 — buildReview (live store)', () => {
   it('throws InsufficientHistory when every in-range snapshot is malformed (BR-S4-2/6)', async () => {
     const repo = createRepository(h.db, journalSnapshots, { deviceId: 'test-device', encryptedFields: [] })
     await repo.create({ snapshot_date: '2026-09-01', sections_data: 'not json', captured_at: 10 })
-    await expect(h.svc.buildReview({ from: '2026-09-01', to: '2026-09-07' })).rejects.toBeInstanceOf(InsufficientHistory)
+    await expect(h.svc.buildReview({ from: '2026-09-01', to: '2026-09-07' })).rejects.toBeInstanceOf(
+      InsufficientHistory,
+    )
   })
 })

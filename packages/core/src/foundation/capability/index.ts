@@ -5,10 +5,6 @@
 export * from './types'
 export { createCapabilityRegistry, SHIPPED_CAPABILITIES, type CapabilityRegistry } from './registry'
 // XS-capability #31 — enforcement services (S1 decision core + grant reads · S2 grant/revoke).
-export {
-  createCapabilityEnforcer,
-  canonicalEnvelopeHash,
-  type CapabilityEnforcer,
-} from './enforcer'
+export { createCapabilityEnforcer, canonicalEnvelopeHash, type CapabilityEnforcer } from './enforcer'
 // XS-capability #31 — offered-set resolver (S3: per-surface-per-Space palette).
 export { createOfferedSetResolver, type OfferedSetResolver } from './offered-set'

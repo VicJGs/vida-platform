@@ -1,21 +1,25 @@
 # PLAN — S3 · Backfill + window policy
+
 # Spec: feature:mod-habits · slice S3 (§XXVI g1) · Status: draft
+
 # No-Guessing: every claim [FACT: path:line] / [INTERP] / [UNKNOWN]. Grounded per Victor's standing directive.
 
 ## 1. Identity
+
 S3 adds `backfillCompletion` (HAB-13) — logging/editing a completion for a PAST date, recomputing streaks
 (reusing the S2 engine), and rejecting a date beyond the user's configured backfill window (or in the future)
 with a typed `BackfillWindowError`. The window VALUE is Preferences-owned (`habit_backfill_window_days`,
 INTENDED) — S3 consumes it via a **permissive (fail-OPEN) port**. NB: this is deliberately the OPPOSITE of the
 repo's fail-CLOSED "deny-safe" security ports (`effects`/`contributions`/`enforcer` deny by default) — the
-backfill window is a user-owned *convenience* policy, not a security gate, so an unconfigured window imposes no
+backfill window is a user-owned _convenience_ policy, not a security gate, so an unconfigured window imposes no
 limit. `[FACT: parts/habits.md:23; business-rules.md:42-45; contract.md:20]`
 NOT in S3: the Preferences setting shape itself (Preferences build phase, `parts/habits.md:101`); reads (S4);
 effects (S5).
 
 ## 2. Business Rules (S3 slice)
+
 - **BR-S3-1 · Backfill = a dated completion in the past, recomputes streaks (HB-10).** `backfillCompletion(habitId,
-  pastDate, input)` routes through the SAME S2 upsert+recompute path (HB-3 upsert per (habit,date); HB-2 recompute).
+pastDate, input)` routes through the SAME S2 upsert+recompute path (HB-3 upsert per (habit,date); HB-2 recompute).
   `[FACT: business-rules.md:42-45; parts/habits.md:23]`
 - **BR-S3-2 · The date guard lives on the shared dated-WRITE path (not just the backfill method).** Any new dated
   completion write (`logCompletion`/`logDetailedCompletion`/`backfillCompletion`) is guarded so the window cannot be
@@ -34,13 +38,16 @@ effects (S5).
   the ledger + cache are unchanged. `[FACT: business-rules.md:75 (backfill terminal state: "no change")]`
 
 ## 3. Contract (S3 — appended)
+
 ```
 backfillCompletion(habitId: string, pastDate: string, input?: Omit<LogCompletionInput,'date'>): Promise<HabitCompletion>
 ```
-+ `HabitsServiceDeps.prefs?: HabitsPrefsPort` (`{ backfillWindowDays(): Promise<number | null> }`; absent → a
-permissive (fail-OPEN) port returning `null` = no limit). + `class BackfillWindowError extends Error`. `[FACT: contract.md:20,54]`
+
+- `HabitsServiceDeps.prefs?: HabitsPrefsPort` (`{ backfillWindowDays(): Promise<number | null> }`; absent → a
+  permissive (fail-OPEN) port returning `null` = no limit). + `class BackfillWindowError extends Error`. `[FACT: contract.md:20,54]`
 
 ## 4. Acceptance (✓live)
+
 - [ ] `backfillCompletion` for a past date within the window persists + recomputes the streak ✓live
 - [ ] with no `prefs` port (default), any past date is allowed (unlimited) ✓live
 - [ ] with a `prefs` port returning `w`, a date older than `asOf − w` → `BackfillWindowError`, no row written ✓live
@@ -51,13 +58,14 @@ permissive (fail-OPEN) port returning `null` = no limit). + `class BackfillWindo
 - [ ] `tsc` 0 · eslint 0 · full `@vida/core` suite green (no S1/S2 regression)
 
 ## 5. Implementation Prompt (ordered; cites §2)
+
 1. **`services/habits/types.ts`** — add `HabitsPrefsPort { backfillWindowDays(): Promise<number | null> }`,
    `prefs?` on `HabitsServiceDeps`, `BackfillWindowError` (`.name` set), `backfillCompletion` on `HabitsService`.
 2. **`services/habits/service.ts`** — add a permissive default `prefs = deps.prefs ?? { backfillWindowDays: async () => null }`.
    Add `assertDateWritable(date, asOf)` (BR-S3-3 future → throw, LEXICAL `date > asOf`; BR-S3-4 past-beyond-window →
    throw, DAY-MATH `toDayNum`). Call it at the TOP of `upsertCompletion` (guards log/detailed/backfill; today
    `date===asOf` passes both checks; BR-S3-2). Add `backfillCompletion(habitId, pastDate, input) =>
-   upsertCompletion(habitId, { ...input, date: pastDate })`. **Leave `recomputeStreak` UNCHANGED** (N2): only the
+upsertCompletion(habitId, { ...input, date: pastDate })`. **Leave `recomputeStreak` UNCHANGED** (N2): only the
    service WRITE-path rejects future dates; the pure recompute stays defensive against a future row arriving via a
    sync merge (its `>asOf` exclusion still holds).
 3. **`services/habits/__tests__/habits-service.test.ts`** — add an S3 describe block for §4; **update the S2
@@ -67,6 +75,7 @@ permissive (fail-OPEN) port returning `null` = no limit). + `class BackfillWindo
 ## 6. Open UNKNOWNs — none (window setting shape is Preferences-owned, out of scope; consumed via the port).
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session               | Change                                                                                                                            |
+| ---------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-09-23 | 2026-09-23-mod-habits | S3 PLAN — backfill + window on the shared write path; deny-safe fail-OPEN window port; closes the S2 future-date state (g2 NIT-1) |

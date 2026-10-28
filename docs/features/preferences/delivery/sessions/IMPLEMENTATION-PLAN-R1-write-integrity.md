@@ -9,20 +9,22 @@
 > `@vida/{types,ui,editor,core}` built. Commands run from the worktree root.
 
 ## Files (in build order)
-| # | File | Change |
-|---|---|---|
-| 1 | `apps/web/src/db/write-lock.test.ts` | **new**: unit tests for the lock + the wrapper (PLAN §4.1, §4.2) |
-| 2 | `apps/web/src/db/write-lock.ts` | **new**: `TransactionLockTimeoutError`, `createWriteLock`, `writeLock` singleton, `withTransactionLock`, `LOCK_WAIT_TIMEOUT_MS`, `LOCK_HOLD_WARN_MS` |
-| 3 | `apps/web/src/db/composition-root.test.ts` | **new**: `getServices()` applies the wrapper (PLAN §4.3) |
-| 4 | `apps/web/src/db/composition-root.ts` | `const db = withTransactionLock(createDrizzleProxy(driver), writeLock)` + the header note |
-| 5 | `apps/web/src/onboarding/first-run-repo.test.ts` | extend: the marker write waits for an in-flight exclusive section (PLAN §4.4) |
-| 6 | `apps/web/src/onboarding/first-run-repo.ts` | `writeFirstRunComplete` → `writeLock.runExclusive(...)` |
-| 7 | `apps/web/src/db/boot.test.ts` | **new**: `getDbClient()` registers `pagehide`/`pageshow`, not `beforeunload`; persisted `pagehide` → `terminate()`; persisted `pageshow` → `location.reload()`; non-persisted → neither |
-| 8 | `apps/web/src/db/boot.ts` | replace the `beforeunload` listener (R1-BR-8) via an exported `registerTeardown(target, client, reload)` helper (testable; `getDbClient` calls it with `window`, the client and `() => location.reload()`) |
-| 9 | `apps/web/e2e/write-lock.spec.ts` | **new**: drives the app page `/`, a burst of concurrent writes via `await import('/src/db/composition-root.ts')`, reload, rows persist (CI; macOS 12 can't run it locally) |
-| 10 | docs (§XXIX) | `docs/infrastructure/web-client-runtime/current-business-rules.md` (BR-RT-LOCK) + `current-spec.md` (lock + teardown + M4 note) · `apps/web/src/db/CLAUDE.md` · `packages/core/src/db/CLAUDE.md` (R1-BR-4/5 rule) · `apps/web/e2e/CLAUDE.md` (handle note) · `delivery/reconciliation.md` B5 (gamification correction) + F18 + `delivery/slice-map.md` R1 row (amended per PLAN §6) · **`delivery/slice-map.md` R2 row gains an "inherits from R1" note** (R1-BR-6: invalidate-on-empty-queue corrects phantom reads; R1-BR-7: per-table queues still required) · `current-business-rules.md` also gets the **BR-RT-D5 note** (writes are serialized by BR-RT-LOCK) |
+
+| #   | File                                             | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| --- | ------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `apps/web/src/db/write-lock.test.ts`             | **new**: unit tests for the lock + the wrapper (PLAN §4.1, §4.2)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 2   | `apps/web/src/db/write-lock.ts`                  | **new**: `TransactionLockTimeoutError`, `createWriteLock`, `writeLock` singleton, `withTransactionLock`, `LOCK_WAIT_TIMEOUT_MS`, `LOCK_HOLD_WARN_MS`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
+| 3   | `apps/web/src/db/composition-root.test.ts`       | **new**: `getServices()` applies the wrapper (PLAN §4.3)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| 4   | `apps/web/src/db/composition-root.ts`            | `const db = withTransactionLock(createDrizzleProxy(driver), writeLock)` + the header note                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 5   | `apps/web/src/onboarding/first-run-repo.test.ts` | extend: the marker write waits for an in-flight exclusive section (PLAN §4.4)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 6   | `apps/web/src/onboarding/first-run-repo.ts`      | `writeFirstRunComplete` → `writeLock.runExclusive(...)`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 7   | `apps/web/src/db/boot.test.ts`                   | **new**: `getDbClient()` registers `pagehide`/`pageshow`, not `beforeunload`; persisted `pagehide` → `terminate()`; persisted `pageshow` → `location.reload()`; non-persisted → neither                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| 8   | `apps/web/src/db/boot.ts`                        | replace the `beforeunload` listener (R1-BR-8) via an exported `registerTeardown(target, client, reload)` helper (testable; `getDbClient` calls it with `window`, the client and `() => location.reload()`)                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 9   | `apps/web/e2e/write-lock.spec.ts`                | **new**: drives the app page `/`, a burst of concurrent writes via `await import('/src/db/composition-root.ts')`, reload, rows persist (CI; macOS 12 can't run it locally)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| 10  | docs (§XXIX)                                     | `docs/infrastructure/web-client-runtime/current-business-rules.md` (BR-RT-LOCK) + `current-spec.md` (lock + teardown + M4 note) · `apps/web/src/db/CLAUDE.md` · `packages/core/src/db/CLAUDE.md` (R1-BR-4/5 rule) · `apps/web/e2e/CLAUDE.md` (handle note) · `delivery/reconciliation.md` B5 (gamification correction) + F18 + `delivery/slice-map.md` R1 row (amended per PLAN §6) · **`delivery/slice-map.md` R2 row gains an "inherits from R1" note** (R1-BR-6: invalidate-on-empty-queue corrects phantom reads; R1-BR-7: per-table queues still required) · `current-business-rules.md` also gets the **BR-RT-D5 note** (writes are serialized by BR-RT-LOCK) |
 
 ## Build steps
+
 1. **Lock tests first (red):**
    - FIFO order: 5 concurrent `runExclusive` calls push 1..5.
    - Release after throw: the next caller runs.
@@ -33,8 +35,8 @@
      (`new Error().stack` captured at acquire). Production wiring passes `warn` only when `import.meta.env.DEV`.
 2. **Wrapper tests (red):** a fake `SqliteDriver` logs `[sql]` and returns `[]` from `values`, with an optional per-call
    delay or throw. `createDrizzleProxy(fake)` then:
-   - **without** the wrapper, two `Promise.all` `db.transaction` calls (each: an `insert`-like `tx.run(sql\`…\`)` with an
-     awaited delay) → the log shows interleaving (assert `begin, begin` adjacency or a foreign statement between a
+   - **without** the wrapper, two `Promise.all` `db.transaction` calls (each: an `insert`-like `tx.run(sql\`…\`)`with an
+awaited delay) → the log shows interleaving (assert`begin, begin` adjacency or a foreign statement between a
      begin/commit pair);
    - **with** the wrapper → strict `begin…commit` blocks;
    - a throwing callback → `rollback` logged + lock idle after;
@@ -54,7 +56,7 @@
      `[{ value: 'dev-1' }]` (the `device_id` read), `values` returns `[]`, and `run` logs.
    - **Don't mock `@vida/core`:** `initVault` must run for real (`sodium.ready` loads in node).
    - `const s = await getServices()`, then `Promise.all([s.notes.createPage({ type: 'note', title: 'a' }),
-     s.notes.createPage({ type: 'note', title: 'b' })])`. The non-journal path has no reads
+s.notes.createPage({ type: 'note', title: 'b' })])`. The non-journal path has no reads
      (`services/notes/service.ts:106-124`), so empty `values` is fine.
    - Assert the log has two strict `begin…commit` blocks.
 5. **Wire the composition root** (one line + the header note).
@@ -92,11 +94,12 @@
       existing exclusive-handle error screen, not a hang). Capture screenshots + console logs as evidence in the gate record.
 11. **Docs** (step 10 of Files) in the same commit. Then `/critique` on the changed files → the Verification Gate record →
     commit `feat(web): R1 write integrity — app-wide transaction lock + bfcache-safe teardown (preferences-rescope)`
-    *(commit only on Victor's say-so)*.
+    _(commit only on Victor's say-so)_.
 
 ## Done = PLAN-R1 §4 acceptance 1–7 all evidenced in a gate record appended to PLAN-R1 §7.
 
 ## Gate record
+
 - **rev 1 → /preflight: 2 gaps** (e2e OPFS reset via the `db` fixture · console-import module identity) → folded → PASSED.
 - **rev 2 → critique (§XXVI step 5): REVISE** (2 blocking, 8 nits). Folded:
   - B1: the boot test runs under jsdom, with a mocked `WorkerDbClient` and a `registerTeardown` seam (no `location.reload`
@@ -108,6 +111,7 @@
     rejection, not the message.
 
 ## Risks / watch
+
 - **Tamagui shell tests flake under load** (memory): re-run alone before treating a failure as a regression.
 - **better-sqlite3 ABI vs Node 24** (memory): rebuild `@vida/core`'s native dep if the core suite fails at load.
 - **A dynamic `import()` of a `/src` path is Vite-dev only.** The e2e and live smoke run against `vite dev`, which is how

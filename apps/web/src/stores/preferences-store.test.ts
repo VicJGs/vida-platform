@@ -18,7 +18,8 @@ describe('preferences store (fe-settings S3 — in-session non-theme prefs, §A0
 
   it('no longer mirrors the module maps (R5) — the Modules pane, dock and ⌘K read the seam', () => {
     const s = usePreferencesStore.getState()
-    for (const key of ['moduleVisibility', 'moduleNames', 'setModuleVisible', 'setModuleName']) expect(key in s).toBe(false)
+    for (const key of ['moduleVisibility', 'moduleNames', 'setModuleVisible', 'setModuleName'])
+      expect(key in s).toBe(false)
   })
 
   it('hydrate (the deferred-seam activation point) merges a partial patch', () => {

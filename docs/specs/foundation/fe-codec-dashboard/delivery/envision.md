@@ -27,24 +27,27 @@ screen × meaningful state × the create/empty/error affordances, at greybox fid
 Each `structural` EC is greybox-provable → it MUST map to ≥1 slice at Decomposition AND be a blocking Visual-Gate assertion.
 `feel` ECs defer to the live per-slice Visual Gate.
 
-| EC | Checkpoint | Type |
-|----|-----------|------|
-| **EC-1** | Heterogeneous span grid: `sm/md/lg/full` cells lay out in one RN-safe flex grid; the spans read as **visually distinct** sizes | `structural` |
-| **EC-2** | Each cell is a `Card` — header (block title + a `⋯` action slot) + `headerDivider`; the block body enters via `renderBlock` | `structural` |
-| **EC-3** | **Per-block 8-state threads independently** — a cell can be loading (skeleton) / empty (teach) / error (status) while siblings are success | `structural` |
-| **EC-4** | Responsive reflow: multi-column at 1440/768 → **single column at 375, no horizontal overflow** | `structural` |
-| **EC-5** | An empty dashboard (no blocks) → a teaching `EmptyState` with an add affordance, never a blank region | `structural` |
+| EC       | Checkpoint                                                                                                                                                                              | Type         |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------ |
+| **EC-1** | Heterogeneous span grid: `sm/md/lg/full` cells lay out in one RN-safe flex grid; the spans read as **visually distinct** sizes                                                          | `structural` |
+| **EC-2** | Each cell is a `Card` — header (block title + a `⋯` action slot) + `headerDivider`; the block body enters via `renderBlock`                                                             | `structural` |
+| **EC-3** | **Per-block 8-state threads independently** — a cell can be loading (skeleton) / empty (teach) / error (status) while siblings are success                                              | `structural` |
+| **EC-4** | Responsive reflow: multi-column at 1440/768 → **single column at 375, no horizontal overflow**                                                                                          | `structural` |
+| **EC-5** | An empty dashboard (no blocks) → a teaching `EmptyState` with an add affordance, never a blank region                                                                                   | `structural` |
 | **EC-6** | **A span is never silently promoted to `full` when alone on a row** — a lone `lg`/`md`/`sm` cell is capped (a per-span `maxWidth`) so its size stays legible; only `full` fills the row | `structural` |
-| **EC-7** | Preset identity: serif titles + accent swap per preset; dark elevation carried by the border (self-cancel) | `feel` |
-| **EC-8** | Span floors are mobile-safe — the largest non-`full` floor (`lg`) must still single-column cleanly at 375 (no clipped cell) | `structural` |
+| **EC-7** | Preset identity: serif titles + accent swap per preset; dark elevation carried by the border (self-cancel)                                                                              | `feel`       |
+| **EC-8** | Span floors are mobile-safe — the largest non-`full` floor (`lg`) must still single-column cleanly at 375 (no clipped cell)                                                             | `structural` |
 
 ### Greybox findings folded into the checkpoints (why the gate ran BEFORE decomposition)
+
 The live greybox exposed three things a static spec would have missed, now pinned:
+
 1. **A lone cell grows to fill its row** (`Reading hub` lg rendered full-width when alone) → **EC-6** (per-span `maxWidth` cap).
 2. **`sm` vs `md` read near-equal when paired** → **EC-1** tightened to "visually distinct" + a `/contract` grow-weight tune.
 3. **The `lg` min floor (~360) sits at the 375 edge** → **EC-8** (mobile-safe floors).
 
 ## Exit
+
 Greybox approved + leanings ratified + EC-1…EC-8 pinned → greybox DELETED → **Step 2 Decomposition**: `slice-map.md` +
 `seam-contract.md` map every `structural` EC (EC-1…EC-6, EC-8) to ≥1 slice (plane-aware — frontend/shared slices carry them
 as Visual-Gate MUSTs; EC-7 `feel` defers to the live gate).

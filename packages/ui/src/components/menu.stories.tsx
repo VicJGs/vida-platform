@@ -94,7 +94,13 @@ export const WithIcons: Story = {
           items={[
             { id: 'edit', label: 'Edit', leading: <Dot />, onSelect: () => {} },
             { id: 'duplicate', label: 'Duplicate', leading: <Dot />, onSelect: () => {} },
-            { id: 'delete', label: 'Delete', intent: 'danger', leading: <Dot color="$colorSignalDanger" />, onSelect: () => {} },
+            {
+              id: 'delete',
+              label: 'Delete',
+              intent: 'danger',
+              leading: <Dot color="$colorSignalDanger" />,
+              onSelect: () => {},
+            },
           ]}
         />
       </View>
@@ -110,7 +116,13 @@ export const Placements: Story = {
     <View height={520} justifyContent="center" paddingHorizontal={48}>
       <View flexDirection="row" flexWrap="wrap" gap={48}>
         {(['bottom-start', 'bottom-end', 'top-start', 'top-end'] as const).map((p) => (
-          <Menu key={p} placement={p} aria-label={p} trigger={<Button intent="secondary">{p} ▾</Button>} items={ITEMS} />
+          <Menu
+            key={p}
+            placement={p}
+            aria-label={p}
+            trigger={<Button intent="secondary">{p} ▾</Button>}
+            items={ITEMS}
+          />
         ))}
       </View>
     </View>

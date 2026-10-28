@@ -4,45 +4,45 @@
 > **Evidence generator:** `tools/backend-intent/p4-set-cover.mjs` (deterministic, re-runnable, fail-loud —
 > Node 24). **Status:** Layer-1 (deterministic) COMPLETE → below. Layer-2 (independent adversarial critic =
 > §XXVI gate-2) pending.
-> **One-line verdict (Layer 1):** the P3 carve **covers 100% of the corpus and smuggles nothing** — D* = 1200
+> **One-line verdict (Layer 1):** the P3 carve **covers 100% of the corpus and smuggles nothing** — D\* = 1200
 > in exact bijection with `traceability.md`; C-COVER/C-SOUND/C-PARTITION all 0-defect; both identities close.
 
 ---
 
-## C1 · Denominator D* — reconciled to 1200 (authoritative)
+## C1 · Denominator D\* — reconciled to 1200 (authoritative)
 
 Fresh suffix-preserving sweep of the 34 `parts/*.md` Part A tables (id regex `[A-Z][A-Z0-9]*(-[A-Z]+)*-\d+u?`,
 namespaced `slug:ID`, rows before each file's `## Local flag index`):
 
-| Count | Value | Disposition |
-|---|---|---|
-| **D\* (disk, suffix-preserving)** | **1200** | **AUTHORITATIVE** — = corpus per-file table sum = `traceability.md` distinct ids (bijective) |
-| naive suffix-dropping sweep | 1192 | undercounts by 8 — collapses the `-u` UI rows onto their base id (the known `*u` rake) |
-| reader-declared prose (`corpus.md:47`) | 1194 | stale self-declaration undercount (readers summed 1168+26 headers but wrote 1200 rows) |
-| assembly mechanical (`corpus.md:48`) | 1201 | over-counts by 1 — a continuation/note row double-counted |
+| Count                                  | Value    | Disposition                                                                                  |
+| -------------------------------------- | -------- | -------------------------------------------------------------------------------------------- |
+| **D\* (disk, suffix-preserving)**      | **1200** | **AUTHORITATIVE** — = corpus per-file table sum = `traceability.md` distinct ids (bijective) |
+| naive suffix-dropping sweep            | 1192     | undercounts by 8 — collapses the `-u` UI rows onto their base id (the known `*u` rake)       |
+| reader-declared prose (`corpus.md:47`) | 1194     | stale self-declaration undercount (readers summed 1168+26 headers but wrote 1200 rows)       |
+| assembly mechanical (`corpus.md:48`)   | 1201     | over-counts by 1 — a continuation/note row double-counted                                    |
 
-- **The 8 `-u` rows** (the delta 1192→1200), all real Part A rows homed to P6, all present in D* **and**
+- **The 8 `-u` rows** (the delta 1192→1200), all real Part A rows homed to P6, all present in D\* **and**
   `traceability.md` (`-u` integrity: 0 synthetic legs):
   `projects:PRO-05u` (`parts/projects.md:17`) · `xcut-ingestion-ai:XCU-03u/06u/10u/16u/18u/19u/25u`.
-- **D* ∖ trace = ∅ · trace ∖ D* = ∅** — the canonical set and the P3 matrix are the *same 1200 ids*.
+- **D* ∖ trace = ∅ · trace ∖ D* = ∅** — the canonical set and the P3 matrix are the _same 1200 ids_.
 - **Corpus per-file header is accurate** where checked (all 22 module files match disk, incl. `projects=47` —
   the 47th is `PRO-05u`; a naive `-u`-dropping count wrongly reads 46). Only the summary prose "1194" is stale.
 
 ## C2–C4 · Set-relations (all 0-defect)
 
-| Check | Relation | Result |
-|---|---|---|
-| **C-COVER** (completeness) | `D* ∖ (issueCovered ∪ homedOut) = ∅` | **0 unhomed ✅** |
-| **C-SOUND** (anti-smuggle, issue) | `issueCovered ∖ D* = ∅` | **0 smuggled ✅** |
-| **C-SOUND** (anti-smuggle, trace) | `traceIds ∖ D* = ∅` | **0 ✅** |
-| **`-u` integrity** | every `-u` trace id ∈ D* (real parts row) | **0 synthetic ✅** |
-| **C-PARTITION** (no double-home) | no id in two XS/MOD issues | **0 ✅** |
-| decomposition ↔ trace agreement | issue-covered ids = trace in-issue ids | **0 diff both ways ✅** |
+| Check                             | Relation                                   | Result                  |
+| --------------------------------- | ------------------------------------------ | ----------------------- |
+| **C-COVER** (completeness)        | `D* ∖ (issueCovered ∪ homedOut) = ∅`       | **0 unhomed ✅**        |
+| **C-SOUND** (anti-smuggle, issue) | `issueCovered ∖ D* = ∅`                    | **0 smuggled ✅**       |
+| **C-SOUND** (anti-smuggle, trace) | `traceIds ∖ D* = ∅`                        | **0 ✅**                |
+| **`-u` integrity**                | every `-u` trace id ∈ D\* (real parts row) | **0 synthetic ✅**      |
+| **C-PARTITION** (no double-home)  | no id in two XS/MOD issues                 | **0 ✅**                |
+| decomposition ↔ trace agreement   | issue-covered ids = trace in-issue ids     | **0 diff both ways ✅** |
 
 ## Identities (independently re-derived from disk — match P3's self-reported guards to the digit)
 
-- **Partition:** `inIssue(985) + homedOut(401) − splitOverlap(186) = 1200` = D* ✅
-- **Leg partition:** `single 968 + service 229 + ui 213 = 1410` legs; `oneLeg 990 + twoLeg 210 = 1200` = D* ✅
+- **Partition:** `inIssue(985) + homedOut(401) − splitOverlap(186) = 1200` = D\* ✅
+- **Leg partition:** `single 968 + service 229 + ui 213 = 1410` legs; `oneLeg 990 + twoLeg 210 = 1200` = D\* ✅
   (the corrected §2 identity — the earlier draft's "orphan legs / does not close" was a misdiagnosis, struck.)
 
 ## C5 · Homed-out legitimacy (401 homed-out legs)

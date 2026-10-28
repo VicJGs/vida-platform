@@ -2,7 +2,7 @@
 <!-- PLAN (gate 1 = the SPEC). Per-slice cadence: g1 /critique → build → tsc → live-store Verification Gate →
      code-review → /critique SHIP → §XXIX currency. No per-slice Victor approval (Approval 1 covered the plan). -->
 
-# PLAN — S3: Assets + positions + R2 port + mapping absent-state  (BOO-09/10/11/12/44)
+# PLAN — S3: Assets + positions + R2 port + mapping absent-state (BOO-09/10/11/12/44)
 
 ## §1 Context (ground truth)
 
@@ -21,7 +21,7 @@ cross-format DERIVATION), BOO-44 (file decrypt/download error — `AssetFileErro
 `BookAsset` `@vida/types` interface. B1 — surface chapters on `BookView` now that it expands (closes the S2
 chapter-READ carry-forward, `current-business-rules.md:62-67`).
 
-## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S3-*)
+## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S3-\*)
 
 - **BR-BK-S3-1 (asset = per-format copy, BK-2/BOO-09)** — `addAsset(bookId, {format, file?})` creates a
   `book_assets` row (0..n per book); `format` ∈ BOOK_ASSET_FORMAT (zod + DB CHECK). Guards the book exists
@@ -36,30 +36,30 @@ chapter-READ carry-forward, `current-business-rules.md:62-67`).
   - **present port + success** ⇒ `file: {status:'stored', fileRef}`, `file_ref` set.
   - **present port + `upload()` rejects** (a real R2 error) ⇒ **`AssetFileError`, fail-loud** — the asset is NOT
     persisted (a broken file "never renders as an empty book"). `[FACT: business-rules.md:127 "File decrypt/R2
-    errors are typed"; :125 integration failures surface typed errors]`. At M1 the port is always absent, so this
+errors are typed"; :125 integration failures surface typed errors]`. At M1 the port is always absent, so this
     path is M2-reached but built + mock-tested now (zero-signature swap).
 - **BR-BK-S3-3 (per-asset position SSOT, BOO-10)** — each asset owns exactly ONE `native_position` (page /
   epub location / audio timestamp / manual for physical·braille). `updatePosition(assetId, nativePosition)`
   writes only that column, re-reads, returns the `BookAsset`. Guards exists (`BookAssetNotFoundError`).
 - **BR-BK-S3-4 (asset removal preserves work-anchored annotations, BOO-11)** — `removeAsset(id)` soft-deletes
   the asset (`book_assets` HAS `deleted_at`, `schema/books.ts:97`). `[FACT: business-rules.md:99-100 "Deleting
-  an asset never deletes work-level annotations; annotations made in a deleted asset's native format remain…
-  flagged native"]` — survival is **structural** (no-FK schema: bookmarks/quotes keyed `book_id`, highlights'
+an asset never deletes work-level annotations; annotations made in a deleted asset's native format remain…
+flagged native"]` — survival is **structural** (no-FK schema: bookmarks/quotes keyed `book_id`, highlights'
   `asset_id` is nullable + no FK, so no cascade). Annotations are built at S4 → the **survival test lands at S4**
   (nothing to delete-test at S3); S3 proves removal + drop-from-`getBook().assets` + the book still resolves.
   Guards exists (`BookAssetNotFoundError`).
 - **BR-BK-S3-5 (cross-format mapping NEVER guessed, BK-4/BOO-12)** — `getMappedPosition(assetId,
-  targetAssetId)` returns the typed `MappedPosition`: `{status:'synced', position, sourceAssetId}` **only** when
+targetAssetId)` returns the typed `MappedPosition`: `{status:'synced', position, sourceAssetId}` **only** when
   a real mapping exists, else `{status:'not-synced', nativePosition}` (pending|failed|unavailable collapsed —
   the frozen seam type). The mapping algorithm (transcription + TOC-anchor matching) is a build-phase design
   pass (`structure-data.md:21`; `rerun §5:153`) — **at M1 it is unbuilt, so the result is ALWAYS `not-synced`**,
   carrying the **target** asset's own `native_position` as the honest fallback. `[FACT: business-rules.md:28-30
-  (BK-5) "under an unsynced mapping they surface at native position"; terminal :113 "'not synced yet' + native
-  position"]` — the native position in the format being viewed is the target's. Both assets must exist and belong
+(BK-5) "under an unsynced mapping they surface at native position"; terminal :113 "'not synced yet' + native
+position"]` — the native position in the format being viewed is the target's. Both assets must exist and belong
   to the **same book** (a cross-work map is nonsensical) → `BookAssetNotFoundError`.
 - **BR-BK-S3-6 (file error is typed + fail-loud, BOO-44)** — `AssetFileError` is the typed R2/decrypt error.
   `[FACT: business-rules.md:127 "File decrypt/R2 errors are typed; a broken file never renders as an empty book"]`.
-  **Two throw sites, both grounded:** (a) S3 — `addAsset` on a present-port `upload()` failure (an R2 *write*
+  **Two throw sites, both grounded:** (a) S3 — `addAsset` on a present-port `upload()` failure (an R2 _write_
   error, BR-BK-S3-2); (b) S6 — `openReader` decrypt/download (terminal `:112` "decrypt/render/playback error →
   typed, never silent"). The class is homed + exercised in S3 (not a phantom); the decrypt throw site lands at S6.
 - **BR-BK-S3-7 (N1 fold — BookAsset interface)** — `BookAsset` is a proper `@vida/types` interface mirroring
@@ -78,12 +78,12 @@ chapter-READ carry-forward, `current-business-rules.md:62-67`).
 
 1. `addAsset` creates a row; no port/no file ⇒ `{file:'attachment-unavailable'}`, `file_ref` null, asset created.
 2. `addAsset` present (mock) port + file + success ⇒ `{file:'stored', fileRef}`, `file_ref` persisted.
-2b. `addAsset` present (mock) port whose `upload()` rejects ⇒ **`AssetFileError`**, and **no asset row persisted**
+   2b. `addAsset` present (mock) port whose `upload()` rejects ⇒ **`AssetFileError`**, and **no asset row persisted**
    (fail-loud, BR-BK-S3-2/`:127`).
 3. `addAsset` guards the book exists (`BookNotFoundError`); invalid `format` rejected (zod).
 4. `updatePosition` sets `native_position` (SSOT), re-reads faithfully; guards exists (`BookAssetNotFoundError`).
 5. `removeAsset` soft-deletes; the asset drops from `getBook().assets`; the book still resolves; guards exists.
-   *(Annotation-survival is structural/no-FK — its test lands at S4 when annotations exist, BR-BK-S3-4.)*
+   _(Annotation-survival is structural/no-FK — its test lands at S4 when annotations exist, BR-BK-S3-4.)_
 6. `getMappedPosition` across two assets of one book ⇒ `{status:'not-synced', nativePosition: <target native>}`
    (M1 mapping unbuilt, fail-loud — never `synced`); guards both exist + same-book (`BookAssetNotFoundError`).
 7. N1: `getBook().assets` is `BookAsset[]` (typed interface, `_sync_status` narrowed). B1: `getBook().chapters`
@@ -107,7 +107,7 @@ tsc 0 · eslint 0 · full `@vida/core` suite green.
    `assets: BookAsset[]` + `chapters: BookChapter[]`. New errors: `BookAssetNotFoundError`, `AssetFileError`
    (homed; thrown at S6). Append the 4 methods to `BooksService`.
 4. **`services/books/service.ts`** — `assetsRepo = createRepository(db, bookAssets, {deviceId, softDelete:true,
-   encryptedFields:[]})`; `toAsset` mapper. Implement `addAsset` (absent port/no file → create row file_ref null;
+encryptedFields:[]})`; `toAsset` mapper. Implement `addAsset` (absent port/no file → create row file_ref null;
    present port + file → `upload()`, success → store ref, **reject → `AssetFileError`, create nothing**),
    `updatePosition` (guard → update native_position → re-read), `removeAsset` (guard → soft-delete),
    `getMappedPosition` (guard both + same-book → always `not-synced`, target native_position, at M1). Update
@@ -126,7 +126,7 @@ tsc 0 · eslint 0 · full `@vida/core` suite green.
    rewritten to both; acceptance 2b added.
 2. **Acceptance #5 untestable at S3** — RESOLVED by `business-rules.md:99-100` (annotation survival is
    structural/no-FK) + the slice-map (annotations = S4). Survival test homed to S4; S3 proves removal only.
-3. **BOO-44 split** — RESOLVED, and *better than the critique's lean*: `:127` gives `AssetFileError` a real S3
+3. **BOO-44 split** — RESOLVED, and _better than the critique's lean_: `:127` gives `AssetFileError` a real S3
    throw site (the `addAsset` R2-write failure), so it is **fully homed + exercised in S3** (not a phantom); the
    decrypt throw site is an additional S6 site (terminal `:112`). The gate ledger records BOO-44 as built in S3.
 4. **Under-specified reads** — RESOLVED: `readable` = **live** asset count (`business-rules.md:97-98`); the

@@ -64,8 +64,6 @@ export const migration032Notifications: Migration = {
     `)
 
     // §5.16 floor's sole index — a PARTIAL index (unread, non-archived).
-    await driver.run(
-      `CREATE INDEX idx_notifications_unread ON notifications(is_read) WHERE is_archived = 0`,
-    )
+    await driver.run(`CREATE INDEX idx_notifications_unread ON notifications(is_read) WHERE is_archived = 0`)
   },
 }

@@ -23,9 +23,11 @@ the **add-frontend-component ②** track with a **per-slice blocking Visual Gate
 ## 1. DEPENDENCIES — every upstream this composes/consumes (built artifacts)
 
 ### 1a. The finished ① service — `createNotesService(deps): NotesService` (the data seam)
+
 The complete API the UI consumes (return types are Drizzle `$inferSelect` **Row** types, NOT `@vida/types`
 interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
 `[FACT: docs/features/notes-and-pages/delivery/seam-contract.md:1-8; memory [[drizzle-row-not-assignable-to-vida-types-interface]]]`:
+
 - **S1 Pages core**: `createPage` · `getPage` · `updatePage` (`.strict()` whitelist) · `softDeletePage` ·
   `getPageByJournalDate` · `getPagesByType` · `getPagesForEntity` (polymorphic reverse-lookup) ·
   `listPages({favorite?,archived?})` `[FACT: seam-contract.md:26-34]`.
@@ -43,6 +45,7 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
   `[FACT: seam-contract.md:70-74]`. The UI must catch these at the create/link affordances (NP-2 clash, unregistered type).
 
 ### 1b. The CODEC primitives it composes (all shipped in `@vida/ui`, presentational shells)
+
 - **`CollectionView`** — controlled-`layout` render-prop shell; `layout ∈ 'list'|'table'|'board'|'gallery'|'calendar'|'graph'|'timeline'`,
   `onLayoutChange`, `renderView(layout, state)` (caller owns data + renderer), `state?: ViewState` (loading|error|empty|success),
   `emptySlot?` `[FACT: packages/ui/src/components/collection-view.tsx — CollectionView, controlled layout + renderView render-prop + state-as-prop]`.
@@ -56,6 +59,7 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
   `[FACT: packages/ui/src/components/entity-view.tsx — EntityView, merged|tabbed facet frame, registry-gated editor slot]`.
 
 ### 1c. The editor — `@vida/editor` + its apps/web binding
+
 - **`VidaEditor`** (component), `VidaEditorHandle`, `INTEGRATION_BLOCK_COMMANDS`; serializers `toMarkdown`/`fromMarkdown`
   (E6), `toPdf` (E7), `toDocx` (E8) `[FACT: packages/editor/src/index.ts — E1 + E6/E7/E8]`.
 - **`apps/web/src/canvas-editor/`** already wraps `VidaEditor` for page editing: `canvas-editor.tsx` + `page-binding.ts`
@@ -63,6 +67,7 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
   Editor facet mounts THIS, not a fresh editor `[INTERP: reuse the shipped binding, don't re-author]`.
 
 ### 1d. House patterns (the destination-folder convention to mirror — Step 3 reads these)
+
 - **`apps/web/src/home/`** — a built feature surface: `home-surface.tsx` (entry) · `home-dashboard.tsx` ·
   `journal-page-region.tsx` + section/selection state `[FACT: apps/web/src/home/]`. Shows how a feature surface
   composes CODEC views + state + the journal/page region — the closest sibling to a notes surface.
@@ -73,8 +78,9 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
   mounted yet `[FACT: apps/web/src/routes.tsx]`. fe-notes mounts its route(s) here.
 
 ### 1e. Design authority + inherited frontend invariants
+
 - **Aspect authority** for the 13 legs: `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-19/24/32/34/47-52)
-  + `xcut-backlinks-search-export.md:43` (BSE-12) + `xcut-capability.md:42-43` (CAP-12/13) `[FACT]`.
+  - `xcut-backlinks-search-export.md:43` (BSE-12) + `xcut-capability.md:42-43` (CAP-12/13) `[FACT]`.
 - **RIDE-visibility + per-slice gate** `[FACT: PLAN-p6-frontend-track.md:34,48]`; **terminal-states / degrade-never-crash**
   is the platform frontend contract (the shell's BR-4 precedent) `[FACT: fe-shell interpretation.md:73]`.
 - **Package boundary**: one-way `apps/web → @vida/ui`/`@vida/editor`; the notes UI lives in `apps/web/src/notes/`
@@ -87,12 +93,12 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
 - **Boot/runtime mount:** notes surfaces mount under `routes.tsx` inside the shell's `<Outlet/>`, AFTER `App.tsx`'s
   DB-ready gate + `UIProvider` + the shell frame `[FACT: apps/web/src/routes.tsx; fe-shell interpretation.md:81]`.
 - **Service injection seam:** the UI needs a wired `NotesService` instance (`createNotesService({db, deviceId, spaces,
-  backlinks, registry})`) `[FACT: seam-contract.md:11-19]`. `[UNKNOWN: is there a composition root / provider that
-  constructs the live service for apps/web, or does M1 stub it? — resolve at decomposition; mirror the CODEC
-  "live hook deferred to first consumer" + `ProviderRead` precedent `[FACT: memory [[absent-deny-safe-port-write-is-noop-not-new-error]]]`]`.
+backlinks, registry})`) `[FACT: seam-contract.md:11-19]`. `[UNKNOWN: is there a composition root / provider that
+constructs the live service for apps/web, or does M1 stub it? — resolve at decomposition; mirror the CODEC
+"live hook deferred to first consumer" + `ProviderRead`precedent`[FACT: memory [[absent-deny-safe-port-write-is-noop-not-new-error]]]`]`.
 - **React-Query data layer:** reads/writes flow through React Query v5 hooks over the service (per ADR-001 state split);
   `[FACT: current-spec note "React-Query hooks → ②" notes-and-pages.md:84]`. `[UNKNOWN: exact query-key scheme +
-  invalidation prefixes — resolve per-slice; heed the prefix-invalidation trap `[FACT: memory
+invalidation prefixes — resolve per-slice; heed the prefix-invalidation trap `[FACT: memory
   [[verify-a-cache-liveness-BR-against-the-runtime-config]]]`]`.
 - **Deferred backing seams the UI must degrade against (render a terminal state, not crash):**
   - FTS5 search engine → **DB-8** → render `search-unavailable` now `[FACT: notes-and-pages.md:64; PLAN:108-112]`.
@@ -117,11 +123,11 @@ interfaces — `_sync_status` plain text vs union; DB-11 reconcile pending)
 
 ## 3. ORGANIZATION — OWNS vs CONSUMES vs DELEGATES
 
-| | fe-notes-and-pages (#27) |
-|---|---|
-| **OWNS** | the **notes feature surface(s)** in `apps/web/src/notes/` (route + composition): the **Note entity page** (EntityView + canvas-editor + page-metadata controls + backlinks panel + attachments) · the **Collection surface** (CollectionView wiring: List/Gallery/Calendar/Graph renderers per type) · the **`[[` wiki-link picker** (+ create-on-miss affordance) · the **backlinks panel presentation** (the G6 merged/grouped shape — a NET-NEW design decision) · the **`/summary` block render** + per-section degrade · the **page-metadata controls** (favorite/archive/icon/cover) · the **search UI** (→ `search-unavailable`) · the **template picker/save** UI · the **preview-card** render · the **block-placement add-menu/slash-menu** UI · its React-Query hooks over the service |
-| **CONSUMES** | `@vida/ui` `CollectionView`/`NeuralGraph`/`EntityView` (+ UI-1 primitives) · `@vida/editor` `VidaEditor` via `apps/web/src/canvas-editor` · the ① `NotesService` seam · `apps/web/src/entity/adapter.ts` · `useMedia()`/breakpoints · the registry (entity_type validation) |
-| **DELEGATES** | **all data derivation/persistence** → the ① service (never re-implements CRUD/links/seed) · **entity-link/tag WRITES** → AR-6 (via the service facade) · **entity-link READS + graph data-prep** → AR-8 (service facade; graph-prep deferred) · **`/summary` aggregation** → MOD-journals engine · **FTS5 ranked results** → DB-8 · **block placement-creation + palette compute** → #31/UI-3 #29 · **platform-block TipTap extensions** → `@vida/editor` / components level (NOT re-authored here) `[FACT: notes-and-pages.md:66 (NOT-52)]` |
+|               | fe-notes-and-pages (#27)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **OWNS**      | the **notes feature surface(s)** in `apps/web/src/notes/` (route + composition): the **Note entity page** (EntityView + canvas-editor + page-metadata controls + backlinks panel + attachments) · the **Collection surface** (CollectionView wiring: List/Gallery/Calendar/Graph renderers per type) · the **`[[` wiki-link picker** (+ create-on-miss affordance) · the **backlinks panel presentation** (the G6 merged/grouped shape — a NET-NEW design decision) · the **`/summary` block render** + per-section degrade · the **page-metadata controls** (favorite/archive/icon/cover) · the **search UI** (→ `search-unavailable`) · the **template picker/save** UI · the **preview-card** render · the **block-placement add-menu/slash-menu** UI · its React-Query hooks over the service |
+| **CONSUMES**  | `@vida/ui` `CollectionView`/`NeuralGraph`/`EntityView` (+ UI-1 primitives) · `@vida/editor` `VidaEditor` via `apps/web/src/canvas-editor` · the ① `NotesService` seam · `apps/web/src/entity/adapter.ts` · `useMedia()`/breakpoints · the registry (entity_type validation)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **DELEGATES** | **all data derivation/persistence** → the ① service (never re-implements CRUD/links/seed) · **entity-link/tag WRITES** → AR-6 (via the service facade) · **entity-link READS + graph data-prep** → AR-8 (service facade; graph-prep deferred) · **`/summary` aggregation** → MOD-journals engine · **FTS5 ranked results** → DB-8 · **block placement-creation + palette compute** → #31/UI-3 #29 · **platform-block TipTap extensions** → `@vida/editor` / components level (NOT re-authored here) `[FACT: notes-and-pages.md:66 (NOT-52)]`                                                                                                                                                                                                                                                      |
 
 **Load-bearing boundary (#27 vs `fe-shell-integration-wiring` thin RIDE issue):** the RIDE issue wires the
 already-built SHARED chrome surfaces — ⌘K search (BSE-14/15/16), export dialog + serializers (BSE-19-22), the GLOBAL
@@ -138,11 +144,11 @@ the exact seam (what fe-notes renders itself vs what it rides from the shell-wir
 - **IR-1 (compose-don't-rebuild):** every surface is a composition of the shipped `@vida/ui`/`@vida/editor`
   primitives over the ① service; fe-notes authors ZERO new design-system components and ZERO data logic — if a
   primitive is missing, that is a decomposition finding, not a license to build it here `[INTERP from fe-shell IR-1/IR-8;
-  PLAN BR-5]`.
+PLAN BR-5]`.
 - **IR-2 (deferred-backend ⇒ honest terminal state, never a dead affordance):** for every backend-deferred leg
   (search/graph/preview/placement) the UI ships the affordance wired to its seam with a correct degraded state
   (`search-unavailable`, empty-graph, unenriched-card) — never a disabled stub nor a crash `[INTERP from PLAN:108-112;
-  notes-and-pages.md:62-66; memory [[absent-deny-safe-port-write-is-noop-not-new-error]]]`.
+notes-and-pages.md:62-66; memory [[absent-deny-safe-port-write-is-noop-not-new-error]]]`.
 - **IR-3 (the merged-backlinks SHAPE is this unit's to design):** ① returns `{pageLinks, entityLinks}` unmerged and
   explicitly tags the merge "G6-tentative → ②" `[FACT: seam-contract.md:56; notes-and-pages.md:38 (NOT-24)]`. The
   grouped/merged presentation (group-by-source? by type? preview per row?) is a NET-NEW design answer → an ENVISION
@@ -155,7 +161,7 @@ the exact seam (what fe-notes renders itself vs what it rides from the shell-wir
   deferred) `[FACT: notes-and-pages.md:62 (NOT-48)]`.
 - **IR-6 (editor facet is registry-gated):** the EntityView Editor facet renders only when the entity `offersEditor`
   (apps/web adapter gate); a note page offers it, a derived collection may not `[FACT: packages/ui/src/components/entity-view.tsx;
-  apps/web/src/entity/adapter.ts]`.
+apps/web/src/entity/adapter.ts]`.
 - **IR-7 (content write goes through the Yjs/editor binding, not a patch):** `updatePage` is for structured metadata
   (`.strict()` whitelist, `content` excluded from casual patching); `pages.content` is CRDT — written via the
   canvas-editor binding `[FACT: notes-and-pages.md:51 (NOT-37); seam-contract.md:29]`.
@@ -177,11 +183,11 @@ the exact seam (what fe-notes renders itself vs what it rides from the shell-wir
   - **Neural graph**: `XCU-BSE-23/24` (RIDE issue) = the **global `/graph` surface** over the deferred AR-8 engine;
     `NOT-49` (fe-notes) = the **notes-collection `layout='graph'` view-mode**. Both ride the same deferred AR-8
     data-prep → both render `NeuralGraph` in its `empty`/terminal state now `[FACT: xcut-backlinks-search-export.md:54-55
-    — BSE-24 "renders NeuralGraph in its empty terminal state when AR-8 graph-prep is a seam"; decomposition-p6.md:13,15]`.
+— BSE-24 "renders NeuralGraph in its empty terminal state when AR-8 graph-prep is a seam"; decomposition-p6.md:13,15]`.
   - **Add-menu**: `XCU-SP-29` (RIDE issue) = the **Space standalone-surface** enforced palette; `XCU-CAP-12/13`
     (fe-notes) = the **editor/page block-placement** slash-menu + `block_instances` placement — same teeth-split RULE,
     different SURFACE (Space-level rides the shell issue; page/editor-level is this unit's) `[FACT: xcut-spaces.md:49
-    (SP-29 = Space standalone add-menu); xcut-capability.md:42-43 (CAP-12/13 = editor/page block placement)]`.
+(SP-29 = Space standalone add-menu); xcut-capability.md:42-43 (CAP-12/13 = editor/page block placement)]`.
   - Slice-map records this seam; fe-notes does not re-build the global graph nor the Space add-menu.
 - **F3 — live `NotesService` composition root** → DECOMPOSITION: is the service wired live for apps/web in M1 or
   stubbed? (§2). Mirror the CODEC first-consumer-defer precedent.
@@ -190,6 +196,7 @@ the exact seam (what fe-notes renders itself vs what it rides from the shell-wir
   empty-graph, unenriched-preview states.
 
 ## 6. Sources
+
 docs/features/notes-and-pages/delivery/{interpretation,seam-contract,slice-map}.md ·
 docs/specs/foundation/backend-intent/{decomposition-p6.md, PLAN-p6-frontend-track.md} ·
 docs/specs/foundation/backend-intent/parts/{notes-and-pages.md, xcut-backlinks-search-export.md, xcut-capability.md} ·

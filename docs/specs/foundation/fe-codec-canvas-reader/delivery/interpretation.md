@@ -12,17 +12,17 @@
 
 ## DEPENDENCIES — every upstream
 
-| Upstream | What it gives the Reader | Cite |
-|---|---|---|
-| `@vida/ui` primitives | `Card` (content/annotation frames) · `Button` (affordances) · `Text`/`View` | `[FACT: packages/ui/src/components/flow-session-view.tsx:1-8]` |
-| `@vida/ui` pattern-kit | `EmptyState` (teaching empty) · `SyncStatus`/`HonestProgress` (save + read progress) · `useReducedMotion` | `[FACT: packages/ui/src/CLAUDE.md "fe-codec-patterns"; hooks/use-reduced-motion.ts]` |
-| `internal/data-view` | `ViewState` union + `warnMissingName` (per-region state + a11y-name guard) | `[FACT: packages/ui/src/components/flow-session-view.tsx:9]` |
-| Theme / preset tokens | the **reader preset** (serif body, oxblood accent) = the editorial reading voice this canvas is the archetype consumer of | `[FACT: packages/ui/src/provider.tsx; CLAUDE.md "reader/quietDesk set"]` |
+| Upstream                                                                       | What it gives the Reader                                                                                                                                                                                                                                          | Cite                                                                                        |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `@vida/ui` primitives                                                          | `Card` (content/annotation frames) · `Button` (affordances) · `Text`/`View`                                                                                                                                                                                       | `[FACT: packages/ui/src/components/flow-session-view.tsx:1-8]`                              |
+| `@vida/ui` pattern-kit                                                         | `EmptyState` (teaching empty) · `SyncStatus`/`HonestProgress` (save + read progress) · `useReducedMotion`                                                                                                                                                         | `[FACT: packages/ui/src/CLAUDE.md "fe-codec-patterns"; hooks/use-reduced-motion.ts]`        |
+| `internal/data-view`                                                           | `ViewState` union + `warnMissingName` (per-region state + a11y-name guard)                                                                                                                                                                                        | `[FACT: packages/ui/src/components/flow-session-view.tsx:9]`                                |
+| Theme / preset tokens                                                          | the **reader preset** (serif body, oxblood accent) = the editorial reading voice this canvas is the archetype consumer of                                                                                                                                         | `[FACT: packages/ui/src/provider.tsx; CLAUDE.md "reader/quietDesk set"]`                    |
 | Books reading domain (**CONSUMED, never imported** — @vida/ui is Tamagui-only) | `openReader(assetId) → ReaderContext {file, sessionId, position}` · `startSession`/`endSession` · `attachPhoto` · `listAnnotations(bookId)` (unions highlight/bookmark/quote) · `listQuotes` · `convertToSpeech` (TTS) · `transcribeForMapping` · `getStatistics` | `[FACT: packages/core/src/services/books/service.ts:875,764,800,821,687,703,1220,1224,854]` |
-| `book_chapters` TOC (**CONSUMED**) | the flat TOC: `title` [E] · `chapter_number` · `start_page`/`end_page` · `is_completed`/`completed_at` · `sort_order` — the Reader's Contents panel + chapter navigation + the chapter-derivation source | `[FACT: packages/core/src/db/schema/books.ts:66-84; types learning.ts:449-458]` |
-| `sessions` sub-type `reading` | the reading session the canvas opens against (base `sessions` + `reading_sessions` 1:1) | `[FACT: docs/modules/books/current-business-rules.md:157 (BR-BK-S6-2)]` |
+| `book_chapters` TOC (**CONSUMED**)                                             | the flat TOC: `title` [E] · `chapter_number` · `start_page`/`end_page` · `is_completed`/`completed_at` · `sort_order` — the Reader's Contents panel + chapter navigation + the chapter-derivation source                                                          | `[FACT: packages/core/src/db/schema/books.ts:66-84; types learning.ts:449-458]`             |
+| `sessions` sub-type `reading`                                                  | the reading session the canvas opens against (base `sessions` + `reading_sessions` 1:1)                                                                                                                                                                           | `[FACT: docs/modules/books/current-business-rules.md:157 (BR-BK-S6-2)]`                     |
 
-**The seam is pre-declared by the backend.** `openReader` returns *only the access outcome*; its own comment
+**The seam is pre-declared by the backend.** `openReader` returns _only the access outcome_; its own comment
 says **"The decrypted bytes stream to the P6 Reader chrome; the service face returns only the access outcome"**
 and BR-BK-S6-6 names the deferred piece **"the read/listen/annotate chrome"** — i.e. this unit.
 `[FACT: packages/core/src/services/books/service.ts:177; docs/modules/books/current-business-rules.md:174-177 (BR-BK-S6-6)]`
@@ -36,7 +36,7 @@ and BR-BK-S6-6 names the deferred piece **"the read/listen/annotate chrome"** �
    never writes**. `[FACT: flow-session-view.tsx:18-21,74-77]`
 2. **Non-generic → React-19 ref-as-prop, no `forwardRef`.** `[FACT: flow-session-view.tsx:21,185]`
 3. **Content must arrive already decrypted + resolved.** The decrypt/auto-session/position orchestration is
-   `openReader`'s (app-side); the shell receives the *resolved* content + position + sessionId as props. The
+   `openReader`'s (app-side); the shell receives the _resolved_ content + position + sessionId as props. The
    shell renders the long-form body through a **slot** (format-agnostic — the `renderStage` precedent), it does
    not parse a book asset. `[FACT: service.ts:875-894]`
 4. **`file` can be unavailable.** `ReaderContext.file` is `{status:'attachment-unavailable'}` for a physical
@@ -106,10 +106,10 @@ and BR-BK-S6-6 names the deferred piece **"the read/listen/annotate chrome"** �
 
 ## Envision §3.75 determination (for Step 1.5)
 
-**Trigger test:** *"Is there a user affordance whose UI answer isn't already obvious from an existing shipped
-surface?"* → **FIRE.** Multiple affordances have no shipped answer: *how does a user select a passage and turn
+**Trigger test:** _"Is there a user affordance whose UI answer isn't already obvious from an existing shipped
+surface?"_ → **FIRE.** Multiple affordances have no shipped answer: _how does a user select a passage and turn
 it into a highlight vs a quote? where does a bookmark land? how is the annotations rail laid out against the
 text? what does the listen control look like, and how does it read as unavailable? how is a not-synced position
-shown?* No shipped surface answers these (the view renderers are read-only lenses; flow-session is staged, not
+shown?_ No shipped surface answers these (the view renderers are read-only lenses; flow-session is staged, not
 long-form). This is a **novel interaction surface** → Envision greybox + human approval is required before
 Decomposition. `[FACT: entity-delivery-flow.md:104-107]`

@@ -4,12 +4,14 @@
 > slice-by-slice; this spec grows per slice. Delivery/front-matter: `docs/specs/foundation/fe-codec-canvas-reader/`.
 
 ## Intent
-A long-form **read · listen · annotate** reading surface — *"the reading column with a living margin."* Text is the
+
+A long-form **read · listen · annotate** reading surface — _"the reading column with a living margin."_ Text is the
 hero; annotations live in a margin rail aligned to the text; a Contents panel (summary + TOC) and a slim listen bar
 frame it. Presentational, state-as-prop (BR-2), LOCAL types (no `@vida/core` import), non-generic (React-19 ref-prop).
 Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) — never directly.
 
 ## Slices
+
 - **S1 ✅ — frame + reading column + states.** title-hero header · `renderContent` slot (success-only) · the 5 states.
 - **S2 ✅ — Contents panel (summary + TOC).** `ReaderChapter` + `summary`/`chapters`/`contentsOpen`/`onToggleContents`/
   `onJumpToChapter`; shell-owned TOC (completion ✓ · current accent+`aria-current` · pressable-when-jump) · "Contents"
@@ -30,25 +32,29 @@ Consumes the shipped `@vida/core` Books service via the apps/web adapter (S6) �
   Books↔Reader adapter (display-resolve).
 
 ## S1 contract
+
 ```ts
-type ReaderState = ViewState | 'unavailable'   // 'loading'|'empty'|'error'|'unavailable'|'success'
+type ReaderState = ViewState | 'unavailable' // 'loading'|'empty'|'error'|'unavailable'|'success'
 interface CanvasReaderProps {
-  title: string                 // serif $display H1; names the region
-  context?: ReactNode           // ONE plain-language location line ($small muted)
-  progress?: number             // 0..1 → HonestProgress bar; rendered ONLY when provided
+  title: string // serif $display H1; names the region
+  context?: ReactNode // ONE plain-language location line ($small muted)
+  progress?: number // 0..1 → HonestProgress bar; rendered ONLY when provided
   progressLabel?: string
-  saveStatus?: ReactNode        // SyncStatus slot
-  action?: ReactNode            // ⋯ slot
-  positionNote?: ReactNode      // honest not-synced line (IR-3)
-  state?: ReaderState           // default 'success'
+  saveStatus?: ReactNode // SyncStatus slot
+  action?: ReactNode // ⋯ slot
+  positionNote?: ReactNode // honest not-synced line (IR-3)
+  state?: ReaderState // default 'success'
   renderContent?: () => ReactNode // success-only
-  emptyTitle?: string           // default "Nothing to read yet"
-  emptyAction?: ReactNode       // EmptyState way-in
-  'aria-label'?, 'aria-labelledby'?, ref?
+  emptyTitle?: string // default "Nothing to read yet"
+  emptyAction?: ReactNode // EmptyState way-in
+  'aria-label'?
+  'aria-labelledby'?
+  ref?
 }
 ```
 
 ## S1 business rules
+
 - **BR-S1-1** title-hero: serif `$display` title alone (no eyebrow / no middle-dot meta); progress BAR only when `progress` given.
 - **BR-S1-2** `positionNote` → quiet `$small` muted line (IR-3), only when provided.
 - **BR-S1-3** Body = centered reading column (`maxWidth:660`); S2/S3 extend into the 3-zone living-margin row.
@@ -59,10 +65,12 @@ interface CanvasReaderProps {
 - **BR-S1-7** region named via `aria-label`/`aria-labelledby`→titleId (`warnMissingName`).
 
 ## S1 verification
+
 Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 375: title-hero · serif column · 5 states
 unavailable≠empty · accent flip · **AA MEASURED 0-fail incl. warm-dark** · 375 reflow). tsc 0 · eslint 0 · 9/9 tests.
 
 ## S3 contract (added to `CanvasReaderProps`)
+
 ```ts
 type Nature = 'highlight' | 'bookmark' | 'quote'
 interface ReaderAnnotation { id: string; nature: Nature; text: ReactNode; location: ReactNode } // location pre-resolved (S6)
@@ -77,6 +85,7 @@ onLinkAnnotation?: (annotationId: string) => void // bookmark & quote only
 ```
 
 ## S3 business rules
+
 - **BR-S3-1 (pre-grouped, EC-14):** renders `annotationGroups` the **adapter** builds (S6); the shell NEVER groups/sorts/
   parses (board-view/list-view `sections` precedent). Chapter derivation + an "Unplaced" bucket are S6's.
 - **BR-S3-2 (IR-1 shell-enforced, EC-5):** `linkable = nature !== 'highlight'` gates both affordances BEFORE handler
@@ -102,26 +111,35 @@ onLinkAnnotation?: (annotationId: string) => void // bookmark & quote only
   AA full-matrix incl. warm-dark; no new motion.
 
 ## S3 verification
+
 Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390 + 768: grouped-by-chapter · counts · 3 distinct
 markers · **IR-1 highlight-no-affordance every cell** · text AA 0-fail (worst 4.52) · **marker 3:1 0-fail (4.95–6.41,
 incl. warm-dark)** · rail states · rail stacks below at 390/768 · no overflow · **axe 0**). tsc 0 · eslint 0 · 26/26
 canvas-reader tests · full `@vida/ui` **496/496** (2 concurrency flakes in untouched files, green on isolation + re-run).
 
 ## S4 contract (NEW exports — NOT on `CanvasReaderProps`)
+
 ```ts
-type Nature = 'highlight' | 'bookmark' | 'quote'   // (also now barrel-exported; was shipped in S3)
+type Nature = 'highlight' | 'bookmark' | 'quote' // (also now barrel-exported; was shipped in S3)
 interface SelectionActionsProps {
-  onHighlight?: () => void; onQuote?: () => void; onBookmark?: () => void; onListenFrom?: () => void
-  listenAvailable?: boolean        // default true; false ⇒ Listen-from-here omitted (IR-7)
-  'aria-label'?: string            // default "Turn selection into"
+  onHighlight?: () => void
+  onQuote?: () => void
+  onBookmark?: () => void
+  onListenFrom?: () => void
+  listenAvailable?: boolean // default true; false ⇒ Listen-from-here omitted (IR-7)
+  'aria-label'?: string // default "Turn selection into"
   ref?: Ref<HTMLDivElement>
 }
 function SelectionActions(p: SelectionActionsProps): JSX.Element
-interface ReaderHighlightMarkProps { children: ReactNode; ref?: Ref<HTMLElement> }
+interface ReaderHighlightMarkProps {
+  children: ReactNode
+  ref?: Ref<HTMLElement>
+}
 function ReaderHighlightMark(p: ReaderHighlightMarkProps): JSX.Element
 ```
 
 ## S4 business rules
+
 - **BR-S4-surfacing (IR-NEEDS-3 / EC-12):** the reading body is the consumer's `renderContent` slot — the shell can't own
   it, detect a selection, or anchor an overlay. So S4 ships `SelectionActions` + `ReaderHighlightMark` as **pieces the
   consumer composes INSIDE `renderContent`** (anchored at the `Range` they own); the 4 callbacks move off `CanvasReaderProps`.
@@ -137,12 +155,14 @@ function ReaderHighlightMark(p: ReaderHighlightMarkProps): JSX.Element
 - **BR-S4-6b (375):** the toolbar is a `flexWrap` row (no mid-control overflow — the flow-session `AffordanceRow` lesson).
 
 ## S4 verification
+
 Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 390: **EC-15 real SVG icons, 0 emoji** · **icon 3:1
 0-fail 4.95–6.41 incl. warm-dark** · 56×48 ≥ 44×44 · **mark underline 3:1 5.63–6.41@2px · mark text AA 15.84–17.29 held** ·
 body text AA 0-fail · **axe 0**). tsc 0 · eslint 0 (S4 files) · 33/33 canvas-reader tests · full `@vida/ui` **503/503**
 (the known untouched-file concurrency flake, green on re-run). Live Range→rect anchoring = apps/web (S6 / fe-books #36).
 
 ## S5 contract (added to `CanvasReaderProps`)
+
 ```ts
 type ListenMode = 'idle' | 'playing' | 'unavailable'   // LOCAL union (the ReaderState precedent); barrel-exported
 // + on CanvasReaderProps:
@@ -153,6 +173,7 @@ onListenToggle?: () => void    // intent only; the control renders on idle/playi
 ```
 
 ## S5 business rules
+
 - **BR-S5-surfacing (inverse of S4):** the listen bar is **book-level persistent chrome** — there is no `Range` to anchor,
   so (unlike S4) it lives ON `CanvasReaderProps` (the seam-contract §A homing), NOT a consumer-composed export. `ListenBar`
   renders between `Header` and `Body` **only when `listen != null`**.
@@ -174,6 +195,7 @@ onListenToggle?: () => void    // intent only; the control renders on idle/playi
   AA full-matrix incl. warm-dark; the icon is a graphical object ≥3:1.
 
 ## S5 verification
+
 Visual Gate PASS (Brave, editorial/reader/quietDesk × light/dark + 375: 3 named Listen groups every cell · toggle 56×48 ≥
 44×44 · **real SVG 0-emoji** · **icon 3:1 0-fail 4.39–5.27 incl. warm-dark** · label AA 0-fail 4.52–5.22 (incl. the muted
 line on `$colorSurfaceSecondary`) · progressbar in playing · calm `role=status` unavailable · no 375 overflow · **axe 0**).
@@ -181,11 +203,13 @@ tsc 0 · eslint 0 (S5 files) · 42/42 canvas-reader tests · full `@vida/ui` **5
 (`convertToSpeech` + playback position) = apps/web (S6 / fe-books #36).
 
 ## S6 — apps/web Books↔Reader adapter (`apps/web/src/reader/adapter.ts`)
+
 A **type + convention** unit (the flow/collection/dashboard/entity precedent) — the single `@vida/core`↔`@vida/ui`
 crossing for the Reader; pure mappers + a `BooksReaderPort` + `bindReaderIntents` ship + test NOW, the live
 `useReader(assetId)` hook deferred to the first consumer (fe-books #36). **Verification Gate** (unit tests), NOT Visual.
 
 ### S6 business rules
+
 - **BR-S6-1 (display-resolve, EC-14):** `resolveLocation(position, chapters)` parses a page (M1: leading integer; CFI/
   timestamp = deferred BK-4) → the `BookChapter` whose `[start_page,end_page]` holds it → "Ch. N · p. P" (decision 3) +
   `{chapterId, page}`. Degrade-never-crash: unparseable → raw string; null → "Location unknown"; never a guessed page.
@@ -193,7 +217,7 @@ crossing for the Reader; pure mappers + a `BooksReaderPort` + `bindReaderIntents
   group; nature identity; per-nature text (`label`/`captured_text`/`text`; null → '').
 - **BR-S6-3 (TOC):** `mapChapters` → `ReaderChapter[]` (number/title/pageRef/done/current), ordered by `chapter_number`.
 - **BR-S6-4 (state boundary):** `mapReaderState(file)` maps the ACCESS outcome ONLY (`attachment-unavailable →
-  'unavailable'`, `stored → 'success'`); loading/empty/error for BOTH column + rail are the deferred hook's
+'unavailable'`, `stored → 'success'`); loading/empty/error for BOTH column + rail are the deferred hook's
   `deriveTerminalState` (the rail is `ViewState`, not `ReaderState`). `mapPositionNote` = the IR-3 not-synced line.
 - **BR-S6-5 (listen, IR-7):** `mapListen(OcrResult)` — `ai-unavailable → 'unavailable'`, else undefined; `convertToSpeech`
   carries the real `AiRequest` (hook-built; M1 `ai?` dormant → always `ai-unavailable`).
@@ -206,6 +230,7 @@ crossing for the Reader; pure mappers + a `BooksReaderPort` + `bindReaderIntents
   page, binding the real `BooksService` to `BooksReaderPort`, flattening `AnnotationView → AnnotationInput`) = fe-books #36.
 
 ### S6 verification
+
 Verification Gate PASS (2026-10-10): `@vida/web` tsc 0 · eslint 0 (S6 files) · **28/28 reader adapter** tests (display-resolve
 boundary/open-ended/unparseable/null/Unplaced · nature identity + per-nature text · state/position/listen mappers ·
 `toReaderProps` assembler · `bindReaderIntents` + degrade-never-crash). Full `@vida/web` suite green bar 2 pre-existing

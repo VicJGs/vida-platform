@@ -41,8 +41,6 @@ export const migration030Journals: Migration = {
       )
     `)
 
-    await driver.run(
-      `CREATE INDEX idx_journal_snapshots_date ON journal_snapshots(snapshot_date)`,
-    )
+    await driver.run(`CREATE INDEX idx_journal_snapshots_date ON journal_snapshots(snapshot_date)`)
   },
 }

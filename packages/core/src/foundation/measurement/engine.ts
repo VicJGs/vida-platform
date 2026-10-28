@@ -35,12 +35,8 @@ export function normalize(input: NormalizeInput): number | null {
 // §3.3 — one weighted rule at every scale. Excludes null-progress children (an
 // un-rated goal cannot drag a parent down); NULL/0 weight ⇒ equal-weight; an
 // empty/all-null set ⇒ null (unmeasured, consistent with BR-2).
-export function rollup(
-  children: { progress: number | null; weight?: number | null }[],
-): number | null {
-  const measured = children.filter(
-    (c): c is { progress: number; weight?: number | null } => c.progress !== null,
-  )
+export function rollup(children: { progress: number | null; weight?: number | null }[]): number | null {
+  const measured = children.filter((c): c is { progress: number; weight?: number | null } => c.progress !== null)
   if (measured.length === 0) return null
   let wsum = 0
   let psum = 0
@@ -53,10 +49,7 @@ export function rollup(
 }
 
 // §3.2 — derive-by-default: a stored value is an OVERRIDE (NULL ⇒ derive).
-export function resolveProgress(
-  stored: number | null,
-  derive: () => number | null,
-): number | null {
+export function resolveProgress(stored: number | null, derive: () => number | null): number | null {
   return stored !== null ? stored : derive()
 }
 

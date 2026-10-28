@@ -69,12 +69,7 @@ export {
   type AgendaDay,
   type Daypart,
 } from './components/agenda-view'
-export {
-  WeekView,
-  type WeekViewProps,
-  type TimedBlock,
-  type CalChip,
-} from './components/week-view'
+export { WeekView, type WeekViewProps, type TimedBlock, type CalChip } from './components/week-view'
 export { YearView, type YearViewProps, type YearDensity } from './components/year-view'
 export {
   LivingView,

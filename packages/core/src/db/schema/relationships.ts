@@ -127,10 +127,7 @@ export const interactions = sqliteTable(
     // NO deleted_at — the interactions ledger (RL-3); hard-deletes with the contact
     // (habit_completions/routine_completions precedent, HB-11/RT-17).
   },
-  (t) => [
-    index('idx_interactions_contact').on(t.contact_id),
-    index('idx_interactions_date').on(t.date),
-  ],
+  (t) => [index('idx_interactions_contact').on(t.contact_id), index('idx_interactions_date').on(t.date)],
 )
 
 // --- contact_reminders: per-person reminders — §5.9 (+ G8 snooze/priority) --

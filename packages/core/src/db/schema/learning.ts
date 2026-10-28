@@ -301,10 +301,7 @@ export const assessments = sqliteTable(
     source: enumText('source', RECORD_SOURCE).notNull().default('manual'), // FIXED → CHECK; AI6
     deleted_at: integer('deleted_at'),
   },
-  (t) => [
-    index('idx_assessments_subject').on(t.subject_id),
-    index('idx_assessments_type').on(t.type),
-  ],
+  (t) => [index('idx_assessments_subject').on(t.subject_id), index('idx_assessments_type').on(t.type)],
 )
 
 // --- subject_documents: the per-subject vault (ED-13, PJ-8) — NO deleted_at --

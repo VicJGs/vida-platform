@@ -10,20 +10,24 @@
 > reads "slight" (screenshot-confirmed: hovered toast lifts, resting toasts flat). Gate script `/tmp/vg/toast-gate.mjs`.
 
 ## 0. Source model
+
 Code-first. No palette churn; reuse `shadow.ts`. The deliverable = a contract-MISSING state (not a new feature).
 
 ## 1. Baseline + the gap (ground truth)
+
 `toast.md:27` Visual-States contract: **hover → "auto-dismiss timer pauses; slight elevation | overlay opacity".** The
 shipped Toast delivers ONLY the functional pause (`onMouseEnter={pause}`, toast.tsx:199) — **no visual elevation**
 [FACT: ToastPanel styled def has no hover/shadow, toast.tsx:94-110]. So the "slight elevation (overlay opacity)" half of
 the contract is MISSING. This slice delivers it.
 
 ## 2. The crux — the Card overlay-opacity mechanism, past the `overflow:hidden` clip
+
 The contract says the elevation is communicated via **overlay opacity** → the **Card elevation precedent**
 (`card-styles.ts`: a raised-shadow overlay child, `opacity:0` resting → `opacity:1` on hover, transition OPACITY only —
 B12-safe; never an animated box-shadow). **⚠ Direct copy fails:** `ToastPanel` has `overflow:hidden` (clips the 3px
 accent bar to the radius, toast.tsx:108) — a shadow on an overlay CHILD would be clipped. **Resolution (Victor's "move
 the shadow to a wrapper"):**
+
 - Wrap the panel in a **`ToastWrapper`** (`position:relative`, **NO `overflow`**, `className="vida-toast-wrap"`).
 - Inside it, a sibling **`ToastElevation`** overlay: `position:absolute; inset:0; borderRadius:$lg` (match the panel);
   the box-shadow (raised) + `opacity:0`; `pointerEvents:none`; `aria-hidden`.
@@ -47,10 +51,12 @@ it: add a subtle **`hoverStyle` border-strengthen** on `ToastPanel` (`borderColo
 = B12-safe, the Tabs/Card precedent.)
 
 ## 3. Contract
+
 No `ToastOptions`/`ToastProvider` prop change. Internal: a wrapper element + an elevation overlay + a toast-styles rule.
 Non-breaking (the pause/focus/accent/motion/live-region behavior is UNTOUCHED).
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking):** Brave, 3 presets × light/dark. Hover a toast → a **slight elevation appears** (the overlay
   shadow fades in, measured: `.vida-toast-elevation` computed `opacity` 0→1 on `:hover`); un-hover → fades out. The
   shadow is NOT clipped (paints outside the panel). **Dark-cell perceptibility (gate-1 fix):** in DARK the hover produces
@@ -64,6 +70,7 @@ Non-breaking (the pause/focus/accent/motion/live-region behavior is UNTOUCHED).
 - **§XXIX:** CLAUDE.md Toast paragraph (+hover elevation) + `toast.md` change log (contract state now delivered).
 
 ## 4b. Preflight RESULT (2026-10-06 — PASSED, grounded)
+
 - **V4 RESOLVED — border-strengthen = `$colorTextMuted` (the Card precedent).** No `$colorBorderStrong` exists; the only
   border token is `$colorBorderDefault` [FACT: themes.ts]. Card's dark-hover cue is `hoverStyle:{ borderColor:'$colorTextMuted' }`
   [FACT: card.tsx:52] — strengthen `$colorBorderDefault`→`$colorTextMuted` (preset-aware, direct semantic, no hard-coded).
@@ -72,6 +79,7 @@ Non-breaking (the pause/focus/accent/motion/live-region behavior is UNTOUCHED).
   (needs `:hover`), handlers/nodeRef stay on PANEL. **V3** overlay behind opaque panel, shadow paints outside (un-clipped).
 
 ## 4a. Preflight + /verify (resolved above in §4b)
+
 - **V1 — shadow level ("slight"):** `shadow.raised` vs `shadow.overlay` on hover — confirm "slight" reads right at the
   gate (lean `raised`; a toast is a lighter surface than a modal).
 - **V2 — wrapper doesn't disturb the stack:** the Toast viewport is a flex column of items; the wrapper must size to the
@@ -84,6 +92,7 @@ Non-breaking (the pause/focus/accent/motion/live-region behavior is UNTOUCHED).
   (direct semantic), no hard-coded value.
 
 ## 5. Implementation prompt
+
 In `toast.tsx`: add a `ToastWrapper` (styled View, `position:relative`, `className="vida-toast-wrap"` — **default
 pointerEvents (NOT none — it needs `:hover`); a tight box, no padding/bg, so it eats no clicks**) around the existing
 `ToastPanel` in `ToastItem`'s return; add a `ToastElevation` (styled View, `position:absolute`, `inset:0`,

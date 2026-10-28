@@ -27,7 +27,9 @@ describe('resolveDataViewState', () => {
     expect(resolveDataViewState({ state: 'empty', itemCount: 0, name: 'X' }).effectiveEmpty).toBe(true)
     expect(resolveDataViewState({ state: 'success', itemCount: 0, name: 'X' }).effectiveEmpty).toBe(true)
     expect(resolveDataViewState({ state: 'error', itemCount: 0, name: 'X' }).effectiveEmpty).toBe(false)
-    expect(resolveDataViewState({ state: 'success', itemCount: 2, name: 'X', ariaLabel: 'x' }).effectiveEmpty).toBe(false)
+    expect(resolveDataViewState({ state: 'success', itemCount: 2, name: 'X', ariaLabel: 'x' }).effectiveEmpty).toBe(
+      false,
+    )
   })
 
   // ── dev-warns (substrings are regression-critical — the consumers assert them) ─

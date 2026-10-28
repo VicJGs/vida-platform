@@ -6,6 +6,7 @@
 > no schema change. Fences: DB-6 (queue+enqueue+dedup) · DB-2 (`_sync_*`+HLC) · AR-9b/M4 (activation) · AR-3 (crypto).
 
 ## Grounded facts (verified this session)
+
 - `@vida/types` re-exports all sync types: `export * from './sync'` [FACT: packages/types/src/index.ts:8];
   names present: `SyncQueueItem, SyncBlob, YjsSyncUnit, SyncOperation, SyncQueueStatus` [FACT: packages/types/src/sync.ts].
 - `DrizzleDb` from `../db/adapter` (sync/ is one level under src; peers at two levels use `../../`) [FACT: foundation/capability/registry.ts:13].
@@ -17,6 +18,7 @@
 ## Build order (5 files created, 1 edited) + exact content
 
 ### 1. `packages/core/src/sync/types.ts` (new)
+
 ```ts
 // ============================================================================
 // Sync engine — module-local guard (AR-9 · ADR-003 §8, scaffold-only).
@@ -33,6 +35,7 @@ export class SyncNotActivated extends Error {
 ```
 
 ### 2. `packages/core/src/sync/queue.ts` (new)
+
 ```ts
 // ============================================================================
 // Sync-queue reader seam (AR-9 · ADR-003 §8.1) — SCAFFOLD-ONLY, inert until M4.
@@ -58,6 +61,7 @@ export function createSyncQueueReader(_db: DrizzleDb): SyncQueueReader {
 ```
 
 ### 3. `packages/core/src/sync/resolver.ts` (new)
+
 ```ts
 // ============================================================================
 // Field-level LWW resolver seam (AR-9 · ADR-003 §6.1) — SCAFFOLD-ONLY, inert until M4.
@@ -82,6 +86,7 @@ export function createFieldLWWResolver(): FieldLWWResolver {
 ```
 
 ### 4. `packages/core/src/sync/crdt.ts` (new)
+
 ```ts
 // ============================================================================
 // Per-page Yjs CRDT seam (AR-9 · ADR-003 §4.2) — SCAFFOLD-ONLY, inert until M4.
@@ -110,6 +115,7 @@ export function createYjsSyncSeam(): YjsSyncSeam {
 ```
 
 ### 5. `packages/core/src/sync/index.ts` (new — barrel)
+
 ```ts
 // sync — AR-9 sync engine scaffolding (no-flush). Reserved seams, inert until M4 (AR-9b).
 // ADR-003 §8 (offline queue) · ADR-017 (scaffold-only).
@@ -120,13 +126,16 @@ export * from './crdt'
 ```
 
 ### 6. `packages/core/src/index.ts` (edit — append after the `services/search` export block)
+
 ```ts
 // Sync — AR-9 engine scaffolding (no-flush): reserved seams inert until M4 (AR-9b · ADR-003 §8)
 export * from './sync'
 ```
 
 ## Tests — `packages/core/src/sync/__tests__/scaffold.test.ts` (new)
+
 Vitest. Four groups (spec §4.2):
+
 1. **exports resolve / factories construct** — `createSyncQueueReader({} as DrizzleDb)`,
    `createFieldLWWResolver()`, `createYjsSyncSeam()` return objects without throwing (SY-1: construction
    touches no DB/network; the DB arg is never dereferenced by the stub).
@@ -147,16 +156,19 @@ Vitest. Four groups (spec §4.2):
    actually finds the root and scans real files (not an empty set that passes vacuously). [[live-smoke-catches-data-shape-bugs]]
 
 ## Verification (DoD gate)
+
 ```
 pnpm --filter @vida/core typecheck      # zero errors; barrel re-export resolves
 pnpm --filter @vida/core test           # existing suite + scaffold.test.ts green
 pnpm --filter @vida/core lint           # _-prefixed args clean (eslint.config.js:12)
 pnpm typecheck                          # root 10/10 unaffected
 ```
+
 Then: `/critique` (post-impl, independent) → engineering quality-gate → `[C]` promote `_index.md` →
 `docs/core/sync/current-*` + `[L]` `sync/CLAUDE.md` layer-doc → commit docs WITH code (branch-first).
 
 ## Assumptions locked (from preflight)
+
 - Reader reserves **only** `readPending`; `markInFlight`/`markFailed` status transitions are AR-9b (not now).
 - Stub bodies throw (not no-op). `_db` intentionally unused (arg reserved for the M4 read impl).
 - No `yjs`, no migration, no `_sync_*` column, `repository.ts` untouched (interim `Date.now()` stays → DB-2/AR-9b).

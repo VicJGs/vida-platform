@@ -10,14 +10,17 @@
 > no engine (NF-1/identity.md:41-42).
 
 ## Dependency order (each slice builds on the prior)
+
 S1 reads/repo → S2 delivery (gating + engine compose) → S3 fire (event path, uses S2 deliver) →
 S4 dispatcher (time path, uses `dueIn` + S3 fire + engine.scheduleLocal) → S5 journal + close-out.
 
 ## Slices
 
-### S1 — Service scaffold + inbox reads + lifecycle + DB-11 reconcile  `[backend]`
+### S1 — Service scaffold + inbox reads + lifecycle + DB-11 reconcile `[backend]`
+
 **Covers:** NF-1 (pure sink), NF-13 (read→archive→expire lifecycle), NF-12 (6 fixed types), the read half of
 contract.md:14.
+
 - `createNotificationsService(deps)` factory-of-closures (no `this`; validating methods async) over
   `createRepository(db, notifications, { deviceId, encryptedFields: [], softDelete: false })` (D5 dormant
   seam; NO `deleted_at` — NF-13). `[FACT: interpretation A5; repository.ts:236]`
@@ -29,9 +32,11 @@ contract.md:14.
 - **Verification:** live-store — create rows directly, assert list filters (status/type), unreadCounts derive,
   markRead/markAllRead/archive/archiveExpired transitions + sync enqueue.
 
-### S2 — Preferences gating + DeliveryDecision builder + `deliver` + delivery-audit  `[backend]`
+### S2 — Preferences gating + DeliveryDecision builder + `deliver` + delivery-audit `[backend]`
+
 **Covers:** NF-4/NF-5 (gate before deliver), NF-6/NF-7 (ZK channel fidelity, in-app always), NF-8 (delivery-
 audit), contract.md:18.
+
 - Inject a **Preferences read port** (`preferences.getMergedPreferences()` → `MergedPreferences`). `[INTERP]`
   Required dep if the Preferences service is wired; else a deny-safe port (absent ⇒ permissive/in-app-only,
   the habits fail-OPEN precedent [[absent-deny-safe-port-write-is-noop-not-new-error]]). `[FACT: preferences/service.ts:74-86]`
@@ -46,9 +51,11 @@ audit), contract.md:18.
 - **Verification:** live-store — against a persisted row, assert audit cols reflect deny-safe M1 (in-app=1,
   push/email=0 fallback), quiet-hours suppression records in-app, per-module toggle off ⇒ no push.
 
-### S3 — `fire` single write path + `surface_notification` rail handler + idempotency  `[backend]`
+### S3 — `fire` single write path + `surface_notification` rail handler + idempotency `[backend]`
+
 **Covers:** NF-2 (event path), NF-8 (idempotent per `effect_event_id`), the single-write-path rule
 (conventions.md:6), NF-14 (achievement from Gamification — recorded not evaluated).
+
 - **D1 ratified (B2):** the single persist logic (map → validate type → derive id → insert) is a service-
   internal closure with TWO entries, differing ONLY in the write primitive:
   - **time entry** `fire(input)` — public; `repo.create(…)` (its own tx). `[FACT: repository.ts create]`
@@ -64,9 +71,11 @@ audit), contract.md:18.
 - **Verification:** live-store — fire via a simulated rail event co-writes in-tx; re-fire same `effect_event_id`
   ⇒ one row (idempotent); fired row is delivered (audit set).
 
-### S4 — Dispatcher `tick()` + time-driven path  `[backend]`
+### S4 — Dispatcher `tick()` + time-driven path `[backend]`
+
 **Covers:** NF-2 (time path), NF-3 (derive-until-fire, no phantom inbox), SignalUnavailable, NF-8 (occurrence
 key), NF-5 gate.
+
 - `tick(range?, now?)` — read `sessions.dueIn(range)` → for each `DueItem`:
   - **OQ-1 REVISED (B3/B4):** fire ONLY time-**pinned** items — those with a `hard_deadline` (the device-stable
     UTC-ms fire instant). `at = hard_deadline`; `occurrenceId = ${source_module}:${ref_id}:${hard_deadline}` →
@@ -75,7 +84,7 @@ key), NF-5 gate.
     Journals, not an alarm — a documented upstream gap, NOT an invented key). No TZ/local-date math, no
     double-fire. `[FACT: sessions/types.ts:225-232; scheduling.ts:63,72; NF-8]`
   - `shouldMaterialize(hard_deadline, now)` → gate (S2) → `fire` (time entry) → `engine.scheduleLocal(occ,
-    quietHours)` for native/local alerts. `[FACT: scheduling.ts:72; service.ts:74; contract.md:16]`
+quietHours)` for native/local alerts. `[FACT: scheduling.ts:72; service.ts:74; contract.md:16]`
 - `SignalUnavailable` — a missing/throwing `dueIn` source ⇒ that lane skipped + flagged, never fire on
   fabricated data; tick is failure-isolated per item. `[FACT: contract.md:40; NF-2/NF-3]`
 - Dispatcher is headless/on-device (not a server cron); feed is sparse at M1 (dormant provider lanes, D3) —
@@ -84,10 +93,12 @@ key), NF-5 gate.
   (`shouldMaterialize` gate), occurrence-id dedup (two ticks ⇒ one row), gated suppression records in-app,
   `dueIn` throw ⇒ skip+flag not crash.
 
-### S5 — Journal contribution + close-out  `[backend]` → **① COMPLETE**
+### S5 — Journal contribution + close-out `[backend]` → **① COMPLETE**
+
 **Covers:** OQ-3 (Journal summary), NF-10 (dangling subject read-safety), NF-13 (expire/purge), final currency.
+
 - `registerNotificationsJournal(registry, svc)` — a thin `JournalContribution { module:'notifications',
-  sectionKey:'summary', dataPoints: DATA_POINTS, summary(date) }` (**B1: `dataPoints` is REQUIRED** —
+sectionKey:'summary', dataPoints: DATA_POINTS, summary(date) }` (**B1: `dataPoints` is REQUIRED** —
   journals/types.ts:58-64; a `DATA_POINTS` const per gamification/journal.ts:34) — unread/by-type recap; **no
   `dueIn` agenda lane** (Notifications CONSUMES dueIn, is not an agenda provider; the gamification summary-only
   precedent). `[FACT: journals/types.ts:58-64; gamification/journal.ts:30-68; identity.md:32]`
@@ -99,16 +110,18 @@ key), NF-5 gate.
   subject was deleted still lists (no crash).
 
 ## Decisions resolved at this gate (ratify or correct)
-| # | Decision | Resolution | Grounding |
-|---|----------|-----------|-----------|
-| OQ-1 | time-path occurrence-id | `${source_module}:${ref_id}:${hard_deadline}`; fire ONLY items WITH a hard_deadline, skip un-pinned (g1 B3 fix — no invented `todayDateKey`, no TZ double-fire) | NF-8 device-stable (UTC ms); DueItem supplies no other stable instant (sessions/types.ts:225-232) |
-| OQ-2 | 6 typed errors throw-vs-record | exported typed OUTCOME vocabulary; record-not-throw (in-app fallback/suppress/no-op) | contract.md:35-42; [[absent-deny-safe-port-write-is-noop-not-new-error]] |
-| OQ-3 | Journal contribution scope | thin summary contribution IN ①; inbox render = ② | identity.md:32; gamification precedent |
-| OQ-4 | `@vida/types Notification` reconcile | fold into S1 | DB-11; common.ts:90-108 vs schema |
-| D-ENC | `encryptedFields` at M1 | `[]` dormant seam (`[E]` set = future boundary) | [[m10-repos-use-empty-encryptedfields-seam]] |
-| D-SCHEMA | new schema? | none — pure service tier, all cols shipped at DB-4 | schema vs interpretation D4 |
+
+| #        | Decision                             | Resolution                                                                                                                                                      | Grounding                                                                                         |
+| -------- | ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- |
+| OQ-1     | time-path occurrence-id              | `${source_module}:${ref_id}:${hard_deadline}`; fire ONLY items WITH a hard_deadline, skip un-pinned (g1 B3 fix — no invented `todayDateKey`, no TZ double-fire) | NF-8 device-stable (UTC ms); DueItem supplies no other stable instant (sessions/types.ts:225-232) |
+| OQ-2     | 6 typed errors throw-vs-record       | exported typed OUTCOME vocabulary; record-not-throw (in-app fallback/suppress/no-op)                                                                            | contract.md:35-42; [[absent-deny-safe-port-write-is-noop-not-new-error]]                          |
+| OQ-3     | Journal contribution scope           | thin summary contribution IN ①; inbox render = ②                                                                                                                | identity.md:32; gamification precedent                                                            |
+| OQ-4     | `@vida/types Notification` reconcile | fold into S1                                                                                                                                                    | DB-11; common.ts:90-108 vs schema                                                                 |
+| D-ENC    | `encryptedFields` at M1              | `[]` dormant seam (`[E]` set = future boundary)                                                                                                                 | [[m10-repos-use-empty-encryptedfields-seam]]                                                      |
+| D-SCHEMA | new schema?                          | none — pure service tier, all cols shipped at DB-4                                                                                                              | schema vs interpretation D4                                                                       |
 
 ## Not in ① scope (homed elsewhere)
+
 - Real external reach (Expo/Tauri scheduler · Hono wake-relay · Web Push · email) → **M2** (deny-safe ports, zero-sig swap). `[FACT: ports.ts; ADR-013 §5]`
 - Digest/batching (`notification_frequency`) → **INTENDED/M2** (realtime per-notification at M1, NF-15).
 - Inbox UI render, `action_url` deep-link resolution UI → **② `fe-notifications` (LIF-192)**.

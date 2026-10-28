@@ -58,7 +58,14 @@ describe('STANDARD_BLOCK_EXTENSIONS — schema', () => {
     const names = Object.keys(headless().schema.nodes)
     expect(names).toEqual(
       expect.arrayContaining([
-        'table', 'tableRow', 'tableCell', 'tableHeader', 'taskList', 'taskItem', 'image', 'callout',
+        'table',
+        'tableRow',
+        'tableCell',
+        'tableHeader',
+        'taskList',
+        'taskItem',
+        'image',
+        'callout',
       ]),
     )
   })

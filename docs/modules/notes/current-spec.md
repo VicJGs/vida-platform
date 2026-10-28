@@ -1,4 +1,4 @@
-# Current Spec — notes (Notes & Pages)   (level: module · tier: DEEP · both planes)
+# Current Spec — notes (Notes & Pages) (level: module · tier: DEEP · both planes)
 
 > §XXIX living doc. Covers BOTH planes of the entity: ① the `@vida/core` **Notes & Pages service** (the in-degree-14
 > connective HUB) and ② the `apps/web` **notes surface** (`/notes`, `/notes/$id`, the shared note editor body).
@@ -12,6 +12,7 @@
 > Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R3 metadata + rename (② surface; ① validators + `getAttachmentThumbnail`). Source of truth = the code.
 
 ## Status
+
 - **① BACKEND COMPLETE** — S1 pages core · S2 entity notes + attachments · S3 page-links + wiki resolution · S4
   delegation facade (2026-09-19, LIF-131) + `writePageContent` (2026-10-20, notes-entity-usability S2).
 - **② SURFACE — PARTIALLY LIVE.** fe-notes #27 S1–S9 shipped 2026-10-11 on stubs; data-plane-wiring (PR #148) +
@@ -23,6 +24,7 @@
 ## ① Service plane — `@vida/core` `services/notes`
 
 ### Construction
+
 `createNotesService(deps): NotesService` — factory-object, no `this.` [FACT: services/notes/service.ts:72].
 Deps `{db, deviceId, spaces, backlinks, registry}` [FACT: services/notes/types.ts:20-29]: `registry` (S1 create + S4
 links), `spaces` (S4 writes, service.ts:272,276), `backlinks` (S4 reads, service.ts:280,288).
@@ -31,8 +33,10 @@ attachment / page-link / read-only entity-tag repos [FACT: service.ts:77-89]. Th
 `seedContent` + `allOf` helpers [FACT: service.ts:41-58].
 
 ### Contract — S1 pages core
+
 Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `Page` interface (DB-11 reconcile)
 [FACT: schema/notes.ts:110]. Interface: [FACT: types.ts:56-105].
+
 - `createPage(input: CreatePageInput): Promise<PageRow>` — Zod parse → journal clash check → `assertRegistered(entity_type)`
   → create with notNull defaults backfilled [FACT: service.ts:106-126].
 - `getPage(id): Promise<PageRow|null>` — `findById` (soft-delete filtered) [FACT: service.ts:128; db/repository.ts:356-361].
@@ -54,6 +58,7 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - Input types: `CreatePageInput`/`UpdatePageInput` = `z.infer` of `validators/note.ts` [FACT: types.ts:31-34].
 
 ### Contract — S2 entity notes + attachments
+
 - `ensureEntityNote(pageType, entityType, entityId, seed: EntityNoteSeed): Promise<PageRow>` — NP-8 idempotent
   find-then-create via `getPagesForEntity` + type filter; `content = seedContent(seed)` (deterministic minimal
   `EditorDocument`) [FACT: service.ts:165-183, 41-58].
@@ -64,6 +69,7 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
   blobs; the boundary cast to Drizzle's `Buffer` is documented [FACT: service.ts:202-207].
 
 ### Contract — S3 page-links + wiki resolution
+
 - `createPageLink(source, target, context?)` — NP-5 idempotent: live → no-op · soft-deleted → revive · absent → create;
   the business-key lookup intentionally includes soft-deleted rows [FACT: service.ts:220-242; migrations/033_notes.ts:91].
 - `removePageLink(source, target)` [FACT: service.ts:244-250] · `getPageLinksFrom` / `getPageLinksTo` [FACT: service.ts:252-256].
@@ -71,6 +77,7 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
   titles never match [FACT: service.ts:259-260].
 
 ### Contract — S4 delegation facade
+
 - `createEntityLink(pageId, entityType, entityId, context?)` — notes `assertRegistered` THEN AR-6 `spaces.createLink`
   [FACT: service.ts:265-273]. `removeEntityLink` → `spaces.removeLink` [FACT: service.ts:275-277].
 - `getEntityLinksFrom(pageId)` → AR-8 `backlinks.getLinksFrom` [FACT: service.ts:279-280].
@@ -78,6 +85,7 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
 - `getTagsForEntity` / `getEntitiesByTag` — read-only `entity_tags` [FACT: service.ts:293-303].
 
 ### Consumers (blast radius)
+
 Core (injected via each module's `types.ts`): tasks · books · knowledge → `ensureEntityNote`; learning-education →
 `getPagesForEntity`; projects → `createPage`, `getPagesForEntity`; purposes → `createPage`, `ensureEntityNote`,
 `getPagesForEntity`; relationships → `getPagesForEntity` + `createPage`; check-ins → structural `JournalLinkPort`
@@ -90,6 +98,7 @@ apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-e
 `getBacklinks`, `updatePage` [INTERP: bounded grep].
 
 ### Adjacent services the surface depends on (not owned here)
+
 - **Templates** (`foundation/templates`): CRUD only — `createTemplate/listTemplates/getTemplate/deleteTemplate`
   [FACT: foundation/templates/service.ts:24-59]; `InstantiationResult`/`TemplateCaptureError` are types with no impl
   [FACT: foundation/templates/types.ts:25-29,45-50]. Instantiate/capture = "first-consumer-pull SEAMS (0 code)"
@@ -107,28 +116,30 @@ apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-e
 ## ② Surface plane — `apps/web/src/notes`
 
 ### Routes + composition
+
 - `/notes` → lazy `notes-surface` [FACT: apps/web/src/routes.tsx:76-80]; `/notes/$id` → lazy `note-entity`
   [FACT: routes.tsx:83-87]; dock entry `routePath:'/notes'` [FACT: nav/module-map.ts:68].
 - `getServices()` — lazy singleton after `ensureDbReady` → `initVault` → `resolveDeviceId`; a rejected build is not cached
   [FACT: apps/web/src/db/composition-root.ts:118-141]. **NotesService is registered**: `registry → spaces → backlinks →
-  createNotesService` [FACT: composition-root.ts:85-88], exposed as `Services.notes` [FACT: :51,:115] and injected
+createNotesService` [FACT: composition-root.ts:85-88], exposed as `Services.notes` [FACT: :51,:115] and injected
   into tasks/purposes/relationships [FACT: :102-110].
 
 ### Hooks (data legs)
-| Hook | Status | Call · query key | Cite |
-|---|---|---|---|
-| `useNotesRows` | **LIVE** | `notes.listPages()` (no filters) · `['notes','pages']` | use-notes-rows.ts:52-64 |
-| `useNoteEntity` | **LIVE** | `notes.getPage(id)` · `['pages',id]`; null → `empty` | use-note-entity.ts:129-140 |
-| `useNoteContent(page)` | **LIVE write** | `notes.writePageContent` (direct promise) · debounce 500 ms · flush on unmount/hide/pagehide · `flush`/`cancel`/`lock` · `seed` (overlay ?? page) · latest-body overlay + barrier + warm write-through · invalidates page·list·journal·calendar-journal (notes-rescope R0, BR-R0-7/8/8a/8b) | use-note-content.ts; body-writes.ts |
-| `useCreateNote` | **LIVE write** | `notes.createPage({type:'note',title:'New note'})` → invalidate `['notes','pages']` → navigate | use-create-note.ts:24-37 |
-| `useBacklinks` | STUB | `{groups:[],count:0,state:'empty'}` | use-backlinks.ts:68-76 |
-| `useAttachments` | STUB | `[]`, add/remove no-op | use-attachments.ts:38-45 |
-| `usePageMetadata` | LIVE (R3) | favorite · archive · icon · cover · rename via one `updatePage` mutation; key sets; `notifyError`; toggles guarded while pending | use-page-metadata.ts |
-| `useWikiLinkPicker` | STUB | candidates `[]`, pick/create no-op | use-wikilink-picker.ts:49-63 |
-| `useJournalSummary` | STUB | `{sections:[],state:'empty'}` (never calls `buildDashboard`) | use-journal-summary.ts:48-51 |
-| `useNotesSearch` | PARTIAL | `useCommandSearch(query, stubSearchProvider)` → honest `search-unavailable` | use-notes-search.ts:36-40 |
-| `useTemplates` | STUB | `[]`, apply/saveCurrent no-op | use-templates.ts:55-62 |
-| `useCollection` (shared) | STUB view-config | layout in local `useState`; filter/sort/new-view `() => {}` | collection/use-collection.ts:32-43 |
+
+| Hook                     | Status           | Call · query key                                                                                                                                                                                                                                                                            | Cite                                |
+| ------------------------ | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `useNotesRows`           | **LIVE**         | `notes.listPages()` (no filters) · `['notes','pages']`                                                                                                                                                                                                                                      | use-notes-rows.ts:52-64             |
+| `useNoteEntity`          | **LIVE**         | `notes.getPage(id)` · `['pages',id]`; null → `empty`                                                                                                                                                                                                                                        | use-note-entity.ts:129-140          |
+| `useNoteContent(page)`   | **LIVE write**   | `notes.writePageContent` (direct promise) · debounce 500 ms · flush on unmount/hide/pagehide · `flush`/`cancel`/`lock` · `seed` (overlay ?? page) · latest-body overlay + barrier + warm write-through · invalidates page·list·journal·calendar-journal (notes-rescope R0, BR-R0-7/8/8a/8b) | use-note-content.ts; body-writes.ts |
+| `useCreateNote`          | **LIVE write**   | `notes.createPage({type:'note',title:'New note'})` → invalidate `['notes','pages']` → navigate                                                                                                                                                                                              | use-create-note.ts:24-37            |
+| `useBacklinks`           | STUB             | `{groups:[],count:0,state:'empty'}`                                                                                                                                                                                                                                                         | use-backlinks.ts:68-76              |
+| `useAttachments`         | STUB             | `[]`, add/remove no-op                                                                                                                                                                                                                                                                      | use-attachments.ts:38-45            |
+| `usePageMetadata`        | LIVE (R3)        | favorite · archive · icon · cover · rename via one `updatePage` mutation; key sets; `notifyError`; toggles guarded while pending                                                                                                                                                            | use-page-metadata.ts                |
+| `useWikiLinkPicker`      | STUB             | candidates `[]`, pick/create no-op                                                                                                                                                                                                                                                          | use-wikilink-picker.ts:49-63        |
+| `useJournalSummary`      | STUB             | `{sections:[],state:'empty'}` (never calls `buildDashboard`)                                                                                                                                                                                                                                | use-journal-summary.ts:48-51        |
+| `useNotesSearch`         | PARTIAL          | `useCommandSearch(query, stubSearchProvider)` → honest `search-unavailable`                                                                                                                                                                                                                 | use-notes-search.ts:36-40           |
+| `useTemplates`           | STUB             | `[]`, apply/saveCurrent no-op                                                                                                                                                                                                                                                               | use-templates.ts:55-62              |
+| `useCollection` (shared) | STUB view-config | layout in local `useState`; filter/sort/new-view `() => {}`                                                                                                                                                                                                                                 | collection/use-collection.ts:32-43  |
 
 DEV-only fixtures: `?sample` (gated `NODE_ENV !== 'production'`) [FACT: use-notes-rows.ts:41-44]; `?picker` /
 `?templates` dev-mounts [FACT: note-entity.tsx:32-38,127-150]. Eight hook headers still claim "no live composition
@@ -136,6 +147,7 @@ root" (stale) [FACT: use-attachments.ts:3-4; use-backlinks.ts:3-5; use-wikilink-
 use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; collection/use-collection.ts:8-10].
 
 ### Components (contract · states · interactions)
+
 - **NotesSurface** (`/notes`) — 4 layouts list/gallery/calendar/graph [FACT: notes-surface.tsx:21]; "New note" (disabled
   while pending) [FACT: :39-41]; `NotesSearch` above the collection; open → `/notes/$id` [FACT: :29];
   `resolved = {rows, groups:[], state, degraded:[]}` [FACT: :32]; filter/sort/new-view → no-op [FACT: :50-52].
@@ -145,7 +157,7 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 - **NoteEntity** (`/notes/$id`) — loading (`aria-busy`) · error (`ReadErrorMessage` "Couldn’t load this page." + Retry,
   R1 BR-R1-8) · empty ("Note not found") · success → `NoteEntityView` [FACT: note-entity.tsx].
 - **NoteEntityView** — `toEntityProps({title: pageLabel(page), entityType: page.type, hasPage:true, gate:'page',
-  action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
+action: <PageActions/>, editorState:'success', defaultFacet:'editor'})`; the Overview is mounted as a component; mode
   from `NoteEntity`'s `useEntityModeStore` (app_state, seeded per-type default while loading; R2) as
   `override ?? modeStore.readMode` [FACT: note-entity.tsx; use-entity-modes.ts]. **Rename (R3):** the inline title seam (`onTitleCommit`, Enter/blur commit, Esc reverts) + ⋯ → "Rename" dialog, one
   mutation; delete arrives at R5.
@@ -179,16 +191,19 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 - **TemplatePicker** — `role=group`, 4 states, Apply/Save no-op [FACT: template-picker.tsx:65-125].
 
 ### Editor integration (`@vida/editor`)
+
 - The only suggestion trigger is `/` [FACT: packages/editor/src/extensions/slash-command.ts:96]; **no `[[` input rule**
   exists. The picker mounts only under DEV `?picker` [FACT: note-entity.tsx:127,134-141].
 - `/summary` = `dailySummary` node with a generic placeholder node-view "Available when its module ships"
   [FACT: packages/editor/src/commands.ts:10-15; extensions/integration-blocks.tsx:147-161,202-204].
 
 ### Key states
+
 List: loading · empty · error · success (`degraded` never populated) · DEV sample. Page: loading · error · not-found ·
 success. Editor save: idle · saving · saved · error. Editor body: editable · unreadable (EC-33 notice). Picker: populated · empty (searching/error unreachable).
 
 ### Consumers outside `notes/`
+
 `home/journal-page-region.tsx:22,70` mounts `NoteEditorBody` (journal writes go through `useNoteContent`);
 `home/use-journal-entry.ts` reuses `toNoteEntity` (key `['journal',date]`, read via `readAfterWrites(['journal:<date>'])`);
 `app/calendar/use-calendar.ts:19,138` reuses `parseContent` (the null-contract wrapper of `parseContentResult`).
@@ -196,6 +211,7 @@ success. Editor save: idle · saving · saved · error. Editor body: editable ·
 ---
 
 ## Deferred / homed elsewhere (not in this context)
+
 `/summary` providers → HARD-1 · backlinks + neural graph data → HARD-3 · FTS5 search → DB-8 · `[E]` field encryption →
 M3/DB-5 · CRDT/Yjs `content` merge → M4 · hard-delete cascade → Part 2 · `word_count` derivation → editor/FTS ·
 EC-18b–e/20/21 entity overviews → fe-tasks / fe-projects (RIDE) [FACT: docs/specs/foundation/golive-replan/coverage-report.md:21-72].

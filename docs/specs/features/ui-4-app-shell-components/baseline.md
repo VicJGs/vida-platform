@@ -1,4 +1,5 @@
 # UI-4 App Shell — Step 0 Document-Context Baseline
+
 Status: baseline (ground truth for the PLAN's gates — §XXVI.1a)
 Session: 2026-08-16-ui-4-app-shell-components
 No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RESOLVED] decision with its citation.
@@ -11,6 +12,7 @@ No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RES
 ## 1. What is already built (design-against, do NOT rebuild)
 
 ### 1.1 The app entry today — `apps/web/src`
+
 - [FACT: App.tsx:11-58] `App` is a **DB-readiness gate**: `ensureDbReady()` → loading / error+retry / on ready
   renders `<QueryClientProvider><RouterProvider router={router}/>`. Comment (App.tsx:1-2) states it is NOT the
   UI-4 chrome yet.
@@ -23,6 +25,7 @@ No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RES
   `exec/values/batch` throw — deferred seam).
 
 ### 1.2 The four UX design models (typed artifacts + docs — all shipped)
+
 - **UX-3 shell layout** — [FACT: shell/breakpoints.ts:8-67] `BREAKPOINTS` {mobile 0 / tablet 768 / desktop 1440 /
   wide 1920}, `PRIMARY_TEST_WIDTHS=[375,768,1440]`, `CONTENT_MAX_WIDTH=1280`, `SIDE_PADDING`, `TOUCH_TARGET`
   {44/8}, `PADDING_SCALE`, `breakpointForWidth()`, and the **`TAMAGUI_MEDIA` seam** (plain data, NOT a
@@ -52,6 +55,7 @@ No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RES
   overlayClose→trigger, pageNav→main-heading, toastAppear→none), `OVERLAY_DISMISS {escape:true}`.
 
 ### 1.3 `@vida/ui` v0.2.0 — what UI-4 composes with
+
 - [FACT: packages/ui/src/index.ts:1-49] barrel exports: `UIProvider`/`useVidaTheme`/`ThemeName`, `config`,
   tokens (`tokens`, `light`/`dark` + 10 `light_/dark_<Comp>` sub-themes, `fonts`, `motion`, `shadow`),
   **10 UI-1 primitives** (Button·Input·Checkbox·Select·Card·Tabs·Menu·Dialog·Popover·`toast`/`ToastProvider`),
@@ -70,16 +74,18 @@ No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RES
   views. All chrome is UI-4's to build in `apps/web/src`.
 
 ## 2. The seams UI-4 must wire (from the models, all confirmed unbuilt)
-| Seam | Current state | UI-4 wiring | Cite |
-|------|---------------|-------------|------|
-| **D5 · `media` config** | `TAMAGUI_MEDIA` is plain data in `breakpoints.ts` | add a plain `media` object to `createTamagui` in `@vida/ui` `tamagui.config.ts` (NOT `createMedia` — v1 helper, gone in v2; the ONLY `packages/ui` edit) | shell-layout.md:149-151 |
-| **Router inject** | `CommandRunContext.navigate` uninjected | wire real `navigate` from the router into the registry | command-bar types.ts:6-8 |
-| **App.tsx first-run branch** | described as data (`FIRST_RUN_BRANCH`), unwired | branch on `isFirstRun(app_state[key])` before `<RouterProvider>`; write `='1'` on complete via `Repository`/`run` | onboarding.md:62-63,102 |
-| **Search provider** | `stubSearchProvider → search-unavailable` | render the `search-unavailable` terminal state (loud, not blank); real provider = DB-8/M1.4 | command-bar-and-search.md:80 |
-| **`app-shell-ui-store` extend** | `isSidebarOpen` only | add `isMobileNavOpen` per `ShellUIStateContract` | shell-layout.md:120 |
-| **Breakpoint read** | — | `useMedia()` reactive (NOT stored) after `createMedia` wiring | shell-layout.md:127 |
+
+| Seam                            | Current state                                     | UI-4 wiring                                                                                                                                              | Cite                         |
+| ------------------------------- | ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- |
+| **D5 · `media` config**         | `TAMAGUI_MEDIA` is plain data in `breakpoints.ts` | add a plain `media` object to `createTamagui` in `@vida/ui` `tamagui.config.ts` (NOT `createMedia` — v1 helper, gone in v2; the ONLY `packages/ui` edit) | shell-layout.md:149-151      |
+| **Router inject**               | `CommandRunContext.navigate` uninjected           | wire real `navigate` from the router into the registry                                                                                                   | command-bar types.ts:6-8     |
+| **App.tsx first-run branch**    | described as data (`FIRST_RUN_BRANCH`), unwired   | branch on `isFirstRun(app_state[key])` before `<RouterProvider>`; write `='1'` on complete via `Repository`/`run`                                        | onboarding.md:62-63,102      |
+| **Search provider**             | `stubSearchProvider → search-unavailable`         | render the `search-unavailable` terminal state (loud, not blank); real provider = DB-8/M1.4                                                              | command-bar-and-search.md:80 |
+| **`app-shell-ui-store` extend** | `isSidebarOpen` only                              | add `isMobileNavOpen` per `ShellUIStateContract`                                                                                                         | shell-layout.md:120          |
+| **Breakpoint read**             | —                                                 | `useMedia()` reactive (NOT stored) after `createMedia` wiring                                                                                            | shell-layout.md:127          |
 
 ## 3. The three UNKNOWNs — RESOLVED from the docs (no guessing)
+
 1. **Build in `packages/ui` vs compose in `apps/web/src`?** → [RESOLVED: compose in `apps/web/src`]. `@vida/ui`
    ships no chrome (agent-2 §6); every design doc says "rendering owned by UI-4" with home `apps/web/src`
    (shell-layout.md:11, IA.md:10,152, command-bar.md:78, onboarding.md:102). Rule-of-three is **unmet** — one
@@ -95,7 +101,9 @@ No-Guessing: every claim is a [FACT: file:line] gathered this session, or a [RES
    the `search-unavailable` state** until DB-8 (the only guarded part — the state is shown, not absent).
 
 ## 4. Doc-determined behaviors (NOT decisions — the docs already resolve each)
+
 These are not open forks; each is fixed by a cited source. Recorded so the spec cites them, not re-litigates them.
+
 - **B-A · Nav to unbuilt routes → DETERMINED.** Render the full dock from `MODULE_MAP` (IA.md:152, the fixed
   content axis); unbuilt targets fall to the existing router `NotFoundComponent` (routes.tsx:21-24) under UX-4
   degrade-never-crash (state-conventions.md). No mark-unbuilt variant to choose — the graceful not-found IS the
@@ -108,6 +116,7 @@ These are not open forks; each is fixed by a cited source. Recorded so the spec 
   `lazyRouteComponent`-split (routes.tsx already uses that pattern; the app note across handoffs mandates it).
 
 ## 5. Gate class
+
 - **FULL §XXVI double-gate** (rendered feature) **+ the component Visual Gate** — UI-4 RENDERS chrome (unlike
   UX-3/4/5 which were design models with no rendered component and no Visual Gate). Confirm against the
   `frontend-visual-gate.md` render table at the PLAN; the UI-1/UI-2 precedent (both carried the Visual Gate)

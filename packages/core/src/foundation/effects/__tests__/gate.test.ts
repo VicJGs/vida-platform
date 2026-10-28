@@ -12,33 +12,25 @@ import { assertEffectPermitted, EffectConsentMissing } from '../gate'
 
 describe('XS-effect-rail #32 · S2 — assertEffectPermitted (XCU-22)', () => {
   it('A1 — sensitive target not in consented set → throws EffectConsentMissing', () => {
-    expect(() =>
-      assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'finance'),
-    ).toThrow(EffectConsentMissing)
+    expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'finance')).toThrow(
+      EffectConsentMissing,
+    )
   })
 
   it('A2 — sensitive target in consented set → passes', () => {
-    expect(() =>
-      assertEffectPermitted({ consentedSensitiveModules: ['finance'] }, 'award_xp', 'finance'),
-    ).not.toThrow()
+    expect(() => assertEffectPermitted({ consentedSensitiveModules: ['finance'] }, 'award_xp', 'finance')).not.toThrow()
   })
 
   it('A3 — non-sensitive target → passes regardless of consent', () => {
-    expect(() =>
-      assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'gamification'),
-    ).not.toThrow()
+    expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'gamification')).not.toThrow()
   })
 
   it('A4 — undefined moduleClass → passes', () => {
-    expect(() =>
-      assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', undefined),
-    ).not.toThrow()
+    expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', undefined)).not.toThrow()
   })
 
   it('A5 — projection effect with a sensitive class → passes (short-circuit, BR-S2-4)', () => {
-    expect(() =>
-      assertEffectPermitted({ consentedSensitiveModules: [] }, 'surface_journal', 'health'),
-    ).not.toThrow()
+    expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'surface_journal', 'health')).not.toThrow()
   })
 
   it('A6 — SENSITIVE_MODULE_CLASSES is re-exported from the capability barrel', () => {

@@ -6,6 +6,7 @@
 > `createTask(+recurrence)`/`completeTask`). Closes with the live-store Verification Gate.
 
 ## Library — dictated by the canonical-choice procedure (not a decision)
+
 The stored format is **RRULE standard format** (ADR-002:1160). ADR-001 locks the canonical libraries and forbids
 alternatives without a new ADR (ADR-001:15): **`ical.js`** is the canonical iCal/**RRULE parser** (ADR-001:137). So the
 next-occurrence computation **reuses `ical.js`** (parse the RRULE → iterate from the current `due_date` → the next
@@ -15,6 +16,7 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
 `ical.js` RRULE/iterator API against its current docs before coding** (CLAUDE.md library-API rule).
 
 ## Scope (what's in ① vs deferred)
+
 - **In:** `setRecurrence` (obligation-only) + the `completeTask` regeneration hook + `RecurrenceRegenError`, over the
   **built** `kind ∈ {standard, obligation}` enum + the `recurrence_rule` column (migration 015).
 - **Deferred (grounded):** **TAS-24** — widening `kind` to a user-extensible `type` registry (`duty`/open vocab) is an
@@ -22,6 +24,7 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
   `duty`'s "composes Scheduler `dueIn`/recurrence" is likewise deferred (no scheduler-recurrence primitive exists).
 
 ## Operations (added to the S1–S4 surface)
+
 - `setRecurrence(taskId, rule: string | null): Task` — `TaskNotFoundError` if absent; the task must be
   `kind='obligation'` else `RecurrenceNotAllowedError` (TK-7 — standard tasks never recur, TAS-21). Writes
   `recurrence_rule` (null clears it; an obligation with no rule behaves standard until set). Returns the row.
@@ -30,6 +33,7 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
   completes exactly as S3 (no regen).
 
 ## Operation flow + invariants
+
 - **Regeneration (TAS-22):** compute the next `due_date` from `recurrence_rule` via `ical.js`, anchored at the task's
   current `due_date` (null `due_date` ⇒ anchor at today; guard it). Then **spawn a new task** via the S1 `createTask`
   path (NN-backfill + ≤1-parent guard). Three outcomes (R1 — do NOT conflate):
@@ -41,7 +45,7 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
   | carried (same obligation) | reset (fresh occurrence) |
   |---|---|
   | `title` · `description` · the one parent-module FK (`project_id`/`milestone_id`/`course_id`/`contact_id`) · `priority` · `difficulty` · `kind:'obligation'` · `recurrence_rule` (so the chain self-sustains) · `estimated_minutes` · `measurement_kind` · `binding_mode` · `nesting_weight` · `sort_order` | `due_date:=next` · `status:'not_started'` · `completed_at:null` · `scheduled_date:null` (only the deadline recurs, TAS-22) · `actual_minutes:null` · new `id` |
-  - **`parent_task_id` is NOT carried — recurrence is top-level only (decision):** a recurring *sub-task* is out of
+  - **`parent_task_id` is NOT carried — recurrence is top-level only (decision):** a recurring _sub-task_ is out of
     scope (obligations are standalone/parent-linked deadlines, not sub-tasks); if `parent_task_id` is set, the spawned
     occurrence drops it (becomes top-level). State so no implementer silently re-parents.
   - The new row is a distinct occurrence (own id) → the S3 completion effects fire anew when IT completes (each
@@ -53,6 +57,7 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
   behavior-recurrence (`frequency`+`days`); the spawn copies forward, no Master→Instance engine (TAS-24 `duty`, deferred).
 
 ## Invariant enforcement + caller contract (N1/N2)
+
 - **N1 — `recurrence_rule` ⇒ `kind='obligation'`, enforced at EVERY write path** (consistent with the ≤1-parent
   guard): `createTask`/`updateTask`/`setRecurrence` reject a non-null `recurrence_rule` on a non-obligation task
   (`RecurrenceNotAllowedError`). No stray inert rule on a standard task. (Clearing to null is always allowed.)
@@ -63,16 +68,18 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
   if a bare RRULE needs a `DTSTART`, synthesize it from the anchor `due_date`. No code before this verifies.
 
 ## Types / validators
+
 - `types.ts`: `RecurrenceNotAllowedError` (non-obligation rule), `RecurrenceRegenError` (invalid rule — carries
   `taskId` + `reason`); extend `TasksService` with `setRecurrence(taskId, rule): Promise<TaskRow>`. `completeTask`
   signature unchanged; its failure mode gains the thrown `RecurrenceRegenError` (outcome 3 only).
 - `validators`: `recurrence_rule` already `z.string().nullable().optional()` (validators/task.ts:47) — the
   obligation-only + parseability rules are service-enforced, not Zod-shape.
 - No `@vida/types` change (kind/recurrence_rule columns exist). A recurrence helper (`nextOccurrence(rule, fromYmd):
-  string | null`) lives in the tasks service (module-local, TAS-22) — a small pure wrapper over `ical.js`; `null` ⇒ no
+string | null`) lives in the tasks service (module-local, TAS-22) — a small pure wrapper over `ical.js`; `null` ⇒ no
   future instance (outcome 2); a throw ⇒ invalid rule (outcome 3).
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3 + real ical.js)
+
 1. `setRecurrence` on an obligation → `recurrence_rule` stored; on a `standard` task → `RecurrenceNotAllowedError`.
 2. `setRecurrence(id, null)` clears the rule; the obligation then completes without regen (behaves standard).
 3. **(outcome 1)** `completeTask` on an obligation with `FREQ=MONTHLY` + `due_date` → completes AND spawns one new
@@ -90,5 +97,6 @@ add it to `@vida/core` deps (installing an ADR-001-canonical lib, pure-JS, runs 
     `RecurrenceNotAllowedError` (the invariant holds at every write path, not just `setRecurrence`).
 
 ## Out of scope
+
 TAS-24 type-registry widening (ADR-002 amendment) · `duty` type + scheduler cycle-gen · measurability (S6) ·
 aggregation (S7) · tags/notes/views (S8).

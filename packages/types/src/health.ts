@@ -16,12 +16,7 @@
 
 // Metric data-taxonomy — the C2 guard: this is the metric's KIND, NOT the goal's
 // ADR-011 measurement_kind (structure-data.md:15).
-export const HEALTH_METRIC_KIND = [
-  'body-measure',
-  'performance-capacity',
-  'test-result',
-  'biomarker',
-] as const
+export const HEALTH_METRIC_KIND = ['body-measure', 'performance-capacity', 'test-result', 'biomarker'] as const
 export type HealthMetricKind = (typeof HEALTH_METRIC_KIND)[number]
 
 // Mandatory trend direction so progress %/trend is computable (structure-data.md:16;
@@ -36,15 +31,7 @@ export type MetricSide = (typeof METRIC_SIDE)[number]
 // Value PROVENANCE (structure-data.md:24) — distinct from a goal's binding_mode
 // (ADR-011 M2). `ai` = AI6 provenance (ADR-015 §3.6); wearable/import = device-mediated
 // ingestion (ADR-014 X1) under external_in_ok (X5).
-export const HEALTH_METRIC_VALUE_SOURCE = [
-  'manual',
-  'photo',
-  'wearable',
-  'derived',
-  'exam',
-  'import',
-  'ai',
-] as const
+export const HEALTH_METRIC_VALUE_SOURCE = ['manual', 'photo', 'wearable', 'derived', 'exam', 'import', 'ai'] as const
 export type HealthMetricValueSource = (typeof HEALTH_METRIC_VALUE_SOURCE)[number]
 
 // Goal time-horizon (structure-data.md:42).

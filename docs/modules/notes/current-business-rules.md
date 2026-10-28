@@ -1,4 +1,4 @@
-# Current Business Rules — notes (Notes & Pages)   (both planes · as-built)
+# Current Business Rules — notes (Notes & Pages) (both planes · as-built)
 
 > §XXIX living doc. Invariants the code upholds TODAY, cited to code. ① rules promoted from the S1–S4 PLANs
 > (2026-09-19); ② rules from fe-notes #27 + notes-entity-usability (2026-10-20). Intent authority:
@@ -9,6 +9,7 @@
 > `apps/web/src/` for ②, unless prefixed.
 
 ## ① S1 — Pages core
+
 - **BR-1 (NP-2, in-service):** one journal per calendar date. `createPage({type:'journal'})` pre-checks
   `getPageByJournalDate` (live rows only) → `JournalExistsError`; never a silent overwrite. The SQL partial-UNIQUE
   (`WHERE type='journal' AND deleted_at IS NULL`) is a backstop. A soft-deleted journal date is reusable.
@@ -48,10 +49,12 @@
   [FACT: migrations/033_notes.ts:39-65; NOT-40]
 
 ### Terminal states
+
 create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zod rejection. Reads → row / `PageRow[]` /
 `null` (never throw on absence). update on unknown id → `Error('Row not found')`.
 
 ## ① S2 — Entity notes + attachments
+
 - **BR-S2-1 (NP-8 idempotent auto-exist):** `ensureEntityNote` returns the existing live `*_note` for
   `(pageType, entity_type, entity_id)`, else creates via `createPage`. [FACT: service.ts:165-183; NOT-11]
 - **BR-S2-2 (seed determinism):** `content = seedContent(seed)` — leading title→type→status then sorted keys, nullish
@@ -65,6 +68,7 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   [FACT: service.ts:202-207]
 
 ## ① S3 — Page-links + wiki resolution
+
 - **BR-S3-1 (NP-5 idempotent + revive):** live → no-op · soft-deleted → revive · absent → create — and both pages
   must be live (BR-R0-5), a revive included. [FACT: service.ts:243-268; migrations/033_notes.ts:91; NOT-14]
 - **BR-S3-2 (resolve-then-soft-delete):** `removePageLink` soft-deletes the live row; no-op if absent. [FACT: service.ts:244-250; NOT-16]
@@ -73,6 +77,7 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   `target_page_id`. Plain LIKE, no escape, no limit. [FACT: service.ts:259-260; NOT-18/50]
 
 ## ① S4 — Delegation facade
+
 - **BR-S4-1 (validate-then-delegate):** notes `assertRegistered` → notes error, THEN AR-6 `spaces.createLink`.
   [FACT: service.ts:265-273; foundation/spaces/types.ts:37]
 - **BR-S4-2 (write delegation):** entity-link writes → AR-6, never re-implemented. [FACT: service.ts:272,276; NOT-22/23]
@@ -84,6 +89,7 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   [FACT: service.ts:135-139; validators/note.ts:47-62; __tests__/notes-service.test.ts:176]
 
 ## ② Surface — what is LIVE (enforced today)
+
 - **BR-NEU-1 (open-on-click):** a collection row/tile opens `/notes/$id`; keyboard-operable (Card `role=button`).
   [FACT: notes/notes-surface.tsx:29; notes/note-renderers.tsx:35-46]
 - **BR-NEU-2 (create-opens, in place):** `createPage({type:'note', title:'New note'})` → invalidate `['notes','pages']` →
@@ -115,12 +121,13 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   selected by `EntitySource.gate:'page'`; module-entity surfaces keep `offersEditor` (`isEntityType && hasPage`).
   [FACT: entity/adapter.ts (offersPageEditor, toEntityProps); notes/note-entity.tsx]
 - **BR-SUR-5 (mode memory):** merged/tabbed is remembered per page on this device — `app_state`
-  `entity_mode:<type>:<id>` (R2, BR-R2-*); unremembered → the type's default (`note` = tabbed; the Note tab leads).
+  `entity_mode:<type>:<id>` (R2, BR-R2-\*); unremembered → the type's default (`note` = tabbed; the Note tab leads).
   [FACT: notes/use-entity-modes.ts; notes/mode-defaults.ts; entity/adapter.ts (createAppStateEntityModeStore)]
 - **BR-SUR-6 (row date):** `NotesRow.date = journal_date ?? ymd(updated_at)` where `ymd` slices `toISOString()` — a
   **UTC** calendar date, not the user's local day. [FACT: notes/live-mappers.ts:25-27,46] (census "TZ date bug")
 
 ## ② Surface — pure logic built + tested, on STUB data legs
+
 - **BR-SUR-7 (backlinks merge):** one row per source, occurrence count, first non-empty snippet, unresolved sources
   omitted; groups A–Z by module, items newest-first with title tie-break. [FACT: notes/backlinks.ts:54-61,76-125]
 - **BR-SUR-8 (wiki-link compose):** candidates drop null/blank titles; the Create row exists iff the trimmed query is
@@ -132,7 +139,9 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
   preview, `/summary`, templates, view-config, mode persistence, rename/delete — see current-spec ② Hooks.
 
 ## notes-rescope R0 — data safety (both planes · 2026-10-26)
+
 Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-safety.md` (rev 3) + IMPLEMENTATION-PLAN.
+
 - **BR-R0-1 · An unreadable body is never written.** Malformed bytes → no editor mounts and the write seam starts
   locked. A doc the editor's schema rejects → `onInvalidContent` locks the seam in the same callback. A page whose
   CURRENT bytes are malformed stays locked even if a latest-body overlay exists (the overlay is kept, never written over
@@ -181,8 +190,10 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-saf
 - Known limit: undeclared node ATTRIBUTES are silently dropped by ProseMirror and not detected (PLAN-R0 G15; M4).
 
 ## notes-rescope R1 — page frame (surface plane · 2026-10-27)
+
 Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R1-page-frame.md` (rev 3) + IMPLEMENTATION-PLAN (rev 3,
 R-1…R-6, DEV-R1-1).
+
 - **BR-R1-1 · Page surfaces gate on page type** (BR-SUR-4). EC-15: all 6 types open with the editor, the Note tab leads.
 - **BR-R1-2 · No empty page name** (BR-SUR-3, `pageLabel`).
 - **BR-R1-3 · Overviews are components.** `OverviewRenderer = ComponentType<OverviewContext>`, mounted `<Overview/>`.
@@ -191,7 +202,7 @@ R-1…R-6, DEV-R1-1).
   Overview is journals-rescope's (EC-18a); `*_note` Overviews ride in from fe-tasks/fe-projects. `SummaryBlock` has no
   notes consumer (R8's `/summary` body). [FACT: notes/overview-registry.ts; notes/note-overview.tsx]
 - **BR-R1-5 · One save announcement per host.** `save-status.ts`: a per-page store (`SaveStatus = LocalSyncState |
-  'locked'`, default `saved`, `locked` sticky, `error` → `saved` only on the next successful write), read by
+'locked'`, default `saved`, `locked` sticky, `error` → `saved` only on the next successful write), read by
   `useSaveStatus` (memoized subscribe). Hosts render `PageSaveStatus` (`@vida/ui` SyncStatus, "Saved on this device"):
   the note page's title row (`PageActions`) and Home's journal frame (right-aligned). Hidden while locked (malformed at
   load via the host prop; `onInvalidContent` → `lock()` → `locked`). `NoteEditorBody` renders no status of its own.
@@ -203,8 +214,8 @@ R-1…R-6, DEV-R1-1).
   [FACT: lib/notify-error.ts; notes/use-note-content.ts]
 - **BR-R1-8 · Read errors are recoverable in place.** `useNoteEntity` / `useNotesRows` / `useJournalEntry` expose
   `retry` + `retrying`; `retryState` keeps the error branch up while a retry runs (`isFetching && data===undefined &&
-  errorUpdateCount>0` — v5 resets a no-data query to pending). `ReadErrorMessage` = polite message + Retry (`Button
-  loading`) outside the live region. DEV `?readerror` (NODE_ENV-gated, absent from prod) forces the error until the first
+errorUpdateCount>0` — v5 resets a no-data query to pending). `ReadErrorMessage` = polite message + Retry (`Button
+loading`) outside the live region. DEV `?readerror` (NODE_ENV-gated, absent from prod) forces the error until the first
   Retry. [FACT: notes/read-error.ts; notes/read-error-message.tsx; the three hooks]
 - **BR-R1-9 · One type-label set** — `note-chrome` `typeIcon`/`typeLabel`; card names = title · type · edited · favorite.
   [FACT: notes/note-renderers.tsx]
@@ -216,8 +227,10 @@ R-1…R-6, DEV-R1-1).
   a `clear(id)`.
 
 ## notes-rescope R2 — mode memory (both planes · 2026-10-27)
+
 Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-memory.md` (rev 4) + IMPLEMENTATION-PLAN
 (rev 3, R-1…R-5). ADR-006 §3.6.
+
 - **BR-R2-1 · Remembered per page, per device.** A toggle writes `entity_mode:<type>:<id>` (`writeAppState`); a reload
   opens the page in it. Same-device multi-tab: last write wins, another tab sees it after reload; cross-device = M4.
   [FACT: notes/use-entity-modes.ts; packages/core/src/db/app-state.ts]
@@ -236,10 +249,12 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-mem
   `entityModeKey` · `ENTITY_MODE_PREFIX`. DEV `?sample` uses the in-memory reference store (no app_state I/O).
 
 ## notes-rescope R3 — metadata + rename (both planes · 2026-10-27)
+
 Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata-rename.md` (rev 3) + IMPLEMENTATION-PLAN
 (rev 3, R-1…R-10, DEV-R3-1).
+
 - **BR-R3-1 · Metadata persists** — favorite · archive · icon · cover through `updatePage`; no optimistic patch (invalidate
-  + re-read); archiving keeps the open page. [FACT: notes/use-page-metadata.ts]
+  - re-read); archiving keeps the open page. [FACT: notes/use-page-metadata.ts]
 - **BR-R3-2 · Keys** — every write: `['pages',id]` + `['notes','pages']` (+ `['journal',date]` for a journal); a rename
   also: the forward keys `['pages','resolve']` + `['links','backlinks']`. [FACT: notes/use-page-metadata.ts]
 - **BR-R3-3 · Icon = a Lucide name** (core `pageIconSchema`, create + update); the UI's curated `PAGE_ICONS` (~48) +
@@ -261,5 +276,6 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata
 - Forward obligations (R4): the live attachments list; a thumbnail for every image attachment.
 
 ## Deferred (documented)
+
 CRDT/Yjs multi-device merge of `content` (M4) · `[E]` content encryption (M3) · FTS5 of content (DB-8) · `word_count`
 auto-derive · hard-delete cascade (Part 2) · blob-type reconcile (DB-11/M3).

@@ -45,11 +45,7 @@ export function Onboarding({ onComplete }: OnboardingProps) {
 
   // Per-breakpoint gutter from SIDE_PADDING (BR-3; jsdom matchMedia stub → mobile). `wide` reuses the desktop gutter.
   const gutter =
-    media.desktop || media.wide
-      ? SIDE_PADDING.desktop
-      : media.tablet
-        ? SIDE_PADDING.tablet
-        : SIDE_PADDING.mobile
+    media.desktop || media.wide ? SIDE_PADDING.desktop : media.tablet ? SIDE_PADDING.tablet : SIDE_PADDING.mobile
 
   const step = ONBOARDING_STEPS[index]
   // Defensive only (index is always in [0, ONBOARDING_STEPS.length)); placed AFTER all hooks so it is not a

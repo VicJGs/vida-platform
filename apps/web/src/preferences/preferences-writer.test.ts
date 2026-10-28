@@ -161,14 +161,26 @@ describe('preferences writer', () => {
     const nav = w.writeNavPreferences({ reduce_motion: true })
     await w.flushAll()
     await expect(nav).rejects.toMatchObject({ kind: 'validation' })
-    await expect(w.setModuleVisibilityMap({ '': false })).rejects.toMatchObject({ kind: 'validation', cause: expect.any(InvalidModuleError) })
+    await expect(w.setModuleVisibilityMap({ '': false })).rejects.toMatchObject({
+      kind: 'validation',
+      cause: expect.any(InvalidModuleError),
+    })
   })
 
   it('BR-PREF-6: setModuleVisibilityMap accepts dock modules + surfaces, rejects unknown and global keys', async () => {
     const w = makeWriter()
-    await expect(w.setModuleVisibilityMap({ nonsense: false })).rejects.toMatchObject({ kind: 'validation', cause: expect.any(InvalidModuleError) })
-    await expect(w.setModuleVisibilityMap({ preferences: false })).rejects.toMatchObject({ kind: 'validation', cause: expect.any(InvalidModuleError) })
-    await expect(w.setModuleVisibilityMap({ journals: true })).rejects.toMatchObject({ kind: 'validation', cause: expect.any(InvalidModuleError) })
+    await expect(w.setModuleVisibilityMap({ nonsense: false })).rejects.toMatchObject({
+      kind: 'validation',
+      cause: expect.any(InvalidModuleError),
+    })
+    await expect(w.setModuleVisibilityMap({ preferences: false })).rejects.toMatchObject({
+      kind: 'validation',
+      cause: expect.any(InvalidModuleError),
+    })
+    await expect(w.setModuleVisibilityMap({ journals: true })).rejects.toMatchObject({
+      kind: 'validation',
+      cause: expect.any(InvalidModuleError),
+    })
     await Promise.all([w.setModuleVisibilityMap({ tasks: false }), w.setModuleVisibilityMap({ features: false })])
     await w.flushAll()
     expect(fake.state.user?.module_visibility).toEqual({ tasks: false, features: false })

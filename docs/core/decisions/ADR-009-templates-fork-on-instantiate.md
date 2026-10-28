@@ -1,6 +1,6 @@
 # ADR-009: Templates are portable seed bundles instantiated by fork — a deep copy with no live link to the template
 
-**Status:** Accepted *(foundation gate PASS + Victor sign-off, 2026-07-15)*
+**Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_
 **Date:** 2026-07-15
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — Spaces (Personalization & Composability foundation). ADR 4 of 5 in the Spaces set.
@@ -17,7 +17,7 @@ capabilities · child structure }` — plus a **one-click instantiate**. Instant
 the bundle into fresh entities (new UUIDs), and the instance keeps **no `template_id` link** back to its source.
 Consequently instance edits never conflict with template updates, and template updates never mutate existing
 instances — the two are independent from the first second. A template captures the user's **authored
-structure + configuration** (his *method*), never his **accumulated runtime data** (logs, completions, real
+structure + configuration** (his _method_), never his **accumulated runtime data** (logs, completions, real
 entries) — which, because the capture transform includes only authored structure and never reads runtime data in,
 makes it a **generic, non-personal artifact**, the one thing the OS can
 export/import (user-initiated, outside the vault) without breaking single-user zero-knowledge. The OS **ships
@@ -29,6 +29,7 @@ full Template.
 
 Templates / bundle-instantiate **do not exist anywhere** in v1 or v2 — no table, no service.
 `[FACT: docs/intake/spaces.md L39, "does not exist anywhere"]` Yet nearly every documented module asks for one:
+
 - **Languages** (SP7): a shipped **starter Template = Victor's method** — Knowledge kinds + a daily-practice Session
   template + a Goal template + immersion Blocks. `[FACT: intake L124, L157-160]`
 - **Health**: an imported exercise library / a shipped training program = a Template. **Skills**: a skill is a Space;
@@ -50,7 +51,7 @@ target Space's `enabled_blocks` offered-capability palette — ADR-006 §3.4 / A
 as authored config, which is exactly why a forked Space lands the palette with zero placements.)
 
 **Capability-config invariant.** The captured "enabled capabilities + their config" carries **authored configuration
-only** — parameters, bindings-*by-type*, cadence — and **never** a reference, handle, or embedded copy of
+only** — parameters, bindings-_by-type_, cadence — and **never** a reference, handle, or embedded copy of
 **accumulated runtime data** (no live entity ids, no log contents, no completion history). A capability config that
 can only be expressed by pointing at accumulated data is **not capturable** into a template. This closes the
 capability-instance-references-accumulated-data hole: a bundle cannot smuggle vault data in through a capability's
@@ -59,6 +60,7 @@ config the way it is barred from smuggling it in through seed entities.
 **3.2 Instantiate = FORK (deep copy, no back-link).** Instantiation **deep-copies** the bundle into fresh entities
 with new client-generated UUIDs (DATA-1); the resulting Space/entities carry **no `template_id`** and no reference to
 the template. Therefore:
+
 - instance edits **never** conflict with template updates (there is nothing to reconcile);
 - template updates **never** propagate to existing instances (a fixed tradeoff — you re-instantiate to get a newer
   starter);
@@ -70,40 +72,41 @@ configuration into a bundle — and instantiate it again elsewhere. Shipped temp
 user-saved templates are rows in a light **`templates`** store (id · name `[E]` · serialized bundle `[E]`),
 syncable (`_sync_*` + `deleted_at`, DATA-4), the bundle encrypted per EN-2.
 
-**3.4 Templates are the OS's *only* sharing bridge, and they are ZK-clean by design — enforced at capture, not literally "by construction".** The capture line is
+**3.4 Templates are the OS's _only_ sharing bridge, and they are ZK-clean by design — enforced at capture, not literally "by construction".** The capture line is
 **authored vs accumulated**: "save this Space as a template" captures the user's **authored structure +
-configuration + starter seed** (the Knowledge kinds, the session cadence, a starter Goal's target — *Victor's
-method*, which is the point of sharing) and **never** captures **accumulated runtime data** (real practice logs,
+configuration + starter seed** (the Knowledge kinds, the session cadence, a starter Goal's target — _Victor's
+method_, which is the point of sharing) and **never** captures **accumulated runtime data** (real practice logs,
 completions, actual journal text, live progress). This exclusion is **enforced at capture-time** — a template is
 a **generic, non-personal artifact** because the capture transform draws the authored-vs-accumulated line and
 **never reads accumulated runtime data into the bundle** in the first place. This cleanliness is a **correctness
-property the capture transform must uphold** (it selectively captures the authored shell — e.g. an *empty* logger
+property the capture transform must uphold** (it selectively captures the authored shell — e.g. an _empty_ logger
 target — while excluding that shell's accumulated rows), **not** a free consequence of the data shape. It is
 therefore ZK-clean **by design + enforced at capture** — the one real risk (§5, Harder) is a capture bug that pulls
 runtime data in, and it rides the same guard as ADR-010 + EN-2. Consequently it is the single kind of thing the OS
 exports/imports. Sharing is **100% user-initiated, outside the
 vault** (the user hands a bundle to someone by his own means); the OS never transmits vault data and has **no in-OS
-sharing, feed, or marketplace** (SU-1, ZK-1 hold). What an *authored* value reveals is the user's own call — he
+sharing, feed, or marketplace** (SU-1, ZK-1 hold). What an _authored_ value reveals is the user's own call — he
 authored it, he chooses whether to share. This makes Templates the concrete instance of the **community-is-external**
 constitution principle: Spaces templates, Skills templates, and the external Skill-DB are the same move — import/
 export of authored, non-accumulated seeds. `[FACT: intake SP5, SP8; task-file "community is EXTERNAL, import/export
 only"]`
 
-**Forward-ref — imported capability *code* is untrusted.** A bundle may carry a **user-authored capability's code**
+**Forward-ref — imported capability _code_ is untrusted.** A bundle may carry a **user-authored capability's code**
 (ADR-008 anatomy), not only its config. Importing such a template therefore imports **executable, untrusted code** —
 an untrusted-import surface. This is **not** an ADR-009 concern to solve: it is governed by **ADR-010 §3.1**, which
-already declares "every non-shipped capability — user-authored *or* arriving inside an imported template — is
+already declares "every non-shipped capability — user-authored _or_ arriving inside an imported template — is
 untrusted" and runs under the grant + sandbox. Importing a template is thus **never a trust escalation**; the
 importer grants the capability's envelope exactly as if they had authored it. Shipped-preset capabilities stay
 trusted (ours).
 
 **3.5 A "preset" is a lighter sibling, not a Template.** The Duties worked-example surfaced the **preset** primitive:
 a **thin tab** = `{ a saved View (ADR-007, e.g. over a `tasks` filter) + per-type UI/UX + default fields/deliverables
-+ an optional starter Template }` bound to a **type** the owning module defines (Tasks owns the task *type*
+
+- an optional starter Template }`bound to a **type** the owning module defines (Tasks owns the task *type*
 discriminator; the preset is the Space-side tab). A preset is essentially **a lightweight Space over a filter** with
 per-type defaults; it *may reference* a starter Template (§3.1) but is not itself a full bundle. So: **Template =
 seed a whole structure; preset = a saved tab + defaults over existing entities.** They compose; they are not the same
-thing. `[FACT: intake L170-177, Duties worked-example]`
+thing.`[FACT: intake L170-177, Duties worked-example]`
 
 **Terminal states.** Instantiation defines **in-progress / success / partial-failure** (a bundle referencing a
 capability not present on this device seeds what it can and flags the rest — a declared degraded state, never a
@@ -117,6 +120,7 @@ channel (there is none — sharing is out-of-OS by design).
 ## 4. Options Considered
 
 ### Option A — Fork: deep copy, no live link (CHOSEN)
+
 - **Rationale:** matches SP5; zero reconciliation between instance and template (no merge conflicts, no CRDT across a
   template boundary); keeps a template a portable, standalone seed; and makes templates ZK-clean generic artifacts —
   the safe sharing bridge. Simplest correct model for a single-user local-first OS.
@@ -124,30 +128,36 @@ channel (there is none — sharing is out-of-OS by design).
   duplicated structure across many instances of one template.
 
 ### Option B — Track: instance keeps `template_id`, template updates propagate (REJECTED)
+
 - **Why rejected:** re-introduces a live cross-reference that must be reconciled on every template edit — a
   distributed-merge problem the single-user fork model has no need for; and a propagating link is a channel through
   which one artifact could carry data into another's space, muddying the clean "generic seed" boundary.
 
 ### Option C — Reference: instance stays a thin pointer, renders the template live (REJECTED)
+
 - **Why rejected:** the instance would not be independently editable (the whole point of instantiating), and it
   couples a user's live Space to an external artifact — the opposite of portable + ZK-clean.
 
 ## 5. Consequences
 
 **Easier:**
+
 - One primitive seeds any composed surface (a Language Space, a training program, a preset tab's starter).
 - Templates are safe to share by design (enforced at capture) — generic structure, no vault data — with no new OS sharing machinery.
 - Instance and template lives are fully decoupled; no reconciliation, no template-migration engine ever needed.
 
 **Harder:**
+
 - No automatic propagation of template improvements to existing instances (by design; user re-instantiates).
 - The capture must correctly draw the **authored-vs-accumulated** line — the one real risk is capturing runtime data
   into a bundle the user then shares; it rides the same guard as ADR-010 + EN-2.
 
 **Explicitly accepted tradeoffs:**
+
 - Structure duplication + no live updates, in exchange for portability, ZK-cleanliness, and zero reconciliation.
 
 ## 6. Review Date / trigger
+
 Reconsider when a **user-shared template** round-trips (export → someone else imports) for the first time — the real
 test of the authored-vs-accumulated capture line. If users demand template-update propagation to live instances, revisit — but only with
 an explicit, opt-in re-instantiate flow, never an automatic live link (that would breach the fork invariant).

@@ -1,6 +1,6 @@
 <!-- Business Rules — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · notes-and-pages/business-rules.md (NP-2, G5, G7) · sessions-and-scheduling (dueIn, ADR-004) · docs/intake/journals.md -->
 
-# Business Rules — Journals  (level: Feature / integration layer)
+# Business Rules — Journals (level: Feature / integration layer)
 
 > Inherits the CORE constitution (ZK-1, LF-2) and Notes & Pages' journal-page rules (NP-2 one-per-date; the
 > `/summary` block; G5 section set; G7 live block). Journals owns the ENGINE behind the block; it never
@@ -9,6 +9,7 @@
 ## Invariants (what is ALWAYS / NEVER true)
 
 **Aggregation & boundary**
+
 - **JR-1 — Journals is the engine, Notes & Pages is the page.** Journals owns `journal-service` (sources →
   sections), the agenda, snapshots, reviews, and journal views; it NEVER owns the `pages` row, NP-2, the
   `/summary` block interface, or the free-form entry (those are Notes & Pages). `[FACT: notes-and-pages/*; J1]`
@@ -24,6 +25,7 @@
   shared `dueIn()` primitive (also feeding Sessions + the Global Calendar). `[FACT: J3]`
 
 **Snapshots & reviews**
+
 - **JR-6 — Past = snapshot; today = live (refines G7).** Today's journal is a LIVE block (re-aggregates on
   open, G7). A PAST day shows the **point-in-time snapshot of that day**. An **optional live comparative**
   overlays then-vs-now; presentation is the user's. `[INTENT: J4; refines notes-and-pages G7 — cross-module note]`
@@ -39,6 +41,7 @@
   `analytics.ts`; it schedules + personalizes the presentation. `[INTENT: sweep]`
 
 ## Validation & edge cases
+
 - A registered provider throws on `summary(date)` → that **section** degrades to an explicit empty/error
   state; the rest of the journal renders (never a blank journal). `[FACT: notes-and-pages summary degrade rule]`
 - A **backfill** of past data (e.g. Habits' backfill window) after a snapshot exists → whether the snapshot
@@ -48,6 +51,7 @@
 - A module with **no** registered contribution → simply absent from the journal (not an error). `[INTENT: J3]`
 
 ## Terminal states (before any build — constitution §2)
+
 - **Daily dashboard:** loading (providers resolving) · empty/first-day (each section shows its own "nothing
   yet", anti-lost) · error (per-section degrade) · populated.
 - **A snapshot:** pending (day not yet snapshotted) · captured (frozen record) · (design-pass: re-captured on
@@ -57,10 +61,12 @@
 - **Agenda:** loading · empty ("nothing due", anti-lost) · error (a `dueIn` lane degrades) · populated.
 
 ## Failure behaviour (fail loud — constitution §5)
+
 - A failed provider degrades its **section**, never the whole journal (JR-1 boundary + fail-loud).
 - Journals NEVER writes a module's data to "fix" a gap — it reads via the registry only (JR-3).
 - A review with a failed source is delivered **flagged as partial**, never silently short.
 
 ## Completion checklist
+
 - [x] invariants with [FACT]/[INTENT] · [x] all terminal states enumerated · [x] failure is loud ·
-  [x] inherits N&P journal-page rules + refines G7 · [x] forward-deps flagged (Purpose/Gamification/Notifications)
+      [x] inherits N&P journal-page rules + refines G7 · [x] forward-deps flagged (Purpose/Gamification/Notifications)

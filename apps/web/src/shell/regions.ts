@@ -110,13 +110,7 @@ export function contentVInsetAt(bp: Breakpoint): number {
 export { CONTENT_MAX_WIDTH }
 
 /** All regions, in a stable order — for iteration by the renderer. */
-export const SHELL_REGIONS: readonly ShellRegion[] = [
-  'moduleDock',
-  'globalBar',
-  'spacesBar',
-  'content',
-  'overlayHost',
-]
+export const SHELL_REGIONS: readonly ShellRegion[] = ['moduleDock', 'globalBar', 'spacesBar', 'content', 'overlayHost']
 
 /** Re-export the breakpoint order so the renderer can drive both from one import. */
 export { BREAKPOINT_ORDER }

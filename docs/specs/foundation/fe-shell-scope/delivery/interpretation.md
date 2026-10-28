@@ -13,7 +13,7 @@
 
 fe-shell (#14) shipped the CODEC dock⇄float inspector frame and left **two empty seams explicitly homed to #15**:
 the top-strip `bar1Slot` prop and the **System** panel's body. #15 fills them with **Bar 1's real content** —
-the **`Spaces:` scope selector** (a *new* global-scope state) and the **6 global surfaces** re-homed from the
+the **`Spaces:` scope selector** (a _new_ global-scope state) and the **6 global surfaces** re-homed from the
 superseded `global-bar.tsx`. It is **presentational chrome** in `apps/web/src/shell` composing shipped `@vida/ui`
 primitives; it adds **no `@vida/ui` component** (rule-of-three unmet) [FACT: apps/web/src/shell/CLAUDE.md:117] and,
 per the M1.0 grain, **no live backend read** — the space-list source is a deferred `ProviderRead` seam.
@@ -23,14 +23,15 @@ per the M1.0 grain, **no live backend read** — the space-list source is a defe
 ## 1. DEPENDENCIES (what must already exist — and what does NOT)
 
 ### Satisfied (present on `origin/main`)
+
 - **D1 — the shell frame + seams.** `AppShell` exposes `bar1Slot?: ReactNode` — documented verbatim as
-  *"#15 (fe-shell-scope) — scope selector + global surfaces (incl. the ⌘K trigger). Injected into the bar; empty
-  in #14"* [FACT: apps/web/src/shell/app-shell.tsx:58-59], rendered in the reserved top strip at
+  _"#15 (fe-shell-scope) — scope selector + global surfaces (incl. the ⌘K trigger). Injected into the bar; empty
+  in #14"_ [FACT: apps/web/src/shell/app-shell.tsx:58-59], rendered in the reserved top strip at
   `data-region="bar1Slot"` [FACT: apps/web/src/shell/app-shell.tsx:269-270]. PR #118 merged
   [FACT: TASKS.md:9 "fe-shell … COMPLETE (S1–S5), PR #118"].
 - **D2 — the System panel body seam.** The dock⇄float `ShellPanel` renders a body slot; #14 fills it with
-  `PanelBodyPlaceholder`, commented *"The real bodies — the grouped module nav (`modules`) + the #15 global
-  surfaces (`system`) — are the re-home follow-up"* [FACT: apps/web/src/shell/app-shell.tsx:38-40,159,344].
+  `PanelBodyPlaceholder`, commented _"The real bodies — the grouped module nav (`modules`) + the #15 global
+  surfaces (`system`) — are the re-home follow-up"_ [FACT: apps/web/src/shell/app-shell.tsx:38-40,159,344].
   The `system` panel renders as an `<aside>` complementary landmark; `modules` as `<nav>`
   [FACT: apps/web/src/shell/shell-panel.tsx:18-20,65,192].
 - **D3 — the 6 global surfaces (data).** `GLOBAL_SURFACES` = **Home `/` · Calendar `/calendar` · Search
@@ -45,26 +46,27 @@ per the M1.0 grain, **no live backend read** — the space-list source is a defe
 - **D5 — nav primitives.** `NavLink` (createLink SPA anchor, exact `aria-current`, `currentColor` icon tint)
   [FACT: apps/web/src/shell/CLAUDE.md:88-89] · `navIcon(key)` key→lucide glyph [FACT: apps/web/src/shell/nav-icons.ts
   via CLAUDE.md:89] · the ⌘K trigger seam `useCommandBarUIStore().open` [FACT: apps/web/src/shell/global-bar.tsx:11,25].
-- **D6 — Spaces substrate (the scope *domain*).** `spaces` table: `root_tag_id · name[E] · icon · default_view_id
-  (nullable) · parent_space_id (nullable)` [FACT: docs/core/spaces/current-spec.md:17]. `views.space_id` nullable —
+- **D6 — Spaces substrate (the scope _domain_).** `spaces` table: `root_tag_id · name[E] · icon · default_view_id
+(nullable) · parent_space_id (nullable)` [FACT: docs/core/spaces/current-spec.md:17]. `views.space_id` nullable —
   **NULL = global, set = Space-owned**; `spaces.default_view_id` names the opener
   [FACT: docs/core/spaces/current-business-rules.md:16 BR-9]. This is the semantic the selector drives.
 
 ### NOT satisfied — the implicit gaps this layer surfaces
+
 - **D7 ⚠ — there is NO `listSpaces`/`getSpace` read API.** `SpacesService` exposes only `createSpace/updateSpace/
-  deleteSpace` + enabled-block junctions — **no read** [FACT: packages/core/src/foundation/spaces/service.ts:38-61].
-  The selector must *read* the space list to populate itself → its data source is an **unbuilt seam**. Per ADR-019
-  §3.5 first-consumer-pull + the current-spec, the *resolution surface* "(UI + the persisted user switch) remains
+deleteSpace` + enabled-block junctions — **no read** [FACT: packages/core/src/foundation/spaces/service.ts:38-61].
+  The selector must _read_ the space list to populate itself → its data source is an **unbuilt seam**. Per ADR-019
+  §3.5 first-consumer-pull + the current-spec, the _resolution surface_ "(UI + the persisted user switch) remains
   → P6" [FACT: docs/core/spaces/current-spec.md:39]. → Resolve as a **`ProviderRead` stub**, mirroring fe-shell's
   `stubShellPrefs` deferred-first-consumer pattern [FACT: apps/web/src/shell/CLAUDE.md:21-23] and the shipped
   `ProviderRead` convention [[sparse-foundation-seed-is-extension-seam-not-a-gap]].
 - **D8 ⚠ — there is NO global-scope state.** No scope/space store exists in `apps/web` (only `module-map.ts` data).
   The active-scope state (which Space; NULL = global) is **net-new** — a new Zustand store, mirroring the shell's
   own ephemeral `app-shell-ui-store.placement` precedent [FACT: apps/web/src/shell/CLAUDE.md:21-23,132-133].
-- **D9 ⚠ — owed ADR-006 amendment.** The Bar-1 `Spaces:` scope selector is flagged *"Victor refinement; owed
-  ADR-006 amendment"* [FACT: docs/specs/foundation/frontend-replan/surface-map.md:29]; the amendment is **not yet
+- **D9 ⚠ — owed ADR-006 amendment.** The Bar-1 `Spaces:` scope selector is flagged _"Victor refinement; owed
+  ADR-006 amendment"_ [FACT: docs/specs/foundation/frontend-replan/surface-map.md:29]; the amendment is **not yet
   written** (grep of ADR-006 finds no scope-selector clause). → Surface at the gate; the amendment documents the
-  global-scope *semantics*, it does not block the presentational surface. ⟨OPEN → confirm with Victor whether the
+  global-scope _semantics_, it does not block the presentational surface. ⟨OPEN → confirm with Victor whether the
   amendment is authored this unit or homed forward⟩
 
 ---
@@ -94,7 +96,7 @@ per the M1.0 grain, **no live backend read** — the space-list source is a defe
 - **O1 — Home = `apps/web/src/shell`.** New chrome files live beside `global-bar.tsx`/`shell-panel.tsx`; the shell
   **composes `@vida/ui`, never rebuilds it**, every value a DS token, **no barrel** (import specific files)
   [FACT: apps/web/src/shell/CLAUDE.md:117-122,137].
-- **O2 — model vs chrome split.** Data/logic (no JSX) → model files; rendering → chrome. The scope *state* is a
+- **O2 — model vs chrome split.** Data/logic (no JSX) → model files; rendering → chrome. The scope _state_ is a
   store (chrome-consumed), NOT a model file [FACT: apps/web/src/shell/CLAUDE.md:11,115-116,132-136].
 - **O3 — scope state store.** New Zustand store under `apps/web/src/stores/` (the `app-shell-ui-store` /
   `command-bar-ui-store` precedent) [FACT: apps/web/src/shell/global-bar.tsx:11] [FACT: apps/web/src/shell/app-shell.tsx:96].
@@ -125,24 +127,24 @@ per the M1.0 grain, **no live backend read** — the space-list source is a defe
   bug [FACT: apps/web/src/shell/global-bar.tsx:15-16,29]. It flips `commandBar.open()` (⌘K owned by #17/UX-2).
 - **IR5 — degrade, never crash.** Unregistered routes → `NotFoundComponent`; an empty space-list → global-only
   selector; links use TanStack `to` (SPA), never `href` [FACT: apps/web/src/shell/CLAUDE.md:123-124].
-- **IR6 — the `system` panel is an `<aside>` landmark, `modules` is `<nav>`.** Bar-1 global-surface *navigation*
+- **IR6 — the `system` panel is an `<aside>` landmark, `modules` is `<nav>`.** Bar-1 global-surface _navigation_
   inside an `<aside>` needs its own labelled `<nav>`/list for SR correctness — don't rely on the aside being a nav
   [FACT: apps/web/src/shell/shell-panel.tsx:18-20,192].
-- **IR7 — `fe-spaces-page` (#20) is a DIFFERENT unit.** It owns the Spaces *page* + create/edit
-  [FACT: .claude/tasks/fe-spaces-page.md:12]. #15 ships only the global *switcher* — space **CRUD is out of scope**.
+- **IR7 — `fe-spaces-page` (#20) is a DIFFERENT unit.** It owns the Spaces _page_ + create/edit
+  [FACT: .claude/tasks/fe-spaces-page.md:12]. #15 ships only the global _switcher_ — space **CRUD is out of scope**.
 
 ---
 
 ## 5. Carry-forward to the gates
 
-| # | Item | Lands at |
-|---|------|----------|
-| IR1 | Where Bar 1 content renders (top strip vs System panel vs both) | **Envision Gate** (design-led) → Decomposition |
-| IR2 | System-panel body injection seam (new prop vs map) | Decomposition / seam-contract.md |
-| D7 | `SpacesScopeRead` `ProviderRead` stub (no `listSpaces`) | seam-contract.md (M1.0 stub, live read deferred) |
-| D8 | net-new scope Zustand store | slice-map.md (frontend) |
-| D9 | owed ADR-006 amendment — author now or home forward? | **Victor confirm** at the gate |
-| IR3 | scope = emit-to-seam (no live view consumer) | slice-map.md (note, not a slice) |
+| #   | Item                                                            | Lands at                                         |
+| --- | --------------------------------------------------------------- | ------------------------------------------------ |
+| IR1 | Where Bar 1 content renders (top strip vs System panel vs both) | **Envision Gate** (design-led) → Decomposition   |
+| IR2 | System-panel body injection seam (new prop vs map)              | Decomposition / seam-contract.md                 |
+| D7  | `SpacesScopeRead` `ProviderRead` stub (no `listSpaces`)         | seam-contract.md (M1.0 stub, live read deferred) |
+| D8  | net-new scope Zustand store                                     | slice-map.md (frontend)                          |
+| D9  | owed ADR-006 amendment — author now or home forward?            | **Victor confirm** at the gate                   |
+| IR3 | scope = emit-to-seam (no live view consumer)                    | slice-map.md (note, not a slice)                 |
 
 **Interpretation Gate asks:** is every implicit dependency surfaced (boot/runtime readiness, injected deps,
 registry entries, missing read APIs)? → **Yes** (D7 missing read API, D8 net-new state, IR2 hardcoded body, IR3

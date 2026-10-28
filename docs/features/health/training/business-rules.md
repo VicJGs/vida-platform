@@ -3,7 +3,7 @@
 
 # Business Rules — Health: Training
 
-Invariants for the Training pillar. Inherits all Core rules (HC-*). Mostly `[INTENT]` (recovered domain, no v2 code).
+Invariants for the Training pillar. Inherits all Core rules (HC-\*). Mostly `[INTENT]` (recovered domain, no v2 code).
 
 - **HT-1 — Five-layer spine.** Catalog → Plan → Template → Instance → Log. A plan references catalog exercises; a
   template composes exercises into a session shape; an instance is a performed session; logs record actual sets. `[INTENT]`
@@ -40,9 +40,11 @@ Invariants for the Training pillar. Inherits all Core rules (HC-*). Mostly `[INT
   forcibly removed (autonomy-with-clarity). `[INTENT HC-14/HC-16; FACT Notion Risk Level]`
 
 ## Terminal states
+
 Catalog (empty=no exercises) · Plan (draft · active · deload-week · completed) · Workout instance (scheduled ·
 in-progress · **paused** · completed · **skipped** · modified) · Set log (planned-only · logged · **failed-set**) ·
 AI-generation (generating · **failed→manual fallback**).
 
 ## Completion checklist
+
 - [x] rules + [FACT/INTENT] · [x] terminal states · [x] Core inheritance noted · [x] no `{{…}}`

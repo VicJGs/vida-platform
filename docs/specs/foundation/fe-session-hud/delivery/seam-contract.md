@@ -53,7 +53,7 @@ export type ActiveSessionRead = () => Promise<HudRead>
   countdown + emits lifecycle intents" `[FACT: packages/ui/src/CLAUDE.md:298-306]`; the service persists
   interval SUMMARY facts, with analytics derived-on-read (PD-11): `duration_seconds` is written at
   completion as the DERIVED actual focus time `[FACT: service.ts:437,498-502 · session-extensions.ts:40
-  nullable]`, no interval-start is persisted (`completeFocus` falls back to `created_at`; `nextInterval`
+nullable]`, no interval-start is persisted (`completeFocus` falls back to `created_at`; `nextInterval`
   persists none `[FACT: service.ts:465-481,497]`), and the planned length lives in `resolveFocusConfig()`
   (prefs → PD-3) `[FACT: service.ts:215-232]`. So the live architecture is two-source:
   1. **①-read (F-HUD-1, genuinely missing):** `findActiveSession()` — `SessionsService` has

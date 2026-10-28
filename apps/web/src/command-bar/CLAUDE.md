@@ -4,6 +4,7 @@
 Full interaction model: `docs/core/architecture/command-bar-and-search.md`.
 
 ## What lives here
+
 The typed **contract + derivation logic** for the `⌘K` global launcher — the source of truth the UI-4 render host
 consumes. Central data/logic, **no chrome**.
 
@@ -19,6 +20,7 @@ consumes. Central data/logic, **no chrome**.
 - (ephemeral open/query/mode store lives at `../stores/command-bar-ui-store.ts` — the AR-4 store pattern.)
 
 ## Rules (do not violate)
+
 - **Data/logic, not chrome.** No JSX, no components, no layout. Rendering is UI-4; layout is UX-3.
 - **No unbuilt-system imports.** FTS5 (DB-8/M1.4) is UNBUILT — a typed **seam** here; search is a stub. History is
   typed to the v1 shape; it is LIVE since preferences-rescope R5 (read: `preferences/preferences-queries`

@@ -6,12 +6,7 @@
 import type { Id, Timestamp, Status, Priority, Frequency, LifeDomain, Money } from './common'
 import type { SyncableEntity, SyncMetadata } from './sync'
 import type { MeasurementKind, BindingMode } from './measurement'
-import type {
-  MetricValueSource,
-  ContributionGoalType,
-  ContributionContributorType,
-  PlanStepOwnerType,
-} from './purpose'
+import type { MetricValueSource, ContributionGoalType, ContributionContributorType, PlanStepOwnerType } from './purpose'
 
 // ---------------------------------------------------------------------------
 // Project enums

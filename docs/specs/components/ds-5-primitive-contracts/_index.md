@@ -1,6 +1,8 @@
 # Spec: component:ds-5-primitive-contracts
+
 <!-- type ∈ component | feature | bug | hotfix | refactor | script | workflow -->
-Status: in progress (2026-08-05 — 10 contracts + component.json full set; components-gate critique REVISE→4 fixed; @vida/ui 31/31, typecheck 0, tokens:build ✓, source-model guard ✓. **No token Visual Gate**: DS-5 introduces no new token VALUES — its component tokens are references into DS-2's already-gated semantic values; per frontend-visual-gate.md's render table DS-5 sits in the **Components/Storybook** row, deferred to its first-consumer unit **UI-1**. DS-5 ships on the normal §XXVI gate. In progress = unmerged (PR #6).)   <!-- draft → approved → implemented -->
+
+Status: in progress (2026-08-05 — 10 contracts + component.json full set; components-gate critique REVISE→4 fixed; @vida/ui 31/31, typecheck 0, tokens:build ✓, source-model guard ✓. **No token Visual Gate**: DS-5 introduces no new token VALUES — its component tokens are references into DS-2's already-gated semantic values; per frontend-visual-gate.md's render table DS-5 sits in the **Components/Storybook** row, deferred to its first-consumer unit **UI-1**. DS-5 ships on the normal §XXVI gate. In progress = unmerged (PR #6).) <!-- draft → approved → implemented -->
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: every claim below is labeled [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
 Sessions: 2026-08-05-ds-5-primitive-contracts.
@@ -9,6 +11,7 @@ Sessions: 2026-08-05-ds-5-primitive-contracts.
      component-token set DS-5 firms. The per-primitive contracts are authored in Step 3. -->
 
 ## 0. Source model (direction — inherited from DS-2)
+
 The frontend's source of truth is the **documented intent** (ADRs, specs, design.md), realized
 **code-first**: the hand-authored `tokens/*.json` seed + coded artifacts are the authored source during
 M1; the community-forkable **Figma file is built later** as a faithful reflection. This spec keeps its
@@ -17,13 +20,15 @@ Pointer: `docs/specs/foundation/frontend-source-of-truth.md` (enforced by `pnpm 
 `[MEM: frontend-source-of-truth-is-documented-intent]`
 
 ## 1. Identity
+
 **DS-5 — Primitive contracts (component API standard)** (LIF-85) — M1.0 `#20`, Design System.
-Depends: DS-4 (done). **Blocks UI-1** (`#27`, which *implements* against this). [FACT: m1.0-delivery-plan.md:193]
+Depends: DS-4 (done). **Blocks UI-1** (`#27`, which _implements_ against this). [FACT: m1.0-delivery-plan.md:193]
 
 **Deliverable = two coupled outputs, both DS-5's:**
+
 1. **The API + visual-state contracts** for 10 primitives (authored, per `components §VII`+`§VIII`).
 2. **The full component-token set** in `packages/ui/src/themes/tokens/component.json` — DS-2 deliberately
-   left only DS-1's Button *proof* and **assigned the full set to DS-5**. [FACT: ds-2 spec:54 "component
+   left only DS-1's Button _proof_ and **assigned the full set to DS-5**. [FACT: ds-2 spec:54 "component
    tokens beyond DS-1's proof are firmed at DS-5"; :101 "full set = DS-5"]
 
 **The intent model is three-layer** (design.md §II): components → **component tokens** → semantic →
@@ -36,8 +41,9 @@ primary → {color/brand/primary}"; component.json currently = button.background
 Toast · Tabs · Menu.
 
 ### What it is NOT
+
 - **NOT the implementation.** `/new-component`, real `.tsx`, Storybook = **UI-1** (`#27`). DS-5 authors
-  contracts + component *tokens*, not component *code*. [FACT: delivery-plan:199 UI-1 "← DS-5"]
+  contracts + component _tokens_, not component _code_. [FACT: delivery-plan:199 UI-1 "← DS-5"]
 - **NOT the semantic or primitive token layers.** DS-5 adds **component** tokens only; each must reference
   an existing semantic token — a semantic token it needs that is genuinely absent is flagged to DS-2, not
   invented. (Current semantic set covers the 10's needs: surface{primary,secondary,inverse}, text{…},
@@ -45,7 +51,9 @@ Toast · Tabs · Menu.
 - **NOT the token pipeline / Figma steps** (scenario Steps 1–3) — DS-1→4.
 
 ## 2. Shared conventions — every contract obeys these
+
 Grounded in `components.md`:
+
 - **Semantic props, never visual** — `disabled`/`invalid`/`selected`/`loading`/`required`;
   `intent="primary|secondary|ghost|danger"`, `size="sm|md|lg"`. No `color=`/`style=`/layout-boolean.
   [FACT: components §VII]
@@ -54,7 +62,7 @@ Grounded in `components.md`:
   `[ComponentName]Props`; forwardRef on every interactive primitive. [FACT: §VII]
 - **8 visual states (all applicable):** default · hover · focus · active · disabled · loading · error ·
   **empty**. ⚠ task lists 7; `§VIII` mandates 8 (`empty`) — standard governs. Row = `State | Trigger |
-  Visual (exact) | Token used`, and **Token used cites a component token** (three-layer). [FACT: §VIII]
+Visual (exact) | Token used`, and **Token used cites a component token** (three-layer). [FACT: §VIII]
 - **Contract shape (7 sections):** Intent · API · Visual States · Motion (+reduced-motion) · Accessibility
   (role/name/states/keyboard/SR) · Performance Budget · Acceptance. [FACT: ~/.claude/commands/contract.md]
 - **Contrast rule (DS-2 hand-off):** filled-on-brand text uses `brand.emphasis` (brand.600), not
@@ -64,14 +72,15 @@ Grounded in `components.md`:
   an overlay's opacity. Plus a `prefers-reduced-motion` instant alternative. [FACT: themes/CLAUDE.md B12]
 
 ### 2.1 Token layers (verbatim from the shipped surface — no invention) [FACT: themes/tokens/*.json]
+
 - **Semantic (DS-2, referenced — these have a semantic→primitive layer):** `color.surface.{primary,
-  secondary,inverse}` · `color.text.{primary,muted,inverse}` · `color.brand.{primary,emphasis}` ·
+secondary,inverse}` · `color.text.{primary,muted,inverse}` · `color.brand.{primary,emphasis}` ·
   `color.focus.ring` · `color.border.default` · `color.signal.{success,danger}` ·
   `space.inset.{compact,default,loose,spacious}` · `radius.{control,card,pill}`. [FACT: semantic.json]
 - **Primitive, consumed directly (NO semantic layer — cited straight in contracts by design):**
   `zIndex.{dropdown,overlay,modal,toast}` (a structural scale — there is no `zIndex` semantic alias; a
   panel references the primitive z-index directly, like a raw scale). Motion `duration.{instant,fast,
-  moderate,slow}` / `easing.{in,out,inOut,linear}` are **AUX** — routed to `createAnimations`, NOT a
+moderate,slow}` / `easing.{in,out,inOut,linear}` are **AUX** — routed to `createAnimations`, NOT a
   Tamagui token category and NOT part of the color/space/radius three-layer model (themes/CLAUDE.md B9/B11).
   So Motion Specs cite them from the primitive/motion layer, not via a component token. [FACT: primitive.json; themes/CLAUDE.md]
 - **Component (DS-5 firms, full set):** each contract's `background`/`text`/`border`/etc. is a
@@ -80,11 +89,13 @@ Grounded in `components.md`:
   the two documented exceptions above. [FACT: component.json]
 
 ## 3. Build sequence (atomic → molecular → organism) [INTERP: victor:planning; components §VI]
-1. **Atomic:** Button · Input · Checkbox    2. **Molecular:** Select · Card · Tabs · Menu
-3. **Overlay/organism:** Dialog · Popover · Toast (each cites its `zIndex` token)
-Per primitive: author contract → firm its `component.json` tokens → `tokens:build` stays green → `/critique`.
+
+1. **Atomic:** Button · Input · Checkbox 2. **Molecular:** Select · Card · Tabs · Menu
+2. **Overlay/organism:** Dialog · Popover · Toast (each cites its `zIndex` token)
+   Per primitive: author contract → firm its `component.json` tokens → `tokens:build` stays green → `/critique`.
 
 ## 4. Definition of Done
+
 - 10 contract files under `docs/specs/components/ds-5-primitive-contracts/`, each complete on 7 sections +
   applicable 8 states, every visual cell citing a **component** token that resolves to a real semantic one.
 - `component.json` firmed to the full set; `pnpm tokens:build` deterministic + green; `@vida/ui` tests +
@@ -95,10 +106,12 @@ Per primitive: author contract → firm its `component.json` tokens → `tokens:
 - `## 0. Source model` present (guard green). `[C]` currency + `[L]`; commit.
 
 ## 5. Process note (corrected)
+
 NOT the pure-docs "lite" path — DS-5 changes `component.json` (token-pipeline output), so it carries a
 real **build + Visual Gate** like DS-2/3/4. Still document-first: contract before its tokens.
 
 ## 6. Open questions
+
 - **OQ-1 [RESOLVED via docs]:** the "missing secondary/ghost token" is **not a gap** — firming the full
   component-token set is DS-5's assigned job (ds-2:54/:101), resolved at the component-token layer
   (design.md §II). DS-5 authors `button.background.{secondary,ghost,danger}` etc. referencing semantic

@@ -69,9 +69,7 @@ describe('useReducedMotion', () => {
 
   it('preference OFF never forces motion — the OS query still applies (R4-BR-6)', () => {
     mockOS(true)
-    const { log } = renderProbe((p) => (
-      <ReducedMotionContext.Provider value={false}>{p}</ReducedMotionContext.Provider>
-    ))
+    const { log } = renderProbe((p) => <ReducedMotionContext.Provider value={false}>{p}</ReducedMotionContext.Provider>)
     expect(log[0]).toBe(true)
   })
 

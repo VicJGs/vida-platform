@@ -1,17 +1,20 @@
 # Spec: component:ui-2-platform-views · V11 — week-view
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) -->
+
 Status: **SHIPPED** (fe-calendar #19 S3, LIF-203, 2026-10-19) — promoted from the gated PLAN (§XXIX).
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md (shared BR-1..BR-6).
+Parent: docs/specs/components/ui-2-platform-views/\_index.md (shared BR-1..BR-6).
 Delivery: docs/specs/foundation/fe-calendar/delivery/ (interpretation · envision · slice-map · seam-contract ·
 PLAN-S3-week-day-renderer.md = the gate/audit record incl. deviation D-S3-DEV-1).
 
 ## 1. Identity
+
 V11 `week-view` — the renderer for the Global Calendar's **Week AND Day ranges** (#19): a time-column grid (64px hour
 gutter · N day columns · one all-day strip on top · timed blocks positioned by hour). **Day = the same component with one
 column** — column count IS `days.length` `[FACT: envision.md:26 EC-4; mockup:204]`. **NOT a `VIEW_LAYOUT` renderer** (a
-calendar *range*, dispatched by the #19 `CalendarSurface`).
+calendar _range_, dispatched by the #19 `CalendarSurface`).
 
 - **Presentational + read-only lens.** Blocks arrive pre-bucketed by `day`; the renderer only POSITIONS. No intents, no
   interactive descendants — the one tab stop is the Week scroll region (navigation) `[FACT: ADR-007/008; EC-12]`.
@@ -20,7 +23,8 @@ calendar *range*, dispatched by the #19 `CalendarSurface`).
 - **Geometry** lives in `internal/week-layout.ts` (pure, unit-tested): `formatHour` · `normalizeSpan` · `windowFor` ·
   `layoutDay`. Order: validate → renderable set → window → layout.
 
-## 2. Business Rules (BR-WV-*, = PLAN BR-CAL-S3-1..16 as built)
+## 2. Business Rules (BR-WV-\*, = PLAN BR-CAL-S3-1..16 as built)
+
 - **BR-WV-1 · Position, never derive.** No content sort/filter; the accessible list keeps INPUT order (`layoutDay` sorts a
   private copy for geometry only).
 - **BR-WV-2 · Never assume time (IR-6).** Only real-clock items are `TimedBlock`s; dated-but-untimed items are all-day
@@ -29,7 +33,7 @@ calendar *range*, dispatched by the #19 `CalendarSurface`).
   may read 24:00 / 12:00 am; 12h always shows minutes on blocks ("9:00 am"), the gutter drops ":00" ("8 am"). `timeFormat`
   = `user_preferences.time_format` (default '24h').
 - **BR-WV-4 · All-day strip.** ONE row spanning all columns, undated chips (the approved shape) `[FACT: mockup:80,220;
-  greybox week/day]`; omitted when empty. The provider selects the range's chips (Day = that day's).
+greybox week/day]`; omitted when empty. The provider selects the range's chips (Day = that day's).
 - **BR-WV-5 · Visible window.** `hours` is a MINIMUM (default [8, 20) = rows 08:00…19:00), auto-extended to floor(earliest
   start)…ceil(latest drawn end), clamped [0, 24] — never a clip (the EC-3 / vision §6 no-hidden-items charter). Invalid
   `hours` → default + dev-warn.
@@ -41,7 +45,7 @@ calendar *range*, dispatched by the #19 `CalendarSurface`).
   placed result) `[FACT: intake/sessions-and-scheduling.md:113-115; sessions SS-9]`.
 - **BR-WV-8 · Block anatomy.** `$colorSurfaceSecondary` fill, `$sm` radius, 3px purpose bar (user hex; absent → muted,
   `aria-hidden`). **Compact** (`drawnHeight < 44 || lanes ≥ 3`) = one row "09:30 Title". **Short time** (`compact ||
-  lanes ≥ 2`, D-S3-DEV-1) = the visible time is the start only, single line; the full range stays in an sr-only span.
+lanes ≥ 2`, D-S3-DEV-1) = the visible time is the start only, single line; the full range stays in an sr-only span.
   Regular = time over a `$small` title clamped to the lines that fit. Paired line-heights. Non-interactive.
 - **BR-WV-9 · Column headers.** Visual header (`aria-hidden`): uppercase eyebrow weekday + `$display` `$subheading`
   tabular number (`lineHeight` paired); today = `$colorBrandEmphasis` + `TodayMark` underline. The list NAME is one
@@ -60,35 +64,62 @@ calendar *range*, dispatched by the #19 `CalendarSurface`).
 - **BR-WV-13 · Read-only + tokens.** No write control, no intents; DIRECT semantic tokens, no sub-theme, no new dep.
 
 ## 3. Contract (as shipped)
+
 ```ts
-export interface CalChip { id: string; title: ReactNode; color?: string }            // undated (approved shape)
-export interface TimedBlock { id: string; title: ReactNode; color?: string; day: string; startHour: number; endHour?: number }
-export interface WeekViewProps { days: readonly string[]; blocks: readonly TimedBlock[]; allDay?: readonly CalChip[]
-  today?: string; hours?: readonly [number, number]; timeFormat?: '12h' | '24h'; state?: ViewState
-  empty?: ReactNode; error?: ReactNode; ref?: Ref<HTMLDivElement>; 'aria-label'?: string; 'aria-labelledby'?: string }
-export function WeekView(props: WeekViewProps): ReactElement                      // non-generic, React-19 ref-as-prop
+export interface CalChip {
+  id: string
+  title: ReactNode
+  color?: string
+} // undated (approved shape)
+export interface TimedBlock {
+  id: string
+  title: ReactNode
+  color?: string
+  day: string
+  startHour: number
+  endHour?: number
+}
+export interface WeekViewProps {
+  days: readonly string[]
+  blocks: readonly TimedBlock[]
+  allDay?: readonly CalChip[]
+  today?: string
+  hours?: readonly [number, number]
+  timeFormat?: '12h' | '24h'
+  state?: ViewState
+  empty?: ReactNode
+  error?: ReactNode
+  ref?: Ref<HTMLDivElement>
+  'aria-label'?: string
+  'aria-labelledby'?: string
+}
+export function WeekView(props: WeekViewProps): ReactElement // non-generic, React-19 ref-as-prop
 ```
+
 Barrel: `WeekView`, `WeekViewProps`, `TimedBlock`, `CalChip`. Refinements vs the proposed seam: `range` prop DROPPED
 (`days.length` decides Week vs Day) · readonly arrays · `empty?`/`error?` slots · `aria-labelledby` · `timeFormat`.
 
 ## 4. Acceptance (met)
+
 - [x] BR-WV-1..13 — jsdom: `week-layout.test.ts` 23 + `week-view.test.tsx` 22 (TZ-forced America/Sao_Paulo); surface
-  `calendar-surface.test.tsx` +6 (Week/Day dispatch · Sunday start on Month/Agenda/Week · 12h reaches WeekView). Stories:
-  Week · Day · Overlap · ExtendedWindow · TwelveHour · Loading · Empty · Failed.
+      `calendar-surface.test.tsx` +6 (Week/Day dispatch · Sunday start on Month/Agenda/Week · 12h reaches WeekView). Stories:
+      Week · Day · Overlap · ExtendedWindow · TwelveHour · Loading · Empty · Failed.
 - [x] Visual Gate PASS (Victor-reviewed 2026-10-19; Brave, real `CalendarSurface`, Week + Day × 3 presets × L/D ×
-  375/768/1440 + overlap fixture + states + 12h + Sunday): text AA min 4.52–5.22 (block time on secondary) · 0 page
-  overflow (region scrolls at 375) · lane rects never intersect, 2px gutter · compact present · ring solid 2px unclipped ·
-  axe 0 · states · 0 pageerrors.
+      375/768/1440 + overlap fixture + states + 12h + Sunday): text AA min 4.52–5.22 (block time on secondary) · 0 page
+      overflow (region scrolls at 375) · lane rects never intersect, 2px gutter · compact present · ring solid 2px unclipped ·
+      axe 0 · states · 0 pageerrors.
 
 ## 5. Deferred / homed
+
 - Live data (`useCalendar` fan-out: timed sources → blocks, dated/dayparted → chips, Day chip selection, `weekStartsOn`)
   → S7. A "now" line / today-pulse motion → EC-F2 (feel). Dense-overlap polish beyond lanes → live-gate feel.
 - Whether undated week chips read well → Victor's live observation (no per-chip day was added — it would be an ADD
   beyond the approved visual).
 
 ## 6. Change log
-| Date | Session | Change |
-|------|---------|--------|
+
+| Date       | Session            | Change                                                                                                                                                                                                                           |
+| ---------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2026-10-19 | fe-calendar #19 S3 | V11 authored at currency from the gated PLAN: BR-WV-1..13 + contract as shipped; deviation D-S3-DEV-1 (Victor-approved at the Visual Gate); gate-caught fixes (sr-only containing block → page overflow; explicit column names). |
 
 - **`pulseKey?: number` (fe-calendar S7, EC-F2 — PLAN-S7 G15/R9):** bump to pulse the today mark once (the #19 surface's Today button); 0/absent = no pulse (never on mount); each new value remounts the mark so the one-shot CSS animation (`internal/calendar-motion.ts`: `scale` 1→1.12→1, `slow` 400ms ease-out) restarts; reduced motion = none via the sheet's `@media` block. Shared with `RangeTransition` (the range fade, `moderate` 250ms opacity).

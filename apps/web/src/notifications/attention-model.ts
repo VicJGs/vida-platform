@@ -169,7 +169,11 @@ function upcomingEntry(item: UpcomingItem, now: number): AttentionEntry {
 /** Build the attention model. `rows` = fired notifications (settled, newest-first already); `upcoming` =
  *  the dueIn agenda (anticipations, soonest-first). PURE — `now` is injected (Date.now() is forbidden in
  *  pure modules and must stay testable). */
-export function toAttentionModel(rows: readonly Notification[], upcoming: readonly UpcomingItem[], now: number): AttentionModel {
+export function toAttentionModel(
+  rows: readonly Notification[],
+  upcoming: readonly UpcomingItem[],
+  now: number,
+): AttentionModel {
   const anticipated = [...upcoming].sort((a, b) => a.dueAt - b.dueAt).map((u) => upcomingEntry(u, now))
   const settled = [...rows].sort((a, b) => b.created_at - a.created_at).map((r) => settledEntry(r, now))
 

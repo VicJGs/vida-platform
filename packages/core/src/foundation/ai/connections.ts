@@ -11,12 +11,7 @@
 // ============================================================================
 
 import { resolveMode } from './modes'
-import {
-  AiConnectionDenied,
-  type AiConnection,
-  type AiConnectionRegistry,
-  type AiConnectionStorePort,
-} from './types'
+import { AiConnectionDenied, type AiConnection, type AiConnectionRegistry, type AiConnectionStorePort } from './types'
 
 export function createAiConnectionRegistry(ports?: { store?: AiConnectionStorePort }): AiConnectionRegistry {
   // M1 default: an in-memory map (deterministic list, ingestion-registry precedent).

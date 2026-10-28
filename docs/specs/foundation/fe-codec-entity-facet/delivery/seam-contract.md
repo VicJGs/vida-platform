@@ -4,7 +4,7 @@
 > (what a consumer passes). **Seam B** = the `apps/web` adapter that gates the editor via the FROZEN `@vida/core` registry +
 > maps an entity → Seam A. Proposed here; **ratified at `/contract` (Step 4)**. Grounds: interpretation §1–§6 · slice-map
 > S1–S2 · envision EC-1…EC-8 · collection-view.tsx · dashboard-view.tsx · tabs.tsx · internal/data-view.tsx ·
-> schema/_registry.ts (shipped `ENTITY_TYPES`/`isEntityType`).
+> schema/\_registry.ts (shipped `ENTITY_TYPES`/`isEntityType`).
 
 ## Seam A — `EntityView` props (`@vida/ui`, presentational; S1)
 
@@ -12,31 +12,31 @@
 // LOCAL union — @vida/ui is Tamagui-only. Editor state reuses the SHIPPED intra-package ViewState (dashboard-view.tsx:5
 // imports it the same way) — NOT a parallel-named alias (critique B3).
 type FacetMode = 'merged' | 'tabbed'
-import type { ViewState } from '../internal/data-view'   // 'loading' | 'empty' | 'error' | 'success'
+import type { ViewState } from '../internal/data-view' // 'loading' | 'empty' | 'error' | 'success'
 
 interface EntityViewProps {
-  title: string                                  // the entity title — names the region + renders as the $display serif H1
-  subtitle?: ReactNode                           // bio/summary line (type · counts · updated) — a slot
-  action?: ReactNode                             // the ⋯ entity-action SLOT (a Menu trigger etc.)
+  title: string // the entity title — names the region + renders as the $display serif H1
+  subtitle?: ReactNode // bio/summary line (type · counts · updated) — a slot
+  action?: ReactNode // the ⋯ entity-action SLOT (a Menu trigger etc.)
   // ── the facet composition mode (EC-4) — CONTROLLED (the app owns + persists; per-instance memory R5/O4) ──
   mode: FacetMode
   onModeChange: (next: FacetMode) => void
   // ── the active facet in tabbed mode (critique B1) — deep-link to the Editor; hold position across a mode round-trip ──
-  defaultFacet?: 'layout' | 'editor'             // default 'layout' (seeds Tabs defaultValue)
-  activeFacet?: 'layout' | 'editor'              // optional controlled; + onActiveFacetChange. Ignored merged/page-less.
+  defaultFacet?: 'layout' | 'editor' // default 'layout' (seeds Tabs defaultValue)
+  activeFacet?: 'layout' | 'editor' // optional controlled; + onActiveFacetChange. Ignored merged/page-less.
   onActiveFacetChange?: (next: 'layout' | 'editor') => void
   // ── the Layout facet (always present) — a composite the consumer builds (SummaryStrip + DashboardView + CollectionView) ──
-  layout: ReactNode                              // the Layout body — self-states via its sub-shells (EC-1/EC-2)
+  layout: ReactNode // the Layout body — self-states via its sub-shells (EC-1/EC-2)
   // ── the OPTIONAL Editor facet — PRESENCE is the registry gate (EC-3): offered iff the app passes it (Seam B) ──
-  editor?: ReactNode                             // the Editor body (the entity's linked page = Canvas: Editor #7, composed)
-  editorState?: ViewState                        // the Editor facet's own state (BR-2) — shell owns a calm page skeleton/
-                                                 // teaching-empty/role="status" error; renders `editor` for success (EC-5)
+  editor?: ReactNode // the Editor body (the entity's linked page = Canvas: Editor #7, composed)
+  editorState?: ViewState // the Editor facet's own state (BR-2) — shell owns a calm page skeleton/
+  // teaching-empty/role="status" error; renders `editor` for success (EC-5)
   // ── tabbed-mode labels ──────────────────────────────────────────────────────────────────
-  layoutLabel?: string                           // default 'Home'
-  editorLabel?: string                           // default 'Content'
+  layoutLabel?: string // default 'Home'
+  editorLabel?: string // default 'Content'
   'aria-label'?: string
   'aria-labelledby'?: string
-  ref?: Ref<HTMLDivElement>                       // React-19 ref-as-prop (no forwardRef; non-generic shell)
+  ref?: Ref<HTMLDivElement> // React-19 ref-as-prop (no forwardRef; non-generic shell)
 }
 ```
 
@@ -63,12 +63,12 @@ the mode toggle is a visible `aria-pressed` header control (EC-4) · reflows sin
 
 ```ts
 // imports @vida/core — lives in apps/web (the Tamagui-only boundary forbids this in @vida/ui).
-import { isEntityType } from '@vida/core'   // schema/_registry.ts:157 — the page-ability type-guard over ENTITY_TYPES
+import { isEntityType } from '@vida/core' // schema/_registry.ts:157 — the page-ability type-guard over ENTITY_TYPES
 
 // THE pure gate (ships now, S2): does this entity get an Editor facet? Page-able iff the type is registered AND a page
 // exists. (M1: `hasPage` from a pages lookup; the create-on-demand path is the live hook's.)
 function offersEditor(entityType: string, hasPage: boolean): boolean
-  // = isEntityType(entityType) && hasPage   [FACT: _registry.ts:5-158,157]
+// = isEntityType(entityType) && hasPage   [FACT: _registry.ts:5-158,157]
 
 // THE CONVENTION (shape, not a shipped hook — R3): a module composes this to drive EntityView from an entity row.
 interface EntityAdapter {
@@ -79,18 +79,18 @@ interface EntityAdapter {
     subtitle?: ReactNode
     entityType: string
     hasPage: boolean
-    editorNode?: ReactNode          // the composed Editor body (Canvas: Editor #7) — passed through iff offersEditor
+    editorNode?: ReactNode // the composed Editor body (Canvas: Editor #7) — passed through iff offersEditor
     mode: FacetMode
   }): EntityViewProps
 
   // the merged/tabbed per-instance MEMORY (CONVENTION). Storage resolved by notes-rescope R2 (ADR-006 §3.6): app_state
   // `entity_mode:<type>:<id>`, seeded per-type default while loading.
-  readMode(entityType: string, entityId: string): FacetMode    // default = the per-type default (quality-bar:127)
+  readMode(entityType: string, entityId: string): FacetMode // default = the per-type default (quality-bar:127)
   persistMode(entityType: string, entityId: string, mode: FacetMode): void
 }
 ```
 
-**Why pure-pieces + convention, not a live hook (R3):** no *built* consumer of the Entity shell exists yet — the module
+**Why pure-pieces + convention, not a live hook (R3):** no _built_ consumer of the Entity shell exists yet — the module
 entity pages (Task, Habit, Project…) all ship after #6 (grep clean; all surface dirs `.gitkeep`). The Collection/Dashboard
 adapters are the exact precedent — real pure code + types + convention ship; only the live React-Query hook defers [FACT:
 fe-codec-dashboard seam-contract Seam B]. So S2 ships `offersEditor` + the `EntityAdapter` type + the memory convention + a
@@ -103,6 +103,7 @@ expressed to the shell as `editor`-slot presence (never a flag crossing into `@v
 app's, passed as props (BR-2); the merged/tabbed storage schema is design-pass-open (O4), never invented here.
 
 ## What this contract does NOT cover (homed elsewhere — slice-map "Out of scope")
+
 The Editor facet BODY = the TipTap block canvas (Canvas: Editor #7, not a dep — O1) · the Layout sub-shell BODIES
 (`DashboardView` #5 / `CollectionView` #4, composed — O2) · the page-ability registry itself (`@vida/core`, frozen — O3) ·
 the merged/tabbed storage schema + the live `useEntity` hook (design-pass-open / first consumer — O4) · per-module entity

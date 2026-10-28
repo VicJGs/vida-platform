@@ -61,7 +61,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -205,9 +208,9 @@ describe('mod-knowledge S1 — kinds + objects + hierarchy', () => {
 
   it('createObject rejects an unresolved parent_object_id (InvalidParentRefError, KNO-08)', async () => {
     const kindId = await seededTopicKindId(h.svc)
-    await expect(
-      h.svc.createObject({ kind_id: kindId, title: 'x', parent_object_id: 'ghost' }),
-    ).rejects.toBeInstanceOf(InvalidParentRefError)
+    await expect(h.svc.createObject({ kind_id: kindId, title: 'x', parent_object_id: 'ghost' })).rejects.toBeInstanceOf(
+      InvalidParentRefError,
+    )
   })
 
   // --- KNO-08 cycle guard ---------------------------------------------------
@@ -234,7 +237,9 @@ describe('mod-knowledge S1 — kinds + objects + hierarchy', () => {
   it('updateObject rejects an unresolved parent_object_id (InvalidParentRefError, KNO-08 update path)', async () => {
     const kindId = await seededTopicKindId(h.svc)
     const obj = await h.svc.createObject({ kind_id: kindId, title: 'X' })
-    await expect(h.svc.updateObject(obj.id, { parent_object_id: 'ghost' })).rejects.toBeInstanceOf(InvalidParentRefError)
+    await expect(h.svc.updateObject(obj.id, { parent_object_id: 'ghost' })).rejects.toBeInstanceOf(
+      InvalidParentRefError,
+    )
   })
 
   it('updateObject can detach to root (parent_object_id → null), skipping integrity checks (KNO-05)', async () => {
@@ -353,7 +358,11 @@ describe('mod-knowledge S2 — containers + references + link/tag cross-cut', ()
   it('addReference persists object-scoped; listReferences returns only that object (KNO-29/30)', async () => {
     const objA = await anObject('A')
     const objB = await anObject('B')
-    const r = await h.svc.addReference(objA, { title: 'Elements of Statistical Learning', source: 'book', url: 'https://x' })
+    const r = await h.svc.addReference(objA, {
+      title: 'Elements of Statistical Learning',
+      source: 'book',
+      url: 'https://x',
+    })
     expect(r.id).toBeTruthy()
     expect(r.object_id).toBe(objA)
     expect(r.title).toBe('Elements of Statistical Learning')
@@ -407,16 +416,16 @@ describe('mod-knowledge S2 — containers + references + link/tag cross-cut', ()
   })
 
   it('linkObject rejects an unresolved object (KnowledgeObjectNotFoundError, BR-S2-8)', async () => {
-    await expect(
-      h.svc.linkObject('ghost', { entityType: 'book', entityId: 'b1' }),
-    ).rejects.toBeInstanceOf(KnowledgeObjectNotFoundError)
+    await expect(h.svc.linkObject('ghost', { entityType: 'book', entityId: 'b1' })).rejects.toBeInstanceOf(
+      KnowledgeObjectNotFoundError,
+    )
   })
 
   it('linkObject rejects an unregistered target entity_type (UnknownEntityType, delegated to spaces, BR-S2-7)', async () => {
     const obj = await anObject()
-    await expect(
-      h.svc.linkObject(obj, { entityType: 'not_a_real_type', entityId: 'x' }),
-    ).rejects.toBeInstanceOf(UnknownEntityType)
+    await expect(h.svc.linkObject(obj, { entityType: 'not_a_real_type', entityId: 'x' })).rejects.toBeInstanceOf(
+      UnknownEntityType,
+    )
   })
 
   it('unlinkObject guards the object then soft-deletes the link (KNO-10, F4)', async () => {
@@ -754,7 +763,11 @@ describe('mod-knowledge S6 — pages-notes + compound sets + lab + seams', () =>
   })
 
   it('assistCompoundSet maps a successful askModel → ready with the suggestion (= AiResponse.content)', async () => {
-    const okAi = { async askModel() { return { content: 'try interleaving' } } } as unknown as AiService
+    const okAi = {
+      async askModel() {
+        return { content: 'try interleaving' }
+      },
+    } as unknown as AiService
     const svc = createKnowledgeService({ ...h.deps, ai: okAi })
     const res = await svc.assistCompoundSet('education', anAiRequest)
     expect(res).toEqual({ status: 'ready', suggestion: 'try interleaving' })
@@ -790,9 +803,7 @@ describe('mod-knowledge S6 — pages-notes + compound sets + lab + seams', () =>
   it('promoteToObject rejects an un-concluded entry → LabEntryNotConcludedError', async () => {
     const kindId = await seededTopicKindId(h.svc)
     const entry = await h.svc.createLabEntry({ hypothesis: 'Unfinished' })
-    await expect(h.svc.promoteToObject(entry.id, { kind_id: kindId })).rejects.toBeInstanceOf(
-      LabEntryNotConcludedError,
-    )
+    await expect(h.svc.promoteToObject(entry.id, { kind_id: kindId })).rejects.toBeInstanceOf(LabEntryNotConcludedError)
   })
 
   it('promoteToObject rejects a re-promote → LabEntryAlreadyPromotedError', async () => {
@@ -825,7 +836,11 @@ describe('mod-knowledge S6 — pages-notes + compound sets + lab + seams', () =>
   })
 
   it('autoPopulate maps a PERMITTED decision → parser-unavailable (real M1 seam — no parsers built)', async () => {
-    const permitting = { async checkIngestion() { return { permitted: true } } } as unknown as IngestionGuard
+    const permitting = {
+      async checkIngestion() {
+        return { permitted: true }
+      },
+    } as unknown as IngestionGuard
     const svc = createKnowledgeService({ ...h.deps, ingestion: permitting })
     expect(await svc.autoPopulate(anAct)).toEqual({ status: 'parser-unavailable' })
   })

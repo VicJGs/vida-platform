@@ -12,6 +12,7 @@
 ## 1. Objective (S8 only)
 
 Make a Subject's / Program's **progress measurable** on the **Education-forged** measure entity, derive-on-read:
+
 1. **`setMeasurement(ref, {measurement_kind, binding_mode?}) → EducationMeasurement`** — configure the measure for a
    subject/program (one per ref, upsert); `measurement_kind` REQUIRED (R3), `binding_mode` nullable ⇒ derive
    [FACT: seam-contract.md:60; schema learning.ts:324-339].
@@ -24,24 +25,24 @@ Make a Subject's / Program's **progress measurable** on the **Education-forged**
 separate entity); `advertise()` a measurement source (C-M5 — Education is a query-only measure, no global scalar); emit
 effects (S10); build UI (② P6) [FACT: slice-map.md:25 "never Projects' storage, C-M5"; seam-contract.md:13 "no sourceRegistry advertise — C-M5"].
 
-## 2. Business Rules (BR-LE-S8-*)
+## 2. Business Rules (BR-LE-S8-\*)
 
 - **BR-LE-S8-1 — The measure is Education-forged, one per ref, upsert (fail-loud on the ref).** `setMeasurement(ref,
-  input)` where `ref={type:'subject'|'program', id}` guards the ref exists (`SubjectNotFoundError` /
+input)` where `ref={type:'subject'|'program', id}` guards the ref exists (`SubjectNotFoundError` /
   `ProgramNotFoundError`), then upserts the single `education_measurements` row for `(ref_type, ref_id)` — if a live
   row exists, update `measurement_kind`/`binding_mode`; else create (the `setSchedule` one-per-ref precedent,
   BR-LE-S4-3; the index is non-unique so the service enforces one-per-ref) [FACT: schema learning.ts:329-338 non-unique
   `idx_education_measurements_ref`; MEASUREMENT_REF_TYPE = subject|program measurement.ts]. Separate storage, never
   Projects' (C-M5) [FACT: slice-map.md:25].
 - **BR-LE-S8-2 — `measurement_kind` is REQUIRED; `binding_mode` is nullable ⇒ derive.** `measurement_kind ∈
-  MEASUREMENT_KIND` (`quantitative|milestone|rate|qualitative`) is caller-supplied, NO default — a dedicated measure
+MEASUREMENT_KIND` (`quantitative|milestone|rate|qualitative`) is caller-supplied, NO default — a dedicated measure
   entity (diverges from deliverables' `'milestone'` default by design) [FACT: schema learning.ts:331-333 "notNull
   no-default … caller always supplies"; R3]. `binding_mode ∈ BINDING_MODE` (`manual|derived-pull|event-trigger`)
   nullable; `NULL ⇒ derive` (M2) [FACT: schema learning.ts:334; BINDING_MODE measurement.ts:9].
   **`measurement_kind` is declared METADATA at M1 — the derivation does NOT branch on it (B1).** Education's M1
   progress IS the grade (subject) or the rollup (program) — both kind-agnostic (BR-LE-S8-5/6); there is no subject-level
   milestone/quantitative source in Education yet (no deliverables), so a direct per-kind `normalize` (a subject measured
-  by a milestone/quantitative target *not* via grade) is M-later. The kind is persisted for the record + that future
+  by a milestone/quantitative target _not_ via grade) is M-later. The kind is persisted for the record + that future
   path, not consulted by `getProgress` at M1 — stated, not a silent gap [FACT: no Education deliverable source; ED-10
   "same axes as Projects" = the declared axis, not an M1 derivation input].
 - **BR-LE-S8-3 — `getProgress` returns an INTEGER 0–100 (or null); the engine works in [0,1].** The stored `progress`
@@ -49,7 +50,7 @@ effects (S10); build UI (② P6) [FACT: slice-map.md:25 "never Projects' storage
   `books.progress`, the one progress precedent) [FACT: schema learning.ts:335 `integer('progress')`; books.progress
   0–100 clamp books/service.ts:1093]. getProgress derives in `[0,1]` (the engine's native unit) and scales to a rounded
   0–100 at the return boundary; `null` = unmeasured (BR-2), never coerced to 0 [FACT: engine.ts:11,44]. `[INTERPRETATION
-  — the 0–100 unit; see §6]`
+— the 0–100 unit; see §6]`
 - **BR-LE-S8-4 — `getProgress` inlines `resolveProgress` §3.2 (stored-override wins, else derive).** No measurement row
   for the ref ⇒ `null` (unmeasured — nothing configured). Else: a non-null stored `progress` override wins (clamped
   0–100); else derive. The inline mirrors `getUnifiedProgress` (books/service.ts:1091) — the generic `resolveProgress`
@@ -64,7 +65,7 @@ effects (S10); build UI (② P6) [FACT: slice-map.md:25 "never Projects' storage
   "grade-derived→derived-pull"]; `binding_mode==='manual'` ⇒ `null` (manual has no auto-derivation — the override is
   its only source, ED-10 "manual→manual") [FACT: business-rules.md:49]; `binding_mode==='event-trigger'` ⇒ `null`
   (no event source until M2) [FACT: BINDING_MODE measurement.ts:9; M2 defer]. `[INTERPRETATION — null-mode⇒grade +
-  event-trigger⇒null-at-M1; see §6]`
+event-trigger⇒null-at-M1; see §6]`
 - **BR-LE-S8-6 — Program derivation: the engine's fractal `rollup` over its subjects.** For `ref.type==='program'` the
   derive branch rolls up the program's subjects' `[0,1]` progress via `rollup` (equal-weight; null-progress subjects
   excluded — an un-measured subject cannot drag the program down) [FACT: engine.ts:38-53; seam-contract.md:61 "derives
@@ -112,6 +113,7 @@ bounded (one user's program). A batched read is S-later. Stated, not silently ch
 ## 4. Acceptance (§4 — the per-slice Verification Gate, blocking)
 
 Done = **all** of:
+
 - `setMeasurement({type:'subject',id}, {measurement_kind:'quantitative'})` creates one row (progress null, binding_mode
   null); a 2nd `setMeasurement` for the same ref UPDATES (still one row); unknown subject/program → typed NotFound;
   omitting `measurement_kind` → a Zod parse error (required).
@@ -131,8 +133,8 @@ Done = **all** of:
 ## 5. Implementation Prompt (§5 — strict order)
 
 1. **`@vida/types/learning.ts`** — add `export interface EducationMeasurement extends SyncableEntity { ref_type:
-   MeasurementRefType; ref_id: string; measurement_kind: MeasurementKind; binding_mode: BindingMode | null; progress:
-   number | null; deleted_at: number | null }` (import `MeasurementKind`/`BindingMode`/`MeasurementRefType`). Barrel
+MeasurementRefType; ref_id: string; measurement_kind: MeasurementKind; binding_mode: BindingMode | null; progress:
+number | null; deleted_at: number | null }` (import `MeasurementKind`/`BindingMode`/`MeasurementRefType`). Barrel
    re-exports learning.
 2. **`validators/learning.ts`** — `SetMeasurementSchema` (`measurement_kind: MeasurementKindSchema` **required**;
    `binding_mode: BindingModeSchema.nullish()` — N1: `.nullish()` (omittable ⇒ `?? null`) is a deliberate divergence
@@ -140,7 +142,7 @@ Done = **all** of:
    `BindingModeSchema` are canonical in `validators/measurement.ts:4-5` (import them); `MeasurementRefTypeSchema` is in
    `validators/learning.ts:69` (reuse for `ref.type`).
 3. **`service/types.ts`** — add `MeasurementRef = { type: MeasurementRefType; id: string }`, `SetMeasurementInput =
-   z.input<typeof SetMeasurementSchema>`, the two method sigs (`setMeasurement`, `getProgress`) on
+z.input<typeof SetMeasurementSchema>`, the two method sigs (`setMeasurement`, `getProgress`) on
    `LearningEducationService`; import `EducationMeasurement`. No new error type beyond the reused `SubjectNotFoundError`/
    `ProgramNotFoundError`.
 4. **`service/service.ts`** — add `educationMeasurementsRepo` (softDelete:true); `toEducationMeasurement` mapper;
@@ -150,12 +152,12 @@ Done = **all** of:
 5. **`__tests__`** — a live-store suite: setMeasurement create+upsert+typed errors+required-kind; getProgress
    none/derived-pull/null-mode-default/manual/event-trigger/program-rollup/stored-override-wins/ungraded-null/empty-program-null.
 6. **tsc 0 · eslint 0 · enum-parity green · full suite green** → Verification Gate → code-review → /critique → §XXIX
-   currency (promote BR-LE-S8-* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
+   currency (promote BR-LE-S8-\* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
 
 ## 6. Risks / open items (the INTERPRETATION calls for Victor's eye)
 
 - **getProgress unit = integer 0–100** (BR-LE-S8-3) — grounded in the `integer` column type (can't hold a [0,1] float)
-  + `books.progress` 0–100. The alternative ([0,1] float) contradicts the column type. `[INTERPRETATION — strong lean]`
+  - `books.progress` 0–100. The alternative ([0,1] float) contradicts the column type. `[INTERPRETATION — strong lean]`
 - **`binding_mode === null` ⇒ derive-by-default = grade** for a subject (BR-LE-S8-5) — grounded in derive-by-default
   (M3) + 'derived-pull→grade' being Education's natural signal; the specific null→grade mapping is my call (the
   alternative: null ⇒ null/unmeasured until a mode is set). `[INTERPRETATION]`

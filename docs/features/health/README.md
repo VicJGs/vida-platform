@@ -11,11 +11,11 @@ the body, generates the work to reach them (by hand, by AI, or by import), track
 
 **Structure — a shared Core + two pillars (finer levers on one spine).** `[INTENT: Fork "Core spine, finer levers"]`
 
-| Sub-context | What it owns | Docs |
-|---|---|---|
-| **Core** (the shared spine) | **Health Metrics + Monitoring** (unified body-measure[bilateral]·performance[per-lift]·test·**biomarker panel** time-series · **derived** BMR/BEE/LBM/1RM · **Domains→Factors** grouping · scheduled **Exams**) · **Health Goals** (unified: metric-target·**physical-role**·body-comp·event-prep) · **Adaptation engine** (Protocols·Responses·**Experiments**·Profiles) · **Physical Roles** (trainable capabilities — calisthenics/swimmer/muay-thai/jiu-jitsu/triathlete; merges Disciplines+capacities) · **Safety & Medical** (Medical Profile · advisory safety flags · autonomy-with-clarity) · the **energy bridge** · planning horizon | [core/](core/) |
-| **Training** (pillar) | Exercise **Catalog** · **Plans** (periodization, Role-generated, medically-aware) · workout-session **extension** + per-lift/bilateral set logs · protocol libraries | [training/](training/) |
-| **Nutrition** (pillar) | **Ingredient/Dish** libraries (**functional-area** + whole-food type · opt-in cooking-skill) · **Nutritional Plan** · **Daily Meal Plan** + Meal instances · **Shopping** · Response logs | [nutrition/](nutrition/) |
+| Sub-context                 | What it owns                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | Docs                     |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------ |
+| **Core** (the shared spine) | **Health Metrics + Monitoring** (unified body-measure[bilateral]·performance[per-lift]·test·**biomarker panel** time-series · **derived** BMR/BEE/LBM/1RM · **Domains→Factors** grouping · scheduled **Exams**) · **Health Goals** (unified: metric-target·**physical-role**·body-comp·event-prep) · **Adaptation engine** (Protocols·Responses·**Experiments**·Profiles) · **Physical Roles** (trainable capabilities — calisthenics/swimmer/muay-thai/jiu-jitsu/triathlete; merges Disciplines+capacities) · **Safety & Medical** (Medical Profile · advisory safety flags · autonomy-with-clarity) · the **energy bridge** · planning horizon | [core/](core/)           |
+| **Training** (pillar)       | Exercise **Catalog** · **Plans** (periodization, Role-generated, medically-aware) · workout-session **extension** + per-lift/bilateral set logs · protocol libraries                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | [training/](training/)   |
+| **Nutrition** (pillar)      | **Ingredient/Dish** libraries (**functional-area** + whole-food type · opt-in cooking-skill) · **Nutritional Plan** · **Daily Meal Plan** + Meal instances · **Shopping** · Response logs                                                                                                                                                                                                                                                                                                                                                                                                                                                        | [nutrition/](nutrition/) |
 
 **Two levers, one object.** Training and Nutrition are two levers acting on **the body**; the Core holds what both
 share — the body's state (Metrics), its direction (Goals), its adaptation (Experiments/Profiles), and the
@@ -24,6 +24,7 @@ share — the body's state (Metrics), its direction (Goals), its adaptation (Exp
 
 **An OS extension, not an island.** Health OWNS the irreducibly fitness/nutrition entities and **composes** the
 documented foundations for everything generic:
+
 - **Sessions & Scheduling (ADR-004)** — a workout = a `workout` session sub-type + runtime; the scheduler + `dueIn()`
   place assigned workouts/meals on the Global Calendar. `[FACT: sessions docs reserve `workout`/`workout_sessions`]`
 - **Knowledge** — Exercise/Ingredient/Dish/Protocol catalogs = Knowledge kinds (technique·mastery·graph); a
@@ -45,13 +46,15 @@ Finance (cost). **Consumes ←** Sessions · Knowledge · Notes&Pages · Spaces 
 prescription path = **opt-in extension-model** (Sessions S5 flags Health effects need consent). `[FACT: ZK-1; sessions S5]`
 
 ## Status
-| Sub-context | Intake | Transform | Verify |
-|---|:---:|:---:|:---:|
-| Core | ✅ (health.md WHOLE + CI-1..CI-6) | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Training | ✅ | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Nutrition | ✅ | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+
+| Sub-context |              Intake               |     Transform     |                   Verify                    |
+| ----------- | :-------------------------------: | :---------------: | :-----------------------------------------: |
+| Core        | ✅ (health.md WHOLE + CI-1..CI-6) | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Training    |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Nutrition   |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
 
 ## Forward-dep stubs (resolve at their turn)
+
 Spaces (#8 — tags/views/capture Blocks) · Purposes (#9 — goal/metric primitive, body-measure targets) · Skills
 (#2 — **Physical Roles are a heavy Skills resource**; opt-in cooking-skill) · **Duties (#3 — assigned workouts/meals/
 exams surface as Duties/Obligations; Health = Duties' first consumer)** · Gamification (#10) · Notifications (#11) ·

@@ -70,7 +70,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -125,12 +128,24 @@ async function setup(opts: SetupOpts = {}): Promise<Harness> {
     rail,
     entityRegistry: opts.sessionsEntityRegistry ?? registry,
   })
-  const tasks = createTasksService({ db, deviceId: 'test-device', sessions, effects: { rail, registry: effectRegistry } })
-  if (opts.tasksTimer !== false) await registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId: 'test-device' })
+  const tasks = createTasksService({
+    db,
+    deviceId: 'test-device',
+    sessions,
+    effects: { rail, registry: effectRegistry },
+  })
+  if (opts.tasksTimer !== false)
+    await registerTasksTimer({ sessionRegistry, effectRegistry, db, deviceId: 'test-device' })
   const habits = createHabitsService({ db, deviceId: 'test-device' })
   // S8 — Spaces + Notes on the PLAIN shared registry (never the sessions deny-override; the tasks setupWithSubstrates pattern).
   const spaces = createSpacesService(db, 'test-device', registry)
-  const notes = createNotesService({ db, deviceId: 'test-device', spaces, backlinks: createBacklinkResolver(db, 'test-device'), registry })
+  const notes = createNotesService({
+    db,
+    deviceId: 'test-device',
+    spaces,
+    backlinks: createBacklinkResolver(db, 'test-device'),
+    registry,
+  })
   const svc = createRoutinesService({
     db,
     deviceId: 'test-device',
@@ -408,7 +423,11 @@ describe('mod-routines S3 — completion ledger + skip', () => {
 
   it('editCompletion patches an existing (step,date); CompletionNotFoundError if absent (RT-5)', async () => {
     await completeActionable(h.svc, stepId, { date: '2026-10-13' })
-    const edited = await h.svc.editCompletion(stepId, '2026-10-13', { actual_duration_minutes: 45, skipped: true, skip_reason: 'late' })
+    const edited = await h.svc.editCompletion(stepId, '2026-10-13', {
+      actual_duration_minutes: 45,
+      skipped: true,
+      skip_reason: 'late',
+    })
     expect(edited.actual_duration_minutes).toBe(45)
     expect(edited.skipped).toBe(true)
     expect(edited.skip_reason).toBe('late')
@@ -469,12 +488,16 @@ describe('mod-routines S2c — floor conformance', () => {
   // 2 — setLifecycle on an archived / missing routine → typed, no write
   it('setLifecycle on an archived or missing routine throws RoutineNotFoundError with no write', async () => {
     await h.svc.archiveRoutine(routineId)
-    const rowBefore = (await h.bsql.prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?').get(routineId)) as Record<string, unknown>
+    const rowBefore = (await h.bsql
+      .prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?')
+      .get(routineId)) as Record<string, unknown>
     const before = await queueCount()
     await expect(h.svc.setLifecycle(routineId, 'paused')).rejects.toBeInstanceOf(RoutineNotFoundError)
     await expect(h.svc.setLifecycle('no-such-routine', 'paused')).rejects.toBeInstanceOf(RoutineNotFoundError)
     expect(await queueCount()).toBe(before)
-    expect(h.bsql.prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?').get(routineId)).toEqual(rowBefore)
+    expect(
+      h.bsql.prepare('SELECT _sync_version, updated_at, lifecycle FROM routines WHERE id = ?').get(routineId),
+    ).toEqual(rowBefore)
   })
 
   // 3 — setLifecycle off-tuple → ZodError, no write
@@ -487,7 +510,9 @@ describe('mod-routines S2c — floor conformance', () => {
 
   // 4 — addStep entity_type validated against the registry (A10, R2)
   it('addStep validates entity_type against the registry; unregistered → UnknownEntityType, no row', async () => {
-    await expect(h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: 'h1' })).resolves.toBeTruthy()
+    await expect(
+      h.svc.addStep(routineId, { title: 'Read', entity_type: 'habit', entity_id: 'h1' }),
+    ).resolves.toBeTruthy()
     await expect(h.svc.addStep(routineId, { title: 'Alarm' })).resolves.toBeTruthy() // null entity_type = check-off (a Task is minted, S5c)
     const before = await queueCount()
     await expect(
@@ -525,9 +550,11 @@ describe('mod-routines S2c — floor conformance', () => {
 
   // 7 — progress override 0..100 int (B2)
   it('progress accepts 0, 100, null and rejects 101, -1, 1.5', async () => {
-    for (const ok of [0, 100, null]) await expect(h.svc.updateRoutine(routineId, { progress: ok })).resolves.toBeTruthy()
+    for (const ok of [0, 100, null])
+      await expect(h.svc.updateRoutine(routineId, { progress: ok })).resolves.toBeTruthy()
     await h.svc.updateRoutine(routineId, { progress: 40 })
-    for (const bad of [101, -1, 1.5]) await expect(h.svc.updateRoutine(routineId, { progress: bad })).rejects.toBeInstanceOf(ZodError)
+    for (const bad of [101, -1, 1.5])
+      await expect(h.svc.updateRoutine(routineId, { progress: bad })).rejects.toBeInstanceOf(ZodError)
     expect((await h.svc.getRoutine(routineId))?.progress).toBe(40) // rejected updates leave the stored value
   })
 
@@ -539,13 +566,25 @@ describe('mod-routines S2c — floor conformance', () => {
     await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: null })).resolves.toBeTruthy()
     const routinesBefore = (await h.svc.listRoutines()).length
     const queueBefore = await queueCount()
-    for (const bad of ['NOT A RULE', 'BYDAY=MO', '', 'RRULE:FREQ=DAILY', 'FREQ=BOGUS', 'FREQ=DAILY;COUNT=abc', 'FREQ=DAILY;BYDAY=XX']) {
-      await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: bad })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+    for (const bad of [
+      'NOT A RULE',
+      'BYDAY=MO',
+      '',
+      'RRULE:FREQ=DAILY',
+      'FREQ=BOGUS',
+      'FREQ=DAILY;COUNT=abc',
+      'FREQ=DAILY;BYDAY=XX',
+    ]) {
+      await expect(h.svc.createRoutine({ name: 'R', recurrence_rule: bad })).rejects.toBeInstanceOf(
+        InvalidRecurrenceRuleError,
+      )
     }
     expect((await h.svc.listRoutines()).length).toBe(routinesBefore)
     expect(await queueCount()).toBe(queueBefore)
     await h.svc.updateRoutine(routineId, { recurrence_rule: 'FREQ=DAILY' })
-    await expect(h.svc.updateRoutine(routineId, { recurrence_rule: 'BYDAY=MO' })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+    await expect(h.svc.updateRoutine(routineId, { recurrence_rule: 'BYDAY=MO' })).rejects.toBeInstanceOf(
+      InvalidRecurrenceRuleError,
+    )
     expect((await h.svc.getRoutine(routineId))?.recurrence_rule).toBe('FREQ=DAILY')
   })
 
@@ -634,7 +673,10 @@ describe('mod-routines S3 — run/drive', () => {
     const run = await h.svc.completeStep(s.id, { date: DAY })
     expect(run).toMatchObject({ target: 'task', status: 'done', date: DAY })
     expect(run.completion?.skipped).toBe(false)
-    expect((await h.sessions.getSession(run.session_id as string))?.session).toMatchObject({ sub_type: 'work', status: 'completed' })
+    expect((await h.sessions.getSession(run.session_id as string))?.session).toMatchObject({
+      sub_type: 'work',
+      status: 'completed',
+    })
     expect((await h.tasks.getTask(s.entity_id as string))?.status).not.toBe('completed')
     expect((h.bsql.prepare('SELECT count(*) AS n FROM task_time_logs').get() as { n: number }).n).toBe(0)
   })
@@ -650,17 +692,23 @@ describe('mod-routines S3 — run/drive', () => {
     const done = await h.svc.completeStep(s.id, { date: DAY })
     expect(done.status).toBe('done')
     expect((await h.tasks.getTask(t.id))?.status).not.toBe('completed')
-    expect((h.bsql.prepare('SELECT count(*) AS n FROM task_time_logs WHERE task_id = ?').get(t.id) as { n: number }).n).toBe(1)
+    expect(
+      (h.bsql.prepare('SELECT count(*) AS n FROM task_time_logs WHERE task_id = ?').get(t.id) as { n: number }).n,
+    ).toBe(1)
     expect((await h.svc.listCompletions(s.id)).map((c) => c.completed_date)).toEqual([DAY])
   })
 
   // 3 — task missing / soft-deleted; soft-deleted step
   it('missing or soft-deleted task → EntityUnavailableError with no routine write; a soft-deleted step → StepNotFoundError first', async () => {
     const ghost = await h.svc.addStep(routineId, { title: 'Ghost', entity_type: 'task', entity_id: 'no-such-task' })
-    const ledgerQueueBefore = (await h.db.select().from(syncQueue).all()).filter((x) => x.table_name === 'routine_completions').length
+    const ledgerQueueBefore = (await h.db.select().from(syncQueue).all()).filter(
+      (x) => x.table_name === 'routine_completions',
+    ).length
     await expect(h.svc.runStep(ghost.id, { date: DAY })).rejects.toBeInstanceOf(EntityUnavailableError)
     expect(await h.svc.listCompletions(ghost.id)).toEqual([])
-    expect((await h.db.select().from(syncQueue).all()).filter((x) => x.table_name === 'routine_completions').length).toBe(ledgerQueueBefore)
+    expect(
+      (await h.db.select().from(syncQueue).all()).filter((x) => x.table_name === 'routine_completions').length,
+    ).toBe(ledgerQueueBefore)
     const t = await h.tasks.createTask({ title: 'Gone' })
     await h.tasks.softDeleteTask(t.id)
     const s = await h.svc.addStep(routineId, { title: 'Gone', entity_type: 'task', entity_id: t.id })
@@ -807,12 +855,17 @@ describe('mod-routines S3 — run/drive', () => {
     await expect(h.svc.completeStep(s3.id, { date: today })).rejects.toBeInstanceOf(EntityUnavailableError)
     // attach failure → the just-started focus is cancelled and the error rethrown
     const base = createTaggableTypeRegistry()
-    const denyStep: TaggableTypeRegistry = { ...base, isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t) }
+    const denyStep: TaggableTypeRegistry = {
+      ...base,
+      isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t),
+    }
     const h2 = await setup({ sessionsEntityRegistry: denyStep })
     const r2 = (await h2.svc.createRoutine({ name: 'R' })).id
     const s4 = await h2.svc.addStep(r2, { title: 'F', step_type: 'focus' })
     await expect(h2.svc.runStep(s4.id)).rejects.toBeInstanceOf(UnknownEntityType)
-    const statuses = (h2.bsql.prepare('SELECT status FROM focus_sessions').all() as { status: string }[]).map((r) => r.status)
+    const statuses = (h2.bsql.prepare('SELECT status FROM focus_sessions').all() as { status: string }[]).map(
+      (r) => r.status,
+    )
     expect(statuses).toEqual(['cancelled'])
     clockSpy.mockRestore()
   })
@@ -984,7 +1037,11 @@ describe('mod-routines S4 — policy evaluation', () => {
   // 1 — no policy: policy-independent judgments + flag
   it('no policy: 0 done → not_started; some → partial flagged undefined; all → done', async () => {
     const { rid, steps } = await routineWith(3)
-    expect(await h.svc.evaluateRoutine(rid, { date: D })).toMatchObject({ status: 'not_started', policy_source: 'undefined', applicable: 3 })
+    expect(await h.svc.evaluateRoutine(rid, { date: D })).toMatchObject({
+      status: 'not_started',
+      policy_source: 'undefined',
+      applicable: 3,
+    })
     await doneOn([steps[0].id])
     const e = await h.svc.evaluateRoutine(rid, { date: D })
     expect(e).toMatchObject({ status: 'partial', policy_source: 'undefined', percent: 33 })
@@ -1005,7 +1062,13 @@ describe('mod-routines S4 — policy evaluation', () => {
 
   // 3 — threshold: exact ratio, 100, 0
   it('threshold: 60 with 2/3 → done; 67 with 2/3 → partial (exact ratio); 100 = all-or-nothing; 0 with 0 done → done', async () => {
-    for (const [pct, doneCount, want] of [[60, 2, 'done'], [67, 2, 'partial'], [100, 2, 'partial'], [100, 3, 'done'], [0, 0, 'done']] as const) {
+    for (const [pct, doneCount, want] of [
+      [60, 2, 'done'],
+      [67, 2, 'partial'],
+      [100, 2, 'partial'],
+      [100, 3, 'done'],
+      [0, 0, 'done'],
+    ] as const) {
       const { rid, steps } = await routineWith(3, { prefs: port({ completion: { kind: 'threshold', percent: pct } }) })
       await doneOn(steps.slice(0, doneCount).map((x) => x.id))
       expect((await h.svc.evaluateRoutine(rid, { date: D })).status, `threshold ${pct} with ${doneCount}/3`).toBe(want)
@@ -1025,12 +1088,20 @@ describe('mod-routines S4 — policy evaluation', () => {
     vi.restoreAllMocks()
     r = await routineWith(2, { prefs: port({ completion: { kind: 'required_node' } }) })
     await doneOn([r.steps[0].id])
-    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ policy_source: 'undefined', policy_note: 'no_required_steps', status: 'partial' })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({
+      policy_source: 'undefined',
+      policy_note: 'no_required_steps',
+      status: 'partial',
+    })
     vi.restoreAllMocks()
     r = await routineWith(2, { prefs: port({ completion: { kind: 'required_node' } }) }, [0])
     await h.svc.planSkipDates(r.steps[0].id, [D])
     await doneOn([r.steps[1].id])
-    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ policy_source: 'undefined', policy_note: 'required_steps_all_neutral', status: 'done' })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({
+      policy_source: 'undefined',
+      policy_note: 'required_steps_all_neutral',
+      status: 'done',
+    })
   })
 
   // 5 — planned skip neutral
@@ -1119,15 +1190,29 @@ describe('mod-routines S4 — policy evaluation', () => {
   it('no applicable steps (all planned-skipped, or none) → not_started, percent 0, applicable 0', async () => {
     let r = await routineWith(1)
     await h.svc.planSkipDates(r.steps[0].id, [D])
-    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', percent: 0, applicable: 0 })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({
+      status: 'not_started',
+      percent: 0,
+      applicable: 0,
+    })
     vi.restoreAllMocks()
     r = await routineWith(0)
-    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', percent: 0, applicable: 0 })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({
+      status: 'not_started',
+      percent: 0,
+      applicable: 0,
+    })
   })
 
   // 10 — errors
   it('errors: archived/missing routine → RoutineNotFoundError; bad date → ZodError; a port throw propagates', async () => {
-    const { rid } = await routineWith(1, { prefs: { policyFor: async () => { throw new Error('prefs offline') } } })
+    const { rid } = await routineWith(1, {
+      prefs: {
+        policyFor: async () => {
+          throw new Error('prefs offline')
+        },
+      },
+    })
     await expect(h.svc.evaluateRoutine(rid, { date: '2026-1-5' })).rejects.toBeInstanceOf(ZodError)
     await expect(h.svc.evaluateRoutine(rid, { date: D })).rejects.toThrow('prefs offline')
     await h.svc.archiveRoutine(rid)
@@ -1205,7 +1290,10 @@ describe('mod-routines S4 — policy evaluation', () => {
     await expect(h.svc.evaluateRoutine(r.rid, { date: D })).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
     vi.restoreAllMocks()
     r = await routineWith(0, { prefs: port({ completion: { kind: 'required_node' } }) })
-    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({ status: 'not_started', policy_source: 'user' })
+    expect(await h.svc.evaluateRoutine(r.rid, { date: D })).toMatchObject({
+      status: 'not_started',
+      policy_source: 'user',
+    })
   })
 
   it('a soft-deleted habit with no routine row reflects not_done (no throw); a logged skip whose task was completed on D is done', async () => {
@@ -1241,7 +1329,11 @@ describe('mod-routines S5 — progress + analytics', () => {
   afterEach(() => vi.restoreAllMocks())
 
   // A routine (and its steps) created on `created`, so DTSTART = created.
-  async function routineOn(created: string, rule: string | null, opts: { steps?: number; prefs?: RoutinesPrefsPort } = {}) {
+  async function routineOn(
+    created: string,
+    rule: string | null,
+    opts: { steps?: number; prefs?: RoutinesPrefsPort } = {},
+  ) {
     h = await setup(opts.prefs ? { prefs: opts.prefs } : {})
     clock = vi.spyOn(Date, 'now')
     setNow(created)
@@ -1296,7 +1388,9 @@ describe('mod-routines S5 — progress + analytics', () => {
       'FREQ=MONTHLY;BYSETPOS=5;BYDAY=FR', // BYSETPOS outside the minimal forms
       'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-30', // impossible pair (negative)
     ]) {
-      await expect(h.svc.createRoutine({ name: 'X', recurrence_rule: bad })).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
+      await expect(h.svc.createRoutine({ name: 'X', recurrence_rule: bad })).rejects.toBeInstanceOf(
+        InvalidRecurrenceRuleError,
+      )
     }
     h.bsql.prepare('UPDATE routines SET recurrence_rule = ? WHERE id = ?').run('FREQ=DAILY;BYDAY=2MO', rid)
     await expect(h.svc.getStreak(rid)).rejects.toBeInstanceOf(InvalidRecurrenceRuleError)
@@ -1393,7 +1487,11 @@ describe('mod-routines S5 — progress + analytics', () => {
     setNow('2026-10-26') // today pending → excluded from judged days
     const r = (await h.svc.getAnalytics(rid, { from: '2026-10-22', to: '2026-10-26' })).ranking
     expect(r.map((x) => x.step_id)).toEqual([A.id, C.id, B.id])
-    expect(r.map((x) => [x.done, x.applicable])).toEqual([[4, 4], [2, 3], [2, 4]])
+    expect(r.map((x) => [x.done, x.applicable])).toEqual([
+      [4, 4],
+      [2, 3],
+      [2, 4],
+    ])
   })
 
   // 10 — time-period comparison
@@ -1550,7 +1648,13 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
     await h.svc.completeStep(s.id, { date: '2026-10-20' })
     await h.svc.completeStep(s.id, { date: '2026-10-21' })
     expect((await h.svc.listCompletions(s.id)).length).toBe(2)
-    expect((h.bsql.prepare("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work' AND status = 'completed'").get() as { n: number }).n).toBe(2)
+    expect(
+      (
+        h.bsql.prepare("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work' AND status = 'completed'").get() as {
+          n: number
+        }
+      ).n,
+    ).toBe(2)
     expect((await h.tasks.getTask(s.entity_id as string))?.status).not.toBe('completed')
   })
 
@@ -1594,7 +1698,12 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
   it("a session step's about-entity is attached alongside the routine_step", async () => {
     await h.sessionRegistry.register(reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]))
     const t = await h.tasks.createTask({ title: 'Topic' })
-    const s = await h.svc.addStep(routineId, { title: 'Review topic', step_type: 'review', entity_type: 'task', entity_id: t.id })
+    const s = await h.svc.addStep(routineId, {
+      title: 'Review topic',
+      step_type: 'review',
+      entity_type: 'task',
+      entity_id: t.id,
+    })
     const done = await h.svc.completeStep(s.id, { date: DAY })
     const types = (await h.sessions.resolveTargets(done.session_id as string)).map((x) => x.entityType).sort()
     expect(types).toEqual(['routine_step', 'task'])
@@ -1654,7 +1763,12 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
   })
 
   it('an obligation step with a rule completes the task and TK-7 regenerates the next occurrence', async () => {
-    const t = await h.tasks.createTask({ title: 'Rent', kind: 'obligation', due_date: DAY, recurrence_rule: 'FREQ=MONTHLY' })
+    const t = await h.tasks.createTask({
+      title: 'Rent',
+      kind: 'obligation',
+      due_date: DAY,
+      recurrence_rule: 'FREQ=MONTHLY',
+    })
     const s = await h.svc.addStep(routineId, { title: 'Rent', entity_type: 'task', entity_id: t.id })
     const done = await h.svc.completeStep(s.id, { date: DAY })
     expect(done.flag).toBeUndefined()
@@ -1671,7 +1785,10 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
 
   it('a failed link after the routine created the occurrence drops that session (no open/orphan work session)', async () => {
     const base = createTaggableTypeRegistry()
-    const denyStep: TaggableTypeRegistry = { ...base, isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t) }
+    const denyStep: TaggableTypeRegistry = {
+      ...base,
+      isRegistered: (t) => t !== 'routine_step' && base.isRegistered(t),
+    }
     h = await setup({ sessionsEntityRegistry: denyStep })
     const rid = (await h.svc.createRoutine({ name: 'R' })).id
     const s = await h.svc.addStep(rid, { title: 'Stretch' })
@@ -1691,7 +1808,11 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
   })
 
   it("'exercise' maps to the registered 'workout' sub-type (intake §D:94-98)", async () => {
-    await h.sessionRegistry.register({ ...reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]), sub_type: 'workout', default_purpose: undefined })
+    await h.sessionRegistry.register({
+      ...reviewDef([{ from: 'scheduled', to: 'completed', event: 'complete' }]),
+      sub_type: 'workout',
+      default_purpose: undefined,
+    })
     const s = await h.svc.addStep(routineId, { title: 'Run', step_type: 'exercise' })
     const done = await h.svc.completeStep(s.id, { date: DAY })
     expect(done.target).toBe('session')
@@ -1700,7 +1821,12 @@ describe('mod-routines S5c — every step drives an entity; occurrences are sess
 
   it('an unregistered step_type with a task ref falls through to the task (approved row 2)', async () => {
     const t = await h.tasks.createTask({ title: 'Lift' })
-    const s = await h.svc.addStep(routineId, { title: 'Lift', step_type: 'workout', entity_type: 'task', entity_id: t.id })
+    const s = await h.svc.addStep(routineId, {
+      title: 'Lift',
+      step_type: 'workout',
+      entity_type: 'task',
+      entity_id: t.id,
+    })
     expect((await h.svc.completeStep(s.id, { date: DAY })).target).toBe('task')
   })
 
@@ -1724,12 +1850,15 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
   const at = (day: string, hhmm = '12:00') => Date.parse(`${day}T${hhmm}:00Z`)
   const setNow = (day: string, hhmm = '12:00') => clock.mockImplementation(() => at(day, hhmm))
   const prefsOf = (p: RoutinePolicy | null): RoutinesPrefsPort => ({ policyFor: async () => p })
-  const win = (w: number): RoutinesPrefsPort => prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: w } })
+  const win = (w: number): RoutinesPrefsPort =>
+    prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: w } })
   const TODAY = '2026-10-26' // a Monday
   afterEach(() => vi.restoreAllMocks())
 
   // A routine created on 10-20 (steps added then); the caller moves the clock to `today` after adding steps.
-  async function world(opts: { prefs?: RoutinesPrefsPort; rule?: string; withHabits?: boolean; tasksTimer?: boolean } = {}) {
+  async function world(
+    opts: { prefs?: RoutinesPrefsPort; rule?: string; withHabits?: boolean; tasksTimer?: boolean } = {},
+  ) {
     h = await setup({
       ...(opts.prefs ? { prefs: opts.prefs } : {}),
       ...(opts.withHabits === false ? { withHabits: false } : {}),
@@ -1775,10 +1904,16 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     await h.svc.completeStep(s.id, { date: '2026-10-21' }) // written while still in-window
     setNow(TODAY)
     await expect(h.svc.skipStep(s.id, { date: '2026-10-22' })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
-    await expect(h.svc.planSkipDates(s.id, ['2026-10-20', '2026-10-30'])).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await expect(h.svc.planSkipDates(s.id, ['2026-10-20', '2026-10-30'])).rejects.toBeInstanceOf(
+      OutsideAcceptanceWindowError,
+    )
     expect((await h.svc.listSteps(rid))[0]?.skip_dates ?? null).toBeNull()
-    await expect(h.svc.editCompletion(s.id, '2026-10-21', { skipped: true })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
-    expect((await h.svc.editCompletion(s.id, '2026-10-21', { actual_duration_minutes: 5 })).actual_duration_minutes).toBe(5)
+    await expect(h.svc.editCompletion(s.id, '2026-10-21', { skipped: true })).rejects.toBeInstanceOf(
+      OutsideAcceptanceWindowError,
+    )
+    expect(
+      (await h.svc.editCompletion(s.id, '2026-10-21', { actual_duration_minutes: 5 })).actual_duration_minutes,
+    ).toBe(5)
     await expect(h.svc.deleteCompletion(s.id, '2026-10-21')).resolves.toBeUndefined()
   })
 
@@ -1788,7 +1923,9 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     let s = await h.svc.addStep(rid, { title: 'A' })
     setNow(TODAY)
     expect((await h.svc.completeStep(s.id, { date: '2026-10-21' })).status).toBe('done')
-    rid = await world({ prefs: prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: -1 } }) })
+    rid = await world({
+      prefs: prefsOf({ completion: { kind: 'all_or_nothing' }, miss: { acceptance_window_days: -1 } }),
+    })
     s = await h.svc.addStep(rid, { title: 'B' })
     setNow(TODAY)
     await expect(h.svc.completeStep(s.id, { date: '2026-10-25' })).rejects.toBeInstanceOf(InvalidRoutinePolicyError)
@@ -1802,7 +1939,13 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
     setNow(TODAY)
     const r = await h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })
-    expect(r).toMatchObject({ step_id: s.id, date: '2026-10-25', target: 'task', status: 'scheduled', completion: null })
+    expect(r).toMatchObject({
+      step_id: s.id,
+      date: '2026-10-25',
+      target: 'task',
+      status: 'scheduled',
+      completion: null,
+    })
     const [b, ...rest] = await blocksOf(s.id)
     expect(rest).toEqual([])
     expect(b).toMatchObject({
@@ -1830,7 +1973,12 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     const done = await h.svc.completeStep(s.id, { date: '2026-10-25' })
     expect(done).toMatchObject({ status: 'done', date: '2026-10-25' })
     const sess = await h.sessions.getSession(done.session_id as string)
-    expect(sess?.session).toMatchObject({ sub_type: 'work', status: 'completed', planned_block_id: r.planned_block_id, scheduling_mode: 'planned' })
+    expect(sess?.session).toMatchObject({
+      sub_type: 'work',
+      status: 'completed',
+      planned_block_id: r.planned_block_id,
+      scheduling_mode: 'planned',
+    })
     expect(count("SELECT count(*) AS n FROM sessions WHERE sub_type = 'work'")).toBe(1)
     expect((await blocksOf(s.id))[0]?.status).toBe('fulfilled')
     expect((await h.svc.evaluateRoutine(rid, { date: '2026-10-25' })).status).toBe('done')
@@ -1955,7 +2103,11 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     const rid = await world({ prefs: win(0) })
     const t = await h.tasks.createTask({ title: 'Clean' })
     const s = await h.svc.addStep(rid, { title: 'Clean', entity_type: 'task', entity_id: t.id })
-    const s2 = await h.svc.addStep(rid, { title: 'Other', entity_type: 'task', entity_id: (await h.tasks.createTask({ title: 'Mop' })).id })
+    const s2 = await h.svc.addStep(rid, {
+      title: 'Other',
+      entity_type: 'task',
+      entity_id: (await h.tasks.createTask({ title: 'Mop' })).id,
+    })
     const s3 = await h.svc.addStep(rid, { title: 'Third' })
     setNow(TODAY)
     await h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot(TODAY, '23:00', '23:50') })
@@ -1981,33 +2133,45 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     const rid = await world({ prefs: win(2) })
     const s = await h.svc.addStep(rid, { title: 'Stretch' })
     setNow(TODAY)
-    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-23', slot: slot() })).rejects.toBeInstanceOf(OutsideAcceptanceWindowError)
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-23', slot: slot() })).rejects.toBeInstanceOf(
+      OutsideAcceptanceWindowError,
+    )
     await h.svc.completeStep(s.id, { date: '2026-10-25' })
-    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // done
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    ) // done
     await h.svc.planSkipDates(s.id, ['2026-10-24'])
-    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // planned skip
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-24', slot: slot() })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    ) // planned skip
     await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-27', slot: slot('2026-10-27') })).rejects.toBeInstanceOf(
       NotMissedOccurrenceError,
     ) // future
-    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot(TODAY, '09:00', '09:30') })).rejects.toBeInstanceOf(
-      InvalidRescheduleSlotError,
-    ) // before now
-    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: { start: at(TODAY, '15:00'), end: at(TODAY, '15:00') } })).rejects.toBeInstanceOf(
-      ZodError,
-    ) // end ≤ start — a malformed input (the module's ZodError convention)
+    await expect(
+      h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot(TODAY, '09:00', '09:30') }),
+    ).rejects.toBeInstanceOf(InvalidRescheduleSlotError) // before now
+    await expect(
+      h.svc.rescheduleStep(s.id, { date: TODAY, slot: { start: at(TODAY, '15:00'), end: at(TODAY, '15:00') } }),
+    ).rejects.toBeInstanceOf(ZodError) // end ≤ start — a malformed input (the module's ZodError convention)
     const s2 = await h.svc.addStep(rid, { title: 'Two' }) // added today → in today's step set
     await expect(h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot('2026-10-29') })).rejects.toBeInstanceOf(
       InvalidRescheduleSlotError,
     ) // past the last make-good day (26 + 2 = 28)
-    await expect(h.svc.rescheduleStep(s2.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // not in D's step set
+    await expect(h.svc.rescheduleStep(s2.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    ) // not in D's step set
     await h.svc.setLifecycle(rid, 'paused')
-    await expect(h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError) // paused
+    await expect(h.svc.rescheduleStep(s2.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    ) // paused
     await h.svc.setLifecycle(rid, 'active')
     const work = await h.svc.addStep(rid, { title: 'W', step_type: 'work' })
     const half = await h.svc.addStep(rid, { title: 'H', entity_type: 'task' })
     const gym = await h.svc.addStep(rid, { title: 'G', step_type: 'workout' })
     for (const x of [work, half, gym]) {
-      await expect(h.svc.rescheduleStep(x.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+      await expect(h.svc.rescheduleStep(x.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(
+        EntityUnavailableError,
+      )
     }
     expect(count('SELECT count(*) AS n FROM planned_blocks')).toBe(0)
   })
@@ -2016,15 +2180,21 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     let rid = await world({ prefs: win(2), rule: 'FREQ=WEEKLY;BYDAY=MO' })
     let s = await h.svc.addStep(rid, { title: 'Weekly' })
     setNow(TODAY)
-    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(NotMissedOccurrenceError)
+    await expect(h.svc.rescheduleStep(s.id, { date: '2026-10-25', slot: slot() })).rejects.toBeInstanceOf(
+      NotMissedOccurrenceError,
+    )
     rid = await world({ prefs: win(2), withHabits: false })
     s = await h.svc.addStep(rid, { title: 'Habit', entity_type: 'habit', entity_id: 'h1' })
     setNow(TODAY)
-    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(
+      EntityUnavailableError,
+    )
     rid = await world({ prefs: win(2), tasksTimer: false })
     s = await h.svc.addStep(rid, { title: 'Check' })
     setNow(TODAY)
-    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(EntityUnavailableError)
+    await expect(h.svc.rescheduleStep(s.id, { date: TODAY, slot: slot() })).rejects.toBeInstanceOf(
+      EntityUnavailableError,
+    )
     expect(count('SELECT count(*) AS n FROM planned_blocks')).toBe(0)
     rid = await world({ prefs: win(2) })
     const ob = await h.tasks.createTask({ title: 'Rent', kind: 'obligation', due_date: TODAY })
@@ -2036,7 +2206,9 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
 
   // 8 — admissibility is step-level
   it('step level: on a threshold-done day an undone step is reschedulable; with no window a past undone day is reschedulable', async () => {
-    let rid = await world({ prefs: prefsOf({ completion: { kind: 'threshold', percent: 50 }, miss: { acceptance_window_days: 2 } }) })
+    let rid = await world({
+      prefs: prefsOf({ completion: { kind: 'threshold', percent: 50 }, miss: { acceptance_window_days: 2 } }),
+    })
     const a = await h.svc.addStep(rid, { title: 'A' })
     const b = await h.svc.addStep(rid, { title: 'B' })
     setNow(TODAY)
@@ -2046,7 +2218,9 @@ describe('mod-routines S6 — reschedule (SS-8 block) + acceptance-window guard'
     rid = await world({ prefs: prefsOf({ completion: { kind: 'all_or_nothing' } }) })
     const c = await h.svc.addStep(rid, { title: 'C' })
     setNow(TODAY)
-    expect((await h.svc.rescheduleStep(c.id, { date: '2026-10-21', slot: slot('2026-11-30') })).status).toBe('scheduled')
+    expect((await h.svc.rescheduleStep(c.id, { date: '2026-10-21', slot: slot('2026-11-30') })).status).toBe(
+      'scheduled',
+    )
   })
 
   // 9 — targets
@@ -2128,7 +2302,12 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
 
   // A fresh registry with spy handlers for both routine-level types (+ optional overrides); the clock pinned BEFORE createRoutine.
   async function world(
-    opts: { rule?: string | null; policy?: RoutinePolicy | null; effects?: boolean; handlers?: Partial<Record<'award_xp' | 'contribute_purpose_metric', 'spy' | 'throw' | 'none'>> } = {},
+    opts: {
+      rule?: string | null
+      policy?: RoutinePolicy | null
+      effects?: boolean
+      handlers?: Partial<Record<'award_xp' | 'contribute_purpose_metric', 'spy' | 'throw' | 'none'>>
+    } = {},
   ) {
     fired = []
     policyNow = opts.policy === undefined ? AON : opts.policy
@@ -2144,7 +2323,9 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
     h = await setup({ effectRegistry, prefs, ...(opts.effects === false ? { effects: false } : {}) })
     clock = vi.spyOn(Date, 'now')
     setNow(D)
-    const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: opts.rule === undefined ? 'FREQ=DAILY' : opts.rule })).id
+    const rid = (
+      await h.svc.createRoutine({ name: 'R', recurrence_rule: opts.rule === undefined ? 'FREQ=DAILY' : opts.rule })
+    ).id
     return rid
   }
   const mine = (rid: string) => fired.filter((f) => f.key === rid)
@@ -2310,7 +2491,12 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
     const effectRegistry = createEffectRegistry()
     effectRegistry.register('contribute_purpose_metric', async (ev) => {
       if (fail) throw new Error('down')
-      fired.push({ type: 'contribute_purpose_metric', key: ev.subjectNaturalKey, transition: ev.transition, target: ev.targetRef })
+      fired.push({
+        type: 'contribute_purpose_metric',
+        key: ev.subjectNaturalKey,
+        transition: ev.transition,
+        target: ev.targetRef,
+      })
     })
     h = await setup({ effectRegistry, prefs })
     clock = vi.spyOn(Date, 'now')
@@ -2366,7 +2552,16 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
       fired = []
       policyNow = AON
       const effectRegistry = createEffectRegistry()
-      effectRegistry.register('award_xp', async (ev) => void fired.push({ type: 'award_xp', key: ev.subjectNaturalKey, transition: ev.transition, target: ev.targetRef }))
+      effectRegistry.register(
+        'award_xp',
+        async (ev) =>
+          void fired.push({
+            type: 'award_xp',
+            key: ev.subjectNaturalKey,
+            transition: ev.transition,
+            target: ev.targetRef,
+          }),
+      )
       h = await setup({ effectRegistry, prefs })
       const rid = (await h.svc.createRoutine({ name: 'R', recurrence_rule: 'FREQ=DAILY' })).id
       const hab = await h.habits.createHabit({ name: 'Read', frequency: 'daily' })
@@ -2418,7 +2613,12 @@ describe('mod-routines S7 — routine-level award_xp + contribute_purpose_metric
     const t = await h.tasks.createTask({ title: 'Ship', kind: 'obligation', due_date: D })
     const s = await h.svc.addStep(rid, { title: 'Ship', entity_type: 'task', entity_id: t.id })
     await h.svc.runStep(s.id, { date: D })
-    expect(fired.filter((x) => x.type === 'award_xp').map((x) => x.key).sort()).toEqual([rid, t.id].sort())
+    expect(
+      fired
+        .filter((x) => x.type === 'award_xp')
+        .map((x) => x.key)
+        .sort(),
+    ).toEqual([rid, t.id].sort())
 
     rid = await world({ handlers: { award_xp: 'throw' } })
     const bad = await h.tasks.createTask({ title: 'Tax', kind: 'obligation', due_date: D })
@@ -2490,7 +2690,11 @@ describe('mod-routines S8 — tags + notes + links', () => {
   })
   const tagIds = (rows: { tag_id: string }[]) => rows.map((r) => r.tag_id).sort()
   const junction = (type: string, id: string) =>
-    (h.bsql.prepare('SELECT count(*) AS n FROM entity_tags WHERE entity_type = ? AND entity_id = ?').get(type, id) as { n: number }).n
+    (
+      h.bsql.prepare('SELECT count(*) AS n FROM entity_tags WHERE entity_type = ? AND entity_id = ?').get(type, id) as {
+        n: number
+      }
+    ).n
 
   // 1 + 7
   it('tags round-trip on routine and step: idempotent tag, untag removes, re-tag revives one row', async () => {
@@ -2520,7 +2724,13 @@ describe('mod-routines S8 — tags + notes + links', () => {
     expect(await h.svc.getRoutineTags(rid)).toEqual([])
     expect(junction('routine', rid)).toBe(1) // the junction row is still there
     await expect(h.svc.untagRoutine(rid, t.id)).resolves.toBeUndefined()
-    expect((h.bsql.prepare('SELECT deleted_at FROM entity_tags WHERE entity_id = ?').get(rid) as { deleted_at: number | null }).deleted_at).not.toBeNull()
+    expect(
+      (
+        h.bsql.prepare('SELECT deleted_at FROM entity_tags WHERE entity_id = ?').get(rid) as {
+          deleted_at: number | null
+        }
+      ).deleted_at,
+    ).not.toBeNull()
   })
 
   // 3
@@ -2538,7 +2748,9 @@ describe('mod-routines S8 — tags + notes + links', () => {
     await expect(h.svc.tagStep(stepId, tag.id)).rejects.toBeInstanceOf(StepNotFoundError)
     await expect(h.svc.untagStep(stepId, tag.id)).rejects.toBeInstanceOf(StepNotFoundError)
     await expect(h.svc.getStepNote(stepId)).rejects.toBeInstanceOf(StepNotFoundError)
-    await expect(h.svc.linkPage(page.id, { type: 'routine_step', id: stepId })).rejects.toBeInstanceOf(StepNotFoundError)
+    await expect(h.svc.linkPage(page.id, { type: 'routine_step', id: stepId })).rejects.toBeInstanceOf(
+      StepNotFoundError,
+    )
     await h.svc.archiveRoutine(rid)
     await expect(h.svc.untagRoutine(rid, tag.id)).rejects.toBeInstanceOf(RoutineNotFoundError)
     await expect(h.svc.getRoutineNote(rid)).rejects.toBeInstanceOf(RoutineNotFoundError)
@@ -2558,7 +2770,9 @@ describe('mod-routines S8 — tags + notes + links', () => {
     expect(n1).toMatchObject({ type: 'note', entity_type: 'routine', entity_id: rid })
     expect(n1.content).toContain('Morning')
     // Repository.create returns the input row → assert the stored column (the seed title lives only in the content H1)
-    expect((h.bsql.prepare('SELECT title FROM pages WHERE id = ?').get(n1.id) as { title: string | null }).title).toBeNull()
+    expect(
+      (h.bsql.prepare('SELECT title FROM pages WHERE id = ?').get(n1.id) as { title: string | null }).title,
+    ).toBeNull()
     const sn = await h.svc.getStepNote(stepId)
     expect(sn).toMatchObject({ type: 'note', entity_type: 'routine_step', entity_id: stepId })
     expect(sn.content).toContain('Stretch')
@@ -2572,7 +2786,11 @@ describe('mod-routines S8 — tags + notes + links', () => {
     const l2 = await h.svc.linkPage(page.id, { type: 'routine', id: rid })
     expect(l2.id).toBe(l1.id)
     const live = () =>
-      (h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE page_id = ? AND deleted_at IS NULL').get(page.id) as { n: number }).n
+      (
+        h.bsql
+          .prepare('SELECT count(*) AS n FROM entity_links WHERE page_id = ? AND deleted_at IS NULL')
+          .get(page.id) as { n: number }
+      ).n
     expect(live()).toBe(1)
     await h.svc.linkPage(page.id, { type: 'routine_step', id: stepId })
     expect(live()).toBe(2)
@@ -2591,7 +2809,11 @@ describe('mod-routines S8 — tags + notes + links', () => {
     await h.svc.linkPage(page.id, { type: 'routine', id: rid })
     await h.svc.archiveRoutine(rid)
     expect(tagIds(await h.svc.getRoutineTags(rid))).toEqual([t.id])
-    const liveLinks = (h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE entity_id = ? AND deleted_at IS NULL').get(rid) as { n: number }).n
+    const liveLinks = (
+      h.bsql.prepare('SELECT count(*) AS n FROM entity_links WHERE entity_id = ? AND deleted_at IS NULL').get(rid) as {
+        n: number
+      }
+    ).n
     expect(liveLinks).toBe(1)
     expect((await h.notes.getPagesForEntity('routine', rid)).map((p) => p.id)).toContain(note.id)
   })
@@ -2736,7 +2958,11 @@ describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', (
     const a = await h.svc.addStep(r, { title: 'A' })
     const hab = await h.habits.createHabit({ name: 'Water', frequency: 'daily' })
     const b = await h.svc.addStep(r, { title: 'B', entity_type: 'habit', entity_id: hab.id })
-    const c = await h.svc.addStep(r, { title: 'C', entity_type: 'task', entity_id: (await h.tasks.createTask({ title: 'T' })).id })
+    const c = await h.svc.addStep(r, {
+      title: 'C',
+      entity_type: 'task',
+      entity_id: (await h.tasks.createTask({ title: 'T' })).id,
+    })
     const keep = await h.svc.addStep(r, { title: 'Keep' })
     const p = await routine('Paused', 'FREQ=DAILY', 1)
     const ps = await h.svc.addStep(p, { title: 'P' })
@@ -2756,7 +2982,8 @@ describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', (
     setNow('2026-10-27') // 10-24's window (2 days) closed at the end of 10-26
     await h.habits.logCompletion(hab.id, { date: '2026-10-25' }) // done by reflection: ticked in Habits, no routine write
     policies[bad] = 'throw'
-    const status = async (stepId: string) => (await h.sessions.listPlannedBlocksForTarget('routine_step', stepId))[0]?.status
+    const status = async (stepId: string) =>
+      (await h.sessions.listPlannedBlocksForTarget('routine_step', stepId))[0]?.status
     await h.svc.getDueReminders(range('2026-10-27', '2026-10-27'))
     expect(await status(a.id)).toBe('skipped')
     expect(await status(b.id)).toBe('skipped')
@@ -2775,7 +3002,10 @@ describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', (
     const a = await h.svc.addStep(r, { title: 'A' })
     const b = await h.svc.addStep(r, { title: 'B' })
     setNow('2026-10-25')
-    const ra = await h.svc.rescheduleStep(a.id, { date: '2026-10-24', slot: { start: at('2026-10-25', '20:00'), end: at('2026-10-25', '20:30') } })
+    const ra = await h.svc.rescheduleStep(a.id, {
+      date: '2026-10-24',
+      slot: { start: at('2026-10-25', '20:00'), end: at('2026-10-25', '20:30') },
+    })
     setNow(TODAY)
     await h.svc.rescheduleStep(b.id, { date: TODAY, slot: { start: at(TODAY, '20:00') } }) // closes after 10-28
     registerRoutinesDueProvider(h.sessions, h.svc)
@@ -2843,7 +3073,14 @@ describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', (
     const sd = await h.svc.summary(TODAY)
     expect(sd).toMatchObject({ sectionKey: 'summary', module: 'routines', state: 'success' })
     expect(sd.dataPoints.map((d) => d.id)).toEqual(['completed_today', 'skipped_today'])
-    const items = sd.items as { routine_id: string; name: string; status?: string; policy_source?: string; not_done?: { title: string }[]; steps: unknown[] }[]
+    const items = sd.items as {
+      routine_id: string
+      name: string
+      status?: string
+      policy_source?: string
+      not_done?: { title: string }[]
+      steps: unknown[]
+    }[]
     expect(items.map((i) => i.routine_id)).toEqual([r, k, old])
     expect(items[0]).toMatchObject({
       name: 'Morning routine', // [E] column, plaintext in M1.0
@@ -2861,7 +3098,9 @@ describe('mod-routines S9 — dueIn / getDueReminders / summary + journal.ts', (
     policies[r] = 'throw'
     const iso = await h.svc.summary(TODAY)
     expect(iso.state).toBe('success')
-    expect((iso.items as { routine_id: string; status?: string }[]).find((i) => i.routine_id === r)?.status).toBeUndefined()
+    expect(
+      (iso.items as { routine_id: string; status?: string }[]).find((i) => i.routine_id === r)?.status,
+    ).toBeUndefined()
     await expect(h.svc.summary('26/10/2026')).rejects.toBeInstanceOf(ZodError)
   })
 

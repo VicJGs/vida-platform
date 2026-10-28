@@ -5,6 +5,7 @@
 > the convention names the shape; the first consumer builds the React Query hook over it. Every row [FACT: path:line].
 
 ## §0. Shared service-access SHAPE (type + convention; live deferred — IR-1)
+
 - A consumer obtains an engine via an **access convention** `useXService()` whose live body (factory instantiation over
   the main-thread Drizzle-proxy) is **deferred to UI-3/first-consumer** [FACT: db/client.ts:44; db/CLAUDE.md].
 - Factories, for reference (all take `db: DrizzleDb, deviceId: string`): `createViewsService` · `createViewEngine(registry?)`
@@ -16,6 +17,7 @@
   hook [FACT: s5-conventions.md:63-70].
 
 ## §A. SavedView seam (ADR-007) — barrel-exported [FACT: index.ts:118]
+
 - **Types:** `ViewRow{id, space_id (null=global), name, layout:ViewLayout, filter/grouping/sort:JSON-TEXT}` [FACT:
   schema/foundation/spaces.ts:113-128]; `ViewFilter`·`ViewGrouping`·`ReadProvider{entityType, list(filter)}`·
   `ResolvedView{rows, groups, state:'loading'|'empty'|'error'|'success', degraded}` [FACT: views/types.ts:10-60].
@@ -29,9 +31,10 @@
   (a view-config write, never an entity write — IR-2) [FACT: collection/adapter.ts:1-94].
 
 ## §B. Capability/Block seam (ADR-008) — barrel-exported [FACT: index.ts:124]
+
 - **Definition:** `CapabilityDefinition{id, kind, render_targets:('inline'|'standalone')[], bindings, effects,
-  config_schema?, terminal_states}` [FACT: capability/types.ts:1-141]; `TERMINAL_STATE=['loading','empty','error',
-  'success']`.
+config_schema?, terminal_states}` [FACT: capability/types.ts:1-141]; `TERMINAL_STATE=['loading','empty','error',
+'success']`.
 - **Registry:** `CapabilityRegistry{register, get, list}`; `SHIPPED_CAPABILITIES`=`habit_logger` only (M1) [FACT:
   registry.ts:49-134].
 - **Enforcer:** `CapabilityEnforcer{checkAction, assertPermitted, getGrant, isEnvelopeCurrent, grant, revoke}`;
@@ -41,11 +44,12 @@
 - **Render surfaces:** `@vida/editor` = inline (TipTap node + slash-menu); `@vida/ui` = standalone (widget) [FACT:
   ADR-008:104-109; editor/extensions/integration-blocks.tsx; dashboard/adapter.ts].
 - **Consumption convention (#13):** standalone — `resolveOfferedSet(space,'standalone')` → add-menu; `toBlocks(instances,
-  registry, states)` gates on `isStandalone` + degrades unresolvable [FACT: dashboard/adapter.ts:1-116]. inline — the
+registry, states)` gates on `isStandalone` + degrades unresolvable [FACT: dashboard/adapter.ts:1-116]. inline — the
   editor registry drives the slash-menu [FACT: editor/slash-commands.ts]. `enabled_blocks`(palette) ≠
   `block_instances`(placements) (IR-3).
 
 ## §C. Template seam (ADR-009) — **NOT yet barrel-exported (S2 closes)** [FACT: index.ts absent; templates/index.ts]
+
 - **Types:** `InstantiationResult{status, seeded, flagged:FlaggedMember[]}`; errors `TemplateNotFound`·
   `TemplateCaptureError` [FACT: templates/types.ts:1-51]. `TemplateRow{id, name, bundle:JSON-TEXT (opaque)}` [FACT:
   schema/foundation/templates.ts:15-22].
@@ -58,17 +62,19 @@
   rendered as a degraded note [FACT: ADR-009 §1; templates/types.ts FlaggedMember].
 
 ## §D. Spaces seam (ADR-006) — barrel-exported [FACT: index.ts:117]
+
 - **Types:** `TaggableTypeRegistry{register, isRegistered, list}`; `CreateSpaceInput`; `SpaceRow{id, root_tag_id, name,
-  icon?, default_view_id?, parent_space_id?}` [FACT: spaces/types.ts:10-71; schema/foundation/spaces.ts:82-95].
+icon?, default_view_id?, parent_space_id?}` [FACT: spaces/types.ts:10-71; schema/foundation/spaces.ts:82-95].
 - **Service:** `SpacesService` — tags `{createTag,updateTag,deleteTag}`, entity-tags `{tagEntity,untagEntity}` (idem),
   entity-links `{createLink,removeLink}` (idem), spaces `{createSpace,updateSpace,deleteSpace}` (cycle-guarded),
   palette `{addEnabledBlock,removeEnabledBlock}` (idem) [FACT: spaces/service.ts:38-241].
 - **Association resolver:** `AssociationResolver.resolveAssociations(ref, mode:'unified'|'separate')` [FACT:
   association-resolver.ts:76-146].
 - **Consumption convention (#13):** `SpacesService` access via §0; a Space = `{root tag · Views · enabled Blocks ·
-  name}`; `enabled_blocks` curation gates *adding*, never force-deletes placements [FACT: ADR-008:128-140]. Scope-STATE
+name}`; `enabled_blocks` curation gates _adding_, never force-deletes placements [FACT: ADR-008:128-140]. Scope-STATE
   (#15) + the page (#20) are out of scope.
 
 ## §E. What #13 does NOT contract (out of scope — see slice-map)
+
 Live service bootstrap (UI-3) · capture/instantiate execution (`@vida/core` S3–S5) · scope state (#15) · Spaces page
 (#20) · per-module providers (#27+) · per-surface live hooks (first consumers) · any rendered surface.

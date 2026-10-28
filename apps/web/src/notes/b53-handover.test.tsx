@@ -17,7 +17,8 @@ import { __resetBodyWrites } from './body-writes'
 
 const writeSpy = vi.fn<(id: string, doc: EditorDocument) => Promise<unknown>>()
 vi.mock('../db/composition-root', () => ({
-  getServices: () => Promise.resolve({ notes: { writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d) } }),
+  getServices: () =>
+    Promise.resolve({ notes: { writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d) } }),
 }))
 
 interface Probe {
@@ -36,14 +37,27 @@ vi.mock('@vida/editor', () => ({
 
 import { NoteEditorBody } from './note-editor-body'
 
-const text = (t: string): EditorDocument => ({ type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }] })
+const text = (t: string): EditorDocument => ({
+  type: 'doc',
+  content: [{ type: 'paragraph', content: [{ type: 'text', text: t }] }],
+})
 const OLD = text('OLD')
 const NEW = text('NEW')
 
 // One journal page, two hosts that both carry the STALE cached copy (content OLD) — exactly what the warm cache holds.
 const stale: NoteEntityData = {
-  id: 'j1', type: 'journal', title: 'today', content: OLD, contentStatus: 'ok', rawContent: JSON.stringify(OLD),
-  favorite: false, archived: false, updated: 'now', journalDate: '2026-10-26', icon: null, cover: null,
+  id: 'j1',
+  type: 'journal',
+  title: 'today',
+  content: OLD,
+  contentStatus: 'ok',
+  rawContent: JSON.stringify(OLD),
+  favorite: false,
+  archived: false,
+  updated: 'now',
+  journalDate: '2026-10-26',
+  icon: null,
+  cover: null,
 }
 
 function Swap({ onReady }: { onReady: (go: () => void) => void }) {

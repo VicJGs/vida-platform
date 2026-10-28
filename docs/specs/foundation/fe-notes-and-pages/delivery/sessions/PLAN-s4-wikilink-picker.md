@@ -6,34 +6,38 @@
 > (NOT-18/19) + the ui-3 editor spec (`e4-slash-menu.md:31`) + the finished ① (`docs/modules/notes/current-*`).
 
 ## 1. What S4 is (scope line)
+
 The **`[[` wiki-link picker**: the UI a user gets when linking a page to another by title — a candidate list over
 `resolveWikiLink(text)`, an explicit **"+ Create '<text>'"** affordance (create-on-miss, never silent — NOT-19), and a
 **preview-card** for a chosen/candidate link (unenriched — BSE-12 deferred). fe-notes OWNS the **picker UI + the
 create-on-miss two-call compose**; it does NOT author the editor-side `[[` trigger.
 
 **Doc-resolved boundary (the pivotal S4 finding — grounded, not guessed):**
+
 - The **`[[` suggestion SURFACE (the editor trigger)** that detects `[[` typed in the editor is **a ui-3 `@vida/editor`
   concern, explicitly separate from the E4 slash menu, and UNBUILT** [FACT: `e4-slash-menu.md:31` — "`@`-mentions /
   entity `[[wiki-link]]` autocomplete — a separate suggestion surface"]. fe-notes **DELEGATES** platform-block TipTap
   extensions to `@vida/editor` and does **not** re-author them [FACT: interpretation.md:124 (NOT-52); IR-1:140 —
   "a missing primitive is a decomposition FINDING, not a license to build it here"]. `VidaEditor` exposes no
   extension/suggestion injection seam [FACT: editor.tsx:25-43,146-160].
-- **NOT-19 SPLIT** [FACT: notes-and-pages.md:33]: *service* = the stub-`note` create + link compose (NOT-01 + NOT-14);
+- **NOT-19 SPLIT** [FACT: notes-and-pages.md:33]: _service_ = the stub-`note` create + link compose (NOT-01 + NOT-14);
   **UI = "the picker '+ Create' affordance + explicit-choice gate" → P6 (fe-notes)**. So the picker UI + compose is ours.
 
 **In scope (S4 — apps/web):**
+
 - A presentational **`PickerView`** (state-as-prop, the S3 `BacklinksView` split): candidate rows · the explicit
   "+ Create '<text>'" row · empty/searching states · keyboard a11y (combobox/listbox semantics).
 - A **`PreviewCard`** for a link target — renders with **available data** (title/type), no enrichment, no dead card (BSE-12).
 - The **create-on-miss two-call compose** (IR-4): `createPage('note')` → `createPageLink(src, tgt)` — explicit, never
   silent; surfaces `JournalExistsError`/`UnregisteredEntityTypeError` at the affordance (IR-8).
 - A **`useWikiLinkPicker`** data seam (honest-stub default + `?sample` DEV gate; live = React-Query over `resolveWikiLink`
-  + the compose mutations), mirroring `useNoteEntity`/`useBacklinks`.
+  - the compose mutations), mirroring `useNoteEntity`/`useBacklinks`.
 - A **DEV-gated mount** (B1): a `?picker` branch in `note-entity.tsx` renders `<WikiLinkPicker sourcePageId={page.id}>`
   **open as an overlay** on the note page for the blocking Visual Gate (the exact `?sample` dev-gate precedent;
   NODE_ENV≠production, off in prod). The real caret-anchored trigger is ui-3.
 
 **Explicitly OUT (homed/deferred — no pull-forward, §XXVIII if tempted):**
+
 - The **`[[` suggestion-surface editor extension** (the trigger) → **ui-3 `@vida/editor`** (e4:31; a FINDING filed in the
   parking lot — the EC-24 "editor change = separate ui-3 PR" precedent). S4 ships the picker; ui-3 ships the trigger that
   mounts it.
@@ -43,6 +47,7 @@ create-on-miss two-call compose**; it does NOT author the editor-side `[[` trigg
 - Content persistence / Yjs (IR-7); FTS5 (DB-8).
 
 ## 2. Composition shape
+
 ```
 apps/web/src/notes/
 ├─ wikilink-picker.tsx        [NET-NEW]  PickerView(state-as-prop) + WikiLinkPicker(hook-wired shell)
@@ -55,23 +60,26 @@ apps/web/src/notes/
 ├─ link-preview-card.tsx      [NET-NEW]  PreviewCard({ target }) — available-data card (BSE-12 unenriched), no dead card
 └─ (DEV harness)              a ?picker dev-gate mounts <WikiLinkPicker> open on /notes/$id for the Visual Gate
 ```
+
 The picker is a **listbox/combobox** popup (the WAI-ARIA pattern the E4 slash menu uses — focus semantics documented in
-`e4-slash-menu.md`); S4 builds the *panel*, not the editor caret-anchoring (that's the ui-3 trigger). States:
+`e4-slash-menu.md`); S4 builds the _panel_, not the editor caret-anchoring (that's the ui-3 trigger). States:
 `searching | empty(no candidates, only "+ Create") | populated | error`.
 
 ## 3. Net-new units (files)
-| File | Purpose | Notes |
-|------|---------|-------|
-| `wikilink.ts` | **pure** — `WikiCandidate` view-model, `toCandidates(PageRow-like[])`, the create-row model | no React/@vida/core; the structural `*Like` precedent |
-| `use-wikilink-picker.ts` | data seam — query state + candidates + `pick`/`createAndLink` | STUB: honest-empty + `?sample`; live swap = RQ over `resolveWikiLink` + compose mutations |
-| `wikilink-picker.tsx` | `PickerView` (state-as-prop) + `WikiLinkPicker` (hook shell) | listbox a11y; explicit "+ Create" row; reuses `note-chrome` atoms (EC-22) |
-| `link-preview-card.tsx` | `PreviewCard` — available-data target card (BSE-12) | no enrichment; degrade to title-only; never a dead card |
-| `*.test.ts(x)` | `wikilink.test.ts` (pure) + `wikilink-picker.test.tsx` (states + create-on-miss) + `link-preview-card.test.tsx` | mirror S3 coverage |
+
+| File                     | Purpose                                                                                                         | Notes                                                                                     |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| `wikilink.ts`            | **pure** — `WikiCandidate` view-model, `toCandidates(PageRow-like[])`, the create-row model                     | no React/@vida/core; the structural `*Like` precedent                                     |
+| `use-wikilink-picker.ts` | data seam — query state + candidates + `pick`/`createAndLink`                                                   | STUB: honest-empty + `?sample`; live swap = RQ over `resolveWikiLink` + compose mutations |
+| `wikilink-picker.tsx`    | `PickerView` (state-as-prop) + `WikiLinkPicker` (hook shell)                                                    | listbox a11y; explicit "+ Create" row; reuses `note-chrome` atoms (EC-22)                 |
+| `link-preview-card.tsx`  | `PreviewCard` — available-data target card (BSE-12)                                                             | no enrichment; degrade to title-only; never a dead card                                   |
+| `*.test.ts(x)`           | `wikilink.test.ts` (pure) + `wikilink-picker.test.tsx` (states + create-on-miss) + `link-preview-card.test.tsx` | mirror S3 coverage                                                                        |
 
 Reuses shipped: `note-chrome` (`Row`/`Icon`/`typeIcon`/`typeLabel`/`Eyebrow`) · Tamagui `Text`/`View` · the ① seam
 (`resolveWikiLink`/`createPage`/`createPageLink`) · typed errors. **No new `@vida/ui` primitive** (§VI; feature panel).
 
 ## 4. Decisions — all DOC-RESOLVED
+
 - **D-S4-1 — the `[[` trigger extension is ui-3, NOT fe-notes.** [FACT: e4-slash-menu.md:31 "separate suggestion
   surface"; interpretation IR-1/DELEGATES] → S4 builds the picker UI + compose; the editor trigger is a FILED ui-3 finding
   (parking lot). Demonstrated standalone via a `?picker` dev-gate (the `?sample` precedent).
@@ -79,9 +87,9 @@ Reuses shipped: `note-chrome` (`Row`/`Icon`/`typeIcon`/`typeLabel`/`Eyebrow`) ·
   No `createNoteAndLink` service method exists or is invented. The "+ Create '<text>'" row is a distinct, explicit
   choice — a typo never silently creates a stray page. Surfaces `JournalExistsError`/`UnregisteredEntityTypeError` (IR-8).
   - **N1 — what pick/create DO in M1 (the picker↔link boundary):** `pick(candidate)` → `createPageLink(sourcePageId,
-    target_page_id)` (the stored `page_links` row — id-bound, NP-7); `createAndLink(title)` → `createPage('note',{title})`
+target_page_id)` (the stored `page_links` row — id-bound, NP-7); `createAndLink(title)` → `createPage('note',{title})`
     THEN `createPageLink`. The **editor-doc `[[token]]` INSERTION at the caret is the ui-3 trigger's job**, NOT fe-notes'
-    (D-S4-1). So fe-notes owns the *stored link* side (which S3's backlinks panel then reads); the inline editor token is
+    (D-S4-1). So fe-notes owns the _stored link_ side (which S3's backlinks panel then reads); the inline editor token is
     ui-3. In M1 (no trigger) the compose is driven by the picker directly (dev-gate/live-hook), not by an editor caret.
 - **D-S4-3 — candidates are id-bound, title-LIKE** [FACT: NOT-18/NP-7]. `resolveWikiLink(text)` → title-LIKE `PageRow`s;
   the picker binds a concrete `target_page_id` (rename-safe). Pure `toCandidates` maps rows → `WikiCandidate` view-model.
@@ -99,14 +107,16 @@ Reuses shipped: `note-chrome` (`Row`/`Icon`/`typeIcon`/`typeLabel`/`Eyebrow`) ·
     pattern `e4-slash-menu.md` documents). Not just static roles.
 
 ## 5. Envision coverage — S4's EC Visual-Gate MUSTs
-| EC | Requirement | S4 assertion |
-|----|-------------|--------------|
-| **EC-10** | `[[` picker shows title-LIKE candidates + an **explicit "+ Create '<text>'"**; create-on-miss never silent | Visual Gate: `?picker` sample shows candidate rows + a distinct "+ Create" row; create is a separate explicit choice |
-| **EC-11** | a link shows a **preview card**; enrichment deferred → renders with available data, no dead card | Visual Gate: `PreviewCard` renders title+type (available data), never empty/dead |
-| **EC-22** | Lucide icons, token-tinted | candidate rows + create row carry Lucide svg, tinted via CSS var |
-| EC-16/17 (feel) | editorial calm | live per-slice Visual Gate (full-matrix AA) |
+
+| EC              | Requirement                                                                                                | S4 assertion                                                                                                         |
+| --------------- | ---------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **EC-10**       | `[[` picker shows title-LIKE candidates + an **explicit "+ Create '<text>'"**; create-on-miss never silent | Visual Gate: `?picker` sample shows candidate rows + a distinct "+ Create" row; create is a separate explicit choice |
+| **EC-11**       | a link shows a **preview card**; enrichment deferred → renders with available data, no dead card           | Visual Gate: `PreviewCard` renders title+type (available data), never empty/dead                                     |
+| **EC-22**       | Lucide icons, token-tinted                                                                                 | candidate rows + create row carry Lucide svg, tinted via CSS var                                                     |
+| EC-16/17 (feel) | editorial calm                                                                                             | live per-slice Visual Gate (full-matrix AA)                                                                          |
 
 ## 6. Test plan
+
 - `wikilink.test.ts` (pure): `toCandidates` maps rows→view-model (id-bound, type/title); the "+ Create" row model
   (present on non-blank query, absent on blank); dedup/ordering if any.
 - `wikilink-picker.test.tsx`: `searching`/`empty`(+Create row present)/`populated`/`error`; pick → `onPick(target_page_id)`;
@@ -118,8 +128,10 @@ Reuses shipped: `note-chrome` (`Row`/`Icon`/`typeIcon`/`typeLabel`/`Eyebrow`) ·
 - Full `@vida/web` suite green (S2 lesson — full suite).
 
 ## 7. Blocking Visual Gate (real browser, after g2)
+
 Brave via `PW_EXECUTABLE_PATH`; real app (onboarding → `/notes/1?sample&picker` mounts the picker open). 3 presets ×
 light/dark × 375/768/1440:
+
 - EC-10: candidate rows + a DISTINCT "+ Create '<query>'" row visible; create is a separate affordance.
 - EC-11: `PreviewCard` renders available data (title+type), no dead card.
 - EC-22: Lucide svg in the picker rows (tinted, both modes).
@@ -129,6 +141,7 @@ light/dark × 375/768/1440:
   ([[visual-gate-must-assert-measurement-and-composite-opacity]]).
 
 ## 8. Risks / findings
+
 - **F-S4-1 (FILED FINDING — not built here):** the `[[` suggestion-surface editor extension (the trigger) is a **ui-3
   `@vida/editor` unit** (e4:31). Add to the task parking lot alongside EC-24; it lands as a separate ui-3 change that
   mounts `WikiLinkPicker`. Without it, the picker is demonstrated via the `?picker` dev-gate only (M1 honest posture).
@@ -138,5 +151,6 @@ light/dark × 375/768/1440:
 - **R2 — create-on-miss default type.** `createPage('note')` is fixed by NOT-19 ("creates a stub `note` page"); not a choice.
 
 ## 9. Performance budget (§XXII)
+
 Pure `toCandidates` is O(n) over the resolveWikiLink result (title-LIKE, small). Picker is a short list; no virtualization
 needed at M1 scale. Stated per §XXII; N/A-trivial for the stub.

@@ -1,11 +1,15 @@
 # Intake: Projects
+
 <!-- /documentation Phase 1 (Intake). Harvest from 3 sources → gap map. No-Guessing: every claim cited. -->
+
 Context: features/projects (Wave 2 foundation — Tasks link in; consumed by Purpose, Check-in reviews, Bucket List)
 Sources: v2 (ADR-002 §5.4 + @vida/types/project.ts + CLAUDE.md §2) · v1 (life-os src/features/projects + types/projects.ts + API.md) · user intent
 Session: 2026-06-28 · documentation-blueprint
 
 ## A. WHAT EXISTS — v2 (current, authoritative)
+
 **Data model — 3 tables** `[FACT: ADR-002 §5.4 L1532-1625; project.ts]`:
+
 - `projects`: `title`[E], `description`[E], `vision`[E], `scope`{personal,professional,academic,community}, `complexity`{simple,moderate,complex,enterprise}, `status`{not_started,in_progress,completed,on_hold,cancelled}, `priority`{critical…none}, **`progress` 0-100 (denormalized)**, `start_date`/`target_end_date`/`actual_end_date`, `estimated_hours`/`actual_hours` (**INTEGER minutes** despite name), `tags`[E], `color`, `icon`, soft-delete. `[FACT: L1535-1568]`
 - `milestones`: `project_id` (CASCADE), **`parent_milestone_id` self-ref (SET NULL) → nested milestones**, `title`[E], `description`[E], `status`, **`progress` 0-100**, `due_date`, `sort_order`. `[FACT: L1576-1598]`
 - `project_documents`: `project_id` (CASCADE), `milestone_id` (SET NULL), `name`[E], `file_type`, `file_size`, **`encrypted_blob` BLOB[E] (file stored locally)**. `[FACT: L1606-1624]`
@@ -15,7 +19,9 @@ Session: 2026-06-28 · documentation-blueprint
 **Cross-cutting:** Tasks link via `task.project_id` + `task.milestone_id` (Tasks-owned) `[FACT: ADR-002 §5.3; CLAUDE.md §3]`; junctions `project_habits`, `purpose_projects` `[FACT: project.ts L248-256]`; `bucket_list_items.project_id` `[FACT: project.ts L228]`; `project` + `milestone` are valid `entity_links` note targets `[FACT: ADR-002 L1343]`.
 
 ## B. WHAT v1 DID — life-os projects (legacy)
+
 `[FACT: life-os src/types/projects.ts + features/projects + API.md]`
+
 - **Full feature**: ProjectsPage · ProjectDetailPage · ArchivedProjectsPage. `[FACT: pages]`
 - **Milestone Kanban** (MilestoneKanban/KanbanColumn/MilestoneKanbanCard) — board view of milestones. `[FACT: components]`
 - **Project-level time tracking** (TimeLogButton/List/Summary, ManualTimeEntry, ProjectTimeReport). `[FACT: components]`
@@ -25,6 +31,7 @@ Session: 2026-06-28 · documentation-blueprint
 - **Archived projects** as a distinct view. `[FACT: ArchivedProjectsPage]`
 
 ### Key v1→v2 deltas (what changed, why it matters)
+
 1. v2 **encrypts** title/description/vision/tags + document blobs `[E]` — ZK upgrade. `[FACT: §5.4 [E]]`
 2. v2 **nests milestones** (`parent_milestone_id`) — a milestone tree, not a flat list. `[FACT: L1579]`
 3. v2 **has no `deliverables` table** — yet CLAUDE.md §2 names a 4-level hierarchy incl. Deliverables. Tension. `[FACT: §5.4 vs CLAUDE.md §2]`
@@ -33,6 +40,7 @@ Session: 2026-06-28 · documentation-blueprint
 6. v2 `estimated_hours`/`actual_hours` are **minutes** (name is misleading). `[FACT: L1552 comment]`
 
 ## C. GAP MAP — genuine unknowns (need Victor's intent; not answerable from sources)
+
 G1 — **Scope / views**: full v1 (assumed). Views: Projects list (+ **archived** view) · Project detail/standalone (milestones **Kanban** + tree, documents, time, vision/mission, progress, linked tasks) · milestone Kanban. Confirm set.
 G2 — ⚠ **DELIVERABLES — the hierarchy gap**: §2 says Project > Milestones > **Deliverables** > Tasks, but the schema has only projects + nested milestones + tasks (via FK). Are "deliverables" = (a) the **nested milestone** level (`parent_milestone_id`: milestone → sub-milestone="deliverable"), (b) a **new `deliverables` table**, or (c) just **tasks** (drop the term)? Resolve the 4-level intent against the 2-entity schema.
 G3 — ⚠ **Vision + Mission via TipTap**: `projects.vision` is a plain `[E]` column and there's **no `mission`**. Should vision + mission be **TipTap `pages`** (`entity_type='project'`, rich markdown — matches §2 "via TipTap"), with the column dropped/kept as a plain summary? How is mission stored?
@@ -46,6 +54,7 @@ G10 — **Notes via pages**: project + milestone notes via `pages` (`entity_type
 G11 — **Tags**: `projects.tags` inline `[E]` → migrate to the **shared scoped** tag system (Tasks/Finance/Relationships precedent)? Confirm.
 
 ## Resolution
+
 `[INTENT: Victor, 2026-06-29]` — **IN PROGRESS** (G1–G3 captured; G4–G11 pending). WHOLE only when all answered.
 
 - **G1 — Views (rich + flexible).** `[INTENT]`
@@ -76,9 +85,9 @@ G11 — **Tags**: `projects.tags` inline `[E]` → migrate to the **shared scope
      data ingestion → ZK tension (see below).**
   4. **Activity logs** — manual task changes + outside logs (calls, cold outreach, organic).
   5. **Solid artifacts** — designs, portfolios, documents, analyses, research (delivered / not).
-  ⇒ a deliverable has a **measurement type** determining how its progress derives; project/milestone progress
-  rolls up from deliverables + tasks. **Large enough to need its own mini-design pass** (the deliverable
-  measurement taxonomy). Documented as intent + taxonomy now, not fully specced.
+     ⇒ a deliverable has a **measurement type** determining how its progress derives; project/milestone progress
+     rolls up from deliverables + tasks. **Large enough to need its own mini-design pass** (the deliverable
+     measurement taxonomy). Documented as intent + taxonomy now, not fully specced.
 - **G5 — No separate project time; derived from task focus sessions.** `[INTENT]` Project time (if shown) derives
   from **focus sessions on project-tasks** (the Tasks time ledger). No project-level timer for now; **task focus
   (pomodoro) is maintained**. (One ledger, as recommended.)
@@ -95,12 +104,13 @@ G11 — **Tags**: `projects.tags` inline `[E]` → migrate to the **shared scope
   project-task special UI/UX (G1).
 
 ### ⚠ CONSTITUTIONAL — external integrations (generalize the Finance ADR) + AI egress (new ADR)
+
 - **Candidate ADR (generalized): "External data ingestion under zero-knowledge"** — now covers banks (Finance) +
   social/marketing metrics (Projects deliverables, G4.3). Same rule: device-side fetch = ZK-safe; aggregator =
   documented dent; server-proxy = breaks ZK.
 - **Candidate ADR (new): "AI/LLM integration under zero-knowledge"** — documents-as-LLM-context (G6) + any AI
   feature. On-device model = ZK-safe; cloud model = opt-in plaintext disclosure.
-Both: ⚠ INTENDED + TENTATIVE until decided; the verified-real Projects surface is manual entry + local docs.
+  Both: ⚠ INTENDED + TENTATIVE until decided; the verified-real Projects surface is manual entry + local docs.
 
 - **G8 — Cross-module links: all + three additions.** `[INTENT]` Confirmed: `project_habits`, `purpose_projects`,
   `bucket_list.project_id`, Check-in reviews read progress, deliverable→Finance links, Gamification XP (⚠).
@@ -116,6 +126,7 @@ Both: ⚠ INTENDED + TENTATIVE until decided; the verified-real Projects surface
 - **G11 — Tags → shared scoped system. CONFIRMED.** `[INTENT]`
 
 ### ⚠⚠ GOVERNING PRINCIPLE (Victor, 2026-06-29) — the "extension model" (→ core constitution + both ADRs)
+
 Adding features/components/integrations **does not change Vida's goal: a zero-knowledge system.** External
 integrations (bank/social/marketing ingestion, AI) are **opt-in components** where **the user owns the risk of
 his own choices**; Vida provides **a tough layer of protection** around them. So the architecture is a
@@ -125,6 +136,7 @@ a named principle**, and it is the frame for: ADR "external data ingestion under
 under ZK".
 
 ### Refinements to earlier gaps
+
 - **G6 reframed:** project documents are **primarily a secure VAULT** — protect confidential/legal/important
   project info (templates, knowledge), **large files included** (resolves the videos/large-file concern → R2
   pipeline for big encrypted blobs). The AI/LLM angle is **secondary**.
@@ -132,13 +144,15 @@ under ZK".
   direction for the AI ADR.
 
 ## Status: intake WHOLE (2026-06-29). All G1–G11 resolved. Major INTENDED surface: deliverables table +
+
 multi-type measurement system (needs design pass), project_contacts(role)/project-accounts/project-events links,
 vision+mission pages, dedicated Tasks→Projects API, vault documents (R2). Governing extension-model principle →
 constitution + 2 ADRs. NOT documented as shipped.
 
 ## EXPANSION — Investigations (Wave R, 2026-07-15) `[INTENT: Victor 2026-07-15]`
+
 Recovered from the v1 audit (`_scope-reconciliation-v1.md` #4: v1 Projects-domain `Investigation` entity, name-only).
-**RESOLVED BY COMPOSITION — no new entity** (Victor: *"resolve it by composition — no entity, record it"*).
+**RESOLVED BY COMPOSITION — no new entity** (Victor: _"resolve it by composition — no entity, record it"_).
 
 - **The question raised (Victor):** why have it, and how does it differ from a milestone / the existing entities?
 - **The distinction (real but already covered):** Milestone/Deliverable/Task = **execution** structure for known
@@ -150,11 +164,12 @@ Recovered from the v1 audit (`_scope-reconciliation-v1.md` #4: v1 Projects-domai
   execution/tracking rung — whose **exploration workspace is a Knowledge Lab investigation**, linked via
   `entity_links`. Zero new schema. Threaded into Projects identity (NOT-note) + structure-data. **Only re-open if a
   future need surfaces project-specific research structure** (formal hypotheses w/ pass-fail, a decision-gate that
-  redirects the project, or research that *is* the whole project) that neither a deliverable nor a Lab entry captures.
+  redirects the project, or research that _is_ the whole project) that neither a deliverable nor a Lab entry captures.
 
 ## Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-06-28 | documentation-blueprint | intake harvested (v2 ADR-002 §5.4 3 tables + project.ts + CLAUDE.md §2; v1 life-os projects full feature: Kanban, time logging, actions, purpose links, docs); gap map G1–G11. ⚠ Headline gaps: deliverables/hierarchy (no table), vision+mission via TipTap (no mission col), progress auto-calc formula, project-vs-task time ledger. |
-| 2026-07-15 | documentation-blueprint | EXPANSION Investigations (Wave R): RESOLVED BY COMPOSITION — no entity. A research/investigation = a deliverable (artifact measurement type) backed by a Knowledge Lab investigation (entity_links). Threaded into identity + structure-data. |
+
+| Date       | Session                 | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------- | ----------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-06-28 | documentation-blueprint | intake harvested (v2 ADR-002 §5.4 3 tables + project.ts + CLAUDE.md §2; v1 life-os projects full feature: Kanban, time logging, actions, purpose links, docs); gap map G1–G11. ⚠ Headline gaps: deliverables/hierarchy (no table), vision+mission via TipTap (no mission col), progress auto-calc formula, project-vs-task time ledger.                                                                                                                                                                                                                                                                                                                                           |
+| 2026-07-15 | documentation-blueprint | EXPANSION Investigations (Wave R): RESOLVED BY COMPOSITION — no entity. A research/investigation = a deliverable (artifact measurement type) backed by a Knowledge Lab investigation (entity_links). Threaded into identity + structure-data.                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | 2026-06-29 | documentation-blueprint | G1–G11 resolved; intake WHOLE. Dedicated deliverables table (G2) w/ multi-type measurement system (financial/statistics/3rd-party/logs/artifacts — needs design pass, G4); vision+mission TipTap pages (G3); project time from task focus only (G5); documents = secure VAULT incl large files via R2 (G6); dedicated Tasks→Projects API for project-tasks (G7); +project_contacts(role)/project-accounts/project-events links (G8); user-personalized views (G9); deliverable notes (G10); shared scoped tags (G11). GOVERNING PRINCIPLE: ZK core + guarded opt-in extension layer (user owns integration risk) → constitution + 2 ADRs (external ingestion, AI agentic-within). |

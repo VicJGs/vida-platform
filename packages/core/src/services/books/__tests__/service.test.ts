@@ -84,7 +84,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -398,7 +401,11 @@ describe('mod-books S2 — ISBN lookup port (BOO-07/08), deny-safe', () => {
 
 // --- S3: Assets + positions + mapping (BOO-09/10/11/12/44) -------------------
 
-const blob = (name: string): FileBlob => ({ bytes: new Uint8Array([1, 2, 3]), mimeType: 'application/pdf', filename: name })
+const blob = (name: string): FileBlob => ({
+  bytes: new Uint8Array([1, 2, 3]),
+  mimeType: 'application/pdf',
+  filename: name,
+})
 
 // A configurable mock AttachmentPort — mirrors mockIngestion. Default upload/download succeed deterministically;
 // `download` is the S6 Reader decrypt seam (BOO-39).
@@ -592,9 +599,9 @@ describe('mod-books S4 — annotations CRUD (BOO-15/16/17)', () => {
     expect(hl.book_id).toBe(b.id) // derived from the asset (work-anchored)
     expect(hl.asset_id).toBe(asset.id)
     expect(hl.captured_text).toBe('a span')
-    await expect(
-      h.svc.addHighlight('missing', { captured_text: 'x', position: 'p.1' }),
-    ).rejects.toBeInstanceOf(BookAssetNotFoundError)
+    await expect(h.svc.addHighlight('missing', { captured_text: 'x', position: 'p.1' })).rejects.toBeInstanceOf(
+      BookAssetNotFoundError,
+    )
   })
 })
 
@@ -628,7 +635,10 @@ describe('mod-books S4 — inter-links + notes (BOO-18, BK-6 highlight exclusion
       h.svc.linkAnnotations({ kind: 'highlight', id: hl.id }, { kind: 'quote', id: q.id }),
     ).rejects.toBeInstanceOf(AnnotationNotLinkableError)
     await expect(
-      h.svc.linkAnnotations({ kind: 'bookmark', id: (await h.svc.addBookmark(b.id, 'p.1')).id }, { kind: 'highlight', id: hl.id }),
+      h.svc.linkAnnotations(
+        { kind: 'bookmark', id: (await h.svc.addBookmark(b.id, 'p.1')).id },
+        { kind: 'highlight', id: hl.id },
+      ),
     ).rejects.toBeInstanceOf(AnnotationNotLinkableError) // highlight as TARGET too
     await expect(h.svc.openAnnotationNote({ kind: 'highlight', id: hl.id })).rejects.toBeInstanceOf(
       AnnotationNotLinkableError,
@@ -755,7 +765,10 @@ describe('mod-books S5 — quote-embed feed + toggles (BOO-21/22)', () => {
     await h.svc.addQuote(a.id, 'a1')
     await h.svc.addQuote(a.id, 'a2')
     await h.svc.addQuote(b.id, 'b1')
-    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: false, overrides: { [a.id]: true } }) })
+    const svc = createBooksService({
+      ...booksDeps(h.db),
+      preferences: mockPreferences({ global: false, overrides: { [a.id]: true } }),
+    })
     expect(await svc.getEmbeddableQuotes({})).toHaveLength(2) // only A's (B excluded)
     expect(await svc.getEmbeddableQuotes({ bookId: a.id })).toHaveLength(2)
     await expect(svc.getEmbeddableQuotes({ bookId: b.id })).rejects.toBeInstanceOf(QuoteEmbedDisabledError)
@@ -768,7 +781,10 @@ describe('mod-books S5 — quote-embed feed + toggles (BOO-21/22)', () => {
     const d = await h.svc.createBook({ title: 'D' })
     await h.svc.addQuote(c.id, 'c1')
     await h.svc.addQuote(d.id, 'd1')
-    const svc = createBooksService({ ...booksDeps(h.db), preferences: mockPreferences({ global: true, overrides: { [c.id]: false } }) })
+    const svc = createBooksService({
+      ...booksDeps(h.db),
+      preferences: mockPreferences({ global: true, overrides: { [c.id]: false } }),
+    })
     await expect(svc.getEmbeddableQuotes({ bookId: c.id })).rejects.toBeInstanceOf(QuoteEmbedDisabledError)
     const feed = await svc.getEmbeddableQuotes({})
     expect(feed).toHaveLength(1) // D only; C excluded, no throw
@@ -874,9 +890,7 @@ describe('mod-books S6 — reading sessions + Reader orchestration (BOO-23/24/25
     expect(rsv.reading.asset_id).toBe(asset.asset.id)
     await expect(h.svc.startSession(a.id, { assetId: 'ghost' })).rejects.toBeInstanceOf(BookAssetNotFoundError)
     // asset belongs to A, not B → same-book guard rejects.
-    await expect(h.svc.startSession(b.id, { assetId: asset.asset.id })).rejects.toBeInstanceOf(
-      BookAssetNotFoundError,
-    )
+    await expect(h.svc.startSession(b.id, { assetId: asset.asset.id })).rejects.toBeInstanceOf(BookAssetNotFoundError)
   })
 
   // (4) endSession — base completed (+ended_at) + capture columns; unknown id rejects; no-capture leaves nulls.
@@ -1014,8 +1028,7 @@ describe('mod-books S7 — Reading plans / Quota Planner (BOO-27..33)', () => {
 
   // date helper — a YYYY-MM-DD `offsetDays` from real today (plans compute against the real clock; derived reads
   // take `asOf` for determinism).
-  const iso = (offsetDays: number): string =>
-    new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
+  const iso = (offsetDays: number): string => new Date(Date.now() + offsetDays * 86400000).toISOString().slice(0, 10)
   type Dist = { dailyQuota: number; totalPages: number; calendarReconciled: boolean }
 
   // (1) createPlan (auto, parallel) — plan + junction rows; distribution round-trips JSON (PLAN §4.1).
@@ -1033,9 +1046,7 @@ describe('mod-books S7 — Reading plans / Quota Planner (BOO-27..33)', () => {
     expect(dist.totalPages).toBe(300)
     expect(dist.dailyQuota).toBe(30) // ceil(300 / 10)
     expect(dist.calendarReconciled).toBe(false)
-    const junctions = h.bsql
-      .prepare('SELECT book_id FROM reading_plan_books WHERE plan_id = ?')
-      .all(plan.id)
+    const junctions = h.bsql.prepare('SELECT book_id FROM reading_plan_books WHERE plan_id = ?').all(plan.id)
     expect(junctions).toHaveLength(2)
   })
 
@@ -1300,7 +1311,9 @@ describe('mod-books S8 — unified progress + conflict resolution', () => {
     await expect(h.svc.resolveConflict(`conflict:${b.id}`, { rule: 'last_valid' })).resolves.toBeUndefined()
     // malformed id (no `conflict:` prefix) and an unknown book both fail loud.
     await expect(h.svc.resolveConflict('garbage', { rule: 'last_valid' })).rejects.toBeInstanceOf(BookNotFoundError)
-    await expect(h.svc.resolveConflict('conflict:ghost', { rule: 'last_valid' })).rejects.toBeInstanceOf(BookNotFoundError)
+    await expect(h.svc.resolveConflict('conflict:ghost', { rule: 'last_valid' })).rejects.toBeInstanceOf(
+      BookNotFoundError,
+    )
   })
 
   // §4.1 — getUnifiedProgress guards the book.

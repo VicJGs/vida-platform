@@ -33,7 +33,7 @@
      designed state; the frame owns the period title once (here "2026", already shipped: `periodLabel` year branch +
      ±12-month clamped nav [FACT: apps/web/src/app/calendar/index.tsx:59,82]).
 
-## 2. Business rules (BR-CAL-S4-*)
+## 2. Business rules (BR-CAL-S4-\*)
 
 1. **BR-CAL-S4-1 · Presentational arrangement only.** `density` arrives pre-derived (S7 `useCalendar` decides what makes
    a day "has" vs "busy" — seam §B); YearView only places dots. No sorting, no counting, no thresholds.
@@ -133,8 +133,8 @@
     boundary by design (paper band, not a control — 1.4.11 does not apply to a non-interactive decorative cell); the
     dot + ring carry the information and are measured.
 12. **BR-CAL-S4-12 · Surface wiring (apps/web).** `range === 'year'` → `<YearView year={focused.getFullYear()}
-    density={yearFixture(focused)} today={toKey(new Date())} weekStartsOn={weekStartsOn} aria-label="Year"
-    onPickMonth={(m) => { setFocusedDate(toKey(clampToMonth(focused, focused.getFullYear(), m))); setRange('month') }} />` — the drill keeps
+density={yearFixture(focused)} today={toKey(new Date())} weekStartsOn={weekStartsOn} aria-label="Year"
+onPickMonth={(m) => { setFocusedDate(toKey(clampToMonth(focused, focused.getFullYear(), m))); setRange('month') }} />` — the drill keeps
     the focused day-of-month clamped to the target month's length (the shipped `addMonthsClamped` rule, :72-78 —
     extracted to a `clampToMonth(d, y, m)` helper both use). `yearFixture` mirrors the greybox's weekday-stripe pattern
     (deterministic; busy on one weekday, has on two, a few scattered), dated in the focused year. The placeholder
@@ -153,32 +153,39 @@
 import { type ViewState, Message, warnMissingName } from '../internal/data-view'
 
 export interface YearDensity {
-  date: string            // 'YYYY-MM-DD', within `year`
-  level: 0 | 1 | 2        // 0 none · 1 has · 2 busy (S7 derives the bands)
+  date: string // 'YYYY-MM-DD', within `year`
+  level: 0 | 1 | 2 // 0 none · 1 has · 2 busy (S7 derives the bands)
 }
 export interface YearViewProps {
-  year: number                          // full year, e.g. 2026
+  year: number // full year, e.g. 2026
   density: readonly YearDensity[]
-  today?: string                        // 'YYYY-MM-DD'
-  weekStartsOn?: 0 | 1                  // user_preferences.week_starts_on (BR-16); default 1
+  today?: string // 'YYYY-MM-DD'
+  weekStartsOn?: 0 | 1 // user_preferences.week_starts_on (BR-16); default 1
   onPickMonth?: (month: number) => void // INTENT (navigate), month index 0–11 (the Date#getMonth convention)
-  state?: ViewState                     // default 'success'
+  state?: ViewState // default 'success'
   empty?: ReactNode
   error?: ReactNode
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
   'aria-labelledby'?: string
 }
-export function YearView(props: YearViewProps): ReactElement   // non-generic → React-19 ref-as-prop
+export function YearView(props: YearViewProps): ReactElement // non-generic → React-19 ref-as-prop
 
 // internal/year-layout.ts (NOT barrel-exported; unit-tested directly)
 export const MONTH_MIN = 128
 export type YearSlot = { kind: 'spacer' } | { kind: 'day'; key: string; day: number; col: number; weekday: number }
-export interface MiniMonth { month: number; offset: number; days: number; rows: YearSlot[][] }   // as built (g2 #7)
+export interface MiniMonth {
+  month: number
+  offset: number
+  days: number
+  rows: YearSlot[][]
+} // as built (g2 #7)
 export function resolveYear(year: number, now: Date): { year: number; warning?: string } // BR-10, pure
-export function buildYear(year: number, weekStartsOn: 0 | 1): MiniMonth[]          // 12 months, offset + day keys
-export function indexDensity(year: number, density: readonly YearDensity[]):
-  { byDate: Map<string, 1 | 2>; warnings: string[] }                               // BR-10 guards; level-0 dropped
+export function buildYear(year: number, weekStartsOn: 0 | 1): MiniMonth[] // 12 months, offset + day keys
+export function indexDensity(
+  year: number,
+  density: readonly YearDensity[],
+): { byDate: Map<string, 1 | 2>; warnings: string[] } // BR-10 guards; level-0 dropped
 ```
 
 Refinements vs the proposed seam (within the per-slice ratification licence): **R1** `readonly` density · `empty?`/`error?`
@@ -190,8 +197,9 @@ intra-package `ViewState` (≡ seam `CalState`). **R5** the flex-wrap fluid midd
 ## 4. Acceptance
 
 _jsdom-vs-browser split (gate-2 G5): items marked **[VG]** are proven in the Visual Gate only; size/opacity/border/minHeight
- assertions in jsdom compare atomic classes against a REFERENCE element with the same props (the lineHeight recipe —
- never hard-coded class names)._
+assertions in jsdom compare atomic classes against a REFERENCE element with the same props (the lineHeight recipe —
+never hard-coded class names)._
+
 - [ ] 12 mini-months Jan→Dec; **[VG]** 4-up at 768/1440, 2-up at 375; serif `$subheading` headings with paired line-height;
       current month heading `$colorBrandEmphasis`.
 - [ ] Grid: correct leading offset for `weekStartsOn` 1 AND 0 (2026-10-01 is a Thursday → offset 3 Mon-start, 4 Sun-start);
@@ -224,8 +232,7 @@ _jsdom-vs-browser split (gate-2 G5): items marked **[VG]** are proven in the Vis
       375/768/1440 + Sunday-start + a non-current year (no ring/accent) +
       no-handler (plain headings) + the 3 state cells (non-blocking probes: viewport 600/700 column count): **3:1 measured** on the has-dot, busy-dot and today ring
       vs `$colorSurfaceSecondary` · **AA** on month headings (incl. the accented current month) + state copy · 4-up/2-up
-      column count per width · **page AND region** 0 overflow every cell · keyboard: Tab order through the 12 month buttons at 375
-      + 1440, ring visible + unclipped, hover bg change + **AA of `$colorBrandEmphasis` heading on the `$colorSurfaceSecondary` hover bg**, Enter drills to Month + focus lands on the Month grid with a visible ring · last-row cell width = first-row · EC-14 reads as a calendar · axe 0 · 0 pageerrors. Victor reviews.
+      column count per width · **page AND region** 0 overflow every cell · keyboard: Tab order through the 12 month buttons at 375 + 1440, ring visible + unclipped, hover bg change + **AA of `$colorBrandEmphasis` heading on the `$colorSurfaceSecondary` hover bg**, Enter drills to Month + focus lands on the Month grid with a visible ring · last-row cell width = first-row · EC-14 reads as a calendar · axe 0 · 0 pageerrors. Victor reviews.
 
 ## 5. Implementation prompt (ordered)
 
@@ -247,7 +254,7 @@ _jsdom-vs-browser split (gate-2 G5): items marked **[VG]** are proven in the Vis
    - slice-map S4 ledger row; seam-contract §A amended (YearView ratified R1–R5);
    - `.claude/docs/decisions.md` rows (heading = the drill target, derived [F5] · drill-in = navigation wired now vs write-intents absent · D-S4-DEV-1 has-dot .75 · cell gap `$8` greybox-governed);
    - `.claude/docs/components.md` V12 row;
-   → commit (S3 message shape).
+     → commit (S3 message shape).
 
 ## 5a. Deviation record (§XXVIII)
 
@@ -257,6 +264,7 @@ _jsdom-vs-browser split (gate-2 G5): items marked **[VG]** are proven in the Vis
 .75 still reads as. **Preflight:** a constant; one test. **Approval:** presented at Approval 1.
 
 **D-S4-DEV-2 · `CalendarView` gains an optional `tabIndex` + a root focus ring (BR-12 said "passes through `...rest`").**
+
 - **What diverged:** the plan assumed `tabIndex`/`focusVisibleStyle` reach `CalRoot` through CalendarView's `...rest`;
   they do at runtime, but `CalendarViewProps` declares neither, so apps/web's tsc rejected them (build-caught).
 - **New direction:** an additive, back-compat V4 prop `tabIndex?: number` (absent = not focusable — the default; the
@@ -273,12 +281,12 @@ the surface focus test (killed), restored from a copy.
 
 ## 6. Change log
 
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-10-20 | fe-calendar S4 | PLAN authored (gate 1). Grounded in slice-map:37, seam §A/§B, envision EC-5/11-14, calendar-vision:19, mockup § YEAR (:85-95), greybox year.png, WeekView/AgendaView/CalendarView/CanvasView patterns, surface `periodLabel`/`shift`/`addMonthsClamped`. Shape/dots/ring/accent doc-fixed by mockup+greybox; a11y + states by the V4/V11 precedents; R1–R5 seam-licensed refinements. |
-| 2026-10-20 | fe-calendar S4 | gate-1 independent critique **REVISE → 12 folded** (0 blockers; all citations verified on disk): **F1** has-dot .55 fails 3:1 in 4/6 (computed) → .75 decided now (D-S4-DEV-1) · **F2** cell gap: the GREYBOX governs (envision:60-61) → `$8`, not the mockup's 2px · **F3** trailing aria-hidden spacers so the last row can't stretch + `aspectRatio` via `style` · **F4** visible "October" (records show no year), name span → table "October 2026", button "October 2026, open month" · **F5** heading-as-drill stated as DERIVED (a wrapping button flattens the table) + decisions row; no extra box press · **F6** weekday in the cell label + `aria-colcount`/`aria-colindex` · **F7** fluid-middle math corrected (3-up ≈512–679, 4-up ≥680; CanvasView 1136 cap) · **F8** `clampToMonth(focused, focused.getFullYear(), m)` · **F9** `setFullYear` + 1000–9999 year guard + impossible-date guard · **F10** non-current heading `$colorTextPrimary` · **F11** acceptance + Visual-Gate cells (today∉year, lineHeight pair, buttons per state, non-current year, no-handler, hover, Tab order, last-row width) · F12 buildability confirmed. **One derived call remains for Approval 1: F5 (heading = the drill target).** |
-| 2026-10-20 | fe-calendar S4 | re-critique **SHIP** (all 12 verified from disk; 375 cells ≈12.5px, 2-up holds) + 4 NITs folded: buttons absent in empty-with-slot (WeekView slot replaces the grid) · decisions.md rows named (F5 · D-S4-DEV-1 · gap) · spacers share the Cell flex style + no-handler heading keeps the `nameId` span · 375 gap-proportion feel note with `$4` alternative. **Awaiting Approval 1.** |
-| 2026-10-20 | fe-calendar S4 | **Approval 1 (Victor) — incl. F5 heading-as-drill, D-S4-DEV-1 .75, `$8` gap.** Preflight: every cited path/line/export verified on disk (canvas-view:66 1136 cap · export-dialog:56 hoverStyle · gallery-view:123 aspectRatio-in-style + test:133 · week-view:193-198 slot replaces grid · data-view `ViewState`/`Message`/`warnMissingName` · calendar-ui-store `setRange`/`setFocusedDate` · preferences-store `weekStartsOn` · space `$8` token · agenda-view.test:2-3 TZ recipe; v12 spec absent = net-new). **Preflight PASSED.** |
-| 2026-10-20 | fe-calendar S4 | gate-2 independent critique **REVISE → 11 folded** (0 blockers; buildability confirmed on disk: render:'button', aria-colcount/colindex typed via HTMLAttributes, aspectRatio-in-style, `$sm`/`$subheading`/`$display`/`$8`/`$24`, no barrel collision, clampToMonth keeps addMonthsClamped + tests :90-111, batched store sets, no placeholder assertion, afterEach already resets prefs): **G1** MonthButton UA reset + `textAlign="left"` · **G2** pure `resolveYear(year, now)` homes the year guard · **G3** TZ forced in year-layout.test too · **G4** loading-with-data stale warn · **G5** jsdom/[VG] split + reference-element class recipe · **G6** `format(d,'EEEE, d MMMM')` · **G7** inline Text name spans, explicit `' ' + year` · **G8** Cell `position:relative` + ring overlay props · **G9** `setFullYear` for days-in-month too · **G10** ref/warnMissingName/surface colindex tests + surface `testTimeout:15000` · **G11** `role=heading aria-level=3` wrapper + hover-AA VG cell. **Awaiting Approval 2.** |
-| 2026-10-20 | fe-calendar S4 | **Grounding pass (Victor: "ground it in the documentation").** Swept the governing corpus: IA (`information-architecture.md:103` — `/calendar` Sessions-owned, no Year rule) · `state-conventions.md` §2 (loading = skeleton matching the settled box + `aria-busy` ✓; empty guided = the CanvasView slot, S3 precedent; error retry = the surface's S7 data layer) + §5 FOCUS_CONTRACT · frontend-quality-bar · frontend-replan surface-map/decomposition (Calendar = Canvas over ProviderRead) · the mockup's YEAR script (:232-255 — bare month names, leading blanks only, "click a month to drill in" :205) · design.md (§III subheading medium · §VI 44×44 + 8px gap) · decisions ledger · shipped heading precedents. **Results:** (1) **G11 REVERSED** — no `role=heading`; the sibling renderers name groups via labelledby, never headings (a heading role was an ADD) · (2) **NEW focus-after-drill** — FOCUS_CONTRACT `tabChange → panel`: the surface focuses the Month grid (the unmounting button would drop focus to body) · (3) heading `fontWeight 500` (design.md:109) · (4) touch gap cited. No other plan point changed. **Victor: proceed (Approval 2).** |
+| Date       | Session        | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-20 | fe-calendar S4 | PLAN authored (gate 1). Grounded in slice-map:37, seam §A/§B, envision EC-5/11-14, calendar-vision:19, mockup § YEAR (:85-95), greybox year.png, WeekView/AgendaView/CalendarView/CanvasView patterns, surface `periodLabel`/`shift`/`addMonthsClamped`. Shape/dots/ring/accent doc-fixed by mockup+greybox; a11y + states by the V4/V11 precedents; R1–R5 seam-licensed refinements.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| 2026-10-20 | fe-calendar S4 | gate-1 independent critique **REVISE → 12 folded** (0 blockers; all citations verified on disk): **F1** has-dot .55 fails 3:1 in 4/6 (computed) → .75 decided now (D-S4-DEV-1) · **F2** cell gap: the GREYBOX governs (envision:60-61) → `$8`, not the mockup's 2px · **F3** trailing aria-hidden spacers so the last row can't stretch + `aspectRatio` via `style` · **F4** visible "October" (records show no year), name span → table "October 2026", button "October 2026, open month" · **F5** heading-as-drill stated as DERIVED (a wrapping button flattens the table) + decisions row; no extra box press · **F6** weekday in the cell label + `aria-colcount`/`aria-colindex` · **F7** fluid-middle math corrected (3-up ≈512–679, 4-up ≥680; CanvasView 1136 cap) · **F8** `clampToMonth(focused, focused.getFullYear(), m)` · **F9** `setFullYear` + 1000–9999 year guard + impossible-date guard · **F10** non-current heading `$colorTextPrimary` · **F11** acceptance + Visual-Gate cells (today∉year, lineHeight pair, buttons per state, non-current year, no-handler, hover, Tab order, last-row width) · F12 buildability confirmed. **One derived call remains for Approval 1: F5 (heading = the drill target).**                                                                                                                                          |
+| 2026-10-20 | fe-calendar S4 | re-critique **SHIP** (all 12 verified from disk; 375 cells ≈12.5px, 2-up holds) + 4 NITs folded: buttons absent in empty-with-slot (WeekView slot replaces the grid) · decisions.md rows named (F5 · D-S4-DEV-1 · gap) · spacers share the Cell flex style + no-handler heading keeps the `nameId` span · 375 gap-proportion feel note with `$4` alternative. **Awaiting Approval 1.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-10-20 | fe-calendar S4 | **Approval 1 (Victor) — incl. F5 heading-as-drill, D-S4-DEV-1 .75, `$8` gap.** Preflight: every cited path/line/export verified on disk (canvas-view:66 1136 cap · export-dialog:56 hoverStyle · gallery-view:123 aspectRatio-in-style + test:133 · week-view:193-198 slot replaces grid · data-view `ViewState`/`Message`/`warnMissingName` · calendar-ui-store `setRange`/`setFocusedDate` · preferences-store `weekStartsOn` · space `$8` token · agenda-view.test:2-3 TZ recipe; v12 spec absent = net-new). **Preflight PASSED.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| 2026-10-20 | fe-calendar S4 | gate-2 independent critique **REVISE → 11 folded** (0 blockers; buildability confirmed on disk: render:'button', aria-colcount/colindex typed via HTMLAttributes, aspectRatio-in-style, `$sm`/`$subheading`/`$display`/`$8`/`$24`, no barrel collision, clampToMonth keeps addMonthsClamped + tests :90-111, batched store sets, no placeholder assertion, afterEach already resets prefs): **G1** MonthButton UA reset + `textAlign="left"` · **G2** pure `resolveYear(year, now)` homes the year guard · **G3** TZ forced in year-layout.test too · **G4** loading-with-data stale warn · **G5** jsdom/[VG] split + reference-element class recipe · **G6** `format(d,'EEEE, d MMMM')` · **G7** inline Text name spans, explicit `' ' + year` · **G8** Cell `position:relative` + ring overlay props · **G9** `setFullYear` for days-in-month too · **G10** ref/warnMissingName/surface colindex tests + surface `testTimeout:15000` · **G11** `role=heading aria-level=3` wrapper + hover-AA VG cell. **Awaiting Approval 2.**                                                                                                                                                                                                                                                                                                                                             |
+| 2026-10-20 | fe-calendar S4 | **Grounding pass (Victor: "ground it in the documentation").** Swept the governing corpus: IA (`information-architecture.md:103` — `/calendar` Sessions-owned, no Year rule) · `state-conventions.md` §2 (loading = skeleton matching the settled box + `aria-busy` ✓; empty guided = the CanvasView slot, S3 precedent; error retry = the surface's S7 data layer) + §5 FOCUS_CONTRACT · frontend-quality-bar · frontend-replan surface-map/decomposition (Calendar = Canvas over ProviderRead) · the mockup's YEAR script (:232-255 — bare month names, leading blanks only, "click a month to drill in" :205) · design.md (§III subheading medium · §VI 44×44 + 8px gap) · decisions ledger · shipped heading precedents. **Results:** (1) **G11 REVERSED** — no `role=heading`; the sibling renderers name groups via labelledby, never headings (a heading role was an ADD) · (2) **NEW focus-after-drill** — FOCUS_CONTRACT `tabChange → panel`: the surface focuses the Month grid (the unmounting button would drop focus to body) · (3) heading `fontWeight 500` (design.md:109) · (4) touch gap cited. No other plan point changed. **Victor: proceed (Approval 2).**                                                                                                                                                                                               |
 | 2026-10-20 | fe-calendar S4 | **BUILT → Visual Gate PASS (Victor-reviewed 2026-10-20; D-S4-DEV-1 + D-S4-DEV-2 approved; no feel changes).** TDD: year-layout 11 → YearView 19 → surface +6 + CalendarView +1. Build-caught: accname leading-space ("January2026") → sibling text node; apps/web tsc rejected `tabIndex` on CalendarView → D-S4-DEV-2. Mutation: removing the drill `focus()` fails the surface focus test (killed; restored from a copy). g2 code review **SHIP** + 9 NITs folded (current-month accent computed from built keys — never without the ring · outer Text in the button removed · reference-class tests for minHeight + heading colours · ring aria-hidden + no day numbers + Living-only placeholder + warnMissingName text asserted · §3 `rows` contract). Visual Gate (29 cells, Brave, real CalendarSurface): has 3:1 min 3.54 · busy/ring 5.93 · names 6.47 · 2-up/4-up · 0 page overflow · Tab Jan→Dec · drill focus on "Month grid"; a first run read 1-up at 375 — the HARNESS lacked the app's `index.css` body reset (16px lost), fixed in the harness, not the product. tsc 0 · eslint 0 (changed; `index.ts:1` pre-existing) · @vida/ui **636/636** · @vida/web **683/683**. Currency → v12 spec + `_index` V12 row + v4 `tabIndex` + ui CLAUDE.md + web-client-runtime current-spec + slice-map ledger + seam-contract §A + decisions ledger + components ledger. |

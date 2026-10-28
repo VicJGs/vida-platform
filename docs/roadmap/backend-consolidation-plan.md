@@ -20,8 +20,9 @@ measurement rollups) get pulled ad-hoc by whichever module hits them first, or d
 module will do it."
 
 **Evidence it is real, not hypothetical:**
-- The notes teardown (2026-09-11) found `POMODORO_TYPE`/`POMODORO_STATUS` — *sessions*-domain vocab —
-  physically filed inside the *notes* **types** module (`@vida/types/note.ts`, now deleted; the canonical
+
+- The notes teardown (2026-09-11) found `POMODORO_TYPE`/`POMODORO_STATUS` — _sessions_-domain vocab —
+  physically filed inside the _notes_ **types** module (`@vida/types/note.ts`, now deleted; the canonical
   copy lives in `session.ts:73-76`), because notes was "the module being built that day."
 - The service tier is almost entirely **un-built**: every `services/<module>/` is an empty layer-doc stub;
   only notes ① existed (now deleted). So service-tier fragmentation is a **future risk we can still design
@@ -30,16 +31,17 @@ module will do it."
 **Where fragmentation reaches (corrected after g1-B1/B2):** it is **not service-tier-only.** The pomodoro
 evidence proves it reached `@vida/types` (the types tier); by [[db4-types-may-be-colocated-grep-name-before-net-new]]
 this colocation is a known recurring class in this repo, so the **per-domain schema + `@vida/types` +
-validators tiers cannot be assumed clean.** What *is* genuinely built-holistically is narrower than first
+validators tiers cannot be assumed clean.** What _is_ genuinely built-holistically is narrower than first
 stated:
+
 - **Built once, holistically (consume as-is):** the `foundation/` **substrates** with real engines —
   sessions, spaces, views, capability, measurement, economy, effects (AR-5/6/7).
 - **NOT built (do not assume):** the `review` substrate — `foundation/review/` is a **0-LOC stub**
-  (only `CLAUDE.md`); DB-3 authored the review *schema tables* (`review_curves`/`method_bindings`/
+  (only `CLAUDE.md`); DB-3 authored the review _schema tables_ (`review_curves`/`method_bindings`/
   `review_events`) but the engine is unbuilt, and its first consumer is `MOD-knowledge` (#43, **M1.2**) —
   a forward substrate-pull, out of this campaign's scope unless the intake surfaces earlier need.
 - **Built holistically at the DDL level, but audit for intent-fidelity (not assume):** the 117 DB-4
-  tables cleared a per-domain No-Decisions Gate, so their *shape* is doc-determined — but a full-intent
+  tables cleared a per-domain No-Decisions Gate, so their _shape_ is doc-determined — but a full-intent
   re-intake can still surface `⚠ INTENDED`/`measurement_kind`-AMEND/vocab-placement gaps the per-domain
   gate deferred (`schema-foundation-build-flow.md:191`).
 
@@ -60,7 +62,7 @@ then build — with the frontend separated out.**
    `note_attachments`, torn down); the other gated tables stand.
 3. **Horizontal decomposition** — carve the corpus into proper Linear issues that cover 100% of the intent,
    with cross-cutting services first-class (built first), not smuggled into a module.
-4. **Coverage gate** — an independent adversarial critic proves ⋃(issues) ⊇ corpus (0 unhomed) *before*
+4. **Coverage gate** — an independent adversarial critic proves ⋃(issues) ⊇ corpus (0 unhomed) _before_
    building, backstopped by a mechanical intake check (§5 P1/P4).
 5. **Frontend split** — the ② UI tier is scoped as its own later track (P6), decoupled from the service build.
 
@@ -68,7 +70,7 @@ then build — with the frontend separated out.**
 a `foundation/` substrate is built only when its first M1 consumer needs it. This plan's "cross-cutting
 services first" does **not** violate it: the cross-cutting **services** targeted here (`dueIn`, `summary(date)`,
 backlinks, measurement rollups) are **application services in `services/`, not `foundation/` substrates** —
-they each already *have* a first consumer within M1.1 (Journals/Sessions/Notes), so building them first is
+they each already _have_ a first consumer within M1.1 (Journals/Sessions/Notes), so building them first is
 consumer-pull, not speculative substrate-first. Any genuine `foundation/` substrate the intake surfaces as
 unbuilt (e.g. `review`) stays governed by §3.5 (built at its first consumer, which may be a later milestone).
 ADR-021 records this as an ADR-019-compatible clarification, not an amendment.
@@ -87,30 +89,31 @@ integrations · M3 encryption · M4 sync/venues (all remain seam-only).
 
 ## 4. What it supersedes
 
-| Superseded | By |
-|---|---|
-| `m1.1-delivery-plan §2` — per-module ①/② vertical grain (backend half) | horizontal service-first decomposition (this plan §2) |
-| `m1.1-delivery-plan §9` — per-module deferred-to-build scope | the unified intent corpus (P1) — one home for all deferred service intent |
-| Entity Delivery Flow — the ①/② fork, per-entity | applies to the **frontend** track only (P6); the backend runs this horizontal flow |
-| `reconstructed-structure.md #31–#48` — module-vertical ① issues | reshaped into layered backend issues (P5), with `#` edges re-derived |
+| Superseded                                                             | By                                                                                 |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| `m1.1-delivery-plan §2` — per-module ①/② vertical grain (backend half) | horizontal service-first decomposition (this plan §2)                              |
+| `m1.1-delivery-plan §9` — per-module deferred-to-build scope           | the unified intent corpus (P1) — one home for all deferred service intent          |
+| Entity Delivery Flow — the ①/② fork, per-entity                        | applies to the **frontend** track only (P6); the backend runs this horizontal flow |
+| `reconstructed-structure.md #31–#48` — module-vertical ① issues        | reshaped into layered backend issues (P5), with `#` edges re-derived               |
 
 **NOT superseded (operate within):** ADR-016 (per-table gating), ADR-017 (features-first), ADR-018 (foundation
-+ services homes), ADR-019 (M1→M4 sequencing + §3.5 substrate-pull — see §2 reconciliation), Model B schema
-philosophy, and the `#` global-build-order **methodology** (P5 re-derives the concrete edge set + re-proves
-acyclicity for the reshaped issues; the M1.4 `⊕agg`/HARD-* `← every MOD-*` deps are re-homed onto the new
-decomposition — g1-N2).
+
+- services homes), ADR-019 (M1→M4 sequencing + §3.5 substrate-pull — see §2 reconciliation), Model B schema
+  philosophy, and the `#` global-build-order **methodology** (P5 re-derives the concrete edge set + re-proves
+  acyclicity for the reshaped issues; the M1.4 `⊕agg`/HARD-_ `← every MOD-_` deps are re-homed onto the new
+  decomposition — g1-N2).
 
 ## 5. Campaign phases (each gated per §XXVI)
 
-| Phase | Deliverable | Gate |
-|---|---|---|
-| **P0 · Ratify** | this plan + **ADR-021** (grain reversal + ADR-019 §3.5 reconciliation) | `/critique` → Approval 1 |
+| Phase                               | Deliverable                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Gate                                                                      |
+| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| **P0 · Ratify**                     | this plan + **ADR-021** (grain reversal + ADR-019 §3.5 reconciliation)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | `/critique` → Approval 1                                                  |
 | **P1 · Full-intent service intake** | `docs/specs/foundation/backend-intent/corpus.md` — every backend service intent item from all module 5-aspect docs + `docs/intake/` + `m1.1-delivery-plan §9` + cross-cutting ADRs, tagged by module/layer/capability, **service-vs-UI classified** (ADR-020), FACT/INTERPRETATION/UNKNOWN-labeled (No-Guessing). **Mechanical backstop (g1-N1):** grep EVERY `⚠ INTENDED`/`[DEFERRED — build phase]`/"→ service"/"design-pass" flag across `docs/features/*` + `docs/intake/*` into the corpus with a cite each; + a Victor glance — not resting on P4's downstream set-cover, which is blind to intake omissions. **Notes input:** the deleted notes intent docs are recoverable at `main` HEAD (`docs/features/notes-and-pages/*`, `docs/intake/notes-and-pages.md`, `docs/specs/foundation/db-4-notes-and-pages/*`) — restore as reference or re-derive fresh. | independent critic: exhaustive, nothing dropped + mechanical-check passes |
-| **P2 · Schema + types reconcile** | DB-4 audit report (table-by-table vs corpus) + `@vida/types` colocation/CHECK-vocab audit ([[open-vocab-columns-take-no-sql-check]]) + targeted fixes + **notes hub rebuilt** (`pages`/`page_links`/`note_attachments` re-authored; migration **appended** — forward-only runner, NOT re-using slot 012 — + re-registered in `runner.ts`; blast-radius sub-deliverable: re-validate `entity_links`/`entity_tags`/`_registry` vocab + the ~10 polymorphic `entity_type='page'` consumers against the rebuilt shape). **Exit sweep (g1-N4):** grep for dangling imports of every deleted notes symbol across apps + packages, not just `tsc`. | `/critique` + DDL-introspection parity + deleted-symbol sweep clean |
-| **P3 · Horizontal decomposition** | the issue set — cross-cutting services first (own issues), then per-module CRUD against the unified intent + built cross-cutting services; acyclic dep edges | Decomposition Gate (well-formed, nothing smuggled) |
-| **P4 · Coverage gate** | intent→issue traceability matrix; assert ⋃(issues) ⊇ corpus · 0 UNHOMED | **independent adversarial critic (flagship gate)** |
-| **P5 · Linear reorg** | Linear projects/milestones/issues created + the module-vertical ① issues (#31–#48) retired/reshaped + `#` edges re-derived + `⊕agg`/HARD-* deps re-homed; `mod-notes` LIF-131 disposition resolved. **Order (g1-N5):** reshape task files → `track-sync --status` clean → live write (a partially-built-then-torn-down issue like LIF-131 reports its reshape, not a phantom Done). | `/track-sync` + reconcile TASKS.md / reconstructed-structure |
-| **P6 · Frontend track scoping** | the separated ② UI plan (consumes the finished service tier) | later; own gate |
+| **P2 · Schema + types reconcile**   | DB-4 audit report (table-by-table vs corpus) + `@vida/types` colocation/CHECK-vocab audit ([[open-vocab-columns-take-no-sql-check]]) + targeted fixes + **notes hub rebuilt** (`pages`/`page_links`/`note_attachments` re-authored; migration **appended** — forward-only runner, NOT re-using slot 012 — + re-registered in `runner.ts`; blast-radius sub-deliverable: re-validate `entity_links`/`entity_tags`/`_registry` vocab + the ~10 polymorphic `entity_type='page'` consumers against the rebuilt shape). **Exit sweep (g1-N4):** grep for dangling imports of every deleted notes symbol across apps + packages, not just `tsc`.                                                                                                                                                                                                                        | `/critique` + DDL-introspection parity + deleted-symbol sweep clean       |
+| **P3 · Horizontal decomposition**   | the issue set — cross-cutting services first (own issues), then per-module CRUD against the unified intent + built cross-cutting services; acyclic dep edges                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | Decomposition Gate (well-formed, nothing smuggled)                        |
+| **P4 · Coverage gate**              | intent→issue traceability matrix; assert ⋃(issues) ⊇ corpus · 0 UNHOMED                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            | **independent adversarial critic (flagship gate)**                        |
+| **P5 · Linear reorg**               | Linear projects/milestones/issues created + the module-vertical ① issues (#31–#48) retired/reshaped + `#` edges re-derived + `⊕agg`/HARD-\* deps re-homed; `mod-notes` LIF-131 disposition resolved. **Order (g1-N5):** reshape task files → `track-sync --status` clean → live write (a partially-built-then-torn-down issue like LIF-131 reports its reshape, not a phantom Done).                                                                                                                                                                                                                                                                                                                                                                                                                                                                               | `/track-sync` + reconcile TASKS.md / reconstructed-structure              |
+| **P6 · Frontend track scoping**     | the separated ② UI plan (consumes the finished service tier)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | later; own gate                                                           |
 
 ## 6. Decomposition principle (P3 — provisional, intake confirms)
 
@@ -121,10 +124,12 @@ dependencies now exist and are planned, not smuggled. Exact carving is fixed at 
 corpus. (This is consumer-pull, not substrate-first — see §2 ADR-019 reconciliation.)
 
 ## 7. Open questions
+
 - **P3:** the exact decomposition axis (cross-cutting-first vs pure-layer) — resolve from the corpus, not up front.
 - **P5:** disposition of the existing module-vertical issues (#31–#48) + `mod-notes` LIF-131 (retire vs reshape).
 
 ## 8. Operational state (as of this draft)
+
 - Branch `backend-replan` off `main`. Notes teardown is **staged, not committed** (25 deletes + 9
   reconciliations; typecheck 11/11 green; migration chain now has a **gap at slot 012** — P2 appends a new
   migration rather than refilling 012). `main` is untouched and clean. `mod-notes-rebuild` abandoned (reflog).

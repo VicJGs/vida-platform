@@ -1,4 +1,4 @@
-# PLAN — S5: Quote-embed feed + toggles  (BOO-21/22)
+# PLAN — S5: Quote-embed feed + toggles (BOO-21/22)
 
 > Entity Delivery Flow (v1) · per-slice SERVICE track · slice 5 of 10.
 > Gate 1 = this SPEC (§XXVI.2 /critique → Approval 1). Grounded in the corpus (No-Guessing).
@@ -13,9 +13,9 @@
   `[FACT: slice-map.md:19]`
 - **Read-only, schema-less slice.** `book_quotes` exists (`schema/books.ts:133`), `BookQuote` exists in
   `@vida/types`, toggle storage is Preferences-owned (Part B / M2). S5 touches **only** `services/books/service.ts`
-  + `services/books/types.ts`. No migration, no `@vida/types` change, no validator (scope is a plain read arg, the
-  `QuoteScope` precedent `types.ts:113`). `[FACT: contract.md:22-23; structure-data.md:30-31; parts/books.md BOO-22
-  "Preferences store — Preferences-owned"]`
+  - `services/books/types.ts`. No migration, no `@vida/types` change, no validator (scope is a plain read arg, the
+    `QuoteScope` precedent `types.ts:113`). `[FACT: contract.md:22-23; structure-data.md:30-31; parts/books.md BOO-22
+"Preferences store — Preferences-owned"]`
 - **The frozen seam-contract pins ONE S5 method** and attaches the error to it:
   `getEmbeddableQuotes(scope: { bookId?: string }): Promise<BookQuote[]>  // per-book > global toggle (preferences?)`
   `// (embed references the stored quote — never copies; QuoteEmbedDisabledError when toggle off)`.
@@ -26,9 +26,9 @@
   `[FACT: interpretation.md:59-60]`
 - **Deny-safe precedent = habits fail-OPEN.** An absent Preferences port ⇒ permissive default (everything
   embeddable) — a user-convenience policy, not a security gate. `[FACT: services/habits/types.ts:35,45;
-  service.ts:130,253 (`backfillWindowDays()` null = no limit)]`
+service.ts:130,253 (`backfillWindowDays()` null = no limit)]`
 
-## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S5-*)
+## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S5-\*)
 
 - **BR-BK-S5-1 (quote-embed feed / BOO-21)** — `getEmbeddableQuotes(scope: { bookId? }): Promise<BookQuote[]>`
   returns embeddable quotes as **live stored `BookQuote` rows** (soft-delete filtered, `isNull(deleted_at)`
@@ -55,7 +55,7 @@
   compatible — S8 appends one method, zero signature change to S5's two). `[slice-map.md:22; seam-contract.md:119]`
 - **Real Preferences keys + per-book override UI** → P6 / M2 (Preferences-owned store; the toggle write path is
   not Books'). S5 only READS via the deny-safe port. `[parts/books.md BOO-22 cross-cutting: Preferences store keys
-  (Part B)]`
+(Part B)]`
 - **Editor quote-embed block render** (the actual embed node + render-time re-check) → P6 (`@vida/editor`-owned).
   `[parts/books.md BOO-21 boundary SPLIT: service provides · P6 renders]`
 - **`tags` grouping on the feed** → S9 (lands with `scopeTag`/BOO-04, the `listQuotes` `tags?` carry-forward).
@@ -79,6 +79,7 @@ Live-store (REAL better-sqlite3, Node 24), fixtures = a few books + quotes:
 ## §5 Implementation prompt (type-first; factory-object; no `this.`)
 
 **(a) `services/books/types.ts`**
+
 - Add the narrow deny-safe port:
   ```ts
   /** S5 — narrow deny-safe quote-embed toggle reads (BK-7, NIT-3). Books homes this 2-read port rather than a hard
@@ -105,13 +106,14 @@ Live-store (REAL better-sqlite3, Node 24), fixtures = a few books + quotes:
   ```
 
 **(b) `services/books/service.ts`**
+
 - Destructure `preferences` from deps (optional).
 - Hoisted closure (no `this.`), the toggle resolver:
   ```ts
   async function resolveEmbedToggle(bookId: string): Promise<boolean> {
-    if (!preferences) return true                               // BR-BK-S5-3 deny-safe permissive
+    if (!preferences) return true // BR-BK-S5-3 deny-safe permissive
     const override = await preferences.getQuoteEmbedOverride(bookId)
-    if (override !== undefined) return override                 // BR-BK-S5-2 per-book > global
+    if (override !== undefined) return override // BR-BK-S5-2 per-book > global
     return preferences.getQuoteEmbedGlobal()
   }
   ```
@@ -119,22 +121,22 @@ Live-store (REAL better-sqlite3, Node 24), fixtures = a few books + quotes:
   ```ts
   async function getEmbeddableQuotes(scope: { bookId?: string }): Promise<BookQuote[]> {
     if (scope.bookId) {
-      if (!(await resolveEmbedToggle(scope.bookId))) throw new QuoteEmbedDisabledError(scope.bookId)  // BR-BK-S5-4
+      if (!(await resolveEmbedToggle(scope.bookId))) throw new QuoteEmbedDisabledError(scope.bookId) // BR-BK-S5-4
       const rows = await quotesRepo.findWhere(
         and(isNull(bookQuotes.deleted_at), eq(bookQuotes.book_id, scope.bookId)) as SQL,
       )
-      return rows.map(toQuote)                                  // live rows; BR-BK-S5-1/5
+      return rows.map(toQuote) // live rows; BR-BK-S5-1/5
     }
     // global feed — exclude toggle-off books; no throw (BR-BK-S5-4)
     const rows = await quotesRepo.findWhere(isNull(bookQuotes.deleted_at))
-    if (!preferences) return rows.map(toQuote)                 // permissive fast-path (BR-BK-S5-3)
-    const prefs = preferences                                  // capture for narrowing in the nested closure
-    const global = await prefs.getQuoteEmbedGlobal()           // read ONCE (g1 NIT: no per-book re-read)
+    if (!preferences) return rows.map(toQuote) // permissive fast-path (BR-BK-S5-3)
+    const prefs = preferences // capture for narrowing in the nested closure
+    const global = await prefs.getQuoteEmbedGlobal() // read ONCE (g1 NIT: no per-book re-read)
     const distinct = [...new Set(rows.map((r) => r.book_id))]
     const overrides = new Map(
       await Promise.all(distinct.map(async (b) => [b, await prefs.getQuoteEmbedOverride(b)] as const)),
     )
-    return rows.filter((r) => overrides.get(r.book_id) ?? global).map(toQuote)  // override > global (BR-BK-S5-2)
+    return rows.filter((r) => overrides.get(r.book_id) ?? global).map(toQuote) // override > global (BR-BK-S5-2)
   }
   ```
 - Add `getEmbeddableQuotes` to the returned factory object + the `BooksService` interface (after `listQuotes`).
@@ -152,7 +154,7 @@ Verification Gate → code-review → currency.
   `seam-contract.md:60,100` attach the error to `getEmbeddableQuotes` itself — there is NO separate by-id resolve
   method (that render-time re-check is P6, `parts/books.md BOO-21` SPLIT). A **feed** yields a filtered list, never
   an error; the **scoped** `{ bookId }` call is the "embed from this book" path, so it is the natural throw site.
-  Alternative (scoped returns `[]`) **rejected** — it collapses the *disabled* signal into *no-quotes*. No new
+  Alternative (scoped returns `[]`) **rejected** — it collapses the _disabled_ signal into _no-quotes_. No new
   method added (anti-over-engineering; frozen seam-contract honored). `[FACT: seam-contract.md:98-100; contract.md:68]`
 - **R2 — single-method, no by-id resolve.** Confirmed faithful to the frozen seam-contract (one S5 row). The
   editor's render-time re-check of an already-embedded quote is P6 (stores `bookId` on the node, re-calls the

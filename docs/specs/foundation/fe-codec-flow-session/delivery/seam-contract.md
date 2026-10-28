@@ -11,54 +11,55 @@
 ```ts
 // LOCAL unions — @vida/ui is Tamagui-only. State reuses the SHIPPED intra-package ViewState (the sibling precedent) —
 // NOT a parallel-named alias. Stage status maps to the Timeline's TemporalState (done→past · current→present · upcoming→future).
-import type { ViewState } from '../internal/data-view'    // 'loading' | 'empty' | 'error' | 'success'
+import type { ViewState } from '../internal/data-view' // 'loading' | 'empty' | 'error' | 'success'
 
 type StageStatus = 'done' | 'current' | 'upcoming'
 type AttachKind = 'document' | 'photo' | 'audio'
 
 interface FlowStage {
   id: string
-  label: ReactNode              // the stage eyebrow / kicker (e.g. "Stage 1") — the Timeline getEyebrow (a legit sequence)
-  title: ReactNode              // the deliverable title — serif; current = $heading, done/upcoming = $subheading muted
-  status: StageStatus           // drives the rail temporal state + whether affordances render (current only)
-  state?: ViewState             // the stage BODY's own state (BR-2); default 'success'
-  proof?: ReactNode             // a done stage's delivered-proof summary (shown collapsed)
+  label: ReactNode // the stage eyebrow / kicker (e.g. "Stage 1") — the Timeline getEyebrow (a legit sequence)
+  title: ReactNode // the deliverable title — serif; current = $heading, done/upcoming = $subheading muted
+  status: StageStatus // drives the rail temporal state + whether affordances render (current only)
+  state?: ViewState // the stage BODY's own state (BR-2); default 'success'
+  proof?: ReactNode // a done stage's delivered-proof summary (shown collapsed)
 }
 
-interface FlowEffect {          // one fired effect, for the read-only effect-rail log
+interface FlowEffect {
+  // one fired effect, for the read-only effect-rail log
   id: string
-  kind: ReactNode               // the effect type label (e.g. "Logged time") — muted, sentence case (no all-caps)
-  detail: ReactNode             // what fired (e.g. "25 min to 'Write the book'")
+  kind: ReactNode // the effect type label (e.g. "Logged time") — muted, sentence case (no all-caps)
+  detail: ReactNode // what fired (e.g. "25 min to 'Write the book'")
 }
 
 interface FlowSessionViewProps {
   // ── title-hero header (EC-5) — the serif title carries; progress is a BAR, not a text subtitle ──
-  title: string                 // names the region + renders as the $display serif H1
-  context?: ReactNode           // ONE quiet plain-language line (e.g. "For 'Write the book'") — $small muted, 16px below title
-  progress?: number             // 0..1 → HonestProgress fraction; if omitted, DERIVED from stages (done / total)
-  progressLabel?: string        // e.g. "2 of 5 stages done"; if omitted, derived
-  saveStatus?: ReactNode        // the SyncStatus slot (right-aligned)
-  action?: ReactNode            // the ⋯ action SLOT (right-aligned)
+  title: string // names the region + renders as the $display serif H1
+  context?: ReactNode // ONE quiet plain-language line (e.g. "For 'Write the book'") — $small muted, 16px below title
+  progress?: number // 0..1 → HonestProgress fraction; if omitted, DERIVED from stages (done / total)
+  progressLabel?: string // e.g. "2 of 5 stages done"; if omitted, derived
+  saveStatus?: ReactNode // the SyncStatus slot (right-aligned)
+  action?: ReactNode // the ⋯ action SLOT (right-aligned)
 
   // ── the staged progression (EC-1/EC-3) — rendered via the shipped Timeline (done/current/upcoming + fulcrum) ──
   stages: FlowStage[]
-  renderStage?: (stage: FlowStage) => ReactNode   // the deliverable BODY CONTENT (description / form / custom); the shell
-                                                  // frames it + supplies the standardized affordances (below) for `current`
-  nowLabel?: ReactNode          // the fulcrum label (default "current stage")
+  renderStage?: (stage: FlowStage) => ReactNode // the deliverable BODY CONTENT (description / form / custom); the shell
+  // frames it + supplies the standardized affordances (below) for `current`
+  nowLabel?: ReactNode // the fulcrum label (default "current stage")
 
   // ── standardized stage affordances (EC-2) — the shell renders these for the CURRENT stage, EMITTING intents (no write) ──
   onAttach?: (stageId: string, kind: AttachKind) => void
   onMarkDone?: (stageId: string) => void
-  onRequireProof?: (stageId: string) => void      // the "require proof" completion mode (§4.5 "mark-done OR require proof")
+  onRequireProof?: (stageId: string) => void // the "require proof" completion mode (§4.5 "mark-done OR require proof")
 
   // ── the effect-rail log (EC-4) — read-only; the shell fires nothing ──
   effects?: FlowEffect[]
-  effectsState?: ViewState      // BR-2; empty → a teaching EmptyState ("Nothing logged yet")
-  effectRailLabel?: ReactNode   // default "Effect rail"
+  effectsState?: ViewState // BR-2; empty → a teaching EmptyState ("Nothing logged yet")
+  effectRailLabel?: ReactNode // default "Effect rail"
 
   'aria-label'?: string
   'aria-labelledby'?: string
-  ref?: Ref<HTMLDivElement>     // React-19 ref-as-prop (no forwardRef; non-generic shell)
+  ref?: Ref<HTMLDivElement> // React-19 ref-as-prop (no forwardRef; non-generic shell)
 }
 ```
 
@@ -84,8 +85,8 @@ degrade-never-crash (every stage/log state renders).
 
 ```ts
 // imports @vida/core — lives in apps/web (the Tamagui-only boundary forbids this in @vida/ui).
-import { createSessionsService } from '@vida/core'   // the FROZEN sessions spine: transition · attach · effect log (ADR-004)
-import { isEntityType } from '@vida/core'            // the attached-entity identity (schema/_registry.ts)
+import { createSessionsService } from '@vida/core' // the FROZEN sessions spine: transition · attach · effect log (ADR-004)
+import { isEntityType } from '@vida/core' // the attached-entity identity (schema/_registry.ts)
 
 // THE CONVENTION (shape, not a shipped hook — R3): a consumer composes this to drive FlowSessionView from a session + its
 // RESOLVED stages. The "stages" structure is a design-intent extension (quality-bar:139) the CONSUMER resolves from its own
@@ -94,20 +95,20 @@ interface FlowAdapter {
   // map a session row + resolved stages + attachments + the fired-effect log → FlowSessionView props.
   toFlowProps(args: {
     title: string
-    context?: ReactNode                   // the attached-entity identity (isEntityType + the entity row)
-    stages: FlowStage[]                   // RESOLVED by the consumer (backend shape is OUT — O7)
-    attachmentsByStage?: Record<string, unknown>   // session_attachments / note_attachments, for the attach affordance state
-    effects: FlowEffect[]                 // mapped from the applied_effects log (read-only)
+    context?: ReactNode // the attached-entity identity (isEntityType + the entity row)
+    stages: FlowStage[] // RESOLVED by the consumer (backend shape is OUT — O7)
+    attachmentsByStage?: Record<string, unknown> // session_attachments / note_attachments, for the attach affordance state
+    effects: FlowEffect[] // mapped from the applied_effects log (read-only)
   }): FlowSessionViewProps
 
   // intent wiring — each binds a Seam-A intent to the FROZEN sessions service (ADR-004 §3.2.2/3.2.3).
-  onMarkDone(sessionId: string): Promise<void>      // = transition(sessionId, 'complete') → fires the declared effects
-  onAttach(sessionId: string, stageId: string, kind: AttachKind): Promise<void>   // = attach(...) + note_attachments blob
-  onRequireProof(sessionId: string, stageId: string): Promise<void>               // the proof flow (consumer-configured)
+  onMarkDone(sessionId: string): Promise<void> // = transition(sessionId, 'complete') → fires the declared effects
+  onAttach(sessionId: string, stageId: string, kind: AttachKind): Promise<void> // = attach(...) + note_attachments blob
+  onRequireProof(sessionId: string, stageId: string): Promise<void> // the proof flow (consumer-configured)
 }
 ```
 
-**Why pure-pieces + convention, not a live hook (R3):** no *built* consumer of the Flow shell exists yet — fe-session-runtime
+**Why pure-pieces + convention, not a live hook (R3):** no _built_ consumer of the Flow shell exists yet — fe-session-runtime
 #23, fe-session-hud #16, fe-onboarding #26, fe-check-ins #31 all ship after #11 (grep clean; surface dirs `.gitkeep`). The
 Collection/Dashboard/Entity adapters are the exact precedent — real pure code + types + convention ship; only the live
 React-Query hook defers [FACT: fe-codec-entity-facet seam-contract Seam B]. So S2 ships `toFlowProps` + the `FlowAdapter`
@@ -121,6 +122,7 @@ takes resolved `stages` as input, it does not define their storage; the effect W
 (O4), never here.
 
 ## What this contract does NOT cover (homed elsewhere — slice-map "Out of scope")
+
 The timer HUD (region 6 → #16, O1) · the session runtime PAGE (#23, O2) · the countdown widget (pomodoro V5 ✅, O3) · the
 effect WRITES + lifecycle engine (`@vida/core` / #32, O4) · the attachment STORAGE + `deliverable_note` pages (`@vida/core`,
 frozen, O5) · the sub-type registry / open session types (`@vida/core`, frozen, O6) · per-consumer flow surfaces + the

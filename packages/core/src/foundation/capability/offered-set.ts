@@ -19,14 +19,8 @@ export interface OfferedSetResolver {
   resolveOfferedSet(spaceId: string, surface: RenderTarget): Promise<CapabilityDefinition[]>
 }
 
-export function createOfferedSetResolver(
-  db: DrizzleDb,
-  registry: CapabilityRegistry,
-): OfferedSetResolver {
-  async function resolveOfferedSet(
-    spaceId: string,
-    surface: RenderTarget,
-  ): Promise<CapabilityDefinition[]> {
+export function createOfferedSetResolver(db: DrizzleDb, registry: CapabilityRegistry): OfferedSetResolver {
+  async function resolveOfferedSet(spaceId: string, surface: RenderTarget): Promise<CapabilityDefinition[]> {
     const all = await registry.list()
 
     if (surface === 'inline') {

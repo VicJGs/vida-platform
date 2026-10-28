@@ -81,9 +81,7 @@ export const migration017Habits: Migration = {
       )
     `)
     // partial index (SQL-migration-only — not in the Drizzle mirror)
-    await driver.run(
-      `CREATE INDEX idx_habits_active ON habits(is_active) WHERE deleted_at IS NULL`,
-    )
+    await driver.run(`CREATE INDEX idx_habits_active ON habits(is_active) WHERE deleted_at IS NULL`)
 
     // --- habit_completions: per-date ledger (no deleted_at; UNIQUE per habit+date) ---
     await driver.run(`

@@ -284,9 +284,7 @@ const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
   permissions: { allowed_effects: [] },
 }
 
-export function createLearningEducationService(
-  deps: LearningEducationServiceDeps,
-): LearningEducationService {
+export function createLearningEducationService(deps: LearningEducationServiceDeps): LearningEducationService {
   const { db, deviceId, sessions, sessionRegistry, ics, spaces, notes, attachment, tasks, books, knowledge, effects } =
     deps
 
@@ -300,22 +298,42 @@ export function createLearningEducationService(
   const subjectsRepo = createRepository(db, subjects, { deviceId, softDelete: true, encryptedFields: [] })
   // S4 — subject_schedules has deleted_at (softDelete:true); class_sessions is a session extension with NO
   // deleted_at (softDelete:false; the base `sessions` owns lifecycle, BR-ED-7). `location` is [E] but M1.0 set=[].
-  const subjectSchedulesRepo = createRepository(db, subjectSchedules, { deviceId, softDelete: true, encryptedFields: [] })
+  const subjectSchedulesRepo = createRepository(db, subjectSchedules, {
+    deviceId,
+    softDelete: true,
+    encryptedFields: [],
+  })
   const classSessionsRepo = createRepository(db, classSessions, { deviceId, softDelete: false, encryptedFields: [] })
   // S5 — ICS tables have NO deleted_at (X8 add-only / X9 revoke-via-is_active) → softDelete:false.
   const icsFeedConfigsRepo = createRepository(db, icsFeedConfigs, { deviceId, softDelete: false, encryptedFields: [] })
-  const icsSyncedEventsRepo = createRepository(db, icsSyncedEvents, { deviceId, softDelete: false, encryptedFields: [] })
+  const icsSyncedEventsRepo = createRepository(db, icsSyncedEvents, {
+    deviceId,
+    softDelete: false,
+    encryptedFields: [],
+  })
   // S6 — grading tables both have deleted_at → softDelete:true.
   const gradingSystemsRepo = createRepository(db, gradingSystems, { deviceId, softDelete: true, encryptedFields: [] })
-  const gradingComponentsRepo = createRepository(db, gradingComponents, { deviceId, softDelete: true, encryptedFields: [] })
+  const gradingComponentsRepo = createRepository(db, gradingComponents, {
+    deviceId,
+    softDelete: true,
+    encryptedFields: [],
+  })
   // S7 — assessments has deleted_at → softDelete:true. `title`/`description` are [E] but M1.0 set=[].
   const assessmentsRepo = createRepository(db, assessments, { deviceId, softDelete: true, encryptedFields: [] })
   // S8 — education_measurements has deleted_at → softDelete:true; no [E] fields.
-  const educationMeasurementsRepo = createRepository(db, educationMeasurements, { deviceId, softDelete: true, encryptedFields: [] })
+  const educationMeasurementsRepo = createRepository(db, educationMeasurements, {
+    deviceId,
+    softDelete: true,
+    encryptedFields: [],
+  })
   // S9 — subject_documents has NO deleted_at (the PJ-8 vault pattern) → softDelete:false. `title`/`description` are
   // [E] but M1.0 set=[]. `tagsRepo` is READ-only (the BR-LE-S9-4 resolve guard; tag/link WRITES delegate to `spaces`,
   // the knowledge S2 precedent).
-  const subjectDocumentsRepo = createRepository(db, subjectDocuments, { deviceId, softDelete: false, encryptedFields: [] })
+  const subjectDocumentsRepo = createRepository(db, subjectDocuments, {
+    deviceId,
+    softDelete: false,
+    encryptedFields: [],
+  })
   const tagsRepo = createRepository(db, tags, { deviceId, softDelete: true, encryptedFields: [] })
 
   // ---- institutions (ED-2) --------------------------------------------------
@@ -423,11 +441,7 @@ export function createLearningEducationService(
   async function listProgramsFor(parent: ParentRef): Promise<Program[]> {
     // findWhere skips the soft-delete filter → filter deleted_at explicitly (R4).
     const rows = await programsRepo.findWhere(
-      and(
-        isNull(programs.deleted_at),
-        eq(programs.parent_type, parent.type),
-        eq(programs.parent_id, parent.id),
-      ) as SQL,
+      and(isNull(programs.deleted_at), eq(programs.parent_type, parent.type), eq(programs.parent_id, parent.id)) as SQL,
     )
     return rows.map(toProgram)
   }
@@ -495,9 +509,7 @@ export function createLearningEducationService(
     } satisfies CreateInput<typeof curricula>)
 
     // Terms — two-pass so `parent_term_id` remaps to the CLONED parent's new id (no ordering assumption).
-    const srcTerms = await termsRepo.findWhere(
-      and(isNull(terms.deleted_at), eq(terms.curriculum_id, sourceId)) as SQL,
-    )
+    const srcTerms = await termsRepo.findWhere(and(isNull(terms.deleted_at), eq(terms.curriculum_id, sourceId)) as SQL)
     const termIdMap = new Map<string, string>()
     for (const t of srcTerms) {
       const nt = await termsRepo.create({
@@ -558,10 +570,7 @@ export function createLearningEducationService(
   }
 
   // ---- terms (ED-12) — curriculum (and optional parent term) must resolve ---
-  async function createTerm(
-    curriculumId: string,
-    input: Omit<CreateTermInput, 'curriculum_id'>,
-  ): Promise<Term> {
+  async function createTerm(curriculumId: string, input: Omit<CreateTermInput, 'curriculum_id'>): Promise<Term> {
     const v = CreateTermSchema.parse({ ...input, curriculum_id: curriculumId })
     if (!(await curriculaRepo.findById(curriculumId))) throw new CurriculumNotFoundError(curriculumId)
     if (v.parent_term_id != null && !(await termsRepo.findById(v.parent_term_id))) {
@@ -602,9 +611,7 @@ export function createLearningEducationService(
     return row ? toTerm(row) : null
   }
   async function listTermsFor(curriculumId: string): Promise<Term[]> {
-    const rows = await termsRepo.findWhere(
-      and(isNull(terms.deleted_at), eq(terms.curriculum_id, curriculumId)) as SQL,
-    )
+    const rows = await termsRepo.findWhere(and(isNull(terms.deleted_at), eq(terms.curriculum_id, curriculumId)) as SQL)
     return rows.map(toTerm)
   }
 
@@ -1024,9 +1031,7 @@ export function createLearningEducationService(
     systems: GradingSystem[],
     scope: GradingScope,
   ): Promise<{ system: GradingSystem; components: GradingComponent[]; scope: GradingScope; ambiguous: boolean }> {
-    const chosen = [...systems].sort(
-      (a, b) => b.created_at - a.created_at || (a.id < b.id ? 1 : -1),
-    )[0]!
+    const chosen = [...systems].sort((a, b) => b.created_at - a.created_at || (a.id < b.id ? 1 : -1))[0]!
     const view = await getGradingSystem(chosen.id)
     // getGradingSystem re-reads live; chosen came from a live list, so view is non-null (defensive fallback: chosen).
     return {
@@ -1036,9 +1041,12 @@ export function createLearningEducationService(
       ambiguous: systems.length > 1,
     }
   }
-  async function resolveGradingSystem(
-    subjectId: string,
-  ): Promise<{ system: GradingSystem; components: GradingComponent[]; scope: GradingScope; ambiguous: boolean } | null> {
+  async function resolveGradingSystem(subjectId: string): Promise<{
+    system: GradingSystem
+    components: GradingComponent[]
+    scope: GradingScope
+    ambiguous: boolean
+  } | null> {
     const atSubject = await listGradingSystems({ type: 'subject', id: subjectId })
     if (atSubject.length > 0) return pickSystem(atSubject, 'subject')
     const subjectRow = await subjectsRepo.findById(subjectId)
@@ -1160,9 +1168,7 @@ export function createLearningEducationService(
     const flags: GradeFlag[] = []
     if (resolved.ambiguous) flags.push('ambiguous-system')
     const assessed = (
-      await assessmentsRepo.findWhere(
-        and(eq(assessments.subject_id, subjectId), isNull(assessments.deleted_at)) as SQL,
-      )
+      await assessmentsRepo.findWhere(and(eq(assessments.subject_id, subjectId), isNull(assessments.deleted_at)) as SQL)
     ).map(toAssessment)
     const componentIds = new Set(resolved.components.map((c) => c.id))
 
@@ -1199,8 +1205,7 @@ export function createLearningEducationService(
 
     // B3 — a scored assessment whose component id is null OR ∉ the resolved system is excluded + flagged (never silent).
     const hasUnmapped = assessed.some(
-      (a) =>
-        a.score !== null && (a.grading_component_id === null || !componentIds.has(a.grading_component_id)),
+      (a) => a.score !== null && (a.grading_component_id === null || !componentIds.has(a.grading_component_id)),
     )
     if (hasUnmapped) flags.push('unmapped-assessments')
     if (hasMissingScale) flags.push('missing-scale')
@@ -1226,15 +1231,11 @@ export function createLearningEducationService(
     let subjectRows
     if (ref.type === 'term') {
       if (!(await termsRepo.findById(ref.id))) throw new TermNotFoundError(ref.id)
-      subjectRows = await subjectsRepo.findWhere(
-        and(eq(subjects.term_id, ref.id), isNull(subjects.deleted_at)) as SQL,
-      )
+      subjectRows = await subjectsRepo.findWhere(and(eq(subjects.term_id, ref.id), isNull(subjects.deleted_at)) as SQL)
     } else {
       if (!(await curriculaRepo.findById(ref.id))) throw new CurriculumNotFoundError(ref.id)
       // The S3 fork union: curriculum_id === id OR term_id ∈ the curriculum's live terms (empty ⇒ short-circuit).
-      const liveTerms = await termsRepo.findWhere(
-        and(eq(terms.curriculum_id, ref.id), isNull(terms.deleted_at)) as SQL,
-      )
+      const liveTerms = await termsRepo.findWhere(and(eq(terms.curriculum_id, ref.id), isNull(terms.deleted_at)) as SQL)
       const liveTermIds = liveTerms.map((t) => t.id)
       const clause =
         liveTermIds.length > 0
@@ -1274,9 +1275,7 @@ export function createLearningEducationService(
     const curriculaRows = await listCurriculaFor(programId)
     const ids = new Set<string>()
     for (const c of curriculaRows) {
-      const liveTerms = await termsRepo.findWhere(
-        and(eq(terms.curriculum_id, c.id), isNull(terms.deleted_at)) as SQL,
-      )
+      const liveTerms = await termsRepo.findWhere(and(eq(terms.curriculum_id, c.id), isNull(terms.deleted_at)) as SQL)
       const liveTermIds = liveTerms.map((t) => t.id)
       const clause =
         liveTermIds.length > 0

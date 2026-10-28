@@ -20,10 +20,47 @@ const TASKS: Task[] = [
 ]
 
 const COLUMNS: Column<Task>[] = [
-  { key: 'title', header: 'Title', render: (t) => <Text color="$colorTextPrimary" fontSize="$small">{t.title}</Text>, sort: 'asc' },
-  { key: 'status', header: 'Status', width: 140, render: (t) => <Text color="$colorTextMuted" fontSize="$small">{t.status}</Text> },
-  { key: 'priority', header: 'Priority', width: 120, render: (t) => <Text color="$colorTextMuted" fontSize="$small">{t.priority}</Text> },
-  { key: 'due', header: 'Due', width: 120, align: 'end', render: (t) => <Text color="$colorTextMuted" fontSize="$small">{t.due}</Text> },
+  {
+    key: 'title',
+    header: 'Title',
+    render: (t) => (
+      <Text color="$colorTextPrimary" fontSize="$small">
+        {t.title}
+      </Text>
+    ),
+    sort: 'asc',
+  },
+  {
+    key: 'status',
+    header: 'Status',
+    width: 140,
+    render: (t) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {t.status}
+      </Text>
+    ),
+  },
+  {
+    key: 'priority',
+    header: 'Priority',
+    width: 120,
+    render: (t) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {t.priority}
+      </Text>
+    ),
+  },
+  {
+    key: 'due',
+    header: 'Due',
+    width: 120,
+    align: 'end',
+    render: (t) => (
+      <Text color="$colorTextMuted" fontSize="$small">
+        {t.due}
+      </Text>
+    ),
+  },
 ]
 
 type PlaygroundArgs = { state: ViewState; density: 'compact' | 'default' | 'spacious' }

@@ -42,7 +42,15 @@ describe('CollectionView — shell', () => {
   it('renders a named region, the title, and an honest count in success', () => {
     const { fn } = spyRenderView()
     const { getByRole, getByText } = renderUI(
-      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={6}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+      />,
     )
     const region = getByRole('region')
     expect(region).not.toBeNull()
@@ -54,7 +62,15 @@ describe('CollectionView — shell', () => {
   it("renders '—' for the count when not success (honest — no fake number)", () => {
     const { fn } = spyRenderView()
     const { getByText } = renderUI(
-      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="loading" />,
+      <CollectionView
+        title="Tasks"
+        count={6}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="loading"
+      />,
     )
     expect(getByText('—')).not.toBeNull()
   })
@@ -62,7 +78,15 @@ describe('CollectionView — shell', () => {
   it('renders the switcher as a role="toolbar" of one labeled button per available layout (tablet+)', () => {
     const { fn } = spyRenderView()
     const { getByRole, getAllByRole } = renderUI(
-      <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+      />,
     )
     expect(getByRole('toolbar', { name: 'View mode' })).not.toBeNull()
     // 7 switcher buttons (the chrome has no other buttons in S1)
@@ -73,7 +97,15 @@ describe('CollectionView — shell', () => {
   it('marks exactly the active layout aria-pressed', () => {
     const { fn } = spyRenderView()
     const { getByRole } = renderUI(
-      <CollectionView title="Tasks" count={0} layout="board" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="board"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+      />,
     )
     expect(getByRole('button', { name: 'Board', pressed: true })).not.toBeNull()
     expect(getByRole('button', { name: 'List', pressed: false })).not.toBeNull()
@@ -83,7 +115,15 @@ describe('CollectionView — shell', () => {
     const { fn } = spyRenderView()
     const onLayoutChange = vi.fn()
     const { getByRole } = renderUI(
-      <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={onLayoutChange} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={onLayoutChange}
+        renderView={fn}
+        state="success"
+      />,
     )
     fireEvent.click(getByRole('button', { name: 'Table' }))
     expect(onLayoutChange).toHaveBeenCalledWith('table')
@@ -93,7 +133,15 @@ describe('CollectionView — shell', () => {
     for (const state of ['success', 'loading', 'error'] as const) {
       const { fn, calls } = spyRenderView()
       renderUI(
-        <CollectionView title="Tasks" count={3} layout="gallery" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state={state} />,
+        <CollectionView
+          title="Tasks"
+          count={3}
+          layout="gallery"
+          layouts={ALL}
+          onLayoutChange={vi.fn()}
+          renderView={fn}
+          state={state}
+        />,
       )
       expect(calls).toContainEqual({ layout: 'gallery', state })
       cleanup()
@@ -105,7 +153,15 @@ describe('CollectionView — empty ownership (the resolved contract point)', () 
   it('renders the teaching-invitation EmptyState for a non-designed-empty layout (list), NOT renderView', () => {
     const { fn, calls } = spyRenderView()
     const { getByRole } = renderUI(
-      <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="empty" />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="empty"
+      />,
     )
     // EmptyState is a role="group" named by its title heading
     expect(getByRole('heading', { name: 'Nothing here yet' })).not.toBeNull()
@@ -116,7 +172,15 @@ describe('CollectionView — empty ownership (the resolved contract point)', () 
   it('delegates empty to renderView for a DESIGNED_EMPTY layout (calendar keeps its grid)', () => {
     const { fn, calls } = spyRenderView()
     renderUI(
-      <CollectionView title="Tasks" count={0} layout="calendar" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="empty" />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="calendar"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="empty"
+      />,
     )
     expect(calls).toContainEqual({ layout: 'calendar', state: 'empty' })
   })
@@ -124,7 +188,16 @@ describe('CollectionView — empty ownership (the resolved contract point)', () 
   it('uses a consumer-supplied empty override when provided', () => {
     const { fn } = spyRenderView()
     const { getByText } = renderUI(
-      <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="empty" empty={<div>custom-empty</div>} />,
+      <CollectionView
+        title="Tasks"
+        count={0}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="empty"
+        empty={<div>custom-empty</div>}
+      />,
     )
     expect(getByText('custom-empty')).not.toBeNull()
   })
@@ -134,7 +207,15 @@ describe('CollectionView — view-config chrome affordances (S2)', () => {
   it('renders NO chrome actions when no callbacks are given (S1 default)', () => {
     const { fn } = spyRenderView()
     const { queryByRole } = renderUI(
-      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={6}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+      />,
     )
     expect(queryByRole('button', { name: 'Filter' })).toBeNull()
     expect(queryByRole('button', { name: 'New view' })).toBeNull()
@@ -142,10 +223,23 @@ describe('CollectionView — view-config chrome affordances (S2)', () => {
 
   it('renders Filter / Sort / + entry points and fires their callbacks', () => {
     const { fn } = spyRenderView()
-    const onFilter = vi.fn(), onSort = vi.fn(), onNewView = vi.fn()
+    const onFilter = vi.fn(),
+      onSort = vi.fn(),
+      onNewView = vi.fn()
     const { getByRole } = renderUI(
-      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success"
-        onFilter={onFilter} onSort={onSort} onNewView={onNewView} sortLabel="Due ↑" />,
+      <CollectionView
+        title="Tasks"
+        count={6}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+        onFilter={onFilter}
+        onSort={onSort}
+        onNewView={onNewView}
+        sortLabel="Due ↑"
+      />,
     )
     fireEvent.click(getByRole('button', { name: 'Filter' }))
     fireEvent.click(getByRole('button', { name: 'Sort: Due ↑' }))
@@ -158,8 +252,17 @@ describe('CollectionView — view-config chrome affordances (S2)', () => {
   it('badges the Filter control when a filter is applied', () => {
     const { fn } = spyRenderView()
     const { getByRole } = renderUI(
-      <CollectionView title="Tasks" count={6} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success"
-        onFilter={vi.fn()} filterActive />,
+      <CollectionView
+        title="Tasks"
+        count={6}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+        onFilter={vi.fn()}
+        filterActive
+      />,
     )
     expect(getByRole('button', { name: 'Filter •' })).not.toBeNull()
   })
@@ -169,8 +272,18 @@ describe('CollectionView — view-config chrome affordances (S2)', () => {
       const { fn } = spyRenderView()
       const onFilter = vi.fn()
       const { getByRole } = renderUI(
-        <CollectionView title="Tasks" count={0} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state={state}
-          onFilter={onFilter} onSort={vi.fn()} onNewView={vi.fn()} />,
+        <CollectionView
+          title="Tasks"
+          count={0}
+          layout="list"
+          layouts={ALL}
+          onLayoutChange={vi.fn()}
+          renderView={fn}
+          state={state}
+          onFilter={onFilter}
+          onSort={vi.fn()}
+          onNewView={vi.fn()}
+        />,
       )
       const filter = getByRole('button', { name: 'Filter' })
       expect(filter.getAttribute('disabled')).toBeNull()
@@ -187,7 +300,15 @@ describe('CollectionView — condensed switcher (<768)', () => {
   it('condenses the switcher to a Menu button (no toolbar) at mobile width', () => {
     const { fn } = spyRenderView()
     const { queryByRole, getByRole } = renderUI(
-      <CollectionView title="Tasks" count={2} layout="list" layouts={ALL} onLayoutChange={vi.fn()} renderView={fn} state="success" />,
+      <CollectionView
+        title="Tasks"
+        count={2}
+        layout="list"
+        layouts={ALL}
+        onLayoutChange={vi.fn()}
+        renderView={fn}
+        state="success"
+      />,
     )
     expect(queryByRole('toolbar')).toBeNull()
     // the condensed trigger shows the current layout
@@ -200,7 +321,15 @@ describe('CollectionView titleRef (notes-rescope R3 — the Retry focus target)'
     const ref = { current: null as HTMLElement | null }
     const { getByText } = render(
       <UIProvider>
-        <CollectionView title="Notes" titleRef={ref} renderView={() => null} layouts={['list']} layout="list" onLayoutChange={() => {}} state="success" />
+        <CollectionView
+          title="Notes"
+          titleRef={ref}
+          renderView={() => null}
+          layouts={['list']}
+          layout="list"
+          onLayoutChange={() => {}}
+          state="success"
+        />
       </UIProvider>,
     )
     expect(ref.current).toBe(getByText('Notes'))

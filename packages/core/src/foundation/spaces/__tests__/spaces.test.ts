@@ -48,7 +48,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -81,14 +84,7 @@ describe('AR-6 — migration 003 wiring', () => {
       )
     ).flat()
     expect(names).toEqual(
-      expect.arrayContaining([
-        'tags',
-        'entity_tags',
-        'entity_links',
-        'spaces',
-        'space_enabled_blocks',
-        'views',
-      ]),
+      expect.arrayContaining(['tags', 'entity_tags', 'entity_links', 'spaces', 'space_enabled_blocks', 'views']),
     )
     // Spaces migration applied (>=3); the exact latest belongs to whichever migration is last
     // (AR-7 added 004) — the table set above is the real proof migration 003 ran.
@@ -193,9 +189,7 @@ describe('AR-6 — tag nesting cycle guard (BR-3)', () => {
     const a = await svc.createTag({ name: 'a' })
     const b = await svc.createTag({ name: 'b', parent_tag_id: a.id }) // b under a
     // Now make a a child of b → a→b→a cycle.
-    await expect(svc.updateTag(a.id, { parent_tag_id: b.id })).rejects.toBeInstanceOf(
-      InvalidTagNesting,
-    )
+    await expect(svc.updateTag(a.id, { parent_tag_id: b.id })).rejects.toBeInstanceOf(InvalidTagNesting)
     await driver.close()
   })
 
@@ -204,9 +198,7 @@ describe('AR-6 — tag nesting cycle guard (BR-3)', () => {
     const rootTag = await svc.createTag({ name: 'root' })
     const a = await svc.createSpace({ root_tag_id: rootTag.id, name: 'A' })
     const b = await svc.createSpace({ root_tag_id: rootTag.id, name: 'B', parent_space_id: a.id })
-    await expect(svc.updateSpace(a.id, { parent_space_id: b.id })).rejects.toBeInstanceOf(
-      InvalidSpaceNesting,
-    )
+    await expect(svc.updateSpace(a.id, { parent_space_id: b.id })).rejects.toBeInstanceOf(InvalidSpaceNesting)
     await driver.close()
   })
 })

@@ -5,28 +5,29 @@
 > **Authority:** Tier-1 flow doc. Rides the global STANDARDS process spine
 > (`~/dev-toolkit/standards/process.md` §XXVI/§XXVII/§XXVIII/§XXIX). Composes
 > `frontend-source-of-truth.md` (code-first) + `frontend-visual-gate.md` (the empirical loop).
-> **Extended by:** the G1 **Vida Frontend Quality Bar** (`frontend-quality-bar/`) — the *yardstick*
+> **Extended by:** the G1 **Vida Frontend Quality Bar** (`frontend-quality-bar/`) — the _yardstick_
 > this flow measures against. This doc owns the **loop**; G1 owns the **bar**.
 > **Source:** crystallizes `_index.md §2` (gate-1-approved 2026-09-30) into a standalone, executable manual.
-> **Supersedes** the P6 module-twin grain (24 `fe-*`, LIF-178…201) as the frontend *unit of work*
+> **Supersedes** the P6 module-twin grain (24 `fe-*`, LIF-178…201) as the frontend _unit of work_
 > (surface, not module); P6's 222-leg coverage is reused (`_index.md §1`).
 
 ---
 
 ## 1. What this document is
 
-The **frontend unit of work is a *surface*** — a page/tab/panel the user navigates — which **composes
-features from many modules**. (The backend's unit is a *service*, owned by one module.) This doc is the
+The **frontend unit of work is a _surface_** — a page/tab/panel the user navigates — which **composes
+features from many modules**. (The backend's unit is a _service_, owned by one module.) This doc is the
 flow that turns a finished backend into a surface the user can actually reach and operate, with **zero
 design/logic guesses**.
 
 It governs two things:
+
 1. **The re-plan gates (G0–G6)** — how the surface set itself is harvested, mapped, coverage-gated, ordered,
    and reshaped into the tracker. (This doc is G0; it is the first thing G1–G6 read.)
 2. **The per-surface build loop** (§6) — how each surface, once planned, becomes merged code.
 
 Read with `_index.md` (the establishment record + the G0–G6 gate table) and the global process spine. Where
-this doc and `_index.md` agree, `_index.md` is the *why* and this doc is the *how*.
+this doc and `_index.md` agree, `_index.md` is the _why_ and this doc is the _how_.
 
 ## 2. The job — three models, zero guessing
 
@@ -47,21 +48,21 @@ discarded knowledge branch). Every gap is surfaced and **resolved by Victor befo
 
 Garrett's Five Planes, expressed as Victor's four stages (an order of operations, bottom → top):
 
-| Stage | Plane(s) | Establishes | Output / asset |
-|---|---|---|---|
-| **FOUNDATION** | Strategy + Scope | why/who/context-of-use + the foundation systems layer | context = single-user, local-first, offline, complex-OS (`_index.md §3`); foundation backend twins merged |
-| **ORGANIZATION** | Structure | IA (dual-axis nav) · surfacing/discoverability · interaction models · full state mapping | UX-1 IA (built) + the **surface map** (G2, produced) |
-| **PRESENTATION** | Skeleton + Surface | responsive grid + Gestalt + screen-archetype catalog; tokens + components + WCAG 2.2 AA + aesthetic/density | DS-\*/UI-1/UI-2/UI-3/shell (built) + archetypes + feel (produced, G1-anchored) |
-| **DEVELOPMENT** | Intake→Process→Output + gated build | the per-surface construction manual, then the build | the 3-lens audit (§4) + the build loop (§6) |
+| Stage            | Plane(s)                            | Establishes                                                                                                 | Output / asset                                                                                            |
+| ---------------- | ----------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| **FOUNDATION**   | Strategy + Scope                    | why/who/context-of-use + the foundation systems layer                                                       | context = single-user, local-first, offline, complex-OS (`_index.md §3`); foundation backend twins merged |
+| **ORGANIZATION** | Structure                           | IA (dual-axis nav) · surfacing/discoverability · interaction models · full state mapping                    | UX-1 IA (built) + the **surface map** (G2, produced)                                                      |
+| **PRESENTATION** | Skeleton + Surface                  | responsive grid + Gestalt + screen-archetype catalog; tokens + components + WCAG 2.2 AA + aesthetic/density | DS-\*/UI-1/UI-2/UI-3/shell (built) + archetypes + feel (produced, G1-anchored)                            |
+| **DEVELOPMENT**  | Intake→Process→Output + gated build | the per-surface construction manual, then the build                                                         | the 3-lens audit (§4) + the build loop (§6)                                                               |
 
 **Entry/exit between stages.** A stage starts only when the stage below it has produced its asset. FOUNDATION
 is complete (all M1.2.1 backend twins merged — `_index.md §3`). ORGANIZATION completes at G2 (surface map) /
-G4 (coverage). PRESENTATION's *shared* assets exist (DS/UI/shell); its *per-surface* feel is decided in each
+G4 (coverage). PRESENTATION's _shared_ assets exist (DS/UI/shell); its _per-surface_ feel is decided in each
 surface's intake against the G1 bar. DEVELOPMENT runs §6 per surface, one at a time, dependency-ordered (G5).
 
 ## 4. The 3-lens gap audit (the core of DEVELOPMENT)
 
-> The canonical lens definitions live in `_index.md §2`; the table below is the *executable* expansion
+> The canonical lens definitions live in `_index.md §2`; the table below is the _executable_ expansion
 > (examples + how the audit runs). If the lenses are ever refined, `_index.md §2` is the authority to change first.
 
 The intake is an **audit, not a transcription**. For each surface:
@@ -70,11 +71,11 @@ The intake is an **audit, not a transcription**. For each surface:
    offer, what the feature docs + IA + state conventions say the surface should present.
 2. **Audit it against the standards + templates + the G1 bar**, producing three lists:
 
-   | Lens | Definition | Examples |
-   |---|---|---|
-   | **WRONG** | Contradicts a standard | an interaction that breaks the a11y/WCAG bar; a state not in the 8-state machine; a component used against its API; a layout off the responsive grid; copy that overclaims (ZK copy-honesty) |
-   | **MISSING** | Docs silent, but the bar or Victor's mental model requires it | a keyboard path; an empty/loading/error state; a skeleton; global quick-capture; a second reachability path; an offline/optimistic state |
-   | **OVERFLOWING** | Scope past the bar / over-engineered / a concern the surface should not own | a feature that belongs on another surface; premature config; a capability no doc or user asks for |
+   | Lens            | Definition                                                                  | Examples                                                                                                                                                                                     |
+   | --------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | **WRONG**       | Contradicts a standard                                                      | an interaction that breaks the a11y/WCAG bar; a state not in the 8-state machine; a component used against its API; a layout off the responsive grid; copy that overclaims (ZK copy-honesty) |
+   | **MISSING**     | Docs silent, but the bar or Victor's mental model requires it               | a keyboard path; an empty/loading/error state; a skeleton; global quick-capture; a second reachability path; an offline/optimistic state                                                     |
+   | **OVERFLOWING** | Scope past the bar / over-engineered / a concern the surface should not own | a feature that belongs on another surface; premature config; a capability no doc or user asks for                                                                                            |
 
 3. **Victor resolves the gaps** — fills unannounced intent, cuts the overflow. **No guessing**: an unresolved
    MISSING/WRONG item blocks the build; it is never assumed away.
@@ -82,19 +83,19 @@ The intake is an **audit, not a transcription**. For each surface:
 
 **The audit is the mechanism that catches hidden features.** Organizing frontend work by surface means a
 module-owned feature must land on the page where the user looks; the audit's MISSING list is where an
-unannounced capability (or an aggregator surface the leg count never itemized) gets surfaced. *A gap not
-spotted here stays a gap* — so Victor's review of the MISSING list is a hard gate (`_index.md §6`).
+unannounced capability (or an aggregator surface the leg count never itemized) gets surfaced. _A gap not
+spotted here stays a gap_ — so Victor's review of the MISSING list is a hard gate (`_index.md §6`).
 
 ## 5. Two adaptations of ISO 9241-210
 
 The sketch assumes a team + a design tool we do not have; two adaptations to Vida's reality:
 
 1. **"Usability testing with representative end-users" → single user.** Vida is single-user; there is no user
-   panel. **The Visual Gate *is* the empirical evaluation loop** — Victor runs the real screen and iterates
+   panel. **The Visual Gate _is_ the empirical evaluation loop** — Victor runs the real screen and iterates
    (`frontend-visual-gate.md`).
 2. **"High-fidelity Figma prototype" → code-first.** The repo is code-first
    (`frontend-source-of-truth.md`: documented intent is truth; the coded realization is the interim source;
-   Figma is deferred to M4 P2-⑦). **Our reference prototype *is* the running screen at the Visual Gate** — so
+   Figma is deferred to M4 P2-⑦). **Our reference prototype _is_ the running screen at the Visual Gate** — so
    "what Victor approves visually" and "what ships" are the same artifact, by construction.
 
 ## 6. The per-surface build loop (DEVELOPMENT execution)
@@ -109,7 +110,7 @@ The loop:
 2. **Victor resolves the gaps.** Unresolved WRONG/MISSING blocks the build. Record resolutions in the surface spec.
 3. **§XXVI build gate** (exact spine order, `standards/process.md:361-369`):
    PLAN → `/critique` → Approval 1 → `/preflight` → `/critique` → Approval 2 → **build** (the double gate —
-   both approvals land *before* implement). Deviations run §XXVIII. The build consumes **frozen** backend
+   both approvals land _before_ implement). Deviations run §XXVIII. The build consumes **frozen** backend
    contracts (the services' `§XXIX current-*` docs); if a contract looks wrong, STOP — do not patch the
    frontend around it.
 4. **Visual Gate** (`frontend-visual-gate.md`, for any surface that renders) — its four stages, in order:
@@ -126,8 +127,9 @@ The loop:
 
 **G0–G6** (gate table + output homes in `_index.md §5`). This doc is **G0**. Each gate starts from zero
 assumptions by reading the prior gate's output:
+
 - **G1** adds the **Vida Frontend Quality Bar** — the yardstick §4's audit and §6's Visual Gate measure
-  against. This doc defines *when* we measure; G1 defines *what good is*.
+  against. This doc defines _when_ we measure; G1 defines _what good is_.
 - **G2–G5** produce the surface map → composition map → coverage gate → order. The 222 P4 legs are the
   **floor**; G2's audit discovers cross-module aggregator surfaces + unannounced intent (the **ceiling** is a
   superset) — `_index.md §G2–G6`.
@@ -140,14 +142,14 @@ this loop) · §XXVIII (deviation protocol) · §XXIX (currency rule) · the Vis
 source-of-truth.
 
 **G1 input carried from `_index.md §7`:** the **aesthetic & density direction** (information-dense power-tool
-vs. calm/spacious) is *not* needed to lock this process — it is an input to the **bar**. Decide it at G1.
+vs. calm/spacious) is _not_ needed to lock this process — it is an input to the **bar**. Decide it at G1.
 
 ## 8. Scope & invariants
 
 - **Web-only for M1.** M1.2.\* targets `apps/web`. Mobile (Expo) / desktop (Tauri) affordances are re-audited
   at M4 (multi-device/venues); G4 coverage is **web**, with a separate mobile/desktop coverage gate at
   M4-start (`_index.md §6`).
-- **Isolation.** This track runs in the `frontend-track` worktree off `main`; `main` holds only *merged*
+- **Isolation.** This track runs in the `frontend-track` worktree off `main`; `main` holds only _merged_
   backend, so the frontend never builds on churning code. Planning/campaign work (G0–G6) = its own branch →
   merge to `main`; each surface build = its own branch → PR.
 - **Frozen contracts.** Once a surface build starts, the backend services it consumes are frozen (their
@@ -159,6 +161,7 @@ vs. calm/spacious) is *not* needed to lock this process — it is an input to th
   gate before G3.
 
 ## 9. References
+
 - `docs/specs/foundation/frontend-replan/_index.md` (establishment + G0–G6 gate table + output homes)
 - `docs/specs/foundation/frontend-source-of-truth.md` (code-first; running screen = reference prototype)
 - `docs/specs/foundation/frontend-visual-gate.md` (the four-stage empirical gate)

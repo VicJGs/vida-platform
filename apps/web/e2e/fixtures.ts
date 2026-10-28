@@ -42,27 +42,14 @@ export const test = base.extend<{ db: VidaDbBackdoor }>({
       exists: (dbName) => page.evaluate((n) => window.__vidaDb.exists(n), dbName),
       migrate: () => page.evaluate(() => window.__vidaDb.migrate()),
       run: (sql, params) =>
-        page.evaluate((a) => window.__vidaDb.run(a[0], a[1]), [sql, params] as [
-          string,
-          unknown[] | undefined,
-        ]),
+        page.evaluate((a) => window.__vidaDb.run(a[0], a[1]), [sql, params] as [string, unknown[] | undefined]),
       query: (sql, params) =>
-        page.evaluate((a) => window.__vidaDb.query(a[0], a[1]), [sql, params] as [
-          string,
-          unknown[] | undefined,
-        ]),
+        page.evaluate((a) => window.__vidaDb.query(a[0], a[1]), [sql, params] as [string, unknown[] | undefined]),
       values: (sql, params) =>
-        page.evaluate((a) => window.__vidaDb.values(a[0], a[1]), [sql, params] as [
-          string,
-          unknown[] | undefined,
-        ]),
+        page.evaluate((a) => window.__vidaDb.values(a[0], a[1]), [sql, params] as [string, unknown[] | undefined]),
       exec: (sql, params) =>
-        page.evaluate((a) => window.__vidaDb.exec(a[0], a[1]), [sql, params] as [
-          string,
-          unknown[] | undefined,
-        ]),
-      batch: (statements) =>
-        page.evaluate((s) => window.__vidaDb.batch(s), statements),
+        page.evaluate((a) => window.__vidaDb.exec(a[0], a[1]), [sql, params] as [string, unknown[] | undefined]),
+      batch: (statements) => page.evaluate((s) => window.__vidaDb.batch(s), statements),
       close: () => page.evaluate(() => window.__vidaDb.close()),
     }
 

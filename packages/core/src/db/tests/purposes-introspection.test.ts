@@ -19,14 +19,7 @@ import { describe, it, expect } from 'vitest'
 import Database from 'better-sqlite3'
 import { getTableColumns } from 'drizzle-orm'
 import type { SQLiteColumn } from 'drizzle-orm/sqlite-core'
-import {
-  purposes,
-  targets,
-  purposeMetrics,
-  purposeMetricValues,
-  targetReviews,
-  dreams,
-} from '../schema/purposes'
+import { purposes, targets, purposeMetrics, purposeMetricValues, targetReviews, dreams } from '../schema/purposes'
 import { migration019Purposes } from '../migrations/019_purposes'
 
 type PragmaCol = { name: string; type: string; notnull: number; dflt_value: unknown; pk: number }
@@ -48,8 +41,7 @@ async function introspectAsync(table: string): Promise<PragmaCol[]> {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const mirrorCols = (t: any): Record<string, SQLiteColumn> =>
-  getTableColumns(t) as Record<string, SQLiteColumn>
+const mirrorCols = (t: any): Record<string, SQLiteColumn> => getTableColumns(t) as Record<string, SQLiteColumn>
 
 const CASES: ReadonlyArray<{ name: string; table: unknown }> = [
   { name: 'purposes', table: purposes },
@@ -112,10 +104,9 @@ describe('DB-4 group #8 — DDL-introspection parity (SQL ↔ Drizzle mirror)', 
       for (const col of Object.values(mirror)) {
         const p = byName.get(col.name)!
         const sqlDefault = p.dflt_value == null ? null : String(p.dflt_value)
-        expect(
-          sqlDefault,
-          `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`,
-        ).toBe(norm(col))
+        expect(sqlDefault, `${name}.${col.name}: mirror default=${norm(col)} but SQL DEFAULT=${sqlDefault}`).toBe(
+          norm(col),
+        )
       }
     })
   }

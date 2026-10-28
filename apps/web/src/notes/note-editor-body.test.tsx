@@ -13,7 +13,8 @@ import type { NoteEntityData } from './use-note-entity'
 
 const writeSpy = vi.fn<(id: string, doc: EditorDocument) => Promise<unknown>>()
 vi.mock('../db/composition-root', () => ({
-  getServices: () => Promise.resolve({ notes: { writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d) } }),
+  getServices: () =>
+    Promise.resolve({ notes: { writePageContent: (id: string, d: EditorDocument) => writeSpy(id, d) } }),
 }))
 
 interface ProbeProps {
@@ -41,8 +42,19 @@ const edited: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', con
 
 function page(over: Partial<NoteEntityData>): NoteEntityData {
   return {
-    id: 'p1', type: 'note', title: 'Plan', content: null, contentStatus: 'absent', rawContent: null,
-    favorite: false, archived: false, updated: 'now', journalDate: null, icon: null, cover: null, ...over,
+    id: 'p1',
+    type: 'note',
+    title: 'Plan',
+    content: null,
+    contentStatus: 'absent',
+    rawContent: null,
+    favorite: false,
+    archived: false,
+    updated: 'now',
+    journalDate: null,
+    icon: null,
+    cover: null,
+    ...over,
   }
 }
 
@@ -68,7 +80,9 @@ afterEach(cleanup)
 describe('NoteEditorBody — EC-33 unreadable content (notes-rescope R0)', () => {
   it('malformed at load (shape-invalid bytes) → the read-only notice, NO editor, only the lossless export', () => {
     const raw = '{"type":"doc"}' // what parseContentResult really tags `malformed` (a doc without content)
-    const { queryByTestId, getByRole, getByText, queryByText } = renderBody(page({ contentStatus: 'malformed', rawContent: raw }))
+    const { queryByTestId, getByRole, getByText, queryByText } = renderBody(
+      page({ contentStatus: 'malformed', rawContent: raw }),
+    )
     expect(queryByTestId('editor')).toBeNull()
     expect(getByRole('heading', { level: 2 }).textContent).toBe('This page can’t be opened for editing')
     // The live region carries the sentence only — no controls inside it (they'd be read out as part of the message).
@@ -87,7 +101,9 @@ describe('NoteEditorBody — EC-33 unreadable content (notes-rescope R0)', () =>
 
   it('"Export a copy" downloads the stored bytes as .json; Markdown as .md (the editor-detected path)', () => {
     const raw = '{"type":"doc","content":[{"type":"paragraph"}]}'
-    const { getByText } = renderBody(page({ contentStatus: 'ok', content: JSON.parse(raw) as EditorDocument, rawContent: raw }))
+    const { getByText } = renderBody(
+      page({ contentStatus: 'ok', content: JSON.parse(raw) as EditorDocument, rawContent: raw }),
+    )
     act(() => probe.onInvalidContent?.(new Error('Invalid content')))
     act(() => getByText('Export a copy').click())
     expect(downloadSpy).toHaveBeenLastCalledWith('Plan.json', raw, 'application/json')

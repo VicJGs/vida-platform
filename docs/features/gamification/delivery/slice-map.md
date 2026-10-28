@@ -16,6 +16,7 @@ service tier; every user-visible affordance is ②. `[FACT: interpretation.md §
 ## Backend slices (① — build order; each runs the per-slice Verification Gate before the next, Step 9)
 
 ### S1 · Currency surface + level + below-floor clamp — **BUILD-thin over RATIFY**
+
 - **Owns:** `deriveLevel(total)` (pure non-linear curve + title) · below-floor **clamp+flag** on lock/spend · `user_profile` read/update (split-residual VIEW, IR-11).
 - **Composes (RATIFY):** `computeBalance(rows, ceiling)` (never re-derive) · `createCurrencyRegistry.create/list` — but note (R1) the registry has ONLY `create(def)→void` + `list()→CurrencyDef[]` `[FACT: foundation/economy/registry.ts:28-31,51-64]`, so the `Currency`-interface shape, `getCurrency`, and the create-echo are a **thin BUILD** over `list()` (map `CurrencyDef`→`Currency`; re-read after create), NOT a pure pass-through.
 - **Net-new types:** `Currency`, `ConsequenceLedger` interfaces (grep-confirmed absent). `[FACT: interpretation.md §3]`
@@ -24,6 +25,7 @@ service tier; every user-visible affordance is ②. `[FACT: interpretation.md §
 - **Verification Gate:** live-store — define a currency, write earn/lock ledger rows via the economy handlers, assert `getBalance` matches `computeBalance`; assert a below-floor lock clamps+flags.
 
 ### S2 · Rule engine — **BUILD**
+
 - **Owns:** `rules` CRUD · binding validation (`assertAcyclic`) · `executeRule`/`evaluateRules` = parse `rules.consequences` (`[E]` JSON-as-TEXT) → typed `EffectEvent[]` (derive subjectNaturalKey/transition) → `dispatchConsequence(rail, effects)` · user-authored envelope check (`grant_id`→`assertPermitted`).
 - **Composes (RATIFY):** `dispatchConsequence` + the grant/lock handlers (via the rail) · measurement `query(key)`/`assertAcyclic` · capability `assertPermitted`.
 - **Net-new types:** `Rule` interface + `ConsequenceSpec` (the parsed `consequences` shape).
@@ -33,6 +35,7 @@ service tier; every user-visible affordance is ②. `[FACT: interpretation.md §
 - **Verification Gate:** live-store — author a shipped rule, execute it, assert the correct ledger row(s) appear once (idempotent replay → no double-apply); a user-authored rule with a revoked grant fails closed.
 
 ### S3 · Achievement engine — **BUILD**
+
 - **Owns:** predicate evaluation over the measurement seam + ledger event stream (a reconcile pass, not bespoke checkers) · unlock → write `user_achievement` (syncable) + fire reward (`grant_currency`) + `surface_notification` · static-seed `achievements` READ (IR-8, not via sync Repository).
 - **Composes (RATIFY):** measurement `query` · the rail (`applyEffect`) · economy handlers.
 - **Operations:** `listAchievements` (seed) · `getUserAchievements` · `evaluateAchievements(ctx)` · `unlockAchievement(id)` (internal, idempotent via `UNIQUE(achievement_id)`).
@@ -40,6 +43,7 @@ service tier; every user-visible affordance is ②. `[FACT: interpretation.md §
 - **Verification Gate:** live-store — seed an achievement, advertise a measure that satisfies its predicate, run `evaluateAchievements`, assert one `user_achievement` row + reward ledger row + notification effect; re-run → no duplicate (UNIQUE holds).
 
 ### S4 · Journal provider + cross-module wiring — **BUILD**
+
 - **Owns:** `createGamificationJournalContribution` (`summary(date) → SectionData`, R2 — the fixed contribution shape; the day payload rides in `items` typed `GamificationDaySummary`) · effect-handler registration wiring (registers the economy handlers into the app's rail at module init; NOT re-implementing them) · the module barrel `index.ts` + `createGamificationService(deps)` assembly.
 - **Composes (RATIFY):** the journal-contribution seam returning `SectionData` (finance precedent `services/finance/journal.ts:24,31`) · `registerEconomyEffects`.
 - **Operations:** `createGamificationService(deps)` (the factory that returns S1–S3 operations + the journal contribution) · `summary(date) → SectionData`.
@@ -52,12 +56,14 @@ service tier; every user-visible affordance is ②. `[FACT: interpretation.md §
 ---
 
 ## Frontend twin (② — `fe-gamification` LIF-181, NOT this task)
+
 Consumes `seam-contract.md`. Surfaces: currency dashboard (balances + level/title) · rule builder · achievement
 wall · (store worth-tree view = Finance's ② when it ships). Each rides an S1–S4 backend op 1:1; Visual Gate is ②'s.
 
 ---
 
 ## Dependencies between slices
+
 S1 → S2 (rules fire currency effects; need the currency surface + types) → S3 (achievements fire rewards = currency
 effects; reuse the effect-firing path) → S4 (assembles all three + journal). Linear build order S1→S2→S3→S4.
 `[INTERP: from the effect-firing dependency chain]`

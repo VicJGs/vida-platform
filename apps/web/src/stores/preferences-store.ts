@@ -37,13 +37,7 @@ interface PreferencesStoreState {
     patch: Partial<
       Pick<
         PreferencesStoreState,
-        | 'dateFormat'
-        | 'timeFormat'
-        | 'weekStartsOn'
-        | 'notifInApp'
-        | 'notifPush'
-        | 'notifEmail'
-        | 'quietHours'
+        'dateFormat' | 'timeFormat' | 'weekStartsOn' | 'notifInApp' | 'notifPush' | 'notifEmail' | 'quietHours'
       >
     >,
   ) => void

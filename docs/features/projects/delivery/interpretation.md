@@ -3,11 +3,11 @@
      Ground truth: the 5 aspect docs, schema/projects.ts (DB-4 roster), db-4-projects/_index.md, the Part-1.2 rerun,
      foundation/measurement, and the learning-education service precedent. Authored for mod-projects #54 (LIF-135). -->
 
-# Interpretation — Projects ① backend  (M1.1.2 head #54)
+# Interpretation — Projects ① backend (M1.1.2 head #54)
 
 > **What this build IS.** The `@vida/core` **service code home** over the 4 DB-4 tables (`projects`,
 > `milestones`, `deliverables`, `project_documents`). The schema + measurement DDL are **already shipped**
-> (DB-4 group #5); the Part-1.2 rerun's `[DEFERRED — build]` was the *code home*, which is this session.
+> (DB-4 group #5); the Part-1.2 rerun's `[DEFERRED — build]` was the _code home_, which is this session.
 > `[FACT: schema/projects.ts header; reruns/projects.md "boundary held … code homes [DEFERRED — build]"]`
 > **What it is NOT.** Not schema authoring (DB-4 did it), not a frontend surface (② `fe-projects`, P6),
 > not the owner of tasks / purpose-rollup / contacts / habits (partner domains — see DEPENDENCIES).
@@ -15,6 +15,7 @@
 ## DEPENDENCIES — what must exist before a line is written
 
 ### Substrate (BUILT, composed — not re-implemented)
+
 - **`foundation/measurement`** — `normalize`/`rollup`/`resolveProgress` + `assertAcyclic` DAG guard + the
   (empty) measurement-source read seam. The engine for PJ-3 derived progress. Imported directly (pure, no
   table) — NOT a deny-safe port. `[FACT: foundation/measurement/index.ts; .../engine.ts]`
@@ -28,6 +29,7 @@
   encryption = M3, BR-DB6-3). `[FACT: schema header "registers an EMPTY [E] set in M1.0"; learning service.ts:308]`
 
 ### Partner domains (NOT owned here — reached via seam/port, never a direct table read, §6)
+
 - **Tasks** (`services/tasks`, **NOT built**, #65) — tasks point UP via their own FKs; Projects consumes a
   **dedicated Tasks→Projects read port** (counts/progress/focus-time) for the leaf of the rollup + project
   time (PJ-6). Deny-safe: absent ⇒ no task leaf. `[FACT: contract.md:28-30; business-rules.md PJ-5/PJ-6; schema header]`
@@ -88,7 +90,7 @@
    schema. ⇒ **OUT of ① scope** (homes to ② `fe-projects`). `[FACT: structure-data.md:46-49 "Zustand owns … pinned project"; schema has no pin column]` `[INTERP]`
 2. **`measurement_kind`/`binding_mode` live on `deliverables` ONLY.** Projects/milestones are **pure
    bottom-up rollups** with an implicit `milestone` kind — never a stored column. A project "measured by $"
-   expresses that as a *financial deliverable under it*. `[FACT: db-4-projects/_index.md PJ-4; structure-data.md:21]`
+   expresses that as a _financial deliverable under it_. `[FACT: db-4-projects/_index.md PJ-4; structure-data.md:21]`
 3. **Investigation = a `deliverable` (`measurement_kind='milestone'` + `binding_mode='manual'`), NO
    `investigations` table.** Exploration content lives in a Knowledge Lab (linked via `entity_links`). `[FACT: identity.md "Not the owner of a research/investigation entity"; reruns C3]`
 4. **A `derived-pull` deliverable with no tasks measures from its bound source** (the M5/R7 seam), not a
@@ -99,6 +101,7 @@
    server-plaintext external/AI ⇒ refused unless opted-in. `[FACT: business-rules.md "Failure behavior"]`
 
 ## Step 1.5 — Envision Gate: **N/A**
+
 Pure-backend entity — renders no surface a user forms a mental model of (`entity-delivery-flow.md §3.75`).
 Any user-visible affordance surfaces in ② `fe-projects` (P6), which wires it under the Envision Gate there.
 Stated, not silently skipped.

@@ -21,7 +21,6 @@ async function waitForAppBoot(page: import('@playwright/test').Page) {
   await page.locator('h1').first().waitFor({ timeout: 30_000 })
 }
 
-
 test.describe('BR-RT-LOCK — concurrent service writes on the real OPFS worker', () => {
   // Requesting `db` resets OPFS on the never-opened harness page (fixtures.ts); then load the app.
   test('a burst of concurrent writes all succeed and persist across reload', async ({ db: _reset, page }) => {
@@ -33,7 +32,11 @@ test.describe('BR-RT-LOCK — concurrent service writes on the real OPFS worker'
       const s = await getServices()
       // Local calendar day — matches the app's `todayLocalYmd` (home/use-journal-entry.ts), never UTC.
       const d = new Date()
-      const today = [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-')
+      const today = [
+        d.getFullYear(),
+        String(d.getMonth() + 1).padStart(2, '0'),
+        String(d.getDate()).padStart(2, '0'),
+      ].join('-')
       // ensureJournal is read-then-create (not this lock's job — R1-BR-7): create today's once, so the burst's
       // ensureJournal calls are idempotent reads interleaved with the createPage writes.
       await s.notes.ensureJournal(today)
@@ -43,7 +46,9 @@ test.describe('BR-RT-LOCK — concurrent service writes on the real OPFS worker'
       ]).flat()
       const results = await Promise.allSettled(writes)
       return {
-        rejected: results.filter((r) => r.status === 'rejected').map((r) => String((r as PromiseRejectedResult).reason)),
+        rejected: results
+          .filter((r) => r.status === 'rejected')
+          .map((r) => String((r as PromiseRejectedResult).reason)),
         notes: (await s.notes.listPages()).filter((p: { title: string | null }) => p.title?.startsWith('lock-')).length,
       }
     }, ROOT)

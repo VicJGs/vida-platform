@@ -29,9 +29,7 @@ function silentWorker(): WorkerLike {
 describe('WorkerDbClient', () => {
   it('resolves open() and returns query rows through the driver', async () => {
     const client = new WorkerDbClient(
-      mockWorker((req) =>
-        req.op === 'query' ? { ok: true, rows: [{ value: '3' }] } : { ok: true },
-      ),
+      mockWorker((req) => (req.op === 'query' ? { ok: true, rows: [{ value: '3' }] } : { ok: true })),
     )
     await expect(client.open('vida')).resolves.toBeUndefined()
     const rows = await client.driver.query('SELECT value FROM app_state')
@@ -50,18 +48,17 @@ describe('WorkerDbClient', () => {
       onmessage: null,
       onerror: null,
       postMessage(msg: any) {
-        buffer.push(() =>
-          w.onmessage?.({ data: { id: msg.id, ok: true, rows: [{ q: msg.sql }] } } as MessageEvent),
-        )
-        if (buffer.length === 2) buffer.splice(0).reverse().forEach((f) => f())
+        buffer.push(() => w.onmessage?.({ data: { id: msg.id, ok: true, rows: [{ q: msg.sql }] } } as MessageEvent))
+        if (buffer.length === 2)
+          buffer
+            .splice(0)
+            .reverse()
+            .forEach((f) => f())
       },
       terminate() {},
     }
     const client = new WorkerDbClient(w)
-    const [a, b] = await Promise.all([
-      client.driver.query('A'),
-      client.driver.query('B'),
-    ])
+    const [a, b] = await Promise.all([client.driver.query('A'), client.driver.query('B')])
     expect(a).toEqual([{ q: 'A' }])
     expect(b).toEqual([{ q: 'B' }])
   })

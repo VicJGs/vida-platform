@@ -3,10 +3,11 @@
 # Current Business Rules — Notification Delivery (the ZK delivery engine)
 
 > The delivery MECHANISM (ADR-013): how a notification reaches the user off-device without the server reading it.
-> NOT the records/dispatch/gating (MOD-notifications) nor *what/when* due (MOD-notifications + Sessions `dueIn`).
+> NOT the records/dispatch/gating (MOD-notifications) nor _what/when_ due (MOD-notifications + Sessions `dueIn`).
 > M1 = pure decision/routing tier + deny-safe ports + NO schema; M2 = real reach + schema. Inherits ZK-1/2/3, LF-1/2.
 
 ## Invariants (BR-ND)
+
 - **BR-ND-1 (three tiers by nature × platform).** `selectTier(nature, platform)`: time-based on native → `local_scheduled`;
   time-based on web OR any event → `wake_signal`. In-app underlies all three, always. `[FACT: ADR-013 §3.1 L41-47; tiers.ts]`
 - **BR-ND-2 (channel matrix, no SMS).** `channelsFor`: only `wake_signal` reaches off-device (push wake-only + email
@@ -33,10 +34,12 @@
   reach with NO signature change. `[FACT: ADR-013 §3.6 L72, §5 L111-115]`
 
 ## Boundary
+
 OWNS: three-tier contract · content-minimal payload spec · per-channel ZK-fidelity rule · wake-relay capability +
-metadata bound · opt-out mode. Does NOT own: `notifications` records/dispatch/gating (MOD-notifications), *what/when*
+metadata bound · opt-out mode. Does NOT own: `notifications` records/dispatch/gating (MOD-notifications), _what/when_
 due (MOD-notifications + Sessions), channel/quiet-hours CONFIG (Preferences §5.17), device registry (ADR-003, XCU-13).
 
 ## Deferred (M2 / build-phase)
+
 Real reach (Expo/Tauri/Web-Push/APNs/FCM), the Hono server wake-relay, email provider, push vendor/runtime policy,
 delivery-audit + push-token columns. Rich/actionable push, history backup, digest/batching (N5) — ⚠ INTENDED-later.

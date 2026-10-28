@@ -12,7 +12,17 @@
 import type { ReactNode } from 'react'
 import { Text, View } from '@tamagui/core'
 import {
-  CircleDot, GraduationCap, ListChecks, RefreshCw, Repeat, Smile, Target, Timer, Trophy, Users, Wallet,
+  CircleDot,
+  GraduationCap,
+  ListChecks,
+  RefreshCw,
+  Repeat,
+  Smile,
+  Target,
+  Timer,
+  Trophy,
+  Users,
+  Wallet,
   type LucideIcon,
 } from 'lucide-react'
 import type { SectionData } from '@vida/core'
@@ -74,8 +84,7 @@ function SummarySection({ section }: { section: SectionData }) {
 export function SummaryView({ sections, state }: { sections: readonly SectionData[]; state: SummaryState }) {
   if (state === 'loading') return <Muted busy>Loading…</Muted>
   if (state === 'error') return <Muted role="status">Couldn’t load your summary.</Muted>
-  if (state === 'empty')
-    return <Muted>Your daily summary appears here once sources are connected.</Muted>
+  if (state === 'empty') return <Muted>Your daily summary appears here once sources are connected.</Muted>
   return (
     <View gap="$16">
       {sections.map((section) => (

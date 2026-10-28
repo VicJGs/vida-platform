@@ -59,7 +59,13 @@ function Segmented<T extends string>({
       {options.map((o) => {
         const active = o === value
         return (
-          <Button key={o} intent={active ? 'secondary' : 'ghost'} size="small" aria-pressed={active} onPress={() => onChange(o)}>
+          <Button
+            key={o}
+            intent={active ? 'secondary' : 'ghost'}
+            size="small"
+            aria-pressed={active}
+            onPress={() => onChange(o)}
+          >
             {labelOf(o)}
           </Button>
         )
@@ -110,10 +116,22 @@ export function NotificationsSurface() {
   // Optimistic-LOCAL lifecycle: the UI responds immediately; the durable write binds to the composition
   // root with reads (deferred). Session-only at M1 (resets on reload, like every M1 write) — honest, NOT
   // a faked "saved". `[FACT: seam-contract.md "writes deferred-live"]`
-  const [overlay, setOverlay] = useState<{ read: ReadonlySet<string>; archived: ReadonlySet<string> }>({ read: new Set(), archived: new Set() })
+  const [overlay, setOverlay] = useState<{ read: ReadonlySet<string>; archived: ReadonlySet<string> }>({
+    read: new Set(),
+    archived: new Set(),
+  })
 
   const rows = useMemo<Notification[]>(
-    () => data.rows.map((r) => (overlay.read.has(r.id) || overlay.archived.has(r.id) ? { ...r, is_read: r.is_read || overlay.read.has(r.id), is_archived: r.is_archived || overlay.archived.has(r.id) } : r)),
+    () =>
+      data.rows.map((r) =>
+        overlay.read.has(r.id) || overlay.archived.has(r.id)
+          ? {
+              ...r,
+              is_read: r.is_read || overlay.read.has(r.id),
+              is_archived: r.is_archived || overlay.archived.has(r.id),
+            }
+          : r,
+      ),
     [data.rows, overlay],
   )
   const unread = useMemo(() => rows.filter((r) => !r.is_read && !r.is_archived).length, [rows])
@@ -129,7 +147,11 @@ export function NotificationsSurface() {
 
   const onMarkRead = (id: string) => setOverlay((o) => ({ ...o, read: new Set(o.read).add(id) }))
   const onArchive = (id: string) => setOverlay((o) => ({ ...o, archived: new Set(o.archived).add(id) }))
-  const onMarkAllRead = () => setOverlay((o) => ({ ...o, read: new Set([...o.read, ...rows.filter((r) => !r.is_read && !r.is_archived).map((r) => r.id)]) }))
+  const onMarkAllRead = () =>
+    setOverlay((o) => ({
+      ...o,
+      read: new Set([...o.read, ...rows.filter((r) => !r.is_read && !r.is_archived).map((r) => r.id)]),
+    }))
 
   const totallyEmpty = model.anticipated.length === 0 && model.settled.length === 0
 
@@ -178,9 +200,21 @@ export function NotificationsSurface() {
 
       {/* controls: lens switcher + status filter */}
       <View flexDirection="row" justifyContent="space-between" alignItems="center" gap="$12" flexWrap="wrap">
-        <Segmented label="Choose a view" value={lens} options={['margin', 'dispatches', 'constellation']} labelOf={(l) => LENS_LABEL[l]} onChange={setLens} />
+        <Segmented
+          label="Choose a view"
+          value={lens}
+          options={['margin', 'dispatches', 'constellation']}
+          labelOf={(l) => LENS_LABEL[l]}
+          onChange={setLens}
+        />
         {lens === 'margin' ? (
-          <Segmented label="Filter by status" value={status} options={['all', 'unread', 'archived']} labelOf={(s) => STATUS_LABEL[s]} onChange={setStatus} />
+          <Segmented
+            label="Filter by status"
+            value={status}
+            options={['all', 'unread', 'archived']}
+            labelOf={(s) => STATUS_LABEL[s]}
+            onChange={setStatus}
+          />
         ) : null}
       </View>
 

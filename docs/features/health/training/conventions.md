@@ -22,4 +22,5 @@ Inherits platform baselines + Core conventions (`../core/conventions.md`). Train
   polymorphic enums so pages/tags/links work uniformly. `[INTENT HL10]`
 
 ## Completion checklist
+
 - [x] platform + Core inheritance noted · [x] Training specifics · [x] [FACT/INTENT] · [x] no `{{…}}`

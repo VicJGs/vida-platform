@@ -4,10 +4,11 @@
 > No-Guessing: every rule is `[FACT: src]` / `[INTENT: rule]` / `[UNKNOWN]`. Branch `mod-knowledge-rebuild`.
 
 ## §1. Context
+
 S1 shipped the kind registry + object hierarchy; S2 made an object a connected, organized citizen. **S3 stands up
-the generic review engine's *scheduling substrate*** — the pluggable **methods**, **curves**, and **bindings** that
-say *how* and *with what cadence* a level is reviewed. It writes **no mastery** and logs **no reviews**: derive /
-rollup / due / record are **S4**. S3 is a *substrate + composition* slice — it authors **no schema** (both migrations
+the generic review engine's _scheduling substrate_** — the pluggable **methods**, **curves**, and **bindings** that
+say _how_ and _with what cadence_ a level is reviewed. It writes **no mastery** and logs **no reviews**: derive /
+rollup / due / record are **S4**. S3 is a _substrate + composition_ slice — it authors **no schema** (both migrations
 already shipped: `022_knowledge`, `008_knowledge_review`).
 
 **Interpretation headline — the engine homes to `foundation/review/`, not `services/knowledge/` (D1).** The
@@ -21,7 +22,7 @@ structure-data.md:38; foundation/review/CLAUDE.md; schema/foundation/knowledge-r
 **Interpretation catch — `listMethods`/`registerMethod` are NOT a new store.** They are typed wrappers over the
 **one OS capability registry** (`createCapabilityRegistry`, ADR-008), keyed to the `kind='study_method'` partition
 (F2/D2 — "not a parallel store"). `registerMethod` → `capabilityRegistry.register(def)`; `listMethods` →
-`capabilityRegistry.list()` **filtered to `kind==='study_method'`** (the registry `list()` returns *all* kinds).
+`capabilityRegistry.list()` **filtered to `kind==='study_method'`** (the registry `list()` returns _all_ kinds).
 `[FACT: contract.md:28-30; parts/knowledge.md:30-31; capability/registry.ts:49-134]`
 
 **Interpretation catch — a `study_method` capability declares an EMPTY privilege envelope.** `register()` enforces
@@ -29,47 +30,48 @@ BR-2..6: render targets ⊆ `RENDER_TARGET`, effects ⊆ `EFFECT_TYPE`, every re
 states, and **effects ∪ bindings ⊆ the shipped privilege envelope** (currently only `habit_logger`'s). A study method
 is not an effect-firing block; it declares `render_targets:[]`, `effects:[]`, `bindings:[]`, `terminal_states:{}` →
 every loop is empty → passes trivially. `register()` forces `is_user_type:true` (correct: a user-registered method
-*is* a user type). FC-02's roles (`retention`/`gathering`) ride `config_schema` and are resolved at **S7**, not S3.
+_is_ a user type). FC-02's roles (`retention`/`gathering`) ride `config_schema` and are resolved at **S7**, not S3.
 `[FACT: capability/registry.ts:84-119; capability/types.ts:18-25; flashcards/contract.md:14-16]`
 
 ## §2. Business rules (S3-scoped, cited)
+
 - **BR-S3-1 — Methods = the `kind='study_method'` partition of the one capability registry, never a parallel store.**
   `registerMethod(spec)` → `capability.register({...spec, kind:'study_method', render_targets:[], effects:[],
-  bindings:[], terminal_states:{}})`; `listMethods()` → `capability.list()` filtered `kind==='study_method'`.
+bindings:[], terminal_states:{}})`; `listMethods()` → `capability.list()` filtered `kind==='study_method'`.
   `[FACT: contract.md:28-30; parts/knowledge.md:30-31 (KNO-15/16); capability/registry.ts:49-134; F2/D2]`
 - **BR-S3-2 — A study_method def carries an empty privilege envelope.** `render_targets:[] / effects:[] / bindings:[]
-  / terminal_states:{}` satisfy BR-2..6 (empty ⊆ shipped envelope; no terminal states owed). Roles/config are S7.
+/ terminal_states:{}` satisfy BR-2..6 (empty ⊆ shipped envelope; no terminal states owed). Roles/config are S7.
   `[FACT: capability/registry.ts:84-119; flashcards/contract.md:14-16]`
 - **BR-S3-3 — Curves are personalizable; SM-2 is ONE preset (not the model).** `review_curves = {name [E],
-  curve_kind (decay|review|test) FIXED→CHECK, params [E] json, is_preset}`. `defineCurve(spec)` creates a **user**
+curve_kind (decay|review|test) FIXED→CHECK, params [E] json, is_preset}`. `defineCurve(spec)` creates a **user**
   curve (`is_preset:false`); `listCurves()` reads live curves (soft-delete filtered). `[FACT: business-rules.md
-  KN-8:43-46; conventions.md:8-9; schema/foundation/knowledge-review.ts:17-27]`
+KN-8:43-46; conventions.md:8-9; schema/foundation/knowledge-review.ts:17-27]`
 - **BR-S3-4 — Bindings are polymorphic at any spine level.** `method_bindings = {method_id, curve_id?, target_type
-  (area|subject|unit|topic|kind) FIXED→CHECK, target_id, daily_cap?}`. `bindMethod({targetType, targetId, methodId,
-  curveId?, dailyCap?})` inserts one row; all refs are **plain TEXT, no FK** (generic anchors). `[FACT:
-  schema/foundation/knowledge-review.ts:29-45; parts/knowledge.md:34 (KNO-19); business-rules.md KN-8:43-46]`
+(area|subject|unit|topic|kind) FIXED→CHECK, target_id, daily_cap?}`. `bindMethod({targetType, targetId, methodId,
+curveId?, dailyCap?})` inserts one row; all refs are **plain TEXT, no FK** (generic anchors). `[FACT:
+schema/foundation/knowledge-review.ts:29-45; parts/knowledge.md:34 (KNO-19); business-rules.md KN-8:43-46]`
 - **BR-S3-5 — `resolveDefaultMethod` is a 2-tier default in S3, never a guess (gate-1 FOLD 1).** Resolution order:
   **(1)** the kind's explicit `default_method_id` if set (the user override persisted at kind level); **(2)** else
   `null`. The engine resolver is **pure over the kind's fields**; `KnowledgeService.resolveDefaultMethod(kindId)` looks
   the kind up (rejects an unresolved kind → `ObjectKindNotFoundError`) and delegates. **The realm-driven tier is a
-  forward seam, not an S3 behavior:** the docs specify realm→method *families* in prose ("memorize→spaced-rep drills",
-  "understand→elaboration") — **not** capability ids — and the concrete method ids are *chosen when the methods are
-  registered*, which is **S7/FC-02** (Flashcards = the memorize-realm method). Hard-coding `'spaced_rep'`/
+  forward seam, not an S3 behavior:** the docs specify realm→method _families_ in prose ("memorize→spaced-rep drills",
+  "understand→elaboration") — **not** capability ids — and the concrete method ids are _chosen when the methods are
+  registered_, which is **S7/FC-02** (Flashcards = the memorize-realm method). Hard-coding `'spaced_rep'`/
   `'elaboration'` would invent identifiers that exist nowhere (No-Guessing) and contradict BR-S3-6. So S3 resolves
   only what is grounded — `default_method_id` — and the realm→*registered-method* match activates at S7 when methods
   self-declare their realm. Always overridable per level via `bindMethod` (KN-8). `[FACT: conventions.md:8-10;
-  business-rules.md KN-4:26-29; schema/knowledge.ts objectKinds.default_method_id; flashcards/contract.md:14-16,61;
-  capability/registry.ts:35-47 (only habit_logger shipped)]`
+business-rules.md KN-4:26-29; schema/knowledge.ts objectKinds.default_method_id; flashcards/contract.md:14-16,61;
+capability/registry.ts:35-47 (only habit_logger shipped)]`
 - **BR-S3-6 — `method_id` is a bare identifier with no FK; it need not pre-resolve to a registered capability.** A
   binding may reference a method the user has not (yet) registered — the schema deliberately keeps `method_id` plain
   TEXT no FK. `bindMethod` does **not** assert the method exists in the registry (a study method may be a
-  shipped/future service id, e.g. Flashcards registered at S7). This is *why* the S3 resolver (BR-S3-5) cannot
+  shipped/future service id, e.g. Flashcards registered at S7). This is _why_ the S3 resolver (BR-S3-5) cannot
   synthesize method ids: if bindings tolerate unregistered ids, the default resolver has even less license to invent
   them. `[FACT: schema/foundation/knowledge-review.ts:34,53; No-Guessing — do not add integrity the schema declines]`
-- **BR-S3-7 — mastery / derive / rollup / due / record are OUT of S3 (S4).** S3 only *configures* scheduling. `quality`
+- **BR-S3-7 — mastery / derive / rollup / due / record are OUT of S3 (S4).** S3 only _configures_ scheduling. `quality`
   is a curve **input**, never written as mastery (fixes the Antigravity scale-conflation bug by construction — no
   mastery write path exists in S3). `review_events` is untouched (S4 appends). `[FACT: decomposition.md:66-74 (S4);
-  business-rules.md KN-9:47-50]`
+business-rules.md KN-9:47-50]`
 - **BR-S3-8 — `review_curves.params` is a `json<T>()` column → the S1 serialization seam recurs.** The M1.0 repo does
   NOT auto-serialize non-encrypted values, so the engine **stringifies `params` at the WRITE boundary and parses on
   READ** — exactly one cast per boundary, commented (S1 `key_concepts` precedent). `method_bindings`/`review_events`
@@ -78,20 +80,21 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
   (`softDelete:true`; every `findWhere` re-applies `isNull(deleted_at)` — [[repository-findwhere-skips-softdelete-filter]]).
   `review_events` has **no** `deleted_at` (append-only — not written in S3). `[E]` fields persist via
   `encryptedFields:[]` (M1.0 pass-through; M3 target — [[m10-repos-use-empty-encryptedfields-seam]]). `[FACT:
-  schema/foundation/knowledge-review.ts:26,39,56]`
+schema/foundation/knowledge-review.ts:26,39,56]`
 - **BR-S3-10 — The engine is composed, not owned inline.** `createReviewEngine(db, deviceId, { capability })` lives in
   `foundation/review/`; it is injected as a **required** dep `review: ReviewEngine` on `KnowledgeServiceDeps` and the
   6 verbs are re-exposed by delegation (spaces/backlinks precedent). Required (not deny-safe optional): the review
-  engine is core to Knowledge, and S7/flashcards needs the *same instance*. `[FACT: decomposition.md:11-19; D1;
-  notes/types.ts:20-29 required-dep precedent]`
+  engine is core to Knowledge, and S7/flashcards needs the _same instance_. `[FACT: decomposition.md:11-19; D1;
+notes/types.ts:20-29 required-dep precedent]`
 
 ## §3. Scope
 
 ### In scope
+
 1. **New foundation module `packages/core/src/foundation/review/`** (populates the reserved stub):
    - `types.ts` — `ReviewEngine` interface, `ReviewEngineDeps { capability: CapabilityRegistry }` (the options object;
      the factory is **positional** `createReviewEngine(db, deviceId, deps)` to match `createCapabilityRegistry(db,
-     deviceId)` / `createSpacesService(db, deviceId, registry)` — gate-2 N-a), input types (`RegisterMethodInput`,
+deviceId)` / `createSpacesService(db, deviceId, registry)` — gate-2 N-a), input types (`RegisterMethodInput`,
      `DefineCurveInput`, `BindMethodInput`), typed errors (`ReviewCurveNotFoundError`, `MethodBindingNotFoundError`).
    - `engine.ts` — `createReviewEngine(deps): ReviewEngine` (factory-object, hoisted closures, no `this.`):
      - `listMethods()` → `capability.list()` filter `kind==='study_method'` (KNO-15).
@@ -125,8 +128,9 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
    `createKnowledgeService({db, deviceId, spaces, backlinks, review})`. Captured for the S7/UI wiring pass.
 
 ### Out of scope (homed later — NOT built in S3)
+
 - **`getDue`/`dueIn`, `recordReview`, `deriveMastery`, `rollupMastery`** — the review-engine ② (S4). S3 provides
-  their *config* (bindings/curves) + `listBindings` read; it computes nothing.
+  their _config_ (bindings/curves) + `listBindings` read; it computes nothing.
 - **`seedPresetCurves()` — the SM-2 preset seed → S4 (gate-1 FOLD 2)**, where the SM-2 `params` shape is defined and
   consumed by the derivation math. S3 ships no preset row (it would be a dormant row whose shape S3 can neither
   interpret nor test for correctness); the KNO-15…20 roster contains no seed leg. `defineCurve`/`listCurves`/
@@ -144,6 +148,7 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
 - Any schema/migration authoring; any mastery write; any `review_events` write.
 
 ## §4. Acceptance
+
 - [ ] `foundation/review/` exists with `createReviewEngine`; the stub is populated; the barrel exports the surface.
 - [ ] `registerMethod({id})` persists a `kind='study_method'` capability with an empty envelope (passes BR-2..6);
       `listMethods()` returns it and **excludes** non-`study_method` kinds (e.g. the shipped `habit_logger`).
@@ -162,6 +167,7 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
       eslint 0, full suite green (no regression). `008_knowledge_review` + `005_*capability` are in `ALL_MIGRATIONS`.
 
 ## §5. Implementation prompt (build order)
+
 1. `foundation/review/types.ts`: `ReviewEngineDeps`, `ReviewEngine`, input types, errors, `REALM_DEFAULT_METHOD` map.
 2. `foundation/review/engine.ts`: `createReviewEngine` — construct `curvesRepo`/`bindingsRepo`
    (`createRepository(db, reviewCurves|methodBindings, {deviceId, softDelete:true, encryptedFields:[]})`); mappers
@@ -174,10 +180,11 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
    `review = createReviewEngine(db, DEVICE, {capability})` and inject `review`; re-run S1/S2 tests green.
 8. Tests: new `foundation/review/__tests__/engine.test.ts` (engine surface, live-store) + extend
    `services/knowledge/__tests__/service.test.ts` (delegation smoke). Cover every §4 box. Node 24 (`nvm use 24`).
-9. §XXIX: promote to `docs/modules/knowledge/current-{spec,business-rules}.md` (BR-S3-*); refresh
+9. §XXIX: promote to `docs/modules/knowledge/current-{spec,business-rules}.md` (BR-S3-\*); refresh
    `foundation/review/CLAUDE.md` status (stub → built).
 
 ## §6. /adr-check
+
 - **ADR-005 (generic review engine):** ✅ S3 builds the substrate ADR-005 reserves — pluggable methods/curves,
   method_id → capability registry, append-only events (untouched in S3). SM-2 = one preset, not the model.
 - **ADR-008 (capability registry):** ✅ methods are a `kind='study_method'` partition of the ONE registry (F2/D2),
@@ -189,11 +196,13 @@ every loop is empty → passes trivially. `register()` forces `is_user_type:true
   gate-1 critic should confirm it (decomposition.md:145).
 
 ## Deviations ledger
+
 > Gate-1 (independent critic) verdict **REVISE → 3 folds applied before Approval 1**. The critic VERIFIED the spine:
 > empty-envelope `register()` trace (BR-2..6 all pass), no-FK ruling (BR-S3-6), `json<T>` params seam (BR-S3-8),
 > `foundation/review/` home (D1), injected-dep composition, roster completeness, `@vida/types` no-reconcile, migrations.
+
 - **FOLD 1 (No-Guessing violation — centerpiece resolver).** `resolveDefaultMethod` hard-coded `'spaced_rep'`/
-  `'elaboration'` as method ids; the docs specify only prose *families*, the ids are chosen at S7/FC-02 registration,
+  `'elaboration'` as method ids; the docs specify only prose _families_, the ids are chosen at S7/FC-02 registration,
   and it self-contradicted BR-S3-6. → Collapsed to a **2-tier** resolver (`default_method_id ?? null`); the
   realm→registered-method tier is homed forward to S7 (KNO-20 stays accountable, not dropped). BR-S3-5/6, §3.1,
   §3-out-of-scope, §4 box updated.

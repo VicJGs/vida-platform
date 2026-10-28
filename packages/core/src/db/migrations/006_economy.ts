@@ -59,8 +59,6 @@ export const migration006Economy: Migration = {
         UNIQUE (effect_event_id, kind, target_ref)
       )
     `)
-    await driver.run(
-      `CREATE INDEX idx_consequence_ledger_currency ON consequence_ledger (currency_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_consequence_ledger_currency ON consequence_ledger (currency_id)`)
   },
 }

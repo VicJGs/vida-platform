@@ -97,8 +97,20 @@ export function MetadataControlsView({
   return (
     // The greybox order (R3 G16): Change icon · Change cover · Favorite · Archive.
     <View role="group" aria-label="Page metadata" flexDirection="row" flexWrap="wrap" gap="$8">
-      <Ctrl icon={Smile} label={icon ? 'Change icon' : 'Add icon'} active={icon !== null} busy={busy} onPress={onChangeIcon} />
-      <Ctrl icon={ImageIcon} label={cover ? 'Change cover' : 'Add cover'} active={cover !== null} busy={busy} onPress={onChangeCover} />
+      <Ctrl
+        icon={Smile}
+        label={icon ? 'Change icon' : 'Add icon'}
+        active={icon !== null}
+        busy={busy}
+        onPress={onChangeIcon}
+      />
+      <Ctrl
+        icon={ImageIcon}
+        label={cover ? 'Change cover' : 'Add cover'}
+        active={cover !== null}
+        busy={busy}
+        onPress={onChangeCover}
+      />
       <Ctrl icon={Star} label="Favorite" pressed={favorite} busy={busy} onPress={onToggleFavorite} />
       <Ctrl icon={Archive} label="Archive" pressed={archived} busy={busy} onPress={onToggleArchive} />
     </View>

@@ -1,11 +1,13 @@
 # apps/web/src/reader — the Books ↔ CanvasReader adapter (fe-codec-canvas-reader S6)
 
 ## What this is
+
 The `apps/web` plane of the CODEC Canvas: Reader shell (#9). Binds `@vida/ui`'s presentational `CanvasReader` to the
 `@vida/core` Books service — the single `@vida/core`↔UI crossing (the Tamagui-only boundary forbids a `@vida/core` import
 in `@vida/ui`, BR-2). The flow/collection/dashboard/entity adapter precedent.
 
 ## Pattern in use
+
 - **The display-resolve (the heart, EC-14)** — `@vida/ui` renders a pre-resolved location; this plane owns the resolve:
   - `resolveLocation(position, chapters)` — parse a page from the native `position` (M1: a LEADING INTEGER; EPUB CFI /
     timestamp line-resolution is the deferred BK-4 design pass) → the `BookChapter` whose `[start_page,end_page]` holds it
@@ -19,7 +21,7 @@ in `@vida/ui`, BR-2). The flow/collection/dashboard/entity adapter precedent.
   — are the deferred hook's `deriveTerminalState` (BR-2). `mapPositionNote` = the IR-3 not-synced line; `mapListen` =
   `ai-unavailable → 'unavailable'` (IR-7, the rest of listen is runtime).
 - **`toReaderProps(src)`** — the assembler → the SHIPPED `CanvasReaderProps` (the shell's `annotationGroups` + `annotationsState:
-  ViewState`, NOT the stale seam-contract §A flat `annotations[]`); explicit `state`/`listen` override the derived map.
+ViewState`, NOT the stale seam-contract §A flat `annotations[]`); explicit `state`/`listen` override the derived map.
 - **`BooksReaderPort` + `bindReaderIntents(port, ctx, opts)`** — the shell/SelectionActions EMIT, here is where writes happen
   (BR-2): `onAddNote → openAnnotationNote({kind, id})` (nature from `natureById`; a highlight never reaches here, IR-1
   shell-enforced); `onLinkAnnotation → opts.onLink` (a consumer link picker → `port.linkAnnotations`, which needs TWO refs);
@@ -29,6 +31,7 @@ in `@vida/ui`, BR-2). The flow/collection/dashboard/entity adapter precedent.
   S6 pure + testable — the `@vida/core` edge lives in the deferred hook (the flow `SessionsPort` precedent).
 
 ## Deferred (first consumer — fe-books #36)
+
 The live **`useReader(assetId)`** hook — React Query → `openReader` + `getBook` + `listAnnotations` + the book-summary Notes
 page (decision 1, `notes.ensureEntityNote`/read), binding the real `BooksService` to `BooksReaderPort`, flattening
 `AnnotationView {kind, annotation, position}` → `AnnotationInput {kind, id, text, position}`, and deriving the terminal
@@ -36,6 +39,7 @@ states. Also the live selection Range→rect anchoring (S4 `SelectionActions` co
 collection/dashboard/entity/flow sibling precedent.
 
 ## Imports
+
 - `CanvasReaderProps`/`ReaderChapter`/`AnnotationGroup`/`ReaderAnnotation`/`Nature`/`ReaderState`/`ListenMode` from `@vida/ui`.
 - `type AiRequest` from `@vida/core` (via the `foundation/ai` barrel re-export) — the only `@vida/core` edge in S6, type-only;
   the concrete service binding is the deferred hook's.
@@ -43,4 +47,5 @@ collection/dashboard/entity/flow sibling precedent.
   `@vida/core` Books shapes (the dashboard-adapter mirror-by-value precedent).
 
 ## Spec
+
 `docs/specs/components/ui-2-platform-views/canvas-reader.md` · delivery `docs/specs/foundation/fe-codec-canvas-reader/`.

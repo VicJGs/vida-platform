@@ -203,14 +203,10 @@ export const SLASH_MENU_ITEMS: readonly SlashMenuItem[] = [...STANDARD_ITEMS, ..
  * Filter by the query typed after `/` (BR-E4-7): case-insensitive SUBSTRING over title + keywords. Empty query → the
  * full list. Deferred entries stay in the results (dimmed) so searching "summary" still surfaces the coming block.
  */
-export function filterSlashItems(
-  items: readonly SlashMenuItem[],
-  query: string,
-): readonly SlashMenuItem[] {
+export function filterSlashItems(items: readonly SlashMenuItem[], query: string): readonly SlashMenuItem[] {
   const q = query.trim().toLowerCase()
   if (!q) return items
   return items.filter(
-    (it) =>
-      it.title.toLowerCase().includes(q) || it.keywords.some((k) => k.toLowerCase().includes(q)),
+    (it) => it.title.toLowerCase().includes(q) || it.keywords.some((k) => k.toLowerCase().includes(q)),
   )
 }

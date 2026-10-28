@@ -18,7 +18,14 @@ const WEEK: AgendaDay[] = [
     date: '2026-10-08',
     items: [
       { id: 'b', title: 'Morning check-in', daypart: 'morning', done: true },
-      { id: 'c', title: 'Finish the re-plan draft', daypart: 'morning', time: '09:30', weight: 'must', color: PURPOSE.career },
+      {
+        id: 'c',
+        title: 'Finish the re-plan draft',
+        daypart: 'morning',
+        time: '09:30',
+        weight: 'must',
+        color: PURPOSE.career,
+      },
       { id: 's', title: 'Spanish, daily session', daypart: 'morning', weight: 'can', color: PURPOSE.growth },
       { id: 'd', title: 'Call Mariana', daypart: 'afternoon', time: '17:00', done: false, color: PURPOSE.career },
       { id: 'a', title: 'Read ch. 4 — Systems', daypart: 'evening', weight: 'can' },
@@ -32,7 +39,12 @@ const WEEK: AgendaDay[] = [
       { id: 'f', title: 'Weekly review', daypart: 'evening', weight: 'can' },
     ],
   },
-  { date: '2026-10-10', items: [{ id: 'g', title: 'Family lunch', daypart: 'afternoon', time: '12:00', done: false, color: PURPOSE.health }] },
+  {
+    date: '2026-10-10',
+    items: [
+      { id: 'g', title: 'Family lunch', daypart: 'afternoon', time: '12:00', done: false, color: PURPOSE.health },
+    ],
+  },
 ]
 
 type PlaygroundArgs = { state: ViewState; interactive: boolean }
@@ -53,7 +65,13 @@ function Owned({ state, interactive }: PlaygroundArgs) {
     setDays((ds) => ds.map((d) => ({ ...d, items: d.items.map((i) => (i.id === id ? { ...i, done: !i.done } : i)) })))
   return (
     <View width={880} maxWidth="100%">
-      <AgendaView days={days} today={TODAY} state={state} onToggleItem={interactive ? toggle : undefined} aria-label="Agenda" />
+      <AgendaView
+        days={days}
+        today={TODAY}
+        state={state}
+        onToggleItem={interactive ? toggle : undefined}
+        aria-label="Agenda"
+      />
     </View>
   )
 }

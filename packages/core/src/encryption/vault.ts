@@ -36,15 +36,15 @@ function assertReady(): void {
 // Constants — standardized libsodium values (hardcoded for WASM compatibility)
 // ---------------------------------------------------------------------------
 
-const KEY_LENGTH = 32             // crypto_secretbox_KEYBYTES
-const NONCE_LENGTH = 24           // crypto_secretbox_NONCEBYTES
-const SALT_LENGTH = 16            // crypto_pwhash_SALTBYTES
-const ACCOUNT_KEY_LENGTH = 32     // 256-bit
+const KEY_LENGTH = 32 // crypto_secretbox_KEYBYTES
+const NONCE_LENGTH = 24 // crypto_secretbox_NONCEBYTES
+const SALT_LENGTH = 16 // crypto_pwhash_SALTBYTES
+const ACCOUNT_KEY_LENGTH = 32 // 256-bit
 
 /** Argon2id: OWASP recommended for interactive logins */
-const ARGON2_OPS_LIMIT = 2        // crypto_pwhash_OPSLIMIT_INTERACTIVE
+const ARGON2_OPS_LIMIT = 2 // crypto_pwhash_OPSLIMIT_INTERACTIVE
 const ARGON2_MEM_LIMIT = 67108864 // crypto_pwhash_MEMLIMIT_INTERACTIVE (64 MiB)
-const ARGON2_ALGORITHM = 2        // crypto_pwhash_ALG_ARGON2ID13
+const ARGON2_ALGORITHM = 2 // crypto_pwhash_ALG_ARGON2ID13
 
 // ---------------------------------------------------------------------------
 // Key derivation
@@ -64,14 +64,7 @@ export function deriveMasterKey(password: string, salt: Uint8Array): Uint8Array 
     throw new Error(`Salt must be ${SALT_LENGTH} bytes, got ${salt.length}`)
   }
 
-  return sodium.crypto_pwhash(
-    KEY_LENGTH,
-    password,
-    salt,
-    ARGON2_OPS_LIMIT,
-    ARGON2_MEM_LIMIT,
-    ARGON2_ALGORITHM,
-  )
+  return sodium.crypto_pwhash(KEY_LENGTH, password, salt, ARGON2_OPS_LIMIT, ARGON2_MEM_LIMIT, ARGON2_ALGORITHM)
 }
 
 /**
@@ -168,11 +161,7 @@ export function createKeyChain(password: string): { keyChain: KeyChain; salt: Ui
  * The user provides their password + Account Key (recovery key).
  * The salt is fetched from the server during SRP handshake.
  */
-export function unlockKeyChain(
-  password: string,
-  accountKey: Uint8Array,
-  salt: Uint8Array,
-): KeyChain {
+export function unlockKeyChain(password: string, accountKey: Uint8Array, salt: Uint8Array): KeyChain {
   assertReady()
 
   const masterKey = deriveMasterKey(password, salt)
@@ -219,10 +208,7 @@ export function decryptField(encrypted: EncryptedField, vaultKey: Uint8Array): s
  * Encrypt arbitrary bytes (for attachments, blobs).
  * Returns nonce + ciphertext as raw Uint8Arrays.
  */
-export function encryptBytes(
-  data: Uint8Array,
-  vaultKey: Uint8Array,
-): { nonce: Uint8Array; ciphertext: Uint8Array } {
+export function encryptBytes(data: Uint8Array, vaultKey: Uint8Array): { nonce: Uint8Array; ciphertext: Uint8Array } {
   assertReady()
 
   const nonce = sodium.randombytes_buf(NONCE_LENGTH)
@@ -234,11 +220,7 @@ export function encryptBytes(
 /**
  * Decrypt raw bytes.
  */
-export function decryptBytes(
-  ciphertext: Uint8Array,
-  nonce: Uint8Array,
-  vaultKey: Uint8Array,
-): Uint8Array {
+export function decryptBytes(ciphertext: Uint8Array, nonce: Uint8Array, vaultKey: Uint8Array): Uint8Array {
   assertReady()
   return sodium.crypto_secretbox_open_easy(ciphertext, nonce, vaultKey)
 }

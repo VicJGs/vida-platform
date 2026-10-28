@@ -131,7 +131,9 @@ describe('CommandBar', () => {
   it('search mode (non-empty query): a loud role=status message, no listbox, no aria-activedescendant (B2)', async () => {
     openBar({ query: 'meeting', mode: 'search' })
     renderBar()
-    await waitFor(() => expect(screen.getAllByRole('status').some((el) => /DB-8/.test(el.textContent ?? ''))).toBe(true))
+    await waitFor(() =>
+      expect(screen.getAllByRole('status').some((el) => /DB-8/.test(el.textContent ?? ''))).toBe(true),
+    )
     expect(screen.queryByRole('listbox')).toBeNull()
     const input = screen.getByRole('combobox')
     expect(input.getAttribute('aria-activedescendant')).toBeNull()
@@ -163,17 +165,40 @@ describe('CommandBar', () => {
 
   it('ranks by history: a pinned command leads, then the most used', async () => {
     testPreferences.state.history = [
-      { command_key: 'nav:/projects', command_label: 'Projects', command_category: 'navigation', use_count: 3, last_used_at: Date.now(), is_pinned: false },
-      { command_key: 'nav:/finance', command_label: 'Finance', command_category: 'navigation', use_count: 0, last_used_at: null, is_pinned: true },
+      {
+        command_key: 'nav:/projects',
+        command_label: 'Projects',
+        command_category: 'navigation',
+        use_count: 3,
+        last_used_at: Date.now(),
+        is_pinned: false,
+      },
+      {
+        command_key: 'nav:/finance',
+        command_label: 'Finance',
+        command_category: 'navigation',
+        use_count: 0,
+        last_used_at: null,
+        is_pinned: true,
+      },
     ]
     openBar()
     renderBar()
-    await waitFor(() => expect(optionNames().slice(0, 2)).toEqual(['Finance' + SETTINGS_COPY.cmdPinnedSuffix, 'Projects']))
+    await waitFor(() =>
+      expect(optionNames().slice(0, 2)).toEqual(['Finance' + SETTINGS_COPY.cmdPinnedSuffix, 'Projects']),
+    )
   })
 
   it('a history read failure leaves the list unranked and shows no error (business-rules.md:34)', async () => {
     testPreferences.state.history = [
-      { command_key: 'nav:/projects', command_label: 'Projects', command_category: 'navigation', use_count: 3, last_used_at: Date.now(), is_pinned: false },
+      {
+        command_key: 'nav:/projects',
+        command_label: 'Projects',
+        command_category: 'navigation',
+        use_count: 3,
+        last_used_at: Date.now(),
+        is_pinned: false,
+      },
     ]
     testPreferences.state.failHistory = 'read'
     openBar()
@@ -267,7 +292,11 @@ describe('CommandBar', () => {
     pinKey()
     pinKey()
     await commandHistory.idle()
-    expect(testPreferences.state.historyCalls).toEqual(['pin:nav:/notes:true', 'pin:nav:/notes:false', 'pin:nav:/notes:true'])
+    expect(testPreferences.state.historyCalls).toEqual([
+      'pin:nav:/notes:true',
+      'pin:nav:/notes:false',
+      'pin:nav:/notes:true',
+    ])
     await waitFor(() => expect(optionNames()[0]).toBe('Notes' + SETTINGS_COPY.cmdPinnedSuffix))
     expect(testPreferences.state.history[0]).toMatchObject({ command_key: 'nav:/notes', is_pinned: true })
   })

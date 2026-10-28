@@ -9,6 +9,7 @@
 `@vida/types` enums + `@vida/core` validators. **No migration** (measurement owns no tables — §3.8).
 
 **Is NOT (deferred, cited — all homed in §6):**
+
 - `measurement_kind`/`binding_mode` **columns on pursuable entities** — per-module, Stream ii (DB-4). [FACT: ADR-011 §3.4; ADR-002 §5.20:3797]
 - **`contributions` table** — Purpose-domain (MOD-purposes), not a universal primitive. [FACT: ADR-011 §3.8:73]
 - **Stored progress → nullable amendment** (`purposes.progress` etc.) — per-entity, per-module. [FACT: ADR-011 §3.2:48]
@@ -46,9 +47,11 @@ enums = DB-9 `as const` tuple + z.enum; empty-registry seam = `views/provider-re
 ## §3. Contract (shapes — cited)
 
 ### 3.1 `@vida/types` enums + validators
+
 - `MEASUREMENT_KIND = ['quantitative','milestone','rate','qualitative'] as const` · `BINDING_MODE = ['manual','derived-pull','event-trigger'] as const` (+ derived types). z.enum validators in `core/validators`. **No enum-parity row** (no scalar CHECK column — measurement owns no tables).
 
 ### 3.2 The engine — `foundation/measurement/engine.ts` (pure functions)
+
 - `normalize(kind, inputs): number | null` — per BR-1/BR-2. Inputs a discriminated union per kind
   (`{kind:'quantitative', current, baseline, target, isHigherBetter}` · `{kind:'milestone', done}|{nDone,n}` ·
   `{kind:'rate', value}` · `{kind:'qualitative', rating?, scaleMax?}`). Basic normalization only (curves deferred).
@@ -58,9 +61,10 @@ enums = DB-9 `as const` tuple + z.enum; empty-registry seam = `views/provider-re
 - `resolveProgress(stored: number | null, derive: () => number | null): number | null` — BR-4 (NULL ⇒ derive).
 
 ### 3.3 Contracts + seam — `foundation/measurement/types.ts` + `source-registry.ts`
+
 - `Pursuable` interface (`measurement_kind` + `progress()`), `MeasurementKind`/`BindingMode` re-exports.
 - **`Binding` type** (F2 — owned now so economy's `rules` condition reuses it, not re-invents): `interface EntityRef
-  { type: string; id: string }` · `interface Binding { mode: BindingMode; source: EntityRef; target: EntityRef }`.
+{ type: string; id: string }` · `interface Binding { mode: BindingMode; source: EntityRef; target: EntityRef }`.
   The binding **TYPE is contract (owned here)**; binding **STORAGE** (columns on pursuable entities) defers to DB-4.
 - `MeasurementSourceRegistry` (advertise/query; empty seam, `views/provider-registry` shape) — BR-6.
 - `assertAcyclic(bindings: Binding[]): void` (derives the edge set from source→target internally, both mode
@@ -70,23 +74,26 @@ enums = DB-9 `as const` tuple + z.enum; empty-registry seam = `views/provider-re
 - Barrels: `foundation/measurement/index.ts`, `@vida/core`; `@vida/types` += measurement enums.
 
 ## §4. Acceptance
+
 1. `MEASUREMENT_KIND` + `BINDING_MODE` tuples + z.enum validators; root typecheck 10/10; `@vida/core` typecheck 0. **No migration** (assert none added; runner unchanged at 5).
 2. Tests (`__tests__/measurement.test.ts`): normalize each kind (incl. quantitative direction, milestone n/m, qualitative-unmeasured→null BR-2); rollup (equal-weight default, weighted, null-exclusion, empty); resolveProgress NULL⇒derive; assertAcyclic accepts a DAG + rejects a cycle (both edge types).
 3. `@vida/core` suite green; existing suites unbroken.
 4. Pure engine (no DB writes, no tables); every shape cited; deferrals homed (§6).
 
 ## §5. Implementation Prompt (→ IMPL-PLAN at gate 2)
+
 `@vida/types` measurement enums (+barrel) → `core/validators` z.enums → `foundation/measurement/types.ts`
 (Pursuable, errors) → `engine.ts` (normalize/rollup/resolveProgress) → `source-registry.ts` (empty seam) +
 `assertAcyclic` → `index.ts` barrels + `@vida/core` → `__tests__/measurement.test.ts` → typecheck + tests.
 Then §XXIX Currency → `docs/core/measurement/current-*` + layer-doc.
 
 ## §6. Deferral-homing check (Phase-3 discipline — every deferral has an issue home)
-| Deferred | Home | Basis |
-|---|---|---|
-| `measurement_kind`/`binding_mode` columns · nullable-progress amendment | pursuable **MOD-*** (tasks #37·habits #38·purposes #46·…) via **DB-4 #10** (Stream ii) | first-consumer-pull; ADR-011 §3.4 |
-| `contributions` table | **MOD-purposes #46** (Purpose-domain) | ADR-011 §3.8:73 |
-| measurement-source registry runtime (real sources) | the source **MOD-*** (finance/habits/health/projects) at their build | first-consumer-pull; §3.6 |
-| non-linear curves · qualitative UI · DAG perf-envelope | **build-phase** within the consuming module builds | §3.8:76 / §3.7:68 |
-| **multi-condition** automation (the `IF cond AND cond THEN` rule mechanism) | **ADR-012 `rules`** — the **economy increment (next)** / §5.20:3780 | ADR-012 §3.5 (condition = an ADR-011 binding); rules are **headless, not render-Blocks** (§3.9) |
-| the **user-authored/sandbox** wrapping any such rule runs under | **#85 CAP-authoring** (ADR-010 surface) | ADR-012 §3.9 (reuse the sandbox, not the render model) |
+
+| Deferred                                                                    | Home                                                                                    | Basis                                                                                           |
+| --------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `measurement_kind`/`binding_mode` columns · nullable-progress amendment     | pursuable **MOD-\*** (tasks #37·habits #38·purposes #46·…) via **DB-4 #10** (Stream ii) | first-consumer-pull; ADR-011 §3.4                                                               |
+| `contributions` table                                                       | **MOD-purposes #46** (Purpose-domain)                                                   | ADR-011 §3.8:73                                                                                 |
+| measurement-source registry runtime (real sources)                          | the source **MOD-\*** (finance/habits/health/projects) at their build                   | first-consumer-pull; §3.6                                                                       |
+| non-linear curves · qualitative UI · DAG perf-envelope                      | **build-phase** within the consuming module builds                                      | §3.8:76 / §3.7:68                                                                               |
+| **multi-condition** automation (the `IF cond AND cond THEN` rule mechanism) | **ADR-012 `rules`** — the **economy increment (next)** / §5.20:3780                     | ADR-012 §3.5 (condition = an ADR-011 binding); rules are **headless, not render-Blocks** (§3.9) |
+| the **user-authored/sandbox** wrapping any such rule runs under             | **#85 CAP-authoring** (ADR-010 surface)                                                 | ADR-012 §3.9 (reuse the sandbox, not the render model)                                          |

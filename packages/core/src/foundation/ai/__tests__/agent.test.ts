@@ -45,7 +45,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -109,11 +112,18 @@ describe('createAiAgentGate — S3 (XCU-21/23) · live store', () => {
     const { db, registry, enforcer } = await harness()
     const def = agentDef()
     await registry.register(def)
-    await seedGrant(db, 'ai_agent', { granted_bindings: ['habit'], granted_effects: ['award_xp'] }, canonicalEnvelopeHash(def))
+    await seedGrant(
+      db,
+      'ai_agent',
+      { granted_bindings: ['habit'], granted_effects: ['award_xp'] },
+      canonicalEnvelopeHash(def),
+    )
     const gate = createAiAgentGate(enforcer)
 
     await expect(gate.assertToolPermitted('ai_agent', { type: 'effect', effect: 'award_xp' })).resolves.toBeUndefined()
-    await expect(gate.assertToolPermitted('ai_agent', { type: 'binding', entityType: 'habit' })).resolves.toBeUndefined()
+    await expect(
+      gate.assertToolPermitted('ai_agent', { type: 'binding', entityType: 'habit' }),
+    ).resolves.toBeUndefined()
     // outside the envelope → fails closed (the enforcer's honest deny reason)
     await expect(gate.assertToolPermitted('ai_agent', { type: 'effect', effect: 'log_time' })).rejects.toMatchObject({
       name: 'CapabilityDenied',

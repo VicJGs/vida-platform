@@ -1,11 +1,14 @@
 # Spec: component:ui-2-platform-views · V4 — calendar-view
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) -->
+
 Status: implemented + Visual Gate PASS (Victor, 2026-08-10) — DONE
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md (shared BR-1..BR-6).
+Parent: docs/specs/components/ui-2-platform-views/\_index.md (shared BR-1..BR-6).
 
 ## 1. Identity
+
 V4 `calendar-view` — the renderer for the `calendar` VIEW_LAYOUT `[FACT: view.ts:22; ADR-007:60]`. A **month grid**
 that buckets dated items onto their days — the surface the **Global Calendar** (a saved view over events/tasks/
 reminders) reduces to `[FACT: ADR-007:34,62 "calendar → a date field"]`. Currently a 0-byte stub.
@@ -20,6 +23,7 @@ reminders) reduces to `[FACT: ADR-007:34,62 "calendar → a date field"]`. Curre
   date-field-required degradation (the view engine's, ADR-007:62-64). New dep: **date-fns** (ADR-001:174, first consumer).
 
 ## 2. Business Rules
+
 - **CV-1 · Date bucketing — TZ-SAFE (B1 fix — the negative-offset off-by-one).** `getDate(item): Date | string`
   (REQUIRED) maps each item to a **local day key** `'yyyy-MM-dd'`. The normalize MUST NOT round-trip a string through
   UTC: for a **`'YYYY-MM-DD'` string** (the platform's canonical calendar-date format, ADR-002 — the COMMON path), the
@@ -36,14 +40,14 @@ reminders) reduces to `[FACT: ADR-007:34,62 "calendar → a date field"]`. Curre
   (`isSameDay(day, today)`) gets a marker (`today` prop, CV-3). `weekStartsOn?: 0|1` (Sun|Mon), default **1** (Mon).
   The weekday header row is generated from the **first 7 grid days** (`format(day,'EEE')`) so headers shift with
   `weekStartsOn` (never a hardcoded Sun-first array) — as `columnheader`s. `[FACT: date-fns startOfMonth/startOfWeek/
-  eachDayOfInterval/addDays/isSameMonth]`
+eachDayOfInterval/addDays/isSameMonth]`
 - **CV-3 · Pure display — `month` is CONTROLLED, nav is opt-in, NO internal state (M1 fix).** The prior 3 views are
   stateless display (the app owns view state — BR-2: `@vida/ui` is a package, month selection is app-level view
   state). So calendar-view keeps NO `useState` month machine: **`month?: Date`** (the displayed month; default =
   `startOfMonth(today)`) + **`today?: Date`** (default `new Date()`, evaluated once — the injection seam for the
   today-marker + the default month, M2: deterministic tests). A header shows the label (`format(month,'MMMM yyyy')`).
   **Prev/next buttons render ONLY when `onMonthChange?` is provided** — wired to `onMonthChange(subMonths/addMonths(
-  month,1))`, no internal state; when absent, no buttons (pure display, the consumer navigates externally, like
+month,1))`, no internal state; when absent, no buttons (pure display, the consumer navigates externally, like
   list-view's consumer-owned row interactivity). Buttons are **icon-only ghost `Button`s** (chevron in `leading`,
   `aria-label="Previous month"/"Next month"`, size matched — m1; an icon-only Button dev-warns without a label).
   `[FACT: BR-2 package→app boundary; button.tsx onPress/leading/aria-label]`
@@ -53,16 +57,16 @@ reminders) reduces to `[FACT: ADR-007:34,62 "calendar → a date field"]`. Curre
   - `success` (incl. **empty** = no items) → the full month grid with day chips (or no chips). **No empty message.**
 - **CV-5 · Per-day chip cap.** `maxPerDay?: number` (default **3**): a day with more renders the first N via
   `renderItem` + a muted **"+K more"** indicator (K = overflow) — keeps cell height bounded. `[INTERP: standard
-  month-cell overflow]`
+month-cell overflow]`
 - **CV-6 · A11y — `role="table"` + `role="cell"` (B2 fix — NOT `gridcell`).** `role="table"` (a static month display
   doesn't obligate the WAI-ARIA `grid` 2D arrow-key contract — the gallery list-not-grid lesson); `role="row"`, weekday
   `role="columnheader"`, day **`role="cell"`** (a `table` takes `cell`; `gridcell` is only valid inside a `grid` — the
   mix is invalid ARIA that axe flags). A `cell` MAY contain interactive descendants (the consumer's chips) — standard
   "table with interactive content," not a `grid`. Each cell names its date (`aria-label` = `format(day,'d MMMM yyyy')`).
   `role="status"` for the error state. **Reuse the shared accessible-name warn** (M3 — extract `warnMissingName(name,
-  ariaLabel, ariaLabelledby)` into `internal/data-view`; it does ONLY the null-name check + the existing warn string).
+ariaLabel, ariaLabelledby)` into `internal/data-view`; it does ONLY the null-name check + the existing warn string).
   ⚠ **`resolveDataViewState` KEEPS its state gate** and only delegates the inner check: `if (state==='loading' ||
-  (state==='success' && !effectiveEmpty)) warnMissingName(...)` — extracting the gate too would fire the warn in
+(state==='success' && !effectiveEmpty)) warnMissingName(...)` — extracting the gate too would fire the warn in
   empty/error and break the 4 "does-NOT-warn-in-empty/error" tests (data-view.test:53-58, list-view.test:152-156, …).
   **calendar-view** calls `warnMissingName` only when it renders the TABLE (i.e. `state !== 'error'`; error → the
   status message needs no table name). The success-empty + loading-stale warns don't apply (empty is a designed grid
@@ -81,8 +85,9 @@ reminders) reduces to `[FACT: ADR-007:34,62 "calendar → a date field"]`. Curre
   `[FACT: design.md §X 375/768/1440]`
 
 ## 3. Contract
+
 ```ts
-import { type ViewState, Message } from '../internal/data-view'   // pieces reused; NOT resolveDataViewState (CV §1)
+import { type ViewState, Message } from '../internal/data-view' // pieces reused; NOT resolveDataViewState (CV §1)
 
 export interface CalendarViewProps<T> {
   items: readonly T[]
@@ -115,14 +120,16 @@ export interface CalendarViewProps<T> {
   'aria-label'?: string
   'aria-labelledby'?: string
 }
-export function CalendarView<T>(props: CalendarViewProps<T>): ReactElement   // generic; React-19 ref-as-prop
+export function CalendarView<T>(props: CalendarViewProps<T>): ReactElement // generic; React-19 ref-as-prop
 ```
+
 - 8-state matrix (§VIII): default(month `role="table"` grid, day cells `role="cell"`) · loading(skeleton grid +
   aria-busy) · error(`role="status"`) · empty(= grid, no chips — a designed non-message state) · hover/focus(chips +
   nav buttons, via renderItem/Button) · disabled(n/a) · dark · responsive (375 horizontal-scroll per CV-8, 768/1440 grid).
 - Sub-theme: none. Export from `index.ts`. `*.test.tsx` + `*.stories.tsx`.
 
 ## 4. Acceptance
+
 - [ ] `CalendarView<T>` renders a `role="table"` month grid: weekday `columnheader`s + a **exactly-42-cell** 6×7 grid
       (day cells `role="cell"`, NOT gridcell); leading/trailing days muted; today marked (injected `today`);
       `weekStartsOn` shifts BOTH headers and grid (date-fns).
@@ -138,12 +145,13 @@ export function CalendarView<T>(props: CalendarViewProps<T>): ReactElement   // 
 - [ ] `pnpm --filter @vida/ui typecheck && build && test` green; root typecheck 10/10; §XXIX CLAUDE.md paragraph.
 
 ## 5. Implementation Prompt (ordered)
+
 1. **Dep** — add `date-fns` to `packages/ui/package.json` deps; `pnpm install`; import only the used fns
    (`startOfMonth,startOfWeek,addDays,addMonths,subMonths,isSameMonth,isSameDay,format`; `parseISO` only if a Date is
    needed from a string).
 2. **Part A' — extract `warnMissingName(name, ariaLabel, ariaLabelledby)`** into `internal/data-view.tsx` (M3): the
    function does ONLY `if (ariaLabel==null && ariaLabelledby==null) console.warn('[vida/ui] ${name}: needs an
-   accessible name…')`. **`resolveDataViewState` KEEPS its state gate**, calling `warnMissingName` only inside
+accessible name…')`. **`resolveDataViewState` KEEPS its state gate**, calling `warnMissingName` only inside
    `if (state==='loading' || (state==='success' && !effectiveEmpty))` — behavior-preserving, so the data-view +
    list/gallery/timeline warn-suppression tests stay green (verify by running the suite after this step, BEFORE
    building calendar). calendar-view calls `warnMissingName` when `state !== 'error'`.
@@ -151,7 +159,7 @@ export function CalendarView<T>(props: CalendarViewProps<T>): ReactElement   // 
    plain generic fn; **NO `useState`** (month is controlled — M1). `today = props.today ?? new Date()` (once);
    `month = props.month ?? startOfMonth(today)`.
 4. **Grid model** — `gridStart = startOfWeek(startOfMonth(month),{weekStartsOn})`; `days = Array.from({length:42},
-   (_,i)=>addDays(gridStart,i))` (CV-2, always 42). Bucket items into `Map<string, T[]>` keyed by the **TZ-safe local
+(_,i)=>addDays(gridStart,i))` (CV-2, always 42). Bucket items into `Map<string, T[]>` keyed by the **TZ-safe local
    day key** (CV-1: a `'YYYY-MM-DD'` string is the key as-is [validate]; a `Date` → `format(date,'yyyy-MM-dd')`).
    Cell lookup: `const EMPTY: readonly T[] = []; buckets.get(key) ?? EMPTY` (shared frozen — no per-cell alloc, m3).
 5. **styled hosts** — `CalRoot` (column, `overflowX:'scroll'` for CV-8; role table|status per state), `Grid`
@@ -172,26 +180,29 @@ export function CalendarView<T>(props: CalendarViewProps<T>): ReactElement   // 
 10. **Export** + CLAUDE.md paragraph.
 
 ## 6. Deferred (documented — NOT V4)
+
 Day/week/agenda views · day-selection + 2D roving (date-picker → upgrade to `role="grid"` then) · drag-to-reschedule ·
 recurring-event expansion · a RICHER mobile (<768) layout (stacked / agenda). Note: V4 IS usable at 375 via the CV-8
 horizontal scroll — the deferral is the nicer stacked layout, not basic mobile function.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-10 | ui-2-platform-views | V4 sub-spec authored at PLAN (month grid + date-fns; the linear-spine divergence — table not list, empty=grid); gate-1 next |
-| 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed (divergence thesis validated correct): **B1** (TZ off-by-one — 'YYYY-MM-DD' key as-is, no UTC round-trip, + TZ=America/Sao_Paulo test), **B2** (invalid ARIA `table`+`gridcell` → `table`+`cell`), **M1** (month CONTROLLED, nav opt-in on onMonthChange, NO internal state — matches the stateless-display siblings), **M2** (`today` injection seam), **M3** (reuse extracted `warnMissingName`, not re-hand-rolled), **M4** (375 usable via CV-8 horizontal scroll — not a silent design.md §X violation); minors (icon-ghost nav Buttons+aria-label, headers from first-week, always-42 grid via addDays, frozen-EMPTY Map lookup) |
-| 2026-08-10 | ui-2-platform-views | preflight PASSED (`$colorBrandPrimary` today-marker verified base key; date-fns 4.4.0). Gate-2 critique **REVISE**→fixed: B1/B2/M1/M2/M4 confirmed correct; 1 material = **M3 state-gate** (`resolveDataViewState` must RETAIN its `(loading || success-non-empty)` gate around `warnMissingName` or the 4 empty/error no-warn tests break) — made explicit; minors (date-fns barrel-import/consumer-shakes phrasing, month-without-onMonthChange mode documented, malformed-string silent-drop). **Approval 2 pending.** |
+
+| Date       | Session                                     | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| ---------- | ------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-10 | ui-2-platform-views                         | V4 sub-spec authored at PLAN (month grid + date-fns; the linear-spine divergence — table not list, empty=grid); gate-1 next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-08-10 | ui-2-platform-views                         | Rev 2 — gate-1 critique REVISE→fixed (divergence thesis validated correct): **B1** (TZ off-by-one — 'YYYY-MM-DD' key as-is, no UTC round-trip, + TZ=America/Sao_Paulo test), **B2** (invalid ARIA `table`+`gridcell` → `table`+`cell`), **M1** (month CONTROLLED, nav opt-in on onMonthChange, NO internal state — matches the stateless-display siblings), **M2** (`today` injection seam), **M3** (reuse extracted `warnMissingName`, not re-hand-rolled), **M4** (375 usable via CV-8 horizontal scroll — not a silent design.md §X violation); minors (icon-ghost nav Buttons+aria-label, headers from first-week, always-42 grid via addDays, frozen-EMPTY Map lookup)                                                                                                                                                                                                                                                                              |
+| 2026-08-10 | ui-2-platform-views                         | preflight PASSED (`$colorBrandPrimary` today-marker verified base key; date-fns 4.4.0). Gate-2 critique **REVISE**→fixed: B1/B2/M1/M2/M4 confirmed correct; 1 material = **M3 state-gate** (`resolveDataViewState` must RETAIN its `(loading                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |     | success-non-empty)`gate around`warnMissingName` or the 4 empty/error no-warn tests break) — made explicit; minors (date-fns barrel-import/consumer-shakes phrasing, month-without-onMonthChange mode documented, malformed-string silent-drop). **Approval 2 pending.** |
 | 2026-10-07 | fe-codec-primitives-refinement P5 (LIF-230) | **Editorial Layer-1 refinement** (chrome only — NO interface/behavior change; TZ keying, 42-cell grid, `role="table"` roles untouched): serif `$heading`/500 title · weekday eyebrows (CSS `textTransform`, DOM stays "Mon"; raw `letterSpacing:0.8`) · `$small` tabular day figures · **today: filled brand blob → accent number + underline** (`TodayMark`, keeps `.vida-cal-today`) · weekend+oos `$colorSurfaceSecondary` paper (`tone` variant; number colour differentiates, oos>weekend) · "+K more" eyebrow. **Today number = `$colorBrandEmphasis`** (not `brandPrimary`) — Visual-Gate caught `brandPrimary` at 4.39/4.44 < 4.5 AA on a secondary-surface (weekend/oos) today; emphasis = the higher-contrast brand step → 5.93–8.89. Chip dot = consumer `renderItem` (LV-5). +7 tests (21 total). Visual Gate PASS (2 stories × 3 presets × light/dark). Spec: `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`. |
-| 2026-10-10 | fe-calendar #19 S1 (LIF-203) | **`hideHeader?: boolean` (slice-map D4 — headerless mode):** suppresses the grid's own month title + nav so a hosting frame (the #19 `CanvasView` surface) owns the period title ONCE (envision EC-2 double-title fix). Default `false` — standalone grids unchanged. Grid/roles/states untouched; +1 test (22 total). _(Doc entry added 2026-10-18 at the S2 baseline — S1's currency pass refreshed only the apps/web context; §XXIX lag closed.)_ |
-| 2026-10-20 | fe-calendar #19 S4 (LIF-203) | **`tabIndex?: number` (D-S4-DEV-2, Victor-approved):** an opt-in programmatic focus target — the #19 surface passes `-1` so focus lands on the Month grid after a Year drill-in (FOCUS_CONTRACT `tabChange → panel`; the pressed month button unmounts). `CalRoot` gains the house `focusVisibleStyle` 2px `$colorFocusRing` ring + `$sm` radius, which renders only when a consumer opts in AND focuses the grid. Absent = not focusable (unchanged default). +1 test (23). |
+| 2026-10-10 | fe-calendar #19 S1 (LIF-203)                | **`hideHeader?: boolean` (slice-map D4 — headerless mode):** suppresses the grid's own month title + nav so a hosting frame (the #19 `CanvasView` surface) owns the period title ONCE (envision EC-2 double-title fix). Default `false` — standalone grids unchanged. Grid/roles/states untouched; +1 test (22 total). _(Doc entry added 2026-10-18 at the S2 baseline — S1's currency pass refreshed only the apps/web context; §XXIX lag closed.)_                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| 2026-10-20 | fe-calendar #19 S4 (LIF-203)                | **`tabIndex?: number` (D-S4-DEV-2, Victor-approved):** an opt-in programmatic focus target — the #19 surface passes `-1` so focus lands on the Month grid after a Year drill-in (FOCUS_CONTRACT `tabChange → panel`; the pressed month button unmounts). `CalRoot` gains the house `focusVisibleStyle` 2px `$colorFocusRing` ring + `$sm` radius, which renders only when a consumer opts in AND focuses the grid. Absent = not focusable (unchanged default). +1 test (23).                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
 ## fe-calendar S7 amendments (2026-10-21 — PLAN-S7-entity-close.md G13/G14/R8)
+
 - **Today SR label (absorbed primitives-refinement debt, P5-calendar.md:115):** the today cell's name = `d MMMM yyyy, today`
   — the **suffix** form the sibling renderers ship (week-view · year-view · living-view).
 - **Controlled unfurl (EC-F3 — the vision's "unfurl the day in place", calendar-vision.md §6 option 1):** three optional
   props — `expandedDay?: string` (CONTROLLED, like `month`) · `onExpandedDayChange?(day | null)` · `renderExpanded?(items,
-  day)`. With both handler + renderer, a day's "+K more" is a native `<button>` (≥44 hit, `aria-expanded`, `aria-controls`
+day)`. With both handler + renderer, a day's "+K more" is a native `<button>` (≥44 hit, `aria-expanded`, `aria-controls`
   when open, named "Show all N items, d MMMM yyyy"); activating it requests the day, a second press or **Esc** requests
   `null` (focus stays on the button). The unfurled list is ONE `role="row"` holding a `role="cell" aria-colspan={7}` named
   "All items, d MMMM yyyy", inserted directly after the week row — instant (no height animation, motion.md safe list). An

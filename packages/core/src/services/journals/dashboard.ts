@@ -10,13 +10,7 @@
 // ============================================================================
 
 import type { JournalRegistry } from './registry'
-import type {
-  DashboardData,
-  HomeSectionKey,
-  JournalContribution,
-  JournalSelection,
-  SectionData,
-} from './types'
+import type { DashboardData, HomeSectionKey, JournalContribution, JournalSelection, SectionData } from './types'
 
 /** A section that failed to resolve — degraded in place (BR-S2-2 / IR-d). */
 function degraded(module: string, sectionKey: HomeSectionKey): SectionData {

@@ -91,11 +91,7 @@ describe('full SRP handshake', () => {
 
     // --- Client step 5: verify server proof ---
     expect(() => {
-      verifyServerProof(
-        clientEphemeral.public,
-        clientSession,
-        serverSession.proof,
-      )
+      verifyServerProof(clientEphemeral.public, clientSession, serverSession.proof)
     }).not.toThrow()
   })
 
@@ -150,11 +146,7 @@ describe('full SRP handshake', () => {
 
     // Now try with a forged proof
     expect(() => {
-      verifyServerProof(
-        clientEphemeral.public,
-        clientSession,
-        'forged-server-proof-0000000000000000000000000000000000',
-      )
+      verifyServerProof(clientEphemeral.public, clientSession, 'forged-server-proof-0000000000000000000000000000000000')
     }).toThrow()
   })
 })
@@ -178,12 +170,7 @@ describe('startLogin / completeLogin', () => {
     const serverEphemeral = srpServer.generateEphemeral(request.verifier)
 
     // --- Client: complete login ---
-    const { verifyRequest, session } = completeLogin(
-      state,
-      TEST_PASSWORD,
-      request.salt,
-      serverEphemeral.public,
-    )
+    const { verifyRequest, session } = completeLogin(state, TEST_PASSWORD, request.salt, serverEphemeral.public)
     expect(verifyRequest.email).toBe(TEST_EMAIL)
     expect(verifyRequest.client_proof).toBe(session.proof)
     expect(state.session).toBe(session) // state is mutated

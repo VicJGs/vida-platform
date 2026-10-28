@@ -1,6 +1,6 @@
 <!-- Contract — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · project.ts · v1 API.md · intake -->
 
-# Contract — Projects  (level: Feature)
+# Contract — Projects (level: Feature)
 
 > **Status:** types exist (`@vida/types/project.ts`: Project/Milestone/ProjectDocument) but `@vida/core`
 > `models/project.ts` is an **empty placeholder (0 lines)** — no service. The `deliverables` table, measurement
@@ -9,6 +9,7 @@
 > `[FACT: project.ts present; core model 0 lines; ADR-002 §5.4]`
 
 ## Exposed surface (via `@vida/core`)
+
 - **Project CRUD & queries** (`Project` `[FACT: project.ts L57-81]`): `createProject` · `updateProject` ·
   `softDeleteProject` (cascades, PJ-9) · `listProjects(filter)` (dashboard/timeline; archived = status filter, G9)
   · `pinProject(id)` (G1)
@@ -23,6 +24,7 @@
 - **⚠ Vision/Mission pages (INTENDED, G3):** `getProjectPage(id, 'vision'|'mission')` → TipTap `pages` row
 
 ## What it consumes (outside dependencies)
+
 - **Tasks — dedicated Projects API (PJ-5, G7):** a project-scoped task service (project-task list, progress
   counts, the project-task standalone UI). Never direct task-table reads. `[INTENT G7; FACT: Tasks TK-9]`
 - **Finance (PJ-4.1/G8):** deliverable financial measurement + project↔account links read account/asset/
@@ -36,10 +38,12 @@
   extension-model principle. `[INTENT G4,G6; ADR-014 X1/X5, ADR-015 AI1/AI4/AI6]`
 
 ## Fed by (parent-module links — read via integration points, §6)
-- **Wave-2 foundation** — Projects is *fed by* Tasks (tasks point up via `project_id`/`milestone_id`) and is a
+
+- **Wave-2 foundation** — Projects is _fed by_ Tasks (tasks point up via `project_id`/`milestone_id`) and is a
   hub many modules point at. `[FACT: ADR-002 §5.3; module-dependency-graph]`
 
 ## Consumed by
+
 - **Purpose & Goals** → As-is `purpose_projects` (a project serves a purpose); **[INTENT M7]: retired → the
   polymorphic weighted `contributions`** (ADR-011 §Amends). `[FACT: project.ts L248]`
 - **Bucket List** → `bucket_list_items.project_id`. `[FACT: project.ts L228]`
@@ -48,10 +52,12 @@
 - **Gamification** → project-completion XP (⚠ INTENDED). `[INTENT G8]`
 
 ## Contract error cases
+
 - `getDeliverableProgress` when its measurement source is unreachable → last-known + typed flag (PJ-4). `[INTENT G4]`
 - `addDocument` over the inline threshold → routed to R2; R2 failure → typed `AttachmentSyncError`, kept local (PJ-8). `[INTENT G6]`
 - External-metric ingest requiring server plaintext → refused unless opted-in (`IntegrationConsentRequired`, PJ-11). `[INTENT]`
 - Reading tasks other than via the Tasks→Projects API → not allowed (PJ-5). `[FACT: TK-9]`
 
 ## Completion checklist
+
 - [x] exposed + consumed + fed-by + consumed-by · [x] types/errors cited · [x] integration via documented points (no direct table access) · [x] [FACT/INTENT] each claim · [x] not-yet-coded + INTENDED flagged

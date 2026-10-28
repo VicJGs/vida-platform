@@ -1,4 +1,4 @@
-# PLAN — S10: Integration close-out + fan-out + Journal  (BOO-40/41/42/43/45/47) — THE FINAL SLICE
+# PLAN — S10: Integration close-out + fan-out + Journal (BOO-40/41/42/43/45/47) — THE FINAL SLICE
 
 > Entity Delivery Flow (v1) · per-slice SERVICE track · slice **10 of 10** (completing ① → open the PR).
 > Gate 1 = this SPEC (§XXVI.2 /critique → Approval 1). Grounded in the corpus (No-Guessing).
@@ -8,16 +8,16 @@
 
 > The aspect docs + the Part-1.2 rerun driver-tokens are the intent authority; they outrank the slice-map/seam-contract.
 
-| S10 element | Authoritative doc source (intent) |
-|---|---|
-| **`convertToSpeech(assetId, req)` → `OcrResult`** — PDF/EPUB → TTS, a scoped model call (X11→ADR-015 AI1/AI3), on_device/cloud, **not AI4**; consent-gated, typed refusal, manual fallback | **BOO-40** (`parts/books.md:50`) · **BK-14/BK-15** (`business-rules.md:69-79`) · rerun G-X11/G-AI1/AI3 (`books.md:55-56`) · C-AI4 (`books.md:72`) |
-| **`transcribeForMapping(assetId, req)` → `OcrResult`** — audiobook → text transcription feeding the BOO-12 TOC-anchor map; `source=ai` provenance (AI6) | **BOO-41** (`parts/books.md:51`) · BK-4 (`business-rules.md:23-27`) · rerun G-AI5/AI6 (`books.md:57-58`) |
-| **OCR provenance + prompt-injection bounding + consent-first** (AI5/AI6) — the OCR'd page is untrusted-origin; derived rows carry `source=ai`; the consent step is first | **BOO-42** (`parts/books.md:52`) · `conventions.md:15-18,56-58` |
-| **`IntegrationConsentError`** — the BK-14 "governing principle": every integration (lookup/TTS/transcription/OCR) requires the consent step; on refusal → typed error + manual fallback stays callable; **never a silent server-side path** | **BOO-43** (`parts/books.md:53`) · **BK-14** (`business-rules.md:69-76`) · `contract.md` error cases ("Consent not granted → `IntegrationConsentError`") |
-| **`getPlansForConsumer()` → `ReadingPlan[]`** — Books EXPOSES plans/deadlines/sessions; Study Planner CONSUMES, never writes (BK-12 boundary invariant) | **BOO-45** (`parts/books.md:55`) · **BK-12** (`business-rules.md:62-64`) · `seam-contract.md:132,151` |
-| **Local-first write invariant** (BK-18) — every write (position/annotation/session/plan) succeeds locally first; LWW per entity; files ride the attachment pipeline | **BOO-47** (`parts/books.md:57`) · **BK-18** (`business-rules.md:88-89`) · `conventions.md:41-42` |
-| **`effects?` measurement-only fan-out** on reading-session completion (composes BOO-26) — **C-E2: Books emits NO economy grant** (grants ride base-`sessions`); emit-only, dormant without a handler | `slice-map.md:24` ("effects? fan-out (measurement-only, C-E2) … reading-session signal") · `interpretation.md:57` (BOO-26 guard) · rerun **C-E2** (`books.md:73`) · `seam-contract.md:28,154` |
-| **`registerBooksJournal` + `getDayBooksDigest(date)`** — the Journal `/summary` PULL contribution composing BOO-30's `getTodayQuotas` | **BOO-30** (`parts/books.md:40`, "Hub + Journal `/summary`") · `seam-contract.md:31,136,144` · the `registerKnowledgeJournal` precedent (`services/knowledge/journal.ts`) |
+| S10 element                                                                                                                                                                                                                                 | Authoritative doc source (intent)                                                                                                                                                             |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **`convertToSpeech(assetId, req)` → `OcrResult`** — PDF/EPUB → TTS, a scoped model call (X11→ADR-015 AI1/AI3), on_device/cloud, **not AI4**; consent-gated, typed refusal, manual fallback                                                  | **BOO-40** (`parts/books.md:50`) · **BK-14/BK-15** (`business-rules.md:69-79`) · rerun G-X11/G-AI1/AI3 (`books.md:55-56`) · C-AI4 (`books.md:72`)                                             |
+| **`transcribeForMapping(assetId, req)` → `OcrResult`** — audiobook → text transcription feeding the BOO-12 TOC-anchor map; `source=ai` provenance (AI6)                                                                                     | **BOO-41** (`parts/books.md:51`) · BK-4 (`business-rules.md:23-27`) · rerun G-AI5/AI6 (`books.md:57-58`)                                                                                      |
+| **OCR provenance + prompt-injection bounding + consent-first** (AI5/AI6) — the OCR'd page is untrusted-origin; derived rows carry `source=ai`; the consent step is first                                                                    | **BOO-42** (`parts/books.md:52`) · `conventions.md:15-18,56-58`                                                                                                                               |
+| **`IntegrationConsentError`** — the BK-14 "governing principle": every integration (lookup/TTS/transcription/OCR) requires the consent step; on refusal → typed error + manual fallback stays callable; **never a silent server-side path** | **BOO-43** (`parts/books.md:53`) · **BK-14** (`business-rules.md:69-76`) · `contract.md` error cases ("Consent not granted → `IntegrationConsentError`")                                      |
+| **`getPlansForConsumer()` → `ReadingPlan[]`** — Books EXPOSES plans/deadlines/sessions; Study Planner CONSUMES, never writes (BK-12 boundary invariant)                                                                                     | **BOO-45** (`parts/books.md:55`) · **BK-12** (`business-rules.md:62-64`) · `seam-contract.md:132,151`                                                                                         |
+| **Local-first write invariant** (BK-18) — every write (position/annotation/session/plan) succeeds locally first; LWW per entity; files ride the attachment pipeline                                                                         | **BOO-47** (`parts/books.md:57`) · **BK-18** (`business-rules.md:88-89`) · `conventions.md:41-42`                                                                                             |
+| **`effects?` measurement-only fan-out** on reading-session completion (composes BOO-26) — **C-E2: Books emits NO economy grant** (grants ride base-`sessions`); emit-only, dormant without a handler                                        | `slice-map.md:24` ("effects? fan-out (measurement-only, C-E2) … reading-session signal") · `interpretation.md:57` (BOO-26 guard) · rerun **C-E2** (`books.md:73`) · `seam-contract.md:28,154` |
+| **`registerBooksJournal` + `getDayBooksDigest(date)`** — the Journal `/summary` PULL contribution composing BOO-30's `getTodayQuotas`                                                                                                       | **BOO-30** (`parts/books.md:40`, "Hub + Journal `/summary`") · `seam-contract.md:31,136,144` · the `registerKnowledgeJournal` precedent (`services/knowledge/journal.ts`)                     |
 
 **Genuinely build-phase (resolved here, grounded):**
 
@@ -40,7 +40,7 @@
   — stays callable, BK-14); the real consent gate that throws it = M2 (the consent store the gate reads — see
   §Deferred). Zero-signature (`OcrResult` already carries only `ready`/`ai-unavailable`).
   `[FACT: seam-contract.md:57,153; current-business-rules.md:248-254; service.ts:805-813; knowledge/service.ts:576-584;
-  ai/types.ts:90-100,145-146; egress/CLAUDE.md]`
+ai/types.ts:90-100,145-146; egress/CLAUDE.md]`
 
 - **`effects?` fan-out emits `emit_measurement_signal` on reading-session completion (emit-only, dormant).**
   `slice-map.md:24` explicitly homes an "effects? fan-out (measurement-only)" + a "reading-session signal (composes
@@ -53,17 +53,17 @@
   C-E2 `books.md:73`). The reading SessionTypeDef already declares `effects:[]` (so the base rail fires nothing for
   `reading`); this Books-side emit-only producer is the separate measurement fan-out, exactly the knowledge pattern.
   `[FACT: slice-map.md:24; seam-contract.md:28,154; knowledge/service.ts:114-211,668-672; effects/types.ts:22,38]`
-  - **Pull-vs-push nuance (flagged for adversarial g1):** the reading *measure* is `derived-pull`
-    (`getReadingMeasureSource`, BOO-14). So a pushed `emit_measurement_signal` has no *named* consumer at M1 (unlike
+  - **Pull-vs-push nuance (flagged for adversarial g1):** the reading _measure_ is `derived-pull`
+    (`getReadingMeasureSource`, BOO-14). So a pushed `emit_measurement_signal` has no _named_ consumer at M1 (unlike
     knowledge's `review.recorded`, whose KNO-39 named measurement re-derive). The reconciliation: slice-map:24 names
     the fan-out directly, the signal is **emit-only + dormant** (we name NO consumer — the handler registers
     downstream at M2, the knowledge `object.created`-vs-`review.recorded` line), and it is C-E2-clean. This is the
-    documented "measurement-only fan-out," not an invented consumer. *(Alternative considered + rejected: push nothing
-    — but slice-map:24 explicitly homes a fan-out here, so push-nothing would UNDER-deliver the named leg.)*
+    documented "measurement-only fan-out," not an invented consumer. _(Alternative considered + rejected: push nothing
+    — but slice-map:24 explicitly homes a fan-out here, so push-nothing would UNDER-deliver the named leg.)_
 
 - **`getPlansForConsumer()`** is a thin READ wrapper over the active plans (`plansRepo.findWhere(isNull(deleted_at))`
   → `toReadingPlan`), the BK-12 boundary made concrete: Books exposes a read-provider and NO write. (Distinct from
-  `getTodayQuotas`, which is the *derived* today-pace view; `getPlansForConsumer` is the raw plan list the Study
+  `getTodayQuotas`, which is the _derived_ today-pace view; `getPlansForConsumer` is the raw plan list the Study
   Planner reads.) `[FACT: BOO-45 parts:55; BK-12; seam-contract.md:132,151]`
 
 - **BOO-47 local-first** is a platform baseline already satisfied by every Books write (DB-6 Repository = local
@@ -72,6 +72,7 @@
   write path** (the invariant is structural, `conventions.md:41-42`). `[FACT: BK-18; ADR-003 LWW]`
 
 **Deferred (homed, NOT built here — each is the documentation's own deferral):**
+
 - **Real TTS/transcription/OCR model pipelines** (the `on_device` runtime + cloud mediator + `source=ai` row
   authorship) — `ai?` is deny-safe at M1 (both ports absent ⇒ `ai-unavailable`); real reach = M2 (`parts:7`; `ai`
   CLAUDE.md "both ports absent at M1 = deny-safe"). The cross-format mapping algorithm BOO-41 feeds stays the S3
@@ -116,8 +117,8 @@
    `getDayBooksDigest` (JSDoc each with its BOO-id + the deny-safe/boundary note).
 6. **`BOOKS_TTS_INTEGRATION_ID = 'books.tts'`** (+ reuse `BOOKS_OCR_INTEGRATION_ID` for transcription-as-OCR-class, OR
    add `BOOKS_TRANSCRIPTION_INTEGRATION_ID = 'books.transcription'`) — Books' own integration identity, the
-   `BOOKS_ISBN_INTEGRATION_ID`/`BOOKS_OCR_INTEGRATION_ID` precedent (No-Guessing; inert at M1). *(g1: one id per model
-   use — TTS and transcription are distinct X11 pipelines → two ids.)*
+   `BOOKS_ISBN_INTEGRATION_ID`/`BOOKS_OCR_INTEGRATION_ID` precedent (No-Guessing; inert at M1). _(g1: one id per model
+   use — TTS and transcription are distinct X11 pipelines → two ids.)_
 
 ### 2.2 `service.ts` — methods + the fan-out
 
@@ -125,21 +126,21 @@
 2. **`fanOutReadingCompletion(sessionId, bookId)`** (private closure, the knowledge `fanOut` precedent) —
    `if (!effects) return`; for `emit_measurement_signal`: `if (!effects.registry.resolve('emit_measurement_signal')) return`;
    `try { await effects.rail.applyEffect({ subjectNaturalKey: sessionId, transition: 'reading_session.completed',
-   effectType: 'emit_measurement_signal', targetRef: bookId }) } catch { /* post-commit, isolated */ }`.
+effectType: 'emit_measurement_signal', targetRef: bookId }) } catch { /* post-commit, isolated */ }`.
 3. **Hook it into `endSession`** — after the base `completeSession` + extension patch persist (post-commit), call
-   `fanOutReadingCompletion(id, existing.book_id)`. Failure-isolated (the mutation stands). *(Only `endSession` fires
-   it — `startSession` is not a completion; `openReader`'s auto-session is still in_progress.)*
+   `fanOutReadingCompletion(id, existing.book_id)`. Failure-isolated (the mutation stands). _(Only `endSession` fires
+   it — `startSession` is not a completion; `openReader`'s auto-session is still in_progress.)_
 4. **`convertToSpeech(assetId, req)`** — guard the asset (`BookAssetNotFoundError`); the deny-safe model-call helper
    (§2.3) → `OcrResult`. At M1 no `ai?` ⇒ `ai-unavailable`; a present-but-dormant `ai?` ⇒ `ai-unavailable` (askModel
    denies). **No `checkModelCall` gate / no M1 throw** (g1 B1).
 5. **`transcribeForMapping(assetId, req)`** — same shape; distinct integration id. Returns `OcrResult`.
 6. **`getPlansForConsumer()`** — `const rows = await plansRepo.findWhere(isNull(readingPlans.deleted_at));
-   return rows.map(toReadingPlan)` (BK-12 read-only; no write exposed).
+return rows.map(toReadingPlan)` (BK-12 read-only; no write exposed).
 7. **`getDayBooksDigest(date)`** — compose `getTodayQuotas(date)`: `pagesRead`/`sessionsLogged` from the day's
    reading sessions (count `reading_sessions` whose base session `ended_at` falls in the UTC-day, the knowledge
    `getDayKnowledgeDigest` window + `getStatistics` timing precedent); `onPace`/`behind` = tally `getTodayQuotas(date)`
-   statuses. Returns `BooksDayDigest`. *(g1: the day-window keys off the base session `ended_at` — timing lives on the
-   base, `service.ts:826-832` — so the digest needs the base-session read, like `getStatistics`.)*
+   statuses. Returns `BooksDayDigest`. _(g1: the day-window keys off the base session `ended_at` — timing lives on the
+   base, `service.ts:826-832` — so the digest needs the base-session read, like `getStatistics`.)_
 8. **Add all four to the return object** (`service.ts:1158`).
 
 ### 2.3 The deny-safe model-call helper (BOO-40/41/42) — mirrors `attachPhoto`/`assistCompoundSet`
@@ -152,26 +153,28 @@ async function runModelCall(defId, req, assetId): Promise<OcrResult> {
   catch (err) { return { status: 'ai-unavailable', reason: err instanceof Error ? err.message : String(err) } } // AiDenied → deny-safe
 }
 ```
-*(g1 B1: NO `checkModelCall` gate, NO M1 throw — the `attachPhoto` `service.ts:805-813` + `assistCompoundSet`
+
+_(g1 B1: NO `checkModelCall` gate, NO M1 throw — the `attachPhoto` `service.ts:805-813` + `assistCompoundSet`
 `knowledge/service.ts:576-584` precedent. `IntegrationConsentError` is exported typed vocabulary; the real consent
-gate that throws it = M2, when the consent store exists. `[FACT: seam-contract.md:153 "no throw-through"]`)*
+gate that throws it = M2, when the consent store exists. `[FACT: seam-contract.md:153 "no throw-through"]`)_
 
 ### 2.4 `journal.ts` (NEW) — the Journal contribution
 
 Mirror `services/knowledge/journal.ts` verbatim-in-shape:
+
 - `DATA_POINTS` = `[{id:'pages_read',label:'Pages read'},{id:'sessions_logged',label:'Reading sessions'}]`.
 - `createBooksJournalContribution(svc): JournalContribution` — `module:'books'`, `sectionKey:'summary'`,
   `async summary(date)`: `const d = await svc.getDayBooksDigest(date)`; `state = d.sessionsLogged + d.pagesRead > 0
-  ? 'success' : 'empty'`; return the `SectionData` (reuse `TerminalState` BY TYPE, never `deriveTerminalState` — the
-  knowledge precedent). *(`sectionKey:'summary'` per BOO-30 "Journal `/summary` block"; the registry dedups by
-  `module`, so Books coexists with knowledge under 'summary'.)*
+? 'success' : 'empty'`; return the `SectionData` (reuse `TerminalState` BY TYPE, never `deriveTerminalState` — the
+  knowledge precedent). _(`sectionKey:'summary'` per BOO-30 "Journal `/summary` block"; the registry dedups by
+  `module`, so Books coexists with knowledge under 'summary'.)_
 - `registerBooksJournal(registry, svc): void`.
 
 ### 2.5 `index.ts` barrel — add `export * from './journal'`.
 
 ---
 
-## §3 Business rules to promote (§XXIX currency — `current-business-rules.md`, BR-BK-S10-*)
+## §3 Business rules to promote (§XXIX currency — `current-business-rules.md`, BR-BK-S10-\*)
 
 - **BR-BK-S10-1 (BOO-40/41 — TTS/transcription deny-safe)** — both return `OcrResult`; no `ai?` ⇒ `ai-unavailable`;
   `source:'ai'` on a `ready` result (AI6). Manual fallback always callable.
@@ -207,9 +210,9 @@ Mirror `services/knowledge/journal.ts` verbatim-in-shape:
 
 ## §5 Gate ledger line (to fill)
 
-| Slice | g1 | Verification Gate | code-review | SHIP | commit |
-|---|---|---|---|---|---|
-| S10 | — | — | — | — | — |
+| Slice | g1  | Verification Gate | code-review | SHIP | commit |
+| ----- | --- | ----------------- | ----------- | ---- | ------ |
+| S10   | —   | —                 | —           | —    | —      |
 
 ## §6 Done-when (completes ①)
 

@@ -9,16 +9,19 @@
 > `rgb(95,110,62)`) · AA worst 4.94, 0 fails incl. warm-dark · axe 0 · 375 no-overflow. Gate script: `/tmp/vg/pomo-gate.mjs`.
 
 ## 0. Source model
+
 Code-first (frontend-source-of-truth.md). Tokens/variants + a local SVG primitive only; **no hard-coded palette**
 (brand values = M4/Figma). No palette-VALUE churn — structure/shape/figures/elevation only.
 
 ## 1. Baseline (ground truth — `packages/ui/src/components/pomodoro-widget.tsx`)
+
 `PomodoroWidget` is **UI-2 · V5**, the interactive timer widget (`role="timer"`, ADR-008:35). Drift-free countdown
 from an `endAtRef` timestamp; the `setInterval` is armed imperatively in `run()`; the ~250ms tick reads `endAtRef` +
 the stable `setRemainingMs` (NO effect deps on countdown state). `status` is state+`statusRef` via one `setStatus`;
 `onComplete` one-way-latched. Controls swap by status. [FACT: pomodoro-widget.tsx:66-232]
 
 **Current presentation (the refinement surface):**
+
 - `Root` — a card: `padding $24`, 1px `$colorBorderDefault`, `$lg` radius, `$colorSurfacePrimary`; **resting shadow NOT
   applied** (plain border). [FACT: pomodoro-widget.tsx:48-57]
 - `PhaseLabel` — `$body`/`$small`/`$colorTextMuted`/`textTransform:capitalize`. [FACT: :58]
@@ -32,9 +35,11 @@ the stable `setRemainingMs` (NO effect deps on countdown state). `status` is sta
 (status drives controls). So P1 is **pure aesthetic + one opt-in capability**, no conformance fix.
 
 ## 2. The crux (the /contract boundary)
+
 Two layers, both presentational, both owned by the widget (no cross-module read → no split):
 
 **Layer 1 — aesthetic polish (NO API change):**
+
 - **L1a · tabular figures on `Time`** (the headline fix): `style={{ fontVariantNumeric: 'tabular-nums' }}` so each digit
   occupies a fixed advance and the countdown stops jittering. **Mechanism = the minimal grounded one:** a static style
   on the DOM text, NOT injected CSS (the CLAUDE.md rule reserves injected CSS for pseudo-state styled() can't see; this
@@ -51,19 +56,22 @@ Two layers, both presentational, both owned by the widget (no cross-module read 
   [FACT: CLAUDE.md Card]. **No new shadow values.**
 
 **Layer 2 — opt-in capability (CONTRACT change → /contract):**
+
 - **L2 · `progress?: 'bar' | 'ring'`** (default **`'bar'`** → non-breaking). `'ring'` renders the countdown inside a
   **circular progress ring** instead of the linear bar (the canonical pomodoro form). Opt-in variant per §VII
   (composition over a breaking swap); existing consumers keep the bar untouched.
-  - **§VI note (why a variant enum, not a slot):** `components.md §VI` reserves *composition/slots* for **consumer-facing
+  - **§VI note (why a variant enum, not a slot):** `components.md §VI` reserves _composition/slots_ for **consumer-facing
     layout** variation. The progress indicator is **widget-INTERNAL** — the consumer never composes it (no `header`/`footer`
     analogue); it's a rendering-MODE of an element the widget owns, so `progress` is a semantic variant like `size`/`intent`,
     NOT the layout-via-enum anti-pattern §VI forbids. [grounded: the widget renders Track/Fill itself, pomodoro-widget.tsx:195-197]
 
 ## 3. Contract (exact diff to `PomodoroWidgetProps`) — PREFLIGHT-GROUNDED
+
 ```
 + progress?: 'bar' | 'ring'   // progress indicator form. Default 'bar' (non-breaking). 'ring' = circular track around
 +                             //   the Time; 'bar' = the current linear track. Pure presentation; same stepped update.
 ```
+
 No other prop changes. Layer-1 is internal (styled-host + inline-style edits), zero API surface.
 
 **Ring rendering (grounded):** a local `<svg>` with two `<circle>`s (track + progress) — progress circle
@@ -71,7 +79,7 @@ No other prop changes. Layer-1 is internal (styled-host + inline-style edits), z
 starts at 12 o'clock. **⚠ Colors via `useTheme()` RESOLVED values, NOT `$token` strings, NOT hard-coded hex (gate-2
 blocker).** An SVG `stroke` attr can't consume a Tamagui `$token` (not a CSS value → colorless ring); a hard-coded hex
 would **reintroduce the exact Neural-Graph conformance violation this task exists to fix** (NG hard-codes `#6366f1`
-*because* WebGL can't take tokens — SVG has the identical constraint). So `const theme = useTheme()` →
+_because_ WebGL can't take tokens — SVG has the identical constraint). So `const theme = useTheme()` →
 `stroke={theme.colorBrandPrimary?.get('web')}` (progress) / `theme.colorSurfaceSecondary?.get('web')` (track) — stays
 **preset- and theme-aware AND token-pure** (re-reads on theme/preset change via the hook). **`.get('web')` is the
 Tamagui-DOCUMENTED call for SVG** [FACT: @tamagui/web 2.6.2 getThemeProxied.d.ts — ThemeGettable.get JSDoc: "For things
@@ -83,6 +91,7 @@ built") and mobile renders charts/graphs via WebView anyway → documented nativ
 `aria-hidden` on the `<svg>` (the `role="timer"` + live `mm:ss` text already announce progress; the ring is decorative).
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking):** Brave, **3 presets (editorial · reader · quietDesk) × light/dark**. Assert, in BOTH
   `progress` modes:
   - **tabular figures** — the `mm:ss` digits hold a fixed advance across a simulated countdown (`25:00 → 09:59 → 00:00`,
@@ -109,14 +118,17 @@ built") and mobile renders charts/graphs via WebView anyway → documented nativ
   note) + `docs/specs/components/ui-2-platform-views/v5-pomodoro-widget.md`.
 
 ## 4b. Preflight RESULT (2026-10-06 — PASSED, grounded in code + v5 durable spec)
+
 **Two doc-grounding finds (strengthen the spec — P1 realizes documented v5 intents, invents nothing):**
+
 - **L1a tabular = a spec'd-but-UNBUILT invariant.** `v5-pomodoro-widget.md §4:144` specifies `Time (… tabular; …)`;
   the shipped `pomodoro-widget.tsx:60` omits it. L1a **completes** it (conformance, not just polish).
 - **L2 ring = v5's DOCUMENTED deferred item.** `v5 §6 Deferred: "a progress RING (SVG/conic — a nicer visual than the
-  V5 linear bar)"`. Realized here as an **opt-in variant** so v5 §1's "linear bar for V5" exclusion stays true for
+V5 linear bar)"`. Realized here as an **opt-in variant** so v5 §1's "linear bar for V5" exclusion stays true for
   existing consumers. No scope violation.
 
 **Verify items resolved:**
+
 - **V1 RESOLVED** — inline `style={{ fontVariantNumeric:'tabular-nums' }}` on `Time` (the `Fill style={{width}}`
   passthrough precedent [FACT: pomodoro-widget.tsx:196]); Visual Gate = the oracle (fixed digit advance across the
   countdown); fallback = `className` + a one-line `ensureNumericStyles()` if Tamagui drops the key. No new file unless needed.
@@ -130,10 +142,11 @@ built") and mobile renders charts/graphs via WebView anyway → documented nativ
   all preserved; stepped-no-transition = PW-5).
 
 ## 4a. Preflight + /verify items (resolved above in §4b)
+
 - **V1 — `fontVariantNumeric` passthrough:** confirm `@tamagui/core` `styled(Text)` forwards `style` to the DOM so
   `fontVariantNumeric:'tabular-nums'` lands (expected: yes — web renders a DOM `<span>`). Fallback if not: a `className`
-  + a one-line `internal/numeric-styles.ts` (`ensureNumericStyles()`, the `ensureToastStyles` pattern). Prefer the style
-  prop (no new file).
+  - a one-line `internal/numeric-styles.ts` (`ensureNumericStyles()`, the `ensureToastStyles` pattern). Prefer the style
+    prop (no new file).
 - **V2 — raw `<svg>` inside a Tamagui tree (web):** confirm `<svg>`/`<circle>` render under `@tamagui/core` on web
   (expected: yes — plain React DOM). Keep it a thin local `ProgressRing` function in the file (no new dep, no new file).
 - **V3 — ring geometry:** pick `r`/`strokeWidth` so the ring reads at 375 (e.g. `size 128`, `r 56`, `strokeWidth 8`);
@@ -147,6 +160,7 @@ built") and mobile renders charts/graphs via WebView anyway → documented nativ
   resolve before Approval 2.
 
 ## 5. Implementation prompt
+
 Types-first: add `progress?: 'bar' | 'ring'` to `PomodoroWidgetProps` (default `'bar'`). (1) **L1a** `Time` → add
 `style={{ fontVariantNumeric: 'tabular-nums' }}` (or the V1 fallback). (2) **L1b** retune `PhaseLabel` to the eyebrow
 (caption/upper/tracked). (3) **L1c** `Track` height 6; keep the inline-width `Fill`. (4) **L1d** apply the resting

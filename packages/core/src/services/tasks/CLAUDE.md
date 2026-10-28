@@ -1,17 +1,22 @@
 # services/tasks — per-module business logic
+
 # Auto-read by Claude when editing this layer. Structural home stood up in Part 2 (ADR-018).
 
 ## What this module is
+
 Tasks, sub-tasks, time logs, cross-module FK links; measurement + effect emission
 
 ## Owning ADR / context
+
 tasks context
 
 ## Pattern
+
 Follows the service data-flow pattern GOVERNED by docs/core/architecture/data-flow.md
 (validate -> repository -> encrypt-seam -> return). Rides foundation/ substrates; does not re-implement them.
 
 ## Status
+
 **① BACKEND COMPLETE — S1–S9 BUILT** (mod-tasks #65 · LIF-142): `createTasksService` — S1 CRUD + ≤1-parent guard +
 app-layer cascade + list filters (DB-4 `tasks`/`task_time_logs`, migration 015; DB-11 reconcile) · S2 sub-tasks + M4
 derived rollup · S3 `completeTask`/`reopenTask` + deny-safe completion fan-out (`[award_xp, contribute_purpose_metric,

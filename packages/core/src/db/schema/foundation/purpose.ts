@@ -11,11 +11,7 @@
 // ============================================================================
 
 import { sqliteTable, text, integer, index } from 'drizzle-orm/sqlite-core'
-import {
-  CONTRIBUTION_GOAL_TYPE,
-  CONTRIBUTION_CONTRIBUTOR_TYPE,
-  PLAN_STEP_OWNER_TYPE,
-} from '@vida/types'
+import { CONTRIBUTION_GOAL_TYPE, CONTRIBUTION_CONTRIBUTOR_TYPE, PLAN_STEP_OWNER_TYPE } from '@vida/types'
 import { baseColumns, enumText, boolInt } from '../_shared'
 
 // --- values: first-class core-beliefs layer ABOVE purposes (PG4) ---

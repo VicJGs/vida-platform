@@ -6,9 +6,11 @@ Authority: `standards/design.md §X/§IV/§V` (responsive · spacing · radius/e
 `docs/core/architecture/shell-layout.md` · nav model: `information-architecture.md`.
 
 ## What lives here
+
 Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (the React components that render it).
 
 **Model (UX-3 — data/logic only, no JSX):**
+
 - `breakpoints.ts` — `Breakpoint`, `BREAKPOINTS`, `BREAKPOINT_ORDER`, `PRIMARY_TEST_WIDTHS`, `CONTENT_MAX_WIDTH`,
   `SIDE_PADDING`, `CONTENT_V_INSET` (content vertical inset 24/32/40 — the shell-owned top+bottom breathing room below
   the strip; design.md §X has only the horizontal gutter, so this is shell-owned, documented in shell-layout.md), `TOUCH_TARGET`,
@@ -22,8 +24,8 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   macOS/iPadOS-inspector panels: each toggles docked (inline, content beside) ⇄ floating (overlay+scrim), rearrangeable
   to any edge. Governing model: `docs/specs/foundation/fe-shell/delivery/envision.md` M1–M7.
 - `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
-  live `nav_preferences` read/write = first consumer, envision L5). Panel *arrangement* is ephemeral Zustand
-  (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); *persistence* is this deferred seam (never a raw table).
+  live `nav_preferences` read/write = first consumer, envision L5). Panel _arrangement_ is ephemeral Zustand
+  (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); _persistence_ is this deferred seam (never a raw table).
 - `spaces-scope.ts` (fe-shell-scope #15, S1) — `SpacesScopeRead = ProviderRead<SpaceOption[]>` + `stubSpacesScope`
   (M1 → `[]` ⇒ global-only). The scope selector's space-list read seam; `SpacesService` has no `listSpaces` yet, so the
   live provider swaps in at the first consumer (the `shell-prefs` deferred-seam precedent). Active scope state is the
@@ -52,6 +54,7 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   → active color `$colorBrandPrimary` → **`$colorBrandEmphasis`** (also fixed the module-dock active item). [[accent-text-on-secondary]]
 
 **Chrome (UI-4 — the rendered app shell):**
+
 - `app-shell.tsx` — **fe-shell #14 · S2 reshaped the frame** to the CODEC dock⇄float inspector model (envision M1–M7).
   The `AppShell` is now a bounded-viewport column (`height:100vh`+`overflow:hidden`): a **reserved top strip** (`<header>`
   → `role="banner"`, `reservedTopInset(bp)` 52/56 tall, `data-top-inset`) carrying the serif `$display` **"Vida"** wordmark +
@@ -66,7 +69,7 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   **fe-shell #14 · S3 reshaped app-shell to COMPOSE the docked panels** (`shell-panel.tsx`, below): the below-strip
   region now folds every open+**docked** panel AROUND the Content (`foldDocked`) so Content sits beside it — a flex
   **row** (left/right edges) or **column** (top/bottom edges), panel-first for left/top. Content stays `flex=1
-  minHeight=0 minWidth=0` + the panel is content-fit (`flexGrow/Shrink=0`) — the RNW flex-collapse guard for the
+minHeight=0 minWidth=0` + the panel is content-fit (`flexGrow/Shrink=0`) — the RNW flex-collapse guard for the
   row↔column flip ([[flex1-child-collapses-to-height-0-in-column-under-rnw]], BR-S3-9). The System/Modules bar toggles
   upgraded from `aria-pressed` to a **disclosure**: `aria-expanded={dockedOpen}` (honest — true iff a docked panel is
   actually rendered) + `aria-controls={panelDomId(id)}` when docked-open; app-shell holds `toggleRefs` so a panel's
@@ -80,12 +83,12 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   Concurrent floats are UI-unreachable (inert blocks reaching a 2nd Float control) → coordinated multi-float is S5.
   **S5 (finale):** `foldDocked` groups docked panels **by edge** → **dock-together** (EC-4): panels sharing an edge render
   as ONE `data-dock-edge` cluster stacked along the cross axis (L/R→column, T/B→row), content-fit, Content beside;
-  different edges nest (PANEL_IDS-first-seen order). The **persist-read seam** is wired: `AppShell` gains `shellPrefs?:
-  ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydration effect (`hydratedRef` + applies only
+  different edges nest (PANEL*IDS-first-seen order). The **persist-read seam** is wired: `AppShell` gains `shellPrefs?:
+ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydration effect (`hydratedRef` + applies only
   while `getState().placement === DEFAULT_PLACEMENT` — never clobbers a set arrangement; no `active`-cleanup so it's
   StrictMode-safe). Live `nav_preferences` read/write = first consumer (envision L5). One responsive model, **no mobile
   auto-switch** (dock/float choice IS the model; M7) — a docked panel at 375 stays content-fit-narrow (user floats for a
-  near-full sheet). _(fe-shell ②/#14 COMPLETE — S1–S5; PR merges to main.)_
+  near-full sheet). *(fe-shell ②/#14 COMPLETE — S1–S5; PR merges to main.)\_
 - `shell-panel.tsx` (fe-shell #14, S3) — **`ShellPanel`**, the DOCKED nav panel (A). Presentational + state-as-prop
   (reads `placement`, emits `onSetMode`/`onSetEdge`/`onClose`; app wires the store). `modules` → `<nav aria-label>`,
   `system` → `<aside aria-label>` (semantic landmark via `styled(View,{render})`). **Inline flush** at its edge
@@ -125,9 +128,9 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   scope (left, `compact` ≤375) · spacer · surfaces strip (mode resolved from the breakpoint). `variant="panel"` = the
   System-panel body (systemPanelSlot): scope above the labeled surfaces list. Composition only (ui-4 BR-1); mounted in
   `routes.tsx` `RootComponent`. app-shell gained a `systemPanelSlot?` seam (the `system` panel body renders it, both docked
-  + float; `modules` keeps the placeholder) + the **System/Modules toggles condense to icon-only at ≤375** (`PANEL_ICON`,
-  label → aria-label) so Bar 1 co-fits the strip (S3 Visual-Gate-caught). EC-5. Visual Gate PASS (real shell: both homes
-  × 3 presets × 2 modes = 0 AA fails incl. warm-dark · float dialog · 375 no-overflow · dark portal menu · axe 0).
+  - float; `modules` keeps the placeholder) + the **System/Modules toggles condense to icon-only at ≤375** (`PANEL_ICON`,
+    label → aria-label) so Bar 1 co-fits the strip (S3 Visual-Gate-caught). EC-5. Visual Gate PASS (real shell: both homes
+    × 3 presets × 2 modes = 0 AA fails incl. warm-dark · float dialog · 375 no-overflow · dark portal menu · axe 0).
 - `nav-link.tsx` (S2) — a `createLink`-styled SPA anchor (one `ShellRoute` widening + `shellNavigate`; exact
   `aria-current`; `currentColor` icon tint). **Active colour = `$colorBrandEmphasis`** (not brandPrimary — brand-as-text
   on the active `$colorSurfaceSecondary` fill fell to 4.39/4.44 < 4.5 AA; fe-shell-scope #15 S2 Visual-Gate fix, benefits
@@ -163,13 +166,14 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
 - `test-router.tsx` — test-only memory-router render helper (not shipped).
 
 ## Rules (do not violate)
+
 - **The MODEL files (`breakpoints.ts`, `regions.ts`) are data, not chrome.** No JSX, no components. The CHROME files
   render them. Do not import `@tamagui`/JSX into the model files; do not put layout constants the model owns into the chrome.
 - **Chrome composes UI-1, never rebuilds it.** The shell adds NO `@vida/ui` component (rule-of-three unmet — one
   consumer); it composes UI-1 primitives (`Button`/`Menu`/…) + `lucide-react` icons. Icon LIBRARY is ADR-001-fixed
   (`lucide-react` web); the icon MAP is rendering data. Every value is a DS token (no hex, no invented z/spacing).
   The only `packages/ui` writes are non-component config: the S1 `media` object (D5 seam) + the S5 `"sideEffects":
-  false` metadata (DF-S5-1, a barrel-defect fix enabling the `/graph` tree-shake — NOT a component; the barrel-defect
+false` metadata (DF-S5-1, a barrel-defect fix enabling the `/graph` tree-shake — NOT a component; the barrel-defect
   precedent [[first-runtime-consumer-surfaces-latent-barrel-defects]]).
 - **Nav degrades, never crashes.** Links target `routePath` via TanStack `to` (SPA) — never `href` (reload);
   unregistered routes render `NotFoundComponent` (BR-4). The `ShellRoute` widening is confined to `nav-link.tsx`.

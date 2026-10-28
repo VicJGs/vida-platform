@@ -68,7 +68,11 @@ export function isStandalone(def: CapabilityDefLike): boolean {
 /** Map a standalone block_instance (+ its PRE-RESOLVED def) + its derived state → a DashboardView cell descriptor. PURE.
  *  `title`/`size` come from the instance config (span default `md` when unset); `state` is derived by the app's 8-state
  *  machine, passed in. */
-export function toCellDescriptor(instance: BlockInstanceLike, def: CapabilityDefLike, state: BlockState): DashboardBlock {
+export function toCellDescriptor(
+  instance: BlockInstanceLike,
+  def: CapabilityDefLike,
+  state: BlockState,
+): DashboardBlock {
   const cfg = parseBlockConfig(instance)
   return {
     id: instance.id,

@@ -55,9 +55,7 @@ export const migration007Purpose: Migration = {
       )
     `)
     await driver.run(`CREATE INDEX idx_contributions_goal ON contributions (goal_type, goal_id)`)
-    await driver.run(
-      `CREATE INDEX idx_contributions_contributor ON contributions (contributor_type, contributor_id)`,
-    )
+    await driver.run(`CREATE INDEX idx_contributions_contributor ON contributions (contributor_type, contributor_id)`)
 
     // --- purpose_reviews: alignment/fulfillment loop (PG3) ---
     await driver.run(`

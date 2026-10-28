@@ -1,6 +1,6 @@
 <!-- Identity — features/finance/fiscal-legal · /documentation Phase 2 · sources: docs/intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · Finance/Projects/Purpose docs · CLAUDE.md §9 -->
 
-# Identity — Fiscal & Legal ("Jurisdiction Compass")  (level: Finance sub-context — situate·organize·plan)
+# Identity — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context — situate·organize·plan)
 
 **What it is.** A **Finance sub-context** that helps a user **situate themselves and their projects/legal-entities across
 jurisdictions**, **track the fiscal-legal obligations** that flow from where their money is (and will be, and is planned
@@ -15,6 +15,7 @@ constantly changing, and mostly invisible to the user until it bites. `[FACT: CL
 sub-context with cross-module dependencies. `[INTENT: RESOLUTION FL1 — Victor chose Finance sub-feature]`
 
 **Four capabilities, split by risk (the buildable shape).** `[INTENT: RESOLUTION]`
+
 - **SITUATE** (ZK-safe spine) — model where the user + each legal-entity is fiscally-legally **resident**, and where money
   **touches** (personal + per-entity). The user's own `[E]` structured data, computed locally.
 - **INFORM** (guarded, public) — a per-jurisdiction **rule knowledge base** (brackets · entity types · filing deadlines ·
@@ -26,11 +27,12 @@ sub-context with cross-module dependencies. `[INTENT: RESOLUTION FL1 — Victor 
 - **ADVISE / WHAT-IF** (guarded, opt-in) — model long-run impact ("incorporate here vs. there; if money flows this way,
   what I'll owe / when") over the user's numbers + rule-packs → the model call **splits to ADR-015** (X11 — ADR-014 moves
   the data, ADR-015 governs the model; §4 names "Fiscal advisement" verbatim), offered in the two **`on_device`** /
-  **`cloud`** execution modes (AI1 — server-blind; "on-device **agentic**" here is ADR-015 §3.1's *mode* label, **not** a
+  **`cloud`** execution modes (AI1 — server-blind; "on-device **agentic**" here is ADR-015 §3.1's _mode_ label, **not** a
   tool-wielding agent — the what-if mutates nothing). A **`cloud`** run is a scope-minimized egress (AI3 + X4 + `external_out_ok`,
   X5). **Informational only** — no auto-action. `[FACT: ADR-014 X4/X5/X11; ADR-015 AI1/AI3]`
 
 **What it is NOT.** `[INTENT; FACT: intake reframe; ADRs]`
+
 - **Not a tax-filing engine — filing HANDS OFF.** Vida situates, organizes, surfaces obligations, and models impact; the
   **filing itself hands to a professional or a 3rd-party engine.** Not "TurboTax-for-the-world" — that's a regulated
   service, per-jurisdiction filing engines, and real legal liability (a company, not a feature). `[INTENT: RESOLUTION FL2]`
@@ -46,4 +48,5 @@ sub-context with cross-module dependencies. `[INTENT: RESOLUTION FL1 — Victor 
 - **Not required.** Opt-in; Finance and the rest of the OS work fully without it. `[FACT: EX-1]`
 
 ## Completion checklist
+
 - [x] "what it is" + capabilities + "what it is NOT" filled · [x] each claim [FACT/INTENT/INTERP] · [x] no `{{…}}` · [x] placement + scope-reframe + liability-first-class + ADR-014/015 wiring stated

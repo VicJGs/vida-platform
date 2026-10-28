@@ -3,13 +3,7 @@
 // inside a memory router whose `/` + `/notes` routes mirror the real registered set (so unregistered targets degrade).
 import { type ReactNode } from 'react'
 import { render } from '@testing-library/react'
-import {
-  createMemoryHistory,
-  createRootRoute,
-  createRoute,
-  createRouter,
-  RouterProvider,
-} from '@tanstack/react-router'
+import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
 import { UIProvider } from '@vida/ui'
 import { createPrefsWrapper } from '../test/preferences-test-utils'
 

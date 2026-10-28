@@ -21,7 +21,8 @@ function pg(id: string, content: EditorDocument | null = null, journalDate: stri
 const writeSpy = vi.fn<(id: string, doc: EditorDocument) => Promise<unknown>>()
 
 vi.mock('../db/composition-root', () => ({
-  getServices: () => Promise.resolve({ notes: { writePageContent: (id: string, doc: EditorDocument) => writeSpy(id, doc) } }),
+  getServices: () =>
+    Promise.resolve({ notes: { writePageContent: (id: string, doc: EditorDocument) => writeSpy(id, doc) } }),
 }))
 
 const doc: EditorDocument = { type: 'doc', content: [] }
@@ -181,7 +182,14 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
   })
 
   it('a malformed page starts locked — nothing is ever written (BR-R0-1)', async () => {
-    const page: NoteContentPage = { id: 'm', title: 'T', type: 'note', content: null, journalDate: null, contentStatus: 'malformed' }
+    const page: NoteContentPage = {
+      id: 'm',
+      title: 'T',
+      type: 'note',
+      content: null,
+      journalDate: null,
+      contentStatus: 'malformed',
+    }
     const { result, unmount } = renderHook(() => useNoteContent(page), { wrapper })
     act(() => {
       result.current.save(loaded)
@@ -195,11 +203,14 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
   })
 
   it.each([
-    ['visibilitychange → hidden', () => {
-      Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
-      document.dispatchEvent(new Event('visibilitychange'))
-      Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
-    }],
+    [
+      'visibilitychange → hidden',
+      () => {
+        Object.defineProperty(document, 'visibilityState', { value: 'hidden', configurable: true })
+        document.dispatchEvent(new Event('visibilitychange'))
+        Object.defineProperty(document, 'visibilityState', { value: 'visible', configurable: true })
+      },
+    ],
     ['pagehide', () => window.dispatchEvent(new Event('pagehide'))],
   ])('%s flushes the pending edit (E-1)', async (_l, fire) => {
     const { result } = renderHook(() => useNoteContent(pg('c', loaded)), { wrapper })
@@ -268,7 +279,12 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
     act(() => result.current.flush())
     await flushAll()
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown[] }).queryKey)
-    expect(keys).toEqual([['pages', 'j2'], ['notes', 'pages'], ['journal', '2026-10-26'], ['calendar', 'journal']])
+    expect(keys).toEqual([
+      ['pages', 'j2'],
+      ['notes', 'pages'],
+      ['journal', '2026-10-26'],
+      ['calendar', 'journal'],
+    ])
   })
 
   it('a note (no journal date) invalidates page · list only', async () => {
@@ -278,18 +294,24 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
     act(() => result.current.flush())
     await flushAll()
     const keys = spy.mock.calls.map((c) => (c[0] as { queryKey: unknown[] }).queryKey)
-    expect(keys).toEqual([['pages', 'n1'], ['notes', 'pages']])
+    expect(keys).toEqual([
+      ['pages', 'n1'],
+      ['notes', 'pages'],
+    ])
   })
 
   it('9c cold cache: a writer unmount-flush → a reader mounting next waits for the write (both directions)', async () => {
     let stored = JSON.stringify(loaded)
     let release!: () => void
-    writeSpy.mockImplementation((_id, d) => new Promise((res) => {
-      release = () => {
-        stored = JSON.stringify(d)
-        res(undefined)
-      }
-    }))
+    writeSpy.mockImplementation(
+      (_id, d) =>
+        new Promise((res) => {
+          release = () => {
+            stored = JSON.stringify(d)
+            res(undefined)
+          }
+        }),
+    )
     const writer = renderHook(() => useNoteContent(pg('j3', loaded, '2026-10-26')), { wrapper })
     act(() => writer.result.current.save(edited))
     writer.unmount() // the note page leaves; its flush registers the write in the same tick
@@ -321,7 +343,10 @@ describe('useNoteContent — data safety (notes-rescope R0)', () => {
 
 // ── DEV-R0-1 · the seed-point overlay + ownership re-save (tests c, d, h, i, j, k) ──
 describe('useNoteContent — latest-body overlay (DEV-R0-1)', () => {
-  const NEW: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }] }
+  const NEW: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }],
+  }
   const flushAll = async () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
@@ -416,7 +441,10 @@ describe('useNoteContent — latest-body overlay (DEV-R0-1)', () => {
     a.unmount()
     await flushAll()
     const b = renderHook(() => useNoteContent(pg('i', loaded)), { wrapper })
-    const edited2: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW2' }] }] }
+    const edited2: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW2' }] }],
+    }
     act(() => b.result.current.save(edited2))
     releases[0]!() // gen 1 succeeds
     await flushAll()
@@ -454,7 +482,10 @@ describe('useNoteContent — latest-body overlay (DEV-R0-1)', () => {
     a.unmount()
     await flushAll()
     const b = renderHook(() => useNoteContent(pg('k', loaded)), { wrapper })
-    const newer: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEWER' }] }] }
+    const newer: EditorDocument = {
+      type: 'doc',
+      content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEWER' }] }],
+    }
     act(() => b.result.current.save(newer))
     rejectFirst(Object.assign(new Error('bad'), { name: 'InvalidPageContentError' }))
     await flushAll()
@@ -511,8 +542,14 @@ describe('useNoteContent — revert within the debounce (DEV-R0-2)', () => {
 // DEV-R0-2 (second window, post-impl critique B1): the dedupe must compare against what the DB WILL hold once queued
 // writes settle — not the last CONFIRMED save — or an undo made while a write is in flight is silently skipped.
 describe('useNoteContent — undo while a write is in flight (DEV-R0-2)', () => {
-  const OLD: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'OLD' }] }] }
-  const NEW: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }] }
+  const OLD: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'OLD' }] }],
+  }
+  const NEW: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }],
+  }
   const flushAll = async () => {
     await act(async () => {
       await vi.advanceTimersByTimeAsync(0)
@@ -568,7 +605,14 @@ describe('useNoteContent — undo while a write is in flight (DEV-R0-2)', () => 
     const a = renderHook(() => useNoteContent(pg('x', OLD)), { wrapper })
     act(() => a.result.current.save(NEW))
     a.unmount()
-    const malformed: NoteContentPage = { id: 'x', title: 'T', type: 'note', content: null, journalDate: null, contentStatus: 'malformed' }
+    const malformed: NoteContentPage = {
+      id: 'x',
+      title: 'T',
+      type: 'note',
+      content: null,
+      journalDate: null,
+      contentStatus: 'malformed',
+    }
     const b = renderHook(() => useNoteContent(malformed), { wrapper })
     expect(b.result.current.seed.status).toBe('malformed')
   })
@@ -577,8 +621,14 @@ describe('useNoteContent — undo while a write is in flight (DEV-R0-2)', () => 
 // Post-impl critique r2 A1 — the ownership re-save survives a type-then-undo inside the debounce: the inherited
 // handover is sticky until THIS mount's own write succeeds (the shared overlay entry is overwritten by its first save).
 describe('useNoteContent — inherited handover is sticky (DEV-R0-1, critique r2 A1)', () => {
-  const NEW: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }] }
-  const NEW2: EditorDocument = { type: 'doc', content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW2' }] }] }
+  const NEW: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW' }] }],
+  }
+  const NEW2: EditorDocument = {
+    type: 'doc',
+    content: [{ type: 'paragraph', content: [{ type: 'text', text: 'NEW2' }] }],
+  }
   beforeEach(() => {
     qc = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
     __resetBodyWrites()

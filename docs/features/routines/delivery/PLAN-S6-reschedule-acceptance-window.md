@@ -8,16 +8,17 @@
 > that was my own framing, not a doc rule, and g1 showed it can't be consumed (focus, TAS-12, time log). **v3** follows SS-8 literally.
 
 ## Grounding
+
 - **What a reschedule is.** A missed occurrence moved to an open slot, then completed: RT-4 (`business-rules.md:26-29`; intake Q1 `:129`).
   The window bounds how long a miss stays "make-good-able / **reschedulable** (one week · N days)" (RT-6 `:35-37`; Q3 `:149-150`). Beyond it:
   `OutsideAcceptanceWindow`, "rejected, no state change" (`contract.md:55`; `business-rules.md:113,120`).
-- **How it persists: SS-8** (`sessions-and-scheduling/business-rules.md:46-49`): "A block records the *plan* (when/duration/window);
+- **How it persists: SS-8** (`sessions-and-scheduling/business-rules.md:46-49`): "A block records the _plan_ (when/duration/window);
   completing it calls the owner's `createSession()`, which instantiates the sub-type carrying `planned_block_id`. The block is never itself the
   log." **SS-7** (`:42-45`): a block for module work **points at** the owner's item, it doesn't mirror it, and the engine (Sessions) owns
   `planned_blocks`. So:
   - the reschedule = a `planned_blocks` row targeting `('routine_step', stepId)`, written through Sessions;
   - the make-good = routines (the owner) runs its S5c drive, which creates the occurrence session, and links it with `planned_block_id`.
-- **Not the M1.2 bridge.** The homed SS-8 bridge is the Planner's *generated* blocks (`activatePlan` writes none; placement algorithm,
+- **Not the M1.2 bridge.** The homed SS-8 bridge is the Planner's _generated_ blocks (`activatePlan` writes none; placement algorithm,
   recalc → M1.2, `sessions-and-scheduling/current-spec.md:154-157`). This slice writes one owner-made block for a caller-given slot
   (R3/seam `:68`/slice-map `:48`, approved at the Re-scope Gate); auto-placement stays the borrowed leg (slice-map `:60`). Nothing re-homed.
 - **The Sessions surface this needs doesn't exist** (no block write, no block lookup). **R1 first-consumer-pull** (`gap2-schema-gates.md:9`):
@@ -29,17 +30,19 @@
   one parser maps block → D.
 
 ## Scope
-| # | Ledger | Change |
-|---|---|---|
-| 1 | — | **Sessions (R1):** `planBlock(input)` · `updatePlannedBlock(id, patch: {scheduled_start?, scheduled_end?, status?})` · `softDeletePlannedBlock(id)` · `listPlannedBlocksForTarget(type, id)` (live only). `sub_type` registry-validated when given. **`dueIn` filters `status ∈ {planned, scheduled}`**: fulfilled/skipped intent isn't due (SS-8: intent ↔ reality) |
-| 2 | — | **Errors:** `OutsideAcceptanceWindowError(stepId, date, windowDays)` · `NotMissedOccurrenceError(stepId, date, reason)` · `InvalidRescheduleSlotError(stepId, reason)` |
-| 3 | BR:120 / contract:55 | **Write guard** W1–W3 (as v1, already accepted) |
-| 4 | A19 | **`rescheduleStep(stepId, {date, slot:{start, end?}}): Promise<StepRunState>`** (status `'scheduled'`, `planned_block_id`): rules R1–R4 |
-| 5 | — | **Make-good fulfils the block** (R5) |
-| 6 | — | **Skip cancels the block** (R6) |
-| 7 | seam/docs | seam ⟲ `rescheduleStep` amendment (was `(stepId, date): Promise<DueItem>`) + 3 typed errors · slice-map S6 row · routines `current-*` and Sessions `current-spec`/`contract.md` for the 4 methods + the `dueIn` filter (§XXIX) |
+
+| #   | Ledger               | Change                                                                                                                                                                                                                                                                                                                                                               |
+| --- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | —                    | **Sessions (R1):** `planBlock(input)` · `updatePlannedBlock(id, patch: {scheduled_start?, scheduled_end?, status?})` · `softDeletePlannedBlock(id)` · `listPlannedBlocksForTarget(type, id)` (live only). `sub_type` registry-validated when given. **`dueIn` filters `status ∈ {planned, scheduled}`**: fulfilled/skipped intent isn't due (SS-8: intent ↔ reality) |
+| 2   | —                    | **Errors:** `OutsideAcceptanceWindowError(stepId, date, windowDays)` · `NotMissedOccurrenceError(stepId, date, reason)` · `InvalidRescheduleSlotError(stepId, reason)`                                                                                                                                                                                               |
+| 3   | BR:120 / contract:55 | **Write guard** W1–W3 (as v1, already accepted)                                                                                                                                                                                                                                                                                                                      |
+| 4   | A19                  | **`rescheduleStep(stepId, {date, slot:{start, end?}}): Promise<StepRunState>`** (status `'scheduled'`, `planned_block_id`): rules R1–R4                                                                                                                                                                                                                              |
+| 5   | —                    | **Make-good fulfils the block** (R5)                                                                                                                                                                                                                                                                                                                                 |
+| 6   | —                    | **Skip cancels the block** (R6)                                                                                                                                                                                                                                                                                                                                      |
+| 7   | seam/docs            | seam ⟲ `rescheduleStep` amendment (was `(stepId, date): Promise<DueItem>`) + 3 typed errors · slice-map S6 row · routines `current-*` and Sessions `current-spec`/`contract.md` for the 4 methods + the `dueIn` filter (§XXIX)                                                                                                                                       |
 
 ## Rules
+
 - **W1–W3 (guard).**
   - Load the step first: `StepNotFoundError` precedes any window error.
   - Only for `D < today`: read the user's policy and validate its window (malformed → `InvalidRoutinePolicyError`); `window === undefined` ⇒ no guard.
@@ -58,6 +61,7 @@
 
   The W2 window check runs first (beyond ⇒ `OutsideAcceptanceWindowError`). No window ⇒ any past undone D is admissible: the same rule
   `completeStep` follows (W1). A D with a logged skip is admissible; a make-good flips it to done (BR-RT-S3-2).
+
 - **R2 · Slot.**
   - `start`, and `end > start` when given, are Unix ms; `start ≥ now`.
   - The slot's day S (the same day function as `clock()`) satisfies `S ≥ D`, and with a window `S ≤ addDays(D, window)` (the last make-good day).
@@ -84,14 +88,19 @@
 - **R7 · Atomicity.** `rescheduleStep` writes only the block (one write) or a slot move (one update), plus, for a not-yet-linked check-off step, the S5c migrate-on-touch (`linkCheckoffTask`, self-compensating). There is no other multi-write.
 
 ## Types
+
 ```ts
-export interface RescheduleStepInput { date: string; slot: { start: number; end?: number } }
+export interface RescheduleStepInput {
+  date: string
+  slot: { start: number; end?: number }
+}
 // StepRunState.status += 'scheduled'; StepRunState += planned_block_id?: string
 // RoutinesService += rescheduleStep(stepId, input): Promise<StepRunState>
 // SessionsService += planBlock · updatePlannedBlock · softDeletePlannedBlock · listPlannedBlocksForTarget
 ```
 
 ## Verification Gate (live store, Node 24, the S3–S5c harness, `Date.now` pinned)
+
 1. **Guard:** window 2, today 10-26: `completeStep`/`runStep(10-23)` rejected, no row, no `work` session, task timer not started;
    10-24 (boundary) ok; today ok.
 2. **Skips:**
@@ -105,7 +114,7 @@ export interface RescheduleStepInput { date: string; slot: { start: number; end?
 5. **Make-good:** `completeStep(D)` → one completed `work` session with `planned_block_id` = the block, block `fulfilled`, D `done` in
    `getAnalytics`, the block gone from `dueIn`. `runStep(D)` → session linked, block still `planned`.
 6. **Re-reschedule moves** the slot (one block); a double-tap (concurrent calls) → one block.
-6b. **R5b isolation:** `runStep(D)`, then `completeStep(today)` → D done, block fulfilled, today untouched; for `work` and a running-capable
+   6b. **R5b isolation:** `runStep(D)`, then `completeStep(today)` → D done, block fulfilled, today untouched; for `work` and a running-capable
    `review`. Two pending Ds stay separate. A focus make-good run on S > D, then complete → D stamped, block fulfilled.
 7. **Rejections, no write:**
    - beyond the window → `OutsideAcceptanceWindowError`;
@@ -130,6 +139,7 @@ export interface RescheduleStepInput { date: string; slot: { start: number; end?
 Gates: tsc 0 · eslint 0 · routines + sessions suites · full `@vida/core` · g2 · /critique · §XXIX.
 
 ## Out of scope (homed)
+
 - Auto-placement (G5) and recalc → `⚠ INTENDED-later` M1.2 (slice-map `:60`).
 - **S9 input:** routines' own `dueIn` must not double-list D's occurrence and its block.
 - Effects → S7.
@@ -139,7 +149,9 @@ Gates: tsc 0 · eslint 0 · routines + sessions suites · full `@vida/core` · g
 - Cascade on `removeStep`/archive → S8.
 
 ## g1 critique (v2, folded into v3): REVISE
+
 **8 blocking.** v3 adopts the SS-8 shape (block now, session at make-good), which dissolves:
+
 - B1 (focus can't be consumed);
 - B3 (TAS-12 bypass);
 - B4 (0-minute time log);
@@ -147,11 +159,13 @@ Gates: tsc 0 · eslint 0 · routines + sessions suites · full `@vida/core` · g
 - B2 (occurrence isolation).
 
 The rest are fixed directly:
+
 - B5 → step-level admissibility;
 - B6 → the `dueIn` status filter;
 - B7 → `softDeletePlannedBlock` + `serialized`.
 
 **Grounding notes:**
+
 - G1 → SS-8/SS-7 cited.
 - G2 → D-link derived (R3 + Q3), no longer a fork.
 - G3 → docs scope.
@@ -164,6 +178,7 @@ The rest are fixed directly:
 ## Approval 1 — Victor 2026-10-22 ("Approved", v3)
 
 ## /preflight — PASSED
+
 - **Frontend:** none (backend slice).
 - **Backend:**
   - Operations typed: `rescheduleStep` plus the 4 Sessions methods.
@@ -183,6 +198,7 @@ The rest are fixed directly:
   5. `stepsAsOf` with this step's ledger row set decides step membership on D.
 
 ## Implementation plan (§5)
+
 1. **Tests first (red).** Routines Verification Gate 1–10 and Sessions gate 11, in the S3–S5c harness and the sessions suite.
 2. **Sessions (R1)** (gate point: the sessions suite green):
    - `types.ts`: `PlanBlockInput`, `PlannedBlockPatch`.
@@ -225,7 +241,7 @@ The rest are fixed directly:
      6. Move the existing block, or `planBlock`.
      7. Return `{ step_id, date: D, target, status:'scheduled', completion: null, planned_block_id }`.
    - **d0. R5b day attribution.** `blockOfSession(session)` → D' or null, a read through `listPlannedBlocksForTarget('routine_step',
-     stepId)` matched by id. It is used in `driveTask` (`open`), `driveSession` (`open`), `completeFocusStep`, and `settleFinishedFocus`
+stepId)` matched by id. It is used in `driveTask` (`open`), `driveSession` (`open`), `completeFocusStep`, and `settleFinishedFocus`
      (the stamp day and the returned `date`).
    - **d. Make-good hook.** Runs **inside** the `serialized` callback after `driveStep`, keyed on the returned `state.date`, and also on
      the already-done early returns (a retry re-settles a swallowed fulfil). Best-effort:
@@ -237,6 +253,7 @@ The rest are fixed directly:
      - `planSkipDates` for each date that has a pending block.
 
    Gate point: the routines suite green after 4a (no regressions), then after 4e.
+
 5. **Docs (row 7).**
    - Seam ⟲ `rescheduleStep` + the typed errors.
    - The slice-map S6 row.
@@ -246,12 +263,15 @@ The rest are fixed directly:
 6. **Gates:** tsc · eslint · routines + sessions · full core · g2 · /critique · §XXIX.
 
 ## Step-5 critique (folded): REVISE
+
 **3 blocking:**
+
 - B1 focus stamped on the slot day → R5b;
 - B2 the open-session paths aren't keyed by date → R5b + gate 6b;
 - B3 `rescheduleStep` resolves no target → 4c.2 + the gate-7 cases.
 
 **Non-blocking, all folded:**
+
 - the hook inside the lock, keyed on `state.date`, also on done paths;
 - skip writes serialized;
 - R4/4b status wording;

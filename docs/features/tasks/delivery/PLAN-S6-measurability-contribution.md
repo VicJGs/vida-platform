@@ -9,31 +9,36 @@
 > precedent** (`services/projects/service.ts`) — NOT a design decision. Closes with the live-store Verification Gate.
 
 ## Grounding correction (what this rewrite fixed — No-Guessing)
+
 An earlier draft gated the completion emission by `binding_mode` ("`emit_measurement_signal` fires only when
 event-trigger"). That is **wrong** and contradicts the live convention:
+
 - `[FACT: services/projects/service.ts:72-81]` — Projects emits `emit_measurement_signal` **unconditionally** on the
   completed transition; it does **not** gate by `binding_mode`. Tasks S3 already matches this (`service.ts:159-169`).
 - `[FACT: services/projects/service.ts:465-530]` — `binding_mode` is consumed on the **READ** side: stored override
   wins → `derived-pull` reads a measurement-source → else the derived leaf. This is the "progress derives via
   binding_mode" of `contract.md:25` + `TK-11` (M3/M4), and the `progress()` pursuable contract XCU-08/BR-8.
-So S6 = the **read-side** `progress()` resolver (the Projects `getDeliverableProgress` analogue, adapted to tasks) +
-the C1/C2 guards. S6 does **not** touch S3's emission.
+  So S6 = the **read-side** `progress()` resolver (the Projects `getDeliverableProgress` analogue, adapted to tasks) +
+  the C1/C2 guards. S6 does **not** touch S3's emission.
 
 ## What is already built (do NOT re-assert — the grounding floor)
+
 - **Axes exist + validated.** `measurement_kind` (NN DEFAULT `'milestone'`) + `binding_mode` (nullable) are columns
   (migration 015) and enum-validated at the service boundary (`BR-TK-S1-6`). `[FACT: migrations/015_tasks.ts:67-69; service.ts:187,218]`
 - **Completion emits the catalogue.** S3 `fanOutCompletion` emits `[award_xp, contribute_purpose_metric,
-  emit_measurement_signal]` unconditionally on the not-completed→completed transition, deny-safe/dormant, bare (no
+emit_measurement_signal]` unconditionally on the not-completed→completed transition, deny-safe/dormant, bare (no
   payload) — matching the Projects/Habits convention. `[FACT: service.ts:151-169, 350; BR-TK-S3-3; projects/service.ts:72]`
 - **Sub-task aggregate derives.** `getRollup(parentId)` → `{done,total,progress}` via the M4 weighted `rollup()`; **returns
   `progress:null` for a leaf (no children)** — so a leaf task's OWN measure is exposed nowhere yet. `[FACT: service.ts:328-338]`
 
 ## The gap S6 closes (grounded, net-new)
+
 Tasks is a **pursuable** (`measurement_kind` applies-to names "Tasks (incl. sub-tasks)") and **owes a `progress()`
 implementation** `[FACT: xcut-measurement XCU-08/BR-8 "each module IMPLEMENTS it"; ADR-011 §3.4]`. Today it implements
 only the sub-task AGGREGATE (`getRollup`), not a task's own `progress()` honoring its axes. S6 implements that.
 
 ## Scope (what's in ① vs deferred)
+
 - **In (net-new):** (1) `getTaskProgress(id): number | null` — the pursuable `progress()` contract, a read-side
   derivation honoring `measurement_kind` + `binding_mode` (Projects model); (2) the pure `resolveBindingMode` +
   `deriveTaskLeaf` helpers it composes; (3) the **C1** (no measurement-source advertise) + **C2** (no M7 table) guards,
@@ -58,27 +63,31 @@ only the sub-task AGGREGATE (`getRollup`), not a task's own `progress()` honorin
     amendment / build-phase `[FACT: xcut-measurement XCU-16 "nullable override-slot amendment … DEFERRED — DB-4/build"]`.
 
 ## Operations (one added read method)
+
 ```ts
 getTaskProgress(id: Id): Promise<number | null>   // the pursuable progress() contract (XCU-08/BR-8), derived-on-read
 ```
+
 Added to `TasksService`. Extends the seam-contract's terse S6 line ("progress derives") with the concrete method —
 within its intent, grounded in the Projects `getDeliverableProgress` precedent + XCU-08. (The cross-module
-*aggregation* read `getTaskRollup({entityType,entityId})` that Projects consumes is **S7**, not S6 — kept distinct.)
+_aggregation_ read `getTaskRollup({entityType,entityId})` that Projects consumes is **S7**, not S6 — kept distinct.)
 
 ## Operation flow + invariants
 
 ### M-read — `getTaskProgress` resolves a task's own [0,1]|null honoring the axes (TAS-25; Projects model)
+
 **Not-found:** `getTaskProgress(id)` on a missing/soft-deleted id ⇒ `TaskNotFoundError` (NOT `null` — `null` is the
-*unmeasured* signal, BR-2, and must never be overloaded with *not-found*; mirrors `completeTask` + Projects
+_unmeasured_ signal, BR-2, and must never be overloaded with _not-found_; mirrors `completeTask` + Projects
 `getDeliverableProgress`/`service.ts:526-528`).
 
 Faithful to the Projects resolver `projects/service.ts:465-530`, where (a) a **stored override** wins
 (`resolveProgress` / XCU-04), (b) `binding_mode` branches **only on `derived-pull`**, (c) else a **derived leaf**.
 Tasks has **no override column** (C6), so step (a) never applies in M1 — a (found) task **always derives**:
+
 - **(parent, has sub-tasks)** ⇒ the M4 rollup (reuse `getRollup`'s `progress`) — a container's measure is its children,
   regardless of `binding_mode` (mirrors Projects' tasks-rollup-first, `projects/service.ts:465-468`).
 - **(childless, `binding_mode='derived-pull'`)** ⇒ **`null`** (never fabricated, BR-2). A `derived-pull` measure is fed
-  by a bound source, **not** by completion — so it must NOT fall through to the milestone leaf. The source *read* needs a
+  by a bound source, **not** by completion — so it must NOT fall through to the milestone leaf. The source _read_ needs a
   task↔source binding store (Projects writes one as an `entity_links` row via `spaces.createLink`,
   `projects/service.ts:404-416`); tasks wires **neither the binding nor a `measurementSources` dep** in M1, so there is
   no source to query → `null` directly. This is `binding_mode`'s one testable M1 branch. **S6 does NOT add
@@ -96,12 +105,13 @@ Tasks has **no override column** (C6), so step (a) never applies in M1 — a (fo
   composes UP a ladder (contributions/M4), the leaf is completion. No fabricated non-milestone leaf.
 
 ### TAS-26 — the UP-contribution is already emitted (S3); S6 adds only the guards
+
 - `contribute_purpose_metric` keeps firing on completion exactly as S3 built it (unconditional, bare, dormant — the
   event-trigger edge, ADR-011 §3.5 / XCU-09). S6 does **not** modify it. The "if the task contributes to a purpose"
   resolution + the weighted `contributions` write are the (dormant, Purpose-owned) handler's job (XCU-12).
 - **C1 (no M5 source) — guard, by construction + test-proven.** Tasks is absent from the measurement-source applies-to
   set (Finance/Habits/Health/Projects); `progress(task)` is **not** advertised. S6 gives tasks **no
-  `MeasurementSourceRegistry` handle** in its deps, so it is *structurally incapable* of calling `advertise` — C1 holds
+  `MeasurementSourceRegistry` handle** in its deps, so it is _structurally incapable_ of calling `advertise` — C1 holds
   by construction, not just by discipline. `getTaskProgress` is a plain read, not an advertised source.
   `[FACT: ADR-011 §3.6; xcut-measurement XCU-06/07; parts/tasks.md:36 C1; TasksServiceDeps has no measurementSources]`
 - **C2 (no M7 tables) — guard, proven-by-absence.** Tasks owns no Purpose-apex rollup tables
@@ -109,6 +119,7 @@ Tasks has **no override column** (C6), so step (a) never applies in M1 — a (fo
   `[FACT: ADR-011 §3.8; xcut-measurement XCU-12; parts/tasks.md:36 C2]`
 
 ## Types / validators
+
 - **No `@vida/types` change, no migration, no new enum, no new typed error.** `getTaskProgress` is a read.
 - `resolveBindingMode` / `deriveTaskLeaf` are module-local pure helpers (like `nextOccurrence`). `getTaskProgress`
   returns `number | null` (the `[0,1]` pursuable progress, matching the engine's `normalize`/`rollup` return + BR-8).
@@ -117,6 +128,7 @@ Tasks has **no override column** (C6), so step (a) never applies in M1 — a (fo
   lands later with the derived-pull binding-read slice, not here.
 
 ## Verification Gate (blocking — live store, Node 24, real better-sqlite3, real measurement engine)
+
 1. `getTaskProgress` on a **leaf** task, `binding_mode` unset (NULL-natural): not completed ⇒ `0`; completed ⇒ `1`
    (milestone leaf via the engine).
 2. `getTaskProgress` on a **parent** (has sub-tasks), NULL-natural: equals the M4 `getRollup().progress` (1 completed of
@@ -140,6 +152,7 @@ Tasks has **no override column** (C6), so step (a) never applies in M1 — a (fo
 10. **(not-found)** `getTaskProgress` on a missing id, and on a soft-deleted task ⇒ `TaskNotFoundError` (never `null`).
 
 ## Out of scope
+
 Value-bearing per-kind measures + their columns (XCU-15, DB-4/build) · task↔source binding storage + live `derived-pull`
 (XCU-13, build) · the live measurement/purpose handlers + `contributions` write (XCU-12, MOD-purposes/first-consumer) ·
 a manual stored-progress override column (XCU-16, ADR-002 amendment) · cross-module aggregation `getTaskRollup` /

@@ -50,7 +50,9 @@ describe('buildYear (BR-3)', () => {
     const oct = y2026[9].rows.flat().filter((s) => s.kind === 'day')
     expect(oct[0]).toMatchObject({ key: '2026-10-01', day: 1, col: 4, weekday: 4 })
     expect(oct[30]).toMatchObject({ key: '2026-10-31', day: 31 })
-    const sunOct1 = buildYear(2026, 0)[9].rows.flat().find((s) => s.kind === 'day')
+    const sunOct1 = buildYear(2026, 0)[9]
+      .rows.flat()
+      .find((s) => s.kind === 'day')
     expect(sunOct1).toMatchObject({ key: '2026-10-01', col: 5 })
   })
   it('pads a 4-digit year (setFullYear — never the 1900+y mapping)', () => {

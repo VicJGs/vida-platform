@@ -37,7 +37,9 @@ import {
 
 // ── integration-block metadata (editor-local; the to-markdown.ts / to-pdf.tsx precedent) ─────────────────────────────
 const INTEGRATION_LABEL = new Map(INTEGRATION_BLOCK_COMMANDS.map((c) => [c.block_type as string, c.label]))
-const INTEGRATION_NODE_NAMES: ReadonlySet<string> = new Set(INTEGRATION_BLOCK_COMMANDS.map((c) => c.block_type as string))
+const INTEGRATION_NODE_NAMES: ReadonlySet<string> = new Set(
+  INTEGRATION_BLOCK_COMMANDS.map((c) => c.block_type as string),
+)
 
 function normalizeVariant(value: unknown): CalloutVariant {
   return CALLOUT_VARIANT.includes(value as CalloutVariant) ? (value as CalloutVariant) : 'info'
@@ -122,7 +124,13 @@ function boldBlocks(blocks: DocxBlock[]): void {
   }
 }
 
-function buildListItems(list: EditorNode, ordered: boolean, level: number, ctx: ListCtx, options: DocxSerializeOptions): DocxBlock[] {
+function buildListItems(
+  list: EditorNode,
+  ordered: boolean,
+  level: number,
+  ctx: ListCtx,
+  options: DocxSerializeOptions,
+): DocxBlock[] {
   const ref = ordered ? nextRef(ctx) : ''
   const rawStart = Number(list.attrs?.start)
   const start = ordered && Number.isFinite(rawStart) ? rawStart : undefined
@@ -161,7 +169,12 @@ function buildTable(node: EditorNode, ctx: ListCtx, options: DocxSerializeOption
   return { kind: 'table', rows: rowsDesc }
 }
 
-function buildBlocks(nodes: EditorNode[] | undefined, ctx: ListCtx, level: number, options: DocxSerializeOptions): DocxBlock[] {
+function buildBlocks(
+  nodes: EditorNode[] | undefined,
+  ctx: ListCtx,
+  level: number,
+  options: DocxSerializeOptions,
+): DocxBlock[] {
   const out: DocxBlock[] = []
   for (const node of nodes ?? []) {
     switch (node.type) {
@@ -202,7 +215,11 @@ function buildBlocks(nodes: EditorNode[] | undefined, ctx: ListCtx, level: numbe
         out.push(buildTable(node, ctx, options))
         break
       case 'callout':
-        out.push({ kind: 'callout', variant: normalizeVariant(node.attrs?.variant), children: buildBlocks(node.content, ctx, level, options) })
+        out.push({
+          kind: 'callout',
+          variant: normalizeVariant(node.attrs?.variant),
+          children: buildBlocks(node.content, ctx, level, options),
+        })
         break
       default:
         if (INTEGRATION_NODE_NAMES.has(node.type)) {
@@ -247,7 +264,11 @@ type ParaDeco = { indent?: { left: number }; border?: IBordersOptions; shading?:
 function mergeDeco(a: ParaDeco | undefined, b: ParaDeco): ParaDeco {
   return { indent: b.indent ?? a?.indent, border: { ...a?.border, ...b.border }, shading: b.shading ?? a?.shading }
 }
-function decoOpts(deco: ParaDeco | undefined): { indent?: { left: number }; border?: IBordersOptions; shading?: IShadingAttributesProperties } {
+function decoOpts(deco: ParaDeco | undefined): {
+  indent?: { left: number }
+  border?: IBordersOptions
+  shading?: IShadingAttributesProperties
+} {
   if (!deco) return {}
   return {
     ...(deco.indent && { indent: deco.indent }),
@@ -269,7 +290,10 @@ function runsToChildren(runs: DocxRun[]): (TextRun | ExternalHyperlink)[] {
       shading: r.code ? CODE_SHADING : undefined,
     }
     if (r.link) {
-      return new ExternalHyperlink({ link: r.link, children: [new TextRun({ ...base, color: DOCX_COLORS.link, underline: {} })] })
+      return new ExternalHyperlink({
+        link: r.link,
+        children: [new TextRun({ ...base, color: DOCX_COLORS.link, underline: {} })],
+      })
     }
     return new TextRun(base)
   })
@@ -280,26 +304,45 @@ function blockToDocx(desc: DocxBlock, deco?: ParaDeco): (Paragraph | Table)[] {
     case 'paragraph':
       return [new Paragraph({ children: runsToChildren(desc.runs), ...decoOpts(deco) })]
     case 'heading':
-      return [new Paragraph({ heading: HEADING_LEVEL[desc.level], children: runsToChildren(desc.runs), ...decoOpts(deco) })]
+      return [
+        new Paragraph({ heading: HEADING_LEVEL[desc.level], children: runsToChildren(desc.runs), ...decoOpts(deco) }),
+      ]
     case 'listItem': {
-      const list = desc.ordered ? { numbering: { reference: desc.ref, level: desc.level } } : { bullet: { level: desc.level } }
+      const list = desc.ordered
+        ? { numbering: { reference: desc.ref, level: desc.level } }
+        : { bullet: { level: desc.level } }
       return [new Paragraph({ ...list, children: runsToChildren(desc.runs), ...decoOpts(deco) })]
     }
     case 'code':
       return desc.lines.map(
-        (line) => new Paragraph({ shading: CODE_SHADING, children: [new TextRun({ text: line, font: DOCX_FONTS.mono })], ...decoOpts(deco) }),
+        (line) =>
+          new Paragraph({
+            shading: CODE_SHADING,
+            children: [new TextRun({ text: line, font: DOCX_FONTS.mono })],
+            ...decoOpts(deco),
+          }),
       )
     case 'hr':
       return [new Paragraph({ ...decoOpts(deco), border: { ...decoOpts(deco).border, bottom: HR_BORDER } })]
     case 'placeholder':
       return [
         new Paragraph({ children: [new TextRun({ text: desc.label, bold: true })], ...decoOpts(deco) }),
-        new Paragraph({ children: [new TextRun({ text: 'Available when its module ships', italics: true, color: DOCX_COLORS.muted })], ...decoOpts(deco) }),
+        new Paragraph({
+          children: [new TextRun({ text: 'Available when its module ships', italics: true, color: DOCX_COLORS.muted })],
+          ...decoOpts(deco),
+        }),
       ]
     case 'blockquote':
-      return desc.children.flatMap((c) => blockToDocx(c, mergeDeco(deco, { indent: { left: BLOCKQUOTE_INDENT }, border: { left: BLOCKQUOTE_BORDER } })))
+      return desc.children.flatMap((c) =>
+        blockToDocx(c, mergeDeco(deco, { indent: { left: BLOCKQUOTE_INDENT }, border: { left: BLOCKQUOTE_BORDER } })),
+      )
     case 'callout':
-      return desc.children.flatMap((c) => blockToDocx(c, mergeDeco(deco, { shading: calloutShading(desc.variant), border: { left: calloutBorder(desc.variant) } })))
+      return desc.children.flatMap((c) =>
+        blockToDocx(
+          c,
+          mergeDeco(deco, { shading: calloutShading(desc.variant), border: { left: calloutBorder(desc.variant) } }),
+        ),
+      )
     case 'table':
       return [
         new Table({
@@ -332,16 +375,26 @@ function collectOrdered(blocks: DocxBlock[], acc: Map<string, Map<number, number
   }
 }
 
-function buildNumbering(
-  blocks: DocxBlock[],
-): { config: { reference: string; levels: { level: number; format: (typeof LevelFormat)[keyof typeof LevelFormat]; text: string; start: number }[] }[] } | undefined {
+function buildNumbering(blocks: DocxBlock[]):
+  | {
+      config: {
+        reference: string
+        levels: { level: number; format: (typeof LevelFormat)[keyof typeof LevelFormat]; text: string; start: number }[]
+      }[]
+    }
+  | undefined {
   const acc = new Map<string, Map<number, number>>()
   collectOrdered(blocks, acc)
   if (acc.size === 0) return undefined
   const config = [...acc].map(([reference, levelMap]) => ({
     reference,
     // Define levels 0–8 DECIMAL so any nesting depth resolves; `start` per level from the collected list (default 1).
-    levels: Array.from({ length: 9 }, (_, i) => ({ level: i, format: LevelFormat.DECIMAL, text: `%${i + 1}.`, start: levelMap.get(i) ?? 1 })),
+    levels: Array.from({ length: 9 }, (_, i) => ({
+      level: i,
+      format: LevelFormat.DECIMAL,
+      text: `%${i + 1}.`,
+      start: levelMap.get(i) ?? 1,
+    })),
   }))
   return { config }
 }

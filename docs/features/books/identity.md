@@ -1,6 +1,6 @@
 <!-- Identity — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 · docs/intake/books.md -->
 
-# Identity — Books  (level: Feature / own module)
+# Identity — Books (level: Feature / own module)
 
 **What it is.** The OS's **reading Universe**: one module that consolidates the entire reading life — the
 **plan** (what to read, at what pace, by when) and the **experience** (reading/listening inside the platform,
@@ -11,13 +11,14 @@ Learning** through the Books↔Education API (the Tasks↔Projects / Tasks↔Edu
 
 **The desire behind it.** Reading today is scattered — the plan in one place, the PDF in another app, the
 audiobook in a third, notes nowhere. v1's Books "was the worst version ever — not even solid on the points it
-was supposed to deliver." The user wants **one safe, distraction-free companion** that is the *sole tool* he
+was supposed to deliver." The user wants **one safe, distraction-free companion** that is the _sole tool_ he
 needs: helping him truly learn **and enjoy** reading — plan a book (or several), read it in whatever format he
 owns, switch formats without losing his place, capture what talked to him, keep pace with flexible quotas that
 reshape when life happens, and — as a student — stay **ahead** of classes and assessments.
 `[INTENT: Victor 2026-07-03, verbatim-derived]`
 
 **Scope — a deliberate v2 reframe (module extraction).** `[INTENT: B1–B16]`
+
 - **FACT base (2 tables today):** `books` + `book_chapters`. `[FACT: ADR-002 L2409-2469; schema.ts L641-674]`
 - **⚠ INTENDED model:** book = the **WORK**; per-format **assets/copies** (0..n — a book can exist with none,
   as a wish + TOC) each with native position; **unified progress** at work level via automatic cross-format
@@ -29,18 +30,19 @@ reshape when life happens, and — as a student — stay **ahead** of classes an
   capture** for physical books — the photos form a **visual reading journal** feeding the daily Journal.
 - **Adaptive Quota Planner:** goals manual or auto-calculated to a target date (date · weekday · day-of-month);
   quotas over free time; **recalculates on missed quotas**; single- or multi-book plans (sequenced | parallel,
-  user-arranged). The Books end of the Calendar-entity reconciliation *(forward dep)*.
+  user-arranged). The Books end of the Calendar-entity reconciliation _(forward dep)_.
 - **In-app Reader:** one surface, three modes — read (pdf/epub) · listen (audiobook + TTS-converted) ·
   annotate live — plus the **physical companion mode** (timer, page entry, photo, quota ring).
 - **Education partition (⚠ immature):** `book_subjects` + pace-vs-schedule/assessments, so the student paces
   ahead of classes.
 
 **What it is NOT.** `[INTENT: intake Transform obligation 1]`
+
 - **Not a Learning sub-extension.** A standalone module; Learning consumes a partition (B1).
 - **Not the syllabus.** The v1 conflation is undone: syllabus/schedule belong to **Education**; the TOC belongs
   to Books (B8). They meet only through the partition.
-- **Not the Study Planner.** The Study Planner plans *study life* from the whole subject intake at another
-  altitude; Books owns *reading* plans. The Planner consumes, never owns (B6).
+- **Not the Study Planner.** The Study Planner plans _study life_ from the whole subject intake at another
+  altitude; Books owns _reading_ plans. The Planner consumes, never owns (B6).
 - **Not a store or social/community reading app.** No purchases, no feeds, no sharing; the ISBN/metadata lookup
   is a governed convenience (a device-mediated **public-reference** fetch of the Books ISBN dataset — ADR-014
   X1/X2/X3 under `external_in_ok`), not a marketplace (B8/B11).
@@ -52,4 +54,5 @@ reshape when life happens, and — as a student — stay **ahead** of classes an
   and renders gracefully (anti-lost). `[INTENT B12]`
 
 ## Completion checklist
+
 - [x] "what it is" + "desire" + "what it is NOT" filled · [x] each claim [FACT/INTENT] · [x] no `{{…}}` remaining

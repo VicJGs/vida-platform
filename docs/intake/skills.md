@@ -1,11 +1,12 @@
-# Intake — skills  (level: domain module; Wave R — recovered/reframe; EXECUTION #2)
+# Intake — skills (level: domain module; Wave R — recovered/reframe; EXECUTION #2)
 
 > Fill order: exec #2. Skills was **separated from Learning** (2026-07-01) — v2's 2 tables are a **deliberately
 > downgraded floor**, not the ceiling; this intake captures the fuller envisioned module. Boundaries are half
 > pre-drawn: Knowledge names Skills a **consumer compound set**; **Health Disciplines bind a Skill**. `[FACT:
-> _scope-reconciliation-v1.md L44-58; knowledge/contract.md L63; health/core Fork 4]`
+_scope-reconciliation-v1.md L44-58; knowledge/contract.md L63; health/core Fork 4]`
 
 ## Current (enforced reality — the thin floor) `[FACT: ADR-002 §5.10 L2475-2520; learning.ts L173-192]`
+
 - **`skills`** — `id` · `parent_skill_id` (self-hierarchy) · `name` **E** · `description` **E** · `mastery_level`
   P (novice/beginner/intermediate/advanced/expert/master) · `practice_hours` P (minutes) · `last_practiced` P ·
   `proficiency_test_score` P · timestamps · `deleted_at`.
@@ -13,11 +14,13 @@
 - **Zero service logic.** `entity_type` reserves `'skill'` in `entity_links`/`pages`. `[FACT: ADR-002 L1347]`
 
 ## Legacy (life-os v1 — also thin, context only)
+
 Skills lived inside Learning: `SkillCard` · `SkillForm` · **`MasteryTimeline`** · SkillsPage · SkillDetailPage +
 `skillsApi`. A skill with a mastery level, practice hours, resources, and a mastery-over-time timeline. Not
 materially richer than v2. `[FACT: ../life-os/src/features/learning/{components/skills,pages}/]`
 
 ## Boundaries with documented foundations (compose, don't rebuild)
+
 - **Knowledge** — Skills is a **consumer compound set**: a skill's learning/mastery composes Knowledge's generic
   engine (objects · methods · derived mastery). Retire the narrow `skill_resources` CHECK → `entity_links` (the
   call Knowledge already made for `resource_type`). `[FACT: knowledge/contract.md L63; business-rules.md L36]`
@@ -28,18 +31,20 @@ materially richer than v2. `[FACT: ../life-os/src/features/learning/{components/
   also compose Skills (a course builds a skill; a language IS a skill family). `[INTENT]`
 
 ## Victor's Notion "Abilities" design (System 2.0, 5 databases) — a rich INTENT SOURCE (dated ~years; NOT the ceiling)
+
 > ⚠ **FRAMING (Victor 2026-07-14):** this Notion is **information/context, not the core**. It was designed years
 > ago, before the real-code structure; his intent has since **evolved** (new developments · improvements ·
 > integrations · new features). It informs the spec — it does **not** dominate it. The **authoritative layer is
 > Victor's CURRENT intent** (elicited below), synthesized with code (FACT) + v1 + this.
-Source: Notion "System 2.0" → **Abilities Management** (`2167ba8dd1d4803baffed3c544faed3d`), fetched 2026-07-14 via
-MCP. Enriches the thin "skills" floor (context, not replacement). **REFRAME (Victor 2026-07-14): the module KEEPS the name "Skills"**;
-it adopts the **"Abilities" design** — a **universal, cross-domain capability-forging engine**; a **higher-order
-module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
+> Source: Notion "System 2.0" → **Abilities Management** (`2167ba8dd1d4803baffed3c544faed3d`), fetched 2026-07-14 via
+> MCP. Enriches the thin "skills" floor (context, not replacement). **REFRAME (Victor 2026-07-14): the module KEEPS the name "Skills"**;
+> it adopts the **"Abilities" design** — a **universal, cross-domain capability-forging engine**; a **higher-order
+> module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
 
 **5-layer structure: Ability → Levels → Activities → Actions → Development Tracker.**
+
 - **`Abilities`** — the capability. `Domain` (Professional·Technical·Creative·Social·Mental·Physical) · `Current
-  Level` (Foundational-Beginner→Beginner→Intermediate→Advanced→Master) · `Progress` (Not-Started→Honing) · Status ·
+Level` (Foundational-Beginner→Beginner→Intermediate→Advanced→Master) · `Progress` (Not-Started→Honing) · Status ·
   Priority · Practice Frequency · Time Investment · Total Practice Time · Start/`Target Mastery Date` · **Why
   Important** · relations → **Levels · Projects · Targets · Physical-Roles-Activities · Development-Tracker**. Cross-
   domain + goal-driven.
@@ -56,6 +61,7 @@ module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
   Improve** · **Next Session Plan** · Recovery Needed · Environment · Key Insights · → Ability · Activity.
 
 **How it maps onto the OS (composes, doesn't rebuild).**
+
 - **Actions → Sessions** (`practice` sub-type, scheduled via `dueIn()`); **Development Tracker → the session log +
   a reflective-practice pattern** (twin of Health's Adaptation engine). `[FACT ADR-004]`
 - **Activity `Type` DISPATCHES to the right module:** Practice/Study → Sessions/Knowledge · **Project → Projects** ·
@@ -74,6 +80,7 @@ module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
 > Obligations · Complementations**. `[FACT: System 2.0 page]`
 
 ## GAP MAP (Abilities — most of the spec is now the Notion design)
+
 - [x] **SK1 — RESOLVED (Victor + Notion): module stays "Skills"; adopts the "Abilities" design** — a universal cross-domain capability-forging engine
       (Ability→Levels→Activities→Actions→Tracker), higher-order/cross-cutting, goal-driven, spanning Professional·
       Technical·Creative·Social·Mental·Physical. The 2-table v2 was the floor; the 5-DB Notion is the design.
@@ -87,7 +94,7 @@ module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
       **Development Tracker = the practice log** (reflective: progress-feeling/focus/insights/next-plan); Total
       Practice Time **derived** from logged actions. `[FACT Notion Actions/Tracker; ADR-004]`
 - [x] **SK5 — Knowledge composition CONFIRMED.** A skill's theory/content/mastery → a **Knowledge compound set**;
-      Skills owns the *leveling · activities · doing · reflection · proficiency*. `[FACT knowledge/contract L63]`
+      Skills owns the _leveling · activities · doing · reflection · proficiency_. `[FACT knowledge/contract L63]`
 - [x] **SK6 — Assessment/evidence = Activity Types + level gates.** `Activity.Type` includes **Assessment · Review
       · Project · Study · Practice**; level advancement is gated by **Completion Criteria + Success Indicators**;
       evidence/artifacts via **pages** + **Project-type activities** (→ Projects). `[FACT Notion Activities]`
@@ -99,6 +106,7 @@ module** (like Purposes) that links every life domain. `[FACT: 5 data sources]`
       its Levels/Activities/practice-Sessions/Knowledge/evidence.
 
 ## Skills as an OS EXTENSION (the reshape)
+
 **OWNS:** the capability-forging spine — `skills` (cross-domain, goal-driven, leveled) · `skill_levels` (sequenced
 curriculum + gates) · `skill_activities` (typed practice tasks) · `skill_actions` (scheduled instances) ·
 `skill_dev_logs` (reflective practice log). **COMPOSES:** Sessions (Actions=`practice` sub-type + scheduler;
@@ -109,10 +117,12 @@ Purposes (skill-goal progress) · Health (Disciplines bind a Skill). **Higher-or
 but its CORE composes ✅ foundations → documentable now; STUBS: Purposes(#9)·Physical-Roles(new). `[INTENT reshape]`
 
 ### Spaces requirements (→ spaces.md accumulator)
+
 Capability Blocks: **level/curriculum tree view · progress/mastery timeline · practice logger · reflective
 dev-log · evidence/portfolio**. A skill = a Space; `Activity.Type` dispatches work to Sessions/Knowledge/Projects.
 
 ## Current / evolved intent — the AUTHORITATIVE layer (Victor 2026-07-14, co-created)
+
 The years-old Notion is context; THIS is the module's real target. **Skills = a game/fiction-like growth engine
 that produces real-life outcomes** — a digital planning/environment for deliberately forging oneself. `[INTENT Victor]`
 
@@ -154,6 +164,7 @@ that produces real-life outcomes** — a digital planning/environment for delibe
 > AI/import/community = opt-in extension-model.
 
 ---
+
 **STATUS: WHOLE (2026-07-14).** Sources synthesized (code + v1 + Notion-as-context) + **current-intent layer
 co-created (CI-1..CI-4, authoritative)**. Module keeps name **Skills**, adopts+**evolves** the Abilities design into
 a game-like, dependency-graphed, user-composable growth engine producing real-life outcomes. **Ready for TRANSFORM**

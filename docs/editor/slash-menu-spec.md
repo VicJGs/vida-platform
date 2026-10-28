@@ -4,12 +4,14 @@
 > `docs/specs/features/ui-3-vida-editor/e4-slash-menu.md`. Ground truth for the surface: `docs/editor/current-*.md`.
 
 ## What it is
+
 Type `/` inside `<VidaEditor>` → a caret-anchored, filterable popup of blocks. Arrow/Enter/Esc drive it while **focus
 stays in the editor** (a WAI-ARIA **combobox**, not a menu). Selecting a block deletes the typed `/query` and inserts or
 turns the current block into the chosen type. No public prop — a built-in of the editing surface (parity with the
 default-on toolbar); inert until `/` is typed, so a read-only editor needs no gate.
 
 ## Mechanism (`@tiptap/suggestion` + `ReactRenderer`)
+
 - **`extensions/slash-command.ts`** — an `Extension` whose `addProseMirrorPlugins` returns
   `Suggestion({ char:'/', allowSpaces:false, startOfLine:false, allow, items, command, render })`.
   - `allow: ({editor}) => !editor.isActive('codeBlock')` — `/` stays literal in code (BR-E4-10).
@@ -22,8 +24,10 @@ default-on toolbar); inert until `/` is typed, so a read-only editor needs no ga
 - **Positioning** is the plugin's (`props.mount`) — no tippy.js, no manual caret-rect math.
 
 ## Command set (`slash-commands.ts`)
+
 An editor-local `SlashMenuItem` view-model (NOT `@vida/types.SlashCommand`, whose `block_type` is integration-only —
 BR-7 kept). `SLASH_MENU_ITEMS`:
+
 - **Standard blocks (usable now)** — Text · Heading 1/2/3 · Bulleted/Numbered/Task list · Quote · Code block · Divider ·
   Table · Callout. Each `run(editor, range) = editor.chain().focus().deleteRange(range).<cmd>().run()`. Heading/Text use
   SET semantics (`setNode('heading',{level})`/`setParagraph()` — turn-into), deliberately NOT E3's toggle. Table =
@@ -37,6 +41,7 @@ BR-7 kept). `SLASH_MENU_ITEMS`:
   Daily-summary block, dimmed).
 
 ## Popup (`slash-menu.tsx`)
+
 A `forwardRef` `role="listbox"` panel wrapped in `<Theme name="Menu">` (the portal-scope lesson — the ReactRenderer
 element sits outside the editor frame; ReactRenderer renders as a React portal inside `<EditorContent>`, so it inherits
 the app's Tamagui context). Rows are `role="option"` + `aria-selected`/`aria-disabled`, grouped by category (Basic ·
@@ -46,6 +51,7 @@ $itemText, `$md` radius via the token scale) — fully Tamagui, **no injected CS
 printables (they fall through to the editor to re-filter).
 
 ## Accessibility (§XIV) — combobox
+
 - **The host is the combobox.** While the menu is open, `editor.tsx`'s `editorProps.attributes` (a FUNCTION of state)
   flips the host `role` textbox→**combobox** and adds `aria-expanded`/`aria-controls`/`aria-haspopup`. This is the
   **single `role` writer** — a ProseMirror plugin CANNOT override `role` (PM consumes `view._props`/editorProps before
@@ -56,10 +62,12 @@ printables (they fall through to the editor to re-filter).
 - Focus never leaves the editor; ↑/↓ skip disabled options; Esc closes; Tab closes without trapping.
 
 ## Boundary
+
 `@vida/editor` stays presentational: E4 adds only `@tiptap/suggestion` (new) + `@tiptap/react` `ReactRenderer` + `@vida/ui`
 `Theme`/tokens. No `@vida/core`/app import.
 
 ## Tests / verify
+
 `slash-commands.test.ts` (view-model + filter + each `run` closure on a real editor), `slash-menu.test.tsx` (listbox/
 option roles + aria + imperative keyboard + host aria-activedescendant), `extensions/slash-command.test.ts` (plugin
 registers; `insertContent('/')` trips detection → `slashActive` true → combobox attrs; code-block guard). Stories "Slash

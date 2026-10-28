@@ -15,11 +15,7 @@ import { createDrizzleProxy, type SqliteDriver, type DrizzleDb } from '../../../
 import { migrate } from '../../../db/migrations/runner'
 import { syncQueue } from '../../../db/schema/foundation/sync-queue'
 import { initVault } from '../../../encryption/vault'
-import {
-  createSessionRegistry,
-  SHIPPED_SESSION_TYPES,
-  type SessionRegistry,
-} from '../registry'
+import { createSessionRegistry, SHIPPED_SESSION_TYPES, type SessionRegistry } from '../registry'
 import {
   type SessionTypeDef,
   InvalidSessionTypeDef,
@@ -47,7 +43,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -94,9 +93,7 @@ describe('AR-5 — migration wiring', () => {
         `SELECT name FROM sqlite_master WHERE type='table' AND name IN ('sessions','session_type_registry','session_attachments')`,
       )
     ).flat()
-    expect(names).toEqual(
-      expect.arrayContaining(['sessions', 'session_type_registry', 'session_attachments']),
-    )
+    expect(names).toEqual(expect.arrayContaining(['sessions', 'session_type_registry', 'session_attachments']))
     await driver.close()
   })
 })
@@ -116,9 +113,7 @@ describe('AR-5 — SessionRegistry.register (BR-3/BR-4/BR-1 + G1)', () => {
     expect(got.sub_type).toBe('my_deep_work')
     expect(got.effects).toEqual(['log_time'])
     expect(got.permissions.allowed_effects).toEqual(['log_time'])
-    expect(got.lifecycle.transitions).toEqual([
-      { from: 'scheduled', to: 'in_progress', event: 'start' },
-    ])
+    expect(got.lifecycle.transitions).toEqual([{ from: 'scheduled', to: 'in_progress', event: 'start' }])
     expect(got.attachment_defaults).toEqual({})
     await driver.close()
   })
@@ -127,9 +122,7 @@ describe('AR-5 — SessionRegistry.register (BR-3/BR-4/BR-1 + G1)', () => {
     const { registry, driver } = await setup()
     const bad = { ...validUserType() } as Partial<SessionTypeDef>
     delete bad.permissions
-    await expect(registry.register(bad as SessionTypeDef)).rejects.toBeInstanceOf(
-      InvalidSessionTypeDef,
-    )
+    await expect(registry.register(bad as SessionTypeDef)).rejects.toBeInstanceOf(InvalidSessionTypeDef)
     await driver.close()
   })
 

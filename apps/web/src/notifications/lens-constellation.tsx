@@ -43,13 +43,29 @@ function Hub({ area, cx, cy }: { area: AttentionArea; cx: number; cy: number }) 
         backgroundColor="$colorSurfaceSecondary"
         alignItems="center"
         justifyContent="center"
-        focusVisibleStyle={{ outlineColor: '$colorFocusRing', outlineWidth: 2, outlineStyle: 'solid', outlineOffset: 2 }}
+        focusVisibleStyle={{
+          outlineColor: '$colorFocusRing',
+          outlineWidth: 2,
+          outlineStyle: 'solid',
+          outlineOffset: 2,
+        }}
       >
         <View color="$colorTextPrimary">
           <Icon size={22} aria-hidden />
         </View>
         {count > 0 ? (
-          <View position="absolute" top={-4} right={4} minWidth={18} height={18} paddingHorizontal={4} borderRadius={99} backgroundColor="$colorBrandPrimary" alignItems="center" justifyContent="center">
+          <View
+            position="absolute"
+            top={-4}
+            right={4}
+            minWidth={18}
+            height={18}
+            paddingHorizontal={4}
+            borderRadius={99}
+            backgroundColor="$colorBrandPrimary"
+            alignItems="center"
+            justifyContent="center"
+          >
             <Text fontSize={10} color="$colorTextInverse">
               {count}
             </Text>
@@ -58,7 +74,18 @@ function Hub({ area, cx, cy }: { area: AttentionArea; cx: number; cy: number }) 
         {/* alert dots orbiting the hub, colored by severity */}
         {area.entries.slice(0, 5).map((e, i) => {
           const a = (i / 5) * Math.PI * 2
-          return <View key={e.id} position="absolute" left={HUB / 2 + Math.cos(a) * 42 - 4} top={HUB / 2 + Math.sin(a) * 42 - 4} width={8} height={8} borderRadius={99} backgroundColor={e.marker} />
+          return (
+            <View
+              key={e.id}
+              position="absolute"
+              left={HUB / 2 + Math.cos(a) * 42 - 4}
+              top={HUB / 2 + Math.sin(a) * 42 - 4}
+              width={8}
+              height={8}
+              borderRadius={99}
+              backgroundColor={e.marker}
+            />
+          )
         })}
       </View>
       <Text fontSize="$small" color="$colorTextPrimary">
@@ -77,23 +104,58 @@ export function ConstellationLens({ model }: { model: AttentionModel }) {
 
   return (
     <View gap="$16">
-      <View position="relative" height={H} borderWidth={1} borderColor="$colorBorderDefault" borderRadius="$md" backgroundColor="$colorSurfacePrimary" overflow="hidden">
+      <View
+        position="relative"
+        height={H}
+        borderWidth={1}
+        borderColor="$colorBorderDefault"
+        borderRadius="$md"
+        backgroundColor="$colorSurfacePrimary"
+        overflow="hidden"
+      >
         {/* connector lines center→hub */}
-        <svg width="100%" height="100%" style={{ position: 'absolute', inset: 0, color: 'var(--colorBorderDefault)', opacity: 0.4 }} aria-hidden>
+        <svg
+          width="100%"
+          height="100%"
+          style={{ position: 'absolute', inset: 0, color: 'var(--colorBorderDefault)', opacity: 0.4 }}
+          aria-hidden
+        >
           {areas.map((_, i) => {
             const ang = (i / Math.max(1, areas.length)) * Math.PI * 2 - Math.PI / 2
-            return <line key={i} x1={cx} y1={cy} x2={cx + Math.cos(ang) * R} y2={cy + Math.sin(ang) * R} stroke="currentColor" strokeWidth="1" />
+            return (
+              <line
+                key={i}
+                x1={cx}
+                y1={cy}
+                x2={cx + Math.cos(ang) * R}
+                y2={cy + Math.sin(ang) * R}
+                stroke="currentColor"
+                strokeWidth="1"
+              />
+            )
           })}
         </svg>
         {/* center: you */}
-        <View position="absolute" left={cx} top={cy} width={10} height={10} marginLeft={-5} marginTop={-5} borderRadius={99} backgroundColor="$colorTextMuted" />
+        <View
+          position="absolute"
+          left={cx}
+          top={cy}
+          width={10}
+          height={10}
+          marginLeft={-5}
+          marginTop={-5}
+          borderRadius={99}
+          backgroundColor="$colorTextMuted"
+        />
         {areas.map((area, i) => {
           const ang = (i / Math.max(1, areas.length)) * Math.PI * 2 - Math.PI / 2
           return <Hub key={area.area} area={area} cx={cx + Math.cos(ang) * R} cy={cy + Math.sin(ang) * R} />
         })}
       </View>
       <Text fontSize="$small" color="$colorTextMuted">
-        {total === 0 ? 'Nothing needs you right now.' : `${total} ${total === 1 ? 'alert' : 'alerts'} across ${areas.length} ${areas.length === 1 ? 'area' : 'areas'}. Select an area to read its notifications.`}
+        {total === 0
+          ? 'Nothing needs you right now.'
+          : `${total} ${total === 1 ? 'alert' : 'alerts'} across ${areas.length} ${areas.length === 1 ? 'area' : 'areas'}. Select an area to read its notifications.`}
       </Text>
     </View>
   )

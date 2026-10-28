@@ -9,12 +9,7 @@
 
 import { describe, it, expect } from 'vitest'
 import { classifyLayer, buildDisclosure } from '../classification'
-import {
-  INGESTION_LAYERS,
-  UnknownIngestionLayer,
-  type IngestionLayer,
-  type IngestionSource,
-} from '../types'
+import { INGESTION_LAYERS, UnknownIngestionLayer, type IngestionLayer, type IngestionSource } from '../types'
 
 function source(layer: string): IngestionSource {
   return { integrationId: 'apple-health', layer: layer as IngestionLayer, normalizationContractId: 'health-v1' }

@@ -30,7 +30,7 @@
      slot [FACT: ui CLAUDE.md canvas-view BR-CB-S1-6]. WeekView is hosted the same way Month/Agenda are
      [FACT: calendar/index.tsx:175-200].
 
-## 2. Business rules (BR-CAL-S3-*)
+## 2. Business rules (BR-CAL-S3-\*)
 
 1. **BR-CAL-S3-1 · Presentational arrangement only.** Blocks arrive pre-bucketed by `day` (S7 `useCalendar` derives
    them); WeekView only POSITIONS. The accessible list order = input order (the provider orders); `layoutDay` sorts a
@@ -61,14 +61,14 @@
 6. **BR-CAL-S3-6 · Visible window.** `hours: readonly [start, end]` — integer hours, half-open `[start, end)`, default
    **[8, 20]** = rows 08:00…19:00 (the mockup's 12 rows [FACT: mockup:221]). Guard: non-integer / `start ≥ end` /
    outside 0–24 → default + dev-warn. The window **auto-extends** to `floor(min start)` and `ceil(max drawn end)`,
-   **clamped to [0, 24]**, so a 06:30 run or a 21:00 call is never hidden; `hours` is the *minimum* window.
+   **clamped to [0, 24]**, so a 06:30 run or a 21:00 call is never hidden; `hours` is the _minimum_ window.
    **DOC-DERIVED (was I-1):** #19 exists to remove the grid's info-crush — "nothing behind +N more" [FACT: envision.md:25
    EC-3; calendar-vision.md §1.2, §6 "dead, non-interactive count"]; the lens shows what the modules hold, never less
    [FACT: ADR-007 read-only lens; IR-6 never assume/alter time]; the quality bar forbids silent loss (copy/state
    honesty: "dead-end → anti-lost") [FACT: frontend-quality-bar/_index.md:41-42 — supporting, not decisive]. A fixed window that drops out-of-hours items would re-create
    the hidden-item defect #19 was chartered to remove.
 7. **BR-CAL-S3-7 · Block geometry.** `top = (startHour − h0) × HOUR_PX`; `height = max((end − startHour) × HOUR_PX,
-   24)`. The late-block clamp happens BEFORE clustering (BR-8): `drawnStart = min(start, h1 − 24/HOUR_PX)`, so a
+24)`. The late-block clamp happens BEFORE clustering (BR-8): `drawnStart = min(start, h1 − 24/HOUR_PX)`, so a
    23:50 block is laid out (and lane-checked) as 23:30–24:00 and stays inside the grid; `top` derives from `drawnStart`.
    `endHour` absent → **1h** (the greybox draws every block one hour-row tall [FACT: greybox week.png, day.png]).
    `endHour ≤ startHour` or non-finite → 1h + dev-warn; `endHour > 24` → 24. `startHour` non-finite or outside [0, 24)
@@ -98,9 +98,9 @@
 10. **BR-CAL-S3-10 · Column headers.** Per day: uppercase-via-CSS tracked weekday eyebrow ("MON") + the day number in
     serif `$display` family at `$subheading`, **tabular**, **paired `lineHeight="$subheading"`** [FACT: ui CLAUDE.md
     Rules "Large type PAIRS its line-height"]. The `today` column (string-equal): number in **`$colorBrandEmphasis`**
-    + an **accent underline** (the calendar-view `TodayMark` recipe — not colour alone, WCAG 1.4.1) + a visually-hidden
-    ", today" in the header text (which names that day's list, BR-11). Parsed TZ-safely by parts; a
-    `TZ=America/Sao_Paulo`-forced test [memory: date-code-needs-tz-forced-tests].
+    - an **accent underline** (the calendar-view `TodayMark` recipe — not colour alone, WCAG 1.4.1) + a visually-hidden
+      ", today" in the header text (which names that day's list, BR-11). Parsed TZ-safely by parts; a
+      `TZ=America/Sao_Paulo`-forced test [memory: date-code-needs-tz-forced-tests].
 11. **BR-CAL-S3-11 · A11y topology (explicit — where `aria-hidden` sits).**
     - Outer `role="group"` named via `aria-label`/`aria-labelledby` (`warnMissingName`, state-gated).
     - Each day column = `[aria-hidden hour-line layer]` + a **sibling** positioned container that IS the
@@ -157,39 +157,40 @@ import { type ViewState, Message, warnMissingName } from '../internal/data-view'
 export interface CalChip {
   id: string
   title: ReactNode
-  color?: string        // purpose colour — USER DATA hex
+  color?: string // purpose colour — USER DATA hex
 }
 export interface TimedBlock {
   id: string
   title: ReactNode
-  color?: string        // purpose colour — USER DATA hex
-  day: string           // 'YYYY-MM-DD' — must be one of `days`
-  startHour: number     // fractional local clock hour in [0, 24); 9.5 = 09:30
-  endHour?: number      // absent → +1h; clamped to 24
+  color?: string // purpose colour — USER DATA hex
+  day: string // 'YYYY-MM-DD' — must be one of `days`
+  startHour: number // fractional local clock hour in [0, 24); 9.5 = 09:30
+  endHour?: number // absent → +1h; clamped to 24
 }
 export interface WeekViewProps {
-  days: readonly string[]               // 'YYYY-MM-DD', display order; 7 = Week, 1 = Day
+  days: readonly string[] // 'YYYY-MM-DD', display order; 7 = Week, 1 = Day
   blocks: readonly TimedBlock[]
   allDay?: readonly CalChip[]
-  today?: string                        // 'YYYY-MM-DD'
-  hours?: readonly [number, number]     // MINIMUM window, integer hours, half-open [start, end); default [8, 20]
-  timeFormat?: '12h' | '24h'            // user_preferences.time_format (BR-16); default '24h'
-  state?: ViewState                     // default 'success'
-  empty?: ReactNode                     // slot overrides (S2 precedent)
+  today?: string // 'YYYY-MM-DD'
+  hours?: readonly [number, number] // MINIMUM window, integer hours, half-open [start, end); default [8, 20]
+  timeFormat?: '12h' | '24h' // user_preferences.time_format (BR-16); default '24h'
+  state?: ViewState // default 'success'
+  empty?: ReactNode // slot overrides (S2 precedent)
   error?: ReactNode
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
   'aria-labelledby'?: string
 }
-export function WeekView(props: WeekViewProps): ReactElement   // non-generic → React-19 ref-as-prop
+export function WeekView(props: WeekViewProps): ReactElement // non-generic → React-19 ref-as-prop
 
 // internal/week-layout.ts (NOT barrel-exported; unit-tested directly)
 export const HOUR_PX = 48
-export function formatHour(h: number, fmt: '12h' | '24h', kind: 'start' | 'end' | 'gutter'): string  // BR-3
+export function formatHour(h: number, fmt: '12h' | '24h', kind: 'start' | 'end' | 'gutter'): string // BR-3
 export function windowFor(blocks: readonly TimedBlock[], hours?: readonly [number, number]): [number, number]
-export function layoutDay(blocks: readonly TimedBlock[], window: readonly [number, number]):
-  { block: TimedBlock; top: number; height: number; lane: number; lanes: number
-    compact: boolean }[]   // compact = drawnHeight < 44 || lanes >= 3 (BR-8/9); input order preserved
+export function layoutDay(
+  blocks: readonly TimedBlock[],
+  window: readonly [number, number],
+): { block: TimedBlock; top: number; height: number; lane: number; lanes: number; compact: boolean }[] // compact = drawnHeight < 44 || lanes >= 3 (BR-8/9); input order preserved
 ```
 
 Refinements vs the proposed seam (all within the seam's per-slice ratification licence):
@@ -256,12 +257,12 @@ intra-package). A block whose `day ∉ days` is skipped + dev-warn. Barrel: `Wee
 5. Barrel exports; `pnpm --filter @vida/ui exec tsc` / eslint / vitest.
 6. `apps/web/src/app/calendar/index.tsx`: **BR-16 root fix first** — read `weekStartsOn`/`timeFormat` from
    `usePreferencesStore`; `weekStartOf(d, weekStartsOn)` replaces `mondayOf` in `periodLabel`/`shift`/`agendaFixture`
-   + `CalendarView weekStartsOn={weekStartsOn}` for Month (+ the surface tests in §4). Then `weekFixture(focused,
-   weekStartsOn)` (the `agendaFixture` pattern — the 7 days from `weekStartOf`, the rich day on today when in-week;
-   returns dated blocks + a dated chip source the Day branch filters) + dispatch (both pass `timeFormat`): `range === 'week'` →
-   `<WeekView days={weekKeys} blocks allDay today aria-label="Week" />`; `range === 'day'` → `<WeekView
-   days={[focusedKey]} blocks/allDay filtered by day={focusedKey} … aria-label="Day" />`. Placeholder copy narrows to
-   Year/Living. apps/web tsc + calendar-surface tests.
+   - `CalendarView weekStartsOn={weekStartsOn}` for Month (+ the surface tests in §4). Then `weekFixture(focused,
+weekStartsOn)` (the `agendaFixture` pattern — the 7 days from `weekStartOf`, the rich day on today when in-week;
+     returns dated blocks + a dated chip source the Day branch filters) + dispatch (both pass `timeFormat`): `range === 'week'` →
+     `<WeekView days={weekKeys} blocks allDay today aria-label="Week" />`; `range === 'day'` → `<WeekView
+days={[focusedKey]} blocks/allDay filtered by day={focusedKey} … aria-label="Day" />`. Placeholder copy narrows to
+     Year/Living. apps/web tsc + calendar-surface tests.
 7. g2 code review → Visual Gate (blocking) → currency (§XXIX):
    - `docs/specs/components/ui-2-platform-views/v11-week-view.md` (the numbered per-view spec);
    - `docs/specs/components/ui-2-platform-views/_index.md` change-log rows for **V10 (missing since S2) and V11**;
@@ -271,11 +272,12 @@ intra-package). A block whose `day ∉ days` is skipped + dev-warn. Barrel: `Wee
      `weekStartsOn` (S7 must not re-hard-code Monday);
    - `.claude/docs/decisions.md` rows: window auto-extend + overlap lanes (doc-derived from the EC-3 no-hidden-items
      charter) · undated chips (doc-fixed) · calendar reads `timeFormat`/`weekStartsOn` (the fe-home READ precedent);
-   → commit (S2 message shape).
+     → commit (S2 message shape).
 
 ## 5a. Deviation record (§XXVIII)
 
 **D-S3-DEV-1 · a shared-column block shows only its START time visually (lanes ≥ 2).**
+
 - **What diverged:** BR-9 gave regular blocks a "09:00–10:30" range over the title. The live Visual Gate (Week 1440,
   Sunday overlap pair — no probe caught it, the screenshot did) showed the range WRAPPING to two lines in a ~75px
   ½-column lane, pushing the title out (“Deep work” clipped mid-glyph, “Call Ma…” cut).
@@ -295,12 +297,12 @@ range for SR + a separator · 3 skeleton bars · cluster-reset + Sunday-columns 
 
 ## 6. Change log
 
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-10-18 | fe-calendar S3 | PLAN authored (gate 1). Grounded in slice-map:36, seam §A, envision EC-4/11-14 + :50 (64px gutter), interpretation IR-6, mockup § WEEK, greybox week/day, AgendaView/CalendarView/CanvasView patterns. |
+| Date       | Session        | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | -------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-10-18 | fe-calendar S3 | PLAN authored (gate 1). Grounded in slice-map:36, seam §A, envision EC-4/11-14 + :50 (64px gutter), interpretation IR-6, mockup § WEEK, greybox week/day, AgendaView/CalendarView/CanvasView patterns.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | 2026-10-18 | fe-calendar S3 | gate-1 independent critique **REVISE → 12 folded:** **B1** Week scroll region made keyboard-reachable (tabIndex/role=region/label/ring; acceptance no longer self-contradicts axe) · **M2** a11y topology explicit (aria-hidden hour layer is a SIBLING of the positioned role=list; tested no hidden ancestor) · **M3** `layoutDay` clusters by DRAWN extent + checks every lane + geometry-only sort · **M4** block anatomy sized to the 17/21px line boxes → regular/compact (<44px one row "09:30 Title"), no lane cap · **M5** today = colour + underline + sr ", today" (1.4.1) · **M6** I-4 reframed → DOC-FIXED (canvas-view STATE RULE) · **M7** NEW I-5 all-day day attribution (`CalChip.day?` + "Thu ·" prefix; fixture filters its own dated source) · **M8** AA set covers every text class + pre-authorized `$colorTextPrimary` time-label fallback · **N9** 375/768 maths stated · **N10** contract nits (half-open `[8,20]`, `layoutDay(blocks,h0)`, `days={weekKeys}`, hours/startHour guards, `formatHour` rounding, 1h cite → greybox) · **N11** I-3 → refinement R1 · **N12** currency + `_index` V10/V11 rows + web-client-runtime + decisions.md rows. **Open for Approval 1: I-1 · I-2 · I-5.** |
-| 2026-10-18 | fe-calendar S3 | re-critique **SHIP** (all 12 verified resolved from disk) + 4 nits folded: window clamped [0,24] + late-block top clamp · compact also when `lanes ≥ 3` · chip `day ∉ days` guard + TZ-safe prefix · `effectiveEmpty` on the renderable set. Declined: a `scrollLabel` prop (no consumer needs i18n of "Week grid" in M1 — the house's other renderers hard-code English copy too). superseded by the grounding row below. |
-| 2026-10-18 | fe-calendar S3 | **Grounding pass (Victor: "check the documentation" ×3 on I-1/I-2/I-5).** Swept the governing corpus I had skipped: IA (`/calendar` is Sessions-owned) · Sessions feature + intake (Calendar = read-only renderer of the placed result; overlapping windows are valid data, SS-9 / current-BR:110) · Relationships/Routines/Journals/Notifications intakes · ADR-007/008 · frontend-replan surface-map/decomposition · quality bar · decisions ledger · ADR-002 `user_preferences` · shipped apps/web stores. **Results:** I-1 window auto-extend + I-2 overlap lanes → **DOC-DERIVED** (EC-3/vision §6 no-hidden-items charter + Sessions overlap-is-valid + IR-6); I-5 → **DOC-FIXED as mocked** (undated chips; `CalChip.day?` dropped — it was an ADD beyond the approved visual); **NEW BR-16** — `time_format`/`week_starts_on` are user prefs already live in `preferences-store` (fe-settings): WeekView takes `timeFormat`, the surface derives weeks from `weekStartsOn` and ROOT-fixes the hard-coded `mondayOf` across week/agenda/living. No open interpretations remain. **Awaiting Approval 1.** |
-| 2026-10-18 | fe-calendar S3 | **Approval 1 (Victor).** Preflight: every cited path/export verified on disk (preferences-store `usePreferencesStore`:68 + types:13-15 · data-view exports · CanvasView `empty?`:48-49 · focusVisibleStyle/numberOfLines in-house · stories/test/current-spec files · ADR-002:3528-3529 · barrel:71). **3 citation fixes:** BR-8 overlap grounding re-anchored on the Sessions intake Calendar-reader resolution (:113-115; the availability-window line is supporting) · BR-6 quality-bar cite marked supporting · BR-16 root-fix precedent pinned to decisions.md:1119-1121. + TZ-test recipe (agenda-view.test.tsx:2-3). **Preflight PASSED.** |
-| 2026-10-18 | fe-calendar S3 | gate-2 independent critique **REVISE → 10 folded** (buildability confirmed: focusVisibleStyle/tabIndex/role=region/% left/numberOfLines all in-house): **F1** Month passes the shipped `CalendarView weekStartsOn` (else Week/Agenda Sunday vs Month Monday) · **F2** surface `afterEach` resets `usePreferencesStore` · **F3** late-block clamp moved BEFORE clustering via `drawnStart`; `layoutDay(blocks,[h0,h1])` · **F4** validate → renderable → `windowFor` → `layoutDay` order (NaN-safe) · **F5** `formatHour(h,fmt,kind)` pinned (start ≤1439, end ≤1440, 12h minutes always, gutter drops :00) + edge tests · **F6** ONE compact rule across BR-8/9/contract/tests · **F7** Visual Gate + lane-rect intersection probe, keyboard ring-clip cell, 12h + Sunday cells · **F8** 6 missing tests · **F9** S7 seam gains `weekStartsOn` + Monday-assuming comments neutralized · **F10** `periodLabel(range, focused, weekStartsOn)` both calls + 'This week' Sunday test. **Awaiting Approval 2.** |
-| 2026-10-19 | fe-calendar S3 | **Approval 2 → BUILT → Visual Gate PASS (Victor-reviewed 2026-10-19; D-S3-DEV-1 approved).** g2 code review: 8 findings folded (no invented end label · empty-with-items renders none + warns · compact keeps full range for SR + separator · 3 skeleton bars · cluster-reset + Sunday-columns tests; NIT live-region-at-mount = AgendaView precedent, noted). Gate-caught: sr-only containing block → page overflow (`position:relative`) · engine-dependent column names → explicit sr-only name · D-S3-DEV-1. tsc 0 · eslint 0 (changed files; `index.ts:1` triple-slash = pre-existing, `@vida/ui` has no lint script) · @vida/ui **605/605** (6 first-test cold-start timeouts under memory pressure, 105/105 re-run alone; `testTimeout:15000` added to week-view.test per the canvas-reader precedent) · @vida/web **677/677**. Currency → `v11-week-view.md` + `_index` V10/V11 rows + ui CLAUDE.md + web-client-runtime current-spec + slice-map ledger + seam-contract §A/§B + decisions ledger. |
+| 2026-10-18 | fe-calendar S3 | re-critique **SHIP** (all 12 verified resolved from disk) + 4 nits folded: window clamped [0,24] + late-block top clamp · compact also when `lanes ≥ 3` · chip `day ∉ days` guard + TZ-safe prefix · `effectiveEmpty` on the renderable set. Declined: a `scrollLabel` prop (no consumer needs i18n of "Week grid" in M1 — the house's other renderers hard-code English copy too). superseded by the grounding row below.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| 2026-10-18 | fe-calendar S3 | **Grounding pass (Victor: "check the documentation" ×3 on I-1/I-2/I-5).** Swept the governing corpus I had skipped: IA (`/calendar` is Sessions-owned) · Sessions feature + intake (Calendar = read-only renderer of the placed result; overlapping windows are valid data, SS-9 / current-BR:110) · Relationships/Routines/Journals/Notifications intakes · ADR-007/008 · frontend-replan surface-map/decomposition · quality bar · decisions ledger · ADR-002 `user_preferences` · shipped apps/web stores. **Results:** I-1 window auto-extend + I-2 overlap lanes → **DOC-DERIVED** (EC-3/vision §6 no-hidden-items charter + Sessions overlap-is-valid + IR-6); I-5 → **DOC-FIXED as mocked** (undated chips; `CalChip.day?` dropped — it was an ADD beyond the approved visual); **NEW BR-16** — `time_format`/`week_starts_on` are user prefs already live in `preferences-store` (fe-settings): WeekView takes `timeFormat`, the surface derives weeks from `weekStartsOn` and ROOT-fixes the hard-coded `mondayOf` across week/agenda/living. No open interpretations remain. **Awaiting Approval 1.**                                                                                                         |
+| 2026-10-18 | fe-calendar S3 | **Approval 1 (Victor).** Preflight: every cited path/export verified on disk (preferences-store `usePreferencesStore`:68 + types:13-15 · data-view exports · CanvasView `empty?`:48-49 · focusVisibleStyle/numberOfLines in-house · stories/test/current-spec files · ADR-002:3528-3529 · barrel:71). **3 citation fixes:** BR-8 overlap grounding re-anchored on the Sessions intake Calendar-reader resolution (:113-115; the availability-window line is supporting) · BR-6 quality-bar cite marked supporting · BR-16 root-fix precedent pinned to decisions.md:1119-1121. + TZ-test recipe (agenda-view.test.tsx:2-3). **Preflight PASSED.**                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| 2026-10-18 | fe-calendar S3 | gate-2 independent critique **REVISE → 10 folded** (buildability confirmed: focusVisibleStyle/tabIndex/role=region/% left/numberOfLines all in-house): **F1** Month passes the shipped `CalendarView weekStartsOn` (else Week/Agenda Sunday vs Month Monday) · **F2** surface `afterEach` resets `usePreferencesStore` · **F3** late-block clamp moved BEFORE clustering via `drawnStart`; `layoutDay(blocks,[h0,h1])` · **F4** validate → renderable → `windowFor` → `layoutDay` order (NaN-safe) · **F5** `formatHour(h,fmt,kind)` pinned (start ≤1439, end ≤1440, 12h minutes always, gutter drops :00) + edge tests · **F6** ONE compact rule across BR-8/9/contract/tests · **F7** Visual Gate + lane-rect intersection probe, keyboard ring-clip cell, 12h + Sunday cells · **F8** 6 missing tests · **F9** S7 seam gains `weekStartsOn` + Monday-assuming comments neutralized · **F10** `periodLabel(range, focused, weekStartsOn)` both calls + 'This week' Sunday test. **Awaiting Approval 2.**                                                                                                                                                                                                              |
+| 2026-10-19 | fe-calendar S3 | **Approval 2 → BUILT → Visual Gate PASS (Victor-reviewed 2026-10-19; D-S3-DEV-1 approved).** g2 code review: 8 findings folded (no invented end label · empty-with-items renders none + warns · compact keeps full range for SR + separator · 3 skeleton bars · cluster-reset + Sunday-columns tests; NIT live-region-at-mount = AgendaView precedent, noted). Gate-caught: sr-only containing block → page overflow (`position:relative`) · engine-dependent column names → explicit sr-only name · D-S3-DEV-1. tsc 0 · eslint 0 (changed files; `index.ts:1` triple-slash = pre-existing, `@vida/ui` has no lint script) · @vida/ui **605/605** (6 first-test cold-start timeouts under memory pressure, 105/105 re-run alone; `testTimeout:15000` added to week-view.test per the canvas-reader precedent) · @vida/web **677/677**. Currency → `v11-week-view.md` + `_index` V10/V11 rows + ui CLAUDE.md + web-client-runtime current-spec + slice-map ledger + seam-contract §A/§B + decisions ledger.                                                                                                                                                                                                              |

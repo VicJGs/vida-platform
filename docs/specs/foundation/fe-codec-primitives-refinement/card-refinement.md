@@ -6,6 +6,7 @@
 > **awaiting Approval 1 (revised — P2 session, 2026-10-06: landmark fix added).**
 
 ## 0a. P1-gate carry-in (the headline P2 decision — grounded in the contract + code)
+
 P1's Visual Gate flagged: Card renders `header`/`footer` as real `<header>`/`<footer>` elements. Because the Card
 FRAME is a `<div>` (`role="group"`/`"button"`) — **not** sectioning content — those nested `<header>`/`<footer>`
 escape to `<body>` scope and are exposed as `banner`/`contentinfo` **landmarks**. In a repeated-row (list) context that
@@ -13,6 +14,7 @@ is N duplicate landmarks → axe `landmark-no-duplicate-banner`/`-contentinfo` (
 composed rows via Card `children`). [FACT: task `## Phase log` ⚑ P2 flag; `card.tsx:80-92` `render:'header'`/`'footer'`]
 
 **The contract already contradicts itself — and the Intent governs:**
+
 - `card.md:6` **Intent**: Card is "**NOT a page section landmark by default**." (the governing statement)
 - `card.md:45` / `u5-card.md:42-43,70,77` **mechanism**: "header/footer are `<header>`/`<footer>` regions inside"
   (`render:'header'`/`'footer'`). `card.test.tsx:41` even encodes the symptom: "renders … as `<header>`/`<footer>`
@@ -31,11 +33,13 @@ mechanism that has no AT value. Fewer-divergence + Intent-faithful wins. `card.t
 CONTENT renders with **no** `banner`/`contentinfo` landmark.
 
 ## 0. Source model (frontend-source-of-truth)
+
 Code-first interim (`docs/specs/foundation/frontend-source-of-truth.md`): tokens come from the shipped Style-Dictionary→
 Tamagui pipeline; **no Figma/Tokens Studio** here; brand VALUES are M4/P2. Acceptance verified via the **Storybook +
 Brave Visual Gate**, not a Figma diff. No palette values authored in this unit.
 
 ## 1. Context (grounded — No-Guessing)
+
 - `Card` = a static grouped surface, renders a `<div>` (`role="group"`, or `role="button"` + hand-rolled keyboard when
   `interactive`; never a native `<button>`). Slots: `header` · `footer` · `actions` (top-right) · `children`. Variants:
   `padding` (compact/default/spacious), `interactive`. **No `loading` prop** (consumer-composed). [FACT: `packages/ui/src/components/card.tsx:27-206`]
@@ -48,13 +52,16 @@ Brave Visual Gate**, not a Figma diff. No palette values authored in this unit.
 - Contract: `docs/specs/components/ds-5-primitive-contracts/card.md` + `ui-1-vida-ui-primitives/u5-card.md`.
 
 ## 2. Business rules
+
 **Preserve (invariants — must not regress):**
+
 - BR-C-1 Read-only container; never a native `<button>`; interactive = `role=button` + Enter/Space + focus-visible ring. [card.md]
 - BR-C-2 Accessible-name guard on interactive cards; computed a11y props win over `{...rest}` (N1). [card.tsx:118-138,170-181]
 - BR-C-3 Elevation = opacity-overlay (B12), self-cancels in dark; **no `animation` on the frame**; reduced-motion safe.
 - BR-C-4 Dimensions via token scale (radius `$lg`), never a sub-theme key (DEF-U8-h). No hard-coded palette (brand = M4).
 
 **Landmark fix (from the P1 gate — see §0a):**
+
 - BR-C-11 Card's `header`/`footer` must **never** be exposed as `banner`/`contentinfo` landmarks, in any context
   (standalone or repeated list row) — honoring the governing Intent `card.md:6`. Mechanism: `CardHeader`/`CardFooter`
   drop `render:'header'`/`'footer'` → plain styled `<div>`s (every style preserved; only the emitted tag changes). The
@@ -63,13 +70,15 @@ Brave Visual Gate**, not a Figma diff. No palette values authored in this unit.
   `card.md:45` (mechanism) — the losing side of its own conflict with `:6`; a descoped `<header>` had no AT value.
 
 **Layer-1 polish (aesthetic):**
+
 - BR-C-5 Softer, more intentional **resting elevation** — a two-layer shadow (ambient + tight) at low opacity, still
   opacity-overlay (B12), still dark-self-cancelling, still reduced-motion safe. (`card-styles.ts`, no API change.)
 - BR-C-6 Optional **hairline header divider** (`$colorBorderDefault`) between the header bar and body.
-- NB the editorial *content* vocabulary (eyebrow kicker · serif title · tabular meta) is **consumer-composed** via
+- NB the editorial _content_ vocabulary (eyebrow kicker · serif title · tabular meta) is **consumer-composed** via
   `header`/`children` — Card ships the chrome, the stories demonstrate the composition. Not new Card API.
 
 **Layer-2 alive-hooks (additive, presentational — primitive ships the hook, surface feeds data):**
+
 - BR-C-7 `status` variant → a **left-edge 3px bar** signalling entity state, using DIRECT semantic **signal** tokens
   (preset-invariant — same `success500`/`danger500` across all 6 themes, the SyncStatus precedent `sync-status.tsx:43-44`):
   `calm`→`$colorSignalSuccess` · `warm`→`$colorSignalDanger` · `faded`→dimmed frame + no edge · `neutral` (default)→no
@@ -96,6 +105,7 @@ Brave Visual Gate**, not a Figma diff. No palette values authored in this unit.
 - BR-C-10 No new deps; no cross-module reads (all data consumer-fed).
 
 ## 3. Contract (API)
+
 Additive to `CardProps` (all optional → non-breaking):
 | Prop | Type | Default | Semantics |
 |---|---|---|---|
@@ -109,6 +119,7 @@ the frozen DS-5 contract): `card.md:45` "header/footer are `<header>`/`<footer>`
 (Intent: not a landmark) — header/footer are non-landmark `<div>` regions. Promote to `card.md` + `u5-card.md` at §XXIX.
 
 ## 4. Acceptance
+
 - **Visual Gate (blocking)** — Brave via `PW_EXECUTABLE_PATH`, full matrix **3 presets × light/dark × calm/dense**:
   (a) `status` edge-tints render with the right **signal** color per mode (preset-invariant), `faded` dims; (b) `metric`
   slot lays out top-right, no collision with `actions`; (c) `headerDivider` hairline; (d) softer resting elevation reads
@@ -129,7 +140,9 @@ the frozen DS-5 contract): `card.md:45` "header/footer are `<header>`/`<footer>`
   non-landmark regions, superseding the `<header>`/`<footer>` wording per the `card.md:6` Intent).
 
 ## 5. Implementation plan
+
 Order = types-first, then the landmark fix (lowest-risk, highest-value), then styles, then slots, then stories/tests.
+
 1. `card.tsx` — **BR-C-11 landmark fix**: `CardHeader`/`CardFooter` drop `render:'header'`/`'footer'` → plain styled
    `<div>`s (every other style unchanged). Frame, `role`/`tabIndex`/`aria-*`, `CardElevation` all untouched. Flip the
    `card.test.tsx:41` landmark test to assert content-in-region + NO `banner`/`contentinfo`.

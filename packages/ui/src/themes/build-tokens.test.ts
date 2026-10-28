@@ -263,9 +263,7 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
     expect(shadow).not.toMatch(/shadow: \{/)
     // fe-codec-primitives-refinement P2 (BR-C-5): resting softened to a 2-layer (ambient+tight) low-opacity shadow —
     // still rgba(15,23,42,·) so it self-cancels in dark. Card is resting's sole consumer (DEF-U5-e).
-    expect(shadow).toMatch(
-      /"resting": "0 1px 2px 0 rgba\(15,23,42,0\.04\), 0 6px 16px -4px rgba\(15,23,42,0\.06\)"/,
-    )
+    expect(shadow).toMatch(/"resting": "0 1px 2px 0 rgba\(15,23,42,0\.04\), 0 6px 16px -4px rgba\(15,23,42,0\.06\)"/)
     expect(shadow).toMatch(/"raised": "0 4px 12px -2px rgba\(15,23,42,0\.10\)"/)
     expect(shadow).toMatch(/"overlay": "0 12px 32px -4px rgba\(15,23,42,0\.18\)"/)
   })
@@ -295,7 +293,16 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
 
   it('emits exactly 8 scheme-first base themes', () => {
     expect(new Set(bases())).toEqual(
-      new Set(['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk', 'light_game', 'dark_game']),
+      new Set([
+        'light',
+        'dark',
+        'light_reader',
+        'dark_reader',
+        'light_quietDesk',
+        'dark_quietDesk',
+        'light_game',
+        'dark_game',
+      ]),
     )
   })
 
@@ -313,7 +320,18 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
   })
 
   it('backward-compat — editorial keeps the bare light/dark + the 10 light_/dark_<Comp> the config imports', () => {
-    for (const comp of ['Button', 'Input', 'Checkbox', 'Select', 'Card', 'Tabs', 'Menu', 'Dialog', 'Popover', 'Toast']) {
+    for (const comp of [
+      'Button',
+      'Input',
+      'Checkbox',
+      'Select',
+      'Card',
+      'Tabs',
+      'Menu',
+      'Dialog',
+      'Popover',
+      'Toast',
+    ]) {
       expect(themes).toMatch(new RegExp(`export const light_${comp} = \\{`))
       expect(themes).toMatch(new RegExp(`export const dark_${comp} = \\{`))
     }
@@ -386,7 +404,9 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
       return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2]
     }
     const ratio = (fg: string, bg: string) => {
-      const [l1, l2] = [lum(fg === 'white' ? '#FFFFFF' : hex(fg)), lum(bg === 'white' ? '#FFFFFF' : hex(bg))].sort((x, y) => y - x)
+      const [l1, l2] = [lum(fg === 'white' ? '#FFFFFF' : hex(fg)), lum(bg === 'white' ? '#FFFFFF' : hex(bg))].sort(
+        (x, y) => y - x,
+      )
       return (l1 + 0.05) / (l2 + 0.05)
     }
     // [label, lightFg, lightBg, darkFg, darkBg] — `P` is the preset; paths are primitive refs the semantics resolve to.

@@ -50,8 +50,7 @@ function encodePatch(patch: Partial<CreateViewInput>): Record<string, unknown> {
   if (patch.name !== undefined) out.name = patch.name
   if (patch.layout !== undefined) out.layout = patch.layout
   if (patch.filter !== undefined) out.filter = patch.filter == null ? null : JSON.stringify(patch.filter)
-  if (patch.grouping !== undefined)
-    out.grouping = patch.grouping == null ? null : JSON.stringify(patch.grouping)
+  if (patch.grouping !== undefined) out.grouping = patch.grouping == null ? null : JSON.stringify(patch.grouping)
   if (patch.sort !== undefined) out.sort = patch.sort == null ? null : JSON.stringify(patch.sort)
   return out
 }

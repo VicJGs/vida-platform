@@ -41,7 +41,13 @@ export function PageActions({ pageId, locked, items }: PageActionsProps) {
           placement="bottom-end"
           items={items}
           trigger={
-            <Button id={triggerId} intent="ghost" size="sm" aria-label="Page actions" leading={<MoreHorizontal size={16} strokeWidth={2} />} />
+            <Button
+              id={triggerId}
+              intent="ghost"
+              size="sm"
+              aria-label="Page actions"
+              leading={<MoreHorizontal size={16} strokeWidth={2} />}
+            />
           }
         />
       ) : null}

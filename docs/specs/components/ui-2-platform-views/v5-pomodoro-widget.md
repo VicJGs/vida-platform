@@ -1,11 +1,14 @@
 # Spec: component:ui-2-platform-views · V5 — pomodoro-widget
+
 <!-- type: component (unit sub-spec of ui-2-platform-views) -->
+
 Status: implemented + Visual Gate PASS (Victor, 2026-08-10) — DONE
 Source-repo: /Users/victor/Documents/CODE/vida-platform
 No-Guessing: [FACT: source] / [INTERP: from fact] / [UNKNOWN: needs X].
-Parent: docs/specs/components/ui-2-platform-views/_index.md.
+Parent: docs/specs/components/ui-2-platform-views/\_index.md.
 
 ## 1. Identity
+
 V5 `pomodoro-widget` — the interactive **timer widget** `@vida/ui` ships `[FACT: ADR-008:35 "@vida/ui ships interactive
 widgets (pomodoro-widget)"]`. A **single-interval countdown** (focus/break) with controls. Currently a 0-byte stub.
 NOT a data-view (no VIEW_LAYOUT / items / terminal states) — a standalone widget, minimal spine reuse (Button, base
@@ -15,7 +18,7 @@ tokens, ref-prop).
   Sessions framework (ADR-004): its lifecycle (`scheduled→in_progress→completed·skipped·missed`, S5), effects
   (`attach_pomodoro`, `award_xp`, S4), durations config, **phase sequencing** (focus→break→focus, long-break every 4),
   persistence + analytics are **MOD-sessions' (deferred)**, NOT the widget's. `[FACT: ADR-004; capability-framework S1/
-  S4/S5; CLAUDE.md:249 "pomodoro is now a sessions sub-type"]`
+S4/S5; CLAUDE.md:249 "pomodoro is now a sessions sub-type"]`
 - **What the widget DOES own:** the **ephemeral** visual countdown (drift-free display, start/pause/resume/reset/skip)
   for ONE interval of `durationMs`, and it **emits lifecycle intents** via callbacks. What those intents DO (create a
   `sessions` row, fire effects, choose the next phase) is the consumer's/engine's — the widget is presentational +
@@ -25,6 +28,7 @@ tokens, ref-prop).
   bar for V5; ring = deferred polish, §6).
 
 ## 2. Business Rules
+
 - **PW-1 · Self-timing, DRIFT-FREE, ref-structured (B1 — the Toast `arm()` precedent).** The widget owns ephemeral
   `remainingMs` (`useState`) + `status` (`idle|running|paused`). Timing is computed from an **`endAtRef` timestamp**
   (`Date.now() + remainingMs` on start). ⚠ **The interval is created IMPERATIVELY inside `start`/`resume`** (like
@@ -49,7 +53,7 @@ tokens, ref-prop).
   **Skip** (`ghost`). All are **text-labelled** ("Start"/"Pause"/… — no icon-only, so no aria-label needed). Reset
   returns `remainingMs=durationMs`, `status='idle'` (clears the interval). Skip discards the interval → `status='idle'`
   (does NOT fire `onComplete`). Each control fires its callback (PW-3) + the local transition. `[FACT: button.tsx
-  intent primary|secondary|ghost|danger; onPress; icon-only aria-label dev-warn]`
+intent primary|secondary|ghost|danger; onPress; icon-only aria-label dev-warn]`
 - **PW-3 · The deferred seam = lifecycle-intent callbacks.** `onStart?`, `onPause?`, `onResume?`, `onReset?`,
   `onSkip?`, `onComplete?` — all optional. The widget works fully standalone (self-timing) with none wired; the engine
   (MOD-sessions) wires them to `sessions` lifecycle transitions + effects. The widget NEVER imports session logic.
@@ -64,7 +68,7 @@ tokens, ref-prop).
   `remainingMs` is already seeded to `durationMs`; a `prevDurationRef` gates on an ACTUAL change — m2). Auto-starting
   the NEXT phase is the engine's, not V5's (§6). `label?: ReactNode`. `autoStart?: boolean` (mount-only effect).
 - **PW-5 · Display + motion.** `mm:ss` via the EXACT formula (M1): `const s = Math.ceil(remainingMs/1000); const mm =
-  Math.floor(s/60); const ss = s%60` → `${pad2(mm)}:${pad2(ss)}` (so the first frame shows `25:00`, completion `00:00`).
+Math.floor(s/60); const ss = s%60` → `${pad2(mm)}:${pad2(ss)}` (so the first frame shows `25:00`, completion `00:00`).
   A linear **progress track+fill**: `progress = durationMs > 0 ? clamp(1 - remainingMs/durationMs, 0, 1) : 0` (M4 —
   clamp + divide-by-zero guard; dev-warn if `durationMs<=0`), fill width inline `${progress*100}%`. Fill updates per
   tick (data-driven, **no CSS transition** → B12-safe). No entrance motion (V5).
@@ -82,6 +86,7 @@ tokens, ref-prop).
   (DEF-U8-h). No new dep. `[FACT: themes.ts base keys; CLAUDE.md]`
 
 ## 3. Contract
+
 ```ts
 export type PomodoroPhase = 'focus' | 'short-break' | 'long-break'
 
@@ -109,13 +114,15 @@ export interface PomodoroWidgetProps {
   ref?: Ref<HTMLDivElement>
   'aria-label'?: string
 }
-export function PomodoroWidget(props: PomodoroWidgetProps): ReactElement   // NOT generic; React-19 ref-as-prop
+export function PomodoroWidget(props: PomodoroWidgetProps): ReactElement // NOT generic; React-19 ref-as-prop
 ```
+
 - 8-state matrix (§VIII): idle · running · paused · complete(00:00) · hover/focus(controls, via Button) · disabled(n/a
   container) · dark · responsive (a compact card, scales trivially). No terminal/data states (not a data-view).
 - Sub-theme: none. Export from `index.ts`. `*.test.tsx` (jsdom + `vi.useFakeTimers`) + `*.stories.tsx`.
 
 ## 4. Acceptance
+
 - [ ] `PomodoroWidget` counts down drift-free from `durationMs` (endAt/ref-based); `mm:ss` (M1 formula) + progress fill
       track it; **the interval is created ONCE per run** (not re-armed per tick — B1).
 - [ ] Controls per status with intents (Start/Resume primary · Pause secondary · Reset/Skip ghost). Each fires its callback.
@@ -129,6 +136,7 @@ export function PomodoroWidget(props: PomodoroWidgetProps): ReactElement   // NO
 - [ ] `pnpm --filter @vida/ui typecheck && build && test` green; root typecheck 10/10; §XXIX CLAUDE.md paragraph.
 
 ## 5. Implementation Prompt (ordered)
+
 1. **Types** — `PomodoroWidgetProps` + `PomodoroPhase`; plain function (NOT generic); React-19 ref-prop.
 2. **Timer state** — `useState` `remainingMs` (init `durationMs`) + `status`; refs `endAtRef`, `intervalRef`,
    `statusRef`, `prevDurationRef` (m2), `completeMsgRef`/state for the polite region. **`setStatus(next)` helper
@@ -161,6 +169,7 @@ export function PomodoroWidget(props: PomodoroWidgetProps): ReactElement   // NO
 8. **Export** + CLAUDE.md paragraph.
 
 ## 6. Deferred (documented — MOD-sessions / later, NOT V5)
+
 The whole session ENGINE: phase sequencing (focus→break→long-break-every-4) · durations config/settings UI · session
 persistence (`sessions` sub-type, ADR-004) · effects (`attach_pomodoro`/`award_xp`) · analytics/streaks · completion
 notification. ~~Plus a **progress RING** (SVG/conic — a nicer visual than the V5 linear bar)~~ **← REALIZED in
@@ -168,9 +177,10 @@ fe-codec-controls-refinement P1 (LIF-231)** as the opt-in `progress='ring'` vari
 deferred: audio cues.
 
 ## 7. Change Log
-| Date | Session | Change |
-|------|---------|--------|
-| 2026-08-10 | ui-2-platform-views | V5 sub-spec authored at PLAN (self-timing timer widget + deferred session-engine seam via lifecycle-intent callbacks; ADR-004/ADR-008 boundary); gate-1 next |
-| 2026-08-10 | ui-2-platform-views | Rev 2 — gate-1 critique REVISE→fixed (seam/scope + drift-free approach validated correct): **B1** (ref-structured imperative interval per toast `arm()`, NO countdown-state effect — the CLAUDE.md Toast re-arm bug), **B2** (onComplete one-way latch via statusRef), **B3** (durationMs-change = ATOMIC idle-guarded reset + mid-run dev-warn), M1 (exact mm:ss formula + boundary tests), M2 (polite role=status completion one-shot for standalone), M3 (per-control intents), M4 (progress clamp + durationMs>0 guard), m1-m3 (phase default, autoStart/sync ordering, pause+unmount/mid-run-change leak tests) |
-| 2026-08-10 | ui-2-platform-views | preflight PASSED (`$display`=36 largest font token; Button intents; no new dep). Gate-2 critique **REVISE**→fixed (all 7 gate-1 fixes confirmed correct): **#1 blocker** — status/statusRef desync → single `setStatus(next)` set-both helper (every transition through it; NOT a lagging useEffect); **#2** contractual latch order (setStatus idle→clear→setRemainingMs(0)→onComplete last; re-entrancy safe by commit semantics); **#3** polite completion region CLEARS on transition-out (one-shot, no double-announce). **Approval 2 pending.** |
+
+| Date       | Session                                   | Change                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-08-10 | ui-2-platform-views                       | V5 sub-spec authored at PLAN (self-timing timer widget + deferred session-engine seam via lifecycle-intent callbacks; ADR-004/ADR-008 boundary); gate-1 next                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| 2026-08-10 | ui-2-platform-views                       | Rev 2 — gate-1 critique REVISE→fixed (seam/scope + drift-free approach validated correct): **B1** (ref-structured imperative interval per toast `arm()`, NO countdown-state effect — the CLAUDE.md Toast re-arm bug), **B2** (onComplete one-way latch via statusRef), **B3** (durationMs-change = ATOMIC idle-guarded reset + mid-run dev-warn), M1 (exact mm:ss formula + boundary tests), M2 (polite role=status completion one-shot for standalone), M3 (per-control intents), M4 (progress clamp + durationMs>0 guard), m1-m3 (phase default, autoStart/sync ordering, pause+unmount/mid-run-change leak tests)                                                                                                                                                                                                                                                                                                          |
+| 2026-08-10 | ui-2-platform-views                       | preflight PASSED (`$display`=36 largest font token; Button intents; no new dep). Gate-2 critique **REVISE**→fixed (all 7 gate-1 fixes confirmed correct): **#1 blocker** — status/statusRef desync → single `setStatus(next)` set-both helper (every transition through it; NOT a lagging useEffect); **#2** contractual latch order (setStatus idle→clear→setRemainingMs(0)→onComplete last; re-entrancy safe by commit semantics); **#3** polite completion region CLEARS on transition-out (one-shot, no double-announce). **Approval 2 pending.**                                                                                                                                                                                                                                                                                                                                                                         |
 | 2026-10-06 | fe-codec-controls-refinement P1 (LIF-231) | Aesthetic refinement + the §6-deferred **progress RING**. Added **`progress?: 'bar' \| 'ring'`** (default 'bar', non-breaking) — a local `ProgressRing` (two-circle `<svg>`, aria-hidden, stepped `strokeDashoffset`, colors via `useTheme().get('web')` — the Tamagui SVG call, NOT a `$token`/hex → preset-aware + token-pure, avoids the NG conformance gap). L1 polish: **tabular figures** on `Time` (completes the §4:144 spec'd-but-unbuilt `tabular`), **eyebrow phase label**, **6px hairline track**, **resting elevation** (`shadow.resting`). Internal fraction renamed `fraction`. Timer/latch/controls UNTOUCHED. §XXVI double-gate (gate-1 + preflight + gate-2 all folded) + code-review + Visual Gate PASS (Brave, 3 presets × light/dark: tabular + eyebrow all cells · ring accent flips per preset+mode · AA 4.94–6.03 incl. warm-dark · axe 0 · 375 no-overflow). tsc 0 · @vida/ui 411 tests · eslint 0. |

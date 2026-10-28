@@ -33,8 +33,7 @@ export function createJournalRegistry(): JournalRegistry {
     },
     list() {
       return [...contributions.values()].sort((a, b) => {
-        const bySection =
-          SECTION_ORDER.indexOf(a.sectionKey) - SECTION_ORDER.indexOf(b.sectionKey)
+        const bySection = SECTION_ORDER.indexOf(a.sectionKey) - SECTION_ORDER.indexOf(b.sectionKey)
         return bySection !== 0 ? bySection : a.module.localeCompare(b.module)
       })
     },

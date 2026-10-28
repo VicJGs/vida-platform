@@ -6,24 +6,27 @@
 > the ADR-009 templates substrate (`foundation/templates/` — shipped CRUD + unbuilt first-consumer-pull seams).
 
 ## 1. What S8 is (scope line)
+
 The **templates picker/save UI** on the note page: a picker that (a) **lists** saved templates, (b) offers **Apply**
 per template (instantiate a new page — the live-block fork), and (c) offers **Save current as template** (capture the
 current page's live-block layout) — NOT-51 / EC-13. A CONSUMER slice over the ADR-009 templates substrate; honest-degraded
 where the substrate's execution seams are unbuilt. Mirrors **S4** (picker UI + compose over injected deferred fns + a
 `?…` DEV mount).
 
-**The tier split (NOT-51, doc-mandated).** `[FACT: parts/notes-and-pages.md:65]` SPLIT: *service* = template **storage +
-apply (instantiate)** → ①/`@vida/core`; *UI* = the **template picker/save** → ②/fe-notes (P6). So:
+**The tier split (NOT-51, doc-mandated).** `[FACT: parts/notes-and-pages.md:65]` SPLIT: _service_ = template **storage +
+apply (instantiate)** → ①/`@vida/core`; _UI_ = the **template picker/save** → ②/fe-notes (P6). So:
+
 - **List** — `TemplatesService.listTemplates()` IS built (XS-templates #36) → consumable (stubbed in M1 for the same
   reason as every slice: no live apps/web composition root — S1-D2).
 - **Apply (instantiate-fork)** — a `@vida/core` **first-consumer-pull seam, UNBUILT** (`foundation/templates/CLAUDE.md`:
-  "`instantiate`-fork execution … XCU-05/11 … pulled by the first *module*"). ①/service-tier work, outside fe-notes' ②
+  "`instantiate`-fork execution … XCU-05/11 … pulled by the first _module_"). ①/service-tier work, outside fe-notes' ②
   boundary → the Apply affordance is present, the action is a **deferred injected seam** (stubbed, honest). (F-S8-1)
 - **Save current as template (capture)** — a `@vida/core` **first-consumer-pull seam, UNBUILT** (`captureFromSpace` +
   authored-vs-accumulated invariant, XCU-02/03/04/07). Service-tier → the Save affordance is present, the capture is a
   **deferred injected seam** (stubbed, honest). (F-S8-1)
 
 **In scope (S8 — apps/web/src/notes/):**
+
 - `use-templates(pageId)` — the DATA seam: `listTemplates` (stub + `?sample`), `apply(templateId)` + `saveCurrent()`
   (deferred instantiate/capture seams — stubbed no-op in M1). 4-state `loading|error|empty|populated`.
 - `template-picker.tsx` — `TemplatePickerView` (state-as-prop, the PickerView/AttachmentsView split) + `TemplatePicker`
@@ -33,6 +36,7 @@ apply (instantiate)** → ①/`@vida/core`; *UI* = the **template picker/save** 
   standalone for the blocking Visual Gate.
 
 **Explicitly OUT (homed/deferred — no pull-forward, §XXVIII):**
+
 - The **instantiate-fork EXECUTION** (`@vida/core` XCU-05/11) + **capture serializer** (`@vida/core` XCU-02/03/04/07) →
   first-consumer-pull service seams; building them is ①/`@vida/core` work, not fe-notes ②. Filed **F-S8-1**. (D-S8-2/3)
 - Live `listTemplates` wiring (an apps/web composition root) → data plane (S1-D2) — stubbed.
@@ -44,6 +48,7 @@ apply (instantiate)** → ①/`@vida/core`; *UI* = the **template picker/save** 
 - `[E]` decryption of `name`/`bundle` → M3 pass-through; sample provides plaintext (D-S8-6).
 
 ## 2. Composition shape
+
 ```
 note-entity.tsx (?templates DEV mount — mirrors ?picker)
 └─ <TemplatePicker pageId={page.id} />            apps/web/src/notes/template-picker.tsx    [NET-NEW]
@@ -55,16 +60,18 @@ note-entity.tsx (?templates DEV mount — mirrors ?picker)
           ├─ loading → Muted busy · error → Muted role=status · empty → Muted + Save-current action
           └─ populated → role="list": per template [LayoutTemplate icon + name + Apply button] + Save-current action
 ```
+
 `TemplatePickerView` is body-only (panel supplies the name). Reuses `note-chrome` atoms (`Icon`/`Row`), the local
 `Muted` idiom, `@vida/ui` (none new), Lucide (EC-22). **No new `@vida/ui` primitive.**
 
 ## 3. Net-new units (files)
-| File | Purpose | Notes |
-|------|---------|-------|
-| `apps/web/src/notes/use-templates.ts` | DATA seam — `{templates, state, apply, saveCurrent}` + `TemplateLike`/`TemplateItem`/`toTemplateItems` | `listTemplates` stub + `?sample`; structural `*Like` (TemplateRow not re-exported — the PageLike precedent); apply/saveCurrent deferred no-op |
-| `apps/web/src/notes/template-picker.tsx` | `TemplatePickerView` (state-as-prop) + `TemplatePicker` (hook shell) | `role=list` rows + per-row Apply + Save-current action; 4-state |
-| `apps/web/src/notes/note-entity.tsx` (edit) | `?templates` DEV mount (mirror `?picker`) | both overlays coexist cleanly |
-| `apps/web/src/notes/template-picker.test.tsx` | view + hook tests | 4 states; Apply fires onApply(id); Save fires onSaveCurrent; a11y; EC-22 svg |
+
+| File                                          | Purpose                                                                                                | Notes                                                                                                                                         |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/notes/use-templates.ts`         | DATA seam — `{templates, state, apply, saveCurrent}` + `TemplateLike`/`TemplateItem`/`toTemplateItems` | `listTemplates` stub + `?sample`; structural `*Like` (TemplateRow not re-exported — the PageLike precedent); apply/saveCurrent deferred no-op |
+| `apps/web/src/notes/template-picker.tsx`      | `TemplatePickerView` (state-as-prop) + `TemplatePicker` (hook shell)                                   | `role=list` rows + per-row Apply + Save-current action; 4-state                                                                               |
+| `apps/web/src/notes/note-entity.tsx` (edit)   | `?templates` DEV mount (mirror `?picker`)                                                              | both overlays coexist cleanly                                                                                                                 |
+| `apps/web/src/notes/template-picker.test.tsx` | view + hook tests                                                                                      | 4 states; Apply fires onApply(id); Save fires onSaveCurrent; a11y; EC-22 svg                                                                  |
 
 Reuses shipped: `@vida/core` `createTemplatesService`/`listTemplates` (the live target; stubbed in M1) · `note-chrome` ·
 Lucide · Tamagui. **No separate pure `.ts`** — `toTemplateItems` is a 1-field projection (exported from the hook file for
@@ -72,29 +79,30 @@ a direct test), not worth a module (the S7 "don't manufacture a near-empty pure 
 which also carried `formatBytes`).
 
 ## 4. Decisions — all DOC-RESOLVED / grounded
+
 - **D-S8-1 — the templates LIST consumes `listTemplates`; structural `TemplateLike`.** `TemplatesService.listTemplates():
-  Promise<TemplateRow[]>` is built `[FACT: foundation/templates/service.ts:44-46]`; `TemplateRow` is NOT re-exported from
+Promise<TemplateRow[]>` is built `[FACT: foundation/templates/service.ts:44-46]`; `TemplateRow` is NOT re-exported from
   `@vida/core` (only `TemplatesService`/`createTemplatesService`/`TemplateNotFound`/`TemplateCaptureError` — `index.ts:133-139`),
   so `TemplateItem = {id, name}` is a structural projection over a `TemplateLike = {id, name}` (the `PageLike`/`NoteAttachmentLike`
   precedent). M1 stub (honest-empty + `?sample`); live swap = RQ over `listTemplates`, key `['templates']`, zero-sig.
 - **D-S8-2 — Apply (instantiate-fork) is a DEFERRED `@vida/core` first-consumer-pull seam.** `foundation/templates/CLAUDE.md`
   lists `instantiate`-fork execution (XCU-05/11) as NOT built — a service-tier seam pulled by the first module. NOT-51 homes
-  *apply* to the **service** `[FACT: parts/notes-and-pages.md:65 SPLIT]`, i.e. ①/`@vida/core`, outside fe-notes' ② boundary
+  _apply_ to the **service** `[FACT: parts/notes-and-pages.md:65 SPLIT]`, i.e. ①/`@vida/core`, outside fe-notes' ② boundary
   (slice-map §0). So the Apply affordance is present (EC-13) and calls an injected `apply(templateId)` that is **stubbed no-op**
   in M1 (the S4 `pick`/`create`, S6 `add`/`remove`, S7 search precedent) — never a dead affordance, never a crash. Filed **F-S8-1**.
 - **D-S8-3 — Save current as template (capture) is a DEFERRED `@vida/core` first-consumer-pull seam.** `captureFromSpace`
-  + the authored-vs-accumulated invariant (XCU-02/03/04/07) are NOT built (service-tier). `createTemplate(input)` CRUD exists,
-  but capturing the current page's live-block layout into a `TemplateBundle` is the unbuilt serializer. The Save affordance is
-  present (EC-13), the capture is a **stubbed injected seam** in M1. Filed **F-S8-1**.
+  - the authored-vs-accumulated invariant (XCU-02/03/04/07) are NOT built (service-tier). `createTemplate(input)` CRUD exists,
+    but capturing the current page's live-block layout into a `TemplateBundle` is the unbuilt serializer. The Save affordance is
+    present (EC-13), the capture is a **stubbed injected seam** in M1. Filed **F-S8-1**.
 - **D-S8-4 — mount via a `?templates` DEV gate (the `?picker` precedent); this is the HONEST choice, not an under-delivery
   (B1).** The real invocation (a note-page action-menu / collection `+` "New/Save template" item) is deferred with the
   menu/composition wiring (`EntityView.action` unforwarded by the adapter — S6 ledger; `onNewView` stub). M1 demonstrates the
   self-contained picker via `?templates` + `?sample`, exactly as S4 demonstrated the `[[` picker via `?picker`
   `[FACT: note-entity.tsx:28-36,124-136]`. **Why a DEV gate and NOT a visible production control (the contrast with S6):**
   S6's metadata controls are visible-but-stubbed because they **REFLECT state** (a favorited page shows the active star —
-  not dead even with a no-op `updatePage`). S8's Apply/Save are **pure actions with no display-state** → a *visible*
+  not dead even with a no-op `updatePage`). S8's Apply/Save are **pure actions with no display-state** → a _visible_
   production button whose action no-ops would be a **dead affordance** (violates the "no dead affordance / honest" principle,
-  the posture every slice holds). So gating the picker behind `?templates` until F-S8-1's execution seam lands is *more*
+  the posture every slice holds). So gating the picker behind `?templates` until F-S8-1's execution seam lands is _more_
   honest than shipping a dead button; the affordance becomes reachable (a real menu item) when the seam + composition root arrive.
 - **D-S8-5 — the picker shows `name` only; `bundle` is opaque.** `bundle` is an opaque serialized seed (ADR-009; one TEXT
   column) `[FACT: schema/foundation/templates.ts]`; the live-block re-aggregation + per-member serialization are build-time
@@ -106,13 +114,15 @@ which also carried `formatBytes`).
   forked page). RQ key `['templates']` (prefix-safe).
 
 ## 5. Envision coverage — S8's EC Visual-Gate MUSTs
-| EC | Requirement | S8 assertion |
-|----|-------------|--------------|
-| **EC-13** | **template picker + apply + save-current-as-template** (live-block layouts) | Visual Gate: the picker lists ≥2 templates (`?sample`); each row has an **Apply** affordance; a **Save current as template** affordance is present |
-| **EC-22** | Lucide icons token-tinted | the template rows + Save action carry Lucide svg |
-| EC-16/17 (feel) | editorial calm | live per-slice Visual Gate (full-matrix AA) |
+
+| EC              | Requirement                                                                 | S8 assertion                                                                                                                                       |
+| --------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **EC-13**       | **template picker + apply + save-current-as-template** (live-block layouts) | Visual Gate: the picker lists ≥2 templates (`?sample`); each row has an **Apply** affordance; a **Save current as template** affordance is present |
+| **EC-22**       | Lucide icons token-tinted                                                   | the template rows + Save action carry Lucide svg                                                                                                   |
+| EC-16/17 (feel) | editorial calm                                                              | live per-slice Visual Gate (full-matrix AA)                                                                                                        |
 
 ## 6. Test plan
+
 - `template-picker.test.tsx` (view): `loading`→aria-busy; `error`→role=status; `empty`→muted + Save action present;
   `populated`→a `role="list"` of templates (name + per-row Apply), Apply fires `onApply(id)`, Save fires `onSaveCurrent`;
   a11y (`role="group"` named · list/listitem · buttons keyboard-operable); EC-22 svg.
@@ -121,8 +131,10 @@ which also carried `formatBytes`).
 - Full `@vida/web` suite green.
 
 ## 7. Blocking Visual Gate (real browser, after g2)
+
 Brave real app → onboarding → `/notes/1?sample&templates` (the `?picker` precedent URL shape). 3 presets × light/dark ×
 375/768/1440:
+
 - **EC-13:** the picker renders a list of ≥2 templates; each has an Apply affordance; a "Save current as template"
   affordance is present.
 - **EC-22:** Lucide svg in the rows + Save action.
@@ -130,6 +142,7 @@ Brave real app → onboarding → `/notes/1?sample&templates` (the `?picker` pre
   opacity; exclude WCAG-disabled controls (`/tmp/vg/s8-gate.mjs`, the S3–S7 harness).
 
 ## 8. Risks / findings
+
 - **F-S8-1 — `@vida/core` template EXECUTION seams (NEW, filed S8):** the **instantiate-fork** (apply; XCU-05/11) and
   **capture serializer** (save-current; XCU-02/03/04/07) are `@vida/core`/①-tier **first-consumer-pull seams** (NOT built —
   `foundation/templates/CLAUDE.md`). S8 ships the fe-notes-owned picker/save UI + the affordances over **injected deferred
@@ -142,4 +155,5 @@ Brave real app → onboarding → `/notes/1?sample&templates` (the `?picker` pre
   greybox `light-templates`), not split across homes.
 
 ## 9. Performance budget (§XXII)
+
 `toTemplateItems` is O(n) over a small list; apply/saveCurrent are stubbed no-ops. N/A-trivial for the stub; stated per §XXII.

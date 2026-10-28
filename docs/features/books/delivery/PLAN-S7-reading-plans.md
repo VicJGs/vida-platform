@@ -1,4 +1,4 @@
-# PLAN — S7: Reading plans / Quota Planner  (BOO-27/28/29/30/31/32/33)
+# PLAN — S7: Reading plans / Quota Planner (BOO-27/28/29/30/31/32/33)
 
 > Entity Delivery Flow (v1) · per-slice SERVICE track · slice 7 of 10.
 > Gate 1 = this SPEC (§XXVI.2 /critique → Approval 1). Grounded in the corpus (No-Guessing).
@@ -8,21 +8,21 @@
 
 > The aspect docs + the Part-1.2 rerun driver-tokens are the intent authority; they outrank the slice-map/seam-contract.
 
-| S7 element | Authoritative doc source (intent) |
-|---|---|
-| plan family = `reading_plans` + `reading_plan_books` junction | schema `schema/books.ts:165-188` · `structure-data.md:26` ("the Quota Planner") · BR-BK (db-4-books) |
-| `arrangement` ∈ {sequenced, parallel}; `goal` ∈ {manual, auto}; `target` = date·weekday·day-of-month | **BK-11** (`business-rules.md:56-61`) · `contract.md:28` (`createPlan`) · `@vida/types` `READING_PLAN_ARRANGEMENT`/`READING_PLAN_GOAL_TYPE` |
+| S7 element                                                                                                                                   | Authoritative doc source (intent)                                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| plan family = `reading_plans` + `reading_plan_books` junction                                                                                | schema `schema/books.ts:165-188` · `structure-data.md:26` ("the Quota Planner") · BR-BK (db-4-books)                                                                                                                                                               |
+| `arrangement` ∈ {sequenced, parallel}; `goal` ∈ {manual, auto}; `target` = date·weekday·day-of-month                                         | **BK-11** (`business-rules.md:56-61`) · `contract.md:28` (`createPlan`) · `@vida/types` `READING_PLAN_ARRANGEMENT`/`READING_PLAN_GOAL_TYPE`                                                                                                                        |
 | **NO stored measurement axes** — the pursuable goal is Purpose/target-owned; Books NAMES the axes (quantitative × derived-pull), stores none | **C-M1** (rerun `books.md:71,79,87,136`, "Do NOT assert a stored `books.measurement_kind`; the pursuable is the reading-plan goal — Purpose/target-owned; Books absent from L240") · the exact default values deferred (`rerun §5:157` "this unit NAMES the axes") |
-| **Books owns plans; consumers consume** (Study Planner reads, never writes) | **BK-12** (`business-rules.md:62-64`) · `conventions.md` ("Never let the Study Planner write reading plans") |
-| auto-goal = **arithmetic over days-until-target** (mature core); Calendar-slot reconciliation **visibly stubbed** (forward dep) | **BOO-28** (`parts/books.md:38`) · BK-11 · `structure-data.md:48-49` · `rerun §5` (Calendar forward dep) |
-| quota distribution — sequenced = A-then-B ordering; parallel = quota split across books | **BOO-29** (`parts/books.md:39`) · BK-11/BK-15 |
-| recalculation **never silently drops the target**; `TargetUnreachableProposal` (extend date / raise quota) | **BOO-32** (`parts/books.md:42`) · `business-rules.md:128-129` (fail-loud) · `conventions.md:28-29` · `contract.md:30,67` |
-| `getTodayQuotas` = Reading Hub + **Journal `/summary`** provider | **BOO-30** (`parts/books.md:40`) · `contract.md:29` |
-| quota computations + projections are **derived** (React-Query), never hand-maintained | `structure-data.md:38-41` ("React Query owns … quota computations + projections; … derived — never hand-maintained") |
-| `quota_distribution` / `recalculation_state` are **stored** `json<Record>` columns | schema `schema/books.ts:171-172` (the plan's computed state — written at create/recalc) |
-| intake resolutions | `intake/books.md` B6 (quotas) · B9 (plan goal) · B15 (user-arranged) |
+| **Books owns plans; consumers consume** (Study Planner reads, never writes)                                                                  | **BK-12** (`business-rules.md:62-64`) · `conventions.md` ("Never let the Study Planner write reading plans")                                                                                                                                                       |
+| auto-goal = **arithmetic over days-until-target** (mature core); Calendar-slot reconciliation **visibly stubbed** (forward dep)              | **BOO-28** (`parts/books.md:38`) · BK-11 · `structure-data.md:48-49` · `rerun §5` (Calendar forward dep)                                                                                                                                                           |
+| quota distribution — sequenced = A-then-B ordering; parallel = quota split across books                                                      | **BOO-29** (`parts/books.md:39`) · BK-11/BK-15                                                                                                                                                                                                                     |
+| recalculation **never silently drops the target**; `TargetUnreachableProposal` (extend date / raise quota)                                   | **BOO-32** (`parts/books.md:42`) · `business-rules.md:128-129` (fail-loud) · `conventions.md:28-29` · `contract.md:30,67`                                                                                                                                          |
+| `getTodayQuotas` = Reading Hub + **Journal `/summary`** provider                                                                             | **BOO-30** (`parts/books.md:40`) · `contract.md:29`                                                                                                                                                                                                                |
+| quota computations + projections are **derived** (React-Query), never hand-maintained                                                        | `structure-data.md:38-41` ("React Query owns … quota computations + projections; … derived — never hand-maintained")                                                                                                                                               |
+| `quota_distribution` / `recalculation_state` are **stored** `json<Record>` columns                                                           | schema `schema/books.ts:171-172` (the plan's computed state — written at create/recalc)                                                                                                                                                                            |
+| intake resolutions                                                                                                                           | `intake/books.md` B6 (quotas) · B9 (plan goal) · B15 (user-arranged)                                                                                                                                                                                               |
 
-**Nothing is deferred that this slice owns.** The exact `measurement_kind`/`binding_mode` default *values* for a
+**Nothing is deferred that this slice owns.** The exact `measurement_kind`/`binding_mode` default _values_ for a
 pursued reading goal are the one genuinely-deferred item (`rerun §5:157` → build-phase + ADR-011 + Purpose owner) —
 but C-M1 settles that they are **NOT stored on `reading_plans`** and the pursuit is **Purpose-owned** (Purpose is
 unbuilt — `services/purposes` is a CLAUDE.md only), so S7 takes **no measurement/Purpose dep** and writes no axis.
@@ -41,10 +41,10 @@ Calendar-slot reconciliation is a documented forward-dep stub (BOO-28). Both are
   measurement dep (C-M1), no Purpose (unbuilt), no Calendar (forward-dep). `[seam-contract.md:109-114]`
 - **The frozen seam-contract pins the surface** (`seam-contract.md:109-114`): `createPlan(input): ReadingPlan` ·
   `getTodayQuotas(): TodayQuotas` · `recordQuotaProgress(planId, sessionRef): void` · `recalculate(planId):
-  ReadingPlan` · `getProjection(planId): PlanProjection`. `TargetUnreachableProposal` is the typed recalc error
+ReadingPlan` · `getProjection(planId): PlanProjection`. `TargetUnreachableProposal` is the typed recalc error
   (`seam-contract.md:59`).
 
-## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S7-*)
+## §2 Business rules (promoted to current-business-rules.md on SHIP, BR-BK-S7-\*)
 
 - **BR-BK-S7-1 (`createPlan` — Books-owned, arrangement/goal/target, NO axes / BOO-27, BK-11/BK-12, C-M1).**
   `createPlan({ books: {bookId, sequence?}[], arrangement, goalType, targetDate, quota? })` validates (`arrangement`
@@ -56,7 +56,7 @@ Calendar-slot reconciliation is a documented forward-dep stub (BOO-28). Both are
 - **BR-BK-S7-2 (auto-goal + quota distribution — arithmetic, Calendar stubbed / BOO-28/29, BK-11).** For `goal='auto'`
   the daily quota is **arithmetic over days-until-target**: `totalPages = Σ book.total_pages` (books with no
   `total_pages` contribute 0 — honest, not guessed), `days = max(1, targetDate − today)`, `dailyQuota = ceil(totalPages
-  / days)`. Distribution: **sequenced** orders books by `sequence` and allocates days per book proportional to pages
+/ days)`. Distribution: **sequenced** orders books by `sequence` and allocates days per book proportional to pages
   (A-then-B); **parallel** splits the daily quota across books by page share. The **Calendar-slot reconciliation**
   (free-time slots from Routines) is a **visibly-stubbed forward dep** — `quota_distribution.calendarReconciled=false`
   is stamped so the P6 Hub renders the stub honestly. `[parts/books.md:38-39; structure-data.md:48-49; rerun §5]`
@@ -66,19 +66,19 @@ Calendar-slot reconciliation is a documented forward-dep stub (BOO-28). Both are
   (`structure-data.md:38-41`). The shape feeds the Reading Hub strip AND the daily-Journal `/summary` block
   (`registerBooksJournal` composes it at S10). `[contract.md:29; parts/books.md:40]`
 - **BR-BK-S7-4 (`recordQuotaProgress` — link a session's pages to the plan / BOO-31).** `recordQuotaProgress(planId,
-  sessionRef)` guards the plan exists (`ReadingPlanNotFoundError`), reads the referenced `reading_sessions` row
+sessionRef)` guards the plan exists (`ReadingPlanNotFoundError`), reads the referenced `reading_sessions` row
   (`sessionRef` = a reading session id; its `pages_read ?? 0` is the contribution), and credits it into the plan's
   `recalculation_state` running progress (serialized json). Idempotent per `sessionRef` (a re-record of the same
   session does not double-count — the running state keys by session id). `[contract.md:29; parts/books.md:41]`
 - **BR-BK-S7-5 (`recalculate` — reshape or propose, never silent drop / BOO-32, BK-11).** `recalculate(planId)`
   guards exists and computes `requiredDailyQuota = ceil(remainingPages / max(1, remainingDays))`. **When on/ahead of
   the planned pace** (`requiredDailyQuota ≤ the stored original `dailyQuota``) it reshapes silently — redistributes the
-  remaining pages over the remaining days, stamps `recalculation_state`, returns the reshaped `ReadingPlan`. **When
-  behind** (`requiredDailyQuota > original dailyQuota`, OR `remainingDays ≤ 0` with pages left) it throws
-  **`TargetUnreachableProposal`** carrying `{ options: ['extend_date','raise_quota'], suggestedDate (keeps the
-  original pace), suggestedQuota (= requiredDailyQuota, keeps the date) }` — **never a silent rewrite** of the
-  target (the user chooses). `remainingDays ≤ 0` ⇒ only `extend_date` is viable (`suggestedQuota` omitted). This is
-  the grounded reading of BOO-32's two named options (extend date / raise quota). `[business-rules.md:56-61,128-129;
+remaining pages over the remaining days, stamps `recalculation_state`, returns the reshaped `ReadingPlan`. **When
+behind** (`requiredDailyQuota > original dailyQuota`, OR `remainingDays ≤ 0` with pages left) it throws
+**`TargetUnreachableProposal`** carrying `{ options: ['extend_date','raise_quota'], suggestedDate (keeps the
+  original pace), suggestedQuota (= requiredDailyQuota, keeps the date) }`— **never a silent rewrite** of the
+target (the user chooses).`remainingDays ≤ 0`⇒ only`extend_date` is viable (`suggestedQuota`omitted). This is
+the grounded reading of BOO-32's two named options (extend date / raise quota).`[business-rules.md:56-61,128-129;
   conventions.md:28-29; contract.md:30,67; parts/books.md:42]`
 - **BR-BK-S7-6 (`getProjection` — derived trajectory / BOO-33).** `getProjection(planId)` guards exists and derives
   `{ planId, projectedCompletionDate, onTrack, remainingPages, remainingDays }` from the stored distribution + recorded
@@ -88,10 +88,10 @@ Calendar-slot reconciliation is a documented forward-dep stub (BOO-28). Both are
   (`getPlansForConsumer`) is **S10/BOO-45** (not here). `[business-rules.md:62-64; slice-map.md:24]`
 - **BR-BK-S7-8 (persistence / json write boundary / N-fold).** `reading_plans` repo = `softDelete:true`,
   `encryptedFields:[]` (plan rows carry no [E]); `reading_plan_books` repo = `softDelete:true`. `quota_distribution`
-  + `recalculation_state` are `json<Record>` columns **WRITTEN** this slice → the service `JSON.stringify`s on write +
-  parses defensively on read (the knowledge `key_concepts` precedent — one cast per boundary;
-  [[json-t-columns-need-service-serialize-in-m10]]). `@vida/types` `ReadingPlan` + `ReadingPlanBook` interfaces added
-  (the N-fold). `[schema/books.ts:165-188; structure-data.md:38]`
+  - `recalculation_state` are `json<Record>` columns **WRITTEN** this slice → the service `JSON.stringify`s on write +
+    parses defensively on read (the knowledge `key_concepts` precedent — one cast per boundary;
+    [[json-t-columns-need-service-serialize-in-m10]]). `@vida/types` `ReadingPlan` + `ReadingPlanBook` interfaces added
+    (the N-fold). `[schema/books.ts:165-188; structure-data.md:38]`
 
 ## §3 Deferred (homed, not built here)
 
@@ -143,10 +143,11 @@ positive` for manual). (Enum Zod schemas reused from `validators/learning.ts`.)
 (`{ planId; target; done; status: 'on-pace'|'behind'|'ahead' }[]`), `PlanProjection`, `QuotaDistribution` (internal
 json shape: `{ dailyQuota; perBook: Record<bookId, number>; calendarReconciled: false }`), `RecalculationState`
 (internal: `{ progressBySession: Record<sessionId, number>; pagesDone: number }`); errors `ReadingPlanNotFoundError`
-+ `TargetUnreachableProposal` (an `Error` carrying `options: ('extend_date'|'raise_quota')[]` + `suggestedDate?` +
-`suggestedQuota?`). Add the 5 methods to `BooksService` after `openReader`. A `today: () => string` injection is NOT
-added — use the existing calendar-date helper / `new Date()` boundary the service already uses for dates (ground the
-"today" source in the repo convention before coding; if none exists, pass `asOf?` through the derived reads).
+
+- `TargetUnreachableProposal` (an `Error` carrying `options: ('extend_date'|'raise_quota')[]` + `suggestedDate?` +
+  `suggestedQuota?`). Add the 5 methods to `BooksService` after `openReader`. A `today: () => string` injection is NOT
+  added — use the existing calendar-date helper / `new Date()` boundary the service already uses for dates (ground the
+  "today" source in the repo convention before coding; if none exists, pass `asOf?` through the derived reads).
 
 **(d) `services/books/service.ts`** — `plansRepo` (`reading_plans`, softDelete:true) + `planBooksRepo`
 (`reading_plan_books`, softDelete:true); `toReadingPlan`/`toReadingPlanBook` mappers (parse the json columns +
@@ -168,7 +169,7 @@ interface/barrel wiring → tsc → Verification Gate → code-review → curren
 
 ## §6 g1 resolution (interpretations pre-grounded in the corpus)
 
-- **R1 — NO measurement axis is written (C-M1).** The reading-plan goal is "a pursuable target" *conceptually*
+- **R1 — NO measurement axis is written (C-M1).** The reading-plan goal is "a pursuable target" _conceptually_
   (quantitative/derived-pull), but `reading_plans` has no `measurement_kind`/`binding_mode` column and Books is
   absent from the L240 pursuable set — the pursuit is Purpose-owned (and Purpose is unbuilt). S7 stores
   `arrangement`/`goal_type`/`target_date` only; it takes no measurement/Purpose dep. Inventing an axis column or a
@@ -177,9 +178,9 @@ interface/barrel wiring → tsc → Verification Gate → code-review → curren
   plan's computed state (set at create/recalc; progress credited at `recordQuotaProgress`) — so the service
   `JSON.stringify`s on write + parses on read, the real json<T> boundary (the knowledge precedent). `getTodayQuotas`/
   `getProjection` DERIVE on read from these stored blobs (no third stored "status" column). `[FACT: schema/books.ts:171-172;
-  structure-data.md:38-41]`
+structure-data.md:38-41]`
 - **R3 — Calendar reconciliation is a stamped stub, not omitted.** `quota_distribution.calendarReconciled=false` is
-  written so the forward-dep is *visible* (BOO-28 "renders visibly stubbed"), not silently absent. The M1 arithmetic
+  written so the forward-dep is _visible_ (BOO-28 "renders visibly stubbed"), not silently absent. The M1 arithmetic
   is days-until-target. `[FACT: parts/books.md:38; structure-data.md:48-49]`
 - **R4 — `TargetUnreachableProposal` is a thrown typed error carrying options, not a return variant.** The frozen
   seam-contract lists it among the errors (`seam-contract.md:59`) and `recalculate` returns `ReadingPlan` on the

@@ -8,12 +8,13 @@
 >
 > **Every slice** runs the §XXVI double gate (PLAN → `/critique` → Approval 1 → `/preflight` → `/critique` → Approval 2)
 > before code, then its per-plane blocking gate:
+>
 > - **backend (B)** → Verification Gate: Vitest (logic + failure paths) → typed-error assertions → live smoke on the real store.
 > - **frontend (F)** → Visual Gate: real browser, every state × light/dark × 375/768/1440, §XIV a11y, the slice's EC MUSTs.
 > - **shared (S)** → both.
-> Each slice re-runs its impact-scan rows (`reconciliation.md` §2) at gate 2, flips the tests its leg invalidates,
-> rewrites the stale comments it touches, records its §XXVIII items from the interpretation §5 register, and refreshes
-> the `current-*` of every context it touches (§XXIX).
+>   Each slice re-runs its impact-scan rows (`reconciliation.md` §2) at gate 2, flips the tests its leg invalidates,
+>   rewrites the stale comments it touches, records its §XXVIII items from the interpretation §5 register, and refreshes
+>   the `current-*` of every context it touches (§XXIX).
 
 ## Order and dependencies
 
@@ -21,6 +22,7 @@
 X1 engine ─── X2 focus lifecycle + routines ─┬─ X3 reads ──────────┬─ X5 HUD live ─────┬─ X7 live close
                                              └─ X4 composition root ┴─ X6 runtime live ──┘
 ```
+
 X1 first: every completion path's semantics (typed errors, keying, preflight) sit under X2. X2 carries the routines
 adaptation + `listSessionsForEntity` WITH the focus-lifecycle change, so no slice leaves a suite red (impact §2 "fix all
 in the same slice"). X3 before X5/X6 (they consume `findActiveSession` / the applied-effects read). X4 before X5/X6
@@ -32,6 +34,7 @@ fe-sessions' ENTITY CLOSE).
 ---
 
 ## X1 — Effect engine semantics · **B** · `foundation/sessions` + `foundation/effects`
+
 - **Ledger:** R-7 (class keying) · R-9 (canTouch target typing + `PermissionDenied`) · R-10 (`EffectFailed`, completion
   commits) · R-11/R-44 (`AttachmentTargetMissing`, `missing[]`) · R-12 (preflight inside `transition`) · R-13
   (soft-deleted spine) · R-15 (`replayCompletionEffects` + derived unapplied) · R-42 (`fired` excludes projection) ·
@@ -46,6 +49,7 @@ fe-sessions' ENTITY CLOSE).
   `award_xp` still per occurrence; live smoke on a real store.
 
 ## X2 — Focus lifecycle, one door + routines adaptation · **B** · `services/sessions` (+ `services/tasks` handler, `services/routines`)
+
 - **Ledger:** R-2 (`attach_pomodoro` handler, in-tx, self-target denied) · R-4/R-14 (`completeFocus` closes the spine,
   resume-close) · R-5 (`cancelFocus` → `skipped`) · R-6 (payload from persisted rows) · R-8 (tasks handler:
   `duration_seconds`, throw) · R-21 (`surface_journal` declared + allowed) · R-41 (start delegation · `updateSession` /
@@ -56,7 +60,7 @@ fe-sessions' ENTITY CLOSE).
 - **IR:** S1 · S2 · S3 · S5 · S13 (service side) · S17 · S18.
 - **§XXVIII:** #1 · #4 · #5 · #6 · #7 · #9 (tasks BR-TK-S4-6).
 - **Impact:** every `completeFocus`/`cancelFocus` caller fixed IN this slice — routines `service.ts:975,1018,1065,1084`
-  + tests sessions `:387,:393,:400,:422` · routines `:778,:792,:801,:1924`.
+  - tests sessions `:387,:393,:400,:422` · routines `:778,:792,:801,:1924`.
 - **Gate:** Verification — focus start→pause→complete closes the spine, fires `attach_pomodoro` + `log_time` (real focus
   minutes in `task_time_logs`), `surface_journal` projection; cancel → `skipped`, no effects; every rejected door typed;
   routines suite green (a focus step completes → spine closed, attachment kept, stamp-retry after a stamp failure);
@@ -64,6 +68,7 @@ fe-sessions' ENTITY CLOSE).
 - **Edge:** `award_xp` → gamification-rescope (focus def gains it with the handler).
 
 ## X3 — Reads · **B** · `services/sessions` (+ `ProviderUnavailable` shared home)
+
 - **Ledger:** R-16 (`findActiveSession` — IR-S7 incl. terminal-run exclusion) · R-17 (applied-effects read, shared
   event-input construction, `detail` via providers) · R-18/R-19 (`dueInDetailed` additive; `ProviderUnavailable` moved,
   journals re-exports).
@@ -73,6 +78,7 @@ fe-sessions' ENTITY CLOSE).
 - **Edge:** Calendar adopts `dueInDetailed` for G17 lane state (fe-calendar is shipped → recorded edge, not built here).
 
 ## X4 — Composition root · **S** · `apps/web/src/db/composition-root.ts`
+
 - **Ledger:** R-3 (`composeServices` async; `registerTasksTimer`; the sessions `attach_pomodoro` registration) · R-43
   (build the shared `ViewProviderRegistry`; register the existing tasks provider; pass `providers` to sessions) · R-48
   part (root comment).
@@ -81,6 +87,7 @@ fe-sessions' ENTITY CLOSE).
   Visual check that the Calendar and Home still load.
 
 ## X5 — Focus store + HUD live · **F** · `apps/web/src/{stores,session-hud}`
+
 - **Ledger:** R-23 (`focus-runtime-ui-store.ts`) · R-24 (`useActiveSession` live) · R-25 (port binding by focus-row id /
   `startFocus({sessionId})`) · R-26 (paused-elapsed + Pause⇄Resume) · R-27 (title via providers, fallback
   `humanizeSubType`; `kindLabel` bare) · R-47 part (loading/failure → `hidden`; pause/resume invalidate
@@ -91,6 +98,7 @@ fe-sessions' ENTITY CLOSE).
 - **Gate:** Visual — all HUD forms × light/dark × 375/768/1440 + a11y; countdown forms driven through the REAL store API.
 
 ## X6 — Runtime page live · **F** · `apps/web/src/{flow,session-runtime}`
+
 - **Ledger:** R-28 (`useFlowSession` live) · R-29 (mark-done live; focus → `completeFocus`) · R-30/R-31 (attach only with
   a `deliverable_note` target; proof hidden) · R-46 (EC-5: subject title, `SyncStatus` from write outcome, `⋯` hidden) ·
   R-45 (EC-4 re-pin: unapplied rows muted in the same list via additive `FlowEffect.status?` — §XXVIII #10 — + aria-label "Session effects") · R-47 part (mark-done invalidates `['active-session']`) · R-49 part · R-35/R-48 part.
@@ -99,6 +107,7 @@ fe-sessions' ENTITY CLOSE).
 - **Gate:** Visual — every terminal state × light/dark × 375/768/1440 + a11y.
 
 ## X7 — Live close (ELC-3…7) · **S**
+
 - **Ledger:** R-39 (ELC-7 live leg) · L19 seed harness (dev-server import of `db/composition-root`: a focus session on a
   task — start · pause · complete; a `work` session; a deleted-task subject for `AttachmentTargetMissing`) · R-36/R-48
   currency sweep · close-time edges (notes-rescope page `ReadProvider` · Linear relations).
@@ -109,6 +118,7 @@ fe-sessions' ENTITY CLOSE).
 ---
 
 ## Re-scope Gate — APPROVED (Victor, 2026-10-27)
+
 1. **Slice plan X1…X7 approved** — "approve all if they are grounded in the documentation": every slice item traces to a
    ledger row with its governing cite (reconciliation.md; Doc/Interpretation Gates + 10 sweep passes); the only doc-silent
    placements were R-45 (ruled below) and EC-5 `⋯` (routed to fe-sessions).

@@ -46,16 +46,48 @@ const editorialTile = (i: Item) => (
       borderWidth={1}
       borderColor="$colorBorderDefault"
     >
-      <View position="absolute" left={8} top={8} backgroundColor="$colorSurfacePrimary" borderRadius="$sm" paddingHorizontal={6} paddingVertical={2}>
-        <Text className="vida-gtile-kicker" fontFamily="$body" fontSize="$caption" fontWeight="700" letterSpacing={0.8} textTransform="uppercase" color="$colorTextMuted">
+      <View
+        position="absolute"
+        left={8}
+        top={8}
+        backgroundColor="$colorSurfacePrimary"
+        borderRadius="$sm"
+        paddingHorizontal={6}
+        paddingVertical={2}
+      >
+        <Text
+          className="vida-gtile-kicker"
+          fontFamily="$body"
+          fontSize="$caption"
+          fontWeight="700"
+          letterSpacing={0.8}
+          textTransform="uppercase"
+          color="$colorTextMuted"
+        >
           {i.kicker}
         </Text>
       </View>
     </View>
-    <Text className="vida-gtile-title" fontFamily="$display" fontSize="$small" fontWeight="500" color="$colorTextPrimary" marginTop={8}>
+    <Text
+      className="vida-gtile-title"
+      fontFamily="$display"
+      fontSize="$small"
+      fontWeight="500"
+      color="$colorTextPrimary"
+      marginTop={8}
+    >
       {i.title}
     </Text>
-    <Text className="vida-gtile-caption" fontFamily="$body" fontSize="$caption" letterSpacing={0.4} textTransform="uppercase" color="$colorTextMuted" marginTop={2} style={{ fontVariantNumeric: 'tabular-nums' }}>
+    <Text
+      className="vida-gtile-caption"
+      fontFamily="$body"
+      fontSize="$caption"
+      letterSpacing={0.4}
+      textTransform="uppercase"
+      color="$colorTextMuted"
+      marginTop={2}
+      style={{ fontVariantNumeric: 'tabular-nums' }}
+    >
       {i.caption}
     </Text>
   </View>
@@ -138,7 +170,13 @@ export const TileWidth: Story = {
     <View gap={24} width={640} maxWidth="100%">
       {([140, 200, 280] as const).map((w) => (
         <Section key={w} label={`minTileWidth: ${w}`}>
-          <GalleryView<Item> items={ITEMS} getKey={(i) => i.id} renderItem={tile} minTileWidth={w} aria-label="Photos" />
+          <GalleryView<Item>
+            items={ITEMS}
+            getKey={(i) => i.id}
+            renderItem={tile}
+            minTileWidth={w}
+            aria-label="Photos"
+          />
         </Section>
       ))}
     </View>
@@ -176,7 +214,13 @@ export const Density: Story = {
     <View gap={24} width={640} maxWidth="100%">
       {(['compact', 'default', 'spacious'] as const).map((d) => (
         <Section key={d} label={`density: ${d}`}>
-          <GalleryView<Item> items={ITEMS.slice(0, 4)} getKey={(i) => i.id} renderItem={tile} density={d} aria-label="Photos" />
+          <GalleryView<Item>
+            items={ITEMS.slice(0, 4)}
+            getKey={(i) => i.id}
+            renderItem={tile}
+            density={d}
+            aria-label="Photos"
+          />
         </Section>
       ))}
     </View>

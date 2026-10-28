@@ -6,13 +6,15 @@
 > (NOT-32/33/34/52) + the journals engine `docs/modules/journals/current-spec.md`.
 
 ## 1. What S5 is (scope line)
+
 The **`/summary` block render** — the daily OS summary, rendered per-section, where a missing/failing source degrades
 **that section only**, never the whole block (NOT-34/EC-9). fe-notes OWNS the **render + per-section degrade**; it
 consumes the journals ENGINE (`buildDashboard`) and does NOT re-author the engine or the editor node.
 
 **Doc-resolved boundary (grounded):**
+
 - **Engine = journals-service.** `buildDashboard(date, selection?) → DashboardData {summary: SectionData[], agenda:
-  SectionData[]}` — barrel-exported from `@vida/core/services/journals`; **per-section degrade is ALREADY engine-side**
+SectionData[]}` — barrel-exported from `@vida/core/services/journals`; **per-section degrade is ALREADY engine-side**
   (per-provider try/catch → `{state:'error'}`; `journalStillRenders` anti-blank) [FACT: journals current-spec.md
   buildDashboard; NOT-32/34 JOU-13]. Notes owns only `summary_config` STORAGE (①, a `pages` column) — not the engine.
 - **UI = P6 (fe-notes).** NOT-32/34 SPLIT homes "the `/summary` block render + per-section degrade" to P6 [FACT:
@@ -24,6 +26,7 @@ consumes the journals ENGINE (`buildDashboard`) and does NOT re-author the engin
   **F-S5-1 finding** (parallel to F-S4-1): fe-notes builds the render; the editor node-view mount is ui-3.
 
 **In scope (S5 — apps/web):**
+
 - `SummaryView` (presentational, state-as-prop): renders `SectionData[]` — each section by its `state`:
   **success** → the section's `dataPoints[].label` list (`DataPoint = {id,label}`, human-readable); **empty** → a muted
   "No `<module>` today"; **error** → a section-scoped calm error (`role=status`); plus **block-level** states (loading /
@@ -37,6 +40,7 @@ consumes the journals ENGINE (`buildDashboard`) and does NOT re-author the engin
   deps `@vida/core`).
 
 **Explicitly OUT (homed/deferred — no pull-forward, §XXVIII if tempted):**
+
 - The inline editor `/summary` block NODE-VIEW (E5 real body) → **ui-3/#31** (F-S5-1).
 - Live `buildDashboard` wiring (a live composition root + registered contributors) → data plane (S1-D2/F3) — stubbed.
 - `summary_config` read/write UI (which sections are enabled) → S6 metadata controls / NOT-32 config; **S5 renders the
@@ -45,6 +49,7 @@ consumes the journals ENGINE (`buildDashboard`) and does NOT re-author the engin
   **fe-journals** (EC-18a RIDE); S5 renders only the `summary` sections in the stub's Summary seam.
 
 ## 2. Composition shape
+
 ```
 note-overview.tsx  (journalOverviewStub — S2, edited)
 └─ replaces SummarySeam() with:
@@ -56,21 +61,24 @@ note-overview.tsx  (journalOverviewStub — S2, edited)
             block states: loading | error | empty            (whole-block terminal)
             per SectionData: success → items/dataPoints · empty → section-empty · error → section-error (EC-9/NOT-34)
 ```
+
 `SummaryView` is **body-only** (the overview Section frame supplies the "Summary" label). One component; the journal
 is the only page-type whose overview has a Summary section (note overview = Properties/Attachments/Backlinks).
 
 ## 3. Net-new units (files)
-| File | Purpose | Notes |
-|------|---------|-------|
-| `apps/web/src/notes/use-journal-summary.ts` | DATA seam — `{sections: SectionData[], state}`; `?sample` | STUB; live = `buildDashboard(date).summary`; key `['journal','summary',date]` |
-| `apps/web/src/notes/summary-block.tsx` | `SummaryView` (state-as-prop) + `SummaryBlock` (hook shell) | reuses `note-chrome` `Eyebrow`/`Row`/`Icon`; per-section + block states |
-| `apps/web/src/notes/note-overview.tsx` (edit) | swap `SummarySeam` → `<SummaryBlock page={page}/>` in `journalOverviewStub` (merged + tabbed) | remove dead `SummarySeam` |
-| `*.test.ts(x)` | `summary-block.test.tsx` (block states + per-section degrade matrix) | mirror S3/S4 |
+
+| File                                          | Purpose                                                                                       | Notes                                                                         |
+| --------------------------------------------- | --------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `apps/web/src/notes/use-journal-summary.ts`   | DATA seam — `{sections: SectionData[], state}`; `?sample`                                     | STUB; live = `buildDashboard(date).summary`; key `['journal','summary',date]` |
+| `apps/web/src/notes/summary-block.tsx`        | `SummaryView` (state-as-prop) + `SummaryBlock` (hook shell)                                   | reuses `note-chrome` `Eyebrow`/`Row`/`Icon`; per-section + block states       |
+| `apps/web/src/notes/note-overview.tsx` (edit) | swap `SummarySeam` → `<SummaryBlock page={page}/>` in `journalOverviewStub` (merged + tabbed) | remove dead `SummarySeam`                                                     |
+| `*.test.ts(x)`                                | `summary-block.test.tsx` (block states + per-section degrade matrix)                          | mirror S3/S4                                                                  |
 
 Reuses shipped: `note-chrome` atoms · `SectionData`/`DashboardData` (type-only, `@vida/core`) · Tamagui · Lucide (EC-22).
 **No new `@vida/ui` primitive.**
 
 ## 4. Decisions — all DOC-RESOLVED
+
 - **D-S5-1 — per-section degrade is RENDER-over-engine-state, not re-derived.** `buildDashboard` already returns each
   section with `state: TerminalState` (per-provider try/catch) [FACT: journals current-spec]. `SummaryView` renders each
   `SectionData` by its `state` — success/empty/error per section (EC-9/NOT-34). fe-notes does NOT re-run providers or
@@ -93,18 +101,20 @@ Reuses shipped: `note-chrome` atoms · `SectionData`/`DashboardData` (type-only,
   success section renders its `dataPoints[].label` (a labeled list); the rich per-module item body is each module's ② /
   the inline editor block, NOT fe-notes (keeps the render generic over any `SectionData`).
 - **D-S5-8 — tabbed-mode wiring (N1):** in `journalOverviewStub` tabbed, flip the `summary` block `state: 'empty' →
-  'success'` + `renderBlock` returns `<SummaryBlock>` (the S3 backlinks-block pattern — the panel owns its own ladder);
+'success'` + `renderBlock` returns `<SummaryBlock>` (the S3 backlinks-block pattern — the panel owns its own ladder);
   merged renders `<SummaryBlock>` inside the Summary Section.
 
 ## 5. Envision coverage — S5's EC Visual-Gate MUSTs
-| EC | Requirement | S5 assertion |
-|----|-------------|--------------|
-| **EC-9** | `/summary` renders per-section; a missing source degrades **that section only**, never the whole block | Visual Gate: a sample with ≥3 sections of MIXED state (success + empty + error) — the error section shows a scoped error, the others still render |
-| **EC-15** | the journal shows `/summary` | the journal-overview Summary section renders the real block (not the S2 seam) |
-| **EC-22** | Lucide icons token-tinted | section rows carry Lucide svg |
-| EC-16/17 (feel) | editorial calm | live per-slice Visual Gate (full-matrix AA) |
+
+| EC              | Requirement                                                                                            | S5 assertion                                                                                                                                      |
+| --------------- | ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **EC-9**        | `/summary` renders per-section; a missing source degrades **that section only**, never the whole block | Visual Gate: a sample with ≥3 sections of MIXED state (success + empty + error) — the error section shows a scoped error, the others still render |
+| **EC-15**       | the journal shows `/summary`                                                                           | the journal-overview Summary section renders the real block (not the S2 seam)                                                                     |
+| **EC-22**       | Lucide icons token-tinted                                                                              | section rows carry Lucide svg                                                                                                                     |
+| EC-16/17 (feel) | editorial calm                                                                                         | live per-slice Visual Gate (full-matrix AA)                                                                                                       |
 
 ## 6. Test plan
+
 - `summary-block.test.tsx` (drive `SummaryView` directly): block `loading`(aria-busy)/`error`(role=status)/`empty`;
   `populated` with a **mixed-state section array** → success section renders its `dataPoints[].label`s, empty section
   renders its empty line, **error section renders a scoped `role=status` error WHILE the others still render** (EC-9/
@@ -113,13 +123,16 @@ Reuses shipped: `note-chrome` atoms · `SectionData`/`DashboardData` (type-only,
 - Full `@vida/web` suite green.
 
 ## 7. Blocking Visual Gate (real browser, after g2)
+
 Brave; real app `/notes/2?sample` (id 2 = journal — `SAMPLE_TYPE['2']='journal'`, so the journal overview + Summary
 section render). 3 presets × light/dark × {merged, tabbed} × 375/768/1440:
+
 - EC-9: the Summary section shows ≥3 sections with ≥1 in an ERROR state scoped to that section (others still render).
 - EC-15: the journal overview Summary section renders the block (not "appears here once connected").
 - EC-22: Lucide svg; full-matrix **AA** on section text incl. warm-dark; `axe` 0; 0 overflow; MEASURED_OK + composite opacity.
 
 ## 8. Risks / findings
+
 - **F-S5-1 (FILED — not built here):** the inline editor `/summary` block node-view (E5 real body) is ui-3/#31; add to
   the parking lot alongside EC-24/F-S4-1. fe-notes' render mounts in the journal overview now; the editor node-view later.
 - **R1 — sample must exercise a mixed-state array** (not all-success) or EC-9's "degrade that section only" is unproven
@@ -129,4 +142,5 @@ section render). 3 presets × light/dark × {merged, tabbed} × 375/768/1440:
   render generic over `SectionData` — a per-module rich body is out of scope.
 
 ## 9. Performance budget (§XXII)
+
 `SummaryView` is O(n) over the sections (small, ~5-10). No memoization. Stated per §XXII; N/A-trivial for the stub.

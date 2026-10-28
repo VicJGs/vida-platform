@@ -55,7 +55,9 @@ describe('FlowSessionView — the Flow/Session shell', () => {
   // ── BR-FS-4/EC-2: the CURRENT stage shows the standardized affordances ──────────────────────
   it('current stage renders Mark done / Require proof / Attach Document·Photo·Audio (when handlers given)', () => {
     // render-when-handler: the affordance row renders only when a handler is provided (not unconditionally).
-    const { getByRole } = renderUI(<FlowSessionView title="F" stages={STAGES} onMarkDone={() => {}} onRequireProof={() => {}} onAttach={() => {}} />)
+    const { getByRole } = renderUI(
+      <FlowSessionView title="F" stages={STAGES} onMarkDone={() => {}} onRequireProof={() => {}} onAttach={() => {}} />,
+    )
     expect(getByRole('button', { name: 'Mark done' })).not.toBeNull()
     expect(getByRole('button', { name: 'Require proof' })).not.toBeNull()
     expect(getByRole('button', { name: 'Document' })).not.toBeNull()
@@ -76,7 +78,13 @@ describe('FlowSessionView — the Flow/Session shell', () => {
     const onRequireProof = vi.fn()
     const onAttach = vi.fn()
     const { getByRole } = renderUI(
-      <FlowSessionView title="F" stages={STAGES} onMarkDone={onMarkDone} onRequireProof={onRequireProof} onAttach={onAttach} />,
+      <FlowSessionView
+        title="F"
+        stages={STAGES}
+        onMarkDone={onMarkDone}
+        onRequireProof={onRequireProof}
+        onAttach={onAttach}
+      />,
     )
     fireEvent.click(getByRole('button', { name: 'Mark done' }))
     expect(onMarkDone).toHaveBeenCalledWith('s2')

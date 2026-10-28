@@ -12,6 +12,7 @@ workaround). Rev 2 had applied the gate-1 critique (REVISE): local spinner (no r
 
 Verified against `@tamagui/core` 2.6.2 docs (styled.mdx · components/new-inputs/2.0.0.mdx · intro/styles.mdx ·
 guides/theme-builder.mdx · guides/how-to-upgrade.mdx). Facts that shape the impl:
+
 - **`render:'input'`** — `styled(View, { render:'<tag>' })` with a string is the documented, compiler-optimized way
   to emit a semantic HTML element on web [FACT: styled.mdx "Render HTML Elements"]. Same family as Button's `render:'button'`.
 - **Web-standard event model** — v2 Input uses `onChange={(e)=> …e.target?.value ?? e.nativeEvent?.text ?? ''}`,
@@ -29,13 +30,14 @@ guides/theme-builder.mdx · guides/how-to-upgrade.mdx). Facts that shape the imp
   (ColorTokens), `type` union incl. `'search'`, `selectionColor`, built-in RN keyboard parity — **NOT installed**
   (only core + animations-css). → the base-component fork below (OPEN DECISION #1).
 
-## First-impl VERIFY (the two things docs don't settle for a *core* `render:'input'`)
+## First-impl VERIFY (the two things docs don't settle for a _core_ `render:'input'`)
 
 Docs answered most of Rev 2's spike. If we build on core `render:'input'` (recommended), two items remain to
 confirm in-browser as the FIRST implementation action (U1 "measure the render" discipline), before the rest:
+
 1. **Controlled-prop + ref forwarding** — a bare `styled(View,{render:'input'})` forwards `value`/`onChange`/`type`/
    `readOnly`/etc. to the DOM node and `forwardRef` lands on that `<input>` (the web-standard model is documented for
-   the *Input component*; confirm it holds for a core styled-view-as-input).
+   the _Input component_; confirm it holds for a core styled-view-as-input).
 2. **Placeholder color** — does `placeholderTextColor='$placeholder'` apply on core `render:'input'` (it's a documented
    `@tamagui/input` prop; may not be wired on a bare styled view)? If not → the minimal fallback is a `::placeholder`
    rule keyed to the frame's Tamagui-generated class, color from a REAL emitted theme var (never `variables.css`,
@@ -61,11 +63,11 @@ the `leading`/`trailing` slots sit inside the box. The forwarded ref targets the
   the spike (step 2).
 - **Focus ring on the frame = `focusWithinStyle` (documented).** The frame is a non-focusable `View`, so Button's
   `focusVisibleStyle` (keys off the element's OWN focus, button.tsx:30-35) can't fire on it. Tamagui's
-  **`focusWithinStyle`** fires when a *descendant* (the inner `<input>`) is focused [FACT: intro/styles.mdx] — exactly
+  **`focusWithinStyle`** fires when a _descendant_ (the inner `<input>`) is focused [FACT: intro/styles.mdx] — exactly
   our case: `focusWithinStyle={{ outlineColor:'$colorFocusRing', outlineWidth:2, outlineStyle:'solid', outlineOffset:2,
-  borderColor:'$borderFocus' }}`. Colors are **theme tokens** → switch light↔dark correctly (no injected hex, no
+borderColor:'$borderFocus' }}`. Colors are **theme tokens** → switch light↔dark correctly (no injected hex, no
   `var(--focus-ring)` — resolves critique B1). **Note (§VIII):** `:focus-within` fires on pointer AND keyboard;
-  for a *text field* that is the correct, native behavior (the field is active for typing → ring shows), whereas
+  for a _text field_ that is the correct, native behavior (the field is active for typing → ring shows), whereas
   §VIII's pointer-suppression is a button concern (a text input's caret already signals activation). Reasoned
   choice, not an oversight.
 
@@ -73,7 +75,7 @@ the `leading`/`trailing` slots sit inside the box. The forwarded ref targets the
 
 - `onChangeText?: (v)=>void` → `onChange={(e)=> onChangeText?.(e.target?.value ?? e.nativeEvent?.text ?? '')}` — the
   documented v2 web-standard extraction [FACT: how-to-upgrade.mdx], defensive across web/RN. `value`/`defaultValue`
-  pass through for controlled/uncontrolled. (Forwarding on a *core* render:'input' = First-impl VERIFY item 1.)
+  pass through for controlled/uncontrolled. (Forwarding on a _core_ render:'input' = First-impl VERIFY item 1.)
 - `type` → native `type` attr, the full 6-value union `'text'|'email'|'password'|'number'|'tel'|'url'` [FACT:
   input.md:23]; `password` masks natively. (A test asserts a non-`password` value, e.g. `type="email"`, reaches the
   DOM `type` attr — password-only proof isn't proof the union forwards.) `readOnly`→`readOnly`+`aria-readonly`; `required`→
@@ -83,16 +85,16 @@ the `leading`/`trailing` slots sit inside the box. The forwarded ref targets the
 
 ## Token map (all via the Input sub-theme; base tokens cascade through)
 
-| Slot | Token | Source [themes.ts:21] |
-|------|-------|------------------------|
-| fill | `$background` | `colorSurfacePrimary` |
-| border (default) | `$border` | `colorBorderDefault` |
-| border (focus) | `$borderFocus` | `colorFocusRing` |
-| border (error) | `$borderError` | `colorSignalDanger` |
-| text | `$text` | `colorTextPrimary` |
-| placeholder | `$placeholder` | `colorTextMuted` |
-| radius | `$radius` | `radiusControl` |
-| ring | `$colorFocusRing` (base cascades) | — |
+| Slot             | Token                             | Source [themes.ts:21] |
+| ---------------- | --------------------------------- | --------------------- |
+| fill             | `$background`                     | `colorSurfacePrimary` |
+| border (default) | `$border`                         | `colorBorderDefault`  |
+| border (focus)   | `$borderFocus`                    | `colorFocusRing`      |
+| border (error)   | `$borderError`                    | `colorSignalDanger`   |
+| text             | `$text`                           | `colorTextPrimary`    |
+| placeholder      | `$placeholder`                    | `colorTextMuted`      |
+| radius           | `$radius`                         | `radiusControl`       |
+| ring             | `$colorFocusRing` (base cascades) | —                     |
 
 `padding` component token = `spaceInsetDefault` = `space.12`; **it can't drive `paddingHorizontal`** (Tamagui
 resolves space props against the space scale, not the sub-theme — U1 post-impl fact). So padding uses **space-scale
@@ -105,16 +107,16 @@ tokens** (`$12/$16/$20`), same as Button.
 
 ## 8 visual states (per contract §Visual States — error/empty are FULLY live here)
 
-| State | Impl |
-|-------|------|
-| default | `$background` fill + 1px `$border` + `$text` + `$radius` + padding |
-| hover | **border strengthens** via `hoverStyle:{ borderColor: … }` on the frame (the frame IS the hovered element — no `group`, no injected CSS). Which token = OPEN DECISION #1 (no `input.borderHover` token; UI-1 can't add tokens). Instant swap (B12) |
-| focus | 2px `$colorFocusRing` ring on the FRAME + `borderColor → $borderFocus`, via documented **`focusWithinStyle`** (fires on the inner input's focus; tokens switch light↔dark). Ring shows whenever the field is active — correct for a text input (see Structure §) |
-| active | typing/caret — native caret; visually identical to focus |
-| disabled | native `disabled` (not focusable) + muted fill/text via `opacity:0.5` (manual, keyed to `disabled`) + `cursor:'not-allowed'` |
-| loading | trailing spinner (LOCAL to input.tsx — see Files) + `aria-busy`; input stays readable/editable |
-| error | `invalid` → `borderColor → $borderError` (danger) + `aria-invalid="true"`; forwards `aria-describedby` (see Error ownership §). Error takes precedence over the focus border color when both hold |
-| empty | native `placeholder` in `$placeholder` (muted); placeholder is never the value (controlled `value` stays independent) |
+| State    | Impl                                                                                                                                                                                                                                                             |
+| -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| default  | `$background` fill + 1px `$border` + `$text` + `$radius` + padding                                                                                                                                                                                               |
+| hover    | **border strengthens** via `hoverStyle:{ borderColor: … }` on the frame (the frame IS the hovered element — no `group`, no injected CSS). Which token = OPEN DECISION #1 (no `input.borderHover` token; UI-1 can't add tokens). Instant swap (B12)               |
+| focus    | 2px `$colorFocusRing` ring on the FRAME + `borderColor → $borderFocus`, via documented **`focusWithinStyle`** (fires on the inner input's focus; tokens switch light↔dark). Ring shows whenever the field is active — correct for a text input (see Structure §) |
+| active   | typing/caret — native caret; visually identical to focus                                                                                                                                                                                                         |
+| disabled | native `disabled` (not focusable) + muted fill/text via `opacity:0.5` (manual, keyed to `disabled`) + `cursor:'not-allowed'`                                                                                                                                     |
+| loading  | trailing spinner (LOCAL to input.tsx — see Files) + `aria-busy`; input stays readable/editable                                                                                                                                                                   |
+| error    | `invalid` → `borderColor → $borderError` (danger) + `aria-invalid="true"`; forwards `aria-describedby` (see Error ownership §). Error takes precedence over the focus border color when both hold                                                                |
+| empty    | native `placeholder` in `$placeholder` (muted); placeholder is never the value (controlled `value` stays independent)                                                                                                                                            |
 
 ## Motion — TRANSCRIBED from the contract [FACT: input.md:44-49; themes/CLAUDE.md B12]
 
@@ -125,7 +127,7 @@ tokens** (`$12/$16/$20`), same as Button.
   `$borderFocus`/`$borderError`/`$colorFocusRing` + the hover token — all resolve per active theme AND switch
   light↔dark. The `variables.css` `--*` names are a Figma/doc projection, NOT wired at runtime [FACT: CLAUDE.md:32].
 - **Placeholder color** = `placeholderTextColor='$placeholder'` (documented `@tamagui/input` prop [FACT:
-  new-inputs/2.0.0.mdx]; First-impl VERIFY item 2 confirms it applies on a *core* render:'input'). Fallback = one
+  new-inputs/2.0.0.mdx]; First-impl VERIFY item 2 confirms it applies on a _core_ render:'input'). Fallback = one
   `::placeholder` rule keyed to the frame's Tamagui class, color from a REAL emitted theme var — structural, not a hex.
 - **Focus-ring fade (OPEN DECISION #3):** the contract names an opacity fade-in (`duration.fast`/`easing.out`).
   Button shipped an **instant** outline ring (an outline can't animate opacity; a box-shadow ring can, but B12
@@ -188,16 +190,16 @@ reserved space.
 3. **Focus-ring fade** → recommend instant ring (U1 parity; an outline can't fade-opacity, a box-shadow ring can't
    under B12). The contract's fade is a deferred nicety, not a per-component fork. (See Motion §.)
 
-*(Dropped from Rev 1: spinner extraction — now local, no fork, per S3. Error-text ownership — a contract FACT, not
-a decision, per S4.)*
+_(Dropped from Rev 1: spinner extraction — now local, no fork, per S3. Error-text ownership — a contract FACT, not
+a decision, per S4.)_
 
 ## Build result + gates (2026-08-06)
 
 - **First-impl VERIFY** (the two doc-unsettled items, measured in jsdom/probe): (1) core `styled(View,{render:'input'})`
-  **forwards** value/onChange/type/disabled/readOnly/required/aria-* + `forwardRef` lands on the DOM `<input>` — **PASS**
+  **forwards** value/onChange/type/disabled/readOnly/required/aria-\* + `forwardRef` lands on the DOM `<input>` — **PASS**
   → base = **(1a) core render:'input'**, no `@tamagui/input` dep. (2) `placeholderTextColor` is **NOT** consumed on core
   render:'input' (React warns) — **used the fallback:** `internal/input-styles.ts` injects `.vida-input::placeholder{
-  color:var(--placeholder)}`; the probe confirmed `--placeholder` is the real Tamagui theme var (light `neutral500` /
+color:var(--placeholder)}`; the probe confirmed `--placeholder` is the real Tamagui theme var (light `neutral500` /
   dark `neutral400`) → muted + theme-switching, no hardcoded hex.
 - **Post-impl critique** (independent, on the actual code): **SHIP.** Empirically verified (rendered into jsdom): the
   invalid-over-focus/hover border precedence is real (Tamagui's variant merge emits only the winner — not a cascade

@@ -54,7 +54,9 @@ describe('reach surfaces', () => {
     // copy honesty (EC-7): no ZK/dead-end strings
     expect(lintCopy('Make Vida yours')).toEqual([])
     expect(
-      lintCopy('Pick the areas you want in your sidebar and choose a look. It takes a minute, and you can change everything later.'),
+      lintCopy(
+        'Pick the areas you want in your sidebar and choose a look. It takes a minute, and you can change everything later.',
+      ),
     ).toEqual([])
   })
 

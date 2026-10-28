@@ -21,7 +21,7 @@ exists** — each surface would hand-roll the P5 teaching-invitation. House patt
 (or renders standalone): **icon/art · title · teaching body · primary way(s) in · opt-in guided-setup**. The P5 anatomy,
 `packages/ui/src/components/empty-state.tsx`.
 
-**Is not:** a state machine (that's S1 — EmptyState *is* the `empty`/`idle→empty` render target, `renderKindFor → 'empty-state'`);
+**Is not:** a state machine (that's S1 — EmptyState _is_ the `empty`/`idle→empty` render target, `renderKindFor → 'empty-state'`);
 interactive itself (the §VIII 8-state matrix applies to the composed `Button`s, not to EmptyState); the data-view default
 `Message` (unchanged — EmptyState is the richer opt-in that fills the slot).
 
@@ -49,12 +49,12 @@ interactive itself (the §VIII 8-state matrix applies to the composed `Button`s,
 
 ```ts
 export interface EmptyStateProps extends Omit<GetProps<typeof EmptyFrame>, 'children'> {
-  title: string          // the headline — "what this is" (sentence-case, VoiceCopy). string → drives aria-labelledby.
-  titleLevel?: number    // aria-level for the title heading (default 2) — overridable per placement depth
-  icon?: ReactNode       // optional art/glyph — decorative (aria-hidden)
-  children?: ReactNode   // teaching body — why it's empty / how to fill it
-  action?: ReactNode     // the primary way(s) in — slot (one or more ui-1 Buttons)
-  guidedSetup?: ReactNode// optional opt-in setup link — secondary, never a wall
+  title: string // the headline — "what this is" (sentence-case, VoiceCopy). string → drives aria-labelledby.
+  titleLevel?: number // aria-level for the title heading (default 2) — overridable per placement depth
+  icon?: ReactNode // optional art/glyph — decorative (aria-hidden)
+  children?: ReactNode // teaching body — why it's empty / how to fill it
+  action?: ReactNode // the primary way(s) in — slot (one or more ui-1 Buttons)
+  guidedSetup?: ReactNode // optional opt-in setup link — secondary, never a wall
 }
 ```
 
@@ -80,7 +80,7 @@ real role keys (`$display/$heading/$body/$small/$caption` — **no `$subheading`
 ## §5. Implementation prompt (type-first, then states)
 
 1. `packages/ui/src/components/empty-state.tsx` — `EmptyFrame = styled(View,{name:'EmptyState', flexDirection:'column',
-   alignItems:'center', gap, padding, direct semantic tokens})`; sub-frames for title/body/guided (styled `Text`);
+alignItems:'center', gap, padding, direct semantic tokens})`; sub-frames for title/body/guided (styled `Text`);
    `forwardRef<ComponentRef<typeof EmptyFrame>, EmptyStateProps>`; a generated `useId()` for the aria-labelledby; dev-warn
    if `title` empty (card.tsx guard precedent). Named export (repo convention — card/button are named-only).
 2. `packages/ui/src/index.ts` — `export { EmptyState, type EmptyStateProps } from './components/empty-state'`.

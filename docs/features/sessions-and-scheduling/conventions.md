@@ -1,11 +1,12 @@
 <!-- Conventions — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 §5.11 + study_sessions · type moves knowledge.ts L222-250 · v1 studyPlanner.ts + entities.ts L1677-1711 · CLAUDE.md conventions · docs/intake/sessions-and-scheduling.md -->
 
-# Conventions — Sessions & Scheduling  (level: Foundation / OWN MODULE)
+# Conventions — Sessions & Scheduling (level: Foundation / OWN MODULE)
 
 > This module is **INTENDED** (v2 = schema-only, 0 logic). These conventions govern how it gets built, and
 > flag the FACT-base landmines so the build doesn't repeat v1/v2 mistakes.
 
 ## How to build here
+
 - **Table-per-type is the pattern.** Every session sub-type = a row in the base `sessions` spine + a 1:1 row
   in a module-owned extension table (`session_id` FK). Read the spine for cross-type work (agenda, Journal,
   Calendar, analytics); join the extension only for that type's tooling. Never widen the spine with
@@ -31,6 +32,7 @@
 - **Analytics are read-time.** Compute from the session log; no synced aggregate tables (SS-12). `[INTENT G8]`
 
 ## Naming & layout
+
 - Sub-types are `<x>_session` (singular concept, plural table): `class_session`, `reading_session`,
   `work_session`. The base is `sessions`; the discriminator is `sub_type`.
 - Scheduling entities: `planned_block` (NOT "scheduled_session" — the rename marks the reshape from mirror to
@@ -41,6 +43,7 @@
   `deleted_at`. `[FACT: CLAUDE.md Conventions]`
 
 ## Landmines / local "never do"
+
 - **The v2 surface is a schema stub — never cite it as behaviour.** `study-planner.ts`, `pomodoro-service.ts`,
   `models/learning.ts` are **0 lines**. There is no engine yet; docs describe INTENDED. `[FACT: wc -l = 0]`
 - **Planner types are in `knowledge.ts`, not `learning.ts`.** `ScheduledStudySession` + `SessionTemplate`
@@ -61,4 +64,5 @@
   post-completion pass (G9); do not fabricate view behaviour in these docs. `[INTENT Victor 2026-07-12]`
 
 ## Completion checklist
+
 - [x] patterns in use (INTENDED, marked) · [x] naming & layout · [x] landmines (v1/v2 traps) · [x] [FACT]/[INTENT] on each claim

@@ -7,13 +7,14 @@
 ## 0. One-line
 
 Canvas: Editor is the composition that **mounts the already-shipped `<VidaEditor>` inside the editorial CODEC
-frame**, producing the *"Editor facet body"* that `EntityView` #6 — and later #18 home journal facet / #27 notes —
+frame**, producing the _"Editor facet body"_ that `EntityView` #6 — and later #18 home journal facet / #27 notes —
 consume as their `editor` slot. It is **not** "build the editor" (that is UI-3, shipped E1–E8) and **not** "wire the
 block registry" (the 11+11 blocks already register; real `CapabilityRegistry` wiring is MOD-notes #31).
 
 ## 1. DEPENDENCIES
 
 ### 1.1 The decisive one — the package boundary forces the plane
+
 - `@vida/editor` **depends on** `@vida/ui` (and `@vida/types`) [FACT: packages/editor/package.json — deps `{@vida/types, @vida/ui}`].
 - `@vida/ui` has **no `@vida/*` runtime deps** [FACT: packages/ui/package.json — no vida deps] → it **cannot import `@vida/editor`** without a dependency cycle (`editor→ui` + `ui→editor`).
 - ⇒ **A shell that renders `<VidaEditor>` cannot live in `@vida/ui`.** Unlike siblings canvas-board/reader/graph
@@ -22,6 +23,7 @@ block registry" (the 11+11 blocks already register; real `CapabilityRegistry` wi
 - `apps/web` currently depends on `@vida/core`, `@vida/types`, `@vida/ui` — but **NOT `@vida/editor`** [FACT: apps/web/package.json deps]. Adding `@vida/editor` to `apps/web` is the enabling seam of this unit; `apps/web → @vida/editor → @vida/ui` is acyclic.
 
 ### 1.2 Shipped substrate this unit COMPOSES (not rebuilds)
+
 - `<VidaEditor>` (UI-3, E1–E8) — uncontrolled: `defaultValue?` + `onChange?(doc)` + imperative `VidaEditorHandle{setContent,focus,getDocument}`; `editable`/`toolbar`/`placeholder`; `aria-label`|`aria-labelledby` REQUIRED [FACT: packages/editor/src/editor.tsx:36-58]. Exports + serializers `toMarkdown/fromMarkdown/toPdf/toDocx` [FACT: packages/editor/src/index.ts].
 - The **11 standard + 11 integration blocks** already register into the editor schema; integration blocks render placeholder node-views until their modules ship (never crash) [FACT: packages/editor/src/extensions/{standard-blocks,integration-blocks}.tsx; baseline §2].
 - `CanvasView` (#10) — renderer-agnostic, **children-based** frame: masthead (eyebrow/title/meta/progress slot/actions slot/hairline), state-override rule (`empty`/`error` override slots → else `children`), responsive wrap, `maxWidth:1136`, `role=region` [FACT: packages/ui/src/components/canvas-view.tsx:34-110].
@@ -29,9 +31,10 @@ block registry" (the 11+11 blocks already register; real `CapabilityRegistry` wi
 - 8-state machine `interaction-state.ts` (patterns S1) in `apps/web/src/state-conventions/` — state derived in apps/web, passed as a prop [FACT: apps/web/src/state-conventions/interaction-state.ts; baseline §4].
 
 ### 1.3 Blocking / blocked
+
 - Blocked by `fe-codec-patterns` (LIF-211 ✅ done) [FACT: g6-reshape-runbook.md:37 — dep = fe-codec-patterns only].
 - Blocks `fe-home` #18 (journal Editor facet) + `fe-notes-and-pages` #27 (Note Entity, Editor-led) [FACT: frontend-replan/reconstructed-structure.md:43,57]. (Historically also #13 seams, already shipped-around #7.)
-- **Not** a dependency of `fe-codec-entity-facet` #6 — #6 shipped the *seam* (optional `editor` slot) and explicitly deferred the body to #7 "later" [FACT: packages/ui/src/components/entity-view.tsx:14-15,20-22].
+- **Not** a dependency of `fe-codec-entity-facet` #6 — #6 shipped the _seam_ (optional `editor` slot) and explicitly deferred the body to #7 "later" [FACT: packages/ui/src/components/entity-view.tsx:14-15,20-22].
 
 ## 2. NEEDS (what the consumers actually require from #7)
 
@@ -41,15 +44,15 @@ block registry" (the 11+11 blocks already register; real `CapabilityRegistry` wi
 
 ## 3. ORGANIZATION (where the code lands — [INFERENCE], ratified at Decomposition)
 
-| Piece | Plane | Build vs reuse |
-|---|---|---|
-| `CanvasEditor` composition (frames `<VidaEditor>` in the editorial voice + SyncStatus + state threading + a11y) | **apps/web** | net-new (thin) |
-| `@vida/editor` added to `apps/web` deps + first real editor mount proven in the vite app | **apps/web** | seam enable |
-| Persistence CONVENTION (EditorDocument ↔ pages.content mapping; pure) + deferred `usePage`/`useEditorDoc` hook note | **apps/web** | net-new (pure) + deferred |
-| The CODEC frame | `@vida/ui` `CanvasView` | **RATIFY** (reuse; renderer-agnostic by design) |
-| Save-state surface | `@vida/ui` `SyncStatus` | **RATIFY** (reuse) |
-| The 11+11 blocks + their schema registration | `@vida/editor` | **RATIFY** (already shipped) |
-| Real `CapabilityRegistry` block wiring | `@vida/core` | **OUT — MOD-notes #31** |
+| Piece                                                                                                               | Plane                   | Build vs reuse                                  |
+| ------------------------------------------------------------------------------------------------------------------- | ----------------------- | ----------------------------------------------- |
+| `CanvasEditor` composition (frames `<VidaEditor>` in the editorial voice + SyncStatus + state threading + a11y)     | **apps/web**            | net-new (thin)                                  |
+| `@vida/editor` added to `apps/web` deps + first real editor mount proven in the vite app                            | **apps/web**            | seam enable                                     |
+| Persistence CONVENTION (EditorDocument ↔ pages.content mapping; pure) + deferred `usePage`/`useEditorDoc` hook note | **apps/web**            | net-new (pure) + deferred                       |
+| The CODEC frame                                                                                                     | `@vida/ui` `CanvasView` | **RATIFY** (reuse; renderer-agnostic by design) |
+| Save-state surface                                                                                                  | `@vida/ui` `SyncStatus` | **RATIFY** (reuse)                              |
+| The 11+11 blocks + their schema registration                                                                        | `@vida/editor`          | **RATIFY** (already shipped)                    |
+| Real `CapabilityRegistry` block wiring                                                                              | `@vida/core`            | **OUT — MOD-notes #31**                         |
 
 ⇒ **Likely a small unit**: ~1 apps/web slice (compose + persistence convention) + possible 2nd slice only if an
 editor-canvas needs chrome `CanvasView` lacks. Much is RATIFY. This is the anti-over-engineering reading the gate exists to pin down.
@@ -71,10 +74,13 @@ editor-canvas needs chrome `CanvasView` lacks. Much is RATIFY. This is the anti-
 3. **Slice count:** 1 (apps/web compose + convention) vs 2 (if a net-new `@vida/ui` editor-canvas chrome is justified). Default to the thinnest that covers the Envision checkpoints.
 
 ### 5.1 RESOLVED by the docs — persistence scope = thin + defer (not a preference)
+
 The live `@vida/core` persistence mount is **out of #7 by the decomposition**, confirmed 2026-10-10 (Victor: "check the documentation"):
+
 - #7 is typed **"canvas" (presentational)**, dep on **#2 patterns only** [FACT: frontend-replan/reconstructed-structure.md:27; g6-reshape-runbook.md:37 "reuse UI-3"].
 - The **"runtime wiring (consume @vida/core)" is #13 seams' scope, not #7's** [FACT: frontend-replan/reconstructed-structure.md:33 — seams = "Capability/Block (inline/standalone) · … Spaces engine runtime wiring (consume @vida/core)", deps #3 #4 #7].
 - **`ProviderRead` = convention + `ProviderRead<T>` type, NOT a hook**; the hook is "**deferred to the first consumer**" [FACT: fe-codec-patterns/s5-conventions.md:33-35,67-69], applied verbatim by the sibling canvas adapters [FACT: apps/web/src/canvas/adapter.ts header].
-⇒ #7 ships: the `apps/web` presentational composition + the **pure** EditorDocument↔pages.content convention. It does **NOT** consume `@vida/core` at runtime and ships **no live data hook** (that is #13/#27). This is IR-6, now doc-anchored.
+  ⇒ #7 ships: the `apps/web` presentational composition + the **pure** EditorDocument↔pages.content convention. It does **NOT** consume `@vida/core` at runtime and ships **no live data hook** (that is #13/#27). This is IR-6, now doc-anchored.
+
 4. **Envision trigger (§3.75):** "a user affordance whose UI answer isn't obvious from a shipped surface?" — the editorial document-writing canvas is a **novel composition surface** → Envision likely **FIRES**. State the ruling explicitly at Step 1.5.
 5. **First-consumer boundary:** confirm entity-facet #6 is an unwired shell (so the live hook genuinely belongs to a later consumer, not #7).

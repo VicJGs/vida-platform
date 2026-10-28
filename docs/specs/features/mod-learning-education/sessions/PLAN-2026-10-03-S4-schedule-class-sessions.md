@@ -11,9 +11,10 @@
 ## 1. Objective (S4 only)
 
 Make a Subject's **schedule + class meetings** real, built on the `sessions` substrate:
+
 1. **Register the `class` session sub-type** (`registerLearningEducation()`, idempotent) so `createSession('class')`
    resolves [FACT: seam-contract.md:41; slice-map.md:21].
-2. **`subject_schedules`** — one row per subject (UNIQUE), recording the schedule's *source* (`ics`/`document`/`manual`)
+2. **`subject_schedules`** — one row per subject (UNIQUE), recording the schedule's _source_ (`ics`/`document`/`manual`)
    [FACT: seam-contract.md:42; schema learning.ts:26-27,242-247].
 3. **`class_sessions`** — the individual meetings = base `sessions` (`sub_type='class'`) + a 1:1 extension keyed
    `session_id`; the SUBJECT is attached as the ADR-004 §3.2.1 target [FACT: schema learning.ts:23-25,226-239; ED-4].
@@ -24,7 +25,7 @@ Make a Subject's **schedule + class meetings** real, built on the `sessions` sub
 nullable forward-link to S5), compute grades (S6/S7), or build any UI (② `fe-learning-education`, P6)
 [FACT: slice-map.md:22,29-32].
 
-## 2. Business Rules (BR-LE-S4-*)
+## 2. Business Rules (BR-LE-S4-\*)
 
 - **BR-LE-S4-1 — The `class` sub-type is registered, never re-defined.** `registerLearningEducation()` registers
   `CLASS_SESSION_TYPE_DEF` via the injected `SessionRegistry`; a 2nd call throws `DuplicateSubType` → caught → no-op
@@ -46,7 +47,7 @@ nullable forward-link to S5), compute grades (S6/S7), or build any UI (② `fe-l
   subject exists → `SubjectNotFoundError` (the BookNotFound precedent) [FACT: service.ts:14 no-FK service integrity].
 - **BR-LE-S4-4 — A class session is a base session + a 1:1 extension; `started_at` carries the MEETING TIME.**
   `createClassSession(subjectId,input)` guards the subject exists, then `sessions.createSession({sub_type:'class',
-  scheduling_mode, status, started_at, ended_at?})` and writes its OWN `class_sessions` row keyed `session_id` (a
+scheduling_mode, status, started_at, ended_at?})` and writes its OWN `class_sessions` row keyed `session_id` (a
   separate write; an orphan base session is harmless + re-drivable, no-FK) [FACT: books `startSession` service.ts:777-793].
   **B1 resolved — the meeting time lives in the spine `started_at`.** The `sessions` spine has NO dedicated
   scheduled-time column — only `started_at`/`ended_at` + a deferred `planned_block_id` [FACT: sessions.ts:32-34] — so a
@@ -96,7 +97,7 @@ the learning service never holds the sessions substrate's own deps (registry/rai
 S-later sessions-substrate addition, OUT of S4 scope. Stated, not silently chosen.
 
 **`getWeeklySchedule` time source:** the base session `started_at`, which carries the meeting time (BR-LE-S4-4 / B1);
-only an ad-hoc class logged with `started_at == null` is excluded from a weekly *time* window [FACT: ED-4]. `TimeRange`
+only an ad-hoc class logged with `started_at == null` is excluded from a weekly _time_ window [FACT: ED-4]. `TimeRange`
 = `{ start: number; end: number }` (Unix ms) is **reused from `../sessions`** [FACT: sessions types.ts:219-222 — the
 `dueIn`/`DueProvider` platform primitive; import, do not redefine] (fall back to a local alias only if the barrel does
 not re-export it).
@@ -109,6 +110,7 @@ mode/status choice itself].
 ## 4. Acceptance (§4 — the per-slice Verification Gate, blocking)
 
 Done = **all** of:
+
 - `registerLearningEducation()` registers `class`; a 2nd call is a no-op (no throw); `createClassSession` before
   registration surfaces `SessionTypeNotFound` from the registry (documented ordering) [FACT: registry.ts:123].
 - `setSchedule` creates one row; a 2nd `setSchedule` for the same subject UPDATES (still one row, UNIQUE honored);
@@ -126,15 +128,15 @@ Done = **all** of:
 ## 5. Implementation Prompt (§5 — the build steps, strict order)
 
 1. **`@vida/types/learning.ts`** — add `export interface SubjectSchedule extends SyncableEntity { subject_id: string;
-   source: ScheduleSource; deleted_at: number | null }` and `export interface ClassSession extends SyncableEntity {
-   session_id: string; subject_id: string; schedule_id: string | null; source_event_id: string | null; location:
-   string | null }` (mirror the rows exactly; no `deleted_at` on `ClassSession`). Barrel already re-exports learning.
+source: ScheduleSource; deleted_at: number | null }` and `export interface ClassSession extends SyncableEntity {
+session_id: string; subject_id: string; schedule_id: string | null; source_event_id: string | null; location:
+string | null }` (mirror the rows exactly; no `deleted_at` on `ClassSession`). Barrel already re-exports learning.
 2. **`validators/learning.ts`** — `SetScheduleSchema` (`source: z.enum(SCHEDULE_SOURCE)`); `CreateClassSessionSchema`
    (`startedAt` **required** Unix ms = the meeting time, B1; `scheduleId?`, `sourceEventId?`, `location?`,
    `schedulingMode?` default `'attended'`, `status?` default `'scheduled'`, `endedAt?`). Reuse the canonical `z.enum` wrappers.
 3. **`service/types.ts`** — grow `LearningEducationServiceDeps` (+`sessions`, +`sessionRegistry`); add input types
    (`SetScheduleInput`, `CreateClassSessionInput`), views (`ClassSessionView = { session: Session; classSession:
-   ClassSession }`), `TimeRange`, and the method signatures on `LearningEducationService`
+ClassSession }`), `TimeRange`, and the method signatures on `LearningEducationService`
    (`registerLearningEducation`, `setSchedule`, `createClassSession`, `listSessions`, `getWeeklySchedule`); add
    `ClassSessionNotFoundError`.
 4. **`service/service.ts`** — `CLASS_SESSION_TYPE_DEF` const (BR-LE-S4-2 transcription); destructure `sessions`,
@@ -144,9 +146,10 @@ Done = **all** of:
 5. **`__tests__`** — a live-store suite: registration idempotency + ordering, schedule upsert + UNIQUE, class-session
    create+attach, list (soft-delete exclusion), weekly range (in/out/untimed), typed errors.
 6. **tsc 0 · eslint 0 · enum-parity green · full suite green** → Verification Gate → code-review → /critique → §XXIX
-   currency (promote BR-LE-S4-* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
+   currency (promote BR-LE-S4-\* into `current-business-rules.md`; update `current-spec.md` surface) in the build commit.
 
 ## 6. Risks / open items
+
 - ~~`TimeRange` import source~~ — RESOLVED: reuse `../sessions` `TimeRange` [FACT: sessions types.ts:219-222].
 - ~~`SESSION_STATUS` tuple~~ — RESOLVED: `scheduled`/`in_progress`/`completed` present [FACT: session.ts:58-66].
 - ~~`default_purpose`~~ — RESOLVED (B2): no Education doc fixes a class purpose [FACT: grep clean] → OMITTED (optional

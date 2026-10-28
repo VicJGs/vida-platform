@@ -22,15 +22,7 @@ import type { ViewGrouping, ViewProviderRegistry, ViewsService } from '../../fou
 import type { NotesService } from '../notes'
 // S9 — the SS-7 due-work shapes (sessions-owned platform primitive; never redeclared here).
 import type { DueItem, SessionsService, TimeRange } from '../sessions'
-import type {
-  Status,
-  Priority,
-  TaskDifficulty,
-  TaskKind,
-  MeasurementKind,
-  BindingMode,
-  ViewLayout,
-} from '@vida/types'
+import type { Status, Priority, TaskDifficulty, TaskKind, MeasurementKind, BindingMode, ViewLayout } from '@vida/types'
 
 // --- deps (grows per slice) --------------------------------------------------
 export interface TasksServiceDeps {

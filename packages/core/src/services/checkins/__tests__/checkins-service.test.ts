@@ -44,7 +44,10 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
       return db.prepare(sqlText).all(...(params ?? [])) as never
     },
     async values(sqlText, params) {
-      return db.prepare(sqlText).raw().all(...(params ?? [])) as unknown[][]
+      return db
+        .prepare(sqlText)
+        .raw()
+        .all(...(params ?? [])) as unknown[][]
     },
     async batch(statements) {
       for (const s of statements) {
@@ -97,9 +100,9 @@ describe('mod-check-ins S2 — entry CRUD', () => {
 
   it('rejects a second check-in on the same (date, type) slot (CHE-01)', async () => {
     await h.svc.createCheckIn({ check_in_date: '2026-09-19', check_in_type: 'morning' })
-    await expect(
-      h.svc.createCheckIn({ check_in_date: '2026-09-19', check_in_type: 'morning' }),
-    ).rejects.toBeInstanceOf(DuplicateCheckInError)
+    await expect(h.svc.createCheckIn({ check_in_date: '2026-09-19', check_in_type: 'morning' })).rejects.toBeInstanceOf(
+      DuplicateCheckInError,
+    )
   })
 
   it('allows different types on the same day (CK-2 composite slot)', async () => {
@@ -326,9 +329,24 @@ describe('mod-check-ins S4 — derivations', () => {
       h = await setup()
     })
     it('getMoodEnergyTrend returns range-filtered plaintext points sorted by date', async () => {
-      await h.svc.createCheckIn({ check_in_date: '2026-09-10', check_in_type: 'morning', mood_score: 5, energy_level: 6 })
-      await h.svc.createCheckIn({ check_in_date: '2026-09-12', check_in_type: 'evening', mood_score: 8, energy_level: 4 })
-      await h.svc.createCheckIn({ check_in_date: '2026-09-20', check_in_type: 'morning', mood_score: 3, energy_level: 3 })
+      await h.svc.createCheckIn({
+        check_in_date: '2026-09-10',
+        check_in_type: 'morning',
+        mood_score: 5,
+        energy_level: 6,
+      })
+      await h.svc.createCheckIn({
+        check_in_date: '2026-09-12',
+        check_in_type: 'evening',
+        mood_score: 8,
+        energy_level: 4,
+      })
+      await h.svc.createCheckIn({
+        check_in_date: '2026-09-20',
+        check_in_type: 'morning',
+        mood_score: 3,
+        energy_level: 3,
+      })
       const trend = await h.svc.getMoodEnergyTrend({ from: '2026-09-01', to: '2026-09-15' })
       expect(trend.points.map((p) => p.date)).toEqual(['2026-09-10', '2026-09-12'])
       expect(trend.points[0]?.mood_score).toBe(5)
@@ -413,7 +431,11 @@ describe('mod-check-ins S5 — cross-module seams', () => {
     registry.register('grant_currency', async () => {
       fired++
     })
-    const svc = createCheckInsService({ db, deviceId: 'd', effects: { rail: createEffectRail(db, registry), registry } })
+    const svc = createCheckInsService({
+      db,
+      deviceId: 'd',
+      effects: { rail: createEffectRail(db, registry), registry },
+    })
     await svc.createCheckIn({ check_in_date: '2026-09-20', check_in_type: 'morning' })
     expect(fired).toBe(1)
     // updateCheckIn is a content edit → NO re-emit.
