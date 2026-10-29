@@ -15,9 +15,16 @@ const base = arg > 0 ? process.argv[arg + 1]
   : ["origin/main", "main"].find((ref) => git("rev-parse", "--verify", "-q", ref).status === 0);
 if (!base) report("check:one-way-door", ["no base ref: pass --base <ref>"]);
 
-const changed = git("diff", "--name-only", `${base}...HEAD`).stdout.split(/\r?\n/).filter(Boolean);
-const doors = changed.filter((p) => cfg.oneWayDoor.some((d) => `/${p}`.includes(`/${d}`)));
-if (!doors.length) report(`check:one-way-door (${changed.length} files changed since ${base}, none one-way)`, []);
+const lines = (out) => out.split(/\r?\n/).filter(Boolean);
+const under = (p, d) => `/${p}`.includes(`/${d}`);
+const isDoor = (p) => cfg.oneWayDoor.some((d) => under(p, d));
+// A door path that matches no tracked file guards nothing, whatever the diff.
+const tracked = lines(git("ls-files").stdout);
+const unguarded = cfg.oneWayDoor.filter((d) => !tracked.some((p) => under(p, d)))
+  .map((d) => `check:one-way-door: ${d} matches no tracked file; set "checks".oneWayDoor`);
+const changed = lines(git("diff", "--name-only", `${base}...HEAD`).stdout);
+const doors = changed.filter(isDoor);
+if (!doors.length) report(`check:one-way-door (${changed.length} files changed since ${base}, none one-way)`, unguarded);
 
 const adrs = cfg.adrDirs.flatMap((d) => walk(d));
 const adrFile = (id) => adrs.find((p) => p.split("/").at(-1).toUpperCase().startsWith(id.toUpperCase()));
@@ -38,7 +45,7 @@ if (event?.pull_request) {
   labelled = linked.length > 0;
 }
 
-const findings = [];
+const findings = [...unguarded];
 const list = doors.join(", ");
 if (!labelled) findings.push(`${list}: one-way-door paths changed without the "${cfg.oneWayDoorLabel}" label (${source})`);
 const found = linked.filter(adrFile);

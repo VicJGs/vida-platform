@@ -33,6 +33,7 @@ const units = load(cfg);
 const glossary = glossaryTerms(cfg.glossary);
 const findings = [];
 const ids = new Map();
+if (!units.length) findings.push(`check:docs: no doc units under ${cfg.docs}/; set "checks".docs`);
 
 for (const u of units) {
   if (!u.fm) { findings.push(`${u.path}: rule 2, no frontmatter`); continue; }

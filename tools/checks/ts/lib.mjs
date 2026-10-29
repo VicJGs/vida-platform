@@ -22,13 +22,13 @@ export function config() {
   return { ...DEFAULTS, ...own };
 }
 
-// Repo-relative paths with forward slashes, skipping dependencies, VCS and archives.
+// Repo-relative paths with forward slashes, skipping dependencies, VCS, archives and build output.
 export function walk(dir) {
   const abs = join(root, dir);
   if (!existsSync(abs)) return [];
   if (!statSync(abs).isDirectory()) return [dir];
   return readdirSync(abs).flatMap((name) => {
-    if (["node_modules", ".git", "archive"].includes(name)) return [];
+    if (["node_modules", ".git", "archive", "dist", "build"].includes(name)) return [];
     return walk(`${dir}/${name}`);
   });
 }

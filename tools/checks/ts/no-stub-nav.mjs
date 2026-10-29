@@ -9,6 +9,9 @@ const nav = exists(cfg.navigation) ? read(cfg.navigation) : "";
 const quoted = (s) => new RegExp(`["'\`]${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'\`]`);
 
 const findings = [];
+for (const [key, path] of [["entityFlags", cfg.entityFlags], ["navigation", cfg.navigation]]) {
+  if (!exists(path)) findings.push(`check:no-stub-nav: ${path} does not exist; set "checks".${key}`);
+}
 for (const entity of notLive) {
   if (new RegExp(`\\bentity:\\s*["']${entity}["']`).test(nav)) findings.push(`${cfg.navigation} links not-live entity ${entity}`);
   for (const r of routes.filter((x) => x.entity === entity && x.path)) {

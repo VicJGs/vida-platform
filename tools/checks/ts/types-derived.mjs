@@ -12,6 +12,7 @@ const tables = walk(cfg.schema).filter((p) => CODE_FILE.test(p)).flatMap((path) 
 
 const TYPE = /\b(?:interface\s+(\w+)(?:<[^>]*>)?(?:\s+extends[^{]+)?|type\s+(\w+)(?:<[^>]*>)?\s*=)\s*\{/g;
 const findings = [];
+if (!tables.length) findings.push(`check:types-derived: no tables found under ${cfg.schema}; set "checks".schema`);
 for (const path of walk(cfg.src).filter((p) => CODE_FILE.test(p) && !TEST_FILE.test(p) && !p.startsWith(`${cfg.schema}/`))) {
   const src = read(path);
   for (const m of src.matchAll(TYPE)) {
