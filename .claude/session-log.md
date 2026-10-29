@@ -1,4 +1,21 @@
 ---
+Date: 2026-10-28 — plugins cutover + forge project layer (LIF-281) — PR #247 merged
+Task: LIF-281 · toolkit plugins cutover · branch `lif-281-plugins-cutover` off main (89a0e20)
+Goal: run Claude Code on the toolkit plugins and generate the repo's project layer with `/core:forge`.
+Completed:
+  - **PR #247 merged (`8906c5c6`)** — v1 wiring dropped (`4e3367c3`) + forge layer (`bb4d9d5c`): `.claude/forge.json` →
+    golden rules, change guide, skills `guide`/`add-table`/`add-service-method`/`add-web-surface`/`fix-bug`,
+    agent `vida-platform-reviewer`, PreToolUse hook `guardrail.mjs`. `pnpm check` runs `guardrail.mjs --scan` first.
+  - CI Lint/Typecheck/Test/E2E/Format green; pre-push `pnpm check` 20/20. Branch deleted local + remote.
+Decisions:
+  - Guardrails: deny `_legacy/` imports; warn on quarantined/generated paths, TS `enum`, `beforeunload`. Path rules on
+    tracked dirs are warn-only (`--scan` would fail CI forever on a path deny).
+  - PR body `Part of LIF-281` — Linear status left to Victor. Workers Builds red is pre-existing (#171, #246).
+Next session:
+  - **First:** decide LIF-281 status in Linear. Then the Workers Builds check (fix or disable until M4).
+  - Session file: `.claude/sessions/2026-10-28-lif-281-plugins-cutover.md`.
+
+---
 Date: 2026-10-12 — fe-settings (#24, LIF-193) SHIPPED — Settings surface, 6 slices, PR #137 merged
 Task: fe-settings (LIF-193) · Profile: Add Frontend Component / default (Entity Delivery Flow ②) · M1.2.1 · worktree off origin/main (5ef0ce7), Node 24
 Goal: ② Frontend build of the net-new Settings System surface at /settings (all 7 control groups + searchable index).
