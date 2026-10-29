@@ -1,4 +1,14 @@
-<!-- Last updated: 2026-10-27 by /session-end -->
+<!-- Last updated: 2026-10-28 by session wrap (LIF-281) -->
+
+## plugins cutover + forge project layer (2026-10-28 — LIF-281)
+
+| Date | Area | Decision | Choice | Reason | Reversible |
+|------|------|----------|--------|--------|------------|
+| 2026-10-28 | forge / ops | which repo operations get a skill | **add-table · add-service-method · add-web-surface · fix-bug** + `guide` router | the repeatable changes the layout and layer docs describe (Victor) | yes |
+| 2026-10-28 | forge / guardrails | deny vs warn | **deny only `_legacy/` imports; warn on quarantined/generated paths, TS `enum`, `beforeunload`** | `--scan` checks every tracked file → a path deny on dirs that exist fails CI forever; the import ban is the enforceable rule (0 current hits) | yes |
+| 2026-10-28 | forge / patterns | how content regexes match quotes | **optional `\` before the quote** | the hook matches JSON-stringified `tool_input` (`"` → `\"`); the scan matches raw text | yes |
+| 2026-10-28 | CI / merge | merge with "Workers Builds: vida-platform" red | **merge** | fails on every PR (#171, #246) — Cloudflare/M4 server, not this change | yes |
+| 2026-10-28 | Linear | `Fixes` vs `Part of LIF-281` | **Part of** | cutover completeness is Victor's call; `Fixes` would auto-close on merge | yes |
 
 ## preferences-rescope R5 — Modules + ⌘K (2026-10-27 — LIF-247)
 
