@@ -13,5 +13,18 @@
   },
   "enabledPlugins": {
     "ts-pack@claude-toolkit": true
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Write|Edit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guardrail.mjs\""
+          }
+        ]
+      }
+    ]
   }
 }
