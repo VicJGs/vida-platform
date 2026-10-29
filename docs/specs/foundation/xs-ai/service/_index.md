@@ -65,4 +65,4 @@ ADR-015:113-115; xcut-ingestion-ai.md:5]`
 
 Factory-of-closures (`createAiService(egressGuard, ports?)`, no `this` — memory
 factory-service-no-this-for-intra-calls); deny-safe default ports; **no schema**; live-store Verification Gate
-on S2/S3 over real `capability_grants` + the built egress guard. @vida/core test-runtime Node 24 (better-sqlite3 ABI).
+on S2/S3 over real `capability_grants` + the built egress guard. @vida/core test-runtime Node 22 per `.nvmrc` (better-sqlite3 ABI).

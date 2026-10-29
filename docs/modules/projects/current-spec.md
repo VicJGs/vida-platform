@@ -12,7 +12,7 @@
 `docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
 seam-contract). Build state: **① COMPLETE — S9 of 9 shipped.**
 
-> **Test runtime: Node 24** (better-sqlite3 ABI = NODE_MODULE_VERSION 137). Run `nvm use 24` before vitest.
+> **Test runtime: Node 22** per `.nvmrc` (better-sqlite3 ABI = NODE_MODULE_VERSION 127). After switching Node, run `pnpm -r rebuild better-sqlite3`.
 
 Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) · S3 deliverables
 (`measurement_kind`×`binding_mode`) · S4 progress-derivation engine (bottom-up rollup via

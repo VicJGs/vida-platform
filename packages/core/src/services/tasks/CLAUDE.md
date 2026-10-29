@@ -41,5 +41,5 @@ Deps after S1 are optional + fail-loud (`TimerNotWiredError`, `TasksDepNotWiredE
 Preferences-owned (ADR-007 §3.5) — not here. `todayYmd()` (S5 regen anchor) rides `utcDay` (re-pointed at S9); "open" = status ∉ `{completed, cancelled}` (`ListTasksFilter.open`; the platform TERMINAL convention). Composition root (the CALLS of the
 four `registerTasks*` helpers) = UI-3 / M1.1+.
 Durable docs: `docs/modules/tasks/current-{spec,business-rules}.md` (BR-TK-S1..S9); slice specs
-`docs/features/tasks/delivery/PLAN-S*.md`. **Test gate:** better-sqlite3 live-store, Node 24 ONLY (ABI 137 — never
-`pnpm rebuild`); `packages/core` has no `lint` script — run eslint from the repo root.
+`docs/features/tasks/delivery/PLAN-S*.md`. **Test gate:** better-sqlite3 live-store, Node 22 per `.nvmrc` (ABI 127; after
+switching Node, `pnpm -r rebuild better-sqlite3`); `packages/core` has no `lint` script — run eslint from the repo root.

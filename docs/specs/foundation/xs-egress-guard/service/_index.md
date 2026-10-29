@@ -19,7 +19,7 @@
 - **PF-3** — `enforcer` param typed `CapabilityEnforcer`, imported from `../capability` (its `index.ts` exports it).
 - **PF-4** — `at` = `Date.now()` (Unix ms) at record time (production service code — `Date.now()` is fine here).
 - **PF-5** — live-store smoke reuses the foundation test-DB harness (real `capability_grants` seeded via
-  `createCapabilityEnforcer.grant`); run under **Node 24** (better-sqlite3 ABI — the LIF-168 follow-up).
+  `createCapabilityEnforcer.grant`); run under **Node 22** per `.nvmrc` (better-sqlite3 ABI).
 
 ## Operations
 | op | signature | leg |
