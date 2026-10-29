@@ -89,7 +89,7 @@ G0 added `game` to `@vida/ui` `ThemePreset`/`THEME_PRESETS`. Once apps/web resol
 
 ## Verify
 
-- Node 24 (the worktree standard; better-sqlite3 ABI).
+- Node 22 per `.nvmrc` (better-sqlite3 ABI; after switching Node, `pnpm -r rebuild better-sqlite3`).
 - **⚠ Worktree `@vida/ui` resolution:** apps/web's `node_modules/@vida/ui` symlink canonicalizes to **main's**
   `packages/ui` (no `game`). For any gate that must see the branch's `@vida/ui` (this unit changed it), re-point it:
   `ln -sfn "$PWD/packages/ui" apps/web/node_modules/@vida/ui`, then `pnpm --filter @vida/ui build` (dist). A

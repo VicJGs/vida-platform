@@ -225,8 +225,8 @@ Coupling budget (constitution §6): respected. There are no reads of other modul
 
 `routines-service.test.ts`: live store (better-sqlite3 in-memory, `migrate()` applies 018), **28/28 green on Node 24 after the
 merge**; after **S2c: 41/41** (+13 Gate tests) · **S3: 64/64** · **S4: 82/82** · **S5: 102/102** · tsc 0 · eslint 0 · full `@vida/core` 2050/2052 (2 = F006 vault timeouts under load; 36/36 alone) · tsc 0 · eslint 0.
-⚠ Run on **Node 24**. The worktree's better-sqlite3 binary is built for ABI 137, so under `.nvmrc`'s Node 22 all 28 fail to load
-the native module (environment, not code).
+⚠ Run on **Node 22** (`.nvmrc`). A better-sqlite3 binary built under another Node fails to load the native module
+(environment, not code): `pnpm -r rebuild better-sqlite3` after switching Node.
 
 ## Completion checklist
 

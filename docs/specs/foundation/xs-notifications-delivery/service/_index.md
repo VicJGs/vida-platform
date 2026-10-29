@@ -30,7 +30,7 @@
   wake-relay's own egress) is a Hono-server / M2 concern, out of this client engine (IR-2). `[FACT: NF-5; ADR-013 §3.6 L72-74]`
 - **PF-4** — timestamps = `Date.now()` (Unix ms) in service code.
 - **PF-5** — all slices are pure/in-memory at M1 (no DB, no schema); **no live-store harness needed**. Vitest under
-  **Node 24** (repo default). The M2 seam is the ports, tested with spy/deny-safe port doubles.
+  **Node 22** (`.nvmrc`). The M2 seam is the ports, tested with spy/deny-safe port doubles.
 
 ## Invariants
 

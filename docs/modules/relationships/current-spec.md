@@ -112,5 +112,5 @@ Enums: `RELATIONSHIP_TYPE`(9) · `INTERACTION_TYPE`(8) · `SENTIMENT`(3) · `CON
 
 `services/relationships/__tests__/service.test.ts` — better-sqlite3 live-store (Node-ABI-matched; `migrate()` applies
 `025_relationships`). S1: 10/10 green. **Note:** the better-sqlite3 prebuilt binary is pinned to one
-NODE_MODULE_VERSION — run the gate under the Node the install compiled it against (here Node 22, ABI 127); an ABI
-error is environment, not a code failure (`pnpm rebuild better-sqlite3` to switch Node).
+NODE_MODULE_VERSION — run the gate under `.nvmrc`'s Node 22 (ABI 127); an ABI error is environment, not a code
+failure (`pnpm -r rebuild better-sqlite3` after switching Node).
