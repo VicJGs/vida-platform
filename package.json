@@ -15,7 +15,7 @@
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "check": "pnpm format:check && turbo run lint typecheck test e2e --continue",
+    "check": "node .claude/hooks/guardrail.mjs --scan && pnpm format:check && turbo run lint typecheck test e2e --continue",
     "check:frontend-source-model": "node tools/scripts/check-frontend-source-model.mjs",
     "preview:tokens": "node tools/scripts/render-token-preview.mjs",
     "storybook": "pnpm --filter @vida/ui storybook",

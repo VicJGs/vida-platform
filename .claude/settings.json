@@ -1,8 +1,6 @@
 {
   "permissions": {
     "deny": [
-      "Edit(~/dev-toolkit/**)",
-      "Write(~/dev-toolkit/**)",
       "Read(.env)",
       "Read(.env.*)",
       "Bash(git push --force *)",
@@ -13,11 +11,19 @@
       "Bash(rm -rf *)"
     ]
   },
+  "enabledPlugins": {
+    "ts-pack@claude-toolkit": true
+  },
   "hooks": {
-    "PostToolUse": [
+    "PreToolUse": [
       {
-        "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "bash .claude/hooks/post-bash-error.sh" }]
+        "matcher": "Write|Edit|NotebookEdit|Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PROJECT_DIR}/.claude/hooks/guardrail.mjs\""
+          }
+        ]
       }
     ]
   }
