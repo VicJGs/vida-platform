@@ -1,8 +1,6 @@
 {
   "permissions": {
     "deny": [
-      "Edit(~/dev-toolkit/**)",
-      "Write(~/dev-toolkit/**)",
       "Read(.env)",
       "Read(.env.*)",
       "Bash(git push --force *)",
@@ -13,12 +11,7 @@
       "Bash(rm -rf *)"
     ]
   },
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [{ "type": "command", "command": "bash .claude/hooks/post-bash-error.sh" }]
-      }
-    ]
+  "enabledPlugins": {
+    "ts-pack@claude-toolkit": true
   }
 }
