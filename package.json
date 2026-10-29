@@ -15,7 +15,7 @@
     "test": "turbo run test",
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
-    "check": "node .claude/hooks/guardrail.mjs --scan && pnpm format:check && pnpm check:rules && pnpm check:one-way-door && turbo run lint typecheck test e2e --continue",
+    "check": "node .claude/hooks/guardrail.mjs --scan && pnpm format:check && pnpm check:rules && pnpm check:one-way-door && pnpm check:entity-live && pnpm check:boundaries && pnpm check:no-stub-nav && turbo run lint typecheck test e2e --continue",
     "check:frontend-source-model": "node tools/scripts/check-frontend-source-model.mjs",
     "preview:tokens": "node tools/scripts/render-token-preview.mjs",
     "storybook": "pnpm --filter @vida/ui storybook",
@@ -23,10 +23,16 @@
     "docs:index": "node tools/checks/core/docs-index.mjs",
     "check:docs": "node tools/checks/core/docs.mjs",
     "check:rules": "node tools/checks/core/rules.mjs",
-    "check:one-way-door": "node tools/checks/core/one-way-door.mjs"
+    "check:one-way-door": "node tools/checks/core/one-way-door.mjs",
+    "check:entity-live": "node tools/checks/ts/entity-live.mjs",
+    "check:types-derived": "node tools/checks/ts/types-derived.mjs",
+    "check:boundaries": "node tools/checks/ts/boundaries.mjs",
+    "check:no-stub-nav": "node tools/checks/ts/no-stub-nav.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.27.0",
+    "@swc/core": "^1.16.20",
+    "dependency-cruiser": "^18.7.0",
     "prettier": "^3.5.0",
     "turbo": "^2.5.0",
     "typescript-eslint": "^8.33.0"
@@ -35,6 +41,12 @@
     "adrDirs": [
       "docs/core/decisions",
       ".adr"
-    ]
+    ],
+    "src": "packages",
+    "e2e": "apps/web/e2e",
+    "compositionRoot": "apps/web/src/db/composition-root.ts",
+    "routes": "apps/web/src/routes.tsx",
+    "navigation": "apps/web/src/nav/module-map.ts",
+    "schema": "packages/core/src/db/schema"
   }
 }
