@@ -30,6 +30,14 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # Docs reshape 0.2: one row per tracked .md, uploaded for the per-folder decisions.
+      - run: pnpm docs:inventory
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doc-inventory
+          path: inventory.csv
+
       - run: pnpm --filter @vida/web exec playwright install --with-deps chromium
 
       # The same command as the pre-push hook: guardrail scan, format, toolkit checks, then lint typecheck test e2e.
