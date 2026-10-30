@@ -81,6 +81,12 @@
         "from": "^packages/core/",
         "to": "^apps/"
       }
+    ],
+    "oneWayDoor": [
+      "packages/core/src/db/schema/",
+      "packages/core/src/db/migrations/",
+      "packages/core/src/encryption/",
+      "packages/core/src/sync/"
     ]
   }
 }

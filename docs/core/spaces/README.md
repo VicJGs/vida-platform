@@ -33,11 +33,11 @@ These were dissolved from the module list into Spaces; they _validate_ that the 
 surfaces. Full example write-ups are a **build-time
 deliverable** (they demonstrate the built primitives, so they are authored when the primitives exist).
 
-| Worked-example           | What it demonstrates                                                                                                                                                        | Preserved intent                                                                                     |
-| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| **Languages**            | tags (`#languages/spanish`) + a hub view + a dictionary view + capability Blocks (A-B-A pronunciation · immersion plan · base-words) + a starter Template (Victor's method) |                                                                                                      |
-| **Duties / Obligations** | the **preset** primitive — a thin tab = a saved View over a `tasks` filter + per-type UI + defaults + optional Template, bound to a task _type_                             |                                                                                                      |
-| **Bucket List**          | a Space over **Dreams** — `#before-i-die` tag + a vision-board Gallery view + derived progress + a Template                                                                 |                                                                                                      |
+| Worked-example           | What it demonstrates                                                                                                                                                        | Preserved intent |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------- |
+| **Languages**            | tags (`#languages/spanish`) + a hub view + a dictionary view + capability Blocks (A-B-A pronunciation · immersion plan · base-words) + a starter Template (Victor's method) |                  |
+| **Duties / Obligations** | the **preset** primitive — a thin tab = a saved View over a `tasks` filter + per-type UI + defaults + optional Template, bound to a task _type_                             |                  |
+| **Bucket List**          | a Space over **Dreams** — `#before-i-die` tag + a vision-board Gallery view + derived progress + a Template                                                                 |                  |
 
 ## What settles at build (not decided here)
 

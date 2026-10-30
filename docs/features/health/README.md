@@ -46,11 +46,11 @@ prescription path = **opt-in extension-model** (Sessions S5 flags Health effects
 
 ## Status
 
-| Sub-context |              Intake               |     Transform     |                   Verify                    |
-| ----------- | :-------------------------------: | :---------------: | :-----------------------------------------: |
-| Core        |          ✅ (CI-1..CI-6)          | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Training    |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Nutrition   |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Sub-context |     Intake      |     Transform     |                   Verify                    |
+| ----------- | :-------------: | :---------------: | :-----------------------------------------: |
+| Core        | ✅ (CI-1..CI-6) | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Training    |       ✅        | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Nutrition   |       ✅        | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
 
 ## Forward-dep stubs (resolve at their turn)
 

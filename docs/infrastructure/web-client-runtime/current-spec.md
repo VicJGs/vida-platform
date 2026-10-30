@@ -185,20 +185,20 @@ The `fe-codec-*` frontend wave added three **cross-module read + view-adapter se
 AR-4/UI-4 snapshots above predate. Recorded here because `fe-calendar` #19 (LIF-203) is the **first consumer** of one
 of their deferred hooks. The UI mechanics live in their own convention docs (`apps/web/src/{canvas,collection}/CLAUDE.md`); recorded here are the **runtime-level** seams:
 
-* **ProviderRead convention** (`providers/provider-read.ts`) — `export type ProviderRead<T> = () => Promise<T>`; the
+- **ProviderRead convention** (`providers/provider-read.ts`) — `export type ProviderRead<T> = () => Promise<T>`; the
   "no direct cross-module tables" read seam. Shipped as a **type + documented convention, NOT a hook** — a
   `useProviderRead` wrapper would be a thin `useQuery` alias with no M1 consumer (ReducedMotion/first-consumer lesson).
   Consumed as `useQuery({ queryKey, queryFn: provider })` where `provider satisfies ProviderRead<T>`. `[FACT: providers/provider-read.ts:9,15]`
-* **Canvas adapter** (`canvas/adapter.ts`) — pure convention for the `CanvasView` immersive frame (fe-codec-canvas-board
+- **Canvas adapter** (`canvas/adapter.ts`) — pure convention for the `CanvasView` immersive frame (fe-codec-canvas-board
   S2): `toCanvasHeader(view, eyebrow, meta?)` (title = user-named surface, never the month, avoids duplication),
   `resolveMeasureProgress(m)` (ADR-011 measure-driven progress descriptor), `createCanvasAdapter()`. `[FACT: canvas/adapter.ts:44,81,107]`
   - **DEFERRED hook — #19's build:** `useCalendar(spaceId)` / `useVisionBoard(spaceId)` (React Query → cross-module
     `dueIn` fan-out via `ProviderRead`) are explicitly "built at the first consumer". `fe-calendar` #19 **is** that
     first consumer for `useCalendar`. `[INTENT: canvas/adapter.ts:22-24]`
-* **Collection adapter** (`collection/adapter.ts`) — pure convention for the 7-renderer `CollectionView` (fe-codec-collection
+- **Collection adapter** (`collection/adapter.ts`) — pure convention for the 7-renderer `CollectionView` (fe-codec-collection
   S3): `toCollectionChrome(view, resolved)`, `bindViewConfigWrites(views)`, `createCollectionAdapter(views)`. The deferred
   `useCollection(viewId)` hook (React Query → `ViewEngine.resolve`) is built at its first consumer (fe-notes #27, not #19). `[FACT: collection/adapter.ts:60,74,92; :14]`
-* **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
+- **View dispatch** — `ViewLayout` union (`'list'|'table'|'board'|'gallery'|'calendar'|'timeline'|'graph'`) in `@vida/types`
   routes a saved-view's `layout` to its renderer; `'calendar'` → the `@vida/ui` `CalendarView` (month grid, LIF-230-refined,
   TZ-safe). The other 5 calendar ranges are **net-new renderers #19 builds** — Agenda = `AgendaView` (S2) · Week/Day =
   `WeekView` (S3) · Year = `YearView` (S4) · Living = `LivingView` (S5) — all shipped. `[FACT: packages/types/src/view.ts; packages/ui/src/components/calendar-view.tsx]`

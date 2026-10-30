@@ -262,8 +262,8 @@ BINDING_MODE measurement.ts:9; code: service.ts deriveProgress01]`
 BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts:370]`
 - **BR-LE-S8-8 (no `advertise()`, no Projects storage — C-M5)** — Education exposes progress ONLY via the `getProgress`
   method (the KN-10 per-subject-measure-is-a-method pattern); never calls the measurement source-registry `advertise()`
-  (global scalars only) and never writes Projects' measure tables. 
-`[[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
+  (global scalars only) and never writes Projects' measure tables.
+  `[[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
 
 ## S9 — Subject vault + tags/links/notes (ED-13 · ED-16 · SP1 · PJ-8)
 
@@ -284,8 +284,8 @@ BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[
 - **BR-LE-S9-3 (`getVault` = documents + notes together)** — `documents` = all `subject_documents` for the subject,
   mapped `→ SubjectDocument`, sorted by `created_at` in JS (`findWhere` has no orderBy, non-mutating `[...rows].sort`);
   `notes` = `notes.getPagesForEntity('subject', subjectId)` returned as `PageRow[]` raw (the NotesService convention —
-  no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud). 
-`[notes/service.ts:144-148; code: service.ts getVault]`
+  no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud).
+  `[notes/service.ts:144-148; code: service.ts getVault]`
 - **BR-LE-S9-4 (`tagEntity` guards the tag resolves BEFORE the blind insert)** — `spaces.tagEntity` blind-inserts an
   unresolved `tag_id`, so `tagEntity(ref, tagId)` guards `tagsRepo.findById(tagId) == null ⇒ TagNotFound` first, then
   delegates (idempotent revive/no-op). An unregistered `entityType` ⇒ `UnknownEntityType` (from spaces). Remove stays the
