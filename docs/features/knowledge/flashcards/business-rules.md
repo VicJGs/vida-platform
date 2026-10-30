@@ -1,4 +1,4 @@
-<!-- Business Rules — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 (review_session) · ADR-005 (service framework) · Knowledge KN-4/KN-5/KN-8/KN-10 · docs/intake/flashcards.md -->
+<!-- Business Rules — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 (review_session) · ADR-005 (service framework) · Knowledge KN-4/KN-5/KN-8/KN-10 -->
 
 # Business Rules — Flashcards (level: Feature / Knowledge sub-context)
 

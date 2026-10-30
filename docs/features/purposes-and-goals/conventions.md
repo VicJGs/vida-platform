@@ -1,4 +1,4 @@
-<!-- Conventions — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 · project.ts · docs/intake/purposes-and-goals.md RESOLUTION · CLAUDE.md Conventions -->
+<!-- Conventions — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 · project.ts · CLAUDE.md Conventions -->
 
 # Conventions — Purposes & Goals (level: Feature — CAPSTONE)
 

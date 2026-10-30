@@ -1,4 +1,4 @@
-<!-- Contract — features/health/training · Phase 2 · sources: intake/health.md §C + core/contract.md + ADR-004.
+<!-- Contract — features/health/training · Phase 2 · sources: core/contract.md + ADR-004.
      ⚠ DESIGNED interface — no @vida/core code yet (recovered domain). -->
 
 # Contract — Health: Training

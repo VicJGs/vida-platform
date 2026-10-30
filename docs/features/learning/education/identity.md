@@ -1,4 +1,4 @@
-<!-- Identity — features/learning/education · /documentation Phase 2 · sources: ADR-002 §5.10 (courses) + §5.18 (ICS) · @vida/types/learning.ts · CLAUDE.md §7 · docs/intake/learning-education.md -->
+<!-- Identity — features/learning/education · /documentation Phase 2 · sources: ADR-002 §5.10 (courses) + §5.18 (ICS) · @vida/types/learning.ts · CLAUDE.md §7 -->
 
 # Identity — Learning: Education (level: Feature / Learning sub-context 1 of 5)
 

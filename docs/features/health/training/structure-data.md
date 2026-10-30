@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/health/training · Phase 2 · sources: intake/health.md (9 Training DBs) + ADR-004
+<!-- Structure & Data — features/health/training · Phase 2 · sources: ADR-004
      (table-per-type sessions). ⚠ NO v2 schema — all NEW → ADR-002 additions. P=plaintext · E=[E] encrypted. -->
 
 # Structure & Data — Health: Training

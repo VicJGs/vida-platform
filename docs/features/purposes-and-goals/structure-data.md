@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 (purposes L1792 · targets L1826 · metrics L1865 · metric_values L1891 · target_reviews L1911 · dreams L1931 · junctions L1959) · bucket_list_items L3319 · §5.20 L3716 · project.ts L109-256 · note.ts L44-46 · docs/intake/purposes-and-goals.md RESOLUTION -->
+<!-- Structure & Data — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 (purposes L1792 · targets L1826 · metrics L1865 · metric_values L1891 · target_reviews L1911 · dreams L1931 · junctions L1959) · bucket_list_items L3319 · §5.20 L3716 · project.ts L109-256 · note.ts L44-46 -->
 
 # Structure & Data — Purposes & Goals (level: Feature — CAPSTONE)
 

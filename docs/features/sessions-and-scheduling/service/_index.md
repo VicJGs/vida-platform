@@ -1,6 +1,6 @@
 <!-- Service spec-set — features/sessions-and-scheduling · MOD-sessions ① (LIF-139) · Entity Delivery Flow §4.
      Backend "Entity Service Build Flow". REFERENCES the aspect docs + delivery/ front matter — never restates.
-     The operation surface + typed errors live in delivery/seam-contract.md; this indexes the spec-set, the
+     This indexes the spec-set, the
      3 backend-only nuances, and the operation→slice→invariant→gate traceability. -->
 
 # Service Spec-Set — `services/sessions` (backend track)
@@ -9,8 +9,8 @@
 `foundation/spaces/service.ts` (D7). One `createRepository(db, table, cfg)` per table; every mutation → repo →
 co-transactional `sync_queue` enqueue. M1.0 `encryptedFields: []` pass-through (BR-13).
 
-**Spec-set (per EDF §4):** operations + typed errors → `delivery/seam-contract.md` (not restated). Per-slice
-forward specs → `service/S<n>-*.md` (the g1/g2 objects). Slices + gate ledger → `delivery/slice-map.md`.
+**Spec-set (per EDF §4):** per-slice
+forward specs → `service/S<n>-*.md` (the g1/g2 objects).
 
 ## The 3 backend-only nuances (apply to every slice)
 

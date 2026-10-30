@@ -3,7 +3,8 @@
 // current docs/index.json. Rule 6 (structured facts as data) and "agents never browse"
 // (rule 10) describe where facts live and how agents read them; no file check can
 // prove them, so they stay with the reviewer.
-import { config, exists, read, report } from "./lib.mjs";
+import { readdirSync } from "node:fs";
+import { config, exists, read, report, root, walk } from "./lib.mjs";
 import { ABSTRACT_MAX, BODY_MAX, REQUIRED, buildIndex, linksOf, serialize, tokens, unquote, units as load } from "./units.mjs";
 
 const FORBIDDEN_HEADING = /^#{1,6}\s+(status|steps|next steps|history|changelog|progress|todo)\b/i;
@@ -76,6 +77,43 @@ for (const u of units) {
   for (const link of linksOf(u.fm)) {
     if (!active.has(link)) findings.push(`${u.path}: links ${link}, which is ${ids.has(link) ? `not active (${ids.get(link)})` : "no unit"}; link an active unit`);
   }
+}
+
+// Rule 10: the archive is denied to agents, so a live doc that names a path in it sends
+// the agent to a dead end. Two archives, each holding what moved out of its parent with
+// paths preserved: docs/_archive (docs/x/y.md becomes docs/_archive/x/y.md) and
+// .claude/archive (.claude/x/z.md). Flags a path through either
+// archive, a path to something moved there, and a partial or bare .md name (parts/x.md,
+// x.md) that only an archived file ends with. Scans every unit, frontmatter or not, and
+// the root CLAUDE.md.
+const ARCHIVES = [[cfg.docs, `${cfg.docs}/_archive`], [".claude", ".claude/archive"]]
+  .filter(([, dir]) => exists(dir))
+  .map(([parent, dir]) => ({ parent, dir, files: readdirSync(`${root}/${dir}`, { recursive: true }) }));
+const archiveFiles = ARCHIVES.flatMap(({ files }) => files.map((f) => `/${String(f).replaceAll("\\", "/")}`));
+// Worktrees hold stale copies of the tree; they are not live docs.
+const liveMd = walk(".").map((f) => f.slice(2)).filter((f) => f.endsWith(".md") && !f.startsWith(".claude/worktrees/")).map((f) => `/${f}`);
+const endsIn = (files, tail) => files.some((f) => f.endsWith(tail));
+const PATH = /(?<![\w/.-])(?:\.{1,2}\/)*[\w.-]+(?:\/[\w.-]+)*\/?/g;
+const intoArchive = (path) => {
+  if (/(?:^|\/)(?:_archive|\.claude\/archive)(?:\/|$)/.test(path)) return true;
+  const rel = path.replace(/^(?:\.{1,2}\/)+/, "");
+  if (rel.endsWith(".md") && endsIn(archiveFiles, `/${rel}`) && !endsIn(liveMd, `/${rel}`)) return true;
+  return ARCHIVES.some(({ parent, dir }) => {
+    // Under the parent: docs/x/..., ../x/... or ./x/...; a bare `reviews/merges` is prose.
+    const under = rel.startsWith(`${parent}/`) ? rel.slice(parent.length + 1) : parent === cfg.docs && rel !== path ? rel : null;
+    if (!under || exists(`${parent}/${under}`)) return false;
+    // Moved there, or under a folder that moved there whole (a file since renamed or gone).
+    const first = under.split("/")[0];
+    return exists(`${dir}/${under}`) || (first !== under.replace(/\/$/, "") && exists(`${dir}/${first}`) && !exists(`${parent}/${first}`));
+  });
+};
+
+for (const path of [...units.map((u) => u.path), ...(exists("CLAUDE.md") ? ["CLAUDE.md"] : [])]) {
+  read(path).split(/\r?\n/).forEach((line, i) => {
+    for (const ref of new Set((line.match(PATH) ?? []).map((m) => m.replace(/\.+$/, "")))) {
+      if (intoArchive(ref)) findings.push(`${path}:${i + 1}: rule 10, ${ref} is in the archive; link the ADR or Linear doc that holds it, or drop it (history lives in git)`);
+    }
+  });
 }
 
 // Rule 10: agents fetch through get_context, which reads only the generated index.

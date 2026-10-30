@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + L1151 (zero-E) + user_preferences pomodoro_* L3497-3500 + entity/dep graph L3756,L3816 · note.ts L58-64,154-163 · ADR-004 §3.1/§3.4 · Sessions structure-data (sessions spine, focus_sessions extension) · Tasks task_time_logs L1510 · v1 studyPlanner.ts pause/interruption fields · docs/intake/pomodoro.md -->
+<!-- Structure & Data — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + L1151 (zero-E) + user_preferences pomodoro_* L3497-3500 + entity/dep graph L3756,L3816 · note.ts L58-64,154-163 · ADR-004 §3.1/§3.4 · Sessions structure-data (sessions spine, focus_sessions extension) · Tasks task_time_logs L1510 · v1 studyPlanner.ts pause/interruption fields -->
 
 # Structure & Data — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 

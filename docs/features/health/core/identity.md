@@ -1,5 +1,4 @@
-<!-- Identity — features/health/core · /documentation Phase 2 · sources: docs/intake/health.md (⭐⭐ 18-DB Notion
-     design + Core resolved Forks 1-4) · Victor Vision 2026-07-13. Health has NO v2 schema (recovered domain). -->
+<!-- Identity — features/health/core · /documentation Phase 2 · sources: Victor Vision 2026-07-13. Health has NO v2 schema (recovered domain). -->
 
 # Identity — Health: Core (level: Feature / Health shared spine)
 

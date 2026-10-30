@@ -1,4 +1,4 @@
-<!-- Identity — features/notifications · /documentation Phase 2 · sources: ADR-002 §5.16 · common.ts L70-99 · §5.17 Preferences · ADR-012 §3.1 · ../life-os (v1) · docs/intake/notifications.md RESOLUTION -->
+<!-- Identity — features/notifications · /documentation Phase 2 · sources: ADR-002 §5.16 · common.ts L70-99 · §5.17 Preferences · ADR-012 §3.1 · ../life-os (v1) -->
 
 # Identity — Notifications ("the System's out-loud voice") (level: Feature — the dead-last observer leaf)
 

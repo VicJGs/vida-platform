@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 · §5.11 planner L2743-2882 · pomodoro_sessions L1432 · task_time_logs L1510 · dep graph L3751-3757 · type moves knowledge.ts L222-250, learning.ts L194-211 · v1 studyPlanner.ts · docs/intake/sessions-and-scheduling.md -->
+<!-- Structure & Data — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 · §5.11 planner L2743-2882 · pomodoro_sessions L1432 · task_time_logs L1510 · dep graph L3751-3757 · type moves knowledge.ts L222-250, learning.ts L194-211 · v1 studyPlanner.ts -->
 
 # Structure & Data — Sessions & Scheduling (level: Foundation / OWN MODULE)
 

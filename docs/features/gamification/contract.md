@@ -1,4 +1,4 @@
-<!-- Contract — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · ADR-004 §3.2.5 · ADR-011 · ADR-008/010 · finance.ts · docs/intake/gamification.md RESOLUTION -->
+<!-- Contract — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · ADR-004 §3.2.5 · ADR-011 · ADR-008/010 · finance.ts -->
 
 # Contract — Gamification ("the System") (level: Feature — incentive engine)
 

@@ -93,8 +93,8 @@
 ## S6 — vision/mission pages + entity_tags
 
 - **BR-PJ-S6-1** — `spaces: SpacesService` + `notes: NotesService` are REQUIRED deps (entity_tags WRITE + `pages`).
-- **BR-PJ-S6-2** — Vision & Mission are `pages` with `entity_type='project'` (NOT a dedicated `PAGE_TYPE` —
-  `db-4-projects/_index.md:32-33`). `getProjectPage(id, kind)` find-or-creates a `type='note'` page keyed by a
+- **BR-PJ-S6-2** — Vision & Mission are `pages` with `entity_type='project'` (NOT a dedicated `PAGE_TYPE`).
+  `getProjectPage(id, kind)` find-or-creates a `type='note'` page keyed by a
   reserved app-managed title ('Vision'/'Mission'); idempotent; orphan-guarded (`ProjectNotFoundError`). The
   `projects.vision` column remains the one-line summary (PJ-7).
 - **BR-PJ-S6-3** — `tagEntity`/`untagEntity(entityType, entityId, tagId)` delegate to SpacesService (PJ-12); the

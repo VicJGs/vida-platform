@@ -1,4 +1,4 @@
-<!-- Business Rules — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 · docs/intake/books.md -->
+<!-- Business Rules — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 -->
 
 # Business Rules — Books (level: Feature / own module)
 

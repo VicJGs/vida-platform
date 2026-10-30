@@ -1,8 +1,8 @@
 # Token Pipeline — Current Business Rules (durable · §XXIX promotion target)
 
 > **Context:** `@vida/ui` → `packages/ui/src/themes/`. Built by DS-1 (LIF-81), 2026-07-26. Companion:
-> `current-spec.md`. Sources: ADR-001 (Tamagui + Style Dictionary), STANDARDS design.md §II/§XII,
-> `docs/specs/components/ds-1-token-pipeline/_index.md`. **No-Guessing:** `[FACT: src]` / `[INTENT]` (owed).
+> `current-spec.md`. Sources: ADR-001 (Tamagui + Style Dictionary), STANDARDS design.md §II/§XII.
+> **No-Guessing:** `[FACT: src]` / `[INTENT]` (owed).
 
 ## Invariants the pipeline upholds
 
@@ -67,7 +67,7 @@ reduced-motion-css.test.ts guard]`
 
 - **[DONE]** Token **values** authored code-first (B6) + **parallel dark** (B7) + **4pt grid enforced** (B8) +
   **aux routing** (B9). ⚠ values are a provisional placeholder palette, not brand ([[ds-2-palette-is-provisional-placeholder]]).
-- **[DONE]** Approved via the **Frontend Visual Gate** (`docs/specs/foundation/frontend-visual-gate.md`) — its first run.
+- **[DONE]** Approved via the **Frontend Visual Gate** — its first run.
 
 ## Rules established by DS-3 (IMPLEMENTED 2026-08-03)
 
@@ -90,7 +90,7 @@ reduced-motion-css.test.ts guard]`
 - **[DONE]** Animation driver **resolved** (was `[UNKNOWN]`): **web = `@tamagui/animations-css`** per ADR-001 §9
   ("CSS variables on web" + "no extra dependency"), consuming `motion.ts` duration **+ easing** losslessly
   (`'cubic-bezier(0,0,0.3,1) 150ms'`); **native = reanimated** (ADR-001:258), deferred to mobile. An RN-driver drift
-  was triaged + corrected — `docs/specs/fixes/ds-4-rn-driver-drift/`.
+  was triaged + corrected.
 - **[DONE]** CSS-var reconciliation **resolved**: Tamagui compiles `createTokens` → its own web CSS vars, which are
   **authoritative at runtime**; the design.md `variables.css` (unitless `--space-*`/`--duration-*`, camelCase
   `--easing-inOut`) is a **parallel documentation / Figma-projection artifact**, not wired into the app. No runtime
@@ -174,7 +174,7 @@ harness: `preview.tsx` 3 toolbar globals + `_codec-gate.stories.tsx`) across all
   sub-themes for the editorial base schemes ONLY (20 = 10 × light/dark); the per-preset `<mode>_<preset>_<Comp>` set (40)
   is **retired** (never resolved; superseded). Themes 66 → 26. Visual-Gate-verified: Primary button + ghost/indicator/
   checked/focus/info accents + all neutrals swap per preset (reader oxblood, quietDesk olive) across the 12-cell matrix.
-  `[components/*.tsx direct-semantic; build-tokens.mjs component-subtheme loop = ['light','dark']; bug-unit docs/specs/fixes/preset-accent-component-subthemes]`
+  `[components/*.tsx direct-semantic; build-tokens.mjs component-subtheme loop = ['light','dark']]`
 
 ## Boundaries (what the pipeline does NOT own — owed downstream)
 

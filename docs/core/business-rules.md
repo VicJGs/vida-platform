@@ -33,7 +33,6 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
   **hybrid logical clock (HLC)** — stamps that order by **causality**, not by each device's raw wall clock — with an
   exact-tie broken by the lexicographically-higher device id; this is what stops cross-device clock skew from silently
   discarding a newer write. Editor content syncs via **Yjs CRDT** per page. `[FACT: ADR-003 §6.1; ADR-002 §3]`
-  ⚠ Drift note: legacy architecture.md says "Automerge" for structured data — ADR-003 uses LWW. ADR authoritative.
 
 ## Encryption Boundaries (EN)
 
@@ -129,7 +128,7 @@ Projects 2026-06-29 surfaced this as the governing principle; ADR-010 §3; task-
 
 - Every feature spec's Business Rules section must **comply with and reference** the relevant rules above.
 - The Verify step of any documentation/build pass treats a violation of a core rule as a **blocker**.
-- Authoritative sources, in order: ADRs + current code > `docs/core/architecture/*` > legacy `docs/architecture.md` (do not use the legacy doc for decisions — `[[authoritative-docs]]`).
+- Authoritative sources, in order: ADRs + current code > `docs/core/architecture/*`.
 
 ## Change Log
 

@@ -26,7 +26,7 @@ The implemented storage schema is v1 and cannot be incrementally patched into th
 - **ADR-002 §5.20 deferred it explicitly:** the consolidated re-write is "deferred to its own build-phase schema session (which also writes the Drizzle schema in `packages/core`)." `[FACT: ADR-002 §5.20]`
 - **The reconciliation quantified the gap** (2026-07-20): current 80 tables vs a documented target of ~130-150 — carry-forward ~40 · retire ~22 · missing ~90-110 · divergent ~9, plus 5 systemic gaps. `[FACT: database-schema-reconciliation.md §A-E]`
 - **DB-1 established the substrate** (2026-07-22, commit b234e85): `schema/` directory + primitives; additive; the monolith kept its import path. During DB-1's review the DDL-generation question surfaced — a Drizzle `check()` helper emits nothing because this repo hand-writes SQL DDL. `[FACT: DB-1 IMPLEMENTATION-PLAN §XXVIII]`
-- **Greenfield → structural decision, not a migration:** no released app, no vault, `DB-10 · Seed` still planned. `[FACT: TASKS.md]`
+- **Greenfield → structural decision, not a migration:** no released app, no vault, `DB-10 · Seed` still planned.
 
 ## 3. Decision
 

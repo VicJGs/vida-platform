@@ -1,4 +1,4 @@
-<!-- Business Rules — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 · §5.11 planner L2743-2882 · pomodoro_sessions L1432-1440,L1435 · dep graph L3751-3757 · Books BK-10/BK-12 · Education contract L42 · Knowledge KN-10 · docs/intake/sessions-and-scheduling.md -->
+<!-- Business Rules — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 · §5.11 planner L2743-2882 · pomodoro_sessions L1432-1440,L1435 · dep graph L3751-3757 · Books BK-10/BK-12 · Education contract L42 · Knowledge KN-10 -->
 
 # Business Rules — Sessions & Scheduling (level: Foundation / OWN MODULE)
 

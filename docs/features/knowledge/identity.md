@@ -1,4 +1,4 @@
-<!-- Identity — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 (study_topics/topic_reviews) + knowledge_notes DDL L2715-2738 · schema.ts L721-759,L809-825 · CLAUDE.md §7 · docs/intake/knowledge.md -->
+<!-- Identity — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 (study_topics/topic_reviews) + knowledge_notes DDL L2715-2738 · schema.ts L721-759,L809-825 · CLAUDE.md §7 -->
 
 # Identity — Knowledge (level: Feature / OWN MODULE — extracted from Learning, mirrors Books)
 

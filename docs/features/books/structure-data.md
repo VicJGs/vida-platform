@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · schema.ts · docs/intake/books.md -->
+<!-- Structure & Data — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · schema.ts -->
 
 # Structure & Data — Books (level: Feature / own module)
 

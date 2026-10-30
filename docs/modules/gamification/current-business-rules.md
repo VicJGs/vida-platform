@@ -1,7 +1,7 @@
 # Gamification — Current Business Rules (as-built)
 
 <!-- Durable per-context rules. Living doc (§XXIX). mod-gamification #48 ① (LIF-124). S1 shipped.
-     Promoted from delivery/interpretation.md (IR-*) + the S1 implementation. [FACT: path:line]. -->
+     Promoted from the interpretation rules (IR-*) + the S1 implementation. [FACT: path:line]. -->
 
 ## S1 — Currency surface, level, below-floor clamp (shipped)
 

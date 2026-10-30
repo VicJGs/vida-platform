@@ -2,7 +2,7 @@
 
 > Durable description of the E6–E8 serializers as built (§XXIX Currency Rule). Refreshed per unit; never lags the code.
 > Scope today: **E6 — Markdown (to + from)** + **E7 — PDF (`to-pdf`)** + **E8 — DOCX (`to-docx`)** — the serializer
-> suite is COMPLETE. Forward specs: `docs/specs/features/ui-3-vida-editor/{e6-markdown-serializers,e7-pdf-serializer,e8-docx-serializer}.md`.
+> suite is COMPLETE.
 
 ## What E6 is
 

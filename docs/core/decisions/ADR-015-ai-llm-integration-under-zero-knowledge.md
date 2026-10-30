@@ -29,9 +29,9 @@ AI is the highest-value and highest-risk integration: an LLM advising over your 
 The constitution committed to this ADR; the modules and Victor's session decisions filled it in:
 
 - **EX-2 names it:** _"AI/LLM integration (agentic on-device = the ZK-safe path; cloud model = an opt-in, consented plaintext dent)."_ `[FACT: business-rules.md EX-2 L108-110]`
-- **Every AI-touching module already stated the same stance:** Projects — _"AI (agentic/on-device preferred)… the user opts in and owns the risk"_ (PJ-11); Health — photo analysis + LLM plan/meal generation are _"opt-in, on-device-preferred, user-owns-risk"_ (HC-10); Skills — _"AI-draft… opt-in"_ (SK-12); Books — OCR/vision _"rides the AI ADR"_; Preferences — _"already dropped AI fields for ZK"_ pending this decision. `[FACT: PJ-11; HC-10; SK-12; intake/books.md; intake/projects.md L87-88]`
+- **Every AI-touching module already stated the same stance:** Projects — _"AI (agentic/on-device preferred)… the user opts in and owns the risk"_ (PJ-11); Health — photo analysis + LLM plan/meal generation are _"opt-in, on-device-preferred, user-owns-risk"_ (HC-10); Skills — _"AI-draft… opt-in"_ (SK-12); Books — OCR/vision _"rides the AI ADR"_; Preferences — _"already dropped AI fields for ZK"_ pending this decision. `[FACT: PJ-11; HC-10; SK-12]`
 - **Victor's decisions (this session):** AI connections get a **dedicated management page** (separate from general integrations); the user **connects their own LLM** (Claude/ChatGPT) as _"the sole foundation,"_ with **native integration later once there's a good user base**; and _"the user will handle how his data is output and sent to other parties, with the set parameters we establish."_ `[INTENT: RESOLUTION — Victor]`
-- **Fiscal & Legal (now unblocked) is the hardest instance:** AI advisement over the user's _actual_ financial numbers — on-device agentic is the ZK-safe path; cloud is a disclosed dent. `[FACT: intake/fiscal-legal.md L26-60]`
+- **Fiscal & Legal (now unblocked) is the hardest instance:** AI advisement over the user's _actual_ financial numbers — on-device agentic is the ZK-safe path; cloud is a disclosed dent.
 
 Because the code is greenfield (Preferences deliberately holds no AI fields yet), this is a **structural decision, not a migration**.
 

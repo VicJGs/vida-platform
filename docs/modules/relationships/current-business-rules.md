@@ -5,8 +5,8 @@
 # Module: mod-relationships #56 · LIF-137 · service `createRelationshipsService` over DB-4 025_relationships (8 tables).
 
 > Inherits the CORE constitution (ZK-1/2/3, LF-1/2/3). PII-heaviest module — ZK-1 paramount. Intent authority =
-> `docs/features/relationships/{identity,business-rules,contract,structure-data,conventions}.md`; leg roster =
-> `docs/specs/foundation/backend-intent/parts/relationships.md` (REL-01…59). **Schema is the floor** — the DB-4
+> `docs/features/relationships/{identity,business-rules,contract,structure-data,conventions}.md`.
+> **Schema is the floor** — the DB-4
 > authoring (`025_relationships`) resolved the aspect docs' "⚠ INTENDED / ADR-002-amendment" delta: networks,
 > `closeness_tier`, snooze/priority, event-anchor, G8 fields are all LIVE columns.
 

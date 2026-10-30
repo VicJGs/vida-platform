@@ -14,8 +14,7 @@ chrome). Rendering is owned by UI-4 and each module (M1.1+).
 
 **Content Source:** `@vida/core` `TerminalState` canon (`foundation/capability/types.ts`, ADR-008 CB6 / R5) · `data-flow.md §7`
 (React Query / Zustand state plane; BR-RT-1..7) · `performance-strategy.md §5` (skeletons, cache) · `standards/engineering.md §XIV`
-(keyboard/focus/aria) + §XIII (CLS) — the authority `[FACT: m1.0-delivery-plan.md:211]`. Full derivation + gates:
-`docs/specs/foundation/ux-4-state-conventions/`.
+(keyboard/focus/aria) + §XIII (CLS).
 
 > **Scope (what this is NOT):** not the state-plane _mechanism_ (AR-4 — this consumes it); not any new `@vida/ui`
 > _primitive_ (UX-4 composes UI-1's existing primitives + the consumer-composed skeleton model — it builds no

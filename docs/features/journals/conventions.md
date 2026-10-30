@@ -1,4 +1,4 @@
-<!-- Conventions — features/journals · /documentation Phase 2 · sources: journal-service.ts (0 lines) · note.ts · notes-and-pages/* · sessions-and-scheduling (dueIn) · CLAUDE.md conventions · docs/intake/journals.md -->
+<!-- Conventions — features/journals · /documentation Phase 2 · sources: journal-service.ts (0 lines) · note.ts · notes-and-pages/* · sessions-and-scheduling (dueIn) · CLAUDE.md conventions -->
 
 # Conventions — Journals (level: Feature / integration layer)
 

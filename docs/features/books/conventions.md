@@ -1,4 +1,4 @@
-<!-- Conventions — features/books · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 · docs/intake/books.md -->
+<!-- Conventions — features/books · /documentation Phase 2 · sources: CLAUDE.md Conventions · ADR-002 -->
 
 # Conventions — Books (level: Feature / own module)
 
@@ -39,7 +39,7 @@ B10-confirm; ADR-004 S1]`
   `[INTENT B2/B5/B15/B16]`
 - FACT enums today: `format`(3 — to be superseded), `status`{want_to_read, reading, completed, dropped}.
   `[FACT: ADR-002 L2414-2417]`
-- Docs home: `docs/features/books/` (own module — extracted from `learning/`). Intake: `docs/intake/books.md`.
+- Docs home: `docs/features/books/` (own module — extracted from `learning/`).
 - Platform-wide: UUIDv7 TEXT PKs, Unix-ms timestamps, booleans 0/1, JSON as TEXT, dates `YYYY-MM-DD`,
   minutes for durations, soft delete on parents, `_sync_*`; enums = unions + CHECK + Zod. `[FACT: CLAUDE.md]`
 

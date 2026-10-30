@@ -20,7 +20,7 @@
   the Spaces `entity_tags` seam (S6/FIN-35). The stale `Transaction.tags` interface field is not trustworthy
   (DB-11). `[FACT: service.ts toTransaction]`
 - **FN-11 — Referential integrity is APP-LAYER.** No FK (ADR-016 §3.4); account-delete cascade / transfer-target
-  SET-NULL is a service contract, not a DB constraint. Soft delete (`deleted_at`) hides without destroying. `[FACT: schema no-FK; slice-map.md S1]`
+  SET-NULL is a service contract, not a DB constraint. Soft delete (`deleted_at`) hides without destroying. `[FACT: schema no-FK]`
 - **FN-12 — Local-first.** Every create/edit/transfer succeeds locally first; LWW on structured columns. `[FACT: LF-2; ADR-003]`
 
 ### Realized (S3 — derived analytics)
@@ -41,7 +41,7 @@
   AUTHORITATIVE "value known" signal (null when price OR quantity is unset); `priceSet` reports only the price
   dimension. Consistent with the overview's unvalued surfacing. `[FACT: service.ts getInvestmentValue]`
 - **BR-S3-6 (FN-8) — S3 sums RAW cents, no FX.** No currency conversion; multi-currency base-currency
-  conversion + `FxRateMissingError` is S5/FIN-21 (needs the deferred Preferences base-currency port). `[FACT: slice-map.md:18,38]`
+  conversion + `FxRateMissingError` is S5/FIN-21 (needs the deferred Preferences base-currency port).
 
 ### Realized (S4 — move_money effect handler)
 
@@ -123,7 +123,7 @@
 - **BR-S8-1 (FL-04/X5).** `rulePack(jurisdiction)` grant-gates `external_in` (fail-closed) then reads the ADR-014
   public-reference layer via the BUILT `createPublicReferenceEngine`; M1 deny-safe fetch → `RulePackUnverified`, no
   grant → `ExternalGrantMissing`. `RulePack = {jurisdiction_code, version, verified}` (version required by
-  `source_rulepack_version` notNull; **content owed → M2**, format unspecified). `[FACT: services/finance/fiscal-legal.ts rulePack; parts/finance.md:123]`
+  `source_rulepack_version` notNull; **content owed → M2**, format unspecified). `[FACT: services/finance/fiscal-legal.ts rulePack]`
 - **BR-S8-2 (FL-05/FL-5).** `deriveObligations(range, pack)` is the proposer + unverified-law gate: refuses an
   unverified pack (`RulePackUnverified`), **never persists / fans out**. The per-jurisdiction rule-evaluation is an
   **owed M2 seam** (no pack content format yet) → a verified handle yields `[]` at M1. `[FACT: fiscal-legal.ts deriveObligations]`

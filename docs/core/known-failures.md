@@ -29,8 +29,8 @@
 ## F003 — token pipeline: `dark_<Comp>` sub-themes identical to `light_<Comp>` (dark mode uses light values)
 
 **Symptom:** Generated `themes.ts` emits `light_Button ≡ dark_Button` (both `backgroundPrimary: tokens.color.brand600`). Component sub-themes render light-mode token values in dark mode; the `semantic.dark.json` overlay is bypassed for the entire component-token layer. Surfaced by DS-5 when firming the `component.json` intent set (previously invisible because only `button.background.primary` existed).
-**Root cause:** STRUCTURAL. The `vida/tamagui-themes` emitter resolves component (rank-2) tokens to their **primitive** value (`build-tokens.mjs:179` `toPrimitivePath` + `:183` `tokenRef`) and emits `light_`/`dark_` from **one shared `subs` object** (`:217-218`) — collapsing the semantic light/dark indirection. This deviates from the DS-1 spec's projection example (`ds-1-token-pipeline/_index.md:113`: `light_Button = { background: light.colorSurfacePrimary }` — sub-themes reference the **base theme objects** `light.*`/`dark.*`). The DS-1 acceptance prose ("referencing those tokens") was ambiguous and the impl followed it; a placeholder duplication of `light_/dark_` went unnoticed while only one non-dark-critical component token existed.
-**Fix:** In the rank-2 branch, read the component token's semantic ref (`t.original.value` → `refTarget` → `camel`) and store the **semantic key**; emit `light_<Comp>[k] = light.<semKey>` / `dark_<Comp>[k] = dark.<semKey>` per DS-1:113 (dark inherits the overlay by construction). Add a `build-tokens.test.ts` fixture asserting `light_<Comp> ≠ dark_<Comp>` when a referenced semantic has a dark override. Full diagnosis + fix: `docs/specs/fixes/component-subtheme-dark-drift/_index.md`.
+**Root cause:** STRUCTURAL. The `vida/tamagui-themes` emitter resolves component (rank-2) tokens to their **primitive** value (`build-tokens.mjs:179` `toPrimitivePath` + `:183` `tokenRef`) and emits `light_`/`dark_` from **one shared `subs` object** (`:217-218`) — collapsing the semantic light/dark indirection. This deviates from the DS-1 spec's projection example (`light_Button = { background: light.colorSurfacePrimary }` — sub-themes reference the **base theme objects** `light.*`/`dark.*`). The DS-1 acceptance prose ("referencing those tokens") was ambiguous and the impl followed it; a placeholder duplication of `light_/dark_` went unnoticed while only one non-dark-critical component token existed.
+**Fix:** In the rank-2 branch, read the component token's semantic ref (`t.original.value` → `refTarget` → `camel`) and store the **semantic key**; emit `light_<Comp>[k] = light.<semKey>` / `dark_<Comp>[k] = dark.<semKey>` per DS-1:113 (dark inherits the overlay by construction). Add a `build-tokens.test.ts` fixture asserting `light_<Comp> ≠ dark_<Comp>` when a referenced semantic has a dark override.
 **Prevention:** When an acceptance criterion's prose disagrees with its concrete projection example, the **example is authoritative** — encode it as a test, not prose. Fix pipeline defects at the pipeline root (DS-1), never per-consumer (DS-5) — a per-component patch masks the shared root cause.
 **Documented:** 2026-08-05 | Session: 2026-08-05-ds-5-primitive-contracts
 
@@ -74,8 +74,7 @@ because the first open finished in the background. The filing's prod claims were
 wasm was always requested. **Fix:** `open`/`migrate` are acked on receipt and their deadline covers receipt only
 (`OPEN_ACK_TIMEOUT_MS` 60 s); reads/writes keep 15 s; the worker opens once (BR-RT-D5); `getServices()` retries a rejected
 build. **If it ever reappears:** "not acknowledged within 60000ms" = the worker never started (module load); "timed out after
-15000ms" on a read = a hung worker. Guard: `pnpm --filter @vida/web test:e2e:prod` (prod-build boot smoke). Bug unit:
-`docs/specs/fixes/data-plane-boot-open/`.
+15000ms" on a read = a hung worker. Guard: `pnpm --filter @vida/web test:e2e:prod` (prod-build boot smoke).
 
 ## F008 — a wave of FIRST-test-of-file timeouts across unrelated files in a full-suite run
 

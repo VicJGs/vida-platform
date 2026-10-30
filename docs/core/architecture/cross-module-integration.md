@@ -9,7 +9,7 @@ cross-module query patterns. (Service code homes are re-derived by the structura
 
 > **Implementation status (2026-07-25):** This document describes the platform's **target** integration model — the
 > substrate world of ADRs 004–017 + the capability framework. It is **not** a snapshot of shipped code: ~99% of current
-> code predates this foundation (`docs/specs/foundation/current-state-baseline/baseline.md`), storage is being **rebuilt
+> code predates this foundation, storage is being **rebuilt
 > from zero** (ADR-016), and Phase-1.0 is **features-first** with encryption/sync/auth **deferred** (ADR-017). Substrate
 > primitives cite their **owning ADR** (conceptual home); code/directory homes are decided in a later structural phase.
 
@@ -503,7 +503,6 @@ document extraction/auto-record, nutrition generation, advisement (informational
 
 ## References
 
-- **`docs/specs/foundation/capability-framework.md`** — The substrate inventory (Sessions, Spaces, Measurability, Economy, Review-engine, Ingestion, AI) with owning ADRs
 - **ADR-004 / ADR-005 / ADR-011 / ADR-012 / ADR-013 / ADR-014 / ADR-015** — Sessions, review engine, measurability/`contributions`, points economy, ZK notifications, external ingestion, AI
 - **ADR-006 (SP2)** — The open entity-link/taggable-type registry (supersedes the closed CHECK)
 - **ADR-002 section 5.2** — `pages`, `page_links`, `entity_links` table definitions

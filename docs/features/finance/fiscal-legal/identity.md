@@ -1,4 +1,4 @@
-<!-- Identity — features/finance/fiscal-legal · /documentation Phase 2 · sources: docs/intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · Finance/Projects/Purpose docs · CLAUDE.md §9 -->
+<!-- Identity — features/finance/fiscal-legal · /documentation Phase 2 · sources: ADR-014 · ADR-015 · Finance/Projects/Purpose docs · CLAUDE.md §9 -->
 
 # Identity — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context — situate·organize·plan)
 
@@ -6,7 +6,7 @@
 jurisdictions**, **track the fiscal-legal obligations** that flow from where their money is (and will be, and is planned
 to be), and **model the long-run impact** of those rules on their goals — **without ever filing anything**. It is the
 OS's answer to one of the hardest walls for people who plan big: the economic-legal sphere is many-ruled, per-country,
-constantly changing, and mostly invisible to the user until it bites. `[FACT: CLAUDE.md §9; intake/fiscal-legal.md intent]`
+constantly changing, and mostly invisible to the user until it bites. `[FACT: CLAUDE.md §9]`
 `[INTENT: RESOLUTION FL1/FL2 — Victor]`
 
 **Placement (Victor's call).** A **sub-feature of Finance**, not its own module (FL1) — it lives closest to money. It

@@ -1,4 +1,4 @@
-<!-- Identity — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · @vida/types/project.ts · CLAUDE.md §2 · docs/intake/projects.md -->
+<!-- Identity — features/projects · /documentation Phase 2 · sources: ADR-002 §5.4 · @vida/types/project.ts · CLAUDE.md §2 -->
 
 # Identity — Projects (level: Feature)
 

@@ -20,7 +20,7 @@
 - [ADR-013](ADR-013-zero-knowledge-notification-delivery.md) (2026-07-19) — **Zero-Knowledge Notification Delivery**: extends **ADR-003's §12 device registry** with `push_token` + `push_platform` columns (no new table); adds `notifications` **delivery-audit** columns. Three-tier delivery (in-app · native local-scheduled · content-free wake-signal); **also amends ADR-001** (resolves the Phase-6.7 push deferral) + **ADR-003** (wake-relay server responsibility).
 - [ADR-012](ADR-012-points-economy-consequence-engine.md) (2026-07-19) — **Points Economy & Consequence Engine** (Gamification "the System"): adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer) + a `rules` table (headless automation); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped ± earn/lock/spend/distribute; drops `xp_amount`/`action_type`/`level_before`/`level_after`); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠**); makes `achievements.condition` a measurable predicate (ADR-011 seam + event stream); `level` → derived (no table). **Also extends ADR-004 §3.2.2** with four Additive-class effects (`grant_currency` · `lock_currency` · `move_money` · `surface_notification`) and **ADR-011 §3.7** with consequence-edge cycle detection.
 
-**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. _(This supersedes the interim pointer to `docs/reviews/2026-07-15-adr-critique-gate.md` § "throughline ①", which remains the decision's audit record.)_
+**⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. _(The decision's audit record: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).)_
 
 ---
 
@@ -3747,7 +3747,7 @@ CREATE VIRTUAL TABLE fts_courses USING fts5(
 > it now (the true owed set is large and much of it is build-phase-deferred — see below), this section is the **durable
 > owed-tables ledger**: the single scoped checklist the build-phase schema session (which also writes the Drizzle
 > schema in `packages/core`) consolidates into §5. It supersedes the interim pointer to the review-doc ledger. Source
-> of the decision: `docs/reviews/2026-07-15-adr-critique-gate.md` (F4/D5) + `docs/specs/adr-revisions/f4-body-d5-adr002-consolidation/PLAN.md`.
+> of the decision: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298) (F4/D5).
 >
 > ADR-002 owes schema changes from **two streams**: **(i)** the ADR revise pass (ADR-003 §17 + ADR-004…012 `Amends:`
 > lines + the F1/F6/F7 build columns) — **fully enumerated below**; and **(ii)** the documentation-blueprint module
@@ -3840,8 +3840,8 @@ itself** — this ledger names the complete input set so nothing is silently omi
 **The 19 owed source docs** (`docs/features/<module>/structure-data.md`, unless noted): `books` · `check-ins` ·
 `finance` · `habits` · `journals` · `knowledge` (+ `knowledge/flashcards`) · `pomodoro` · `preferences` · `projects` ·
 `relationships` · `routines` · `sessions-and-scheduling` · `skills` · `tasks` · `health/core` · `health/nutrition` ·
-`health/training` · `learning/education`. **Dissolved modules** (schema landed elsewhere): Bucket List →
-`docs/intake/bucket-list.md`; Duties → `docs/intake/duties.md`; Languages content → `docs/features/languages/`.
+`health/training` · `learning/education`. **Dissolved modules** (schema landed elsewhere):
+Languages content → `docs/features/languages/`.
 
 **Notable confirmed cross-module MOVES** (examples — the full set lives in the docs above):
 

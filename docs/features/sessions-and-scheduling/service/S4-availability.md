@@ -6,7 +6,7 @@
 **Home:** extends `services/sessions/service.ts`. Two new repos over the DB-4 scheduler-input tables. No new
 factory deps. Independent of S1–S3 (only needs the factory + repos).
 
-## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+## §1 Operations (return the row)
 
 - `setAvailability(input): Availability` — create a recurring window (`study_availability`).
 - `updateAvailability(id, patch): Availability` — patch a window.

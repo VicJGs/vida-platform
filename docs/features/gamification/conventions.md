@@ -1,4 +1,4 @@
-<!-- Conventions — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · ADR-004 §3.2.5 · ADR-011 · ADR-008/010 · docs/intake/gamification.md RESOLUTION · CLAUDE.md Conventions -->
+<!-- Conventions — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · ADR-004 §3.2.5 · ADR-011 · ADR-008/010 · CLAUDE.md Conventions -->
 
 # Conventions — Gamification ("the System") (level: Feature — incentive engine)
 

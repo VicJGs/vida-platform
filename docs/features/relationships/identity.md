@@ -1,4 +1,4 @@
-<!-- Identity — features/relationships · /documentation Phase 2 · sources: ADR-002 §5.9 · @vida/types/relationship.ts · CLAUDE.md §6 · docs/intake/relationships.md -->
+<!-- Identity — features/relationships · /documentation Phase 2 · sources: ADR-002 §5.9 · @vida/types/relationship.ts · CLAUDE.md §6 -->
 
 # Identity — Relationships (CRM) (level: Feature)
 

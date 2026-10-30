@@ -1,4 +1,4 @@
-<!-- Business Rules — features/notifications · /documentation Phase 2 · sources: ADR-002 §5.16 L3468-3500 · common.ts L70-99 · §5.17 · ADR-012 §3.1 · ADR-004 §3.2.5 · docs/intake/notifications.md RESOLUTION -->
+<!-- Business Rules — features/notifications · /documentation Phase 2 · sources: ADR-002 §5.16 L3468-3500 · common.ts L70-99 · §5.17 · ADR-012 §3.1 · ADR-004 §3.2.5 -->
 
 # Business Rules — Notifications ("the System's out-loud voice") (level: Feature — the observer leaf)
 

@@ -3,7 +3,6 @@
 > **Context:** `@vida/ui` → `packages/ui/src/themes/`. **Built** by DS-1 (LIF-81, plumbing) 2026-07-26 + **DS-2**
 > (LIF-82, foundation values + aux namespaces + dark overlay) 2026-08-03 + **DS-3** (LIF-83, motion tokens) 2026-08-03.
 > Companion: `current-business-rules.md`.
-> Forward specs: `docs/specs/components/{ds-1-token-pipeline,ds-2-foundations,ds-3-motion-foundation}/_index.md`.
 > **No-Guessing:** `[FACT: src]` / `[INTENT]` (documented direction, not yet built).
 
 ## What the token pipeline is

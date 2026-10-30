@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · notes-and-pages/structure-data.md · docs/intake/journals.md -->
+<!-- Structure & Data — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · notes-and-pages/structure-data.md -->
 
 # Structure & Data — Journals (level: Feature / integration layer)
 

@@ -1,4 +1,4 @@
-<!-- Identity — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences pomodoro_* L3497-3500 · note.ts L58-64,154-163 · ADR-004 §2/§3.1/§3.2 · Sessions SS-11/SS-3/identity L50-51 · Tasks TK-5 · v1 studyPlanner.ts SessionTemplate+PomodoroSession + FocusMode.tsx · CLAUDE.md §8 · docs/intake/pomodoro.md (INTAKE WHOLE 2026-07-15) -->
+<!-- Identity — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences pomodoro_* L3497-3500 · note.ts L58-64,154-163 · ADR-004 §2/§3.1/§3.2 · Sessions SS-11/SS-3/identity L50-51 · Tasks TK-5 · v1 studyPlanner.ts SessionTemplate+PomodoroSession + FocusMode.tsx · CLAUDE.md §8 -->
 
 # Identity — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 
@@ -41,7 +41,7 @@ faces. Breaks are part of it — not dumb countdowns but **per-type guidance** (
 **What it is NOT.** `[INTENT — anti-scope-creep]`
 
 - **NOT a module / not a sub-context.** A feature/capability inside the Sessions realm (intake G0 = thin
-  capability-doc). `[[../../intake/pomodoro]]`
+  capability-doc).
 - **NOT a Session sub-type.** `pomodoro` is the **runtime**, not a `sub_type` — the sub-type is `focus`
   (Sessions SS-1: _"`pomodoro` is not a sub-type — it is the runtime"_). `[FACT: Sessions SS-1/SS-11]`
 - **NOT a Notes-owned entity (after reframe).** Notes hosts the `/pomodoro` **widget** only; the entity lives
@@ -59,7 +59,7 @@ Break (short/long interval with per-type guidance) · Completed (interval/run fi
 Cancelled/Interrupted (stopped early; interruption reason captured) · Error (a failed effect never corrupts
 the linked session — fail loud). `[INTENT; FACT type/status enums note.ts L61-62]`
 
-**Neighbors.** `[[../../intake/pomodoro]]` (whole intake) · `[[../sessions-and-scheduling/identity]]` (owns
+**Neighbors.** `[[../sessions-and-scheduling/identity]]` (owns
 the `focus` sub-type + Integration Contract — Pomodoro is its runtime) · `[[../../core/decisions/ADR-004-session-framework]]`
 (the 4-dimension contract Pomodoro's reach rides) · `[[../tasks/identity]]` (task→focus-Session→`log_time`,
 TK-5) · `[[../notes-and-pages/identity]]` (`/pomodoro` widget = a session lens) · `[[../health/training/identity]]`

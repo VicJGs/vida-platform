@@ -12,7 +12,7 @@ wiring the boot branch are owned by **UI-4**; the vault-unlock/lock UX is **UX-5
 
 **Content Source:** ADR-019 (auth-coupled deferral split) · ADR-017 (features-first: encryption/auth off in the
 feature phase) · the boot path `apps/web/src/App.tsx` + `db/client.ts` · UX-4 `state-conventions.md` (focus/keyboard)
-· UX-3 `shell-layout.md` (breakpoints). Full derivation + gates: `docs/specs/foundation/ux-5-onboarding/`.
+· UX-3 `shell-layout.md` (breakpoints).
 
 > **Scope (what this is NOT):** not the rendered onboarding screens (UI-4); not the real vault-key creation or the
 > unlock/lock-on-every-launch UX (AR-3 crypto + UX-5b, **M3**); not per-name/multi-vault first-run semantics
@@ -112,4 +112,3 @@ claim; `m3?` = the encryption-backed claim, gated behind an encryption-active si
 - ADR-019 (Phase-1.0 resequence — the auth-coupled deferral split) · ADR-017 (features-first; encryption/auth off)
 - `information-architecture.md` (UX-1) · `shell-layout.md` (UX-3) · `state-conventions.md` (UX-4) — the surfaces this builds on
 - `apps/web/src/onboarding/{steps,first-run}.ts` — the code artifact (data/logic)
-- `docs/specs/foundation/ux-5-onboarding/` — baseline, PLAN + IMPLEMENTATION-PLAN, gates

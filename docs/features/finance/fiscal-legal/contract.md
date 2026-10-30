@@ -1,4 +1,4 @@
-<!-- Contract — features/finance/fiscal-legal · /documentation Phase 2 · sources: intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · Finance/Projects/Tasks/Notifications docs -->
+<!-- Contract — features/finance/fiscal-legal · /documentation Phase 2 · sources: ADR-014 · ADR-015 · Finance/Projects/Tasks/Notifications docs -->
 
 # Contract — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context)
 

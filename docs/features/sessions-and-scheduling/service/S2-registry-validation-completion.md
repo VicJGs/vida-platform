@@ -1,5 +1,5 @@
 <!-- S2 forward spec — MOD-sessions ① · slice S2. The §XXVI g1 gate object.
-     Scope is doc-GIVEN (m1.1-delivery-plan.md:239), not decided. REFERENCES the aspects + S1 + interpretation.
+     Scope is doc-GIVEN, not decided. REFERENCES the aspects + S1 + interpretation.
      No-Guessing: every claim FACT / INTERPRETATION / UNKNOWN. -->
 
 # S2 — createSession registry validation + completion wiring (forward spec · g1)
@@ -10,8 +10,7 @@ additions. Adds two deps to the factory: `rail: EffectRail` + `entityRegistry: T
 **Scope is doc-given, NOT a decision (delivery-plan:239).** ① is "AR-5 shipped types only" — S2 validates
 against the registry _as AR-5 shipped it_ (`focus`) plus the `register()` seam; it does **NOT** seed the other
 8 shipped sub-types (owning modules register their own — SS-5 extension model, `contract.md:12`,
-`identity.md:22`). No `foundation/sessions/registry.ts` roster edit. `[FACT: m1.1-delivery-plan.md:239;
-memory sparse-foundation-seed-is-extension-seam-not-a-gap]`
+`identity.md:22`). No `foundation/sessions/registry.ts` roster edit. `[FACT: memory sparse-foundation-seed-is-extension-seam-not-a-gap]`
 
 ## §1 Operations (delta over S1)
 
@@ -37,7 +36,7 @@ UnknownEntityType(entityType)` before the idempotent create. Mirrors `foundation
 - **completion wiring — route through the existing engine (IR-1, resolves the delivery-plan:249 ⚠ boundary).**
   `completeSession`/`transitionSession` build `TransitionDeps = { db, registry, rail, deviceId }` and call the
   #32 `transition()`. NO second firing path is built (that would break BR-10 fire-first/commit-last + the R1
-  single-ledger). `[FACT: lifecycle.ts transition(); interpretation.md IR-1]`
+  single-ledger). `[FACT: lifecycle.ts transition()]`
 - **The rail is FAIL-LOUD on missing handlers — this bounds what completion can do in M1.1 (B1).** On
   completion `fireCompletionEffects` calls `rail.applyEffect` per declared effect. `applyEffect`
   (`effects/service.ts:31-40`): a `projection` effect (`surface_journal`/`surface_calendar`) no-ops

@@ -19,7 +19,7 @@ pending_approval` hop is the deferred algorithm's output) so the endpoint set is
 `draft` = the ②/wizard pre-generate state. `[FACT: intake:169-170; business-rules.md:88; DB-4 widened
 course_id → scope_type/scope_id per G5 — scheduling.ts:74]`
 
-## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+## §1 Operations (return the row)
 
 - `generatePlan(input): PlanBatch` — create a batch (the "generate" action). Status → `pending_approval`,
   `generated_at:now`, `total_sessions:0`. `input` = `{ scope_type?, scope_id?, name? }`. `name` `[E]`. The

@@ -14,19 +14,18 @@
   instance lives inside the page document. Document the block at the components level. `[FACT: ADR-008 §3.1, L120-124]`
 - **Wiki-links via a suggestion surface, stored by id.** Typing `[[` opens the picker at the caret; selection inserts
   the inline link and writes a `page_links` row by `target_page_id`; no match offers "+ Create" (create-on-miss →
-  `note`); hovering a link shows the preview card. `[FACT: fe-notes PLAN-s4-wikilink-picker.md:132 (F-S4-1); INTENT G2]`
-  Built as an `@vida/editor` `@tiptap/suggestion` extension like the `/` menu, not a plain input rule
-  `[INTERP: docs/specs/features/ui-3-vida-editor/e4-slash-menu.md:31 "a separate suggestion surface"]`.
+  `note`); hovering a link shows the preview card. `[FACT: INTENT G2]`
+  Built as an `@vida/editor` `@tiptap/suggestion` extension like the `/` menu, not a plain input rule.
 - **Templates = live blocks + user-defined** (NP-12); capture never takes accumulated data — the page-doc rule is open (NP-12).
 - **Entity-note seed is client-side** (NP-8, ZK-1).
 - **Summary degrades per section** (G5); the engine is Journals.
 - **Honest local-first UI.** No fake spinners for local writes; M1 save/sync state = `saved` / `error`
-  ("saved on this device"); synced/pending/offline/conflict arrive with the sync engine (M4, MVP-PATH.md:34).
-  `[FACT: frontend-quality-bar:81-84; decisions.md:289]`
+  ("saved on this device"); synced/pending/offline/conflict arrive with the sync engine (M4).
+  `[FACT: frontend-quality-bar:81-84]`
 - **Dates are the user's local day.** Build `YYYY-MM-DD` from local calendar fields, never `toISOString().slice(0,10)`.
   `[FACT: settled rule — timezone = the user's location; apps/web/src/home/use-journal-entry.ts:28-33 (todayLocalYmd)]`
 - **Hooks are live over `getServices()`** with structured keys, invalidate + re-read; `?sample` fixtures are DEV-only
-  for the Visual Gate. `[FACT: golive-replan process.md ELC-4]`
+  for the Visual Gate.
 
 ## Naming & layout
 

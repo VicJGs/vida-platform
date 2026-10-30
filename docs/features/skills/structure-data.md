@@ -1,5 +1,4 @@
-<!-- Structure & Data — features/skills · Phase 2 · sources: intake/skills.md (v2 floor + Notion context + current
-     intent). v2 has 2 tables (skills, skill_resources); the rest are NEW → ADR-002 additions. P=plain · E=[E]. -->
+<!-- Structure & Data — features/skills · Phase 2 · v2 has 2 tables (skills, skill_resources); the rest are NEW → ADR-002 additions. P=plain · E=[E]. -->
 
 # Structure & Data — Skills
 

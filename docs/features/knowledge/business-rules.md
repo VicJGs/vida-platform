@@ -1,4 +1,4 @@
-<!-- Business Rules — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 Learning (study_topics L2557-2621, knowledge_notes L2715-2738) · schema.ts · CLAUDE.md §7 · docs/intake/knowledge.md -->
+<!-- Business Rules — features/knowledge · /documentation Phase 2 · sources: ADR-002 §5.10 Learning (study_topics L2557-2621, knowledge_notes L2715-2738) · schema.ts · CLAUDE.md §7 -->
 
 # Business Rules — Knowledge (level: Feature / own module)
 

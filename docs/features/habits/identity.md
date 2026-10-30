@@ -1,4 +1,4 @@
-<!-- Identity — features/habits · /documentation Phase 2 · sources: ADR-002 §5.5 · @vida/types/habit.ts · CLAUDE.md §4 · docs/intake/habits.md -->
+<!-- Identity — features/habits · /documentation Phase 2 · sources: ADR-002 §5.5 · @vida/types/habit.ts · CLAUDE.md §4 -->
 
 # Identity — Habits (level: Feature)
 

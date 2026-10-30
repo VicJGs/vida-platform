@@ -1,4 +1,4 @@
-<!-- Business Rules — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · notes-and-pages/business-rules.md (NP-2, G5, G7) · sessions-and-scheduling (dueIn, ADR-004) · docs/intake/journals.md -->
+<!-- Business Rules — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · notes-and-pages/business-rules.md (NP-2, G5, G7) · sessions-and-scheduling (dueIn, ADR-004) -->
 
 # Business Rules — Journals (level: Feature / integration layer)
 

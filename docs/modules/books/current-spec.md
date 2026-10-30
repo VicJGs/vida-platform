@@ -8,8 +8,7 @@
 ## What this module is
 
 `createBooksService(deps)` — the ① backend service tier for the **reading Universe** over DB-4 `023_books`
-(10 tables). The full design lives in `docs/features/books/` (aspect docs) + `docs/features/books/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① COMPLETE — S10 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution · Education partition + measure source + tags + linkable-target · **Integrations + fan-out + Journal**). All 48 BOO legs delivered.
+(10 tables). The full design lives in `docs/features/books/` (aspect docs). Build state: **① COMPLETE — S10 of 10 shipped** (Works · Chapters/TOC + ISBN lookup · Assets + mapping · Annotations + notes/links · Quote-embed feed + toggles · Reading sessions + Reader orchestration · Reading plans / Quota Planner · Unified progress + conflict resolution · Education partition + measure source + tags + linkable-target · **Integrations + fan-out + Journal**). All 48 BOO legs delivered.
 
 ## Delivered surface (as of S10 — ① COMPLETE)
 

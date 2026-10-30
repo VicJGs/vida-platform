@@ -1,4 +1,4 @@
-<!-- Identity — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 + §5.11 planner L2743-2882 + pomodoro_sessions L1432-1440 · types learning.ts L194-211, knowledge.ts L222-250 · v1 studyPlanner.ts (409L) + entities.ts L1551,L1677-1711 · docs/intake/sessions-and-scheduling.md -->
+<!-- Identity — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 study_sessions L2524-2551 + §5.11 planner L2743-2882 + pomodoro_sessions L1432-1440 · types learning.ts L194-211, knowledge.ts L222-250 · v1 studyPlanner.ts (409L) + entities.ts L1551,L1677-1711 -->
 
 # Identity — Sessions & Scheduling (level: Foundation / OWN MODULE — extracted + PROMOTED from Learning "Study Sessions & Planner")
 
@@ -44,7 +44,7 @@ planned ones fill the gaps.
 - **Not Learning-only.** It spans Habits, Tasks, Projects, Health, Purpose, Language — any module with timed
   focused work.
 - **Not the Global Calendar.** The Calendar _renders_ placed blocks (read-only); this module _writes_ them.
-  It decides _when_; the Calendar shows _what/where_. `[[../../intake/sessions-and-scheduling]]`
+  It decides _when_; the Calendar shows _what/where_.
 - **Not the owner of any module's schedule.** Books/Flashcards/Knowledge own their own plans; this aggregates
   them (G2/BK-12).
 - **Not the owner of domain mastery.** It **emits** completion signals; Knowledge (KN-10) and Education own
@@ -61,7 +61,7 @@ shipped session types shown, anti-lost) · Loading (agenda/analytics hydrating) 
 effect never silently corrupts a linked entity — fail loud) · Populated (sessions logging, blocks placed,
 providers feeding the agenda, effects firing across the OS). `[INTENT]`
 
-**Neighbors.** `[[../../intake/sessions-and-scheduling]]` (whole intake) · `[[../books/identity]]`
+**Neighbors.** `[[../books/identity]]`
 (reading_session sub-type; Books owns reading_plans, consumed) · `[[../learning/education/identity]]`
 (class_session; generation source + pace-signal consumer) · `[[../knowledge/identity]]` (review_session;
 mastery-signal consumer, KN-10) · Flashcards (review_session; SM-2 provider) · `[[../pomodoro/identity]]`

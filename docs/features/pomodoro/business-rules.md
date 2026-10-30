@@ -1,4 +1,4 @@
-<!-- Business Rules — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences pomodoro_* L3497-3500 + L1151 (zero-E) · note.ts L61-62,154-163 · ADR-004 §3.2/§3.3/§3.4 · Sessions SS-3/SS-6/SS-11/SS-12 · Tasks TK-5 · v1 studyPlanner.ts pause/interruption fields · docs/intake/pomodoro.md -->
+<!-- Business Rules — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences pomodoro_* L3497-3500 + L1151 (zero-E) · note.ts L61-62,154-163 · ADR-004 §3.2/§3.3/§3.4 · Sessions SS-3/SS-6/SS-11/SS-12 · Tasks TK-5 · v1 studyPlanner.ts pause/interruption fields -->
 
 # Business Rules — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 

@@ -1,7 +1,7 @@
 # Spaces — CURRENT SPEC (durable, living)
 
 <!-- §XXIX Currency Rule: this reflects the CODE AS-IS. Refresh on every change to the Spaces substrate.
-     Born 2026-07-29 by AR-6 (LIF-77). Promoted from docs/specs/foundation/ar-6-spaces/_index.md §3. -->
+     Born 2026-07-29 by AR-6 (LIF-77). -->
 
 Level: CORE / foundation (a tier beneath Notes & Pages). Owning ADRs: ADR-006 (tags/links/spaces) · ADR-007 (views).
 Status: **AR-6 built (2026-07-29)** — structure + thin services. M1.0 grain; deferrals below.
@@ -46,8 +46,8 @@ only `views.layout` is a FIXED SQL CHECK. `[E]` fields are the M3 target — M1.
 - **Templates capture/instantiate/shipped-asset/preset (XS-templates #36) → first-consumer-pull SEAMS.** The
   `templates` store (CRUD) + types are built (above); `captureFromSpace` (XCU-02/03/04/07-serializer),
   `instantiate`-fork execution (XCU-05/11), `listShipped` asset-source (XCU-08), and the preset primitive
-  (XCU-12/13, tab = P6) have **no M1.1 consumer** (decomposition.md:49 read-seams "—"; template-capable surfaces
-  = modules, capability-framework.md:239) → each is pulled by the first _module_ that saves-as-template /
+  (XCU-12/13, tab = P6) have **no M1.1 consumer** (template-capable surfaces
+  = modules) → each is pulled by the first _module_ that saves-as-template /
   instantiates (ADR-009 invariants LOCKED, ADR-019 §3.5). No sibling-service reads added at #36.
 
 ## Tests

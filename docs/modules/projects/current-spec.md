@@ -9,8 +9,7 @@
 
 `createProjectsService(deps)` — the ① backend service tier for **Projects** over DB-4 `016_projects`
 (4 tables: `projects` · `milestones` · `deliverables` · `project_documents`). The full design lives in
-`docs/features/projects/` (aspect docs) + `docs/features/projects/delivery/` (interpretation · slice-map ·
-seam-contract). Build state: **① COMPLETE — S9 of 9 shipped.**
+`docs/features/projects/` (aspect docs). Build state: **① COMPLETE — S9 of 9 shipped.**
 
 > **Test runtime: Node 22** per `.nvmrc` (better-sqlite3 ABI = NODE_MODULE_VERSION 127). After switching Node, run `pnpm -r rebuild better-sqlite3`.
 
@@ -64,7 +63,7 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **Orphan guard:** `createDeliverable` fails loud (`MilestoneNotFoundError`) if the milestone is absent.
 - **ADR-011 fields:** `measurement_kind` NN, backfilled to `'milestone'` (create echoes input); `binding_mode`
   nullable, **no default** (NULL ⇒ derive-natural); `progress` NULL⇒derive (S4); `nesting_weight` NULL⇒equal.
-  **No `status`/`due_date`/`source`** — deliberate asymmetry vs milestones (`db-4-projects/_index.md §3c`);
+  **No `status`/`due_date`/`source`** — deliberate asymmetry vs milestones;
   source binding is an `entity_links` row + the M5/R7 seam (S7), not a column.
 - `listDeliverables`: `findWhere(and(eq(milestone_id), isNull(deleted_at))!)` sorted by `sort_order`.
 - `updateDeliverable`: existence → `DeliverableNotFoundError`; no-op patch is a no-write; returns `DeliverableRow`.
@@ -111,7 +110,7 @@ Slice plan (9): **S1 projects CRUD + queries** · S2 milestones (nestable tree) 
 - **Deps change:** `ProjectsServiceDeps` now REQUIRES `spaces: SpacesService` + `notes: NotesService` (the
   entity_tags WRITE + `pages` surfaces). The test harness constructs both over a shared taggable-type registry.
 - `getProjectPage(projectId, 'vision'|'mission')`: **title-keyed** find-or-create. Vision/mission are `pages` with
-  `entity_type='project'`, **NOT a dedicated `PAGE_TYPE`** (`db-4-projects/_index.md:32-33` — "mission is a page,
+  `entity_type='project'`, **NOT a dedicated `PAGE_TYPE`** ("mission is a page,
   not a column"; `PAGE_TYPE` has no vision/mission slot, and `ensureEntityNote` can't hold two distinct pages per
   entity). Each is a `type='note'` page discriminated by a reserved app-managed title ('Vision'/'Mission');
   idempotent (second call returns the same row). The `projects.vision` column stays the one-line summary (PJ-7).

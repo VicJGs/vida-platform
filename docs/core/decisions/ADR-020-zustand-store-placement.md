@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-07-30
 **Decision Makers:** Victor J.
-**Context:** Vida Platform — resolving the deferred decision ADR-001:286 ("Zustand stores placement: `packages/core` vanilla vs per-app React hooks", deferred to Phase 0.5 / Monorepo Init). AR-1 (topology) did not close it, and AR-4 (LIF-75) is the **first consumer** to place a store — so it resolves it here. Basis: `docs/specs/foundation/ar-4-state-routing-forms/sessions/PLAN-2026-07-29-ar-4-state-routing-forms.md` (gate-1 PLAN, D2), grounded in `docs/core/architecture/data-flow.md §7`.
+**Context:** Vida Platform — resolving the deferred decision ADR-001:286 ("Zustand stores placement: `packages/core` vanilla vs per-app React hooks", deferred to Phase 0.5 / Monorepo Init). AR-1 (topology) did not close it, and AR-4 (LIF-75) is the **first consumer** to place a store — so it resolves it here. Grounded in `docs/core/architecture/data-flow.md §7`.
 **Tags:** architecture · state · frontend · foundation
 **Amends:** ADR-001 §21 (resolves the deferred store-placement row — a one-line pointer added at ADR-001:286). Doc + first-implementation decision; no prior code changed.
 **Does NOT amend:** the state-plane boundary itself (ADR-001 §12 / `data-flow.md §7` — React Query owns DB-derived data, Zustand owns ephemeral UI state) is unchanged; this ADR fixes only _where the store code lives_.

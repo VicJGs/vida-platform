@@ -8,7 +8,7 @@ Independent CRUD (build-order swap: before S5). Templates are **②-applied pres
 runtime does NOT bind a template to a timer (no `template_id` column) — building S6 also reconciled S3's
 `resolveFocusConfig` to drop its dead `templateId` branch (§XXVIII).
 
-## §1 Operations (return the row; signatures → `delivery/seam-contract.md`)
+## §1 Operations (return the row)
 
 - `createTemplate(input): SessionTemplate` — create a focus preset (`name` required).
 - `updateTemplate(id, patch): SessionTemplate` — patch preset fields.

@@ -1,4 +1,4 @@
-<!-- Identity — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 · project.ts L109-256 · CLAUDE.md §9 · docs/intake/purposes-and-goals.md (PG1 + RESOLUTION) -->
+<!-- Identity — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 · project.ts L109-256 · CLAUDE.md §9 -->
 
 # Identity — Purposes & Goals (level: Feature — CAPSTONE / higher-order)
 

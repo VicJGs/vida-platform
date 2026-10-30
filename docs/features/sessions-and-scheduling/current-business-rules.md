@@ -103,7 +103,7 @@ completed | cancelled`; an illegal move (`pause` a non-running, `resume`/`start`
   (no `template_id` binding — reconciled in S6). `[FACT: service.ts; preferences.ts]`
 - **BR-25 (§0, intake:166,179) — run-complete ≠ session-complete in M1.1.** `completeFocus` finalizes the
   focus_sessions run only; the session stays `in_progress` and effect-firing stays S2's `completeSession` path
-  (focus handlers → sessions-rescope). No second firing path (IR-1). `[FACT: service.ts; intake/pomodoro.md:166,179]`
+  (focus handlers → sessions-rescope). No second firing path (IR-1). `[FACT: service.ts]`
 
 ## ENFORCED now (MOD-sessions ① · S4 — availability, `services/sessions/service.ts`)
 

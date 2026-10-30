@@ -1,4 +1,4 @@
-<!-- Identity — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · user.ts · CLAUDE.md §9 · ../life-os (v1) · docs/intake/gamification.md RESOLUTION -->
+<!-- Identity — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 · user.ts · CLAUDE.md §9 · ../life-os (v1) -->
 
 # Identity — Gamification ("the System") (level: Feature — behavioral incentive engine)
 

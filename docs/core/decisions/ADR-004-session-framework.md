@@ -7,7 +7,7 @@
 **Tags:** architecture · data model · API
 **Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner. **+ (F1/D1, 2026-07-16)** adds the local-only `applied_effects` dedup ledger + `effect_event_id` columns (owed-tables ledger).
 **Inherits:** ADR-001 (SQLite/libsodium) · ADR-003 (LWW sync) · the surfaced extension-model principle (guarded opt-in integrations).
-**Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate `docs/reviews/2026-07-15-adr-critique-gate.md` F1/D1.
+**Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
 
 ---
 

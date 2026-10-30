@@ -4,9 +4,7 @@
 # Habits — Current Business Rules
 
 > Status: ① backend in progress — **S1 (definition CRUD + `@vida/types` reconcile) landed**. S2–S5 append.
-> Authority for intent: `docs/features/habits/{identity,business-rules,contract,structure-data,conventions}.md`
->
-> - `docs/specs/foundation/backend-intent/parts/habits.md` (HAB-01…28). This doc records what the CODE enforces.
+> Authority for intent: `docs/features/habits/{identity,business-rules,contract,structure-data,conventions}.md`. This doc records what the CODE enforces.
 
 ## S1 — Definition CRUD (`createHabitsService`)
 
@@ -86,7 +84,7 @@ pastDate, input)` routes through the shared S2 upsert+recompute path. `[FACT: se
   (`done = count>=target`) over the ledger — the charts/calendar render is ②. `[FACT: services/habits/service.ts]`
 - **BR-HB-27 · M5 measure read seam (R7).** `getStreak`/`getCompletionRate` ARE the queryable measures
   Journal/Purpose read through. The pursuable `rate` MEASURE VALUE + goal-vs-habit target model remain the
-  documented design-pass (rerun §5:146) — NOT built here. `[FACT: parts/habits.md:25,66; rerun §5:146]`
+  documented design-pass (rerun §5:146) — NOT built here. `[FACT: rerun §5:146]`
 - **BR-HB-28 · Reads are pure + fail-loud.** No mutation; per-habit reads throw `Habit not found` on a missing/
   soft-deleted habit. `[FACT: services/habits/service.ts]`
 
@@ -117,7 +115,7 @@ pastDate, input)` routes through the shared S2 upsert+recompute path. `[FACT: se
 count>=target_count}`; off-schedule completions keep `scheduled:false` with their count/done (BR-HB-14). ONE ledger
   query (`completed_date` range, indexed). No range validation (the S4 range-read precedent; BR-HB-28 throws only for a
   missing habit) — an inverted/malformed range walks zero days. Pure read; the thread-state mapping is the consumer's.
-  `[FACT: services/habits/service.ts getCompletionGrid; docs/specs/foundation/fe-calendar/delivery/PLAN-S6-first-consumer-reads.md]`
+  `[FACT: services/habits/service.ts getCompletionGrid]`
 
 ## ① COMPLETE
 

@@ -31,7 +31,7 @@ All queries filter `isNull(deleted_at)` (soft-delete aware). `getBacklinksTo` hi
 
 This resolver IS the documented read API modules pull entity-link data through — never a direct
 `entity_links` read or a materialized cross-module index. Read-only (BL-1) + graceful-degrade (unknown →
-`[]`, BL-3). See **BL-7**. `[capability-framework.md:66 R7 (INT-1) · ADR-007 §3.4 · ADR-011 §3.6]`
+`[]`, BL-3). See **BL-7**. `[ADR-007 §3.4 · ADR-011 §3.6]`
 
 ## Scope boundary (M1.0)
 

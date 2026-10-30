@@ -4,7 +4,7 @@
 
 > The invariants the code enforces, promoted per slice from the slice PLANs. Inherits the CORE constitution
 > (ZK-1/2/3, LF-1/2/3). Born at S1 (LIF-130, #52). Source rules: `docs/features/learning/education/business-rules.md`
-> (ED-1..16) + `docs/specs/foundation/db-4-learning-education/_index.md` (BR-ED-\*) + the delivery interpretation
+> (ED-1..16) + the delivery interpretation
 > (R1..R10).
 
 ## Shipped invariants (as of S1 — hierarchy spine + routing)
@@ -71,7 +71,7 @@
   `updateCurriculum`, child writes, or deletion; `updateCurriculum` is unchanged from S1 (an update on a template
   still succeeds). `[code: types.ts TemplateImmutableError (exported, never thrown); service.ts updateCurriculum unchanged]`
 - **BR-LE-S3-3 (the fork is a working instance — `is_template=false`)** — the copy is created with
-  `is_template=false` (the F5 structural default "a new curriculum is not a template"; `db-4-learning-education/_index.md:151`);
+  `is_template=false` (the F5 structural default "a new curriculum is not a template");
   `is_template` is immutable on fork — written to neither the base nor `true` on the copy. `[code: service.ts forkCurriculum is_template:false]`
 - **BR-LE-S3-4 (term hierarchy remapped)** — two-pass: clone each live term with `parent_term_id:null`, build an
   old→new id map, then set each clone's `parent_term_id` to the CLONED parent via the map. A parent not in the
@@ -139,10 +139,10 @@
   class session at M1 (that path is the M2 sync). `[code: service.ts addFeed]`
 - **BR-LE-S5-3 (`syncFeed` is deny-safe — live fetch = M2)** — the `ics?` port absent ⇒ `IcsUnavailableError`
   (fail-loud: a sync that cannot run must not silently return empty/stale). The configs/events schema + the add-only
-  dedup logic are fully M1; only the network fetch+parse is M2 (ADR-014 X1). `[interpretation.md:52-54; code: service.ts syncFeed]`
+  dedup logic are fully M1; only the network fetch+parse is M2 (ADR-014 X1). `[code: service.ts syncFeed]`
 - **BR-LE-S5-4 (`syncFeed` never silent-stale)** — a PRESENT port that throws ⇒ the feed's `last_error` is persisted
   BEFORE `IcsSyncError` is thrown; a successful run clears `last_error` and stamps `last_synced_at`. No path stamps
-  success on failure, nor leaves `last_error` stale on success. `[seam-contract.md:48; code: service.ts syncFeed]`
+  success on failure, nor leaves `last_error` stale on success. `[code: service.ts syncFeed]`
 - **BR-LE-S5-5 (add-only dedup on UNIQUE(feed_id,uid) — X8)** — `syncFeed` inserts only uids not already present for
   the feed; the dedup set counts IGNORED rows too (an ignored event is never resurrected); in-batch duplicate uids are
   also skipped (no UNIQUE violation under any ordering). Returns `SyncResult {added, skipped}`. `[code: service.ts syncFeed; migration 024 UNIQUE(feed_id,uid)]`
@@ -150,7 +150,7 @@
   `matched_subject_id` and returns the event; fail-loud `SubjectNotFoundError` on an unknown subject (no dangling ref);
   the event→class-session auto-create is the M2 sync path, so `created_session_id` stays null at M1. `[code: service.ts matchEvent]`
 - **BR-LE-S5-7 (unmatched events surface — R7)** — `listEvents(feedId)` returns ALL events (ignored + unmatched) so
-  the UI can surface unmatched ones for manual match; an unmatched event stays unmatched until `matchEvent`. `[interpretation.md:104; code: service.ts listEvents]`
+  the UI can surface unmatched ones for manual match; an unmatched event stays unmatched until `matchEvent`. `[code: service.ts listEvents]`
 - **BR-LE-S5-8 (four typed ICS errors — all with real throw sites, No-Guessing)** — `IcsUnavailableError` /
   `IcsSyncError` / `IcsFeedNotFoundError` / `IcsEventNotFoundError`; no invented or dead error. `[code: types.ts]`
 - **BR-LE-S5-9 (DB-11 ICS reconcile — the S5 carry-forward RESOLVED)** — `@vida/types` `IcsFeedConfig.default_course_id`
@@ -256,14 +256,14 @@ BINDING_MODE measurement.ts:9; code: service.ts deriveProgress01]`
   the program's live curricula of (`curriculum_id===c.id` OR `term_id ∈ c's live terms`), deduped (the S7 computeGPA/S3
   fork union, iterated per curriculum). Each subject contributes `getProgress(subject)/100` (honoring its own
   override/mode) → fed to `rollup` as [0,1] (never 0–100 — that would wrongly clamp to 1). Depth 1 (subject⊂program), no
-  cycle. `[engine.ts:38-53; seam-contract.md:61; code: service.ts deriveProgress01/programSubjectIds]`
+  cycle. `[engine.ts:38-53; code: service.ts deriveProgress01/programSubjectIds]`
 - **BR-LE-S8-7 (`@vida/types` `EducationMeasurement` — net-new)** — `extends SyncableEntity`, mirrors
   `EducationMeasurementRow` (`ref_type: MeasurementRefType`, `ref_id`, `measurement_kind: MeasurementKind`, `binding_mode:
 BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[code: packages/types/src/learning.ts; schema learning.ts:370]`
 - **BR-LE-S8-8 (no `advertise()`, no Projects storage — C-M5)** — Education exposes progress ONLY via the `getProgress`
   method (the KN-10 per-subject-measure-is-a-method pattern); never calls the measurement source-registry `advertise()`
-  (global scalars only) and never writes Projects' measure tables. `[seam-contract.md:13;
-[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
+  (global scalars only) and never writes Projects' measure tables. 
+`[[[measurement-source-registry-is-sync-scalar-per-subject-uses-a-method]]; code: service.ts — no advertise call]`
 
 ## S9 — Subject vault + tags/links/notes (ED-13 · ED-16 · SP1 · PJ-8)
 
@@ -284,8 +284,8 @@ BindingMode|null`, `progress: number|null`, `deleted_at`). `softDelete:true`. `[
 - **BR-LE-S9-3 (`getVault` = documents + notes together)** — `documents` = all `subject_documents` for the subject,
   mapped `→ SubjectDocument`, sorted by `created_at` in JS (`findWhere` has no orderBy, non-mutating `[...rows].sort`);
   `notes` = `notes.getPagesForEntity('subject', subjectId)` returned as `PageRow[]` raw (the NotesService convention —
-  no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud). `[seam-contract.md:65;
-notes/service.ts:144-148; code: service.ts getVault]`
+  no `toPage` mapper exists; already excludes soft-deleted pages). Guards the subject (fail-loud). 
+`[notes/service.ts:144-148; code: service.ts getVault]`
 - **BR-LE-S9-4 (`tagEntity` guards the tag resolves BEFORE the blind insert)** — `spaces.tagEntity` blind-inserts an
   unresolved `tag_id`, so `tagEntity(ref, tagId)` guards `tagsRepo.findById(tagId) == null ⇒ TagNotFound` first, then
   delegates (idempotent revive/no-op). An unregistered `entityType` ⇒ `UnknownEntityType` (from spaces). Remove stays the
@@ -314,7 +314,7 @@ knowledge/types.ts:66,75]`
   `'all'`. Real read lands when Tasks is built (zero-signature swap). `[contract.md:28-29; code: service.ts listEducationTasks]`
 - **BR-LE-S10-2 (`getBookPlansForSubject` deny-safe passthrough to BK-12 ⇒ `[]` when absent)** — `books?: BookPlansPort`
   (`getPlansForConsumer(): Promise<ReadingPlan[]>`); absent ⇒ `[]`. M1 is a passthrough (BK-12 has no subject arg);
-  `subjectId` reserved (the book↔subject filter = M2). `[seam-contract.md:69; code: service.ts getBookPlansForSubject]`
+  `subjectId` reserved (the book↔subject filter = M2). `[code: service.ts getBookPlansForSubject]`
 - **BR-LE-S10-3 (`getMasteryForSubject` consumes Knowledge KN-10; absent ⇒ all-null — unmeasured)** — `knowledge?:
 KnowledgeMasteryPort` (`getMasterySource(subjectId): Promise<SubjectMastery>`); absent ⇒ `{objectMastery:null,
 assessmentResults:null, paceVsSyllabus:null}` (a valid unmeasured reading, no throw). `SubjectMastery` is an
@@ -341,7 +341,7 @@ books/journal.ts precedent; code: service.ts getDayEducationDigest, journal.ts]`
 - **BR-LE-S10-6 (deps grew by `tasks?`/`books?`/`knowledge?`/`effects?`, all deny-safe/optional; NO `ai?`)** — the `?`
   optionality is seam-contract-specified (lines 16-24; even `books?` despite Books DONE) — M1 has no composition root, so
   every cross-module dep is injected absent (wired at M2/P6). No S10 method consumes AI → `ai?` not added (No-Guessing).
-  No new `@vida/types`, no schema. `[seam-contract.md:16-24; code: types.ts Deps]`
+  No new `@vida/types`, no schema. `[code: types.ts Deps]`
 
 ## Scope guards honored (the C-\* negatives — rerun-ratified)
 

@@ -1,4 +1,4 @@
-<!-- Contract — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 §5.11 planner L2743-2882 · pomodoro_sessions L1432 · dep graph L3751-3757 · Books BK-12 · Education contract L42 · Knowledge KN-10 · Habits/Tasks/Purpose/Gamification schemas · docs/intake/sessions-and-scheduling.md -->
+<!-- Contract — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 §5.11 planner L2743-2882 · pomodoro_sessions L1432 · dep graph L3751-3757 · Books BK-12 · Education contract L42 · Knowledge KN-10 · Habits/Tasks/Purpose/Gamification schemas -->
 
 # Contract — Sessions & Scheduling (level: Foundation / OWN MODULE)
 

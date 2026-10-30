@@ -1,7 +1,7 @@
 # foundation/egress — Current Business Rules
 
-> Durable invariants for the egress-mediation service (XS-egress-guard #43). Promoted from
-> `docs/specs/foundation/xs-egress-guard/` at §XXIX. Owning ADR: ADR-014 §3.3/§3.1 (+ ADR-015 §3.3).
+> Durable invariants for the egress-mediation service (XS-egress-guard #43).
+> Owning ADR: ADR-014 §3.3/§3.1 (+ ADR-015 §3.3).
 > Kept current with `packages/core/src/foundation/egress/`.
 
 - **EG-1 (fail-closed default).** Every missing/negative input denies — no user-initiation, unresolved target,
@@ -15,14 +15,14 @@
   enforcer.ts:92-98] (INV-3)
 - **EG-4 (a fetch is an egress act).** `assertFetchEgress` applies the identical gate; the fetch URL/params become
   the audited slice. A non-sensitive fetch has empty `sensitiveModules` → the union half is a no-op, the boolean
-  governs. [ADR-014:42; capability-framework.md:200 (X6)] (INV-4)
+  governs. [ADR-014:42] (INV-4)
 - **EG-5 (never auto-transmit).** Every egress requires a `UserInitiationProof`; a proof-less (agent/code-composed)
   transmit denies `not_user_initiated`, and each cloud hop re-hits the gate — no silent on-device→cloud upgrade.
   [ADR-014:64; ADR-015:58 §3.4a] (IR-2)
 - **EG-6 (audit is what+when, not content; sensitive; append-only).** The `EgressAuditRecord` names target + slice
   summary + sensitive tags + `at`, never the plaintext payload. When persisted (M2) it is field-encrypted `[E]`
   (R3/EN-2 — it describes what sensitive data left; plaintext would itself be an egress) and append-only (the
-  ledger convention). [capability-framework.md:62; schema-audit-appendix.md:485; ADR-014:64] (INV-5/IR-8/IR-9)
+  ledger convention). [ADR-014:64] (INV-5/IR-8/IR-9)
 - **EG-7 (check is pure; assert persists once).** `checkEgress` builds the record but never writes — a speculative
   check must not record an egress that never happened; `assertEgressPermitted` persists exactly once on permit.
   [PF-1] (INV-5)
@@ -31,7 +31,7 @@
   `defId` (parity with `CapabilityDenied`). [enforcer.ts:174; types.ts:125-134] (INV-7)
 - **EG-9 (no credentials, no network, no store at M1).** The guard decides + produces the record; it never holds a
   token (mediator/XCU-09), never makes the provider call (ADR-015/#45), and the M1 ports are a deny-safe consent
-  default + a no-op audit sink. The durable store + real targets are M2. [ADR-014:68,82; xcut-ingestion-ai.md:5] (INV-6)
+  default + a no-op audit sink. The durable store + real targets are M2. [ADR-014:68,82] (INV-6)
 - **EG-10 (target = integration-identity anchor).** An `EgressTarget` keys on the stable integration-identity
   anchor (decoupled from layer), not a raw URL — so a Layer-3→Layer-1 upgrade keeps grant + audit continuity.
-  [ADR-014:78 §3.8; capability-framework.md:204 (X10)] (R-3)
+  [ADR-014:78 §3.8] (R-3)

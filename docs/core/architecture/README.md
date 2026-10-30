@@ -21,7 +21,7 @@ Phase-1.0 is features-first, with encryption/sync/auth added later).
 ## Relationship to ADRs
 
 The architecture documents in this directory **interpret and organize** information from the ADRs in
-`docs/core/decisions/`. **ADRs 001–017 + `docs/specs/foundation/capability-framework.md` are the canonical foundation** —
+`docs/core/decisions/`. **ADRs 001–017 are the canonical foundation** —
 technology stack (001), data model (002), sync (003), the substrate frameworks (004–015: sessions, review engine,
 spaces/tags, saved views, capability registry, templates, capability-authoring security, measurability, economy,
 notifications, external ingestion, AI), storage rebuild (016), and features-first resequencing (017). Architecture docs do

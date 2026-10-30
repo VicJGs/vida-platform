@@ -41,7 +41,7 @@ surface (a block _or_ a widget), never "declared once, placed anywhere." This is
 rigidity that **Knowledge** retired (`resource_type` CHECK → registry) and **ADR-005** generalized ("keep the seam,
 retire the instance"). Meanwhile the documented modules keep surfacing capabilities that need _both_ surfaces: a
 workout logger (standalone on a Health Space **and** inline in a journal), a chart, a Skill-tree graph, the
-Languages pronunciation tool. `[FACT: docs/intake/spaces.md L33-37, SP4; L152-198 accumulator]`
+Languages pronunciation tool.
 
 ## 3. Decision
 

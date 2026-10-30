@@ -8,7 +8,7 @@
 The Gamification module ("the System") — the user-facing SURFACE over the AR-7 economy substrate
 (`foundation/economy`). It COMPOSES the substrate (currency registry · `computeBalance` · effect handlers ·
 `dispatchConsequence`) and never re-implements it. Service tier only; every user-visible affordance is the
-② `fe-gamification` (LIF-181). `[FACT: packages/core/src/services/gamification/CLAUDE.md; docs/features/gamification/delivery/interpretation.md §0]`
+② `fe-gamification` (LIF-181). `[FACT: packages/core/src/services/gamification/CLAUDE.md]`
 
 ## Factory & composition
 

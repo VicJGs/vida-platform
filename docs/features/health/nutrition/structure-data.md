@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/health/nutrition · Phase 2 · sources: intake/health.md (9 Nutrition DBs).
+<!-- Structure & Data — features/health/nutrition · Phase 2.
      ⚠ NO v2 schema — all NEW → ADR-002 additions. P=plaintext · E=[E] encrypted · money=cents INTEGER. -->
 
 # Structure & Data — Health: Nutrition

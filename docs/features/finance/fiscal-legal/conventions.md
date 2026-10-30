@@ -1,4 +1,4 @@
-<!-- Conventions — features/finance/fiscal-legal · /documentation Phase 2 · sources: intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · CLAUDE.md Conventions -->
+<!-- Conventions — features/finance/fiscal-legal · /documentation Phase 2 · sources: ADR-014 · ADR-015 · CLAUDE.md Conventions -->
 
 # Conventions — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context)
 

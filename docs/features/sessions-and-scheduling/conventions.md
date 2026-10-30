@@ -1,4 +1,4 @@
-<!-- Conventions — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 §5.11 + study_sessions · type moves knowledge.ts L222-250 · v1 studyPlanner.ts + entities.ts L1677-1711 · CLAUDE.md conventions · docs/intake/sessions-and-scheduling.md -->
+<!-- Conventions — features/sessions-and-scheduling · /documentation Phase 2 · sources: ADR-002 §5.11 + study_sessions · type moves knowledge.ts L222-250 · v1 studyPlanner.ts + entities.ts L1677-1711 · CLAUDE.md conventions -->
 
 # Conventions — Sessions & Scheduling (level: Foundation / OWN MODULE)
 

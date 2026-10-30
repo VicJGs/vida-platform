@@ -339,10 +339,10 @@ NULL DEFAULT 0`; reframed to nullable (NULL ⇒ derive via `progress()` on-read,
 
 - **[FACT] BR-RT7-1 — the REFRAME, not the POC.** Authors 3 tables — `routines` (sequence) · `routine_step`
   (polymorphic step, **replaces** the flat `routine_actions`) · `routine_completions` (per-step ledger). The
-  orchestration reframe DESIGN landed (`docs/intake/routines.md` §E, RT-1…RT-19); only the DDL was deferred "→ build
+  orchestration reframe DESIGN landed (RT-1…RT-19); only the DDL was deferred "→ build
   phase" = DB-4 (shape-open, store/rules pattern). ⚠ Two Victor corrections re-grounded this: (a) "there is a docs for
   that, investigate deeper" (the design landed, not an undone design-pass — [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]);
-  (b) "already solved inside the documentation" (the three "open" points were doc-closed). `[FACT: 018_routines.ts; §E; part-1.2-reruns/routines.md]`
+  (b) "already solved inside the documentation" (the three "open" points were doc-closed). `[FACT: 018_routines.ts; §E]`
 - **[FACT] BR-RT7-2 — no cross-table FK (no-FK convention).** `routine_id` / `routine_step_id` / `entity_id` are
   plain TEXT; cascade (RT-17) is the app/sync layer's. `[FACT: 018_routines.ts; BR-DB3-1]`
 - **[FACT] BR-RT7-3 — a routine is a pursuable (RT-19).** `routines.measurement_kind` NOT NULL DEFAULT **`'rate'`**
@@ -450,7 +450,7 @@ NULL DEFAULT 0`; reframed to nullable (NULL ⇒ derive via `progress()` on-read,
   Purpose feeder, not a pursuable — C6). OUT (documented boundary): `import_staging`/`connection_config` (undecided
   ingestion ADR), `ai_connections` (ADR-015), budgeting/`liability_payments`/FX (design pass), `move_money` (handler).
   `ENTITY_TYPES += account/transaction/asset/investment/liability` (income_stream + fiscal entities excluded, G12).
-  `[FACT: _registry.ts; docs/specs/foundation/db-4-finance-and-fiscal-legal/]`
+  `[FACT: _registry.ts]`
 - **[FACT] BR-FN9-8 — parity + introspection + runner green.** `@vida/core` 385 tests (+13 enum-parity rows, +36
   DDL-introspection × 9); `LATEST_VERSION`=20; typecheck 11/11; eslint 0-err. Gates: gate-1 SHIP · preflight PASSED ·
   gate-2 REVISE→resolved (fiscal nullability = roster, not FL-11 inference) · post-impl SHIP. Foundation-readiness:

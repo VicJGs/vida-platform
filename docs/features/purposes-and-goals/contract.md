@@ -1,4 +1,4 @@
-<!-- Contract — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 · project.ts · ADR-004 (review sub-type + §3.2.5) · journals/contract.md · docs/intake/purposes-and-goals.md RESOLUTION -->
+<!-- Contract — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 · project.ts · ADR-004 (review sub-type + §3.2.5) · journals/contract.md -->
 
 # Contract — Purposes & Goals (level: Feature — CAPSTONE)
 

@@ -4,7 +4,7 @@
 > the code. Source of truth for `/critique` + `/preflight` + `victor:session-kickoff`. Every claim cites code.
 > Scope today: **E1 — editor core spine + E2 — standard blocks + E3 — toolbar + E4 — slash menu + E5 — integration-block
 > registry + E6 — markdown serializers + E7 — PDF serializer + E8 — DOCX serializer** (UI-3 — the serializer suite is
-> COMPLETE). Forward specs: `docs/specs/features/ui-3-vida-editor/`. Serializer ground truth: `docs/editor/serialization-spec.md`.
+> COMPLETE). Serializer ground truth: `docs/editor/serialization-spec.md`.
 
 ## Package
 

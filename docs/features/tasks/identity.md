@@ -1,4 +1,4 @@
-<!-- Identity — features/tasks · /documentation Phase 2 · sources: ADR-002 §5.3 · @vida/types/task.ts · CLAUDE.md §3 · docs/intake/tasks.md -->
+<!-- Identity — features/tasks · /documentation Phase 2 · sources: ADR-002 §5.3 · @vida/types/task.ts · CLAUDE.md §3 -->
 
 # Identity — Tasks (level: Feature)
 

@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-07-25
 **Decision Makers:** Victor J.
-**Context:** Vida Platform — Part 3 of the foundation-realignment campaign (the build-roadmap resequence). ADR-017 established features-first (encryption/sync/auth deferred to a hardening pass) but left the _order_ of external integrations vs the hardening pass, and the internal-vs-external integration boundary, unspecified. This ADR fixes the milestone spine that `docs/roadmap.md` is rewritten to. Basis: `docs/specs/foundation/part-3-build-roadmap/_index.md` (the gate-1 PLAN, critique-verified — the M2-before-M3 safety confirmed against ADR-002 §4 / ADR-014 / ADR-015).
+**Context:** Vida Platform — Part 3 of the foundation-realignment campaign (the build-roadmap resequence). ADR-017 established features-first (encryption/sync/auth deferred to a hardening pass) but left the _order_ of external integrations vs the hardening pass, and the internal-vs-external integration boundary, unspecified. This ADR fixes the milestone spine that `docs/roadmap.md` is rewritten to.
 **Tags:** architecture · process · foundation · sequencing · delivery · roadmap
 **Amends (sequencing only — no architecture is changed):**
 

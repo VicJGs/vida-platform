@@ -6,7 +6,7 @@
 
 ## What this is
 
-> **Authoritative definition — `docs/roadmap/m1.0-delivery-plan.md:183`:** "Sync scaffolding (no-flush):
+> **Authoritative definition:** "Sync scaffolding (no-flush):
 > the **reader/flush engine stub** (`sync/{queue,resolver,crdt}.ts`), **stubbed** (M4 activates); HLC
 > encoding deferred. ⚠ `sync_queue` table + co-transactional enqueue-WRITE moved → DB-6 (ADR-004 §3.4);
 > `_sync_*` columns land per-table (DB-2 parked→folded)." Home `core/src/sync` · ADR-003 §8, ADR-017
@@ -70,7 +70,7 @@ no schema change.
 - **ADR-003** — sync protocol (architecture §3, offline queue §8, LWW §6.1, Yjs §4.2, transport §5).
 - **ADR-004 §3.4** — co-transactional enqueue (producer, DB-6).
 - **ADR-017 §5** — parks the sync engine as the post-feature **hardening pass** and defers _ordering_ to
-  a replan. `reconstructed-structure.md` (that replan) placed **AR-9 = no-flush scaffolding at `#15`
+  a replan. That replan placed **AR-9 = no-flush scaffolding at `#15`
   (M1.0)**, activation **AR-9b at `#78` (M4)**. This baseline follows the reconstruction (the `#`-order
   routing authority). See `## Open questions`.
 

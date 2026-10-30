@@ -1,4 +1,4 @@
-<!-- Identity — features/notes-and-pages · /documentation Phase 2 · sources: CLAUDE.md §8 · ADR-002 §5.2 · ADR-004 · ADR-008 · @vida/types/note.ts · docs/intake/notes-and-pages.md -->
+<!-- Identity — features/notes-and-pages · /documentation Phase 2 · sources: CLAUDE.md §8 · ADR-002 §5.2 · ADR-004 · ADR-008 · @vida/types/note.ts -->
 <!-- Restored 2026-10-26 (notes-rescope LIF-245, Documentation Gate) from eaf64f8^ — deleted by the MOD-notes teardown
      (eaf64f8, 2026-09-13) and never restored though docs/features/README.md:36 lists it. Realigned to ADR-004/006/008/021
      + the as-built code (docs/modules/notes/current-*). backend-intent NOT-* line cites refer to the eaf64f8^ text. -->
@@ -19,8 +19,7 @@ module, it is the unifying layer." `[FACT: CLAUDE.md §8; INTENT: Victor 2026-06
 **Scope — full v1 (NOT an MVP; nothing deferred by intent).** `[INTENT: Victor 2026-06-18, gap G1]`
 
 - **All 6 page types, all editor-led:** `journal` · `note` · `task_note` · `task_group_note` · `milestone_note` ·
-  `deliverable_note`. `[FACT: packages/types/src/note.ts:23-29]` Every page type opens with the editor facet
-  `[FACT: docs/specs/foundation/fe-notes-and-pages/delivery/envision.md EC-15; frontend-replan surface-map.md:48]`.
+  `deliverable_note`. `[FACT: packages/types/src/note.ts:23-29]` Every page type opens with the editor facet.
 - **Integration blocks = the ADR-008 open capability registry**, not a closed list. The 12 v1 blocks (`/summary`
   `/tasks` `/events` `/classes` `/habits` `/timeline` `/chart` `/pomodoro` `/entity-link` `/backlink` `/class-notes`
   `/milestone`) are the shipped seed of that registry; inline instances live inside the page document

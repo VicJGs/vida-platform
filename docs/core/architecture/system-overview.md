@@ -6,12 +6,11 @@ The highest-level description of the Vida Platform. The first thing a new develo
 
 **Governs:** No code directly. Provides the mental model for the entire system.
 
-**Content Source:** ADRs 001–017 + `docs/specs/foundation/capability-framework.md`. (The former source `docs/architecture.md`
-is **quarantined legacy** — superseded and moved to `docs/_legacy/`; do not use it.)
+**Content Source:** ADRs 001–017.
 
 > **Implementation status (2026-07-25):** This document describes the platform's **target architecture** — the substrate
 > model established by ADRs 004–017 + the capability framework. It is **not** a snapshot of shipped code: ~99% of current
-> code predates this foundation (see `docs/specs/foundation/current-state-baseline/baseline.md`), the storage layer is being
+> code predates this foundation, the storage layer is being
 > **rebuilt from zero** per-table (ADR-016), and Phase-1.0 is **features-first** with encryption/sync/auth **deferred to a
 > later hardening pass** (ADR-017). Substrate primitives cite their **owning ADR** (conceptual home); their code/directory
 > homes are decided in a later structural phase, not here.
@@ -42,7 +41,7 @@ Vida is organized as **feature modules riding shared foundation substrates**. Th
 user-facing domains; the **substrates** are cross-cutting primitives — introduced by ADRs 004–015 — that many modules
 consume rather than each re-implementing. The earlier "17 flat modules" framing predated these substrates and folded
 their mechanisms (tags, sessions, progress, XP, views, spaced repetition) into individual modules; they are now single
-foundations. See `docs/specs/foundation/capability-framework.md` for the full substrate inventory and
+foundations. See
 `module-dependency-graph.md` §2 for the substrate list with owning ADRs.
 
 ### Foundation Substrates (cross-cutting)
@@ -360,7 +359,6 @@ The complete technology stack is defined in **ADR-001**. Below is a summary with
 - **ADR-003** — Complete sync protocol (LWW, Yjs, transport, offline behavior, device management)
 - **ADR-004 … ADR-015** — The foundation substrates (sessions, review engine, spaces/tags, views, capability registry, templates, capability-authoring security, measurability, economy, notifications, external ingestion, AI)
 - **ADR-016 / ADR-017** — Storage rebuilt from zero (hand-written SQL migrations); features-first resequencing (encryption/sync/auth deferred)
-- **`docs/specs/foundation/capability-framework.md`** — The substrate inventory with mechanical predicates
 - `docs/core/architecture/data-flow.md` — How data moves through write/read/encrypt/sync pipelines
 - `docs/core/architecture/cross-module-integration.md` — Every cross-module data access point
 - `docs/core/architecture/platform-strategy.md` — Code sharing, database adapters, editor/visualization per platform

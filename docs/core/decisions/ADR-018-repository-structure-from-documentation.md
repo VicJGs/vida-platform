@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-07-25
 **Decision Makers:** Victor J.
-**Context:** Vida Platform — Part 2 of the foundation-realignment campaign. Part 1 realigned all 34 docs (24 contexts + 8 arch docs) to the ADR-004–017 foundation; those docs **deliberately deferred every code/directory home to "a later structural phase"** (`cross-module-integration.md:8`, `module-dependency-graph.md:13`, `platform-strategy.md:12`). This ADR is that phase. The coded surface is ~99% pre-documentation residue built against the OLD foundation (ADR-001/002/003 + the quarantined v2 guide), incoherent with the ADRs that now govern `[FACT: current-state-baseline/baseline.md §2, §5]`. Basis: `docs/specs/foundation/part-2-repository-structure/_index.md` (the gate-1 PLAN, critique+preflight grounded).
+**Context:** Vida Platform — Part 2 of the foundation-realignment campaign. Part 1 realigned all 34 docs (24 contexts + 8 arch docs) to the ADR-004–017 foundation; those docs **deliberately deferred every code/directory home to "a later structural phase"** (`cross-module-integration.md:8`, `module-dependency-graph.md:13`, `platform-strategy.md:12`). This ADR is that phase. The coded surface is ~99% pre-documentation residue built against the OLD foundation (ADR-001/002/003 + the quarantined v2 guide), incoherent with the ADRs that now govern.
 **Tags:** architecture · repository-structure · foundation · process · substrates
 **Realizes:** the `[home: Part 2]` markers across the 8 arch docs + the directory-home half of every `[DEFERRED — Part 2]` marker in the 17 Part-1.2 re-runs (their DDL/columns/ADR-002 halves stay build-phase).
 **Amends:**

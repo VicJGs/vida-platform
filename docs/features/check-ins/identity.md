@@ -1,6 +1,6 @@
 > ⤷ superseded by ../../modules/check-ins/current-spec.md (rules → ../../modules/check-ins/current-business-rules.md) — kept as backing, not the canonical truth.
 
-<!-- Identity — features/check-ins · /documentation Phase 2 · sources: ADR-002 §5.13 · CLAUDE.md §9 · docs/intake/check-ins.md -->
+<!-- Identity — features/check-ins · /documentation Phase 2 · sources: ADR-002 §5.13 · CLAUDE.md §9 -->
 
 # Identity — Check-ins (level: Feature)
 

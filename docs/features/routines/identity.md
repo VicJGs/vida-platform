@@ -1,7 +1,7 @@
-<!-- Identity — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 L1705-1763 · @vida/types/routine.ts · CLAUDE.md §5 · docs/intake/routines.md (§D reconciliation + §E resolution) -->
+<!-- Identity — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 L1705-1763 · @vida/types/routine.ts · CLAUDE.md §5 -->
 
-> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
-> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2.
+> Full rewording lands in the §XXIX pass at unit close.
 
 # Identity — Routines (level: Feature)
 
@@ -46,7 +46,7 @@ never discarded, because "it is very important to be grateful and happy about wh
   (which may _be_ habits). Habits' own identity already cedes "action-list cadence" to Routines. `[FACT:
 habits/identity.md L26]`
 - **Not a deadline tool.** Deadline recurrence (obligations) is a **Tasks** type; a routine can _contain_ such a
-  task, it doesn't own the concept. `[FACT: intake/tasks.md ADDENDUM]`
+  task, it doesn't own the concept.
 - **Not a session engine.** Runtimes (timers, rest/energy capture) are **Sessions & Scheduling** (ADR-004); Routines
   _launches_ sub-types, never re-implements them. `[FACT: sessions/identity.md]`
 - **Not its own scheduler.** Cadence, availability, `dueIn`, reschedule-to-open-slot come from the **Scheduler**.

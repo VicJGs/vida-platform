@@ -1,5 +1,5 @@
-<!-- Contract — features/health/core · Phase 2 · sources: docs/intake/health.md §C Integration Contract + Core
-     resolved. ⚠ DESIGNED interface — no @vida/core code yet (recovered domain). -->
+<!-- Contract — features/health/core · Phase 2.
+     ⚠ DESIGNED interface — no @vida/core code yet (recovered domain). -->
 
 # Contract — Health: Core
 
@@ -56,7 +56,7 @@ skill_id, session_sub_types[]})` · `generateExercises(role_id)` (medically-awar
   **capability Blocks** (workout-logger · photo-capture) [#8 stub]. `[INTENT; ADR-006 SP1/SP2]`
 - **Preferences** — units (kg/lb) · module toggle · dietary defaults. **Check-ins** — subjective energy/mood/sleep
   (cross-ref; Health owns objective). `[INTENT]`
-- **Routines** [#4 stub] — the `exercise` step drives a Core-scheduled workout session. `[FACT: intake/routines.md]`
+- **Routines** [#4 stub] — the `exercise` step drives a Core-scheduled workout session.
 - **AI-ADR / external-data-ADR** — LLM plan/meal/Role generation · food-DB/barcode · photo analysis · **curated Role
   library import** (locale-varying) · prescription import (all opt-in). AI rides **ADR-015** (on_device/cloud AI1,
   cloud = egress + scope-min AI3, untrusted-content provenance AI5, `source=ai` AI6); ingestion rides **ADR-014**

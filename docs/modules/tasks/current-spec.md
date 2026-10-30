@@ -5,7 +5,7 @@
 
 > **Context:** `@vida/core` tasks service tier (`packages/core/src/services/tasks/`). The OS-wide task primitive +
 > its time ledger. Built PER SLICE (Entity Delivery Flow ①). **Pulled ahead of mod-routines** (routines drives
-> task-type steps). Design authority: `docs/features/tasks/` + `docs/specs/foundation/backend-intent/parts/tasks.md`.
+> task-type steps). Design authority: `docs/features/tasks/`.
 
 ## Build status — slices
 
@@ -121,7 +121,7 @@
     (`normalize({kind:'milestone', done})`). A task's only leaf signal is completion (BR-TK-S2-4); the declared
     `measurement_kind` governs ladder composition, not the leaf.
 - **`binding_mode` resolution:** `resolveBindingMode = binding_mode ?? 'event-trigger'` (NULL ⇒ the task's natural mode;
-  `015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ interpretation.md:33). `manual` is **inert in M1** (no override column
+  `015_tasks.ts:21` "NULL ⇒ derive-natural"). `manual` is **inert in M1** (no override column
   until XCU-16 lands) — it derives like any other, no `manual⇒null` special case.
 - **S3 emission UNCHANGED** — S6 adds no push-side gate: `emit_measurement_signal`/`contribute_purpose_metric` fire on
   completion exactly as S3 built them (unconditional, bare, dormant), matching the Projects/Habits convention.
@@ -293,10 +293,10 @@ no dependency). Prior through S5: g2 SHIP (S5 B1 timezone-drift fixed; S4 F1/F3)
 ## Deferred / downstream
 
 **① BACKEND COMPLETE (S1–S9).** **S9 deferrals (each homed in a DOC):** urgency ranking (`urgency:0`) → ADR-004 §3.3
-L139 + `parts/xcut-sessions.md` UNKNOWN-1 (G5 placement design-pass) · a user-timezone day bucket → the designed
+L139 (G5 placement design-pass) · a user-timezone day bucket → the designed
 `user_profile.timezone` (ADR-002:3370-3381, unbuilt) + journals BR-S3-4 ("strict tz-aware today = design-pass");
 `utcDay` is the one seam · `registerTasksDueProvider` is CALLED by the apps/web composition root (fe-calendar #19 S7, 2026-10-22); `registerTasksJournal`
-→ the dashboard aggregator HARD-1 (LIF-112) · the 12→7 layout mapping → `schema-audit-deferred-homes.md:281-282` (007 anatomy pass).
+→ the dashboard aggregator HARD-1 (LIF-112) · the 12→7 layout mapping → the 007 anatomy pass.
 **Closed by the docs (not deferrals, not calls):** `todayYmd()` → the UTC day (the platform convention, re-pointed) ·
 "open" = status ∉ `{completed, cancelled}` (the shipped TERMINAL convention + projects intake G9) · calendar-date
 validity = the ADR-002 §2.8 format, shape-validated like every module · "overdue carry-forward" (the lane's window IS
