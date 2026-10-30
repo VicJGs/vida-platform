@@ -3,6 +3,8 @@
     "deny": [
       "Read(.env)",
       "Read(.env.*)",
+      "Read(/docs/_archive/**)",
+      "Read(/.claude/archive/**)",
       "Bash(git push --force *)",
       "Bash(git push -f *)",
       "Bash(git push * --force*)",
