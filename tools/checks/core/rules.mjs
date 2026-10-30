@@ -25,4 +25,5 @@ for (const path of files.filter((p) => TEST_FILE.test(p) && CODE_FILE.test(p))) 
 }
 
 const findings = [...stated].filter(([rule]) => !tested.has(rule)).map(([rule, where]) => `${rule} (stated in ${where}) has no test named with it`);
+if (!stated.size) findings.push(`check:rules: no rule ID matching ${cfg.ruleId} stated in ${cfg.docs}/ or code comments; set "checks".ruleId`);
 report(`check:rules (${stated.size} rule IDs, ${tested.size} tested)`, findings);

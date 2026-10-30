@@ -7,12 +7,16 @@ import { spawnSync } from "node:child_process";
 import { mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { config, exists, read, report, root } from "./lib.mjs";
+import { config, exists, read, report, root, walk } from "./lib.mjs";
 
 const cfg = config();
+// A rule whose `from` matches no file under src forbids nothing.
+const files = walk(cfg.src);
+const unmatched = cfg.boundaries.filter((b) => !files.some((p) => new RegExp(b.from).test(p)))
+  .map((b) => `check:boundaries: rule ${b.name} (from ${b.from}) matches no file under ${cfg.src}/; set "checks".boundaries`);
 // Its package.json is not in "exports", so locate it on disk rather than via require.
 const pkg = "node_modules/dependency-cruiser/package.json";
-if (!exists(pkg)) report("check:boundaries", ["dependency-cruiser is not installed: npm i -D dependency-cruiser"]);
+if (!exists(pkg)) report("check:boundaries", [...unmatched, "dependency-cruiser is not installed: npm i -D dependency-cruiser"]);
 const bin = join(root, "node_modules", "dependency-cruiser", JSON.parse(read(pkg)).bin.depcruise);
 
 const depConfig = {
@@ -32,7 +36,7 @@ writeFileSync(file, JSON.stringify(depConfig));
 
 const r = spawnSync(process.execPath, [bin, cfg.src, "--config", file, "--output-type", "err"], { cwd: root, encoding: "utf8" });
 const out = `${r.stdout}${r.stderr}`.trim();
-const findings = out.split(/\r?\n/).filter((l) => /^\s*error\s/.test(l)).map((l) => l.trim());
+const findings = [...unmatched, ...out.split(/\r?\n/).filter((l) => /^\s*error\s/.test(l)).map((l) => l.trim())];
 if (r.status !== 0 && !findings.length) findings.push(`dependency-cruiser exited ${r.status}: ${out}`);
 const cruised = Number(out.match(/(\d+) modules/)?.[1] ?? 0);
 if (!cruised) findings.push(`dependency-cruiser cruised 0 modules under ${cfg.src}/, so nothing was checked: ${out}`);
