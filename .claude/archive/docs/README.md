@@ -1,3 +1,5 @@
+> **Archived 2026-10-30 (LIF-333). Frozen v1 snapshots; no session reads or writes these.** Plan and status live in the Linear issue, decisions in ADRs under `docs/core/decisions/`, recurring failures in `docs/core/known-failures.md`, and APIs and components in the code and `docs/core/`.
+
 # .claude/docs — Documentation Convention
 # Do not delete. Do not reorganize. Claude reads these at session start.
 # All files in this folder are updated automatically by /session-end.
