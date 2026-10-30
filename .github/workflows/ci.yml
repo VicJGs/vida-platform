@@ -13,68 +13,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  check:
+    name: pnpm check
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
         with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm turbo run lint
-        env:
-          TURBO_TELEMETRY_DISABLED: 1
-
-  typecheck:
-    name: Typecheck
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm turbo run typecheck
-        env:
-          TURBO_TELEMETRY_DISABLED: 1
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm turbo run test
-        env:
-          TURBO_TELEMETRY_DISABLED: 1
-
-  e2e:
-    name: E2E (Playwright + OPFS)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+          fetch-depth: 0 # check:one-way-door diffs against origin/main
 
       - uses: pnpm/action-setup@v4
 
@@ -87,23 +32,7 @@ jobs:
 
       - run: pnpm --filter @vida/web exec playwright install --with-deps chromium
 
-      - run: pnpm turbo run e2e
+      # The same command as the pre-push hook: guardrail scan, format, toolkit checks, then lint typecheck test e2e.
+      - run: pnpm check
         env:
           TURBO_TELEMETRY_DISABLED: 1
-
-  format-check:
-    name: Format Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version-file: '.nvmrc'
-          cache: 'pnpm'
-
-      - run: pnpm install --frozen-lockfile
-
-      - run: pnpm format:check
