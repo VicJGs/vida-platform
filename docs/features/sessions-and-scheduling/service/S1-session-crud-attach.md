@@ -11,9 +11,9 @@
 **Slice boundary (why these ops, not more).** S1 stands up the factory + the **structural** write/read paths
 over the spine + 1:1 extensions + attachments. It deliberately does NOT do: semantic `sub_type`/`entity_type`
 **registry** validation or completion/lifecycle wiring — those are **S2** (so S1 has a clean, testable surface
-and S2 layers meaning on top). `[FACT: delivery/slice-map.md S1 vs S2]`
+and S2 layers meaning on top).
 
-## §1 Operations (surface — signatures in `delivery/seam-contract.md`)
+## §1 Operations (surface)
 
 - `createSession(input): Promise<Session>` — write the `sessions` spine row; if `input.extension` present,
   co-transactionally write the matching 1:1 extension (`focus_sessions` | `study_sessions`).

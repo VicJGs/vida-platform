@@ -36,18 +36,18 @@
 
 ## Collection views (ADR-007)
 
-- One Notes collection (`/notes`) — List · Gallery · Neural (EC-1 re-pinned 2026-10-26: journals left `/notes`; `surface-map.md:48`'s
-  Calendar is stale). `[FACT: intake G3 :55; fe-notes envision §Re-pins]`
+- One Notes collection (`/notes`) — List · Gallery · Neural (EC-1 re-pinned 2026-10-26: journals left `/notes`).
+  `[FACT: intake G3 :55; fe-notes envision §Re-pins]`
 - **Availability by type** `[INTENT G3]`: **Note** → List · Gallery · Neural (no Calendar); **Journal** → Calendar · List · Gallery,
   rendered by the Journals module (journal views, JR-1), not by `/notes`.
   `*_note` pages are reached from their parent entity's page, not as a standalone collection. `[INTERP: NP-8 + CLAUDE.md]`
 - `/notes` default = `note` pages, not archived (Archived = a filter predicate); journals are not part of `/notes` — journal
-  views (Calendar/List/Gallery) are the Journals module's (JR-1; `intake/journals.md:25-26`). **RESOLVED (delivery/interpretation.md §5 #2).**
+  views (Calendar/List/Gallery) are the Journals module's (JR-1). **RESOLVED.**
 - **Field declarations (XCU-14):** calendar needs a date, gallery a cover/image, neural the link graph; a layout whose
   field is absent is **degraded** (declared, non-error), never a crash. The declarations are renderer knowledge
-  (RATIFY into the views slice-map). `[FACT: ADR-007 §3.3; xcut-views:27; views interpretation.md:64-74; debt-plan.md:22]`
+  (RATIFY into the views slice-map). `[FACT: ADR-007 §3.3; xcut-views:27]`
 - Renderer selection by a saved `views` row: ADR-007; default view seed per type = ADR-009 templates → `createView`
-  (XCU-06). `[FACT: decisions.md:895]`
+  (XCU-06).
 
 ## State management map
 
@@ -59,8 +59,8 @@ state-conventions.md:121-127]`
 - **Editor document** is held by TipTap/ProseMirror (Yjs at M4), not Zustand.
 - **Mode memory** (merged/tabbed, EC-5): per-type default, remembered per instance, persisted (anything that must
   survive a session lives in SQLite). Convention `readMode`/`persistMode(entityType, entityId)` from
-  fe-codec-entity-facet O4. `[FACT: frontend-quality-bar:129; entity-facet seam-contract.md:86-89; data-flow.md:431,466]`
-  **RESOLVED (delivery/interpretation.md §5 #3):** storage = `app_state` KV (`entity_mode:<type>:<id>`, device-local); per-type defaults =
+  fe-codec-entity-facet O4. `[FACT: frontend-quality-bar:129; data-flow.md:431,466]`
+  **RESOLVED:** storage = `app_state` KV (`entity_mode:<type>:<id>`, device-local); per-type defaults =
   OS constants — `note` = tabbed, editor active (EC-4); `journal` = Home's arrangement (journals-rescope); `*_note` = their
   RIDE owners. Storage needs no new schema (sync OFF in M1). ADR-006 per-instance-memory append owed (Step 5).
 

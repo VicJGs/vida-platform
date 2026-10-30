@@ -1,5 +1,4 @@
-<!-- Identity — features/skills · /documentation Phase 2 · sources: docs/intake/skills.md (v2 2-table floor + Notion
-     "Abilities" design as CONTEXT + Victor's AUTHORITATIVE current-intent 2026-07-14). Module keeps name "Skills". -->
+<!-- Identity — features/skills · /documentation Phase 2 · Module keeps name "Skills". -->
 
 # Identity — Skills (level: Feature / higher-order module; Wave R — recovered/reframe)
 

@@ -159,7 +159,7 @@ Mapped to ADR-002 §5.20 Stream (i) ADD, **11 line-items are done** (the 4 satel
 `session_attachments`, `tags`, `entity_links` — are not distinct §5.20 rows). **DB-3 authors the 11 remaining ADD
 tables** (`planned_blocks` · `templates` · `review_curves` · `method_bindings` · `review_events` · `values` ·
 `contributions` · `purpose_reviews` · `plan_steps` · `store` · `rules`) + session sub-type extensions (decide author/defer)
-+ column-level AMENDs (classify) + the RETIRE reconcile. `[FACT: docs/roadmap/schema-foundation-build-flow.md §3; ADR-002 §5.20]`
++ column-level AMENDs (classify) + the RETIRE reconcile. `[FACT: ADR-002 §5.20]`
 
 ## DB-3 — IMPLEMENTED (2026-08-18 · LIF-65 · the Stream (i) substrate remainder)
 The M1.0 schema foundation is complete: the 11 remaining ADR-002 §5.20 Stream (i) ADD tables are authored (migrations
@@ -191,7 +191,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
 > inert gap** (011→013); the shape is unchanged from the pre-teardown holistic build (corpus §11 verified).
 > Also **O4 provenance unify:** `PHYSICAL_ROLE_AUTHORING_SOURCE`/`SKILL_FILL_SOURCE` `'llm'`→`'ai'` (+ their
 > CHECKs in 021/027/029) → the canonical triad `manual|ai|import` platform-wide. `LATEST_VERSION=33`;
-> `@vida/core` 796/796; typecheck 11/11. Audit: `docs/specs/foundation/backend-intent/schema-audit.md`.
+> `@vida/core` 796/796; typecheck 11/11.
 
 | Migration | Module | Tables |
 |-----------|--------|--------|
@@ -240,7 +240,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`sessions-scheduling-introspection.test.ts`, 24 cases: column-set·nullability·PK·default × 6). `@vida/core` **221 tests**;
   `LATEST_VERSION`=14; typecheck 11/11. Cross-group: PD-7 global config → group #2 backfill. Interface reconcile
   (`PomodoroSession`/`StudyPlanBatch`/`StudySession`) → DB-11. **Foundation-readiness:** MOD-sessions (#139) finds every
-  needed column — PASS. `[FACT: 014_sessions_scheduling.ts; docs/specs/foundation/db-4-sessions-and-scheduling/]`
+  needed column — PASS. `[FACT: 014_sessions_scheduling.ts]`
 - **Group #4 Tasks (2026-08-19):** **2 tables** (`tasks` · `task_time_logs`), the OS-wide task primitive + aggregator.
   2 `[E]` fields (`tasks.title`/`description`). **No-FK reconciliation:** §5.3's 5 parent FKs (`project_id`/`milestone_id`/
   `course_id`/`contact_id` + self-ref `parent_task_id`) + `task_time_logs.task_id` CASCADE → plain TEXT (cascade/set-null
@@ -256,7 +256,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   nullability·PK·default × 2). `@vida/core` **240 tests** green (1 pre-existing encryption-1MB timeout flake, passes
   isolated); `LATEST_VERSION`=15; typecheck 11/11; lint 0-err. Interface reconcile (`Task` +7 cols −`tags`; `TaskTimeLog`
   +`updated_at`) → DB-11. **Foundation-readiness:** MOD-tasks finds every needed column — PASS. `[FACT: 015_tasks.ts;
-  schema/tasks.ts; docs/specs/foundation/db-4-tasks/]`
+  schema/tasks.ts]`
 - **Group #5 Projects (2026-08-19):** **4 tables** — `projects` · `milestones` · `deliverables` · `project_documents`,
   the four-level hierarchy (Project > Milestone > Deliverable > Task) + document vault. **11 `[E]` fields** (title/
   description/vision on projects; title/description on milestones + deliverables; name/encrypted_blob on
@@ -278,7 +278,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   escalated the measurement-scope to Victor; re-grounded as doc-determined — the module doc is the roster). Interface
   reconcile (`Project` progress→nullable −`tags`; `Milestone` +`nesting_weight` progress→nullable; **new `Deliverable`**)
   → DB-11. **Foundation-readiness:** MOD-projects finds every needed column — PASS. `[FACT: 016_projects.ts;
-  schema/projects.ts; docs/specs/foundation/db-4-projects/]`
+  schema/projects.ts]`
 - **Group #6 Habits (2026-08-19):** **3 tables** — `habits` · `habit_completions` · `project_habits` (the kept
   Projects↔Habits junction, deferred here from #5). **7 `[E]` fields** (habits name/description/unit/cue/reward +
   `success_criteria`; habit_completions `location`). **No-FK reconciliation:** §5.5's `habit_id` CASCADE +
@@ -297,11 +297,10 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   domain/measurement_kind/binding_mode/difficulty). **Phase-5 DDL-introspection** (`habits-introspection.test.ts`, 12
   cases × 3 tables). `@vida/core` **283 tests** green; `LATEST_VERSION`=17; typecheck clean; eslint 0-err. **Zero
   build-decisions.** Interface reconcile (`Habit` +4 −`tags`; `HabitCompletion` +3; new `ProjectHabit`) → DB-11.
-  **Foundation-readiness:** MOD-habits finds every needed column — PASS. `[FACT: 017_habits.ts; schema/habits.ts;
-  docs/specs/foundation/db-4-habits/]`
+  **Foundation-readiness:** MOD-habits finds every needed column — PASS. `[FACT: 017_habits.ts; schema/habits.ts]`
 - **Group #7 Routines (2026-08-19):** **3 tables** — the ORCHESTRATION REFRAME (`routines` · `routine_step` ·
   `routine_completions`), superseding the flat 2-table §5.6 POC (`routine_actions` retired → `routine_step`). The
-  reframe **design landed** (`docs/intake/routines.md` §E 2026-07-14, RT-1…RT-19); only the DDL was deferred "→ build
+  reframe **design landed** (2026-07-14, RT-1…RT-19); only the DDL was deferred "→ build
   phase" = this session (shape-open, the store/rules pattern; [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]).
   **6 `[E]`** (routines name/description; routine_step title/description; completion skip_reason). **No-FK:** routine_id/
   routine_step_id/entity_id plain TEXT (app-layer cascade, RT-17). `routines` (pursuable, RT-19): `measurement_kind` NN
@@ -318,8 +317,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`routines-introspection.test.ts`, 12 cases × 3). `@vida/core` **299 tests** green; `LATEST_VERSION`=18; typecheck
   clean; eslint 0-err. **Zero build-decisions** (⚠ two Victor corrections re-grounded the read: the reframe design landed,
   DDL is the build job — not an undone design-pass; the three "open" points were doc-closed). Interface reconcile → DB-11.
-  **Foundation-readiness:** MOD-routines finds the sequence/step/ledger — PASS. `[FACT: 018_routines.ts; schema/routines.ts;
-  docs/specs/foundation/db-4-routines/]`
+  **Foundation-readiness:** MOD-routines finds the sequence/step/ledger — PASS. `[FACT: 018_routines.ts; schema/routines.ts]`
 - **Group #8 Purpose & Goals (2026-08-19):** **6 tables** — the CAPSTONE meaning-spine (`purposes` · `targets` ·
   `purpose_metrics` · `purpose_metric_values` · `target_reviews` · `dreams`); the §5.7 floor MINUS the 4 DB-3 substrate
   tables (`values`/`contributions`/`purpose_reviews`/`plan_steps`, consumed no-FK). **~19 `[E]`**. **No-FK:** all spine
@@ -336,7 +334,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`value` already present, DB-3). **Phase-5 DDL-introspection** (`purposes-introspection.test.ts`, 24 cases × 6).
   `@vida/core` **336 tests** green; `LATEST_VERSION`=19; typecheck clean; eslint 0-err. **Zero build-decisions.**
   Interface reconcile → DB-11. **Foundation-readiness:** MOD-purpose finds the spine + Dreams — PASS. `[FACT:
-  019_purposes.ts; schema/purposes.ts; docs/specs/foundation/db-4-purposes-and-goals/]`
+  019_purposes.ts; schema/purposes.ts]`
 - **Group #9 Finance (+Fiscal & Legal) (2026-08-20):** **9 tables** — the 6 §5.8 finance entities (`accounts` ·
   `transactions` · `assets` · `liabilities` · `investments` · `income_streams`, authored fresh — they lived in the
   pre-rebuild monolith) + the 3 net-new Fiscal & Legal tables (`fiscal_residencies` · `legal_entities` ·
@@ -360,7 +358,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   4). `@vida/core` **385 tests** green; `LATEST_VERSION`=20; typecheck 11/11; eslint 0-err. **Zero build-decisions.**
   Interface reconcile → DB-11 (Finance +opening_balance/category_bidx/jurisdiction_code/G9; new `FiscalResidency`/
   `LegalEntity`/`FiscalObligation`). **Foundation-readiness:** MOD-finance finds the 6 entities + net worth over the
-  DB-3 `store` tree + fiscal spine — PASS. `[FACT: 020_finance.ts; schema/finance.ts; docs/specs/foundation/db-4-finance-and-fiscal-legal/]`
+  DB-3 `store` tree + fiscal spine — PASS. `[FACT: 020_finance.ts; schema/finance.ts]`
 - **Group Skills (2026-08-20):** **7 tables** authored fresh (only `db/_legacy` had the old 2-table floor) — the
   reshaped `skills` capability + `skill_levels` · `skill_activities` · `skill_actions` · `skill_dev_logs` ·
   `skill_dependencies` · `skill_definitions`. The `structure-data.md` roster is authoritative; **ADR-002 §5.9 DDL is
@@ -384,7 +382,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`skills-introspection.test.ts`, 28 cases × 4). `@vida/core` **426 tests** green; `LATEST_VERSION`=21; typecheck
   11/11; eslint 0-err. **Zero build-decisions.** Interface reconcile → DB-11 (new `Skill`/`SkillLevel`/`SkillActivity`/
   `SkillAction`/`SkillDevLog`/`SkillDependency`/`SkillDefinition`; the stale learning.ts `Skill` retired).
-  `[FACT: 021_skills.ts; schema/skills.ts; docs/specs/foundation/db-4-skills/]`
+  `[FACT: 021_skills.ts; schema/skills.ts]`
 - **Group #10 Knowledge (+flashcards) (2026-08-20):** **7 tables** — the largest, most-reframed group (the "Knowledge
   Universe"). `knowledge_objects` (generalizes `study_topics`; `parent_object_id` self-ref IS the Subject›Unit›Topic +
   user-kinds hierarchy, BR-KN-1) · `object_kinds` (user-extensible kind registry) · `knowledge_containers` (Module⊃Area⊃
@@ -404,7 +402,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   compound-set AI-assist + OS automation surface ("not designed anywhere", business-rules L78-80). `compound_sets`/
   `knowledge_lab_entries` = base tables only. **Phase-5 introspection** (`knowledge-introspection.test.ts`, 28 cases × 4).
   `@vida/core` green; `LATEST_VERSION`=22; typecheck 11/11; eslint 0-err. **Zero build-decisions** (gate-1 REVISE→resolved:
-  `references.url` [E], the sole ZK-regression catch). Interface reconcile → DB-11. `[FACT: 022_knowledge.ts; schema/knowledge.ts; docs/specs/foundation/db-4-knowledge/]`
+  `references.url` [E], the sole ZK-regression catch). Interface reconcile → DB-11. `[FACT: 022_knowledge.ts; schema/knowledge.ts]`
 - **Group #11 Books (2026-08-20):** **10 tables** — the 2nd-largest reframe (the reading Universe). `books`/`book_chapters`
   reshaped from the 2-table FACT floor + 8 net-new (`book_assets`, 3 annotations [`book_bookmarks`/`book_highlights`/
   `book_quotes`], `reading_sessions`, `reading_plans`, `reading_plan_books`, `book_subjects`). **ADR-002 §Books STALE.**
@@ -422,7 +420,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   Preferences+derived), ISBN/OCR/TTS X*/AI* service, Education pacing, quote-embed block, photos (note_attachments). **Phase-5
   introspection** (`books-introspection.test.ts`, 40 cases × 4). `@vida/core` **503 tests** green; `LATEST_VERSION`=23;
   typecheck 11/11; eslint 0. **Zero build-decisions** (gate-1 REVISE→resolved: the `deleted_at`-on-extension audit — see below).
-  Interface reconcile → DB-11. `[FACT: 023_books.ts; schema/books.ts; docs/specs/foundation/db-4-books/]`
+  Interface reconcile → DB-11. `[FACT: 023_books.ts; schema/books.ts]`
 - **⚠ Cross-group fix (2026-08-20 `deleted_at` audit):** `skill_actions` (Skills group) wrongly carried `deleted_at` — a
   session sub-type extension must not (base `sessions` owns lifecycle; the `study_sessions`/`focus_sessions` precedent).
   REMOVED from `skills.ts` + `021_skills.ts`. Audit of all authored groups found this the sole instance; no table violates
@@ -455,7 +453,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   11/11; eslint 0. **Zero build-decisions** — the `(design pass)` labels are build-phase forward-pointers, resolved WHOLE by
   the intake §Resolution (a Victor drift-catch corrected an author-vs-defer framing at P1). Interface reconcile (Course→Subject,
   `default_course_id`→`default_subject_id`, stale COURSE progress/tags) → DB-11.
-  `[FACT: 024_learning_education.ts; schema/learning.ts; docs/specs/foundation/db-4-learning-education/]`
+  `[FACT: 024_learning_education.ts; schema/learning.ts]`
 - **Group #14 Relationships (CRM) (2026-08-20):** **8 tables** — the PII-heaviest module (personal CRM). 6 §5.9 tables
   authored fresh (absent from the new `schema/`; lived in the pre-rebuild monolith) + **2 net-new networks** (`network_groups`
   + `network_group_contacts`, G2/RL-4 — a contact in MANY networks). **Build-phase INTENDED authored** (intake §Resolution
@@ -478,7 +476,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   passes standalone); `LATEST_VERSION`=25; typecheck 11/11; eslint 0. **Zero build-decisions.** Interface reconcile (Contact
   +how_we_met/closeness_tier −tags · Interaction +energy/key_takeaways · ContactReminder +snooze/priority · ReminderGroup
   +anchor · new NetworkGroup/NetworkGroupContact) → DB-11.
-  `[FACT: 025_relationships.ts; schema/relationships.ts; docs/specs/foundation/db-4-relationships/]`
+  `[FACT: 025_relationships.ts; schema/relationships.ts]`
 - **Group #16 Check-ins (2026-08-20):** **3 tables** — the lightest group (structured daily-reflection + a template
   form-builder), the lone non-ingest unit. `daily_check_ins` + `check_in_templates` (baseColumns) + `check_in_template_questions`
   (**`id` + `syncColumns`, NO `created_at`/`updated_at`** — the §5.13 floor omits them + the interface `extends SyncMetadata`).
@@ -498,7 +496,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`check-ins-introspection.test.ts`, 12 cases × 4). `@vida/core` **635 tests** green; `LATEST_VERSION`=26; typecheck 11/11;
   eslint 0. Gates: gate-1 **REVISE**→resolved (the net-new-types miss) · preflight PASSED · gate-2 SHIP · post-impl SHIP.
   **Zero build-decisions.** Interface reconcile (`DailyCheckIn`/`CheckInTemplate`/`CheckInTemplateQuestion` vs the mirror; the
-  `CHECK_IN_TYPE` expansion flows through automatically) → DB-11. `[FACT: 026_check_ins.ts; schema/check-ins.ts; docs/specs/foundation/db-4-check-ins/]`
+  `CHECK_IN_TYPE` expansion flows through automatically) → DB-11. `[FACT: 026_check_ins.ts; schema/check-ins.ts]`
 - **Group #17 Health: Core (2026-08-20):** **12 tables** — the shared Health spine (Metrics + Monitoring · Goals ·
   Adaptation · Physical Roles · Safety & Medical). Recovered domain, **no v2 schema** → all net-new ADR-002 additions, but
   the `structure-data.md` roster (from the AUTHORITATIVE 18-DB Notion design) IS the documented per-table floor. `health_metrics`·
@@ -514,7 +512,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   green; `LATEST_VERSION`=27; typecheck 11/11; eslint 0. Gates: gate-1 **REVISE**→resolved (deleted_at floor — Victor drift-catch
   on a critique's false "no floor" premise) · preflight PASSED (10 folds) · gate-2 SHIP (3 folds) · post-impl SHIP. **Zero
   build-decisions.** Interface reconcile (12 Health row interfaces + 14 enums) → DB-11. Nutrition #18 / Training #19 = separate
-  groups. `[FACT: 027_health_core.ts; schema/health-core.ts; packages/types/src/health.ts; docs/specs/foundation/db-4-health-core/]`
+  groups. `[FACT: 027_health_core.ts; schema/health-core.ts; packages/types/src/health.ts]`
 - **Group #18 Health: Nutrition (2026-08-20):** **6 tables** — the fuel pillar (`nutrition_ingredients`·`nutrition_dishes`·
   `nutritional_plans`·`daily_meal_plans`·`meals`·`shopping_items`). Net-new (recovered domain); composes the Core spine #17
   (Nutrition Goals → Core `health_goals`, Experiments/Responses → Core Adaptation, cost → Finance, tags → Spaces). **`deleted_at`
@@ -526,7 +524,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   `cooking_skill_id` opt-in nullable; no import_staging). `ENTITY_TYPES += 6` (incl. `nutritional_plan`). **Phase-5 introspection**
   (`health-nutrition-introspection.test.ts`, 6 × 4 + deleted_at guard = 25). `@vida/core` **730 tests** green; `LATEST_VERSION`=28;
   typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9 folds) · gate-2 SHIP · post-impl SHIP. **Zero build-decisions.**
-  Interface reconcile (6 Nutrition interfaces + 2 enums) → DB-11. `[FACT: 028_health_nutrition.ts; schema/health-nutrition.ts; packages/types/src/nutrition.ts; docs/specs/foundation/db-4-health-nutrition/]`
+  Interface reconcile (6 Nutrition interfaces + 2 enums) → DB-11. `[FACT: 028_health_nutrition.ts; schema/health-nutrition.ts; packages/types/src/nutrition.ts]`
 - **Group #19 Health: Training (2026-08-20):** **5 tables** — the exercise pillar (`exercises`·`exercise_plans`·
   `workout_templates`·`workout_sessions`·`workout_sets`), the five-layer spine (Catalog → Plan → Template → Instance → Log).
   Net-new (recovered domain, **no rerun** — row 21 ALIGNED). A workout **IS a Session**: `workout_sessions` = the `sessions`
@@ -540,7 +538,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   introspection** (`health-training-introspection.test.ts`, 5 × 4 + deleted_at guard + session_id-unique guard = 22). `@vida/core`
   **757 tests** green; `LATEST_VERSION`=29; typecheck 11/11; eslint 0. Gates: gate-1 SHIP · preflight (9 folds) · gate-2 SHIP ·
   post-impl SHIP. **Zero build-decisions.** **The Health domain (Core + Nutrition + Training) is COMPLETE.** Interface reconcile
-  (5 Training interfaces + 3 enums) → DB-11. `[FACT: 029_health_training.ts; schema/health-training.ts; packages/types/src/training.ts; docs/specs/foundation/db-4-health-training/]`
+  (5 Training interfaces + 3 enums) → DB-11. `[FACT: 029_health_training.ts; schema/health-training.ts; packages/types/src/training.ts]`
 - **Group #20 Journals (2026-08-21):** **1 net-new table** — `journal_snapshots` (the frozen point-in-time day-summary
   record the temporal Review engine reads, JR-6/JR-7). The platform **INTEGRATION LAYER**, but almost all of it is runtime
   code / owned elsewhere: the journal PAGE (`pages` `type='journal'` + `journal_date` + `summary_config[E]`) = Notes & Pages
@@ -556,7 +554,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   amendment). **Phase-5 introspection** (`journals-introspection.test.ts`, 1 × 4 + no-`deleted_at`/`created_at`/`updated_at`
   floor guard + index/no-UNIQUE guard = 6). `@vida/core` **763 tests** green; `LATEST_VERSION`=30; typecheck 0; eslint 0.
   Gates: gate-1 SHIP · preflight PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** Interface
-  reconcile (1 `JournalSnapshot` row interface) → DB-11. `[FACT: 030_journals.ts; schema/journals.ts; docs/specs/foundation/db-4-journals/]`
+  reconcile (1 `JournalSnapshot` row interface) → DB-11. `[FACT: 030_journals.ts; schema/journals.ts]`
 - **Group #21 Gamification ("the System") (2026-08-21):** **3 tables** — `user_profile` · `achievements` · `user_achievements`.
   The heaviest INTENDED reframe (ADR-012 "Points Economy & Consequence Engine") but only 3 tables: the economy spine
   (`currencies`·`consequence_ledger`·`store`·`rules`) is **already-authored DB-3 substrate** (`foundation/economy.ts`, consumed);
@@ -574,7 +572,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   introspection** (`gamification-introspection.test.ts`, 3 × 4 + non-syncable + SyncMetadata/UNIQUE + no-deleted_at guards = 15)
   + 2 parity rows. `@vida/core` **780 tests** green; `LATEST_VERSION`=31; typecheck 0; eslint 0. Gates: gate-1 SHIP · preflight
   PASSED · gate-2 SHIP · post-impl SHIP — all clean. **Zero build-decisions.** UserProfile interface reconcile (shed 7 fields) +
-  XpHistory retire → DB-11. `[FACT: 031_gamification.ts; schema/gamification.ts; docs/specs/foundation/db-4-gamification/]`
+  XpHistory retire → DB-11. `[FACT: 031_gamification.ts; schema/gamification.ts]`
 - **Group #22 Notifications (2026-08-21) — the FINAL group:** **1 table** — `notifications`, the dead-last observer leaf
   (a PURE SINK, out-degree 0). The dispatcher / two production paths / derived-until-fire reminders / ZK wake-signal delivery
   (ADR-013) are **service (M1.1)**, not schema; delivery config → Preferences (NF-4). §5.16 floor + RESOLUTION-N4 AMENDMENTs
@@ -588,7 +586,7 @@ The Stream (ii) per-domain modules — **all 21 active groups authored (DB-4 COM
   (`notifications-introspection.test.ts`, 1 × 4 + no-updated_at/deleted_at + UNIQUE-convergence/partial-index behavioral guards
   = 6) + 1 parity row. `@vida/core` **787 tests** green; `LATEST_VERSION`=32; typecheck 0; eslint 0. Gates: gate-1 **REVISE**
   →resolved (the `effect_event_id` convergence-key catch — a real P1 miss, ADR-012 cross-check) · preflight PASSED · gate-2 SHIP
-  · post-impl SHIP. `Notification` interface reconcile → DB-11. `[FACT: 032_notifications.ts; schema/notifications.ts; docs/specs/foundation/db-4-notifications/]`
+  · post-impl SHIP. `Notification` interface reconcile → DB-11. `[FACT: 032_notifications.ts; schema/notifications.ts]`
 - **✅ DB-4 COMPLETE — all 21 active groups authored (migrations 012–032; #13 Languages dissolved → Spaces, ADR-006). The M1.0
   schema foundation is done.**
 

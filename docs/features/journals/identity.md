@@ -1,4 +1,4 @@
-<!-- Identity — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · journal-service.ts (0 lines) · notes-and-pages/* (journal page owner) · sessions-and-scheduling/contract.md (dueIn) · v1 features/today/ · docs/intake/journals.md -->
+<!-- Identity — features/journals · /documentation Phase 2 · sources: ADR-002 pages/journal L1266-1310 · note.ts JournalSummaryConfig L75-104 · journal-service.ts (0 lines) · notes-and-pages/* (journal page owner) · sessions-and-scheduling/contract.md (dueIn) · v1 features/today/ -->
 
 # Identity — Journals (level: Feature / the INTEGRATION LAYER — last Wave-2 context)
 
@@ -57,5 +57,5 @@ a blank journal) · Populated (sections aggregated, snapshots accruing, schedule
 
 **Neighbors.** `[[../notes-and-pages/identity]]` (owns the journal page + `/summary` block + editor) ·
 `[[../sessions-and-scheduling/identity]]` (`dueIn` agenda provider + `surface_journal` effect) · every module
-(a registered `summary(date)` provider) · `[[../../intake/journals]]` (whole intake) · Purpose & Goals /
+(a registered `summary(date)` provider) · Purpose & Goals /
 Gamification / Notifications (⚠ forward-deps for the improvement lens + scheduled delivery — Wave 3/4).

@@ -1,4 +1,4 @@
-<!-- Conventions — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · CLAUDE.md conventions · docs/intake/flashcards.md -->
+<!-- Conventions — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · CLAUDE.md conventions -->
 
 # Conventions — Flashcards (level: Feature / Knowledge sub-context)
 

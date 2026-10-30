@@ -37,7 +37,7 @@ ADR-015:60]` — `boundPromptInput` (unknown origin → untrusted, fail-safe).
 - **BR-AI-12 — The BYO-key is mediator-custodied, never in-reach.** The `ai_connections` config carries no key;
   a non-mediator custody is refused (`key_not_mediated`). `[FACT: ADR-015:62,114]` — `createAiConnectionRegistry`.
 - **BR-AI-13 — No schema at M1; ports deny-safe/fail-closed; durable stores + real reach are M2.** `[FACT:
-ADR-015:113-115; xcut-ingestion-ai.md:5]` — both `AiPorts` absent by default; the AI-egress audit delegates to
+ADR-015:113-115]` — both `AiPorts` absent by default; the AI-egress audit delegates to
   the egress no-op sink.
 
 ## Deferred (homed, out of this build)

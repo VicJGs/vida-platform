@@ -1,4 +1,4 @@
-<!-- Conventions — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences L3497-3500 · note.ts L58-64 · ADR-004 §3.2 · Sessions conventions/SS-11 · Tasks TK-5 · CLAUDE.md Conventions · docs/intake/pomodoro.md -->
+<!-- Conventions — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 + user_preferences L3497-3500 · note.ts L58-64 · ADR-004 §3.2 · Sessions conventions/SS-11 · Tasks TK-5 · CLAUDE.md Conventions -->
 
 # Conventions — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 

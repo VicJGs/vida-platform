@@ -1,5 +1,5 @@
-<!-- Structure & Data — features/health/core · Phase 2 · sources: docs/intake/health.md (18-DB Notion + Core
-     resolved). ⚠ NO v2 schema exists — all NEW → ADR-002 additions. P=plaintext · E=field-encrypted [E]. -->
+<!-- Structure & Data — features/health/core · Phase 2.
+     ⚠ NO v2 schema exists — all NEW → ADR-002 additions. P=plaintext · E=field-encrypted [E]. -->
 
 # Structure & Data — Health: Core
 

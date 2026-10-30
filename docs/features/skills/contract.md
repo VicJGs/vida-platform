@@ -1,4 +1,4 @@
-<!-- Contract — features/skills · Phase 2 · sources: intake/skills.md §reshape + current-intent. ⚠ DESIGNED
+<!-- Contract — features/skills · Phase 2 · ⚠ DESIGNED
      interface — no @vida/core code yet (v2 = a 2-table floor). -->
 
 # Contract — Skills

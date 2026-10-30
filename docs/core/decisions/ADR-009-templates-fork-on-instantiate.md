@@ -28,7 +28,7 @@ full Template.
 ## 2. Context — what triggered this
 
 Templates / bundle-instantiate **do not exist anywhere** in v1 or v2 — no table, no service.
-`[FACT: docs/intake/spaces.md L39, "does not exist anywhere"]` Yet nearly every documented module asks for one:
+Yet nearly every documented module asks for one:
 
 - **Languages** (SP7): a shipped **starter Template = Victor's method** — Knowledge kinds + a daily-practice Session
   template + a Goal template + immersion Blocks. `[FACT: intake L124, L157-160]`

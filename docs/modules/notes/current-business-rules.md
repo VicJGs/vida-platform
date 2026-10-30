@@ -1,8 +1,7 @@
 # Current Business Rules — notes (Notes & Pages) (both planes · as-built)
 
 > §XXIX living doc. Invariants the code upholds TODAY, cited to code. ① rules promoted from the S1–S4 PLANs
-> (2026-09-19); ② rules from fe-notes #27 + notes-entity-usability (2026-10-20). Intent authority:
-> `backend-intent/parts/notes-and-pages.md` (①) · `docs/specs/foundation/fe-notes-and-pages/` (②).
+> (2026-09-19); ② rules from fe-notes #27 + notes-entity-usability (2026-10-20).
 > Last refreshed: 2026-10-26 — notes-rescope (LIF-245) Step 0 baseline (citations re-anchored to current lines;
 > `ensureJournal` + 2 undocumented ① behaviors + the ② surface rules added); same day — **notes-rescope R0 data safety**
 > (BR-R0-1…9; BR-7c superseded; BR-S2-2 · BR-S3-1 · BR-NEU-3 · BR-SUR-3 amended). Paths: `packages/core/src/` for ①,
@@ -140,7 +139,7 @@ create → `PageRow` | `JournalExistsError` | `UnregisteredEntityTypeError` | Zo
 
 ## notes-rescope R0 — data safety (both planes · 2026-10-26)
 
-Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-safety.md` (rev 3) + IMPLEMENTATION-PLAN.
+Approved PLAN: IMPLEMENTATION-PLAN.
 
 - **BR-R0-1 · An unreadable body is never written.** Malformed bytes → no editor mounts and the write seam starts
   locked. A doc the editor's schema rejects → `onInvalidContent` locks the seam in the same callback. A page whose
@@ -191,7 +190,7 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R0-data-saf
 
 ## notes-rescope R1 — page frame (surface plane · 2026-10-27)
 
-Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R1-page-frame.md` (rev 3) + IMPLEMENTATION-PLAN (rev 3,
+Approved PLAN: IMPLEMENTATION-PLAN (rev 3,
 R-1…R-6, DEV-R1-1).
 
 - **BR-R1-1 · Page surfaces gate on page type** (BR-SUR-4). EC-15: all 6 types open with the editor, the Note tab leads.
@@ -228,7 +227,7 @@ loading`) outside the live region. DEV `?readerror` (NODE_ENV-gated, absent from
 
 ## notes-rescope R2 — mode memory (both planes · 2026-10-27)
 
-Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-memory.md` (rev 4) + IMPLEMENTATION-PLAN
+Approved PLAN: IMPLEMENTATION-PLAN
 (rev 3, R-1…R-5). ADR-006 §3.6.
 
 - **BR-R2-1 · Remembered per page, per device.** A toggle writes `entity_mode:<type>:<id>` (`writeAppState`); a reload
@@ -250,7 +249,7 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R2-mode-mem
 
 ## notes-rescope R3 — metadata + rename (both planes · 2026-10-27)
 
-Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata-rename.md` (rev 3) + IMPLEMENTATION-PLAN
+Approved PLAN: IMPLEMENTATION-PLAN
 (rev 3, R-1…R-10, DEV-R3-1).
 
 - **BR-R3-1 · Metadata persists** — favorite · archive · icon · cover through `updatePage`; no optimistic patch (invalidate
@@ -271,8 +270,8 @@ Approved PLAN: `docs/features/notes-and-pages/delivery/sessions/PLAN-R3-metadata
   (`useFocusOnRecovery`). Controls are `aria-disabled` (still focusable) while a write is pending.
 - **Controls** — icon + visible label in the greybox order (Change icon · Change cover · Favorite · Archive).
 - **DEV-R3-1** — `@vida/ui` `Input`'s native element is a Text host (font tokens now apply to every size).
-- **DEV-R3-2** — `@vida/ui` `Dialog` restores focus to its trigger AFTER un-inerting the background (its contract,
-  `dialog.md:47`; before, focus never returned in a real browser).
+- **DEV-R3-2** — `@vida/ui` `Dialog` restores focus to its trigger AFTER un-inerting the background (its contract;
+  before, focus never returned in a real browser).
 - Forward obligations (R4): the live attachments list; a thumbnail for every image attachment.
 
 ## Deferred (documented)

@@ -1,7 +1,7 @@
-<!-- Business Rules — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · docs/intake/routines.md §D/§E -->
+<!-- Business Rules — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts -->
 
-> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
-> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2.
+> Full rewording lands in the §XXIX pass at unit close.
 
 # Business Rules — Routines (level: Feature)
 
@@ -26,7 +26,7 @@
 - **RT-4 — An actionable step with no rich entity is a recurrent Task.** A "just check it within a timeframe" step
   is modeled as a **Task** using Tasks' recurrence-in-a-timeframe (e.g. every 3h). Alarm-like: not checked within
   the timeframe → **not done**; **rescheduled within the day → the Scheduler places it in an open, fitting slot**,
-  then completed. `[INTENT Q1; composes intake/tasks.md + Scheduler]`
+  then completed. `[INTENT Q1; composes Scheduler]`
 - **RT-5 — Completion is a USER-CONFIGURABLE policy; partial is ALWAYS recorded.** At the timeframe's end the
   routine computes **what was done vs not**, and that partial record is **never discarded** and is surfaced
   **positively** (→ Journal / meaning-spine). Whether the routine counts as _done_ is the **user's policy**:
@@ -75,7 +75,7 @@ ADR-002 L1344; INTENT G9]`
 - **RT-16 — Tags via `entity_tags` (⚠ INTENDED).** `routine_actions` has no tags column today (As-is); the go-forward
   primitive is **`entity_tags`** (`tag_id, entity_type, entity_id`, ADR-006 SP1) — the shared/universal tag system
   owned by **Spaces**; routines registers `entity_type='routine_action'` as a consumer, never a bespoke Routines tag
-  store. `[INTENT G10; FACT: §5.6 no tags col; ADR-006 SP1; intake/spaces.md SP2]`
+  store. `[INTENT G10; FACT: §5.6 no tags col; ADR-006 SP1]`
 - **RT-17 — Cascade + soft delete.** `routine_completions` cascade-delete with their action (`ON DELETE CASCADE`);
   deleting a routine deletes its steps (⚠ INTENDED). Soft delete (`deleted_at`) hides while preserving the ledger.
   `[FACT: ADR-002 §5.6 CASCADE; soft-delete convention]`

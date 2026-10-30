@@ -9,15 +9,15 @@ mutates its 1:1 `focus_sessions` row. Pomodoro is NOT a separate service — a t
 
 ## §0 The S2-flag resolution (M1.1 focus completion) — doc-given, not a decision
 
-`intake/pomodoro.md:166,179` = "the hook exists; **stub the contract now, wire later**." So in M1.1 the timer's
+Pomodoro intake: "the hook exists; **stub the contract now, wire later**." So in M1.1 the timer's
 `complete` finalizes the **focus_sessions run** (status + duration); it does **NOT** auto-route to
 `completeSession`→`transition`→fire (that throws — `focus` declares `log_time`/`attach_pomodoro`, handlers
 deferred #46). Session-completion-with-effects stays the single firing path (S2 `completeSession`), invoked when
 #46 wires handlers. IR-1 preserved (no second firing path — the timer simply doesn't invoke the firing path in
 M1.1). The shipped `focus` def is **NOT edited** (`registry.test.ts` pins its `{attach_pomodoro, log_time}`
-envelope — BR-4 tests). `[FACT: intake/pomodoro.md:166,179; registry.test.ts:74,140,150; interpretation.md IR-1]`
+envelope — BR-4 tests). `[FACT: registry.test.ts:74,140,150]`
 
-## §1 Operations (signatures in `delivery/seam-contract.md`; return the `focus_sessions` row = `FocusTimer`)
+## §1 Operations (return the `focus_sessions` row = `FocusTimer`)
 
 - `startFocus({ sessionId?, templateId?, attach? }): FocusTimer` — **no `sessionId`:**
   `createSession('focus', status:'in_progress', started_at:now, extension:{kind:'focus', type:'focus',

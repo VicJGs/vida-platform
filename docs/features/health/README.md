@@ -1,6 +1,5 @@
 <!-- Health umbrella index — a domain module with a shared CORE + two module-sized pillar sub-contexts
-     (Training, Nutrition). Sources: docs/intake/health.md (v1 seed + Victor's Vision + 18-DB Notion design +
-     OS-extension reshape + resolved Core). Layout confirmed 2026-07-13 (Victor): umbrella + sub-contexts. -->
+     (Training, Nutrition). Layout confirmed 2026-07-13 (Victor): umbrella + sub-contexts. -->
 
 # Health — Vida Platform (umbrella)
 
@@ -47,11 +46,11 @@ prescription path = **opt-in extension-model** (Sessions S5 flags Health effects
 
 ## Status
 
-| Sub-context |              Intake               |     Transform     |                   Verify                    |
-| ----------- | :-------------------------------: | :---------------: | :-----------------------------------------: |
-| Core        | ✅ (health.md WHOLE + CI-1..CI-6) | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Training    |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
-| Nutrition   |                ✅                 | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Sub-context |     Intake      |     Transform     |                   Verify                    |
+| ----------- | :-------------: | :---------------: | :-----------------------------------------: |
+| Core        | ✅ (CI-1..CI-6) | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Training    |       ✅        | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
+| Nutrition   |       ✅        | ✅ enhanced 07-14 | ✅ gate PASS 07-13 · **re-gate PASS 07-14** |
 
 ## Forward-dep stubs (resolve at their turn)
 

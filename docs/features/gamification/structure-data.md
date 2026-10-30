@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 L3361-3463 · user.ts L38-92 · ADR-004 §3.2.2/§3.2.5 · ADR-011 · ADR-008/010 · finance.ts · docs/intake/gamification.md RESOLUTION -->
+<!-- Structure & Data — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 L3361-3463 · user.ts L38-92 · ADR-004 §3.2.2/§3.2.5 · ADR-011 · ADR-008/010 · finance.ts -->
 
 # Structure & Data — Gamification ("the System") (level: Feature — incentive engine)
 

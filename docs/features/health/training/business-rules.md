@@ -1,4 +1,4 @@
-<!-- Business rules — features/health/training · Phase 2 · sources: intake/health.md (9 Training DBs) + core/* +
+<!-- Business rules — features/health/training · Phase 2 · sources: core/* +
      ADR-004 + v1 CR-005. Prefix: HT- (Health Training). -->
 
 # Business Rules — Health: Training

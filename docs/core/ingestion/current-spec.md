@@ -2,7 +2,6 @@
 
 > Durable contract for the device-mediated ingestion-guard service (XS-ingestion #44). Owning ADR: ADR-014
 > §3.1–§3.8. Kept current with `packages/core/src/foundation/ingestion/`.
-> Spec: `docs/specs/foundation/xs-ingestion/`.
 
 ## What it is
 

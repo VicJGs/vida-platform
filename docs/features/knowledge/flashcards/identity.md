@@ -1,4 +1,4 @@
-<!-- Identity — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 flashcard_decks L2628-2650 / flashcards L2656-2688 / flashcard_reviews L2693-2710 · types knowledge.ts L106-160 · v1 entities.ts L1250-1297 · ADR-004 · ADR-005 · Knowledge KN-4/KN-5/KN-8/KN-10 · docs/intake/flashcards.md -->
+<!-- Identity — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 flashcard_decks L2628-2650 / flashcards L2656-2688 / flashcard_reviews L2693-2710 · types knowledge.ts L106-160 · v1 entities.ts L1250-1297 · ADR-004 · ADR-005 · Knowledge KN-4/KN-5/KN-8/KN-10 -->
 
 # Identity — Flashcards (level: Feature / Knowledge SUB-CONTEXT — a study-method SERVICE, not a module)
 

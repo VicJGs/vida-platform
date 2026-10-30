@@ -12,8 +12,8 @@ user-facing dispatcher/surface) over DB-4 `032_notifications` (1 table, `notific
 **PURE SINK** (in-degree = everything, out-degree 0): it observes every module and nothing depends on it. It
 composes — and never re-implements — the BUILT `foundation/notifications` delivery engine (#46), the ADR-004
 effect rail, the Sessions `dueIn(range)` aggregator, and Preferences gating. Full design lives in
-`docs/features/notifications/` (aspect docs) + `docs/features/notifications/delivery/` (interpretation ·
-slice-map · seam-contract). Build state: **① COMPLETE — S1–S5 shipped** (S1 scaffold + inbox reads +
+`docs/features/notifications/` (aspect docs).
+Build state: **① COMPLETE — S1–S5 shipped** (S1 scaffold + inbox reads +
 lifecycle + DB-11 reconcile · S2 Preferences gating + `deliver` + delivery-audit · S3 `fire` + the
 `surface_notification` rail handler + idempotency · S4 dispatcher `tick()` + time-driven path · S5 Journal
 summary contribution + `purgeExpired` retention + NF-10 dangling-subject read-safety).

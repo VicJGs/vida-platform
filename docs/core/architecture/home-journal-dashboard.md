@@ -10,7 +10,7 @@ The landing surface Victor opens every day — `/` renders the **Journal daily d
 `<Outlet/>`. UX-6 is a **design model** (a typed declarative artifact + this doc), the same shape as its
 experience-track siblings UX-3 (shell layout) / UX-4 (state conventions) / UX-5 (onboarding): it fixes the shape,
 not the pixels. There is **no rendered component and no Visual Gate** — the rendered screen is Phase-1b, consuming
-this model. `[FACT: derived-graph.md:31 "Home/Journal screen DESIGN within the shell"; delivery-plan:270 "design issue"; ui-4/_index.md:29]`
+this model. `[FACT: delivery-plan:270 "design issue"; ui-4/_index.md:29]`
 
 ## The three sections (`section-model.ts` · BR-1)
 

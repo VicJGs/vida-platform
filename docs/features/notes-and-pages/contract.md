@@ -45,7 +45,7 @@ Notes & Pages is the **hub (in-degree 14)**. `[FACT: module-dependency-graph.md]
 - **Pomodoro** — a widget-lens: the `/pomodoro` block launches a `focus_sessions` timer via the Sessions realm and the
   page links to that `session_id`. `[INTENT: ADR-004 §3.1]` `has_pomodoro` is caller-supplied (BR-8); who sets it
   (the `/pomodoro` block insert vs a Sessions effect, ADR-004 `attach_pomodoro`) is **OUT of notes-rescope scope** — it rides the `/pomodoro`
-  body (fe-sessions) (delivery/interpretation.md §5 #4).
+  body (fe-sessions).
 
 ## What it consumes
 
@@ -61,16 +61,15 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   streaks/stats · `/summary` across the OS · check-in (EC-18a — owned by the Journals module → journals-rescope; Notes provides
   the Overview slot). `*_note` Overviews ride
   fe-tasks / fe-projects (EC-18b–e). Merged mode renders the SAME per-type sections as one continuous page (EC-19).
-  `[FACT: fe-notes envision.md:45-52]`
 - **Journal summary on the page:** `useJournalSummary` reads Journals `buildDashboard(date)`; until HARD-1 registers
   module providers the registry is empty (`apps/web/src/db/composition-root.ts:90-97`) and the block shows the honest
   empty state. The `summary_config` → `JournalSelection` mapping is `[UNKNOWN — homed: the hook-flip slice PLAN]`.
 - **Inline palette (CAP-13):** offers the union of the page's Spaces' capabilities + the editor base (ADR-008
   L134-137); inline instances live in the page doc (L120-124). Which registry entries get real bodies in this unit vs
-  keep the honest "available when its module ships" placeholder: **RESOLVED (delivery/interpretation.md §5 #5):** `/summary` `/entity-link` `/backlink`
-  get bodies here; the other 8 stay honest placeholders with edges to their units (extension-catalog.md:35-45). CAP-12 `block_instances` placement is homed to notes-rescope by
-  coverage-report.md:50; whether it applies to the page surface at all (ADR-008 L120-124) is `[UNKNOWN — homed: notes-rescope Step 4 reconciliation]`.
-- **Metadata values:** favorite/archive are booleans; glyphs are Lucide icons, never emoji (EC-22, envision.md:55);
+  keep the honest "available when its module ships" placeholder: **RESOLVED:** `/summary` `/entity-link` `/backlink`
+  get bodies here; the other 8 stay honest placeholders with edges to their units (extension-catalog.md:35-45). CAP-12 `block_instances` placement is homed to notes-rescope;
+  whether it applies to the page surface at all (ADR-008 L120-124) is `[UNKNOWN — homed: notes-rescope Step 4 reconciliation]`.
+- **Metadata values:** favorite/archive are booleans; glyphs are Lucide icons, never emoji (EC-22);
   `cover_image` = a user-chosen image URL `[E]` (security-model.md:465). **RESOLVED (notes-rescope R3, PLAN-R3 G4/G5):**
   `icon` = a Lucide icon name (kebab-case, shape-validated on create + update); `cover_image` = an `http(s)` image URL
   (≤ 2048) or `attachment:<id>` (one of the page's attachments, rendered from its thumbnail only).
@@ -78,9 +77,9 @@ capability registry. `/summary` data and the NP-8 seed are read-only integration
   (performance-strategy.md:132). Picker UX, size limit and storage (DB blob vs OPFS): `[UNKNOWN — homed: the
 attachments leg's slice PLAN / Envision Gate]`.
 - **View-config persistence:** layouts are ADR-007 `views` rows; whether `/notes` persists a global row
-  (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": **RESOLVED (delivery/interpretation.md §5 #6): YES** — a global row; layout/filter/sort persist via `ViewsService`.
+  (`space_id` NULL) given NOT-48's "selection primitive DEFERRED (design-pass)": **RESOLVED: YES** — a global row; layout/filter/sort persist via `ViewsService`.
 - **Entity links from the editor (G6 creation half):** `/entity-link` block and entities as `[[` candidates — EC-10
-  pins page candidates only → **RESOLVED (delivery/interpretation.md §5 #7):** `[[` candidates = every OS entity that is a page (pages + registered entity types); page → `page_links`, entity → `entity_links`; EC-10 re-pinned by Victor 2026-10-26.
+  pins page candidates only → **RESOLVED:** `[[` candidates = every OS entity that is a page (pages + registered entity types); page → `page_links`, entity → `entity_links`; EC-10 re-pinned by Victor 2026-10-26.
 
 ## Contract error cases
 

@@ -1,5 +1,4 @@
-<!-- Business rules — features/skills · Phase 2 · sources: intake/skills.md (current-intent CI-1..CI-4 + Notion
-     context + reshape). Prefix: SK- (Skills rules; distinct from the intake's SK1-SK8 gaps). -->
+<!-- Business rules — features/skills · Phase 2 · Prefix: SK- (Skills rules; distinct from the intake's SK1-SK8 gaps). -->
 
 # Business Rules — Skills
 

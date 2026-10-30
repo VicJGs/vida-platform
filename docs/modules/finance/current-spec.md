@@ -8,7 +8,7 @@
 
 **What it is.** The finance module — accounts, transactions, assets, liabilities, investments, income streams —
 over the DB-4 `020_finance` schema. This build delivers the ① **backend service tier**
-(`@vida/core/services/finance`, `createFinanceService`); the ② frontend (9 view surfaces) is P6 `fe-finance`. `[FACT: services/finance/service.ts; slice-map.md]`
+(`@vida/core/services/finance`, `createFinanceService`); the ② frontend (9 view surfaces) is P6 `fe-finance`. `[FACT: services/finance/service.ts]`
 
 **The one job it owns.** Persist + validate the 6 finance entities, derive balances/net-worth/analytics live
 (never stored), and move money via transfers — all client-side, local-first. `[FACT: identity.md]`
@@ -16,9 +16,9 @@ over the DB-4 `020_finance` schema. This build delivers the ① **backend servic
 **What it is NOT.**
 
 - Not the schema (authored at DB-4 #9, migration `020_finance`, v20). `[FACT: schema/finance.ts]`
-- Not the store-economy layer — the ADR-012 `store` tree (net worth over wrapped entities, FIN-18) is DEFERRED; ① uses the FN-7 simple sum. `[FACT: slice-map.md:26]`
-- Not the Purpose-metrics owner — it EXPOSES a net-worth/balance read seam (feeder, FIN-33/S6); no `measurement_kind`/`binding_mode` on finance entities (ADR-011 C6). `[FACT: parts/finance.md:43]`
-- Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6). `[FACT: parts/finance.md]`
+- Not the store-economy layer — the ADR-012 `store` tree (net worth over wrapped entities, FIN-18) is DEFERRED; ① uses the FN-7 simple sum.
+- Not the Purpose-metrics owner — it EXPOSES a net-worth/balance read seam (feeder, FIN-33/S6); no `measurement_kind`/`binding_mode` on finance entities (ADR-011 C6).
+- Not the tag owner — consumes `entity_tags` (Spaces SP1); notes via the `pages` seam (both S6).
 
 ## 2. Contract — what it exposes / needs
 
@@ -40,7 +40,7 @@ legal-entity CRUD (returns Row types, DB-11; `[E]` M1 pass-through); `linkMoneyT
 money-touch Finance entity (5 types, liability excluded) via the finance update path; `assertExternalGrant`
 fail-closed via the enforcer (no enforcer → `ExternalGrantMissing`); the 7-error FL-10 typed contract (S8 throws the
 guarded ones). **§XXVIII deviation:** exposed `jurisdiction_code` on the 5 money-touch `@vida/types` interfaces
-(FL-02, deferred S1→S7 per slice-map.md:57). `[FACT: services/finance/fiscal-legal.ts; types finance.ts]`
+(FL-02, deferred S1→S7). `[FACT: services/finance/fiscal-legal.ts; types finance.ts]`
 
 **S6 (2026-09-22) — cross-module providers + delegates (FIN-31/32/33/34/35/37), `journal.ts` + service methods:**
 `createFinanceJournalContribution`/`registerFinanceJournal` — ONE Journals contribution (`summary(date)` = today's
@@ -81,7 +81,7 @@ monthlyIncome, monthlyExpenses, month, unvaluedAssets, unvaluedLiabilities, part
 **S1 (2026-09-21):** 5-entity CRUD + validators + faithful create-echo + `@vida/types` FIN-01/27 field extensions. `[FACT: service.ts, validators/finance.ts]`
 
 **Needs (deferred seams):** Preferences base-currency/recurring-mode (S5) · ADR-014 ingestion #44 + enforcer
-#31/egress #43 (S5) · EffectRegistry `move_money` (S4) · Journals registry + `entity_tags` + `pages` (S6). `[FACT: slice-map.md]`
+#31/egress #43 (S5) · EffectRegistry `move_money` (S4) · Journals registry + `entity_tags` + `pages` (S6).
 
 ## 3. Structure & shape
 
@@ -98,7 +98,7 @@ FIN-18 store-tree net worth · FIN-24 lock-box · FIN-36/38/39 Commitments/budge
 (design-pass) · net-worth-over-time chart (snapshot design-pass) · **FIN-31 concrete emit** (#48) · **S8 M2 reach**
 (rule-pack content/mirror/verifier · AI mediator/on-device runtime LIF-145 · Tasks/Notif/Calendar fan-out · export
 format-render · Purpose `contributions` writer — all behind zero-signature-change deny-safe ports) · **all S5 deferred STORES**
-(FX/base-currency, managed-category, persisted-aggregates, import_staging, materialize write path — M2). Homed in `slice-map.md`.
+(FX/base-currency, managed-category, persisted-aggregates, import_staging, materialize write path — M2).
 
 ## 5. Terminal states
 

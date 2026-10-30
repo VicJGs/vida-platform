@@ -2,7 +2,7 @@
 
 > Durable contract for the egress-mediation service (XS-egress-guard #43). Owning ADR: ADR-014 §3.3/§3.1
 > (+ ADR-015 §3.3 — a cloud call is an egress that rides this guard).
-> Kept current with `packages/core/src/foundation/egress/`. Spec: `docs/specs/foundation/xs-egress-guard/`.
+> Kept current with `packages/core/src/foundation/egress/`.
 
 ## What it is
 

@@ -1,5 +1,4 @@
-<!-- Identity — features/health/training · Phase 2 · sources: docs/intake/health.md (⭐⭐ 18-DB Notion: 9 Physical
-     Training DBs) + health/core/* + Sessions ADR-004. Health has NO v2 schema (recovered domain). -->
+<!-- Identity — features/health/training · Phase 2 · sources: health/core/* + Sessions ADR-004. Health has NO v2 schema (recovered domain). -->
 
 # Identity — Health: Training (level: Feature / Health pillar 1 of 2)
 

@@ -3,8 +3,7 @@
 > Language: English.
 > Coverage: 9/9 files read — **full** (same set as `current-spec.md`, incl. `journal.ts`).
 > Inherits: `docs/core/business-rules.md` + `docs/core/conventions.md` (constitution) → this module. Intent authority:
-> `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19) + the GOVERNING
-> `delivery/interpretation.md` (main's 9-slice set, Victor 2026-10-14; implicit rules cited as **interp §4.n**).
+> `docs/features/routines/{identity,business-rules,contract,structure-data,conventions}.md` (RT-1…RT-19).
 > Last refreshed: 2026-10-26 · **① track closed — S9 promoted (§XXIX)** · S8 · S7 · S6 · S5c · S5 · S4 · S3 · S2c · earlier: entity-rescope **Step 0 BASELINE** (worktree @ `0456c32`). Source of truth = the code (§XXIX).
 
 > **Baseline note.** This doc records what the CODE enforces. The `BR-RT-S1/S2/S3-n` IDs are kept stable from the
@@ -56,7 +55,7 @@
 - **Note for derivation (g2 N2):** `editCompletion` may leave `skipped:false` + a stale `skip_reason`. Any derive MUST key on
   `skipped`. `[FACT: service.ts]`
 
-**S2c — Floor conformance** (`delivery/PLAN-S2c-floor-conformance.md`)
+**S2c — Floor conformance**
 
 - **BR-RT-S2c-1 · setLifecycle (ROU-17).** Zod-validated enum; missing/archived routine → `RoutineNotFoundError`, no write. Its effect
   on misses is the S5 acceptance-window procedure (BR-RT-S5a-3: paused/off neutralise only not-yet-real misses).
@@ -77,7 +76,7 @@
   - `reorderSteps` updates every owned step in its own transaction (even unchanged ones), so it's not atomic and causes sync churn.
     This is as-built S2 behaviour; a candidate for a later slice.
 
-**S3 — Run/drive** (`delivery/PLAN-S3-run-drive.md`)
+**S3 — Run/drive**
 
 - **BR-RT-S3d-1 · Drive first, stamp second (N7, rule 1).** No routine write precedes a successful entity call. The routine stamps its own
   occurrence row and never fires effects of its own (the habit/obligation fire theirs; `completeFocus` fires none, never `completeSession`, N9).
@@ -112,10 +111,10 @@
 - **BR-RT-S3d-6 · Re-run.** A focus step with a done row returns it. Task/habit steps re-reflect their entity (no second effect: tasks fan out only
   on a fresh transition, habits dedup on `completed:<date>`). A logged skip flips to done on a successful drive (BR-RT-S3-2).
 
-**S4 — Policy evaluation** (`delivery/PLAN-S4-policy-evaluation.md`)
+**S4 — Policy evaluation**
 
 - **BR-RT-S4e-1 · The policy is the user's.** Read via `prefs?.policyFor(routineId)`. Routines hardcodes no policy values (intake Q2/Q3; the shipped
-  default = Spaces templates/presets, `intake/spaces.md:178-185`). No policy ⇒ `policy_source:'undefined'`: only all-done ⇒ `done` and none-done ⇒
+  default = Spaces templates/presets). No policy ⇒ `policy_source:'undefined'`: only all-done ⇒ `done` and none-done ⇒
   `not_started`; anything else `partial` (flagged).
 - **BR-RT-S4e-2 · As-of-date step set.** Steps created on/before D and not deleted on/before D, plus any step with a ledger row on D. No retroactive change.
 - **BR-RT-S4e-3 · Done = the routine's occurrence row OR the driven entity done as of D.** Reflection (S5c): an **obligation** task
@@ -132,7 +131,7 @@
   occurrence is stamped on the day `completeStep` names, with no abandon rule (stopping/cancelling a stale timer is Tasks'); two steps sharing one
   Task can adopt the same running `work` session (RT-10 sharing).
 
-**S5 — Progress + analytics** (`delivery/PLAN-S5-progress-analytics.md`)
+**S5 — Progress + analytics**
 
 - **BR-RT-S5a-1 · Minimal day-grain cadence allowlist (RT-11).** `recurrence_rule` must be one of:
   - `DAILY[;INTERVAL]`;
@@ -163,7 +162,7 @@
 - **Recorded limits:** the obligation-only reflection limit (a completed obligation reads done on later days until reopened) carries into streak/rate/progress; archived routines aren't served; the ical.js helpers + hang guard
   aren't shared with tasks (tasks' `nextOccurrence` is exposed: Victor).
 
-**S6 — Reschedule + acceptance-window guard** (`delivery/PLAN-S6-reschedule-acceptance-window.md` v3)
+**S6 — Reschedule + acceptance-window guard**
 
 - **BR-RT-S6-1 · Guard (RT-6, contract.md:55, business-rules.md:120).** A make-good/skip write for a PAST date D is rejected when
   `addDays(D, window) < today` (S5's real-miss predicate) → `OutsideAcceptanceWindowError`, no state change. Guarded: `completeStep`/`runStep`,
@@ -189,7 +188,7 @@
   S9 (the owner's live read, sessions business-rules.md:72-74).
   A block cancelled by a skip stays `skipped` if its already-running linked session is then completed (D stamped done): edge, recorded.
 
-**S7 — Routine-level effects** (`delivery/PLAN-S7-effects.md`)
+**S7 — Routine-level effects**
 
 - **BR-RT-S7-1 · What (D3, RT-7/ROU-21/22).** The routine emits `award_xp` (the XP case of `grant_currency`, ADR-012 E2) and
   `contribute_purpose_metric` through `effects.rail`, keyed `subjectNaturalKey = routine.id`, `transition = completed:<date>`,
@@ -208,7 +207,7 @@
 - **S7 limits:** a failed `award_xp` on a write is not re-driven (the transition doesn't recur; habits' auto path is silent too);
   `planSkipDates`/`updateStep` evaluate per added date (no batching).
 
-**S8 — Tags · notes · links** (`delivery/PLAN-S8-tags-notes-links.md`)
+**S8 — Tags · notes · links**
 
 - **BR-RT-S8-1 · Targets (D2, rule 14).** Tags, notes and links target `routine` and `routine_step` (pre-seeded; routines registers nothing).
 - **BR-RT-S8-2 · Consumer only (T1, RT-16, constitution §6).** Writes go through Spaces (`tagEntity`/`untagEntity`/`createLink`/
@@ -223,7 +222,7 @@
 - **S8 limits:** `pageId` is not validated (no FK, the platform-wide `createLink` contract); `ensureEntityNote` may return a second
   user-made `'note'` page attached to the same routine (unordered — books/knowledge share it).
 
-**S9 — Providers + Journal (the ① track closer)** (`delivery/PLAN-S9-providers-journal.md` v2)
+**S9 — Providers + Journal (the ① track closer)**
 
 - **BR-RT-S9-1 · Due predicate (RT-13 "scheduled occurrences"; S5/S6 logic).** A routine-day D of an active routine is due iff some step in
   `stepsAsOf(D)` is still owed (a removed step never is — make-good needs a live step; a step with its own done row on D never is,

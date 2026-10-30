@@ -1,4 +1,4 @@
-<!-- Contract — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 · ADR-005 · Knowledge contract (study_methods/method_bindings/review_events) · docs/intake/flashcards.md -->
+<!-- Contract — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 L2628-2710 · ADR-004 · ADR-005 · Knowledge contract (study_methods/method_bindings/review_events) -->
 
 # Contract — Flashcards (level: Feature / Knowledge sub-context)
 

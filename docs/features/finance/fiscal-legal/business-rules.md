@@ -1,4 +1,4 @@
-<!-- Business Rules — features/finance/fiscal-legal · /documentation Phase 2 · sources: intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · Finance/Projects/Purpose/Tasks/Notifications docs -->
+<!-- Business Rules — features/finance/fiscal-legal · /documentation Phase 2 · sources: ADR-014 · ADR-015 · Finance/Projects/Purpose/Tasks/Notifications docs -->
 
 # Business Rules — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context)
 

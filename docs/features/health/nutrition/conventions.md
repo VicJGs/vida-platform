@@ -1,4 +1,4 @@
-<!-- Conventions — features/health/nutrition · Phase 2 · sources: intake/health.md + core/conventions.md +
+<!-- Conventions — features/health/nutrition · Phase 2 · sources: core/conventions.md +
      platform baselines. Nutrition-specific patterns on top of Core + platform. -->
 
 # Conventions — Health: Nutrition

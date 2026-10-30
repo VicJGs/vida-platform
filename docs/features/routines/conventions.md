@@ -1,7 +1,7 @@
-<!-- Conventions — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · docs/intake/routines.md §D/§E · CLAUDE.md Conventions -->
+<!-- Conventions — features/routines · /documentation Phase 2 · sources: ADR-002 §5.6 · routine.ts · CLAUDE.md Conventions -->
 
-> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2 — see
-> [`delivery/documentation-gate.md` §A](delivery/documentation-gate.md) for the governing FACT per stale claim. Full rewording lands in the §XXIX pass at unit close.
+> ⚠ **Superseded in part (2026-10-21).** The As-is/naming layer predates the shipped reframe (migration 018) and D1–D2.
+> Full rewording lands in the §XXIX pass at unit close.
 
 # Conventions — Routines (level: Feature)
 
@@ -32,7 +32,7 @@ RT-5, RT-6]`
   `linked_*_id`). `[INTENT structure-data]`
 - Notes target `entity_type='routine_action'` in `pages`; tags via the **`entity_tags`** primitive (ADR-006 SP1) —
   the Spaces universal vocabulary; routines registers `entity_type='routine_action'` as a consumer. `[FACT:
-ADR-002 L1344; ADR-006 SP1; intake/spaces.md SP2]`
+ADR-002 L1344; ADR-006 SP1]`
 
 ## Pitfalls / local "never do"
 

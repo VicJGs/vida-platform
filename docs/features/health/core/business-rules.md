@@ -1,5 +1,4 @@
-<!-- Business rules — features/health/core · Phase 2 · sources: docs/intake/health.md (Core resolved Forks 1-4 +
-     closing resolutions HL13/HL2-HL10) · v1 CR-005/CR-006. Prefix: HC- (Health Core). -->
+<!-- Business rules — features/health/core · Phase 2 · sources: v1 CR-005/CR-006. Prefix: HC- (Health Core). -->
 
 # Business Rules — Health: Core
 

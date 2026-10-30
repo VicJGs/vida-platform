@@ -1,7 +1,7 @@
 # foundation/capability — Current Business Rules
 
-> Durable invariants for the capability registry (AR-7 Increment 2). Promoted from
-> `docs/specs/foundation/ar-7-capability-registry/capability/` at §XXIX. Owning ADRs: ADR-008 (CB1–6) + ADR-010 (A2/A5).
+> Durable invariants for the capability registry (AR-7 Increment 2).
+> Owning ADRs: ADR-008 (CB1–6) + ADR-010 (A2/A5).
 > Kept current with `packages/core/src/foundation/capability/`.
 
 - **BR-1 (definition registry).** The registry holds capability **definitions** (`id · kind · render_targets ·
@@ -25,7 +25,7 @@ bindings · effects · config_schema · terminal_states`); shipped defs are **co
 
 ## Enforcement invariants (XS-capability #31 · ADR-010 — the enforce tier)
 
-Promoted from `docs/specs/foundation/xs-capability/service/invariants.md`. The decision tier over the AR-7
+The decision tier over the AR-7
 `capability_grants` structure — DECIDES, does not execute.
 
 - **BR-9 (fail-closed default).** Every unknown/missing input resolves to _deny_ (`no_grant`, `not_in_envelope`,

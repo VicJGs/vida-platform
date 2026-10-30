@@ -1,7 +1,7 @@
 # Slash menu — spec of record (@vida/editor, E4)
 
-> Durable description of the `/`-triggered block menu as built (§XXIX). Refreshed with the code. Forward spec:
-> `docs/specs/features/ui-3-vida-editor/e4-slash-menu.md`. Ground truth for the surface: `docs/editor/current-*.md`.
+> Durable description of the `/`-triggered block menu as built (§XXIX). Refreshed with the code.
+> Ground truth for the surface: `docs/editor/current-*.md`.
 
 ## What it is
 

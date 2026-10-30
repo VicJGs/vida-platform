@@ -1,4 +1,4 @@
-<!-- Business rules — features/health/nutrition · Phase 2 · sources: intake/health.md (9 Nutrition DBs) + core/* +
+<!-- Business rules — features/health/nutrition · Phase 2 · sources: core/* +
      v1 CR-006. Prefix: HN- (Health Nutrition). -->
 
 # Business Rules — Health: Nutrition

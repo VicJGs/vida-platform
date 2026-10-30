@@ -1,4 +1,4 @@
-<!-- Contract — features/health/nutrition · Phase 2 · sources: intake/health.md §C + core/contract.md.
+<!-- Contract — features/health/nutrition · Phase 2 · sources: core/contract.md.
      ⚠ DESIGNED interface — no @vida/core code yet (recovered domain). -->
 
 # Contract — Health: Nutrition

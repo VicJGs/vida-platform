@@ -1,4 +1,4 @@
-<!-- Identity — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 · docs/intake/books.md -->
+<!-- Identity — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · CLAUDE.md §7 -->
 
 # Identity — Books (level: Feature / own module)
 

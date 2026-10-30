@@ -36,8 +36,7 @@ SP4 put **user-authored capability Blocks in the vision**: the user gets the pow
 "at his own risk and accord," wrapped in "a safety net / security layer … the most secure possible." The intent and
 the authoring _seam_ are locked; the safe-authoring _surface_ is a later design-pass — but the **security invariants
 the runtime must enforce are decided now**, because ADR-008 opens the registry and nothing non-shipped may run until
-this guard exists. `[FACT: docs/intake/spaces.md SP4 — "at their own risk … safety net and layer to let it be the
-most secure possible"; L83-87]`
+this guard exists.
 
 **Why a real security model, not a policy note.** A user-authored capability is untrusted code executing on the
 device that holds the **decrypted vault**. Its threat surface:

@@ -8,7 +8,7 @@ This document specifies which modules and **foundation substrates** depend on wh
 
 > **Implementation status (2026-07-25):** This document describes the platform's **target architecture** — the substrate
 > model established by ADRs 004–017 + the capability framework. It is **not** a snapshot of shipped code: ~99% of current
-> code predates this foundation (see `docs/specs/foundation/current-state-baseline/baseline.md`), the storage layer is being
+> code predates this foundation, the storage layer is being
 > **rebuilt from zero** per-table (ADR-016), and Phase-1.0 is **features-first** with encryption/sync/auth **deferred to a
 > later hardening pass** (ADR-017). Substrate primitives cite their **owning ADR** (conceptual home); their code/directory
 > homes are decided in a later structural phase, not here.
@@ -29,8 +29,8 @@ Each dependency between modules is classified as:
 ## 2. Modules and Foundation Substrates
 
 The platform is organized as **feature modules riding shared foundation substrates**. A substrate is a cross-cutting
-primitive that many modules consume rather than each re-implementing — introduced by ADRs 004–015 and inventoried in
-`docs/specs/foundation/capability-framework.md`. The old "17 flat modules" framing understated these: mechanisms that
+primitive that many modules consume rather than each re-implementing — introduced by ADRs 004–015.
+The old "17 flat modules" framing understated these: mechanisms that
 were once duplicated per module (tags, sessions, progress, XP, views) are now single substrates with the widest blast
 radius in the platform.
 
@@ -355,7 +355,6 @@ These modules can be developed in any order after the foundational modules are i
 
 ## References
 
-- **`docs/specs/foundation/capability-framework.md`** — The foundation substrates (Sessions, Spaces, Measurability, Economy, Views, Review-engine, Capability-registry) with their mechanical predicates and owning ADRs
 - **ADR-004 … ADR-015** — The substrate frameworks (sessions, review engine, spaces/tags, views, capability registry, templates, measurability, economy, notifications, ingestion, AI)
 - **ADR-002 section 8** — Cross-domain relationship map (FK relationships, `contributions`, polymorphic references)
 - **ADR-002 section 5.2** — Pages table with entity_type/entity_id polymorphic pattern

@@ -1,4 +1,4 @@
-<!-- Identity — features/finance · /documentation Phase 2 · sources: ADR-002 §5.8 · @vida/types/finance.ts · CLAUDE.md §1 · docs/intake/finance.md -->
+<!-- Identity — features/finance · /documentation Phase 2 · sources: ADR-002 §5.8 · @vida/types/finance.ts · CLAUDE.md §1 -->
 
 # Identity — Finance  (level: Feature)
 

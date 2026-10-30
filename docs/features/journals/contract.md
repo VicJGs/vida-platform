@@ -1,4 +1,4 @@
-<!-- Contract — features/journals · /documentation Phase 2 · sources: note.ts JournalSummaryConfig L75-104 · notes-and-pages/contract.md (buildJournalSummary, /summary) · sessions-and-scheduling/contract.md (dueIn) · analytics.ts · docs/intake/journals.md -->
+<!-- Contract — features/journals · /documentation Phase 2 · sources: note.ts JournalSummaryConfig L75-104 · notes-and-pages/contract.md (buildJournalSummary, /summary) · sessions-and-scheduling/contract.md (dueIn) · analytics.ts -->
 
 # Contract — Journals (level: Feature / integration layer)
 

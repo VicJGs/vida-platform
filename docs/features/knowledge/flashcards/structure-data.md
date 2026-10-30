@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 flashcard_decks L2628-2650 / flashcards L2656-2688 / flashcard_reviews L2693-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · Knowledge structure-data · docs/intake/flashcards.md -->
+<!-- Structure & Data — features/knowledge/flashcards · /documentation Phase 2 · sources: ADR-002 flashcard_decks L2628-2650 / flashcards L2656-2688 / flashcard_reviews L2693-2710 · v1 entities.ts L1250-1297 · ADR-005 · ADR-004 · Knowledge structure-data -->
 
 # Structure & Data — Flashcards (level: Feature / Knowledge sub-context)
 

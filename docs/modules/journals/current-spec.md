@@ -6,7 +6,7 @@
 **Context:** `@vida/core/services/journals` — the **integration-layer aggregation engine + provider registry** behind
 the journal daily dashboard. Journals owns the ENGINE, never the journal page (JR-1). Issue: mod-journals #39
 (LIF-127), M1.1.1 — Hub & Foundation · Backend. Owns one table (`journal_snapshots`, migration 030, DB-4 #20);
-this issue is service-only. Delivery docs: `docs/features/journals/delivery/{interpretation,slice-map,seam-contract}.md`.
+this issue is service-only.
 
 ## Build status (per slice)
 

@@ -1,5 +1,5 @@
-<!-- Identity — features/health/nutrition · Phase 2 · sources: docs/intake/health.md (⭐⭐ 18-DB Notion: 9 Nutrition
-     DBs) + health/core/*. Health has NO v2 schema (recovered domain). -->
+<!-- Identity — features/health/nutrition · Phase 2 · sources: health/core/*.
+     Health has NO v2 schema (recovered domain). -->
 
 # Identity — Health: Nutrition (level: Feature / Health pillar 2 of 2)
 

@@ -26,7 +26,7 @@ Documenting the Purposes & Goals capstone forced the question the whole OS had d
 - **v2 is schema-only, 0 logic:** `purposes.progress` and `targets.current_value` are **plain columns nothing computes**. `[FACT: ADR-002 §5.7 L1789-1857; grep clean of packages/core/src/services]`
 - **No common scale:** a habit streak, a project %, a net-worth number, and a qualitative "feel more grounded" goal had **no shared representation** — so nothing heterogeneous could roll into a single goal.
 - **No home for causal chains:** Victor's worked example — _Dream "England" → Task "Buy tickets" → bound to a programmed expense → paid → task auto-done → dream advances_ — had no documented mechanism, even though ADR-004 already catalogues the effects it needs (`emit_measurement_signal`, `complete_habit_occurrence`). `[FACT: ADR-004 §3.2.2]`
-- **v1 evidence of intent:** v1 targets carried `target_type {quantitative,qualitative,milestone,habit_based}`, metrics carried `is_higher_better`/`baseline_value`, and OR-001 was _"purpose progress = weighted average of linked target progress, live"_ — all **nerfed to plain columns in v2**. `[FACT: intake/purposes-and-goals.md L44-71]`
+- **v1 evidence of intent:** v1 targets carried `target_type {quantitative,qualitative,milestone,habit_based}`, metrics carried `is_higher_better`/`baseline_value`, and OR-001 was _"purpose progress = weighted average of linked target progress, live"_ — all **nerfed to plain columns in v2**.
 
 Because the code is greenfield (schema-only), this is a **structural decision, not a migration**. And because the same `measurement_kind`/`binding_mode` pair must land on entities owned by **seven+ modules**, it must be decided **once, at core**, or each module will re-invent it incompatibly.
 

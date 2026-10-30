@@ -27,7 +27,7 @@ Views today are **components, not data**, and the "saved view" idea was flagged 
 
 - `@vida/ui` ships `calendar-view · list-view · gallery-view · neural-graph · timeline` plus page filters
   (`listPages({favorite,archived,tag})`, `getPagesByType`). There is **no saved, cross-module, tag-scoped view
-  record.** `[FACT: packages/ui/src/components/; docs/intake/spaces.md L27-31]`
+  record.** `[FACT: packages/ui/src/components/]`
 - **INTENDED `task_views`** (Tasks) and **per-module custom views** (Preferences) were each flagged but never
   unified — the seed of five parallel half-solutions. `[FACT: tasks + preferences structure-data.md]`
 
@@ -36,7 +36,7 @@ Calendar** is "a saved view over cross-module events/tasks/reminders" (Relations
 dictionary** is "a grouped/filtered saved view" and a "hub" view (SP7 accumulator); a **Duties/Obligations preset
 tab** is "a saved View over a `tasks` filter + per-type UI" (Duties worked-example); the **Bucket List** is "a
 vision-board **Gallery** view over Dreams with derived progress" (Bucket-List worked-example). Five requests, one
-primitive. `[FACT: docs/intake/spaces.md L152-198, accumulator]`
+primitive.
 
 Building each as its own surface is exactly the per-feature "Hub" sprawl v1 died of (`LanguageHubPage`, one bespoke
 page per module). `[FACT: intake L55-58, legacy]`

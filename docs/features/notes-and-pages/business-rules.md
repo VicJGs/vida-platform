@@ -35,13 +35,13 @@ entity_type, entity_id)` (enforced by the AR-6 Spaces substrate). Re-linking is 
   irreversible (emptying Trash). There are **no SQL FKs**: a hard delete is an app-layer cleanup the notes service
   orchestrates — `page_links`, `note_attachments`, the page's `entity_links` and `entity_tags` rows, its `app_state`
   `entity_mode` row (ADR-006 §3.6, notes-rescope R2), and `parent_id → NULL` on children.
-  Trash keeps a page **30 days**. `[FACT: frontend-quality-bar/_index.md:83 (P4);
+  Trash keeps a page **30 days**. `[FACT:
 p4-trust-reversibility-specimen.html:120-157 (":123 kept 30 days"); NOT-39/41; migrations/033_notes.ts:14 (no REFERENCES)]`
-  **RESOLVED (delivery/interpretation.md §5 #1):** the delete leg ships soft-delete + undo + a notes-scoped Trash (restore · delete forever ·
+  **RESOLVED:** the delete leg ships soft-delete + undo + a notes-scoped Trash (restore · delete forever ·
   Empty Trash behind a danger confirm) + the cascade. Open, homed: (ii) purge timing/mechanics — `[UNKNOWN — homed: the delete leg's slice PLAN]`.
 - **NP-10 — Every page type is editor-capable.** On the page surface the editor gate keys on **page type**
   (`PAGE_TYPE`), not on the `ENTITY_TYPES` polymorphic-reference registry, which governs module-entity surfaces.
-  `[FACT: debt-census.md:84-88; envision EC-15; surface-map.md:48]`
+  `[FACT: envision EC-15]`
 - **NP-11 — Renames are metadata edits.** A title change goes through the metadata patch (`updatePage`); links are
   unaffected (NP-7); no optimistic patching (invalidate + re-read). `[FACT: notes-entity-usability IMPLEMENTATION-PLAN:117;
 state-conventions.md:121-127]`
@@ -49,7 +49,7 @@ state-conventions.md:121-127]`
   that contains live blocks (today's view re-aggregates on open; a past day shows its snapshot, JR-6). `[INTENT G7;
 FACT: NOT-51]` Applying ADR-009 §3.4's authored-vs-accumulated capture line (L73-82, written for Space bundles) to a
   single page document is `[INTERP: G7 + ADR-009 §3.4 applied to a page]`; what counts as "authored" prose inside a
-  page doc is `[UNKNOWN — homed: the templates S3–S5 RATIFY append (debt-plan.md:22), notes-rescope Step 5]`.
+  page doc is `[UNKNOWN — homed: the templates S3–S5 RATIFY append, notes-rescope Step 5]`.
 
 ## Validation & edge cases
 
@@ -57,7 +57,7 @@ FACT: NOT-51]` Applying ADR-009 §3.4's authored-vs-accumulated capture line (L7
 - `parent_id` self-references `pages` (deliverable_note → milestone_note); orphan → NULL on hard delete (NP-9).
 - Tag names are `[E]` (ADR-006 §3.2); tag rules are owned by ADR-006 / Spaces, not here.
 - `/notes` default view = `note` pages, not archived (Archived = a filter predicate); journals are NOT part of `/notes`
-  — their views and day surface are Journals'/Home's (JR-1; Victor 2026-10-26) — **RESOLVED (delivery/interpretation.md §5 #2)**; a delta vs as-built BR-7b / BR-SUR-1. The `show_archived` pref is
+  — their views and day surface are Journals'/Home's (JR-1; Victor 2026-10-26) — **RESOLVED**; a delta vs as-built BR-7b / BR-SUR-1. The `show_archived` pref is
   Tasks-only (ADR-002 L3537-3539) — not the basis.
 
 ## Terminal states (enumerated before build)
@@ -79,9 +79,8 @@ FACT: NOT-51]` Applying ADR-009 §3.4's authored-vs-accumulated capture line (L7
 - Every read/write returns typed errors; no catch swallows a foundation gap.
 - A `/summary` source that is unavailable degrades **that section only**. `[INTENT G5]`
 - Create-on-miss is explicit ("+ Create …"); a typo never silently creates a page. `[INTENT G2]`
-- Writes succeed locally first (LF-2); sync state is surfaced honestly — no fake "synced" before the sync engine (M4,
-  `docs/roadmap/MVP-PATH.md:34`). `[FACT: frontend-quality-bar:81-84; decisions.md:289 (which still says "M3 forward
-seam" — stale vs MVP-PATH)]`
+- Writes succeed locally first (LF-2); sync state is surfaced honestly — no fake "synced" before the sync engine (M4).
+  `[FACT: frontend-quality-bar:81-84]`
 
 ## ⚠ Flagged delta
 

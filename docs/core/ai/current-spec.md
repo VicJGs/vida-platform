@@ -2,7 +2,7 @@
 
 > Durable contract for the AI-application service tier (XS-ai #45). Owning ADR: ADR-015 §3.1–3.8
 > (reuses ADR-014 §3.3 egress · ADR-010 sandbox · ADR-004 §3.2.5 write rail).
-> Kept current with `packages/core/src/foundation/ai/`. Spec: `docs/specs/foundation/xs-ai/`.
+> Kept current with `packages/core/src/foundation/ai/`.
 
 ## What it is
 
@@ -21,7 +21,7 @@ mediator/on-device runtime are M2 (behind the ports). Legs XCU-17…27 (11; ADR-
   `buildAiDisclosure(mode) → AiModeDisclosure` (XCU-20/XCU-26, the ADR-015 §3.2 honest bound per mode — cloud
   content-dent + on-device residual, verbatim) · `stampAiProvenance(row) → row & {source:'ai'}` (XCU-24, pure
   idempotent helper; the row is written by each module's own service). `AI_MODES = ['on_device','cloud']`;
-  `AI_PROVENANCE = 'ai'`. XCU-17 (the ingestion↔ai split seam) is declared in `seam-contract.md`, realized by S2's
+  `AI_PROVENANCE = 'ai'`. XCU-17 (the ingestion↔ai split seam) is realized by S2's
   `askModel` signature.
 - **S2 `service.ts` — `createAiService(egressGuard, ports?): AiService`** (factory-of-closures, no `this`;
   `ports = { mediator?: AiMediatorPort; onDevice?: OnDeviceRuntimePort }`):

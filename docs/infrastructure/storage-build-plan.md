@@ -154,7 +154,7 @@
 
 ## Retires (monolith tables NOT re-authored — deleted at parity, per reconciliation §B)
 
-`page_tags`(→`entity_tags`) · flat `study_sessions`(→spine+ext) · `scheduled_study_sessions`(→`planned_blocks`) · `flashcard_decks` · `flashcard_reviews` · `study_topics`(→`knowledge_objects`) · `topic_reviews`(→`review_events`) · `knowledge_notes`(→`pages`) · `skill_resources`(→`entity_links`) · `routine_actions`(→`routine_step`; **`routine_completions` retained**) · `purpose_habits`/`purpose_routines`/`purpose_projects`(→`contributions`) · `xp_history`(→`consequence_ledger`) · `bucket_list_items`(→`dreams`) · **9 `language_*` tables** (Languages dissolved → Spaces worked-example; `docs/features/languages/`, `docs/intake/languages.md`).
+`page_tags`(→`entity_tags`) · flat `study_sessions`(→spine+ext) · `scheduled_study_sessions`(→`planned_blocks`) · `flashcard_decks` · `flashcard_reviews` · `study_topics`(→`knowledge_objects`) · `topic_reviews`(→`review_events`) · `knowledge_notes`(→`pages`) · `skill_resources`(→`entity_links`) · `routine_actions`(→`routine_step`; **`routine_completions` retained**) · `purpose_habits`/`purpose_routines`/`purpose_projects`(→`contributions`) · `xp_history`(→`consequence_ledger`) · `bucket_list_items`(→`dreams`) · **9 `language_*` tables** (Languages dissolved → Spaces worked-example; `docs/features/languages/`).
 
 > **Retained/reshaped (authored, NOT retired):** `study_availability` · `availability_exceptions` · `study_plan_batches` · `session_templates` · `routine_completions`. **Not a table:** `study_methods` = the `kind='study_method'` partition of the capability registry (ADR-002 §5.20), queried by kind — never authored as a base table.
 

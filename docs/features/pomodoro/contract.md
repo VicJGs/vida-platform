@@ -1,4 +1,4 @@
-<!-- Contract — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 · note.ts L58-64,154-163 · ADR-004 §3.2 (effects) · Sessions contract (registry, 4-dim contract, effect catalog, createSession) · Tasks TK-5 · Notes contract L19 · pomodoro-service.ts/pomodoro-block.ts/pomodoro-widget.tsx (0 lines) · docs/intake/pomodoro.md -->
+<!-- Contract — features/pomodoro · /documentation Phase 2 · sources: ADR-002 pomodoro_sessions L1433-1458 · note.ts L58-64,154-163 · ADR-004 §3.2 (effects) · Sessions contract (registry, 4-dim contract, effect catalog, createSession) · Tasks TK-5 · Notes contract L19 · pomodoro-service.ts/pomodoro-block.ts/pomodoro-widget.tsx (0 lines) -->
 
 # Contract — Pomodoro (level: Feature / CAPABILITY within the Sessions & Scheduling realm)
 

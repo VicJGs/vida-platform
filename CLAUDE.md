@@ -207,7 +207,7 @@ This is NOT just another module — it is the **unifying layer** of the entire p
 ## Commands
 
 - `pnpm dev` — Start all apps in dev mode (includes `@vida/server` via `wrangler dev` — requires macOS 13.5+ / `workerd`)
-- `pnpm dev:app` — Local-first dev **without** the server (web + package watchers). Use this for M1 work: M1 is local-only/no-server (the server is an M4 concern per `docs/roadmap/MVP-PATH.md`), and `workerd` cannot run on macOS < 13.5.
+- `pnpm dev:app` — Local-first dev **without** the server (web + package watchers). Use this for M1 work: M1 is local-only/no-server (the server is an M4 concern), and `workerd` cannot run on macOS < 13.5.
 - `pnpm build` — Build all packages and apps
 - `pnpm typecheck` — Type-check all packages
 - `pnpm lint` — Lint all packages
@@ -283,13 +283,10 @@ vida-platform/
 
 ## Reference Documents
 
-**The ADRs at `docs/core/decisions/` are the authoritative foundation — ADR-001 through ADR-017 govern.** The
-legacy Multiplatform Guide v2 is quarantined at `docs/_legacy/architecture.md` (superseded on 5 axes; do not use).
+**The ADRs at `docs/core/decisions/` are the authoritative foundation — ADR-001 through ADR-017 govern.**
 The `docs/core/architecture/*` docs are themselves under realignment (campaign Part 1.3).
 
 - All architecture decisions: `docs/core/decisions/` (ADR-001 … ADR-017)
-- Capability framework (every ADR-004–015 capability + mechanical predicate): `docs/specs/foundation/capability-framework.md`
-- Foundation-realignment campaign: `docs/specs/foundation/realignment-master-plan/_index.md`
 - Tech stack: `docs/core/decisions/ADR-001-tech-stack.md`
 - Data model & schema: `docs/core/decisions/ADR-002-data-model.md`
 - Sync protocol: `docs/core/decisions/ADR-003-sync-protocol.md`

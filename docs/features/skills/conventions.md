@@ -1,4 +1,4 @@
-<!-- Conventions — features/skills · Phase 2 · sources: intake/skills.md + platform baselines + core patterns. -->
+<!-- Conventions — features/skills · Phase 2 · sources: platform baselines + core patterns. -->
 
 # Conventions — Skills
 

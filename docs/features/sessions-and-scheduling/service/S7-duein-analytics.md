@@ -6,7 +6,7 @@
 **Home:** extends `services/sessions/service.ts`. Reuses the S5 `batchRepo`-adjacent `plannedBlocks` table (a
 new `plannedBlocksRepo`) + the S1 `sessionRepo`/`focusRepo`. New in-memory provider registry (empty seam, N5).
 
-## §1 Operations (signatures → `delivery/seam-contract.md`)
+## §1 Operations
 
 - `dueIn(range: TimeRange): Promise<DueItem[]>` — the **shared platform primitive** (IR-2; Journals consumes
   `dueIn(today)`, the future Calendar the full range): own `planned_blocks` in range ∪ live provider reads.
@@ -39,7 +39,7 @@ sessions) }`. **Richer cuts deferred:** per-module time (needs attachment joins)
 - **`DueItem`/`DueProvider` home.** Defined in `services/sessions/types.ts` (exported via the `@vida/core`
   barrel — Journals imports from there). The seam-contract sketched "canonical in `@vida/types`"; deferring that
   promotion until a **non-core** consumer needs it (only `@vida/core` services consume it now — simpler-solution
-  rule). `[INTERPRETATION: seam-contract.md; @vida/types is enum-tuples + interfaces, no runtime need yet]`
+  rule). `[INTERPRETATION: @vida/types is enum-tuples + interfaces, no runtime need yet]`
 
 ## §3 Contract (delta)
 

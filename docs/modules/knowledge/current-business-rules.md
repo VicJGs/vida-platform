@@ -45,7 +45,7 @@ listContainers; schema/knowledge.ts:80-87; KN-7]`
 - **BR-KN-S2-2 — Container membership rides `entity_tags` (scoped tag), many-to-many.** `tagMembership(containerId,
 memberRef, scopedTag)` records membership via `spaces.tagEntity`; the `scopedTag` (a `tags` id) is caller-supplied
   (the schema has no `root_tag_id` on `knowledge_containers`, so the binding cannot live in the schema); an Area may
-  join multiple Modules. `[FACT: service.ts tagMembership; spaces/service.ts:128-143; KN-7; parts/knowledge.md:28]`
+  join multiple Modules. `[FACT: service.ts tagMembership; spaces/service.ts:128-143; KN-7]`
 - **BR-KN-S2-3 — References are first-class (replace `resource_urls`).** `addReference(objectId, {title, source?,
 url?, type?})` writes an object-scoped `references` row (`title`/`source`/`url` `[E]`); `listReferences(objectId)`
   reads live refs; `removeReference` soft-deletes. `[FACT: service.ts addReference/listReferences; schema/knowledge.ts:90-105]`
@@ -77,7 +77,7 @@ spaces/service.ts:128-143; repository.ts:356-365]`
   `[FACT: service.ts; [[repository-findwhere-skips-softdelete-filter]]]`
 - **BR-KN-S2-10 — KN-45 is ratification, not migration.** S1 retired the inline `tags` column; in a fresh local DB
   there is no legacy tag data — KN-45 is satisfied by tagging riding `entity_tags` (BR-KN-S2-2). `[FACT: schema/
-knowledge.ts:45-68 (no tags col); parts/knowledge.md:60]`
+knowledge.ts:45-68 (no tags col)]`
 
 ## Review engine ① (S3 — KNO-15..20) — `foundation/review`
 
@@ -195,7 +195,7 @@ conclusion)` guards exists (`LabEntryNotFoundError`); `promoteToObject(entryId, 
   requires a **concluded** (`LabEntryNotConcludedError` else) **un-promoted** (`LabEntryAlreadyPromotedError` else)
   entry → creates a catalog object (title=hypothesis, description=conclusion) then stamps `promoted_object_id`
   (create-then-stamp; eventually consistent per the no-FK app-layer convention). The `lab.concluded` **event is S8**.
-  `[FACT: service.ts createLabEntry/concludeLabEntry/promoteToObject/listLabEntries; contract.md:47-49; decomposition.md:88 vs :32,108]`
+  `[FACT: service.ts createLabEntry/concludeLabEntry/promoteToObject/listLabEntries; contract.md:47-49]`
 - **BR-KN-S6-5 — AI-assist is an opt-in, deny-safe extension-model seam (KNO-33).** `assistCompoundSet(consumerModule,
 req)` composes the OPTIONAL `ai` dep: absent ⇒ `{status:'ai-unavailable'}`; `ai.askModel(req)` **throws `AiDenied`**
   on every deny path (M1 ports absent) → caught → `{status:'ai-unavailable', reason}`; success →
@@ -208,7 +208,7 @@ req)` composes the OPTIONAL `ai` dep: absent ⇒ `{status:'ai-unavailable'}`; `a
   maps the OPTIONAL `ingestion` guard's `IngestionDecision`: absent ⇒ `ingestion-unavailable`; `!permitted` ⇒
   `refused` (reason + disclosure passed through, refuse-not-downgrade); `permitted` ⇒ `parser-unavailable` (source
   parsers deferred — the real M1 seam). `checkIngestion` never touches the mediator. `[FACT: service.ts autoPopulate;
-ingestion/guard.ts:48-81; decomposition.md:90]`
+ingestion/guard.ts:48-81]`
 - **BR-KN-S6-8 — Typed errors + M1.0 seams inherited.** New errors `LabEntryNotFoundError`/`LabEntryNotConcludedError`/
   `LabEntryAlreadyPromotedError`; `encryptedFields:[]` M1.0 pass-through ([E] `spec`/`hypothesis`/`conclusion` → M3);
   soft-delete + explicit `isNull(deleted_at)` on every S6 `findWhere` read. `[FACT: service.ts; types.ts]`

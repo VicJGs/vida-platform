@@ -1,4 +1,4 @@
-<!-- Business Rules — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 L3361-3463 · user.ts L38-92 · ADR-004 §3.2.2/§3.2.5 · ADR-011 · ADR-008/010 · docs/intake/gamification.md RESOLUTION -->
+<!-- Business Rules — features/gamification · /documentation Phase 2 · sources: ADR-002 §5.15 L3361-3463 · user.ts L38-92 · ADR-004 §3.2.2/§3.2.5 · ADR-011 · ADR-008/010 -->
 
 # Business Rules — Gamification ("the System") (level: Feature — behavioral incentive engine)
 

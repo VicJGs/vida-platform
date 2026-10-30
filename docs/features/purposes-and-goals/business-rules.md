@@ -1,4 +1,4 @@
-<!-- Business Rules — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 · project.ts L109-256 · docs/intake/purposes-and-goals.md RESOLUTION · ADR-004 §3.2.5 · core/business-rules INT-1a/INT-2/PC-2 -->
+<!-- Business Rules — features/purposes-and-goals · /documentation Phase 2 · sources: ADR-002 §5.7 L1789-1953 · project.ts L109-256 · ADR-004 §3.2.5 · core/business-rules INT-1a/INT-2/PC-2 -->
 
 # Business Rules — Purposes & Goals (level: Feature — CAPSTONE / higher-order)
 

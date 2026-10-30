@@ -1,4 +1,4 @@
-<!-- Identity — features/preferences · /documentation Phase 2 (realigned Part 1.2) · sources: ADR-002 §5.17 · ADR-012 §3.10 (E9) · ADR-013 §3.2/§3.4 (N6/N7) · ADR-014 §3.2 (Layer-3) · life-os settings · docs/intake/preferences.md -->
+<!-- Identity — features/preferences · /documentation Phase 2 (realigned Part 1.2) · sources: ADR-002 §5.17 · ADR-012 §3.10 (E9) · ADR-013 §3.2/§3.4 (N6/N7) · ADR-014 §3.2 (Layer-3) · life-os settings -->
 
 # Identity — Preferences (level: Feature)
 

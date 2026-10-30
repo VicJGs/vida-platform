@@ -148,8 +148,8 @@ duration_minutes=max(0, round((end−start)/60000))}` → **then** `completeSess
   always derives (Projects-faithful): a **parent** (has sub-tasks) ⇒ the M4 `getRollup().progress` (container rollup
   wins, regardless of `binding_mode`); a **childless** task ⇒ the `binding_mode` branch (BR-TK-S6-2).
 - **BR-TK-S6-2 (`binding_mode` governs the childless read, TAS-25).** `resolveBindingMode = binding_mode ?? 'event-trigger'`
-  (NULL ⇒ the task's natural mode — `015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ interpretation.md:33 "event-trigger
-  (completion)"). A childless **`derived-pull`** task ⇒ **`null`** (its measure is source-fed, not completion-fed; no
+  (NULL ⇒ the task's natural mode — `015_tasks.ts:21` "NULL ⇒ derive-natural").
+  A childless **`derived-pull`** task ⇒ **`null`** (its measure is source-fed, not completion-fed; no
   task↔source binding exists in M1 → nothing to read, never fabricated — BR-2). Any other childless task
   (`event-trigger`/`manual`/NULL) ⇒ the milestone-from-completion leaf (`normalize({kind:'milestone', done})`).
 - **BR-TK-S6-3 (milestone is the only leaf; `measurement_kind` is carried, not leaf-applied, BR-TK-S2-4).** A childless

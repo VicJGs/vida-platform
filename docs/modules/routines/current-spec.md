@@ -9,16 +9,16 @@
 
 > **Baseline note (2026-10-21).** This doc records the code AS-IS. The code was built 2026-10-13 against an
 > **older 8-slice decomposition**. The governing delivery docs are now main's **9-slice** set (Victor's
-> 2026-10-14 re-approval, D1–D3): `docs/features/routines/delivery/{interpretation,slice-map,seam-contract}.md`.
+> 2026-10-14 re-approval, D1–D3).
 > The "S1/S2/S3" labels below are the **as-built** labels; how they map onto the governing slices is the job of
-> the re-scope's Step 4 (`delivery/reconciliation.md`), not this doc. Implicit-rule cites use the governing
+> the re-scope's Step 4, not this doc. Implicit-rule cites use the governing
 > interpretation's numbering: **interp §4.n** (the old `IR-n` labels are retired).
 
 ## 1. Identity & responsibility
 
 The `@vida/core` **① service tier for Routines**: the cross-module _orchestrator_. A routine is a named, ordered,
 recurring sequence of polymorphic steps, and each step drives a real entity elsewhere. The intended service
-"composes + derives, writes almost nothing of its own" `[FACT: docs/features/routines/delivery/interpretation.md:13-15]`.
+"composes + derives, writes almost nothing of its own".
 
 **As-built today (S1–S9, the ① track closed):** routine + step CRUD, the ledger + skips, floor conformance (S2c), run/drive over the real Tasks/Habits/
 Sessions (S3, S5c), policy evaluation (S4), progress + analytics (S5), reschedule + the window guard (S6), routine-level effects (S7),
@@ -28,10 +28,9 @@ tags/notes/links (S8), and the providers + Journal contribution (S9) `[FACT: ser
 
 - A derivation engine for evaluation (S4) and progress/streak/analytics/misses (S5); `progress` stays a nullable override slot.
 - A provider since S9: `dueIn` / `getDueReminders` / `summary` + `routines/journal.ts` register helpers — shipped, NOT called (N5).
-- NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track
-  `[FACT: docs/specs/foundation/golive-replan/process.md §4]`.
+- NOT registered in the app composition-root. That happens in the routines ENTITY close (fe-routines ②), not this track.
 - NEVER an owner of policy config (→ Preferences/Spaces), the Scheduler (→ Sessions), XP (→ Gamification handler) or
-  purpose mapping (→ Purpose) `[FACT: db/schema/routines.ts:31-34; interpretation.md §1b]`.
+  purpose mapping (→ Purpose) `[FACT: db/schema/routines.ts:31-34]`.
 
 ## 2. Contract — what it exposes / needs
 

@@ -1,4 +1,4 @@
-<!-- Conventions — features/health/training · Phase 2 · sources: intake/health.md + core/conventions.md +
+<!-- Conventions — features/health/training · Phase 2 · sources: core/conventions.md +
      platform baselines. Training-specific patterns on top of Core + platform. -->
 
 # Conventions — Health: Training

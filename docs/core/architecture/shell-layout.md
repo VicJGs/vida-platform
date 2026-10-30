@@ -11,9 +11,8 @@ breakpoints, the per-region responsive behaviour, and the density that keeps it 
 `apps/web/src/shell/{breakpoints.ts, regions.ts}` (central data; not chrome). Rendering is owned by UI-4.
 
 **Content Source:** `standards/design.md §X` (breakpoints, containers, touch targets), `§IV` (spacing/density scale),
-`§V` (radius/elevation) — the authority `[FACT: m1.0-delivery-plan.md:210]` · `information-architecture.md §5` (the
-reserved regions) · the DS token scales (`packages/ui/src/themes/tokens.ts`). Full derivation + gates:
-`docs/specs/foundation/ux-3-shell-layout-responsive/`.
+`§V` (radius/elevation) — the authority · `information-architecture.md §5` (the
+reserved regions) · the DS token scales (`packages/ui/src/themes/tokens.ts`).
 
 > **Scope (what this is NOT):** not the shell _components_ — dock/sidebar/top-bar/command-bar/modal host (UI-4); not
 > the command-bar + search _interaction_ (UX-2 — this doc owns only the overlay host's _placement_); not the nav/module
@@ -163,4 +162,3 @@ Code: `regions.ts` (`OVERLAY_MODE`, `LAYERING`).
 - `standards/design.md §X` (responsive), `§IV` (spacing), `§V` (radius/elevation) — the authority
 - `apps/web/src/shell/{breakpoints.ts, regions.ts}` — the canonical layout model (code)
 - `apps/web/src/shell/CLAUDE.md` — the layer's rules
-- `docs/specs/foundation/ux-3-shell-layout-responsive/` — baseline, PLAN + IMPLEMENTATION-PLAN, gates

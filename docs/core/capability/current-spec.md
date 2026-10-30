@@ -21,7 +21,7 @@ refs (AR-6) resolve to. Rides increment-1's `EFFECT_TYPE` (defs declare effects)
 
 The platform-agnostic envelope-enforcement decision tier over `capability_grants` — the _what_ (ADR-010 §3.6); it
 DECIDES, it does not execute (effect firing #32 · egress mediation #43 · ingestion layer #44 · user-code sandbox #116
-are delegated). Spec: `docs/specs/foundation/xs-capability/`.
+are delegated).
 
 - **`createCapabilityEnforcer(db, deviceId, registry): CapabilityEnforcer`** (`foundation/capability/enforcer.ts`):
   - `checkAction(defId, action) → {allowed, reason?}` / `assertPermitted(defId, action)` (throws `CapabilityDenied`) —

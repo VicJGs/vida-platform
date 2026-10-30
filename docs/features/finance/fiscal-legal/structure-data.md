@@ -1,4 +1,4 @@
-<!-- Structure & Data — features/finance/fiscal-legal · /documentation Phase 2 · sources: intake/fiscal-legal.md RESOLUTION · ADR-014 · ADR-015 · Finance/Projects structure-data -->
+<!-- Structure & Data — features/finance/fiscal-legal · /documentation Phase 2 · sources: ADR-014 · ADR-015 · Finance/Projects structure-data -->
 
 # Structure & Data — Fiscal & Legal ("Jurisdiction Compass") (level: Finance sub-context)
 
@@ -7,7 +7,7 @@
 ### As-is (v2 — FACT, the floor)
 
 - **Nothing.** Net-new context — v2 has **no** fiscal/legal schema. v1 carried only income `is_taxable` (dropped in v2).
-  `[FACT: grep clean; intake/finance.md v1 is_taxable dropped]`
+  `[FACT: grep clean]`
 
 ### Intended (the sub-context — ⚠ INTENDED → ADR-002 §5.20) `[INTENT: RESOLUTION]`
 

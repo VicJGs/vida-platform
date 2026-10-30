@@ -7,8 +7,6 @@
 > the one test file — **full** · ② `apps/web/src/notes/` non-test files **full** (R1 added `save-status` · `page-actions` · `read-error` · `read-error-message`), 26 test files counted
 > (~204 `it`) not read; routes + `db/composition-root.ts` + `entity/adapter.ts` + `collection/*` read.
 > Inherits: `docs/core` → ADR-002 (data model) · ADR-006 (spaces/registry) · ADR-008 (render targets) · ADR-009 (templates).
-> Intent authority: ① `docs/specs/foundation/backend-intent/parts/notes-and-pages.md` (NOT-01…54) ·
-> ② `docs/specs/foundation/fe-notes-and-pages/` (envision EC-1…24).
 > Last refreshed: 2026-10-27 — notes-rescope (LIF-245) R3 metadata + rename (② surface; ① validators + `getAttachmentThumbnail`). Source of truth = the code.
 
 ## Status
@@ -44,8 +42,8 @@ Returns Drizzle `PageRow` (`typeof pages.$inferSelect`), not the `@vida/types` `
   [FACT: service.ts:130-133; validators/note.ts:47-62].
 - `writePageContent(id, content: EditorDocument): Promise<PageRow>` — the IR-7 editor-body write path,
   `update({content: JSON.stringify(content)})`, SEPARATE from `updatePage`'s LWW metadata patch so M4 can re-home
-  `content` to the CRDT merge without touching callers [FACT: service.ts:135-139;
-  docs/specs/foundation/fe-notes-and-pages/delivery/interpretation.md:159]. No Zod check on `content`.
+  `content` to the CRDT merge without touching callers [FACT: service.ts:135-139].
+  No Zod check on `content`.
 - `softDeletePage(id): Promise<void>` [FACT: service.ts:141-143].
 - `getPageByJournalDate(date)` [FACT: service.ts:98-103, bound 145] · **`ensureJournal(date): Promise<PageRow>`** —
   get-or-create the day's journal, title = the date string [FACT: types.ts:67; service.ts:190-194] ·
@@ -101,12 +99,10 @@ apps/web live calls: `composition-root.ts` (construction) · `home/use-journal-e
 
 - **Templates** (`foundation/templates`): CRUD only — `createTemplate/listTemplates/getTemplate/deleteTemplate`
   [FACT: foundation/templates/service.ts:24-59]; `InstantiationResult`/`TemplateCaptureError` are types with no impl
-  [FACT: foundation/templates/types.ts:25-29,45-50]. Instantiate/capture = "first-consumer-pull SEAMS (0 code)"
-  [FACT: docs/features/templates/delivery/slice-map.md:24-51].
+  [FACT: foundation/templates/types.ts:25-29,45-50]. Instantiate/capture = "first-consumer-pull SEAMS (0 code)".
 - **Views** (`foundation/views`): `create/update/delete/get/listViews`, `cloneView(sourceId, targetSpaceId: string|null)`
   [FACT: foundation/views/service.ts:26-45] over `views{space_id,name,layout,filter,grouping,sort}`
-  [FACT: db/schema/foundation/spaces.ts:113-128]. XCU-14 = "✅ (seam; no code owed)" → renderer
-  [FACT: docs/features/views/delivery/reconciliation.md:25].
+  [FACT: db/schema/foundation/spaces.ts:113-128]. XCU-14 = "✅ (seam; no code owed)" → renderer.
 - **Journals** `buildDashboard` exists [FACT: services/journals/dashboard.ts:41-44; services/journals/service.ts:48-50] and
   is composed in apps/web over an EMPTY `JournalRegistry` — no `register*Journal` call in apps/web
   [FACT: apps/web/src/db/composition-root.ts:90-91,97].
@@ -214,4 +210,4 @@ success. Editor save: idle · saving · saved · error. Editor body: editable ·
 
 `/summary` providers → HARD-1 · backlinks + neural graph data → HARD-3 · FTS5 search → DB-8 · `[E]` field encryption →
 M3/DB-5 · CRDT/Yjs `content` merge → M4 · hard-delete cascade → Part 2 · `word_count` derivation → editor/FTS ·
-EC-18b–e/20/21 entity overviews → fe-tasks / fe-projects (RIDE) [FACT: docs/specs/foundation/golive-replan/coverage-report.md:21-72].
+EC-18b–e/20/21 entity overviews → fe-tasks / fe-projects (RIDE).

@@ -3,8 +3,7 @@
 # Books — CURRENT BUSINESS RULES  (`@vida/core` `services/books`)
 
 > The invariants the code enforces, promoted per slice from the slice PLANs. Inherits the CORE constitution
-> (ZK-1/2/3, LF-1/2/3). Born at S1 (LIF-117). Source rules: `docs/features/books/business-rules.md` (BK-1..18)
-> + `docs/specs/foundation/db-4-books/_index.md` (BR-BK-1..7).
+> (ZK-1/2/3, LF-1/2/3). Born at S1 (LIF-117). Source rules: `docs/features/books/business-rules.md` (BK-1..18).
 
 ## Shipped invariants (as of S1)
 
@@ -49,7 +48,7 @@
   fetch ⇒ `{status:'lookup-unavailable'}` (fail-closed); the manual fallback (`setChapters`/`createBook`) is
   callable regardless. At M1 the substrate has no mediator ⇒ always unavailable; the `FetchResult`→`BookMetadata`
   normalization (Books' XCU-14 contract, `IsbnLookupPayload`) lands at M2 (zero-signature swap). `[code: service.ts
-  lookupBook; foundation/ingestion; parts/books.md:138]`
+  lookupBook; foundation/ingestion]`
 - **BR-BK-S2-6 (plannable honors a TOC / BK-17 — closes the S1-6 carry-forward)** — `getCapabilities.plannable` is
   true when a work-level `total_pages` OR a TOC (≥1 chapter) exists; a TOC-only book with no `total_pages` is
   plannable. `[code: service.ts getCapabilities chapterCount]`
@@ -150,7 +149,7 @@
 
 - **BR-BK-S6-1 (`registerBooks()` / BOO-23, IR-1)** — a call-once, `DuplicateSubType`-guarded registration of the
   `reading` `SessionTypeDef`, every field a transcription of **ADR-004 §3.2**: `effects:[]` (§3.2.2 — Books is a
-  non-feeder per **C-E2** `rerun books.md:73`), lifecycle `scheduled→in_progress→completed` (§3.2.3),
+  non-feeder per **C-E2**), lifecycle `scheduled→in_progress→completed` (§3.2.3),
   `permissions.allowed_effects:[]` (§3.2.4 — `∅` ⊆ shipped), `default_purpose:'reading'`. Idempotent. Registers ONLY
   the sub-type (no study_method — Books isn't a review method). `createSession('reading')` throws
   `SessionTypeNotFound` until it runs. `[code: service.ts registerBooks/READING_SESSION_TYPE_DEF; ADR-004 §3.2.2-3.2.4]`
@@ -175,10 +174,10 @@
   `attachment?.download` (absent/no `file_ref` ⇒ `attachment-unavailable`; present-port reject ⇒ `AssetFileError`,
   the S6 decrypt throw site) + auto-start a reading session + resolve the asset's OWN position as a `MappedPosition`
   (native ⇒ synced-to-self, null ⇒ not-synced; never a cross-format guess, BK-4). The read/listen/annotate chrome is
-  P6. `[code: service.ts openReader; parts/books.md:49]`
+  P6. `[code: service.ts openReader]`
 - **BR-BK-S6-7 (C-E2 guard)** — Books declares no effect and emits no `award_xp`/`grant_currency` (realized by the
   empty `reading` envelope); the reading-completion grant rides the base-`sessions` sub-type. S6 takes no `effects?`
-  dep. `[rerun C-E2 books.md:73,119,138; BK-10]`
+  dep. `[BK-10]`
 - **BR-BK-S6-8 (persistence / F1 + JSON boundary / N-fold)** — `reading_sessions` repo = `softDelete:false`,
   `encryptedFields:[]`; NO `deleted_at` (session extension, BR-BK-4). `statistics` (`json<Record>`) is parsed
   defensively on read (`toReadingSession`), write path dormant (M2). `@vida/types` `ReadingSession` interface added
@@ -191,7 +190,7 @@
   one `reading_plan_books` row per book (sequence for `sequenced`), computes + stores the initial `quota_distribution`.
   Validates `arrangement`/`goalType`/≥1 book (each guarded → `BookNotFoundError`). **No `measurement_kind`/`binding_mode`
   written** — the pursuable goal is Purpose-owned (C-M1; Purpose unbuilt → no dep). `manual` takes the caller's `quota`;
-  `auto` derives it. `[code: service.ts createPlan; rerun C-M1 books.md:71]`
+  `auto` derives it. `[code: service.ts createPlan]`
 - **BR-BK-S7-2 (auto-goal + distribution — arithmetic, Calendar stubbed / BOO-28/29)** — `goal='auto'` daily quota =
   `ceil(Σ total_pages / max(1, daysUntilTarget))`; a book with no `total_pages` contributes 0 (honest, never guessed);
   `quota_distribution.calendarReconciled=false` keeps the Calendar-slot forward-dep visibly stubbed. `[code: service.ts
@@ -251,11 +250,11 @@
   per-asset `native_position` write is NOT that clash-write (each asset owns its SSOT, BK-2). The read surfaces flag
   `'conflicted'`; S9 `getReadingMeasureSource` **returns `null`** for a conflicted book (the measure contract is
   `number|null`; never throws — the `getMasterySource` precedent). *(Corrects the S8-session note that said "thrown at
-  S9"; §XXIX no-silent-drift, verified in S9.)* `[code: types.ts PositionConflictPending; contract.md:64; seam-contract.md:58; BK-8]`
+  S9"; §XXIX no-silent-drift, verified in S9.)* `[code: types.ts PositionConflictPending; contract.md:64; BK-8]`
 - **BR-BK-S8-7 (`getConflicts` — derived queue, no table / interpretation rule 7)** — guards the book
   (`BookNotFoundError`, fail-loud parity), then: an unresolved clash ⇒ one `ConflictItem`
   (`id='conflict:'+bookId`, `blocking: true`, competing `sources: PositionSource[]`), else `[]`. The id is
-  deterministic (no `book_conflicts` table). `[code: service.ts getConflicts; seam-contract.md:47]`
+  deterministic (no `book_conflicts` table). `[code: service.ts getConflicts]`
 - **BR-BK-S8-8 (`resolveConflict` — persist a valid preset via the deny-safe port / B2)** — parses `conflict:<bookId>`
   (malformed/unknown ⇒ `BookNotFoundError`); validates a `source_of_truth` `assetId` ∈ the book's non-deleted assets
   (`BookAssetNotFoundError` — a structural error, distinct from a read-side miss); persists via
@@ -290,7 +289,7 @@
 - **BR-BK-S9-5 (`getPaceStatus` — deny-safe null at M1 / BOO-38, BK-13)** — guards the book (`BookNotFoundError`) then
   returns `null`: Education's `subject_schedules`/assessments are **unbuilt** (`#52`), so a pace is never fabricated
   (the `MasterySource` null precedent). `subjectId` trusted, not guarded (the KNO-25 cross-module boundary); it is the
-  M2-ready signature. `[code: service.ts getPaceStatus; slice-map.md:49]`
+  M2-ready signature. `[code: service.ts getPaceStatus]`
 - **BR-BK-S9-6 (`getReadingMeasureSource` — the reading measure SOURCE / BOO-14, C-M1)** — a **method** (per-book,
   async — the KNO-25 `getMasterySource` pattern; NOT `advertise()`). Composes `getUnifiedProgress` (which guards the
   book) and returns `ReadingMeasureSource { progress }` where `'conflicted'`/`null` ⇒ `null` (a conflict is "not
@@ -299,7 +298,7 @@
 - **BR-BK-S9-7 (BOO-46 — Books as a linkable TARGET, identity only)** — `'book'` + `'book_chapter'` are registered
   `ENTITY_TYPES` → valid tag/link targets for Knowledge/review/Skills/Purposes, which own those links; Books exposes
   the identity and authors nothing. No new method; the seam-contract's `backlinks` dep is **not wired** (no consuming
-  read-method — No-Guessing). `[code: _registry.ts:89-90; seam-contract.md:146-147]`
+  read-method — No-Guessing). `[code: _registry.ts:89-90]`
 - **BR-BK-S9-8 (partition boundary / BK-13)** — Books reaches Education only through the junction + (future) contract;
   never a direct Education table read. `subjectId` trusted; no junction write is exposed to Education (Books-owned).
   `[business-rules.md:65-68]`
@@ -311,28 +310,28 @@
   a denied/failed `askModel` ⇒ `ai-unavailable`; a `ready` result carries `source:'ai'` (AI6). Books stamps its OWN
   `defId` (`BOOKS_TTS_INTEGRATION_ID`/`BOOKS_TRANSCRIPTION_INTEGRATION_ID` — No-Guessing); the caller picks only the
   mode (AI1). Guards the asset (`BookAssetNotFoundError`). The manual fallback always stays callable (BK-14).
-  `[code: service.ts runModelCall; parts/books.md:50-51]`
+  `[code: service.ts runModelCall]`
 - **BR-BK-S10-2 (BOO-42/43 — the consent gate)** — `IntegrationConsentError` is exported BK-14 typed vocabulary with
   **NO M1 backend throw-site** (the `PositionConflictPending`/BR-BK-S8-6 precedent): at M1 no consent refusal is
   producible (no consent store; the deny-safe ports return `*-unavailable`, and `on_device` never egresses), so the
-  methods map every deny to the deny-safe state — **no `checkModelCall` gate, no throw-through** (`seam-contract.md:153`).
-  The real consent gate that throws it is M2. `[FACT: ai/types.ts:98-100; seam-contract.md:57,153; business-rules.md:69-76]`
+  methods map every deny to the deny-safe state — **no `checkModelCall` gate, no throw-through**.
+  The real consent gate that throws it is M2. `[FACT: ai/types.ts:98-100; business-rules.md:69-76]`
 - **BR-BK-S10-3 (BOO-45 / BK-12 — Study-Planner read-provider)** — `getPlansForConsumer()` returns the active plans
   (soft-delete filtered), read-only; Books exposes NO plan-write to consumers (the boundary invariant — Books owns
-  plans, consumers consume). Distinct from `getTodayQuotas` (the derived pace view). `[parts/books.md:55; BK-12]`
+  plans, consumers consume). Distinct from `getTodayQuotas` (the derived pace view). `[BK-12]`
 - **BR-BK-S10-4 (BOO-26 / C-E2 — measurement-only fan-out)** — `endSession` emits ONE `emit_measurement_signal`
   (grain = base session id, exactly-once per completion; `targetRef` = book_id) via the deny-safe `effects?` port —
   emit-only, post-commit, failure-isolated, rail-idempotent, **dormant** without `effects?`/a registered handler.
   **NEVER an economy grant** (C-E2 — `award_xp`/`grant_currency` ride the base-`sessions` sub-type, not Books).
   **No named M1 consumer** (the reading measure is derived-pull, BR-BK-S9-6) ⇒ a dormant seam-only signal (a handler
   registers downstream at M2), not a live re-derive like knowledge's `review.recorded`. `[code: service.ts
-  fanOutReadingCompletion; slice-map.md:24; effects/types.ts:22; rerun C-E2 books.md:73]`
+  fanOutReadingCompletion; effects/types.ts:22]`
 - **BR-BK-S10-5 (BOO-30 — Journal contribution)** — `registerBooksJournal(registry, svc)` plugs a `sectionKey:'summary'`
   / `module:'books'` contribution; `summary(date)` composes `getDayBooksDigest` (pages read + sessions logged over the
   day's completed-session `ended_at` window, the `getStatistics` timing; + plan pace tallies) → `state:'success'` on
   activity, `state:'empty'` on an idle day, never a throw (the per-section degrade is the dashboard's). Reuses
   `TerminalState` BY TYPE (the knowledge precedent). Coexists with other modules under 'summary' (registry dedups by
-  `module`). `[code: journal.ts; parts/books.md:40; knowledge/journal.ts]`
+  `module`). `[code: journal.ts; knowledge/journal.ts]`
 - **BR-BK-S10-6 (BOO-47 / BK-18 — local-first)** — every Books write (position/annotation/session/plan) succeeds
   locally first (DB-6 Repository write-through; no network dependency); LWW per entity via the sync seam. A platform
   baseline asserted here, not a new write path. `[business-rules.md:88-89; conventions.md:41-42]`
@@ -344,7 +343,7 @@
   unimplemented filter"). *(S4 "Embeddability = S5" CLOSED by BR-BK-S5-1..5; S3 annotation-survival CLOSED by
   BR-BK-S4-7; S2 "Chapter READ path" CLOSED by BR-BK-S3-8; S1 "Derivation lands at S8" CLOSED by BR-BK-S8-1..9.)*
 
-## Deferred (homed, not yet enforced — see delivery/slice-map.md Deferred-by-design)
+## Deferred (homed, not yet enforced)
 
 Cross-format mapping `NotSyncedState` (S3, algorithm = build-phase design pass) · ISBN lookup **real fetch +
 normalization** (M2 — mediator + registry; the S2 port is built deny-safe) · OCR / TTS / transcription **real model

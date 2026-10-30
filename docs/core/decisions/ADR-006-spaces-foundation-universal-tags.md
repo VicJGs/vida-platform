@@ -32,7 +32,7 @@ toggle).
 Documenting Languages (2026-07-13) revealed that a whole "module" dissolves into a **configuration of generic
 seams** — a tag-scoped surface + saved views + composed capabilities + an optional template. The real deliverable
 is the **foundation that makes that composition possible**. Four primitives were missing; this ADR delivers the
-first. `[FACT: docs/intake/spaces.md L1-13, pivot origin]`
+first.
 
 **Current enforced reality — the tag primitive is page-only and closed:**
 
@@ -41,7 +41,7 @@ first. `[FACT: docs/intake/spaces.md L1-13, pivot origin]`
   Knowledge object. `[FACT: ADR-002 L1374-1402; notes-and-pages/contract.md L17]`
 - **`entity_links` is a closed CHECK enum.** It links a page to ~34 entity types via a hard-coded
   `entity_type CHECK(...)` list — note-_linking_, not tagging. `[FACT: ADR-002 L1340-1352]`
-- **No universal, cross-module, nestable tag exists.** `[FACT: docs/intake/spaces.md L15-25]`
+- **No universal, cross-module, nestable tag exists.**
 
 **The precedent is already in the codebase.** Knowledge retired its closed `resource_type CHECK(...)` for an
 **open registry** when it was documented — the identical anti-pattern, the identical fix.
@@ -50,8 +50,7 @@ first. `[FACT: docs/intake/spaces.md L1-13, pivot origin]`
 **Why a new tier, not a bigger N&P.** N&P (a Wave-0 foundation) currently owns tags + view components. If N&P owned
 the _universal_ versions, it would depend on the modules that depend on it — a **cycle**. Every downstream module
 (Health, Skills, Purposes) needs to tag its own entities and needs the Purposes capstone to **ladder progress up
-universal tags** (SP9). The primitive must therefore live **beneath** every module. `[FACT: docs/intake/spaces.md
-L41-45, boundary]`
+universal tags** (SP9). The primitive must therefore live **beneath** every module.
 
 The v2 tag/link code is schema + thin service (no cross-module tag logic), so this is a **structural decision**,
 not a data migration of live behavior.
@@ -65,7 +64,6 @@ foundation the others consume. (Manifest re-sequence at Accept must place Spaces
 this.) It owns the universal personalization primitives (tags here; views, blocks, templates in ADR-007…010). N&P
 keeps _using_ tags on pages (the journal/page tag UX is unchanged for the user) but no longer owns the tag
 _primitive_. This **closes the standing "N&P tag-scoping: universal vs module-specific" backlog item.**
-`[FACT: docs/intake/spaces.md SP1-CONFIRMED, boundary L41-45]`
 
 **3.2 Universal tagging — `entity_tags`.** A tag attaches to **any** entity.
 
@@ -138,7 +136,7 @@ the per-type default while loading**, then the remembered mode applies (a toggle
 are registered by each page type's owning unit (the Overview-slot RIDE pattern); unregistered → tabbed. A soft delete
 keeps the row (restore brings the layout back); **each entity's hard-delete owner removes its own key inside its purge
 transaction**. Memory is per device in M1; cross-device memory needs a synced store (M4). `[FACT: notes-rescope
-PLAN-R2-mode-memory.md G1–G12; slice-map R2]`
+slice-map R2]`
 
 **What this decision does NOT do:** it locks that the unify ⇄ separate **resolution** exists and is user-owned, but
 does not specify the resolution layer's internals or its surface (build-time design-pass); it does not build views,

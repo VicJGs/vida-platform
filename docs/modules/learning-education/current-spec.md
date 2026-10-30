@@ -9,8 +9,8 @@
 
 `createLearningEducationService(deps)` — the ① backend service tier for **the Learning hub (Education)** over
 DB-4 `024_learning_education` (15 tables, the heaviest DB-4 group). The full design lives in
-`docs/features/learning/education/` (aspect docs) + `docs/features/learning/education/delivery/`
-(interpretation · slice-map · seam-contract). Build state: **① COMPLETE — S1–S10 shipped** (hierarchy
+`docs/features/learning/education/` (aspect docs).
+Build state: **① COMPLETE — S1–S10 shipped** (hierarchy
 spine + routing · subjects + DB-11 reconcile · curriculum fork + lineage · schedule + class sessions · ICS feeds +
 events · grading systems + components · assessments + grade/GPA compute · education measurement · subject vault +
 tags/links/notes · cross-module fan-out + Journal). ② `fe-learning-education` (P6) is the remaining track.

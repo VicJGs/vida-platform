@@ -1,7 +1,7 @@
 # foundation/effects — Current Business Rules
 
-> Durable invariants for the effect rail (AR-7 Increment 1). Promoted from
-> `docs/specs/foundation/ar-7-capability-registry/effects/` at §XXIX. Owning spec: ADR-004 §3.2.5 + F1.
+> Durable invariants for the effect rail (AR-7 Increment 1).
+> Owning spec: ADR-004 §3.2.5 + F1.
 > Kept current with `packages/core/src/foundation/effects/`.
 
 - **BR-1 — Exactly-once (R1).** An effect is applied at most once per `(effect_event_id, effect_type,
@@ -37,6 +37,6 @@ target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-tr
 
 ## Deferred (not in this increment)
 
-Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-\* tracks, SES-13; "#46" was decomposition.md:46); `effect_event_id`
+Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-\* tracks, SES-13); `effect_event_id`
 columns on consumer output rows; cross-device convergence merge (AR-9/M4); the `derive()` hash.
 **No longer deferred:** session-lifecycle→fire wiring is BUILT (#32, `foundation/sessions/lifecycle.ts`).

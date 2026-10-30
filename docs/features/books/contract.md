@@ -1,4 +1,4 @@
-<!-- Contract — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts · docs/intake/books.md -->
+<!-- Contract — features/books · /documentation Phase 2 · sources: ADR-002 §Books · learning.ts -->
 
 # Contract — Books (level: Feature / own module)
 

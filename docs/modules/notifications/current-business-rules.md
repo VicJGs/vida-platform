@@ -4,7 +4,7 @@
 
 > The invariants the code enforces, promoted per slice from the slice PLANs. Inherits the CORE constitution
 > (ZK-1/2/3, LF-1/2/3, INT-1). Born at S1 (LIF-132, #53). Source rules: `docs/features/notifications/business-rules.md`
-> (NF-1..15) + `docs/features/notifications/delivery/{interpretation,slice-map}.md`.
+> (NF-1..15).
 
 ## Shipped invariants (as of S1)
 

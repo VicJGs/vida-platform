@@ -14,7 +14,7 @@ over the finished DB-4 #2 schema (`user_preferences`, `nav_preferences`, `comman
   `MergedNavPreferences` + `NavPreferencesFields`/`UpdateNavPreferencesSchema` + `NAV_PREFERENCES_DEFAULTS`.
 - **Slice 3 · `command_bar_history` — SHIPPED** (this session). `recordCommand` (upsert-by-key) /
   `pinCommand` / `getCommandHistory` (pinned-then-frecency) + `RecordCommandSchema`. **① backend complete.**
-- **② frontend** — shipped as **fe-settings** (LIF-193; renamed from `fe-preferences` LIF-134, decisions.md:302) +
+- **② frontend** — shipped as **fe-settings** (LIF-193; renamed from `fe-preferences` LIF-134) +
   **fe-onboarding** guided setup (LIF-216), originally in-session only. The live close is **preferences-rescope**
   (LIF-247, M1.2.4): R2 made the seam live; **R3 persists Appearance** (theme · persona · Home arrangement) and seeds it
   at boot; **R4 persists reduce motion and makes it gate all motion app-wide**; **R5 persists Modules (show/hide ·
@@ -138,7 +138,7 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   `preferences-store` holds reduceMotion · arrangement · moduleVisibility · moduleNames · dateFormat · timeFormat ·
   weekStartsOn · notifInApp/Push/Email · quietHours `[FACT: stores/preferences-store.ts:68-80]`. Both expose a
   `hydrate()` with **no caller**.
-- **Control → storage** (fe-settings seam-contract §B, `seam-contract.md:46-58`; no schema change, decisions.md:12):
+- **Control → storage** (no schema change):
   preset → `dashboard_layout.theme` · mode → `theme` · density → `compact_mode` · reduce-motion →
   `nav_preferences.reduce_motion` · arrangement → `dashboard_layout.arrangement` · show/hide + Atlas/Sync →
   `module_visibility` · rename → `dashboard_layout.moduleNames` · locale + channels → their columns. `updatePreferences`
@@ -163,7 +163,7 @@ The surface plane's own as-built record is `apps/web/src/{settings,onboarding}/C
   **outside** `QueryClientProvider` `[FACT: App.tsx:103-125]`.
 - **Pinned ECs carried:** fe-settings EC-1…12 (census ✅8 · ❌EC-4, EC-7 · ⏳EC-11, EC-12) · fe-onboarding EC-1…10
   (✅8 · ❌EC-1 · ⏳EC-10) · inherited: fe-home EC-2/EC-9 (arrangement) · fe-gamification EC-1 (`game` preset),
-  EC-10 (persona → copy) `[FACT: census/b-system-features.md:59-76,153-166; a-notes-home.md:158,165]`.
+  EC-10 (persona → copy).
 
 ## Not owned (delegated / cited)
 

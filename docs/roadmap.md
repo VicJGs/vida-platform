@@ -8,13 +8,9 @@
 > **Provenance.** Victor's build intent (2026-07-20) + the features-first resequence (2026-07-25), patched
 > against the **19 ADRs (001–019)** + **24 documented contexts** (`structure-data.md`) +
 > `docs/core/architecture/module-dependency-graph.md`. The structure is the **ADR-018** `foundation/`+`services/`
-> homes; the sequence is **ADR-017** (features-first) as refined by **ADR-019** (M1→M4). Tasks:
-> `.claude/tasks/build-roadmap-resequence.md`. Source-of-truth precedence: ADRs + code over architecture docs
+> homes; the sequence is **ADR-017** (features-first) as refined by **ADR-019** (M1→M4).
+> Source-of-truth precedence: ADRs + code over architecture docs
 > (`docs/core/business-rules.md`).
-
-> **Current state + MVP path.** For the live "what's done / what each remaining issue makes usable /
-> difficulty / the minimal path to a daily-usable OS" view, see **[`roadmap/MVP-PATH.md`](roadmap/MVP-PATH.md)**
-> (status-dated; this file SETS deliverables, MVP-PATH tracks progress against them).
 
 ---
 
@@ -89,14 +85,13 @@ substrate no M1 module consumes is not built in M1.
 > LIF-66 PR #32). Both verified _truly delivered_ via a Phase-0 delivery-truth gate (against the §5.20 ledger +
 > the `structure-data.md` floors — not census alignment; the 2026-08-17 premature-close mode is retired). Modules
 > build service+UI on the finished schema, do not author it. **M1.0 CLOSED → M1.1 opens** (head MOD-notes #31).
-> Status record: [`docs/roadmap/m1.0-closeout.md`](./roadmap/m1.0-closeout.md).
 
 The thinnest foundation the first modules need (grown per module, not all-upfront):
 
 - **AR-1 · Monorepo topology** — Turbo pipeline, tsconfig refs, package exports (types→core→editor→ui). _(done)_
 - **AR-2 · DatabaseAdapter + web-adapter** — `wa-sqlite` + OPFS; async Drizzle proxy driver. _(rebuild the web-adapter — quarantined to `Old/` in Part 2, ADR-018.)_ **SQLCipher WASM + encryption → M3.**
 - **AR-4 · State + routing + forms** — Zustand, React Query v5, TanStack Router, TanStack Form + Zod.
-- **DB spine** — **DB-1** schema primitives _(done)_ · **DB-6** repository (encrypt/decrypt **seam**, pass-through) · **DB-7** migrations runner _(present; per-feature)_ · **DB-9** canonical enums + Zod · **DB-10** dogfood seed vault. Schema authored hand-written per ADR-016 into `db/schema/<domain>.ts`. **⚠ Model B — schema is the deliberate exception to "grown per module" above (decided 2026-08-18):** **DB-3** (stream-(i) substrate) then **DB-4** (stream-(ii) per-domain) are authored as **gated foundation build heads BEFORE M1.1** — the full schema is finished upfront so M1.1+ modules build service + UI on it and author no schema. Flow: [`roadmap/schema-foundation-build-flow.md`](./roadmap/schema-foundation-build-flow.md). _(Supersedes the earlier "streaming / per-module / not upfront" model.)_
+- **DB spine** — **DB-1** schema primitives _(done)_ · **DB-6** repository (encrypt/decrypt **seam**, pass-through) · **DB-7** migrations runner _(present; per-feature)_ · **DB-9** canonical enums + Zod · **DB-10** dogfood seed vault. Schema authored hand-written per ADR-016 into `db/schema/<domain>.ts`. **⚠ Model B — schema is the deliberate exception to "grown per module" above (decided 2026-08-18):** **DB-3** (stream-(i) substrate) then **DB-4** (stream-(ii) per-domain) are authored as **gated foundation build heads BEFORE M1.1** — the full schema is finished upfront so M1.1+ modules build service + UI on it and author no schema. _(Supersedes the earlier "streaming / per-module / not upfront" model.)_
 - **Connective substrates** (`foundation/`, ADR-018 — pulled by the hubs): **AR-5** Sessions base · **AR-6** Spaces + `entity_tags`/`entity_links` + backlinks · **AR-7** Capability registry + measurability (ADR-011) + effect rail (ADR-004/012) · **Views** (ADR-007).
 - **AR-8 · Foundation services** (cross-cutting only, `services/*`): search + **DB-8** FTS5, backlink resolver, export serializers, neural-graph data-prep. _(Module-owned engines live in their module.)_
 - **AR-9 · Sync scaffolding (no-flush)** — **DB-2** `_sync_*` metadata columns + `sync_queue` writes wired (written-never-flushed; HLC encoding = deferred decision, see caveat); engine stubbed (M4 activates).

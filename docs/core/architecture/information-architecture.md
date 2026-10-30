@@ -11,7 +11,7 @@ between them. This is the **experience-track root** (UX-1, LIF-90) — UX-2 (com
 
 **Content Source:** `system-overview.md §2` (module inventory) · each module's `docs/features/<module>/identity.md`
 (view intent) · ADR-006/007 (Spaces/Views) · ADR-002 §3564 (`nav_preferences`) · Victor's nav-axis decision
-(2026-08-01). Full derivation + gates: `docs/specs/foundation/ux-1-information-architecture/`.
+(2026-08-01).
 
 > **Scope (what this is NOT):** not the shell visual layout/responsive design (UX-3); not the shell components —
 > dock/sidebar/top-bar/command-bar/modal host (UI-4); not the command-bar + search UX (UX-2); not per-module route
@@ -89,7 +89,6 @@ they are each module's **per-module VIEWS review** (ADR-007 §3.6) at M1.1+. Eve
 Examples (from each module's `identity.md`): Tasks — a multi-layout All-Tasks view + task pages + cross-module
 aggregate; Relationships — a multi-mode top view (dashboard / graph / contacts) + contact & network pages; Finance —
 a dashboard (financial/accounts) + account pages + net-worth tree; Habits — dashboard + per-habit analytics page.
-_(The complete surface inventory lives in the unit's `view-intent-harvest.md`.)_
 
 ---
 
@@ -163,4 +162,3 @@ code-splitting and a < 80 KB initial bundle; search/route params are Zod-validat
 - `system-overview.md §2` — the module inventory this IA organizes
 - `apps/web/src/nav/module-map.ts` — the canonical nav/module map (code)
 - ADR-006 (Spaces & Tags), ADR-007 (Saved Views) — the substrate this IA amends (§1)
-- `docs/specs/foundation/ux-1-information-architecture/` — baseline, view-intent harvest, PLAN + IMPLEMENTATION-PLAN, gates

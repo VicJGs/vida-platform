@@ -1,4 +1,4 @@
-<!-- Conventions — features/health/core · Phase 2 · sources: docs/intake/health.md + platform conventions
+<!-- Conventions — features/health/core · Phase 2 · sources: platform conventions
      (CLAUDE.md / ADR-002). Health-Core-specific patterns on top of the platform baseline. -->
 
 # Conventions — Health: Core

@@ -234,7 +234,6 @@ The first frontend consumer of the Flow/Session codec seam — the `/sessions/$i
 - **M1 stubs (surface):** `session-runtime-surface.tsx:78-79` passes `attachTarget: () => undefined` + `onProof: () => {}`
   into `bindFlowIntents` (`flow/adapter.ts:113-122`) — so Attach renders but drops the intent (X12) and Require-proof is a no-op.
 - **Deferred (not #23):** multi-stage per-module assembly (O7) · effect WRITES/lifecycle consumption handlers (per receiving module, SES-13; focus's → sessions-rescope).
-  Spec: `docs/specs/foundation/fe-session-runtime/`.
 
 ## ② FRONTEND — Session HUD (fe-session-hud #16, LIF-217 · merged 2026-10-18, PR #144 `33278c1`)
 
@@ -250,8 +249,7 @@ The persistent shell-strip indicator (region 6) for an active session (no single
 - **M1 stubs:** `useActiveSession` defaults to `{kind:'hidden'}` (renders nothing in prod) with DEV `?sample=` forms; the
   port is a logging no-op (`use-active-session.ts`). Live swap = the two-source model: ① `findActiveSession()` (**does not
   exist** — the service has `getSession(id)` + entity-scoped `findOpenSessionForEntity`, S1 section above) + ② the shared focus-runtime
-  client store (ships with the first live timer driver). Debt → `sessions-rescope`; findings `docs/specs/foundation/
-fe-session-hud/delivery/findings.md` F-HUD-1.
+  client store (ships with the first live timer driver). Debt → `sessions-rescope`.
 
 ## What is DEFERRED (NOT built — homed beyond MOD-sessions ①)
 
@@ -267,5 +265,4 @@ view layer → G9 · shipped-type editing → later · `key_learnings` encryptio
 
 ## Verification (2026-07-28)
 
-typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean. Spec:
-`docs/specs/foundation/ar-5-sessions-base/`.
+typecheck 10/10 · @vida/core 110/110 · @vida/web 6/6 · deferral grep clean.
