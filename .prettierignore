@@ -10,6 +10,7 @@ apps/mobile/ios
 
 # Archive and agent tool state — not live files (doc 3, Executable truth: "Prettier on live files only")
 docs/_legacy
+docs/_archive
 .claude
 Old
 

@@ -32,7 +32,7 @@
     },
     {
       "title": "Where problems are written up",
-      "body": "The Linear issue (team LIF); decisions in .claude/docs/decisions.md; recurring failures in .claude/knowledge/failure-patterns/known-failures.md."
+      "body": "The Linear issue (team LIF); a decision that outlives the issue becomes an ADR in docs/core/decisions/; recurring failures in docs/core/known-failures.md. Never write session, status or decision-log files."
     },
     {
       "title": "Plan",
@@ -117,10 +117,10 @@
       ],
       "steps": [
         "Read the error fully; classify it isolated or structural (structural → plan first and ask).",
-        "Check .claude/knowledge/failure-patterns/known-failures.md for the pattern.",
+        "Check docs/core/known-failures.md for the pattern.",
         "Reproduce with a failing test at the lowest layer that shows it (TZ-forced for date code; Playwright for OPFS/worker behaviour).",
         "State the root cause, apply the minimal fix, and grep for sibling call sites with the same defect.",
-        "Record a new recurring pattern in known-failures.md; run `pnpm check`."
+        "Record a new recurring pattern in docs/core/known-failures.md; run `pnpm check`."
       ]
     }
   ],
