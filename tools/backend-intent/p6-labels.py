@@ -12,9 +12,9 @@ from linear_client import LinearClient  # noqa: E402
 import tracker_sync as ts  # noqa: E402
 
 REPO = Path.cwd()
-MAP = json.loads((REPO / ".claude/tasks/.tracker-map.json").read_text())
+MAP = json.loads((REPO / ".claude/archive/tasks/.tracker-map.json").read_text())
 ISSUES = MAP["issues"]; TEAM = MAP["team"]["id"]
-FE24 = sorted(s.stem for s in (REPO / ".claude/tasks").glob("fe-*.md"))
+FE24 = sorted(s.stem for s in (REPO / ".claude/archive/tasks").glob("fe-*.md"))
 if len(FE24) != 24:
     sys.exit(f"FAIL: expected 24 fe-*.md, found {len(FE24)}")
 

@@ -3,7 +3,7 @@
 
 Why this exists: `tracker_sync --sync` aborts the whole run on a single network timeout (it happened
 mid issue-loop), so it's unreliable for the relations phase. This reconciler is per-edge and resumable:
-it reads the EXPECTED edges from the .claude/tasks task files (blocked-by), reads the ACTUAL edges live
+it reads the EXPECTED edges from the .claude/archive/tasks task files (blocked-by), reads the ACTUAL edges live
 from Linear, and creates only the missing ones. Add-only (never deletes). Fail-soft per edge, retry on
 timeout. Run repeatedly until it reports 0 missing.
 
