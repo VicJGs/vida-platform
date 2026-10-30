@@ -21,6 +21,7 @@
     "storybook": "pnpm --filter @vida/ui storybook",
     "clean": "turbo run clean && rm -rf node_modules",
     "docs:index": "node tools/checks/core/docs-index.mjs",
+    "docs:inventory": "node tools/scripts/doc-inventory.ts",
     "check:docs": "node tools/checks/core/docs.mjs",
     "check:rules": "node tools/checks/core/rules.mjs",
     "check:one-way-door": "node tools/checks/core/one-way-door.mjs",
