@@ -80,6 +80,22 @@ describe('mutable attr defaults are not shared GLOBALLY across editors (post-imp
     ;(na.attrs.sections as string[]).push('LEAK')
     expect(nb.attrs.sections).toEqual([])
   })
+
+  it('every node and mark attr with an object default gets a fresh instance per editor (a literal default leaks)', () => {
+    const a = headless().schema
+    const b = headless().schema
+    const shared: string[] = []
+    for (const kind of ['nodes', 'marks'] as const) {
+      for (const [name, type] of Object.entries(a[kind])) {
+        for (const [attr, spec] of Object.entries(type.spec.attrs ?? {})) {
+          const dflt = (spec as { default?: unknown }).default
+          const other = (b[kind][name]!.spec.attrs?.[attr] as { default?: unknown } | undefined)?.default
+          if (typeof dflt === 'object' && dflt !== null && dflt === other) shared.push(`${name}.${attr}`)
+        }
+      }
+    }
+    expect(shared).toEqual([])
+  })
 })
 
 describe('never-crash boundary — out-of-schema attrs DEGRADE, they do not throw (BR-E5-2 boundary, lossy)', () => {
