@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Frontend Visual Gate — stage 3 render for DESIGN TOKENS (docs/specs/foundation/frontend-visual-gate.md).
+// Frontend Visual Gate — stage 3 render for DESIGN TOKENS.
 // Parses the GENERATED packages/ui/src/themes/variables.css, resolves var() chains to literals, categorizes tokens
 // by path-prefix, and emits a self-contained preview.html gallery (swatches / type / spacing / radius / shadow) so
 // Victor can VISUALLY approve the look — the same code that ships is what he sees (code-first source of truth).
