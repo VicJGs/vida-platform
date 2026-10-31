@@ -142,13 +142,6 @@
       "action": "warn"
     },
     {
-      "rule": "docs/_archive is planning history (superseded): do not use or extend it.",
-      "tools": ["Write", "Edit"],
-      "match": "path",
-      "pattern": "docs/_archive/**",
-      "action": "warn"
-    },
-    {
       "rule": "Old/ is quarantined pre-foundation residue: reference-only.",
       "tools": ["Write", "Edit"],
       "match": "path",
