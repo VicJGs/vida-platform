@@ -18,7 +18,7 @@ import { enumText } from '../_shared'
 
 // Canonical enum tuples come straight from @vida/types (DB-9 single source).
 // These are the SAME tuples the z.enum validators + the SQL migration CHECK derive
-// from — see docs/specs/foundation/db-9-enums-zod. Do not redefine them here.
+// from — see LIF-222. Do not redefine them here.
 
 export const syncQueue = sqliteTable(
   'sync_queue',

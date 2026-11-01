@@ -9,7 +9,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/019_purposes.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-purposes-and-goals/):
+// Shape:
 // - NO hard cross-table FK — purpose_id/value_id/metric_id/target_id/project_id are
 //   plain TEXT (no-FK BR-DB3-1; SR-003 relaxed → the spine joints are OPTIONAL/nullable,
 //   PG-9; delete-parent = app-layer SET NULL, PG-19).

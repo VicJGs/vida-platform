@@ -1,6 +1,6 @@
 // ============================================================================
 // Key Management — Session caching, lifecycle, rotation prep
-// ADR-001 §6 · ADR-002 §4 · architecture.md §3.3
+// ADR-001 §6 · ADR-002 §4
 //
 // The Vault Key lives in memory ONLY while the vault is unlocked.
 // This module manages its lifecycle: unlock → use → lock → wipe.

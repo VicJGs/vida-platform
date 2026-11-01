@@ -1,6 +1,6 @@
 // ============================================================================
 // Vault — Key derivation, encrypt/decrypt, account key generation
-// ADR-001 §6 · ADR-002 §4 · architecture.md §3.3
+// ADR-001 §6 · ADR-002 §4
 //
 // Key hierarchy:
 //   1. User chooses password

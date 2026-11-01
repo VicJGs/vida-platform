@@ -10,7 +10,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/022_knowledge.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Reframe (spec docs/specs/foundation/db-4-knowledge/):
+// Reframe:
 // - knowledge_objects generalizes study_topics (the topic-kind row of a general object);
 //   parent_object_id (self-ref, no FK) IS the Subject›Unit›Topic + user-kinds hierarchy
 //   (BR-KN-1). mastery_level is DERIVED → nullable, no default (BR-KN-2; §5.10 NOT NULL

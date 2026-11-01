@@ -10,7 +10,7 @@
 //
 // DDL model (ADR-016 §3.5): CHECK + indexes live in migrations/029_health_training.ts.
 //
-// Shape (spec docs/specs/foundation/db-4-health-training/_index.md):
+// Shape:
 // - Enums: REUSE METRIC_SIDE (workout_sets.side) + PHYSICAL_ROLE_AUTHORING_SOURCE
 //   (exercise_plans.authoring_source) from health.ts (#17); 3 net-new FIXED tuples
 //   (MOVEMENT_PATTERN, WORKOUT_SET_CATEGORY, BURN_SOURCE → training.ts). Everything else

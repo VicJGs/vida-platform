@@ -9,7 +9,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in migrations/028_health_nutrition.ts.
 // These Drizzle objects are the query mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-health-nutrition/_index.md):
+// Shape:
 // - Enums: REUSE FREQUENCY (common.ts, nutritional_plans.review_frequency) + 2 net-new
 //   FIXED tuples (MEAL_SOURCE, MEAL_GENERATION_METHOD → nutrition.ts). Everything else OPEN
 //   (modality per conventions L17 · editable-starter functional_area/whole_food_type per C5 ·

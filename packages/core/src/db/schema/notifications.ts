@@ -18,8 +18,6 @@
 // rows carry it; a time-driven dispatcher fire has no ADR-012 effect id (keyed by its dueIn occurrence
 // = dispatcher service). SQLite treats NULLs as distinct, so the many NULL time-driven rows never
 // collide. Mirrors the consequence_ledger sibling (economy.ts).
-//
-// Spec: docs/specs/foundation/db-4-notifications/_index.md §3a.
 // ============================================================================
 
 import { sqliteTable, text, unique } from 'drizzle-orm/sqlite-core'

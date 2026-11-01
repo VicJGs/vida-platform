@@ -8,7 +8,7 @@
 // to the Sessions realm (`focus_sessions`, ADR-004).
 //
 // REBUILT in P2 (backend-replan) — torn down at teardown `eaf64f8`, re-authored
-// against the intent corpus (`parts/notes-and-pages.md`) on a NEW appended
+// against the intent corpus on a NEW appended
 // migration (`033_notes.ts`, version 33 — NOT slot 012; the runner filters
 // `version > currentVersion` so a v12 migration is silently skipped on a v32
 // device). Shape unchanged from the pre-teardown holistic build (corpus §11
@@ -20,7 +20,7 @@
 // not a SQL CHECK; the mirror declares the plain query indexes only (UNIQUE /
 // partial-unique / CHECK are SQL-migration-only — the spaces.ts precedent).
 //
-// Shape (spec docs/specs/foundation/backend-intent/schema-audit.md §11):
+// Shape:
 // - NO hard cross-table FK, self-ref included (N-R1, live convention).
 // - Full `baseColumns` (incl. updated_at) + `deleted_at` on all 3 (N-R2, ADR-016
 //   §3.4 locked pattern). NOTE: @vida/types PageLink/NoteAttachment still extend

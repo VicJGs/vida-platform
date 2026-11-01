@@ -10,7 +10,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/023_books.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Reframe (spec docs/specs/foundation/db-4-books/):
+// Reframe:
 // - book = the WORK; book_assets (0..n) each carry format + one native_position (BK-2).
 // - unified progress DERIVED: books.progress nullable override (NULL⇒derive, M3); the
 //   §Books NOT NULL DEFAULT 0 anti-signal resolved out; current_page → per-asset position (BR-BK-2).
