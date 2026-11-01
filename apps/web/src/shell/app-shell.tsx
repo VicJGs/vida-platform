@@ -1,11 +1,11 @@
 // fe-shell (#14) · S2 (LIF-199) — the CODEC shell FRAME. Reshapes the ui-4/ux-3 five-region shell into the
-// macOS/iPadOS dock⇄float inspector model (`delivery/envision.md` M1–M7). S2 builds the FRAME ONLY:
+// macOS/iPadOS dock⇄float inspector model (M1–M7). S2 builds the FRAME ONLY:
 //   • a reserved top strip (the persistent bar — serif wordmark + System/Modules panel toggles + #15/#16 slots) — EC-7,
 //   • a full-bleed, 1280-centered Content <Outlet/> inset below the strip — EC-9,
 //   • an overlay host for ⌘K/modals — EC-8.
 // The dock⇄float PANELS the toggles open are S3 (docked-inline) / S4 (floating-overlay); their bodies + the Bar-1
 // content (#15) / Session HUD (#16) / ⌘K registry (#17) inject through the slots — empty-but-functional in #14.
-// `[FACT: delivery/slice-map.md:19 S2; seam-contract.md §C; envision.md EC-7/8/9]`. Chrome only — composes @vida/ui + DS tokens.
+// `[FACT: S2; EC-7/8/9]`. Chrome only — composes @vida/ui + DS tokens.
 import { useEffect, useRef, type ReactNode } from 'react'
 import { styled, Text, View, useMedia } from '@tamagui/core'
 import { LayoutDashboard, LayoutGrid, type LucideIcon } from 'lucide-react'

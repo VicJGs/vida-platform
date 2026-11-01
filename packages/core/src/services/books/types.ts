@@ -4,7 +4,7 @@
 // Deps + the BooksService interface + input/view types + typed errors. Factory-object shape, hoisted closures,
 // no `this.` (the ② destructure-consumption shape; the knowledge/habits/finance precedent). S1 declares the
 // Works-CRUD surface; S2–S10 APPEND (chapters · assets · annotations · quote-embed · sessions · plans ·
-// progress/conflict · Education/measurement · integrations/Journal) per docs/features/books/delivery/slice-map.md.
+// progress/conflict · Education/measurement · integrations/Journal).
 // Deps grow the same way — S1 needs only { db, deviceId }; later slices add spaces/backlinks/notes/sessions/
 // sessionRegistry + the optional deny-safe ports (ai?/ingestion?/attachment?/preferences?/effects?).
 // ============================================================================
@@ -47,7 +47,7 @@ import type {
 } from '../../validators/books'
 
 /** The `entity_type` a book registers in the shared taggable/pages/links registries (pre-seeded by DB-4
- *  `ENTITY_TYPES`, db-4-books/_index.md:116 — Books injects the registry, never re-registers). Consumed by
+ *  `ENTITY_TYPES` — Books injects the registry, never re-registers). Consumed by
  *  S4 (annotations/links) + S9 (tags/subjects). */
 export const BOOK_ENTITY_TYPE = 'book'
 
@@ -58,13 +58,13 @@ export interface BooksServiceDeps {
    *  `lookupBook` returns `lookup-unavailable` and `revokeLookupGrant` is a no-op. At M1 even when injected the
    *  fetch folds to `lookup-unavailable` (fail-closed) — the def is unregistered (⇒ CapabilityNotFound) and there
    *  is no mediator; the real grant + normalization land at M2 (zero-signature swap). `[FACT: foundation/ingestion
-   *  CLAUDE.md; parts/books.md:138]` */
+   *  CLAUDE.md]` */
   ingestion?: IngestionGuard
   /** S3 — ADR-003 R2 encrypted file/photo upload (BOO-09). Optional deny-safe port: absent ⇒ `addAsset` stores
    *  no file (`file_ref` null, `attachment-unavailable`), the asset is still created (BK-17). A PRESENT port whose
    *  `upload()` rejects is a real R2 error ⇒ fail-loud `AssetFileError` (BR-BK-S3-2, `business-rules.md:127`). No
    *  R2 substrate exists at M1 (`grep foundation/ = none`) — the real pipeline lands at M2 (zero-signature swap).
-   *  `[FACT: business-rules.md:14 (BK-1 attachments); parts/books.md:19 (BOO-09, R2=ADR-003-owned)]` */
+   *  `[FACT: business-rules.md:14 (BK-1 attachments); BOO-09 (R2=ADR-003-owned)]` */
   attachment?: AttachmentPort
   /** S4 — ADR-006 entity_links WRITE (BOO-18 inter-link) + the entity-type registry that enforces BK-6 (highlights
    *  are unregistered → fail-loud). Required: annotation linking is core to S4, not optional (the knowledge/notes
@@ -72,11 +72,11 @@ export interface BooksServiceDeps {
   spaces: SpacesService
   /** S4 — pages-backed notes on bookmarks/quotes (BOO-16/17) via `ensureEntityNote` (idempotent). Required. */
   notes: NotesService
-  /** S5 — quote-embed toggle reads (BK-7/BOO-22). Optional NARROW deny-safe port (NIT-3, `interpretation.md:60`):
+  /** S5 — quote-embed toggle reads (BK-7/BOO-22). Optional NARROW deny-safe port (NIT-3):
    *  Books homes two toggle reads rather than a hard dep on the full `services/preferences`. Absent ⇒ PERMISSIVE
    *  (every quote embeddable) — the habits `backfillWindowDays` fail-OPEN precedent (a convenience policy, not a
    *  security gate). S8 appends the conflict preset-rule read (zero signature change). Real Preferences keys land at
-   *  M2/P6 (zero-signature swap). `[FACT: interpretation.md:59-60; business-rules.md:35-37 (BK-7)]` */
+   *  M2/P6 (zero-signature swap). `[FACT: business-rules.md:35-37 (BK-7)]` */
   preferences?: PreferencesPort
   /** S6 — ADR-004 base `sessions` `reading` sub-type spine (timer/scheduling/lifecycle) + the Books 1:1 extension.
    *  REQUIRED: reading sessions are core to S6 (the flashcards required-dep precedent). `[ADR-004 §3.1; BK-10]` */
@@ -88,14 +88,14 @@ export interface BooksServiceDeps {
   /** S6 — ADR-015 OCR for page-photo position extraction (BOO-25). Optional deny-safe port (the knowledge `ai?`
    *  precedent): absent OR a thrown deny ⇒ `ai-unavailable`; the photo stores regardless (BK-10). OCR runs
    *  `on_device` (the photo is vault content — ZK-safe, conventions.md:57). M1 dormant (askModel denies — both ports
-   *  absent); the real OCR pipeline = M2. `[ADR-015 AI5/AI6; parts/books.md:35 (BOO-25)]` */
+   *  absent); the real OCR pipeline = M2. `[ADR-015 AI5/AI6; BOO-25]` */
   ai?: AiService
   /** S10 — ADR-012 effect rail for the reading-session-completion MEASUREMENT fan-out (BOO-26). Optional deny-safe
    *  port (the knowledge/habits emit-only precedent): absent ⇒ the whole fan-out is dormant (`endSession` fires
-   *  nothing). **C-E2 (rerun books.md:73): measurement signals ONLY** — Books emits `emit_measurement_signal`, NEVER
+   *  nothing). **C-E2: measurement signals ONLY** — Books emits `emit_measurement_signal`, NEVER
    *  an economy grant (`award_xp`/`grant_currency` ride the base-`sessions` sub-type, not Books). Emit-only producer
    *  (no handler ownership): post-commit, failure-isolated, rail-idempotent; a keyed effect with no registered handler
-   *  is skipped (BR-BK-S10-4). `[FACT: slice-map.md:24; seam-contract.md:28,154; knowledge/service.ts:195-211]` */
+   *  is skipped (BR-BK-S10-4). `[FACT: knowledge/service.ts:195-211]` */
   effects?: { rail: EffectRail; registry: EffectRegistry }
   // S9/BOO-46 backlinks dep intentionally NOT wired (no consuming read-method — No-Guessing, BR-BK-S9-7).
 }
@@ -125,13 +125,13 @@ export interface AttachmentPort {
   /** S6 — decrypt/download a stored file for the Reader (BOO-39). An ADDITIVE extension of the S3 port (zero break
    *  to `upload`). The whole port is absent at M1 ⇒ `openReader` returns `attachment-unavailable`; a PRESENT port
    *  whose `download` rejects is a real R2/decrypt error ⇒ fail-loud `AssetFileError` (the S6 decrypt throw site,
-   *  BOO-44). M2 provides the real pipeline (zero-signature swap). `[FACT: parts/books.md:49 (BOO-39); slice-map.md:77]` */
+   *  BOO-44). M2 provides the real pipeline (zero-signature swap). `[FACT: BOO-39]` */
   download(input: { fileRef: string }): Promise<{ blob: FileBlob }>
 }
 
 /** addAsset's file outcome (BOO-09) — the frozen 2-state `AttachmentRef`: `stored` (port present + success) or
  *  `attachment-unavailable` (no port / no file). A real R2 FAILURE is NOT a state here — it throws `AssetFileError`
- *  (BR-BK-S3-2). `[FACT: seam-contract.md:45-46; business-rules.md:97-98,127]` */
+ *  (BR-BK-S3-2). `[FACT: business-rules.md:97-98,127]` */
 export type AttachmentRef = { status: 'stored'; fileRef: string } | { status: 'attachment-unavailable' }
 
 /** getMappedPosition outcome (BOO-12, BK-4) — the honest cross-format absent-state, never a guessed position. At M1
@@ -181,7 +181,7 @@ export type ChapterSeed = z.infer<typeof ChapterSeedSchema>
 /** addAsset metadata (BOO-09) — `format` + optional `native_position`; `z.infer` of `AddAssetSchema`. */
 export type AddAssetInput = z.infer<typeof AddAssetSchema>
 /** addAsset's full argument — the metadata PLUS the optional raw `file` blob, bundled in one object per the frozen
- *  seam-contract (`seam-contract.md:84`). The service splits `file` off before Zod-validating the metadata (the
+ *  seam-contract. The service splits `file` off before Zod-validating the metadata (the
  *  blob is raw bytes, not a validated value). */
 export type AddAssetArgs = AddAssetInput & { file?: FileBlob }
 
@@ -190,7 +190,7 @@ export type AddAssetArgs = AddAssetInput & { file?: FileBlob }
 /** The narrow quote-embed toggle seam (BK-7). Books owns this 2-read interface (NIT-3) — NOT the full
  *  `services/preferences` API. Precedence is applied by the service: a per-book override wins over global. A present
  *  port owns its stored defaults; an ABSENT port is the permissive (fail-OPEN) default. M2 provides the real
- *  Preferences-backed adapter (zero-signature swap). `[FACT: interpretation.md:59-60; conventions.md:22-23]` */
+ *  Preferences-backed adapter (zero-signature swap). `[FACT: conventions.md:22-23]` */
 export interface PreferencesPort {
   /** Global quote-embed availability toggle. */
   getQuoteEmbedGlobal(): Promise<boolean>
@@ -222,7 +222,7 @@ export interface PositionSource {
   nativePosition: string
   progress: number
 }
-/** The derived conflict queue row (BK-8, `seam-contract.md:47`) — NO table; `id` is the deterministic
+/** The derived conflict queue row (BK-8) — NO table; `id` is the deterministic
  *  `conflict:<bookId>` (one book-level clash). `blocking: true` — an unresolved conflict blocks unified progress. */
 export interface ConflictItem {
   id: string
@@ -378,7 +378,7 @@ export class AnnotationNotLinkableError extends Error {
 
 /** BK-7/BOO-22 — a SCOPED `getEmbeddableQuotes({ bookId })` whose book resolves toggle-OFF (per-book override >
  *  global). The GLOBAL feed excludes toggle-off books instead of throwing (a feed yields a filtered list, never an
- *  error). `[FACT: contract.md:68; seam-contract.md:60,100]` */
+ *  error). `[FACT: contract.md:68]` */
 export class QuoteEmbedDisabledError extends Error {
   constructor(public readonly bookId: string) {
     super(`Quote embedding disabled for book ${bookId}`)
@@ -390,9 +390,9 @@ export class QuoteEmbedDisabledError extends Error {
  *  refused at the consent gate; the manual fallback path (`setChapters`/`updatePosition`/manual entry) stays callable.
  *  **Exported typed vocabulary with NO M1 backend throw-site** — the `PositionConflictPending` precedent (BR-BK-S8-6):
  *  at M1 no consent refusal is producible (no consent store; the deny-safe ports return `*-unavailable`, not a refusal),
- *  so the integration methods map every deny to their deny-safe typed state (no throw-through, `seam-contract.md:153`).
+ *  so the integration methods map every deny to their deny-safe typed state (no throw-through).
  *  The real throw-site is the M2 consent gate (the stored grant the gate reads). `[FACT: business-rules.md:69-76;
- *  seam-contract.md:57,153; current-business-rules.md:248-254]` */
+ *  current-business-rules.md:248-254]` */
 export class IntegrationConsentError extends Error {
   constructor(public readonly defId: string) {
     super(`Integration consent not granted: ${defId}; the manual fallback is available`)
@@ -402,7 +402,7 @@ export class IntegrationConsentError extends Error {
 
 /** S10 (BOO-30) — the day's reading digest feeding the Journal `/summary` PULL contribution (`registerBooksJournal`).
  *  `pagesRead`/`sessionsLogged` over the day's completed reading sessions; `onPace`/`behind` tally the active plans'
- *  today-quota statuses (`getTodayQuotas`). `[FACT: seam-contract.md:49,136; parts/books.md:40]` */
+ *  today-quota statuses (`getTodayQuotas`). */
 export interface BooksDayDigest {
   pagesRead: number
   sessionsLogged: number
@@ -459,7 +459,7 @@ export interface ReadingStatistics {
 /** openReader service face (BOO-39) — decrypt + auto-session + position orchestration; the read/listen/annotate
  *  chrome is P6. `file` = the decrypt outcome (`attachment?` deny-safe); `sessionId` = the auto-started base
  *  session; `position` = the asset's own native position as a `MappedPosition` (synced-to-self | not-synced, never a
- *  cross-format guess — BK-4). `[FACT: parts/books.md:49 (BOO-39); BK-15 business-rules.md:78-79]` */
+ *  cross-format guess — BK-4). `[FACT: BOO-39; BK-15 business-rules.md:78-79]` */
 export interface ReaderContext {
   file: AttachmentRef
   sessionId: string
@@ -525,7 +525,7 @@ export class ReadingPlanNotFoundError extends Error {
 /** BOO-32/BK-11 — recalculation cannot meet the target at the planned pace. THROWN (never a silent target rewrite),
  *  carrying the two options the user chooses between: `extend_date` (keep the pace → `suggestedDate`) or
  *  `raise_quota` (keep the date → `suggestedQuota` = the faster required pace). `remainingDays<=0` ⇒ only
- *  `extend_date` is viable. `[FACT: parts/books.md:42; conventions.md:28-29; contract.md:67]` */
+ *  `extend_date` is viable. `[FACT: conventions.md:28-29; contract.md:67]` */
 export class TargetUnreachableProposal extends Error {
   constructor(
     public readonly planId: string,
@@ -636,7 +636,7 @@ export interface BooksService {
   getStatistics(scope: { bookId?: string }): Promise<ReadingStatistics>
   /** BOO-39 — the Reader service face: decrypt (`attachment?`) + auto-start a reading session + resolve the asset's
    *  own position; the read/listen/annotate chrome is P6. A present-port decrypt failure ⇒ `AssetFileError`. Guards
-   *  the asset exists. `[parts/books.md:49; BK-15]` */
+   *  the asset exists. `[BK-15]` */
   openReader(assetId: string): Promise<ReaderContext>
 
   // ── S7: Reading plans / Quota Planner (BOO-27..33) ───────────────────────────

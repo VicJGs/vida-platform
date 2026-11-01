@@ -5,7 +5,7 @@
 // shape, hoisted closures, no `this.` (the ② destructure-consumption shape; the
 // habits/finance precedent). S1 declares the kind-registry + object-hierarchy surface;
 // S2–S8 append (containers/refs/links/tags · review engine · mastery · measurement ·
-// pages/compound/lab · flashcards · events) per docs/modules/knowledge/delivery/decomposition.md.
+// pages/compound/lab · flashcards · events).
 // ============================================================================
 
 import type { z } from 'zod'

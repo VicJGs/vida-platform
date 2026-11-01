@@ -3,8 +3,8 @@ import { styled, Text, useTheme, View } from '@tamagui/core'
 import { type ViewState, Message, resolveDataViewState } from '../internal/data-view'
 
 // UI-2 · V3 · timeline — the renderer for the `timeline` VIEW_LAYOUT. Implements
-// docs/specs/components/ui-2-platform-views/v3-timeline.md (Part B) + the fe-codec-primitives-refinement P3 pass
-// (docs/specs/foundation/fe-codec-primitives-refinement/phases/P3-timeline.md). **V1's data-view spine laid out as a
+// LIF-87 (Part B) + the fe-codec-primitives-refinement P3 pass
+// (LIF-230). **V1's data-view spine laid out as a
 // CONTINUOUS vertical rail** — the temporal analogue of list (Tasks/Projects timeline, CRM interaction timeline).
 // - Continuous rail (B1): TimelineRoot has NO gap; inter-item spacing is the Content column's paddingBottom, so the
 //   rail columns sit FLUSH and their full-height lines meet into one unbroken rail (an absolute line scoped to an

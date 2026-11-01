@@ -3,7 +3,7 @@
 //
 // Node / better-sqlite3 live-store harness (mirrors checkins/preferences): REAL data store, UNLOCKED
 // vault (IR-a — the sync-hash path runs even with empty [E]), migrate() applies 020_finance so the
-// tables exist. Covers the slice-map.md S1 gate: CRUD happy + invalid-enum reject + soft-delete hides +
+// tables exist. Covers the S1 gate: CRUD happy + invalid-enum reject + soft-delete hides +
 // not-found guard + faithful create echo (defaults backfilled) + co-transactional sync_queue enqueue.
 // ============================================================================
 

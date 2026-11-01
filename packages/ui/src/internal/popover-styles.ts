@@ -3,7 +3,7 @@ import { shadow } from '../themes/shadow'
 import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Popover primitive — the panel ENTER animation a Tamagui styled(View) can't express across a
-// react-dom portal (the shipped Select/Menu/Dialog precedent). Contract (popover.md:34): open = opacity + a
+// react-dom portal (the shipped Select/Menu/Dialog precedent). Contract: open = opacity + a
 // `scale(0.96→1)` from the anchor edge, `duration.fast`/`easing.out`. B12: only `opacity` + `transform` transition.
 // The scale grows from the anchor edge because `transform-origin` is set INLINE from the resolved side (single
 // authority; this sheet sets none — the Menu precedent). Reduced-motion → instant.

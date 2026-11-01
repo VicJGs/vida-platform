@@ -1,4 +1,4 @@
-// fe-calendar #19 · S3 — the pure time-column geometry behind WeekView (PLAN-S3-week-day-renderer.md BR-3/6/7/8).
+// fe-calendar #19 · S3 — the pure time-column geometry behind WeekView (BR-3/6/7/8).
 // No Date, no TZ: hours are plain local-clock numbers (9.5 = 09:30) the provider already resolved. Kept out of the
 // component so the lane maths is unit-tested on its own.
 

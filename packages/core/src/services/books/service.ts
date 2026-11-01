@@ -198,10 +198,10 @@ const toReadingSession = (r: ReadingSessionRow): ReadingSession => ({
 })
 
 /** IR-1 — the `reading` Session sub-type Books registers (BK-10). Every field is a TRANSCRIPTION of ADR-004 §3.2:
- *  `effects:[]` (§3.2.2 — Books is a non-feeder per C-E2 `rerun books.md:73`, so it declares no effect; the
+ *  `effects:[]` (§3.2.2 — Books is a non-feeder per C-E2, so it declares no effect; the
  *  completion grant rides the base-`sessions` sub-type), the shared lifecycle (§3.2.3 scheduled→in_progress→
  *  completed), `allowed_effects:[]` (§3.2.4 — a module sub-type's envelope ⊆ shipped; `∅` is subset-legal). Mirrors
- *  the flashcards `REVIEW_SESSION_TYPE_DEF`. `[FACT: ADR-004 §3.2.2-3.2.4; rerun C-E2 books.md:73; BK-10]` */
+ *  the flashcards `REVIEW_SESSION_TYPE_DEF`. `[FACT: ADR-004 §3.2.2-3.2.4; BK-10]` */
 const READING_SESSION_TYPE_DEF: SessionTypeDef = {
   sub_type: READING_SESSION_SUB_TYPE,
   owner_module: 'books',
@@ -274,8 +274,8 @@ const PAGE_UNIT_FORMATS: ReadonlySet<BookAssetFormat> = new Set<BookAssetFormat>
 // An internal progress candidate = the public PositionSource + `updatedAt` (needed for the `last_valid` tie-break).
 type Candidate = PositionSource & { updatedAt: number }
 
-// S10 — the reading-session-completion MEASUREMENT fan-out (BOO-26, slice-map.md:24). Domain event (NOT an effectType
-// — the knowledge H1 grain) + the effectType SET it fans to. **C-E2 (rerun books.md:73): measurement ONLY** — the
+// S10 — the reading-session-completion MEASUREMENT fan-out (BOO-26). Domain event (NOT an effectType
+// — the knowledge H1 grain) + the effectType SET it fans to. **C-E2: measurement ONLY** — the
 // ONLY member is `emit_measurement_signal` (a keyed measurement signal); NEVER `award_xp`/`grant_currency` (economy
 // rides the base-`sessions` sub-type, not Books). No named M1 consumer (the measure is derived-pull, BR-BK-S9-6) ⇒
 // emit-only + dormant seam-only (a handler registers downstream at M2). `[FACT: effects/types.ts:22; interpretation rule 3]`
@@ -528,7 +528,7 @@ export function createBooksService(deps: BooksServiceDeps): BooksService {
 
   async function revokeLookupGrant(): Promise<void> {
     // X9 stop-future / keep-imported: revoke reaches only the GRANT, never an imported row. No ingestion dep ⇒
-    // nothing was granted at M1 ⇒ no-op. `[FACT: ADR-014:70 (§3.4); parts/books.md BOO-08]`
+    // nothing was granted at M1 ⇒ no-op. `[FACT: ADR-014:70 (§3.4); BOO-08]`
     if (!ingestion) return
     await ingestion.revokeIntegration(BOOKS_ISBN_INTEGRATION_ID)
   }

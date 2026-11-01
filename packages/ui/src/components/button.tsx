@@ -3,8 +3,8 @@ import { styled, Text, View, type GetProps } from '@tamagui/core'
 import { useReducedMotion } from '../hooks/use-reduced-motion'
 import { ensureInteractionStyles } from '../internal/interaction-styles'
 
-// UI-1 · Button (primitive 1/10) — implements ds-5-primitive-contracts/button.md against Tamagui v2.
-// Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u1-button.md.
+// UI-1 · Button (primitive 1/10) — implements the ds-5 Button contract against Tamagui v2.
+// Reconcile: LIF-86.
 // - name:'Button' auto-applies the light_Button/dark_Button sub-themes ($colorBrandEmphasis, $colorTextInverse…).
 // - render:'button' → a real <button> (native Enter/Space, type, form submit, role). (v2 renamed tag→render.)
 // - hover/press overlay = a child whose opacity transitions via CSS descendant-hover (interaction-styles.ts),
@@ -52,7 +52,7 @@ const ButtonFrame = styled(View, {
         borderColor: '$colorBorderDefault',
         color: '$colorTextPrimary',
       },
-      // ghost: transparent fill; hover fills surface.secondary (button.md:61) — a state swap, not animated.
+      // ghost: transparent fill; hover fills surface.secondary — a state swap, not animated.
       ghost: {
         backgroundColor: 'transparent',
         color: '$colorBrandPrimary',
@@ -173,7 +173,7 @@ export const Button = forwardRef<ComponentRef<typeof ButtonFrame>, ButtonProps>(
   },
   ref,
 ) {
-  // Icon-only requires aria-label — contract-enforced as a dev-time assertion (button.md:85), not a type union.
+  // Icon-only requires aria-label — contract-enforced as a dev-time assertion, not a type union.
   // `process.env.NODE_ENV` is bundler-replaced (Vite/Storybook define) → the block dead-code-eliminates in prod.
   if (process.env.NODE_ENV !== 'production') {
     const hasText = children != null && children !== ''
@@ -187,7 +187,7 @@ export const Button = forwardRef<ComponentRef<typeof ButtonFrame>, ButtonProps>(
   const reduced = useReducedMotion()
   ensureInteractionStyles()
 
-  // Loading ≠ disabled (button.md:51-52,86): a busy button stays focusable + in the a11y tree so it announces
+  // Loading ≠ disabled: a busy button stays focusable + in the a11y tree so it announces
   // "{name}, busy" (aria-busy + aria-disabled). Native `disabled` is reserved for the real `disabled` prop
   // (removes from tab order). Activation is suppressed for BOTH via the onPress guard + forcing type='button'
   // while loading (blocks native form submit). `{...rest}` is spread FIRST so computed a11y props win (N1).

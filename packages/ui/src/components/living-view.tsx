@@ -9,7 +9,7 @@ import { Card } from './card'
 import type { CalChip } from './week-view'
 
 // fe-calendar #19 · S5 — living-view, the Global Calendar's signature "Living" lens (EC-6..EC-10).
-// Spec: docs/specs/foundation/fe-calendar/delivery/PLAN-S5-living-renderer.md (→ ui-2 v13-living-view.md).
+// Spec: LIF-203 (→ ui-2, LIF-87).
 // PRESENTATIONAL + read-only (EC-12): every value arrives pre-derived + pre-ordered by S7 `useCalendar` — this arranges.
 // - ④ purpose budget (honest-null: null hours = "unmeasured", never 0) · ② habit threads (one sentence per row for AT)
 //   · the 7 day Cards whose look follows TEMPORAL ASYMMETRY via Card alive-hooks: past `faded` · today `warm` · future.

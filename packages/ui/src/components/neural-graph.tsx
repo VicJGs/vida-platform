@@ -16,7 +16,7 @@ import { type ViewState, Message } from '../internal/data-view'
 import { useReducedMotion } from '../hooks/use-reduced-motion'
 
 // UI-2 · V7 · neural-graph — the renderer for the `graph` VIEW_LAYOUT. A force-directed WebGL graph (Sigma.js).
-// Implements docs/specs/components/ui-2-platform-views/v7-neural-graph.md. The last + hardest UI-2 view.
+// Implements LIF-87. The last + hardest UI-2 view.
 // - PRESENTATIONAL (the boundary): `nodes`/`edges` are props the app provides (from AR-8's graph-prep, which @vida/ui
 //   can't import). V7 defines its own minimal GraphNode/GraphEdge shape.
 // - Sigma mounts via a ref+effect (BR-5), WebGL-GUARDED (skips in jsdom / no-WebGL). ⚠ The effect deps on a CONTENT

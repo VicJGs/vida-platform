@@ -15,7 +15,7 @@ export interface SettingsCategory {
   built: boolean
 }
 
-// Rail order mirrors the OS System specimen (p6-archetypes-design.html:298) + decomposition.md:71.
+// Rail order mirrors the OS System specimen (p6-archetypes-design.html:298).
 export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
   { id: 'appearance', label: 'Appearance', built: true },
   { id: 'locale', label: 'Locale', built: true },

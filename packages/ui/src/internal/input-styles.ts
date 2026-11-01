@@ -6,7 +6,7 @@
 // 1) PLACEHOLDER color. `placeholderTextColor` is NOT consumed on a core render:'input' (React warns) — verified.
 //    Tamagui emits our token as `--placeholder` (light neutral500 / dark neutral400), so `::placeholder` reads it.
 //
-// 2) FOCUS RING = `:focus-visible`, on the FRAME. The contract (input.md:37,55) + components §VIII:155 mandate
+// 2) FOCUS RING = `:focus-visible`, on the FRAME. The contract + components §VIII:155 mandate
 //    `:focus-visible` (keyboard focus, POINTER-SUPPRESSED) — NOT `:focus-within` (which rings on pointer-click and on
 //    a focused trailing clear/reveal button). But the ring must sit on the frame, which is never itself focused
 //    (focus lands on the inner <input>). So we apply the documented `:focus-visible` selector via
@@ -26,7 +26,7 @@ export function ensureInputStyles(): void {
   style.textContent = [
     // 1) placeholder — muted, theme-switching. opacity:1 defeats Firefox's default placeholder opacity.
     '.vida-input::placeholder{color:var(--placeholder);opacity:1}',
-    // 2) focus-visible ring on the frame (2px, 2px offset — §VIII / input.md:37).
+    // 2) focus-visible ring on the frame (2px, 2px offset — §VIII).
     '.vida-input-frame:has(input:focus-visible){outline:2px solid var(--colorFocusRing);outline-offset:2px}',
     // border → focus, EXCEPT when invalid (danger border wins; the ring still shows).
     '.vida-input-frame:not(.vida-input-invalid):has(input:focus-visible){border-color:var(--borderFocus)}',

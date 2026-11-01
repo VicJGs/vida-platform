@@ -150,7 +150,7 @@ export function createNotesService(deps: NotesServiceDeps): NotesService {
 
     // IR-7: the editor body is written through its OWN path, never the updatePage LWW metadata patch, so the
     // eventual M4 CRDT merge is not clobbered. M1 = a local write (serialized TipTap doc → the text column);
-    // M4 swaps the internals to the CRDT entry point — this signature is stable. (interpretation.md:159)
+    // M4 swaps the internals to the CRDT entry point — this signature is stable.
     // BR-R0-6: the shape is checked first so a bad body never costs a read; BR-R0-5: then the page must be live.
     writePageContent: async (id: string, content: EditorDocument): Promise<PageRow> => {
       if (!isEditorDocument(content)) throw new InvalidPageContentError(id)

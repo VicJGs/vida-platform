@@ -11,7 +11,6 @@
 // OPEN vocabs (physical_roles.type modality · experiment.type · exam.kind · metric
 // category/body_part · response scales · severity · medical.status · winner) are
 // user-extensible / under-specified → NO tuple, NO CHECK (plain TEXT).
-// Spec: docs/specs/foundation/db-4-health-core/_index.md
 // ============================================================================
 
 // Metric data-taxonomy — the C2 guard: this is the metric's KIND, NOT the goal's

@@ -7,7 +7,7 @@ import { Input } from './input'
 
 // UI-1 · Popover stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
-// MEASURE items (u9-popover.md §9 + popover.md): the panel is a non-modal surface anchored to the trigger with an
+// MEASURE items: the panel is a non-modal surface anchored to the trigger with an
 // ARROW pointing at it · it enters with opacity + scale(0.96→1) FROM the anchor edge (transform/opacity only — B12,
 // instant under reduced motion) · focus MOVES into the panel (the first input focuses) but is NOT trapped — Tab out
 // of the panel CLOSES it (the page behind stays interactive) · Esc closes + returns focus to the trigger · all 8

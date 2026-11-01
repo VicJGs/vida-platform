@@ -9,7 +9,7 @@
 // It builds `DrizzleDb` over the now-live `client.driver` (the data-plane seam),
 // establishes the device id, and constructs the module services in dependency
 // order. Each entity's closing slice (register + flip — the Entity Live Close,
-// docs/specs/foundation/golive-replan/process.md) consumes these; adding a
+// LIF-240) consumes these; adding a
 // module APPENDS its construction here (seams/CLAUDE.md:85) — the mechanism is
 // build-once, the construction manifest grows. Every write is serialized by the app-wide
 // write lock (write-lock.ts, BR-RT-LOCK) applied to `db.transaction` below.

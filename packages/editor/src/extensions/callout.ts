@@ -2,7 +2,7 @@
 // hand-rolled ProseMirror node (spec §3, BR-E2-6). Rendered/parsed as <div data-type="callout" data-variant>;
 // styled by injected CSS (internal/editor-styles.ts), NOT a React node-view — the E1 editor-styles precedent
 // (leaner; no ReactNodeViewRenderer overhead).
-// Spec: docs/specs/features/ui-3-vida-editor/e2-standard-blocks.md · BR-E2-6.
+// Spec: LIF-88 · BR-E2-6.
 import { Node, mergeAttributes } from '@tiptap/react'
 
 /**

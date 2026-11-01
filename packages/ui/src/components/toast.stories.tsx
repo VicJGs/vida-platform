@@ -7,7 +7,7 @@ import { Button } from './button'
 // Toast is IMPERATIVE — there is no <Toast> element to render; each story mounts its OWN <ToastProvider> (the F1
 // single-provider invariant, per canvas) + buttons that call toast().
 //
-// MEASURE items (u10-toast.md §9 + toast.md): toasts stack at the bottom-center · each carries an intent LEFT-ACCENT
+// MEASURE items: toasts stack at the bottom-center · each carries an intent LEFT-ACCENT
 // bar (info=brand · success=green · danger=red) · they ENTER with opacity + a translateY slide from the edge and
 // EXIT the same way (transform/opacity only — B12; instant under reduced motion, but still announced via aria-live)
 // · auto-dismiss after 5s, PAUSED while hovered/focused · duration:0 = sticky · the cap (default 3) evicts the

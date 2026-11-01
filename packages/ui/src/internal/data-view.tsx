@@ -3,7 +3,7 @@ import { styled, Text } from '@tamagui/core'
 // UI-2 · shared data-view spine — extracted at V3 (rule of three: list-view + gallery-view + timeline). Holds the
 // pieces that are byte-identical across the data-driven platform views; the per-view container/wrapper/skeleton
 // layout GENUINELY differs, so only the error-prone shared logic lives here (NOT a mega-component).
-// Spec: docs/specs/components/ui-2-platform-views/v3-timeline.md §2.
+// Spec: LIF-87.
 
 /** The four rendered terminal states (BR-2). LOCAL union — @vida/ui deps are Tamagui-only, so importing
  *  @vida/core's `TerminalState` would be a wrong-direction edge; structural typing makes the app's

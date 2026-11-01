@@ -13,7 +13,7 @@
 // notification records / dispatch / gating (MOD-notifications), *what/when* due
 // (MOD-notifications + Sessions dueIn), or channel/quiet-hours CONFIG (Preferences).
 // The decision reaching `deliver` is ALREADY GATED by the dispatcher (NF-5) — this
-// engine holds no enforcer/egress. Spec: docs/specs/foundation/xs-notifications-delivery/.
+// engine holds no enforcer/egress. Spec: LIF-174.
 //
 // This file grows one slice at a time (ai/ingestion precedent). S1 = tier routing,
 // channel matrix, content-minimal payload contract.
@@ -22,7 +22,7 @@
 // XCU-01 — the three delivery tiers. In-app is the always-on baseline every
 // notification has; the OFF-DEVICE/scheduled tier is `local_scheduled` (native,
 // time-based) or `wake_signal` (event cross-device, and web time-based).
-// `[FACT: ADR-013 §3.1 L41-47 (tier table); xcut-notifications.md:28]`
+// `[FACT: ADR-013 §3.1 L41-47 (tier table)]`
 export const DELIVERY_TIERS = ['in_app', 'local_scheduled', 'wake_signal'] as const
 export type DeliveryTier = (typeof DELIVERY_TIERS)[number]
 
@@ -49,7 +49,7 @@ export type DeliveryChannel = (typeof DELIVERY_CHANNELS)[number]
 // XCU-17 — the delivery posture. `standard` uses every ZK-valid channel for the
 // tier; `no_third_party` (the opt-out mode) runs in-app + native local-scheduled
 // ONLY — no APNs/FCM, no email, no server relay: no third-party observer ever.
-// `[FACT: ADR-013 §3.5 L67, L108 (explicitly accepted); xcut-notifications.md:44]`
+// `[FACT: ADR-013 §3.5 L67, L108 (explicitly accepted)]`
 export const DELIVERY_MODES = ['standard', 'no_third_party'] as const
 export type DeliveryMode = (typeof DELIVERY_MODES)[number]
 
@@ -67,7 +67,7 @@ export interface RoutingMeta {
 // XCU-08 — the content-minimal wake payload: routing only, zero `[E]` content, zero
 // `type`, zero subject entity. `kind:'wake'` marks it a content-free "sync now"
 // signal. This is the ZK payload CONTRACT ADR-013 owns. `[FACT: ADR-013 §3.3 L53,
-// §3.5 L61-65, §3.6 L70; xcut-notifications.md:35]`
+// §3.5 L61-65, §3.6 L70]`
 export interface WakePayload {
   kind: 'wake'
   userId: string
@@ -111,7 +111,7 @@ export class PayloadNotContentFree extends Error {
 // resolves the TZ (the calendar-view TZ-safe-keying discipline), so the derivation stays
 // pure + deterministic. `policy` = what to do with a reminder landing inside (shift vs
 // suppress "per the user's setting"; the shift-vs-suppress runtime is build-phase INTERP).
-// `[FACT: ADR-013 §3.2 L51; §5.17 quiet_hours_*; NF-4 business-rules:24-26; xcut-notifications.md:32]`
+// `[FACT: ADR-013 §3.2 L51; §5.17 quiet_hours_*; NF-4 business-rules:24-26]`
 export interface QuietHours {
   enabled: boolean
   /** inclusive local minute-of-day the quiet window opens (0-1439). */
@@ -124,7 +124,7 @@ export interface QuietHours {
 // A due reminder occurrence derived over the Sessions `dueIn` agenda (NF-3). `occurrenceId`
 // is its stable id (feeds the XCU-14 dedup namespace so scheduleLocal ↔ reschedulePlan ↔
 // dedupKey cohere); `at` is the absolute fire time (Unix ms); `minuteOfDay` is its LOCAL
-// minute-of-day (caller-resolved, TZ-safe). `[FACT: xcut-notifications.md:19-21; NF-3:20-23; NF-8]`
+// minute-of-day (caller-resolved, TZ-safe). `[FACT: NF-3:20-23; NF-8]`
 export interface DueOccurrence {
   occurrenceId: string
   at: number
@@ -154,7 +154,7 @@ export interface ReschedulePlan {
 // XCU-14 — the idempotency source. An EVENT carries the ADR-012 deterministic
 // `effectEventId` (NF-8 Additive) — passed THROUGH, never re-hashed (the effect rail
 // owns the key, N3). A time-based fire is keyed by its `dueIn` occurrence id.
-// `[FACT: NF-8 business-rules:39-42; ADR-012 §3.1; xcut-notifications.md:41]`
+// `[FACT: NF-8 business-rules:39-42; ADR-012 §3.1]`
 export type DedupSource = { kind: 'event'; effectEventId: string } | { kind: 'due'; occurrenceId: string }
 
 // ─── S3 — delivery dispatch: deny-safe ports · fallback→in-app · opt-out (XCU-03,06,07,09,10,11,15,16,17) ───
@@ -200,7 +200,7 @@ export interface ScheduleResult {
 
 // ── Ports (injected; M1 default = deny-safe/fail-closed — no network call). M2 wires the
 // real reach (Expo/Tauri local scheduler · Hono server wake-relay · Web Push · email
-// provider) with NO signature change (IR-7). `[FACT: ADR-013 §5 L111-115; xcut-notifications.md:52]`
+// provider) with NO signature change (IR-7). `[FACT: ADR-013 §5 L111-115]`
 
 // XCU-03 — native OS local scheduler (Expo Notifications / Tauri). Server-free, ZK.
 export interface OsSchedulerPort {

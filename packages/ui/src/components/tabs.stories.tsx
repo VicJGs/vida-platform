@@ -5,7 +5,7 @@ import { Tabs } from './tabs'
 
 // UI-1 · Tabs stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
-// MEASURE items (u6-tabs.md §8 + §10/§16): the 1px baseline rule under the strip · muted vs active label colour ·
+// MEASURE items: the 1px baseline rule under the strip · muted vs active label colour ·
 // the indicator sitting UNDER the active tab · the indicator SLIDING (transform) when you arrow/click between tabs —
 // and RESIZING instantly to the new tab's width (never a left/width crawl) · focus ring (Tab to the strip, arrow
 // between) · a disabled tab (muted, skipped by arrows) · Tab moves focus INTO the panel · vertical orientation ·

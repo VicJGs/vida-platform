@@ -104,7 +104,7 @@ describe('build — outputs (B1/B3/B4)', () => {
   })
 
   it('F003 — component sub-themes reference the BASE themes (light./dark.), not raw primitives, so dark inherits the overlay', () => {
-    // Regression guard for docs/specs/fixes/component-subtheme-dark-drift (DS-1:113).
+    // Regression guard for the component sub-theme dark drift fix (DS-1:113).
     // Before the fix, light_/dark_ both emitted `tokens.color.*` → dark_Button ≡ light_Button.
     const lightSub = themes1.match(/export const light_Button = \{[^\n]*\}/)?.[0] ?? ''
     const darkSub = themes1.match(/export const dark_Button = \{[^\n]*\}/)?.[0] ?? ''

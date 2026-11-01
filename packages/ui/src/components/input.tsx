@@ -2,11 +2,11 @@ import { forwardRef, type InputHTMLAttributes, type ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
 import { ensureInputStyles } from '../internal/input-styles'
 
-// UI-1 · Input (primitive 2/10) — implements ds-5-primitive-contracts/input.md against Tamagui v2.
-// Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u2-input.md. /verify /tamagui/tamagui (2026-08-06).
+// UI-1 · Input (primitive 2/10) — implements the ds-5 Input contract against Tamagui v2.
+// Reconcile: LIF-86. /verify /tamagui/tamagui (2026-08-06).
 // - Frame (View) owns the border/bg/padding + the leading/trailing slots; the real <input> sits inside it.
 // - render:'input' → a real <input> (native text editing, type, form participation) [FACT: styled.mdx].
-// - Focus lands on the inner <input>. The contract (input.md:37,55) + components §VIII:155 mandate `:focus-visible`
+// - Focus lands on the inner <input>. The contract + components §VIII:155 mandate `:focus-visible`
 //   (keyboard focus, POINTER-SUPPRESSED). Tamagui `focusVisibleStyle` keys off the element's OWN focus, so it can't
 //   fire on the never-focused frame; and `focusWithinStyle` (`:focus-within`) would ring on pointer-click and on a
 //   focused trailing button — a spec deviation. So the ring is delivered as the DOCUMENTED `:focus-visible` selector
@@ -90,7 +90,7 @@ const NativeInput = styled(Text, {
 })
 
 // Tamagui types a View-rendered styled component as View props; on web `render:'input'` forwards native <input>
-// attributes at runtime (verified in-browser — u2-input.md First-impl VERIFY). We widen the type to the input
+// attributes at runtime (verified in-browser). We widen the type to the input
 // attrs we actually pass (incl. Tamagui's `placeholderTextColor` token prop), keeping strict TS with no `any`.
 type NativeInputExtra = Pick<
   InputHTMLAttributes<HTMLInputElement>,

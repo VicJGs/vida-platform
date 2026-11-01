@@ -7,7 +7,7 @@ import { Input } from './input'
 
 // UI-1 · Dialog stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
-// MEASURE (u8-dialog.md §5/§6/§10): the scrim dims the page + the panel is CENTERED (radiusCard, $background) · the
+// MEASURE: the scrim dims the page + the panel is CENTERED (radiusCard, $background) · the
 // panel ENTERS with opacity + a small scale/lift (transform/opacity ONLY — B12), instant under reduced-motion · on
 // open focus lands on the first focusable inside · Tab CYCLES within the panel (never escapes to the page) · Esc +
 // backdrop close (dismissible) · the non-dismissible confirm ignores Esc/backdrop (only its actions close it) · the

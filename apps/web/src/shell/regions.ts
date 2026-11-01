@@ -118,7 +118,7 @@ export { BREAKPOINT_ORDER }
 // ── fe-shell (#14) · the dock⇄float panel placement model ─────────────────────────────────────────────────────────
 // The CODEC reshape of the shell nav: the two bars become macOS/iPadOS-inspector panels — each toggles between DOCKED
 // (inline, content beside) and FLOATING (overlay over full-bleed content), rearrangeable to any edge, content-fit.
-// `[FACT: delivery/envision.md M1–M7; frontend-quality-bar §4.1:103; p6-organization-map.html:135]`. Data-only (as the
+// `[FACT: M1–M7; frontend-quality-bar §4.1:103; p6-organization-map.html:135]`. Data-only (as the
 // rest of this file); the chrome (app-shell.tsx / shell-panel.tsx) renders against it. Bar 1/HUD/⌘K CONTENT is #15/#16/#17.
 
 /** The two user-rearrangeable nav panels. `system` = scope + global surfaces (#15 content); `modules` = the grouped nav. */

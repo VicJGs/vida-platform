@@ -1,7 +1,7 @@
 // ============================================================================
 // mod-journals #39 · LIF-127 · Slice 1 — registry + types tests (pure logic)
 //
-// Proves the S1 charter (docs/specs/features/mod-journals/sessions/PLAN-2026-09-19-s1-registry.md §4):
+// Proves the S1 charter (LIF-127):
 //   • BR-S1-2 — list() is DETERMINISTIC: sectionKey (summary→agenda→entry) then module asc
 //   • BR-S1-3 — re-register OVERWRITES by module key (not throw)
 //   • edges   — empty list() → []; get(unknown) → undefined

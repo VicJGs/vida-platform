@@ -7,7 +7,7 @@ import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 import { formatHour, HOUR_PX, layoutDay, normalizeSpan, type Span, windowFor } from '../internal/week-layout'
 
 // fe-calendar #19 · S3 — week-view, the Week AND Day range renderer (Day = this with one column — EC-4).
-// Spec: docs/specs/foundation/fe-calendar/delivery/PLAN-S3-week-day-renderer.md (→ ui-2 v11-week-view.md).
+// Spec: LIF-203 (→ ui-2, LIF-87).
 // PRESENTATIONAL + read-only (EC-12): blocks arrive pre-bucketed by `day`; this only POSITIONS them. No intents, no
 // interactive descendants — the one tab stop is the Week scroll region (navigation, WCAG 2.1.1).
 // - Never assume time (IR-6): only real-clock items are blocks; dated-but-untimed items are all-day chips.

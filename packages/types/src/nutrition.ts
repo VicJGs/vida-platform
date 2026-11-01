@@ -9,7 +9,6 @@
 // dish_category · source_type · whole_food_type · functional_area · all status
 // columns) are modality / editable-starter (C5) / not inline-enumerated → NO tuple,
 // NO CHECK (plain TEXT/JSON). Row interfaces → DB-11 reconcile.
-// Spec: docs/specs/foundation/db-4-health-nutrition/_index.md
 // ============================================================================
 
 // Meal authorship provenance (structure-data.md:27) — the `manual|ai|import` triad.

@@ -8,7 +8,7 @@ import { Card } from './card'
 // timeline is V1's spine laid out as a CONTINUOUS vertical rail (dot + connecting line) with an optional temporal
 // label. Rows compose an interactive Card.
 //
-// MEASURE (v3-timeline.md §5 + P3-timeline.md §4): success sequence — the rail is CONTINUOUS across items (no dashes at
+// MEASURE: success sequence — the rail is CONTINUOUS across items (no dashes at
 // the gaps), trims to the dot at first/last (no overhang) · the date sits in a serif+eyebrow LEFT GUTTER, aligned near
 // each dot · hollow resting dots · present = accent dot + soft ring · future = faded DOT (date held at full AA) ·
 // now-fulcrum = an accent "now" divider before the first non-past item (rail connects through it) · loading = N dot-only

@@ -13,8 +13,8 @@ import { useSettings } from './settings-context'
 // preferences-rescope R5 (R5-BR-1): reads the persisted view and writes through the Settings save path
 // (`useSettings().update` → the writer): show/hide → `module_visibility` (map merge), rename → `dashboard_layout.moduleNames`
 // (map merge, trimmed, ≤ 40 chars). Every row control speaks the DISPLAY name, so a renamed row has one spoken name.
-// Touch targets (R5 Visual Gate): Switch `lg` (the documented touch size, fe-settings s1-switch.md) + `lg` icon
-// buttons (≥44, decisions.md:138) — the S5 `md`/`sm` controls measured 36×20 / 40×32.
+// Touch targets (R5 Visual Gate): Switch `lg` (the documented touch size) + `lg` icon
+// buttons (≥44) — the S5 `md`/`sm` controls measured 36×20 / 40×32.
 
 function PencilIcon() {
   return (

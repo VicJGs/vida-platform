@@ -5,8 +5,8 @@
 // hoisted closures, no `this.` (the ② destructure-consumption shape; the books/knowledge/habits precedent).
 // S1 declares the hierarchy-CRUD surface (institutions · self_taught · programs · curricula · terms) + the
 // `resolveParentChain` routing primitive S2 enforces. S2–S10 APPEND (subjects+DB-11 · fork · schedule/sessions ·
-// ICS · grading · assessments/GPA · measurement · vault · cross-module+Journal) per
-// docs/features/learning/education/delivery/slice-map.md. Deps grow the same way — S1 needs only { db, deviceId };
+// ICS · grading · assessments/GPA · measurement · vault · cross-module+Journal).
+// Deps grow the same way — S1 needs only { db, deviceId };
 // later slices add spaces/notes/sessions/sessionRegistry/journalRegistry + the optional deny-safe ports
 // (ics?/attachment?/tasks?/ai?) + the dormant effects? seam.
 //
@@ -91,7 +91,7 @@ export interface RawIcsEvent {
 /** The deny-safe ICS fetch port (S5). The device-mediated network fetch + ICS parse is **M2** (ADR-014 X1);
  *  at M1 this port is injected ABSENT ⇒ `syncFeed` throws `IcsUnavailableError`. A PRESENT port that throws
  *  during fetch ⇒ the feed's `last_error` is written then `IcsSyncError` is thrown (never silent-stale).
- *  `[seam-contract.md ICS; interpretation.md:52-54]` */
+ *  `[ICS]` */
 export interface IcsFetchPort {
   fetchFeed(url: string): Promise<RawIcsEvent[]>
 }
@@ -128,7 +128,7 @@ export interface LearningEducationServiceDeps {
    *  composition root wires services yet; wired at M2/P6). */
   tasks?: TasksEducationPort
   /** Deny-safe Books read port (S10) — `getBookPlansForSubject` passthrough to BK-12 `getPlansForConsumer`; absent ⇒
-   *  `[]`. Optional despite Books being DONE (seam-contract.md:17 marks it `?`) — M1 has no composition root. */
+   *  `[]`. Optional despite Books being DONE (the seam contract marks it `?`) — M1 has no composition root. */
   books?: BookPlansPort
   /** Deny-safe Knowledge mastery read port (S10) — `getMasteryForSubject` consumes the KN-10 leaf; absent ⇒ an
    *  all-null `SubjectMastery` (unmeasured). */
@@ -153,7 +153,7 @@ export interface EducationFileBlob {
  *  R2 ref; a rejection is a real R2/encrypt error ⇒ fail-loud `DocumentFileError`. Absent ⇒ inline fallback (no
  *  throw). Only `upload` is needed in S9 (Education has no Reader/download slice). M2 provides the real pipeline
  *  (zero-signature swap). Subject-keyed `upload` ≠ the books book-keyed one, so NOT reused — named
- *  `EducationAttachmentPort` to avoid the flat-barrel collision. `[seam-contract.md:23; books/types.ts:121]` */
+ *  `EducationAttachmentPort` to avoid the flat-barrel collision. `[books/types.ts:121]` */
 export interface EducationAttachmentPort {
   upload(input: { file: EducationFileBlob; subjectId: string }): Promise<{ fileRef: string }>
 }
@@ -550,7 +550,7 @@ export class UnroutedSubjectError extends Error {
  *  Per interpretation R9, this has NO wired throw site in S3: `forkCurriculum` writes only new rows, so the
  *  base is never mutated BY CONSTRUCTION (BR-LE-S3-2) — there is nothing to throw at. It is exported so the
  *  ratified seam surface is complete and a future mutable-template-edit path (M2+) can wire it without a
- *  signature change (the `IntegrationConsentError` books-S10 precedent). `[R9; slice-map.md:20; seam-contract.md:75]` */
+ *  signature change (the `IntegrationConsentError` books-S10 precedent). `[R9]` */
 export class TemplateImmutableError extends Error {
   constructor(id: string) {
     super(`Curriculum is an immutable template: ${id}`)
@@ -567,7 +567,7 @@ export class IcsUnavailableError extends Error {
   }
 }
 /** A PRESENT `ics?` port threw during fetch/parse — the feed's `last_error` is persisted BEFORE this throws, so
- *  the failure is never silent-stale (seam-contract.md ICS). */
+ *  the failure is never silent-stale (ICS). */
 export class IcsSyncError extends Error {
   constructor(feedId: string, cause: string) {
     super(`ICS sync failed for feed ${feedId}: ${cause}`)
@@ -623,7 +623,7 @@ export class DocumentFileError extends Error {
   }
 }
 /** `addDocument` was given BOTH an inline `file` and a pre-uploaded `storage_ref` — the two storage sources are
- *  mutually exclusive (seam-contract.md:64 `file?|storageRef?`). Typed (not a plain Error) for constitution §5
+ *  mutually exclusive (`file?|storageRef?`). Typed (not a plain Error) for constitution §5
  *  consistency with the rest of the module. Real throw site: the pre-write guard in `addDocument`. */
 export class ConflictingFileSourceError extends Error {
   constructor() {

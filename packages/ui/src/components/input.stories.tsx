@@ -6,7 +6,7 @@ import { Input } from './input'
 // modes. Resting states (default/disabled/invalid/readOnly/empty) show explicitly; hover/focus/active are verified
 // live (hover the mouse, Tab/click to focus, type) — no static story without a pseudo-forcing addon.
 //
-// `loading` is NOT a prop (contract input.md:11-28 has none; :40 realizes it via "(trailing slot)"): the consumer
+// `loading` is NOT a prop (the contract has none; it realizes it via "(trailing slot)"): the consumer
 // puts a spinner in `trailing` + sets `aria-busy`. The Loading story demonstrates exactly that.
 
 const meta = {
@@ -104,7 +104,7 @@ export const Disabled: Story = { args: { disabled: true, value: 'Disabled' } }
 export const ReadOnly: Story = { args: { readOnly: true, value: 'Read only' } }
 
 export const Loading: Story = {
-  // loading — spinner in the trailing slot + aria-busy (contract input.md:40; no `loading` prop).
+  // loading — spinner in the trailing slot + aria-busy (no `loading` prop).
   args: { value: 'checking…', trailing: <Spinner />, 'aria-busy': true },
 }
 

@@ -7,7 +7,7 @@ import { SlashMenu } from './slash-menu'
 import { SLASH_MENU_ITEMS } from './slash-commands'
 import { INTEGRATION_BLOCK_TYPE, type EditorDocument } from '@vida/types'
 
-// E1 (UI-3) — the component Visual-Gate surface for <VidaEditor> (frontend-visual-gate.md render table). The
+// E1 (UI-3) — the component Visual-Gate surface for <VidaEditor>. The
 // preview decorator roots each story in @vida/ui's UIProvider + paints the theme page surface, so the editor chrome
 // (frame border, caret, placeholder) is reviewable in both light｜dark. States: default · focus (interact) · disabled
 // · empty (placeholder). Smoke-verifies the contenteditable mounts with NO react-native-web / process-shim crash

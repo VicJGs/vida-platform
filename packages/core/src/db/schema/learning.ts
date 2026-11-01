@@ -11,7 +11,7 @@
 // migration (migrations/024_learning_education.ts). These Drizzle objects are the
 // type-safe QUERY mirror — `enumText` gives the TS union, not a SQL CHECK.
 //
-// Reframe (spec docs/specs/foundation/db-4-learning-education/):
+// Reframe:
 // - `courses` → `subjects` (reinterpreted): inline `tags` RETIRED → entity_tags
 //   (SP1, entity_type='subject'); `progress` nullable override (NULL⇒derive, M3 —
 //   the §5.10 NOT NULL DEFAULT 0 anti-signal resolved out); +routing (curriculum_id/

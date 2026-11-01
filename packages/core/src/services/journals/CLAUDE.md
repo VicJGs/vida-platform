@@ -10,7 +10,7 @@ dashboard. Owns the ENGINE, never the journal page (JR-1). ① backend built at 
 ## Owning ADR / context
 
 notes-and-pages · docs/features/journals · ADR-004 (registry pattern). Currency:
-`docs/modules/journals/current-{spec,business-rules}.md`. Delivery: `docs/features/journals/delivery/*`.
+`docs/modules/journals/current-{spec,business-rules}.md`.
 
 ## Pattern
 

@@ -7,7 +7,7 @@ import { SR_ONLY } from '../internal/calendar-shared'
 import { buildYear, indexDensity, localDate, MONTH_MIN, resolveYear } from '../internal/year-layout'
 
 // fe-calendar #19 · S4 — year-view, the Year range renderer: 12 mini-months of activity-density dots (EC-5).
-// Spec: docs/specs/foundation/fe-calendar/delivery/PLAN-S4-year-renderer.md (→ ui-2 v12-year-view.md).
+// Spec: LIF-203 (→ ui-2, LIF-87).
 // PRESENTATIONAL + read-only (EC-12): density arrives pre-derived (S7 useCalendar owns has/busy); this only places dots.
 // The one intent is NAVIGATION — a month heading drills into Month (`onPickMonth`, render-when-handler).
 // - Shape is the approved greybox: no day numbers, no weekday row, leading blanks only, `$8` cell gap, 4-up → 2-up.

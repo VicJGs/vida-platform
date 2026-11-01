@@ -6,7 +6,7 @@
 //
 // What it owns: the masthead (via CanvasView) + SyncStatus + the sheet-on-desk page + 8-state threading + a11y.
 // What it does NOT own: live data / @vida/core persistence (deferred to the first consumer #27 — S3 ships only the
-// pure convention; reconstructed-structure.md:33 homes runtime @vida/core wiring to #13 seams).
+// pure convention; runtime @vida/core wiring belongs to the #13 seams).
 import type { ReactNode } from 'react'
 import { View, Text } from '@tamagui/core'
 import { CanvasView, SyncStatus, EmptyState, type CanvasState } from '@vida/ui'

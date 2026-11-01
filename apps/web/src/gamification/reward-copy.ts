@@ -6,8 +6,8 @@
 // Preferences/Onboarding; GM-16 forbids the System owning framing). This is the whole, bounded
 // effect of persona on the surface: a few nouns swap.
 //
-// Grounded strictly in the envision EC-10 pairs — "Quests/Treasure/Loot ↔ Rules/Boxes/Reward"
-// (envision.md:32). Only the pairs that name THIS surface's vocabulary are mapped:
+// Grounded strictly in the envision EC-10 pairs — "Quests/Treasure/Loot ↔ Rules/Boxes/Reward".
+// Only the pairs that name THIS surface's vocabulary are mapped:
 //   • Rules  ↔ Quests   (the rule mode + authoring flow)
 //   • Reward ↔ Loot      (the reward noun a rule grants)
 // "Treasure ↔ Boxes" is Finance-owned storage, not a surface here (GM-16 / IR-G4) → not mapped.

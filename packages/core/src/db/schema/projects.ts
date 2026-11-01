@@ -11,7 +11,7 @@
 // migration (migrations/016_projects.ts). These Drizzle objects are only the
 // type-safe QUERY mirror — `enumText` gives the TS union, not a SQL CHECK.
 //
-// Shape (spec docs/specs/foundation/db-4-projects/):
+// Shape:
 // - NO hard cross-table FK, self-ref included (no-FK convention; project→milestone/
 //   document cascade + milestone SET-NULL/reparent are the app/sync layer's, PJ-9).
 // - `progress` is a NULLABLE override slot on projects/milestones/deliverables

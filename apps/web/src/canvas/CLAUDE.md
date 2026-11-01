@@ -37,8 +37,7 @@ owning-module Capabilities, R1):
 
 `useVisionBoard(spaceId)` / `useCalendar(spaceId)` live data hooks (React Query → the saved view + dreams / `dueIn`
 cross-module fan-out + these pieces) are built at the FIRST real consumer — fe-purposes' Dreams vision-board /
-`fe-calendar #19` (the cross-module `dueIn` lane). The dense-day overflow treatment is #19's (parked
-`calendar-vision.md §6`).
+`fe-calendar #19` (the cross-module `dueIn` lane). The dense-day overflow treatment is #19's (parked).
 
 ## Verify
 

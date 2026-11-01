@@ -8,7 +8,7 @@ import { Button } from './button'
 //
 // KNOWN addon-a11y flag (expected, NOT a U1 defect): filled `danger` fails AA contrast (white on
 // signal.danger #EF4444 ≈ 3.5:1). This is a provisional-palette item deferred to the DS-2 brand pass
-// (ds-5 button.md:63-68, acceptance :108 — filled-danger is withheld until a danger.600 emphasis token
+// (ds-5 Button contract — filled-danger is withheld until a danger.600 emphasis token
 // meets AA). The check is left ON (honest) rather than suppressed.
 
 const meta = {

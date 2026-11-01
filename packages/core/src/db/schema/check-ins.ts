@@ -7,7 +7,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes/UNIQUE live in the hand-written SQL
 // migration (migrations/026_check_ins.ts). These Drizzle objects are the query mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-check-ins/_index.md):
+// Shape:
 // - Enums REUSED from @vida/types (entities/user.ts) — colocated there historically
 //   (check_in_streak* lived on user_profile). CHECK_IN_TYPE amended 3→6 (CK-3). No new tuple.
 // - NO cross-table FK: template_id ×2 plain TEXT (was SET NULL / CASCADE). CK-10 = app-layer.

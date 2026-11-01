@@ -8,7 +8,7 @@
 // HOME = @vida/core (NOT @vida/types): `SectionData.state` reuses the @vida/core
 // `TerminalState` canon, and @vida/types is the base layer that cannot import
 // @vida/core. `JournalSummaryConfig` (a `Page` field) stays in @vida/types/note.ts.
-// Spec: docs/specs/features/mod-journals/sessions/PLAN-2026-09-19-s1-registry.md
+// Spec: LIF-127
 // ============================================================================
 
 // Reuse the terminal-state canon by TYPE — never redefine (BR-S1-4). The four

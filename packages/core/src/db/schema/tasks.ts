@@ -16,7 +16,7 @@
 // mirror declares the plain query indexes only (the 2 partial `WHERE deleted_at
 // IS NULL` indexes are SQL-migration-only — the notes.ts precedent).
 //
-// Shape (spec docs/specs/foundation/db-4-tasks/):
+// Shape:
 // - NO hard cross-table FK, self-ref included (no-FK convention).
 // - Full `baseColumns` (incl. updated_at) on both; `tasks` has `deleted_at`,
 //   `task_time_logs` does NOT (ledger — hard-deletes with the task, §5.3).

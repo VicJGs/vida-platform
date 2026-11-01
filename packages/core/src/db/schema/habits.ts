@@ -11,7 +11,7 @@
 // written SQL migration (migrations/017_habits.ts). These Drizzle objects are only
 // the type-safe QUERY mirror — `enumText` gives the TS union, not a SQL CHECK.
 //
-// Shape (spec docs/specs/foundation/db-4-habits/):
+// Shape:
 // - NO hard cross-table FK (habit_id/project_id plain TEXT — cascade is the app/sync
 //   layer's, HB-11/BR-DB3-1).
 // - habits is a pursuable → measurement_kind NN DEFAULT 'rate' (HB-13 doc-licensed

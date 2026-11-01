@@ -10,7 +10,7 @@
 //
 // The enum-parity test checks only CHECK value-SETS; the runner test only that
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
-// Origin: group #2 P5 (time_format type-lie). schema-foundation-build-flow.md §2 Phase 5.
+// Origin: group #2 P5 (time_format type-lie).
 //
 // The 2 junctions carry a synthetic `id` PK (project_habits v2 shape — NOT §5.9's composite PK),
 // so the `pk == ['id']` assertion holds uniformly across all 8.

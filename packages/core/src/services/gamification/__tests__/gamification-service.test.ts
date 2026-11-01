@@ -3,7 +3,7 @@
 //
 // Node / better-sqlite3 live-store harness (mirrors finance/checkins): REAL data store,
 // UNLOCKED vault, migrate() applies 006_economy + 031_gamification so the tables exist.
-// Covers the slice-map.md S1 Verification Gate: currency define/list/get (thin-build over
+// Covers the S1 Verification Gate: currency define/list/get (thin-build over
 // registry.list, R1) · getBalance DERIVED via computeBalance (IR-1) · below-floor clamp
 // (IR-12) · unknown-code fail-loud · deriveLevel curve (GM-14) · profile upsert + JSON view.
 // ============================================================================

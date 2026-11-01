@@ -4,7 +4,7 @@
 // The Notifications MODULE surface (the ADR-013 dispatcher/surface) over the DB-4 `notifications`
 // table — the terminal PURE SINK (in-degree=everything, out-degree 0). Composes the BUILT delivery
 // engine (foundation/notifications #46) + effect rail + Sessions `dueIn` + Preferences; invents no
-// engine. Grows one slice at a time (slice-map.md). S1 = scaffold + inbox reads + lifecycle + DB-11.
+// engine. Grows one slice at a time. S1 = scaffold + inbox reads + lifecycle + DB-11.
 //
 // Deps grow per slice (the books/habits precedent): S1 needs only { db, deviceId }; S2 adds `engine`
 // + `preferences?`, S4 adds `sessions`. The factory signature extends; no breaking re-shape.

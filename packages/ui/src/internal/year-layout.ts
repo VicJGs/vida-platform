@@ -1,5 +1,5 @@
-// fe-calendar #19 · S4 — the pure mini-month geometry + density guards behind YearView (PLAN-S4-year-renderer.md
-// BR-3/10). TZ-safe: every date is built from numeric parts via setFullYear at local NOON (a bare new Date(y,…) maps
+// fe-calendar #19 · S4 — the pure mini-month geometry + density guards behind YearView
+// (BR-3/10). TZ-safe: every date is built from numeric parts via setFullYear at local NOON (a bare new Date(y,…) maps
 // years 0–99 to 1900+y; noon keeps a DST-at-midnight zone on the right day) and keyed from its calendar fields — never
 // a 'YYYY-MM-DD' string parsed by Date (UTC midnight → the day before in UTC−3).
 

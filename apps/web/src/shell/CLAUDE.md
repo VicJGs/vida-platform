@@ -22,7 +22,7 @@ Two concerns coexist: the UX-3 **layout model** (data) and the UI-4 **chrome** (
   `DEFAULT_PLACEMENT` (both closed, docked-left — M1/L1) · `PANEL_IDS` · `panelAxis` (L/R=vertical, T/B=horizontal) ·
   `isOverlay` (float⇒overlay) · `reservedTopInset(bp)` (the EC-7 top strip, 52/56 on-grid). The two nav bars are
   macOS/iPadOS-inspector panels: each toggles docked (inline, content beside) ⇄ floating (overlay+scrim), rearrangeable
-  to any edge. Governing model: `docs/specs/foundation/fe-shell/delivery/envision.md` M1–M7.
+  to any edge. Governing model: LIF-226 M1–M7.
 - `shell-prefs.ts` (fe-shell #14, S1) — `ShellPrefsRead = ProviderRead<ShellPlacement>` + `stubShellPrefs` (M1 → DEFAULT;
   live `nav_preferences` read/write = first consumer, envision L5). Panel _arrangement_ is ephemeral Zustand
   (`app-shell-ui-store.placement`, BR-RT-6 "panel state"); _persistence_ is this deferred seam (never a raw table).
@@ -100,7 +100,7 @@ ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydratio
   shown-but-disabled keeps the dock⇄float control visible per EC-1 without a reachable float dead-end / dishonest
   disclosure — g2 S3 fold, a §XXVIII deviation from the live-Float plan). Composes `@vida/ui` `Button` + `lucide-react`;
   every value a DS token. `panelDomId(id)` = the `aria-controls` target. One consumer ⇒ stays here, NOT `@vida/ui`
-  (ui-4 BR-1). Delivery: `docs/specs/foundation/fe-shell/delivery/` (+ `sessions/PLAN-s3-docked-panel.md`).
+  (ui-4 BR-1). Delivery: LIF-226.
   **S4 added the FLOATING branch** (`FloatShellPanel`): when `placement.mode==='float'` the SAME chrome renders as an
   edge-anchored **modal drawer** — a scrim (`$colorSurfaceInverse` @ **0.5**, the Dialog scrim value; click→close) + a
   `role="dialog" aria-modal="true"` panel (NOT the `<nav>`/`<aside>` landmark — that's docked; B4) anchored per
@@ -146,7 +146,7 @@ ShellPrefsRead` (default `stubShellPrefs`) + a **once, cold-boot-only** hydratio
   `routes.tsx`, and `packages/ui/package.json` gained `"sideEffects": false` so Rollup tree-shakes the unused
   `NeuralGraph` out of the eager barrel graph. MEASURED: sigma/graphology leave the initial chunk into a ~42 KB lazy
   `graph-*` chunk (< 50 KB, performance-strategy §6). ⚠ the residual ~154 KB initial chunk (React+Tamagui+router,
-  unsplit) is a SEPARATE framework-split perf task, NOT BR-7. See `docs/specs/features/ui-4-app-shell-components/s5-integration.md`.
+  unsplit) is a SEPARATE framework-split perf task, NOT BR-7. See LIF-89.
 - `command-bar.tsx` (S3) — the ⌘K launcher overlay: COMPOSES UI-1 `Dialog` (modal envelope) + `Input` (a `role=combobox`
   field via Input's `{...rest}` pass-through — no `packages/ui` edit) + a hand-rolled `role=listbox` of non-focusable
   `role=option` divs (aria-activedescendant, ↑/↓, Enter — the Select pattern, one tab stop). Builds the registry

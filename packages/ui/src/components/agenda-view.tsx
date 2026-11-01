@@ -6,7 +6,7 @@ import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-mot
 import { parseLocalDate, SR_ONLY } from '../internal/calendar-shared'
 
 // fe-calendar #19 · S2 — agenda-view, the Agenda range renderer (the "another way" that solves the month grid's
-// info-crush). Spec: docs/specs/foundation/fe-calendar/delivery/PLAN-S2-agenda-renderer.md (→ ui-2 v10-agenda-view.md).
+// info-crush). Spec: LIF-203 (→ ui-2, LIF-87).
 // PRESENTATIONAL + read-only (EC-12): items arrive PRE-dayparted + PRE-ordered (the useCalendar seam derives them);
 // this only ARRANGES. The one interaction — completion — is an INTENT (`onToggleItem`), never a write.
 // - Temporal asymmetry: ONLY the `today` day is grouped under Morning/Afternoon/Evening; other days are one flat list

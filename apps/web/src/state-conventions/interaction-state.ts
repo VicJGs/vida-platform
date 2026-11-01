@@ -21,7 +21,7 @@ export { TERMINAL_STATE, type TerminalState, type QueryResultLike, deriveTermina
 import { type QueryResultLike, type TerminalState, deriveTerminalState } from './terminal-state'
 
 /**
- * The input-bearing superset (decomposition.md §1.3 / :39). The four terminal
+ * The input-bearing superset. The four terminal
  * members ARE the `@vida/core` canon's literals (never a 5th copy); the four
  * additions (`idle·typing·results·unavailable`) are surface sub-states that each
  * collapse back to a canonical one via {@link collapseToTerminal}.

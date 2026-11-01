@@ -6,7 +6,7 @@
 // built for 10K-node datasets + carries the WebGL concrete-color seam; for ~8 area-hubs a deterministic
 // CSS/SVG constellation is lighter, controllable, and IS the greybox Victor visually approved. Reduced-
 // motion-safe by default (no animation). Live drill-down (tap an area → its alerts) is deferred with the
-// data plane. `[FACT: envision.md EC-4; approved greybox = CSS/SVG]`
+// data plane. `[FACT: EC-4; approved greybox = CSS/SVG]`
 // ============================================================================
 import { Text, View } from '@tamagui/core'
 import { Award, BookOpen, Clock, Folder, LayoutGrid, Users, Wallet } from 'lucide-react'

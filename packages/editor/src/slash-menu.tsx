@@ -2,7 +2,7 @@
 // Menu mount — a slash menu is a COMBOBOX: focus stays in the editor, so this exposes an imperative `onKeyDown` handle
 // the plugin forwards ↑/↓/Enter to, and never moves DOM focus into itself). Reuses the UI-1 Menu sub-theme token
 // language under `<Theme name="Menu">` (the portal-scope lesson — the ReactRenderer element is positioned outside the
-// editor frame, so the sub-theme scope must be re-established here). Spec: e4-slash-menu.md · BR-E4-1/6, §5.
+// editor frame, so the sub-theme scope must be re-established here). BR-E4-1/6.
 import {
   forwardRef,
   useEffect,

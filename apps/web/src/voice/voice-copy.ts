@@ -1,5 +1,5 @@
 // fe-codec-patterns · S5 — VoiceCopy (Vida's voice + the copy-honesty lint).
-// Reconcile: docs/specs/foundation/fe-codec-patterns/s5-conventions.md · interpretation R8 · frontend-quality-bar §2.1-2.2 ·
+// Reconcile: LIF-211 · interpretation R8 · frontend-quality-bar §2.1-2.2 ·
 // onboarding/steps.ts BR-4 (the staged m1/m3 honesty precedent this generalizes).
 //
 // `VOICE` = the documented voice (the tonal rules — not a false-precision NLP lint). `lintCopy` = a BACKSTOP that flags

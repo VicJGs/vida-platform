@@ -3,7 +3,7 @@ import { styled, View } from '@tamagui/core'
 import { type ViewState, Message, resolveDataViewState } from '../internal/data-view'
 
 // UI-2 · V2 · gallery-view — the renderer for the `gallery` VIEW_LAYOUT. Implements
-// docs/specs/components/ui-2-platform-views/v2-gallery-view.md. **V1's data-view spine with a responsive GRID**
+// LIF-87. **V1's data-view spine with a responsive GRID**
 // instead of a vertical stack — same generics, same four rendered terminal states, same role="list"/listitem
 // semantics, same dev-warns (reuses `ViewState` from ./list-view — intra-package, no second copy).
 // - Grid (GV-2): flexDirection row + flexWrap wrap; each tile flexGrow:1 + flexBasis/minWidth:minTileWidth (the

@@ -10,7 +10,7 @@
 // Anticipations do NOT come from notification rows: the dispatcher never writes a row before fire time
 // (NF-3 derive-until-fire, no phantom future inbox). They derive from the Sessions `dueIn` agenda —
 // honest-empty at M1, `?sample` for the gate, live swap deferred to the first consumer.
-// `[FACT: docs/modules/notifications/current-business-rules.md BR-NT-S4-3; seam-contract.md]`
+// `[FACT: docs/modules/notifications/current-business-rules.md BR-NT-S4-3]`
 // ============================================================================
 import type { Notification, NotificationType } from '@vida/types'
 

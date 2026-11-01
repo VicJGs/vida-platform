@@ -19,7 +19,7 @@ function result<T>(over: Partial<QueryResultLike<T>> & { data?: T }): QueryResul
   return { isPending: false, isError: false, data: undefined, ...over }
 }
 
-describe('INTERACTION_STATE — the exact decomposition.md:39 superset (BR-S1-2)', () => {
+describe('INTERACTION_STATE — the exact superset (BR-S1-2)', () => {
   it('is the 8 documented members, no more no less', () => {
     expect([...INTERACTION_STATE]).toEqual([
       'idle',

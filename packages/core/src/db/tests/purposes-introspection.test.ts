@@ -8,7 +8,7 @@
 //
 // The enum-parity test checks only CHECK value-SETS; the runner test only that
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
-// Origin: group #2 P5 (time_format type-lie). schema-foundation-build-flow.md §2 Phase 5.
+// Origin: group #2 P5 (time_format type-lie).
 //
 // Interface (@vida/types) divergences DEFERRED to DB-11 (Purpose +value_id/progress→null;
 // new Target/PurposeMetric/PurposeMetricValue/TargetReview/Dream; retire TARGET_TYPE;

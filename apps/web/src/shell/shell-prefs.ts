@@ -1,6 +1,6 @@
 // fe-shell (#14) · S1 — the nav-placement persistence seam (`nav_preferences` via ProviderRead).
 // Panel placement (dock/float · edge · open) is a user preference persisted to `nav_preferences`
-// `[FACT: traceability.md:34; delivery/envision.md L5]`. Per the ProviderRead convention (providers/CLAUDE.md) a surface
+// Per the ProviderRead convention (providers/CLAUDE.md) a surface
 // reads another module's data through its provider method, NEVER a raw table — enforced architecturally.
 //
 // M1 = a STUB that returns the cold-start DEFAULT (deny-safe): live read/write of `nav_preferences` is the FIRST

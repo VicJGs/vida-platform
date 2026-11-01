@@ -5,7 +5,7 @@
 // sequence (`routines`) of polymorphic `routine_step`s, each DRIVING a real
 // entity elsewhere (a Session sub-type, task, habit) — composes, never
 // duplicates. `routine_completions` is the per-step ledger. The reframe design
-// LANDED (docs/intake/routines.md §E 2026-07-14, RT-1…RT-19); only the DDL was
+// LANDED (2026-07-14, RT-1…RT-19); only the DDL was
 // deferred "→ build phase" = this session. Supersedes the flat 2-table POC
 // (`routine_actions` retired → `routine_step`).
 // [[check-intake-and-reruns-before-triaging-a-design-pass-undone]]
@@ -14,7 +14,7 @@
 // written SQL migration (migrations/018_routines.ts). These Drizzle objects are
 // only the type-safe QUERY mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-routines/):
+// Shape:
 // - NO hard cross-table FK (routine_id/routine_step_id/entity_id plain TEXT —
 //   cascade is the app/sync layer's, RT-17/BR-DB3-1).
 // - `routines` is a pursuable → measurement_kind NN DEFAULT 'rate' (RT-19 natural)

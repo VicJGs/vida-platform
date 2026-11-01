@@ -4,7 +4,7 @@
 // Drives the REAL app boot on a production build (`playwright.prod.config.ts`): a clean-origin first run (every
 // migration applies inside the worker `open`) must reach the app — never the "Failed to open the local database"
 // screen — and a reload must boot again on the persisted DB. Root cause this guards: a fixed 15 s client RPC timer
-// failed a first-run `open` that was alive and still migrating (docs/specs/fixes/data-plane-boot-open/ § Triage).
+// failed a first-run `open` that was alive and still migrating.
 // ============================================================================
 
 import { test, expect, type Page } from '@playwright/test'
@@ -47,8 +47,8 @@ test('a production build boots on a clean origin, then again after a reload', as
     if (m.type() === 'error') errors.push(`console: ${m.text()}`)
   })
   // index.html declares no icon, so the browser's implicit /favicon.ico request 404s on `vite preview` (dev answers it
-  // with the SPA fallback). The docs classify it as noise, "not product issues" (fe-notes-and-pages
-  // envision.md:21,99), so it is answered here instead of loosening the console-clean check for everything else.
+  // with the SPA fallback). The docs classify it as noise, "not product issues" (fe-notes-and-pages),
+  // so it is answered here instead of loosening the console-clean check for everything else.
   await page.route('**/favicon.ico', (route) => route.fulfill({ status: 204 }))
 
   await resetOpfs(page)

@@ -6,7 +6,7 @@
 // IR-4 — never a bundled service method). PURE: no React, no @vida/core.
 //
 // The editor-side `[[` TRIGGER (the suggestion surface) is a ui-3 @vida/editor
-// concern (e4-slash-menu.md:31), NOT built here — fe-notes owns the picker + compose.
+// concern, NOT built here — fe-notes owns the picker + compose.
 // ============================================================================
 import type { PageType } from '@vida/types'
 

@@ -23,7 +23,7 @@ Registry built by AR-7 Increment 2 (2026-08-03): `capability_definitions` (CB1 r
   **Enforcement services added by XS-capability #31 (2026-09-17):** `enforcer.ts` (`createCapabilityEnforcer` —
   checkAction/assertPermitted decision core · getGrant/isEnvelopeCurrent · grant/revoke · `canonicalEnvelopeHash` ·
   `SENSITIVE_MODULE_CLASSES`) + `offered-set.ts` (`createOfferedSetResolver`). Fail-closed, shipped-bypass, ADR-010
-  declare→grant→enforce. Currency: `docs/core/capability/current-*` (BR-9..17). Spec: `docs/specs/foundation/xs-capability/`.
+  declare→grant→enforce. Currency: `docs/core/capability/current-*` (BR-9..17). Spec: LIF-169.
   Deferred (all homed, DF-12): user-code **execution sandbox + DSL + authoring UI** → `#116 CAP-authoring`; registry
   runtime → MOD-notes/UI-3; per-source layer → XS-ingestion `#44`; egress mediation/audit → XS-egress-guard `#43`.
   ⚠ Gotcha: `Repository.findWhere` does NOT apply the soft-delete filter — filter `isNull(deleted_at)` explicitly (see

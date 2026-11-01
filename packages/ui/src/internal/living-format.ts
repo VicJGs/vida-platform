@@ -1,4 +1,4 @@
-// fe-calendar #19 · S5 — the purpose-budget hours formatter (PLAN-S5-living-renderer.md BR-3 + BR-17 G5). Pure: the
+// fe-calendar #19 · S5 — the purpose-budget hours formatter (BR-3 + BR-17 G5). Pure: the
 // provider passes hours as a number; this only formats it — minute-rounded, minutes zero-padded ("2h05", the concept's
 // "2h40" form), with a spoken twin for screen readers. Non-finite / negative → null (the caller shows "unmeasured").
 

@@ -115,7 +115,7 @@ export function NotificationsSurface() {
   const [status, setStatus] = useState<StatusFilter>('all')
   // Optimistic-LOCAL lifecycle: the UI responds immediately; the durable write binds to the composition
   // root with reads (deferred). Session-only at M1 (resets on reload, like every M1 write) — honest, NOT
-  // a faked "saved". `[FACT: seam-contract.md "writes deferred-live"]`
+  // a faked "saved". `[FACT: "writes deferred-live"]`
   const [overlay, setOverlay] = useState<{ read: ReadonlySet<string>; archived: ReadonlySet<string> }>({
     read: new Set(),
     archived: new Set(),

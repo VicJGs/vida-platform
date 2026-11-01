@@ -1,8 +1,8 @@
 # apps/web/src/settings — the Settings System surface (fe-settings #24, LIF-193)
 
 **Owning issue:** fe-settings #24 (M1.2.1) · **Authority:** add-frontend-component / Entity Delivery Flow ② ·
-intent `docs/features/preferences` + `decomposition.md:71` (the System archetype) · delivery:
-`docs/specs/foundation/fe-settings/delivery/` (interpretation · envision [12 ECs] · slice-map · seam-contract · s1-switch).
+intent `docs/features/preferences` (the System archetype) · delivery:
+LIF-225 (interpretation · envision [12 ECs] · slice-map · seam-contract · s1-switch).
 
 ## The surface (two-pane System archetype, EC-1)
 

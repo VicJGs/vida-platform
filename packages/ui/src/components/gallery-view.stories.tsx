@@ -8,7 +8,7 @@ import { Card } from './card'
 // gallery-view is V1's spine with a responsive flex-wrap GRID (the imagery-first / vision-board layout, ADR-007).
 // Tiles compose an interactive Card with a cover block (row/tile interactivity is the consumer's).
 //
-// MEASURE (v2-gallery-view.md §4): success grid of cover tiles · responsive wrap (resize the canvas → columns
+// MEASURE: success grid of cover tiles · responsive wrap (resize the canvas → columns
 // reflow, single column ~375) · minTileWidth (tiles grow to [min, 2·min]) · density gap · loading = N aspect-locked
 // skeleton tiles (3:2, NO shimmer) · empty/error status messages · dark mode (base tokens cross).
 

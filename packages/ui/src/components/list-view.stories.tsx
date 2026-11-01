@@ -8,7 +8,7 @@ import { Card } from './card'
 // terminal states (loading skeletons · empty · error · success). Rows here compose an interactive Card (row
 // interactivity is the consumer's, LV-5).
 //
-// MEASURE (v1-list-view.md §4/§VIII): success list of Card rows · density gap compact/default/spacious · dividers
+// MEASURE: success list of Card rows · density gap compact/default/spacious · dividers
 // hairline · loading = N static skeleton bars (NO shimmer) · empty message · error message · dark mode (base tokens
 // cross) · role per state (list / status).
 

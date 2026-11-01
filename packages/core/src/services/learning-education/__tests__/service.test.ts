@@ -698,7 +698,7 @@ describe('mod-learning-education S5 — ICS feeds + events (ED-6 · X1/X2/X5/X8/
     h = await setup()
   })
 
-  // A stub `ics?` port over the SAME live store — proves the M1 add-only dedup logic (interpretation.md:54) that a
+  // A stub `ics?` port over the SAME live store — proves the M1 add-only dedup logic that a
   // port-absent service can never reach. `createLearningEducationService` is cheap to re-instantiate on the same db.
   function withIcs(events: RawIcsEvent[] | (() => Promise<RawIcsEvent[]>)): LearningEducationService {
     const port: IcsFetchPort = {

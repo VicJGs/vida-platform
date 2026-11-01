@@ -16,8 +16,6 @@
 //   NOT written via the sync Repository (an M1.1 seeding-path concern).
 // - user_achievements: the earned-join (SyncMetadata: id + syncColumns, no created_at/updated_at),
 //   UNIQUE(achievement_id), no-FK.
-//
-// Spec: docs/specs/foundation/db-4-gamification/_index.md §3.
 // ============================================================================
 
 import { sqliteTable, text, integer, unique } from 'drizzle-orm/sqlite-core'

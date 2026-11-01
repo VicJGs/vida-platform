@@ -68,7 +68,7 @@ function humanizeSubType(subType: string): string {
 
 /**
  * Assemble a single-stage `FlowSource` from a session (+ its deliverable / attachments / effect log). The hero title
- * is the session identity (humanized sub_type); the one stage's title is the deliverable (decomposition.md:70 —
+ * is the session identity (humanized sub_type); the one stage's title is the deliverable (
  * "entity title + summary · stage · deliverable + description"). Proof: an explicit skipped/missed label, else an
  * attachment-count summary on a done stage. Degrade-never-crash: missing deliverable/attachments → honest partials.
  */
