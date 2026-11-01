@@ -3,7 +3,7 @@ import { View } from '@tamagui/core'
 import { SyncStatus, HonestProgress } from './sync-status'
 
 // fe-codec-patterns · S4 — SyncStatus + HonestProgress stories = the Visual Gate surface. Toggle the toolbar
-// Preset × Theme. MEASURE (s4-sync-status.md §4): the dot SIGNAL tokens hold across presets (preset-invariant);
+// Preset × Theme. MEASURE: the dot SIGNAL tokens hold across presets (preset-invariant);
 // label + surface swap with mode; calm never-alarming chip; honest determinate + indeterminate progress; AA on the
 // label both modes. HONESTY: copy says "Saved on this device", never "synced to cloud"; no "Saving…" state.
 

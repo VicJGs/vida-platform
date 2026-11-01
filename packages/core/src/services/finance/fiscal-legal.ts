@@ -302,7 +302,7 @@ export function createFiscalLegalService(deps: FiscalLegalServiceDeps): FiscalLe
       DeriveObligationsRangeSchema.parse(range)
       if (!pack.verified) throw new RulePackUnverified(`${pack.jurisdiction_code}: rule-pack not verified`)
       // The per-jurisdiction evaluation (brackets/deadlines → candidates) lands with the OWED rule-pack
-      // content format at M2 (parts/finance.md:123). A verified handle carries no content to evaluate yet
+      // content format at M2. A verified handle carries no content to evaluate yet
       // ⇒ no candidates. NEVER persists / fans out — NoAutoAction is structural (only confirm persists).
       return []
     },

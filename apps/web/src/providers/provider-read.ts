@@ -1,5 +1,5 @@
 // fe-codec-patterns · S5 — ProviderRead (the "no direct cross-module tables" read convention).
-// Reconcile: docs/specs/foundation/fe-codec-patterns/s5-conventions.md · interpretation R7 · frontend-quality-bar §0 (OVERFLOWING).
+// Reconcile: LIF-211 · interpretation R7 · frontend-quality-bar §0 (OVERFLOWING).
 //
 // THE CONVENTION: a surface that needs another module's data reads it through that module's exposed PROVIDER method
 // (e.g. booksService.getDayBooksDigest, the dueIn(today) provider) — NEVER by touching another module's tables directly

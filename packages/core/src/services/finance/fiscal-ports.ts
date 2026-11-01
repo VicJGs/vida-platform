@@ -32,7 +32,7 @@ export const NOT_PROFESSIONAL_ADVICE = 'This is informational only — not profe
 // A MINIMAL handle: `version` is structurally required NOW (a confirmed obligation's
 // `source_rulepack_version` is notNull); the CONTENT (brackets/entity-types/deadlines)
 // is an OWED M2 field landing with the ADR-014 public-reference build (format not yet
-// specified — parts/finance.md:123 BLOCKER). `verified` = fetched-and-provenance-checked.
+// specified — BLOCKER). `verified` = fetched-and-provenance-checked.
 export interface RulePack {
   jurisdiction_code: string
   version: string

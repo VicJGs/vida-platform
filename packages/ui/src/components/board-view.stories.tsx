@@ -9,7 +9,7 @@ import { Card } from './card'
 // the board level owns loading/error/board-empty; each column reuses the list spine. READ-ONLY lens — no drag/move
 // (BV-1). Card interactivity composes in renderCard (LV-5).
 //
-// MEASURE (v9-board-view.md §4): role="group"/column role="list"/listitem · group header + per-group count ·
+// MEASURE: role="group"/column role="list"/listitem · group header + per-group count ·
 // per-column empty (role="status") · 4 board states (loading skeleton columns · error status · board-empty status ·
 // success) · dark mode × 3 presets · resize narrow → horizontal scroll (375, BV-5).
 

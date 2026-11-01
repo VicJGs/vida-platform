@@ -1,6 +1,6 @@
 // ============================================================================
 // Encryption Types — @vida/types
-// ADR-001 §6 · ADR-002 §4 · architecture.md §3.3
+// ADR-001 §6 · ADR-002 §4
 // Three-layer model: L1 SQLCipher, L2 field-level libsodium, L3 sync blob
 // ============================================================================
 

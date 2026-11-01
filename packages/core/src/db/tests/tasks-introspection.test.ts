@@ -12,7 +12,7 @@
 //   - column DEFAULTs (mirror .default ≡ SQL DEFAULT)
 //
 // Origin: group #2 P5 caught a `time_format` NOT NULL type-lie a CHECK-only pass
-// missed. schema-foundation-build-flow.md §2 Phase 5.
+// missed.
 //
 // Interface (@vida/types) divergences are DEFERRED to DB-11 (Task gains 7 cols +
 // drops `tags`; TaskTimeLog gains `updated_at`) — cited in the spec, not asserted

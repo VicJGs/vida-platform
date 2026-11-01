@@ -6,7 +6,7 @@
 // TESTABILITY SPLIT (BR-E8-7): `docx`'s core primitives (Paragraph/TextRun/Table) hold a PRIVATE `properties` field —
 // they are NOT introspectable the way react-pdf's plain React elements are. So the PURE core (`documentToDocxBlocks`)
 // returns a plain intermediate DESCRIPTOR AST (deep-equal testable, no packing); a thin mechanical adapter maps each
-// descriptor 1:1 to a `docx` instance; `toDocx` packs it. Spec: docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md.
+// descriptor 1:1 to a `docx` instance; `toDocx` packs it. Spec: LIF-88.
 import {
   Document,
   Packer,

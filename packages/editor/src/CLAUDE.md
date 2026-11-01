@@ -1,7 +1,7 @@
 # packages/editor/src — @vida/editor source (TipTap block editor)
 
 The block editor that is the heart of the Notes & Journals integration layer (ADR-001 §8, CLAUDE.md §8).
-Durable spec: `docs/specs/features/ui-3-vida-editor/{_index,e1-editor-core,e2-standard-blocks,e3-toolbar,e4-slash-menu,e5-block-registry}.md`.
+Durable spec: LIF-88.
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
@@ -57,7 +57,7 @@ runtime dep `docx` (+ `jszip` **test-only devDep** for the OOXML unzip assertion
   header-bold + callout normalize + image degradation + integration modes + frontmatter + degradation + determinism + a
   `PK` pack smoke + an **unzipped `document.xml` adapter assertion** [`<w:hyperlink>`/`<w:numId>`/`[image: cat]` with no
   `<pic:pic>`/nested-cell list/placeholder] + a 2-cell ragged-row regression). No component surface → **no Visual Gate**.
-  Boundary unchanged (no `@vida/core`). **224 total.** Spec `docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md`.
+  Boundary unchanged (no `@vida/core`). **224 total.** Spec LIF-88.
 
 ## Shipped (E7 — PDF serializer)
 
@@ -78,7 +78,7 @@ The **PDF serializer** (ADR-001:101 — `@react-pdf/renderer@4.6.1`, **web/deskt
   throws at react-pdf RENDER — the caller's contract (valid `note_attachments` srcs, BR-E2-5). Additive `PdfSerializeOptions`
   in `@vida/types`. Tests: `serializers/to-pdf.test.tsx` (**33** — schema-parity all 11 + marks + hardBreak + integration
   modes + frontmatter + degradation + M1/M2/m1/m2 regressions + 2 `%PDF-` byte smokes). No component surface → **no Visual
-  Gate**. Boundary unchanged (no `@vida/core`). **188 total.** Spec `docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md`.
+  Gate**. Boundary unchanged (no `@vida/core`). **188 total.** Spec LIF-88.
 
 ## Shipped (E6 — markdown serializers)
 

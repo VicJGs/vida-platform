@@ -6,10 +6,10 @@ import { Button } from './button'
 import type { ViewState } from '../internal/data-view'
 
 // UI-2 · fe-codec-entity-facet · EntityView stories — the component Visual-Gate surface. Toggle Preset × Mode × Density.
-// EntityView = the CODEC Entity shell ("the facet system", decomposition.md:31 §1.2) — a facet FRAME composing a Layout
+// EntityView = the CODEC Entity shell ("the facet system") — a facet FRAME composing a Layout
 // facet + an optional Editor facet in a merged | tabbed mode; the Editor facet is registry-gated (slot presence).
 //
-// MEASURE (entity-view.md · envision EC-1…EC-8): merged = both facets, one surface, divider (EC-1) · tabbed = Home/Content,
+// MEASURE (envision EC-1…EC-8): merged = both facets, one surface, divider (EC-1) · tabbed = Home/Content,
 // active-only, indicator (EC-2) · page-less = no editor facet/tab/toggle, DISTINCT from empty-editor (EC-3) · toggle
 // role="toolbar"+aria-pressed (EC-4) · per-facet state loading/empty/error calm, merged regions labeled (EC-5) · reflow
 // 375→1440 no overflow (EC-6) · serif $display title + DIRECT tokens + dark designed + preset flips (EC-7). axe clean.

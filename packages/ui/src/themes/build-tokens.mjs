@@ -11,7 +11,7 @@
 // Before building, a custom check enforces the design.md §II three-layer indirection and FAILS LOUD (B2).
 //
 // Run:  pnpm --filter @vida/ui tokens:build   (→ node src/themes/build-tokens.mjs)
-// Spec: docs/specs/components/ds-1-token-pipeline/_index.md  (§2 invariants B1–B5, §3 contract, §4 acceptance)
+// Spec: LIF-81 (invariants B1–B5)
 // DS-1 ships THROWAWAY placeholder values — DS-2 authors the real scales directly in the seed (code-first).
 // The community Figma file is built later and synced via Figma MCP + a scripter (not Tokens Studio).
 
@@ -191,7 +191,7 @@ StyleDictionary.registerFormat({
       } else if (rank === 2) {
         // Component sub-theme: reference the SEMANTIC base-theme KEY (DS-1 spec:113) so <theme>_<Comp>
         // inherits that theme's overlay by construction. Resolving to the PRIMITIVE here (the old drift)
-        // collapsed the light/dark indirection. See docs/specs/fixes/component-subtheme-dark-drift/.
+        // collapsed the light/dark indirection.
         const ref = t.original?.value
         if (!isRef(ref)) fail(`component token "${p}" must reference a semantic token (B2), got ${JSON.stringify(ref)}`)
         const semPath = refTarget(ref) // e.g. "color.brand.emphasis"

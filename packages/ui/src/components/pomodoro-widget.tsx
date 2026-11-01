@@ -5,7 +5,7 @@ import { shadow } from '../themes/shadow'
 
 // UI-2 · V5 · pomodoro-widget — the interactive timer widget @vida/ui ships (ADR-008:35). A single-interval,
 // self-timing countdown with a DEFERRED session-engine seam. Implements
-// docs/specs/components/ui-2-platform-views/v5-pomodoro-widget.md. NOT a data-view.
+// LIF-87. NOT a data-view.
 // - Drift-free (PW-1): timing from an `endAtRef` timestamp; the interval is armed IMPERATIVELY in run() (the toast.tsx
 //   arm() precedent) and the ~250ms tick reads endAtRef.current (never a stale closure) + the stable setRemainingMs —
 //   NO useEffect deps on countdown state (that would re-arm every tick, the Toast bug).

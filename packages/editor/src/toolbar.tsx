@@ -2,7 +2,7 @@
 // APPLY formatting commands and REFLECT the active marks/block at the current selection. Composes UI-1 Button + Menu
 // (BR-4); active-mark state comes from `useToolbarState` (BR-E3-2). Mounted INSIDE VidaEditorImpl (the raw Editor
 // never leaks — BR-E3-1); rendered only when `editor != null` (the null-editor gate).
-// Spec: docs/specs/features/ui-3-vida-editor/e3-toolbar.md · BR-E3-1..8.
+// Spec: LIF-88 · BR-E3-1..8.
 import {
   forwardRef,
   Fragment,

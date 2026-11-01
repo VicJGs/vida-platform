@@ -1,7 +1,7 @@
 // ============================================================================
 // mod-journals #39 · LIF-127 · Slice 2 — buildDashboard + selection (pure logic)
 //
-// Proves the S2 charter (docs/specs/features/mod-journals/sessions/PLAN-2026-09-19-s2-dashboard.md §4):
+// Proves the S2 charter (LIF-127):
 //   • BR-S2-1/5 — deterministic order; membership by producing method; summary-only ⇒ no agenda
 //   • BR-S2-2   — a throwing provider degrades ONLY its section; buildDashboard never throws
 //   • BR-S2-6   — async providers awaited

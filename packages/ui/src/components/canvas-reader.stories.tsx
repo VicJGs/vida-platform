@@ -13,7 +13,7 @@ import { SyncStatus } from './sync-status'
 // CanvasReader stories — the component Visual Gate surface (fe-codec-canvas-reader S1). Toggle Theme (light｜dark) +
 // preset in the toolbar. S1 ships the FRAME: title-hero header + reading column (renderContent) + the 5 states
 // (loading/empty/error/unavailable/success). The Contents panel (S2), rail (S3), selection (S4), listen (S5) land later.
-// MEASURE (PLAN-S1-frame.md §4): EC-2 title-hero · EC-3 serif column · EC-8 5 states (unavailable≠empty) · EC-9 375
+// MEASURE: EC-2 title-hero · EC-3 serif column · EC-8 5 states (unavailable≠empty) · EC-9 375
 // reflow · EC-10 dark × 3 presets + accent flip + AA · EC-11 semantic scale.
 
 const meta: Meta<typeof CanvasReader> = { title: 'Canvas/CanvasReader', component: CanvasReader }
@@ -273,7 +273,7 @@ export const SelectionInPlace: Story = {
 }
 
 // ── S5 · Listen control ──────────────────────────────────────────────────────────────────────────────────────
-// MEASURE (PLAN-S5-listen.md §5): EC-7 three states (idle · playing+HonestProgress · unavailable calm) · EC-15 real
+// MEASURE: EC-7 three states (idle · playing+HonestProgress · unavailable calm) · EC-15 real
 // SVG icons (0 emoji) · icon/progress ≥3:1 · label AA · toggle ≥44×44 · EC-1 persistent-in-context · 375 wrap.
 
 /** S5 — listen idle: a Listen affordance (real SVG speaker icon) + label; toggle starts playback. */

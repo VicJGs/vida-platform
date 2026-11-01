@@ -1,5 +1,5 @@
 {
-  "_note": "G4 capability→reach-paths map. Paths are independent entry types from the Quality Bar nav model. A capability needs >=2. Derived from surface-map.md + decomposition.md. ⌘K ('jump anywhere · do anything · search') is universal by design, but the codec's ReachabilityRegistry only grants a path once the capability is REGISTERED in ⌘K — unregistered = not a path.",
+  "_note": "G4 capability→reach-paths map. Paths are independent entry types from the Quality Bar nav model. A capability needs >=2. ⌘K ('jump anywhere · do anything · search') is universal by design, but the codec's ReachabilityRegistry only grants a path once the capability is REGISTERED in ⌘K — unregistered = not a path.",
   "paths": [
     "dock",
     "global-bar",

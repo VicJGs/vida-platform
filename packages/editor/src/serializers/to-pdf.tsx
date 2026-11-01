@@ -3,7 +3,7 @@
 // EMIT-ONLY: no round-trip (BR-5 is E6's) — correctness = every STANDARD_BLOCK_TYPE block + every registered mark +
 // hardBreak renders faithfully, degrading never-throwing (BR-E7-2/9). Split for testability (BR-E7-7): a PURE
 // `documentToPdfTree` (the react-pdf element tree — exhaustively unit-testable on `element.type`, no bytes) + a thin
-// `toPdf` (the only async/IO seam: `pdf(tree).toBlob()`). Spec: docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md.
+// `toPdf` (the only async/IO seam: `pdf(tree).toBlob()`). Spec: LIF-88.
 import type { ReactElement, ReactNode } from 'react'
 import { Document, Page, Text, View, Image, Link, pdf, type DocumentProps } from '@react-pdf/renderer'
 import type { EditorDocument, EditorNode, EditorMark, PdfSerializeOptions } from '@vida/types'

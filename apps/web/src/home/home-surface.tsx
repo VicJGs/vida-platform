@@ -17,7 +17,7 @@ import { JournalPageRegion } from './journal-page-region'
 import { usePreferences } from '../preferences/use-preferences'
 import type { HomeArrangement as PrefArrangement } from '../preferences/preferences-view'
 
-/** The Home arrangement — a user personalization chosen in Settings (decomposition.md:71). */
+/** The Home arrangement — a user personalization chosen in Settings. */
 export type HomeArrangement = 'journalFirst' | 'dashboardFirst'
 
 /** The useHomeArrangement READ seam (A), live since preferences-rescope R3 (IMPL step 17): the persisted

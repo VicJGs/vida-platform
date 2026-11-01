@@ -6,7 +6,7 @@ import { type ViewState, Message, resolveDataViewState, warnMissingName } from '
 export type { ViewState }
 
 // UI-2 · V9 · board-view — the renderer for the `board` VIEW_LAYOUT (packages/types VIEW_LAYOUT). Implements
-// docs/specs/components/ui-2-platform-views/v9-board-view.md. A grouped-column (kanban) grid: PRE-GROUPED columns,
+// LIF-87. A grouped-column (kanban) grid: PRE-GROUPED columns,
 // each a titled list of cards. The LAST canonical view-mode renderer — completes the 7-member spine.
 // - READ-ONLY LENS (BV-1): renders already-grouped data; it does NOT group/filter/sort/write. The grouping is
 //   provider-delegated (ADR-007 §3.3 — the renderer receives `groups`, never a `groupBy`); card interactivity is the
@@ -15,7 +15,7 @@ export type { ViewState }
 // - HYBRID spine reuse (BV-3): a column IS a list → each column reuses `resolveDataViewState` (the list-view path:
 //   role="list"/"status" + per-column empty). The BOARD level diverges (the table/calendar path): it owns
 //   loading (skeleton columns) / error (role="status") / board-empty (no groups → role="status") directly, NOT
-//   through resolveDataViewState [FACT: seam-contract.md:90-91; interpretation R4; slice-map S2].
+//   through resolveDataViewState [FACT: interpretation R4; slice-map S2].
 // - state is a PROP, not derived (BR-2, the package→app boundary): the app derives via the 8-state machine and
 //   passes it; @vida/ui is a package and cannot import an app. ViewState is the LOCAL union (no @vida/core edge).
 // - React 19 `ref`-as-prop: a generic forwardRef erases <T>, so a plain generic function + ref prop (list-view B2).

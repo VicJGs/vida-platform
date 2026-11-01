@@ -2,7 +2,7 @@
 // AssociationResolver tests — XCU-SP-27 tag/link unify⇄separate resolution
 // (Node / better-sqlite3 live-store harness; real migration 003 + Repository)
 //
-// Proves the Verification-Gate plan (service/spec.md §Verification Gate):
+// Proves the Verification-Gate plan:
 //   • shape        — separate → {tags,links}; unified → one Association[] w/ kind
 //   • behavioral   — same-id tag+link → TWO distinct edges (no blur/dedup, BR-4);
 //                    unified order deterministic (tags before links)

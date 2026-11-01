@@ -97,7 +97,7 @@ export function AppearancePane() {
             />
           }
         />
-        {/* D4 — directly under the three theme rows (interpretation.md:239). Drives reward COPY only (fe-gamification
+        {/* D4 — directly under the three theme rows. Drives reward COPY only (fe-gamification
             EC-10); the live read lands with gamification-rescope (G3-E6). */}
         <OptionRow
           label={SETTINGS_COPY.personaLabel}

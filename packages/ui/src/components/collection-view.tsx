@@ -7,12 +7,12 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 
 // ============================================================================
 // CollectionView — the CODEC Collection shell (fe-codec-collection S1).
-// "A Saved View rendered in a view-mode" — the workhorse archetype shell
-// (decomposition.md:29 §1.2). COMPOSES the 7 shipped view-mode renderers via a
+// "A Saved View rendered in a view-mode" — the workhorse archetype shell.
+// COMPOSES the 7 shipped view-mode renderers via a
 // render-prop; it is NOT a renderer (it never renders rows). Presentational,
 // state-as-prop (BR-2); @vida/ui has no @vida/core / @vida/types dep, so the
 // `layout` type is a LOCAL union ≡ VIEW_LAYOUT (the ViewState-local precedent).
-// Spec: docs/specs/components/ui-2-platform-views/collection-view.md.
+// Spec: LIF-87.
 //
 // NON-GENERIC: the shell holds no `items` (the consumer's `renderView` owns the
 // data + the renderer's real props), so there is no <T> to erase → a plain
@@ -26,7 +26,7 @@ export type ViewLayout = 'list' | 'table' | 'board' | 'gallery' | 'calendar' | '
 
 /** Layouts whose `empty` is a DESIGNED structure (keep the renderer's own empty) rather than an absence (→ the
  *  teaching-invitation EmptyState). `calendar`'s empty is the month grid with no chips [calendar-view.tsx]. A single
- *  documented rule (not per-consumer) — the critic's empty-ownership contract point, resolved (collection-view.md). */
+ *  documented rule (not per-consumer) — the critic's empty-ownership contract point, resolved. */
 const DESIGNED_EMPTY_LAYOUTS: readonly ViewLayout[] = ['calendar']
 
 /** The `tablet` breakpoint (config.media `tablet: { minWidth: 768 }`) — below it, the switcher condenses to a Menu.
@@ -145,7 +145,7 @@ export function CollectionView({
   // NOT wrap (no precedent) and NOT horizontal-scroll (that's the wide-DATA pattern). ≥44×44 targets hold either way.
   const condensed = !useTabletUp()
 
-  // ── body: state → renderer, with the resolved empty-ownership rule (collection-view.md) ──────────────
+  // ── body: state → renderer, with the resolved empty-ownership rule ──────────────
   const designedEmpty = DESIGNED_EMPTY_LAYOUTS.includes(layout)
   let body: ReactNode
   if (state === 'empty' && !designedEmpty) {

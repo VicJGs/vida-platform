@@ -7,7 +7,7 @@ import { Select } from './select'
 // modes. Open the panel (click / Enter / ↓) to review: active highlight (hover or ↑/↓), the selected check, disabled
 // options, the danger border (invalid), the placeholder (empty), flip-up (Bottom story), and dark-mode panel elevation.
 //
-// MEASURE items (u4-select.md §8): open panel over content · active-highlight · selected check · disabled option ·
+// MEASURE items: open panel over content · active-highlight · selected check · disabled option ·
 // invalid border · placeholder muted · flip-up when no room below · horizontal clamp · panelBackground across the portal.
 
 const FRUITS = [

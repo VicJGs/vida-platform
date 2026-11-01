@@ -1,7 +1,6 @@
 # apps/web/src/preferences — the live Preferences seam (preferences-rescope · LIF-247)
 
 **Owning unit:** preferences-rescope (M1.2.4 Live Close) · **Authority:** `docs/features/preferences/*` (PR-1…12) ·
-delivery `docs/features/preferences/delivery/` (interpretation · reconciliation · slice-map · sessions/PLAN-R2, PLAN-R3) ·
 runtime rules `docs/infrastructure/web-client-runtime/current-business-rules.md` (BR-RT-PREFS, BR-RT-LOCK, BR-RT-BOOT,
 BR-RT-7).
 

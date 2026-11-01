@@ -8,7 +8,7 @@ import { Button } from './button'
 // A presentational export modal: composes UI-1 Dialog (footer + description props) + a hand-rolled radiogroup; emits
 // onExport(format) — the app wires the actual serialization.
 //
-// MEASURE (v6-export-dialog.md §4): the format radiogroup (selected = brand dot + border) · arrow-key selection ·
+// MEASURE: the format radiogroup (selected = brand dot + border) · arrow-key selection ·
 // Export/Cancel in the Dialog <footer> (right-aligned) · the description copy · busy = "Exporting…" spinner + disabled
 // radios/Cancel · dark mode.
 

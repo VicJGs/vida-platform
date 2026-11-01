@@ -4,8 +4,7 @@
 // Deps + the HabitsService interface + input types + typed errors. Factory-object
 // shape, hoisted closures, no `this.` (the ② destructure-consumption shape; the
 // finance/checkins precedent). S1 declares the definition-CRUD surface; S2–S5 append
-// (completion ledger + streak engine · backfill · derivations · effect/seams) per
-// docs/features/habits/delivery/slice-map.md.
+// (completion ledger + streak engine · backfill · derivations · effect/seams).
 // ============================================================================
 
 import type { z } from 'zod'

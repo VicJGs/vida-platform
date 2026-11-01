@@ -3,7 +3,7 @@
 // The TasksService public surface + deps, built PER SLICE (Entity Delivery Flow).
 // `TasksServiceDeps` GROWS per slice: S1 = { db, deviceId }; `sessions`/`effects` land at the timer/completion
 // slices (S3/S4); `spaces`/`notes`/`registry` at S8; the deny-safe aggregation `providers` port at S7. The
-// seam-contract §Factory is the S9 end-state, NOT the S1 shape (docs/features/tasks/delivery/seam-contract.md).
+// seam-contract §Factory is the S9 end-state, NOT the S1 shape.
 //
 // Return types are the Drizzle Row types (NOT @vida/types `Task` — the interface reconcile is DB-11 mirror-only,
 // landed this slice). [[drizzle-row-not-assignable-to-vida-types-interface]]

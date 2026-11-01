@@ -212,7 +212,7 @@ function inWindow(ms: number | undefined, range: TimeRange): boolean {
 
 // ---- S6: measurability helpers (pure; exported for direct unit test) --------
 /** The task's effective `binding_mode` (TAS-25). NULL ⇒ the task's natural mode = `event-trigger` (completion is the
- *  state change): `migrations/015_tasks.ts:21` "NULL ⇒ derive-natural" ∘ `delivery/interpretation.md:33`
+ *  state change): `migrations/015_tasks.ts:21` "NULL ⇒ derive-natural" ∘
  *  "binding_mode='event-trigger' (completion)". Mirrors the per-module NULL-natural convention (habits=event-trigger,
  *  routines=derived-pull). NOTE: in M1 `getTaskProgress` only observes the `=== 'derived-pull'` branch, so the
  *  `event-trigger` default is forward-looking (it documents the grounded natural mode for a future consumer that keys

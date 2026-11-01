@@ -35,7 +35,7 @@ describe('Card', () => {
   })
 
   // BR-C-11 — header/footer render their content but are NOT <header>/<footer> landmark elements (a <header> nested in
-  // the <div> frame is exposed as a banner/contentinfo landmark, duplicated N× in a list — card.md:6 Intent forbids it).
+  // the <div> frame is exposed as a banner/contentinfo landmark, duplicated N× in a list — the contract's Intent forbids it).
   it('renders header/footer content as non-landmark regions (no <header>/<footer>, no banner/contentinfo)', () => {
     const { container, getByText, queryByRole } = renderCard(
       <Card header="Title" footer="Foot">

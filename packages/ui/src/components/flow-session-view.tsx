@@ -19,7 +19,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 // page (#23), NOT the countdown (pomodoro V5). Presentational, state-as-prop (BR-2); @vida/ui is
 // Tamagui-only → all types are LOCAL, no @vida/core import. Non-generic (FlowStage is concrete) →
 // React-19 ref-as-prop (no forwardRef).
-// Spec: docs/specs/components/ui-2-platform-views/flow-session-view.md.
+// Spec: LIF-87.
 // ============================================================================
 
 /** A stage's lifecycle position in the flow (BR-FS-3 → the Timeline temporal state). */

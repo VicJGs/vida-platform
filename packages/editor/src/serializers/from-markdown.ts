@@ -1,7 +1,7 @@
 // E6 (UI-3) — the Markdown → TipTap-JSON parser. The exact inverse of `to-markdown.ts` over the CLOSED canonical
 // grammar the emitter produces (BR-E6-2); arbitrary NON-canonical markdown is not parsed exactly — it DEGRADES
 // (never throws, BR-E6-9). Custom serializer per ADR-001 §8 — no off-the-shelf markdown lib (BR-E6-1/BR-E6-8).
-// Pure/headless/deterministic (BR-E6-7). Spec: docs/specs/features/ui-3-vida-editor/e6-markdown-serializers.md.
+// Pure/headless/deterministic (BR-E6-7). Spec: LIF-88.
 import type { EditorNode, EditorMark, MarkdownParseResult, MarkdownSerializeOptions } from '@vida/types'
 
 const DEFAULTS: MarkdownSerializeOptions = { include_frontmatter: false, integration_block_handling: 'placeholder' }

@@ -6,7 +6,7 @@
 // top of the capability enforcer's external_out boolean (#31). Decides + records;
 // holds no credentials, makes no network call. No schema at M1 — the durable audit
 // + per-target-consent STORE is M2 (the ports; [E] + append-only there, R-1/R-2).
-// Spec: docs/specs/foundation/xs-egress-guard/.
+// Spec: LIF-171.
 // ============================================================================
 
 // WHO receives vault-leaving data. Keyed on the stable integration-identity anchor

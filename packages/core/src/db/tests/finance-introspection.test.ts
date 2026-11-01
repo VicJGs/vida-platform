@@ -8,7 +8,7 @@
 //
 // The enum-parity test checks only CHECK value-SETS; the runner test only that
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
-// Origin: group #2 P5 (time_format type-lie). schema-foundation-build-flow.md §2 Phase 5.
+// Origin: group #2 P5 (time_format type-lie).
 //
 // Interface (@vida/types) divergences DEFERRED to DB-11 (Finance +opening_balance/category_bidx/
 // jurisdiction_code/G9; new FiscalResidency/LegalEntity/FiscalObligation) — cited in the spec,

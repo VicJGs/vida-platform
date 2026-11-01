@@ -16,7 +16,7 @@ import { ensureCalendarMotionStyles, pulseClass } from '../internal/calendar-mot
 import { Button } from './button'
 
 // UI-2 · V4 · calendar-view — the renderer for the `calendar` VIEW_LAYOUT. Implements
-// docs/specs/components/ui-2-platform-views/v4-calendar-view.md. A month grid that buckets dated items onto days.
+// LIF-87. A month grid that buckets dated items onto days.
 // **Diverges from the linear-list spine:** a calendar is a 2D date grid → it renders as a role="table" (NOT a list),
 // and "empty" is a designed grid-with-no-chips state (NOT a status message). So it reuses the spine's PIECES
 // (ViewState, Message, warnMissingName, ref-prop, base tokens) but NOT resolveDataViewState (its empty→status role is
@@ -127,7 +127,7 @@ const TodayMark = styled(View, {
   paddingBottom: 2,
 })
 const SkeletonBar = styled(View, { height: '$12', borderRadius: '$md', backgroundColor: '$colorSurfaceSecondary' })
-// S7 unfurl: the "+K more" request — the year-view MonthButton UA reset; ≥44 hit height (decisions.md:82 touch floor).
+// S7 unfurl: the "+K more" request — the year-view MonthButton UA reset; ≥44 hit height (the touch floor).
 const MoreButton = styled(View, {
   render: 'button',
   alignSelf: 'flex-start',

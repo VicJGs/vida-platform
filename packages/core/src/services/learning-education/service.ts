@@ -269,7 +269,7 @@ const toSubjectDocument = (r: SubjectDocumentRow): SubjectDocument => ({
 // `effects:[]` (§3.2.2 + C-E2 — Education is a non-feeder; any completion grant rides the base sub-type),
 // the shared lifecycle (§3.2.3 scheduled→in_progress→completed), `allowed_effects:[]` (§3.2.4 — a module
 // envelope ⊆ shipped; `∅` subset-legal). `default_purpose` OMITTED (no Education doc fixes a class purpose;
-// optional dim — No-Guessing). Mirrors the books `READING_SESSION_TYPE_DEF`. [slice-map.md:21; seam-contract.md:41]
+// optional dim — No-Guessing). Mirrors the books `READING_SESSION_TYPE_DEF`.
 const CLASS_SESSION_TYPE_DEF: SessionTypeDef = {
   sub_type: 'class',
   owner_module: 'learning-education',

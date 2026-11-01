@@ -10,7 +10,6 @@
 // energy_system_focus · workout_type · set_structure · location · form_quality ·
 // status) are modality (conventions L16) / not inline-enumerated → NO tuple, NO CHECK.
 // Row interfaces → DB-11 reconcile.
-// Spec: docs/specs/foundation/db-4-health-training/_index.md
 // ============================================================================
 
 // Exercise movement pattern (structure-data.md:10). `[HT-7 modality; conventions L16]`

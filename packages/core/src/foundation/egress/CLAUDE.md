@@ -26,7 +26,7 @@ sensitive-union → per-target consent → build+return; the assert path persist
 (no consent adapter ⇒ deny). `EgressDenied(defId, reason)`.
 **No schema at M1** — the audit + per-target-consent STORE is M2 via the ports (`EgressConsentPort` deny-safe
 default · `EgressAuditPort` no-op default); the M2 store is field-encrypted `[E]` (R3/EN-2) + append-only.
-Spec: `docs/specs/foundation/xs-egress-guard/`. Currency: `docs/core/egress/current-*`.
+Spec: LIF-171. Currency: `docs/core/egress/current-*`.
 Delegated: `external_out` boolean + in/out union across action checks → CapabilityEnforcer #31 · per-source
 layer → XS-ingestion #44 · credential injection + provider call → mediator (XCU-09) · the model call →
 XS-ai #45 / ADR-015 · audit VIEW + consent UX → P6 (XCU-06u).

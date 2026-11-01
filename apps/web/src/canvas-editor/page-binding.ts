@@ -1,10 +1,10 @@
 // fe-codec-canvas-editor (#7) · S3 — the persistence CONVENTION + the EntityView slot binding (apps/web plane, PURE).
 //
 // The seam between a `pages` row and the presentational CanvasEditor. Pure (types + mapping only) — per the
-// ProviderRead convention (fe-codec-patterns s5-conventions.md:15, "a TYPE + convention, not a hook; the hook is
+// ProviderRead convention (fe-codec-patterns "a TYPE + convention, not a hook; the hook is
 // deferred to the first consumer") and the sibling canvas/entity adapter precedent. It ships NO live data hook and
 // touches NO @vida/core at runtime: the runtime `pages` read/write wiring is the first consumer's (#27 fe-notes) and
-// the Spaces/engine runtime wiring is #13 seams (reconstructed-structure.md:33). IR-6.
+// the Spaces/engine runtime wiring is #13 seams. IR-6.
 //
 // Slot binding: the EntityView `editor` slot is ALREADY produced + registry-gated by #6
 // (apps/web/src/entity/adapter.ts — `offersEditor` + `EntitySource.editorNode`). #7 supplies WHAT that `editorNode`

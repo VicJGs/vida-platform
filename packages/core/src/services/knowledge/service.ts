@@ -598,7 +598,7 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
 
   /** KNO-36 (BR-S6-9) — promote a concluded, un-promoted entry into a catalog object (title=hypothesis,
    *  description=conclusion), then stamp `promoted_object_id`. `createObject` validates kind + parent (KNO-04/08). The
-   *  `lab.concluded` EVENT fan-out is S8 (decomposition.md:32,108) — NOT emitted here. */
+   *  `lab.concluded` EVENT fan-out is S8 — NOT emitted here. */
   async function promoteToObject(entryId: string, input: PromoteToObjectInput): Promise<KnowledgeObject> {
     const v = PromoteToObjectSchema.parse(input)
     const entry = await labEntriesRepo.findById(entryId)
@@ -636,7 +636,7 @@ export function createKnowledgeService(deps: KnowledgeServiceDeps): KnowledgeSer
   // --- S6: auto-population seam (KNO-43) — ingestion, deny-safe --------------
   /** KNO-43 (BR-S6-12) — opt-in device-side auto-population. Map the optional ingestion guard's `IngestionDecision`:
    *  absent ⇒ `ingestion-unavailable`; `!permitted` ⇒ `refused` (refuse-not-downgrade); `permitted` ⇒
-   *  `parser-unavailable` (source parsers are deferred, decomposition.md:90 — the real M1 seam). `checkIngestion`
+   *  `parser-unavailable` (source parsers are deferred — the real M1 seam). `checkIngestion`
    *  never touches the mediator (guard.ts:48-81). */
   async function autoPopulate(act: IngestionAct): Promise<AutoPopulateResult> {
     if (ingestion == null) return { status: 'ingestion-unavailable' }

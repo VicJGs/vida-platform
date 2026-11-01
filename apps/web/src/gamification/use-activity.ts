@@ -7,7 +7,7 @@
 // System has no ledger rows yet → the 8-state `empty`, a teaching line, no dead
 // affordance).
 //
-// ⚠ There is NO ledger-history read in the shipped ① seam (seam-contract.md exposes
+// ⚠ There is NO ledger-history read in the shipped ① seam (it exposes
 // only getBalance/getBalances, which read consequence_ledger PRIVATELY inside
 // computeBalance). "S5 Activity owns the ledger" (currencies-mode.tsx:26,
 // CLAUDE.md:50). The enriched read is an UNBUILT ①-tier first-consumer-pull seam —

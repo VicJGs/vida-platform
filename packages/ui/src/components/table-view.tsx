@@ -6,7 +6,7 @@ import { type ViewState, Message, warnMissingName } from '../internal/data-view'
 export type { ViewState }
 
 // UI-2 · V8 · table-view — the renderer for the `table` VIEW_LAYOUT (packages/types VIEW_LAYOUT). Implements
-// docs/specs/components/ui-2-platform-views/v8-table-view.md. A columnar grid: caller-declared columns × rows.
+// LIF-87. A columnar grid: caller-declared columns × rows.
 // - READ-ONLY LENS (TV-1): renders resolved+sorted rows; it does NOT sort/filter/group/write. Sort TOGGLE is the
 //   Collection shell's (TV-5 — the renderer only reflects `column.sort` via aria-sort); row interactivity is the
 //   consumer's `column.render` (LV-5). A view is a read-only lens; interaction-that-writes is a Capability

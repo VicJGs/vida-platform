@@ -3,8 +3,8 @@ import { styled, Text, View } from '@tamagui/core'
 import { ensureInteractionStyles } from '../internal/interaction-styles'
 import { ensureCheckboxStyles } from '../internal/checkbox-styles'
 
-// UI-1 · Checkbox (primitive 3/10, last atomic) — implements ds-5-primitive-contracts/checkbox.md against Tamagui v2.
-// Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u3-checkbox.md.
+// UI-1 · Checkbox (primitive 3/10, last atomic) — implements the ds-5 Checkbox contract against Tamagui v2.
+// Reconcile: LIF-86.
 // - A real <input type="checkbox"> (native role/Space-toggle/form participation/`indeterminate`) sits opacity:0,
 //   absolute-filling a styled BOX; a real <label> (render:'label') wraps both so label-click toggles natively.
 // - name:'Checkbox' establishes the .t_Checkbox sub-theme scope (light_/dark_Checkbox → $border/$colorBrandEmphasis/
@@ -16,12 +16,12 @@ import { ensureCheckboxStyles } from '../internal/checkbox-styles'
 type CheckboxSize = 'sm' | 'md' | 'lg'
 
 // Box is a square control; no `checkbox.size` token exists and $size (32/40/48) is control-height — so raw 4pt-grid
-// dp (u3-checkbox.md D1 / DEF-U3-b: doc gap, flagged for DS to tokenize). Checkmark ~0.7× the box.
+// dp (DEF-U3-b: doc gap, flagged for DS to tokenize). Checkmark ~0.7× the box.
 const BOX: Record<CheckboxSize, number> = { sm: 16, md: 20, lg: 24 }
 const GLYPH: Record<CheckboxSize, number> = { sm: 12, md: 14, lg: 16 }
 const LABEL_SIZE: Record<CheckboxSize, string> = { sm: '$caption', md: '$small', lg: '$body' }
 
-// The real <label>: click-to-toggle + implicit label association (checkbox.md:50). render:'label' → <label>
+// The real <label>: click-to-toggle + implicit label association. render:'label' → <label>
 // (Tamagui v2: string render prop = semantic HTML tag). name:'Checkbox' scopes the sub-theme for descendants.
 const CheckboxRoot = styled(View, {
   name: 'Checkbox',
@@ -33,7 +33,7 @@ const CheckboxRoot = styled(View, {
   userSelect: 'none',
   variants: {
     disabled: {
-      // muted + non-interactive (checkbox.md:35). The native `disabled` on the input removes it from tab order.
+      // muted + non-interactive. The native `disabled` on the input removes it from tab order.
       true: { opacity: 0.5, cursor: 'not-allowed' },
     },
   } as const,

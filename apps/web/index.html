@@ -12,7 +12,7 @@
          @tamagui/core reads process.env.TAMAGUI_* at runtime; `process` is undefined in the browser → a
          ReferenceError crashes React to a blank page (jsdom defines process, so only a real browser surfaces it).
          A runtime shim covers EVERY process.env.* read across the library. Mirrors the Storybook preview-head.html
-         fix (docs/specs/fixes/ui-1-storybook-slow-load). [[measure-browser-bugs-dont-hypothesize]] -->
+         fix. [[measure-browser-bugs-dont-hypothesize]] -->
     <script>
       window.process = window.process || { env: { NODE_ENV: 'development' } }
     </script>

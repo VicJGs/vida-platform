@@ -2,7 +2,7 @@
 // E1's StarterKit already provides paragraph/heading/bulletList/orderedList/blockquote/codeBlock/horizontalRule —
 // those are NOT re-added here (BR-E2-2: ProseMirror throws on duplicate node names). Spread into the useEditor
 // extensions array AFTER StarterKit + Placeholder (editor.tsx).
-// Spec: docs/specs/features/ui-3-vida-editor/e2-standard-blocks.md · BR-E2-1/3/5.
+// Spec: LIF-88 · BR-E2-1/3/5.
 import type { Extensions } from '@tiptap/react'
 import Image from '@tiptap/extension-image'
 import { TaskList, TaskItem } from '@tiptap/extension-list'

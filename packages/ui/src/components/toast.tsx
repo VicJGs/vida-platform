@@ -21,8 +21,8 @@ import {
   type ToastRecord,
 } from '../internal/toast-store'
 
-// UI-1 · Toast (primitive 10/10, overlay 3rd of 3) — implements ds-5-primitive-contracts/toast.md against Tamagui
-// v2. Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u10-toast.md.
+// UI-1 · Toast (primitive 10/10, overlay 3rd of 3) — implements the ds-5 Toast contract against Tamagui
+// v2. Reconcile: LIF-86.
 // - The ONLY imperative primitive: consumers call `toast(options)` (re-exported from ./index) — the store
 //   (internal/toast-store.ts) bridges that non-React call to THIS mounted region via useSyncExternalStore.
 // - ToastProvider is mounted ONCE near the app root. It portals to <body> under <Theme name="Toast"> and renders
@@ -107,7 +107,7 @@ const ToastPanel = styled(View, {
   borderRadius: '$lg',
   overflow: 'hidden',
   pointerEvents: 'auto',
-  // fe-codec-controls-refinement P4b: the contract hover "slight elevation" (toast.md:27). LIGHT = the shadow overlay
+  // fe-codec-controls-refinement P4b: the contract hover "slight elevation". LIGHT = the shadow overlay
   // (ToastElevation) fades in; DARK = this border-strengthen carries perceptibility (the shadow self-cancels in dark —
   // the Card card.tsx:52 precedent: $colorBorderDefault→$colorTextMuted). Instant swap = B12-safe.
   hoverStyle: { borderColor: '$colorTextMuted' },
@@ -263,7 +263,7 @@ export function ToastProvider({ limit = 3, placement = 'bottom' }: ToastProvider
   // Register the per-region cap, log() it (perf budget), and enforce the single-provider invariant (F1).
   useEffect(() => {
     setToastLimit(limit)
-    // eslint-disable-next-line no-console -- log() the visible cap per the performance budget (toast.md:52)
+    // eslint-disable-next-line no-console -- log() the visible cap per the performance budget
     console.info(`[vida/ui] Toast: max ${limit} visible per region.`)
     mountedCount += 1
     if (process.env.NODE_ENV !== 'production' && mountedCount > 1) {

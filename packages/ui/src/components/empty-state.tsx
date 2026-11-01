@@ -2,7 +2,7 @@ import { forwardRef, useId, type ComponentRef, type ReactNode } from 'react'
 import { styled, Text, View, type GetProps } from '@tamagui/core'
 
 // fe-codec-patterns · S3 — EmptyState (the CODEC teaching-invitation empty state).
-// Reconcile: docs/specs/foundation/fe-codec-patterns/s3-empty-state.md · interpretation R3 · state-conventions.md:81.
+// Reconcile: LIF-211 · interpretation R3 · state-conventions.md:81.
 //
 // A PRESENTATIONAL teaching empty state a surface drops into its data-view `empty?` slot (richer than the default muted
 // `internal/data-view` Message) or renders standalone. The P5 anatomy (p5-discover-own-specimen.html:159-166): an

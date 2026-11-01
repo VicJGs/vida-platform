@@ -5,8 +5,8 @@
 // pure presentational (state-as-prop → all states unit-tested directly); WikiLinkPicker
 // is the thin hook shell.
 //
-// The editor-side `[[` TRIGGER that mounts this at the caret is a ui-3 concern
-// (e4-slash-menu.md:31), NOT built here; in M1 a `?picker` dev-gate mounts it standalone.
+// The editor-side `[[` TRIGGER that mounts this at the caret is a ui-3 concern,
+// NOT built here; in M1 a `?picker` dev-gate mounts it standalone.
 // ============================================================================
 import { useState, type KeyboardEvent } from 'react'
 import { Text, View } from '@tamagui/core'

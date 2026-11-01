@@ -5,7 +5,7 @@
 //   ⚠ MAT-2: `useEditorState` gates the RE-RENDER, not the selector COMPUTE. The selector runs on every transaction
 //   and does O(controls) `isActive`/`can()` probes (each `can()` builds a throwaway state). Standard Tiptap-toolbar
 //   practice, fine for normal docs; if a perf pass shows jank on large docs, narrow/memoize the probe set.
-// Spec: docs/specs/features/ui-3-vida-editor/e3-toolbar.md · BR-E3-2/BR-E3-5.
+// Spec: LIF-88 · BR-E3-2/BR-E3-5.
 import { useEditorState, type Editor } from '@tiptap/react'
 
 /** The block type at the current selection — drives the block-type Menu's trigger label. */

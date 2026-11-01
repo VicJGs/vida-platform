@@ -19,7 +19,7 @@ import { styled, Text, Theme, View } from '@tamagui/core'
 import { ensureMenuStyles } from '../internal/menu-styles'
 
 // UI-1 · Menu (primitive 7/10, 4th molecular · second floating/portalled) — implements
-// ds-5-primitive-contracts/menu.md against Tamagui v2. Reconcile: ui-1-vida-ui-primitives/u7-menu.md.
+// the ds-5 Menu contract against Tamagui v2. Reconcile: LIF-86.
 // - WAI-ARIA APG "menu button": trigger role=button + aria-haspopup=menu + aria-expanded; a role=menu panel
 //   PORTALLED to document.body (zIndex.dropdown), items role=menuitem. Unlike Select (a combobox), focus MOVES into
 //   the panel — ROVING DOM FOCUS on items (only the active item tabIndex=0, real .focus()), Esc returns focus to the

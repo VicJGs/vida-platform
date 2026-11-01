@@ -3,7 +3,7 @@
 // cannot read Tamagui theme vars (the react-pdf `pdf-theme.ts` parallel). The repo "no raw hex" grep-gate targets the
 // Tamagui/CSS component surface; the DOCX engine's required literals are quarantined here. Print-neutral by design —
 // brand fonts/palette are a deferred seam; the values are provisional (mirrors pdf-theme.ts).
-// Spec: docs/specs/features/ui-3-vida-editor/e8-docx-serializer.md §5.
+// Spec: LIF-88.
 import { BorderStyle, ShadingType, type IBorderOptions, type IShadingAttributesProperties } from 'docx'
 import type { CalloutVariant } from '../extensions/callout'
 

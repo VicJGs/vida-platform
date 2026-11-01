@@ -5,7 +5,7 @@
 // shape, hoisted closures, no `this.` (the ② destructure-consumption shape; the
 // checkins/notes precedent). Bespoke Error subclasses (ServiceError reconcile → DB-11).
 // S1 declares the 5-entity CRUD surface; S2–S6 append (ledger · derivations · effect
-// handler · external seams · cross-module providers) per delivery/slice-map.md.
+// handler · external seams · cross-module providers).
 // ============================================================================
 
 import type { z } from 'zod'

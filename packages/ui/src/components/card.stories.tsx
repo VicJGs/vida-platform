@@ -6,7 +6,7 @@ import { Button } from './button'
 // UI-1 · Card stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both
 // modes. Card is a static container; its interactive states apply ONLY when `interactive`.
 //
-// MEASURE items (u5-card.md §8 + §10): resting surface/border/radius/padding · header + actions + footer layout ·
+// MEASURE items: resting surface/border/radius/padding · header + actions + footer layout ·
 // hover raise (LIGHT = raised-shadow overlay fades in · DARK = the shadow self-cancels, so the border strengthens —
 // confirm dark elevation reads via BORDER, not a visible drop shadow) · focus ring (Tab to a card) · disabled muted ·
 // the consumer-composed empty + loading states · padding compact/default/spacious.

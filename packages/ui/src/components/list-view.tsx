@@ -7,7 +7,7 @@ import { type ViewState, Message, resolveDataViewState } from '../internal/data-
 export type { ViewState }
 
 // UI-2 · V1 · list-view — the renderer for the `list` VIEW_LAYOUT (packages/types VIEW_LAYOUT). Implements
-// docs/specs/components/ui-2-platform-views/v1-list-view.md. **This unit establishes the shared data-view spine**
+// LIF-87. **This unit establishes the shared data-view spine**
 // (generic items<T> + renderItem + getKey + the four RENDERED terminal states) that V2–V4 reuse.
 // - Pure PRESENTATIONAL: list-view owns layout + role="listitem" semantics + the terminal states; it does NOT own
 //   row interactivity (the consumer's `renderItem` composes an interactive Card when a row is clickable — LV-5). This

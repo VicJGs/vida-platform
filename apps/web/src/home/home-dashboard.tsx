@@ -5,7 +5,7 @@
 // widgets with stats + summaries across the whole OS (ADR-008 `standalone` render
 // target). COMPOSES the shipped @vida/ui `DashboardView` (#5) — it is NOT a widget
 // renderer: each widget's SUCCESS body enters via the `renderWidget` seam; the real
-// standalone capability bodies ship downstream (dashboard-view.md:8). Live data
+// standalone capability bodies ship downstream. Live data
 // (buildDashboard / per-module providers) is deferred to the first live consumer
 // (the collection/dashboard ProviderRead precedent); M1 = a default widget set.
 //
@@ -16,7 +16,7 @@
 //   • EC-4 — a grid of standalone widgets across OS domains (finance·tasks·projects·purposes·dreams·habits·schedule)
 //   • EC-5 — per-widget degrade: one widget error/loading/empty while siblings stay live (DashboardView owns this)
 //   • EC-7/EC-8 — DashboardView's RN-safe flex grid reflows to 375; DIRECT semantic tokens, AA both modes
-// Seams (seam-contract.md): useHomeWidgets (READ, B) · renderHomeWidget (EXPOSE, C). M1 placeholders; swap zero-signature.
+// Seams: useHomeWidgets (READ, B) · renderHomeWidget (EXPOSE, C). M1 placeholders; swap zero-signature.
 // ============================================================================
 import type { ReactNode } from 'react'
 import { Text } from '@tamagui/core'

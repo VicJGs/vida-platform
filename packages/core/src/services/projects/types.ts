@@ -3,7 +3,7 @@
 // The ProjectsService public surface + deps, built PER SLICE (Entity Delivery Flow).
 // `ProjectsServiceDeps` GROWS per slice: S1 = { db, deviceId }; `spaces`/`notes` land at S6; the deny-safe
 // partner ports (`tasks?`/`finance?`/`attachment?`/`effects?`/…) at their slices. The seam-contract §A is the
-// S9 end-state, NOT the S1 shape (docs/features/projects/delivery/seam-contract.md).
+// S9 end-state, NOT the S1 shape.
 //
 // Return types are the Drizzle Row types (NOT @vida/types `Project` — it still carries `tags`/NN-`progress` and
 // has no `Deliverable`; the interface reconcile is DB-11 mirror-only). [[drizzle-row-not-assignable-to-vida-types-interface]]
@@ -238,7 +238,7 @@ export interface ProjectsDayDigest {
 }
 
 /** A measurement source a `derived-pull` deliverable pulls from (a Finance account, a metric, …). Bound as an
- *  `entity_links` row (deliverable → source) per `db-4-projects/_index.md:32-33` §3c; resolved via the ADR-011
+ *  `entity_links` row (deliverable → source); resolved via the ADR-011
  *  §3.6 measurement-source seam. The `entityType` must be a registered taggable type. */
 export interface DeliverableSourceRef {
   entityType: string
@@ -247,7 +247,7 @@ export interface DeliverableSourceRef {
 
 /**
  * The two app-managed guiding pages of a project (PJ-7/G3). Represented as `pages` rows with
- * `entity_type='project'` (NOT a dedicated `PAGE_TYPE` — `db-4-projects/_index.md:32-33`: "mission is a page,
+ * `entity_type='project'` (NOT a dedicated `PAGE_TYPE` — "mission is a page,
  * not a column"), discriminated by a reserved title. The `projects.vision` column stays the one-line summary.
  */
 export type ProjectPageKind = 'vision' | 'mission'

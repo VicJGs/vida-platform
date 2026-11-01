@@ -6,7 +6,7 @@ import { Button } from './button'
 // fe-codec-patterns · S3 — EmptyState stories = the component Visual Gate surface. Toggle the toolbar Theme
 // (light｜dark) AND Preset (reader｜editorial｜quietDesk) to review the matrix.
 //
-// MEASURE (s3-empty-state.md §4): the teaching anatomy (art · heading · body · actions · guided) · tokens swap with
+// MEASURE: the teaching anatomy (art · heading · body · actions · guided) · tokens swap with
 // mode + preset (no hard-coded color) · body measure capped (~60ch) · the heading reads as a heading (SR) · the
 // "honest invitation, never 'No data available'" voice · responsive 375/768/1440 (resize the viewport).
 

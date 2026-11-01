@@ -168,13 +168,13 @@ export function SettingsSurface() {
 
         {readOnly && (
           <View gap="$12" alignItems="flex-start">
-            {/* polite, muted error text — the ratified rule (decisions.md:162); the write toast is the assertive one. */}
+            {/* polite, muted error text — the ratified rule; the write toast is the assertive one. */}
             <View role="status" key={failedRetries}>
               <Text fontFamily="$body" fontSize="$body" color="$colorTextMuted">
                 {hasData ? SETTINGS_COPY.readErrorKept : SETTINGS_COPY.readErrorDefaults}
               </Text>
             </View>
-            {/* state-conventions §3 retry affordance; lg = 48px (≥44, design.md:218 · decisions.md:138). */}
+            {/* state-conventions §3 retry affordance; lg = 48px (≥44, design.md:218). */}
             <Button ref={retryRef} intent="secondary" size="lg" onPress={onRetry}>
               {SETTINGS_COPY.retry}
             </Button>

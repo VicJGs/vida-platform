@@ -5,7 +5,7 @@ import { motion } from '../themes/motion'
 // Toast is the ONLY imperative primitive: `toast(options)` is callable from OUTSIDE the React tree (an async
 // catch, a store action, a non-component module). A module-level store + React 19's `useSyncExternalStore`
 // (in toast.tsx's ToastProvider) is the bridge — the sonner/react-hot-toast reducer model, zero-dep (@vida/ui
-// has no zustand). Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u10-toast.md §3.1.
+// has no zustand). Reconcile: LIF-86.
 
 export type ToastIntent = 'info' | 'success' | 'danger'
 

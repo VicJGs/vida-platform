@@ -7,7 +7,7 @@
 // second `begin` throws ("cannot start a transaction within a transaction") or a
 // foreign statement commits/rolls back inside another write's transaction.
 //
-// Rules (docs/features/preferences/delivery/sessions/PLAN-R1-write-integrity.md):
+// Rules:
 // - One writer at a time, FIFO; always released in `finally` (R1-BR-1/2).
 // - A waiter past `waitTimeoutMs` rejects with TransactionLockTimeoutError, and its
 //   slot still FORWARDS the predecessor's release so callers behind it aren't

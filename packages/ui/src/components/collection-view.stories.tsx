@@ -16,7 +16,7 @@ import { Card } from './card'
 // preset in the toolbar. The shell: a view-mode SWITCHER (role="toolbar" of labeled buttons; condenses to a Menu <768)
 // + the active renderer dispatched via renderView + chrome (title/count) + the 8-state threaded. NOT a renderer.
 //
-// MEASURE (collection-view.md §Done when): switcher (7 labeled buttons, active aria-pressed) · dispatch to all 7
+// MEASURE: switcher (7 labeled buttons, active aria-pressed) · dispatch to all 7
 // renderers · 4 states · empty-ownership (EmptyState for list/…, grid for calendar) · 375 condense · light/dark × 3
 // presets · AA full-matrix. Resize < 768 → the switcher condenses to "View: {label}".
 

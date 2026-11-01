@@ -8,7 +8,7 @@
 //
 // The enum-parity test checks only CHECK value-SETS; the runner test only that
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
-// Origin: group #2 P5 (time_format type-lie). schema-foundation-build-flow.md §2 Phase 5.
+// Origin: group #2 P5 (time_format type-lie).
 //
 // F1 deleted_at exceptions (book_chapters + reading_sessions omit it) are covered by the
 // column-set dim: both mirror and migration omit deleted_at, so the sets match. Interface

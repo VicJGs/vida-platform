@@ -1,7 +1,7 @@
 # apps/web/src/session-hud — the Session HUD (fe-session-hud #16)
 
 **Owning issue:** fe-session-hud (LIF-217) — ② frontend CODEC chrome, G6 unit #16: "Session HUD (region 6) —
-persistent timer/stage, responsive placement". Delivery docs: `docs/specs/foundation/fe-session-hud/`.
+persistent timer/stage, responsive placement". Delivery docs: LIF-217.
 **Authorities:** the pomodoro capability docs (PD-1…PD-12, `docs/features/pomodoro/`) — Pomodoro IS the focus
 runtime this HUD surfaces; ADR-004 (sessions framework); the V5 pomodoro-widget timer discipline
 (`packages/ui/src/CLAUDE.md`); the shell chrome rules (`../shell/CLAUDE.md`).
@@ -50,4 +50,4 @@ at the ANCHOR (`style textDecoration/color`); a child's `textDecorationLine:'non
 The hudSlot composition: subscribes to the ROUTER's search (`useRouterState` → `location.searchStr`) and
 feeds `useActiveSession(search)` — a bare `window.location` read is render-time-only and never updates on
 client-side pushState (the S3 Visual-Gate catch). M1 prod: hidden ⇒ the strip is unchanged. No per-unit
-tabIndex (the Bar-1 trap precedent). Deferred work: `delivery/findings.md` F-HUD-1.
+tabIndex (the Bar-1 trap precedent). Deferred work: F-HUD-1.

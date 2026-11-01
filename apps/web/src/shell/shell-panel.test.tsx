@@ -2,7 +2,7 @@
 // fe-shell #14 · S3 — ShellPanel (docked) tests. The docked nav panel: landmark + two-row contained header (mode +
 // edge controls + close) + content-fit body slot. Presentational + state-as-prop — we assert the rendered a11y
 // structure, that the controls reflect `placement` (aria-pressed), and that they EMIT the right intents (the app wires
-// the store). `[FACT: delivery/sessions/PLAN-s3-docked-panel.md §3/§6; envision.md EC-1/2/4/5]`
+// the store). `[FACT: EC-1/2/4/5]`
 import { describe, expect, it, vi } from 'vitest'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach } from 'vitest'

@@ -3,12 +3,12 @@
 The `/gamification` route: a **multi-mode top view** (IA §4 · `hasMultiModeTopView`, no routed detail pages — content
 lives in the modes) over the finished `mod-gamification` ① service. ② UI/UX only — **no `@vida/core`/`@vida/types`
 change**; the UI renders the seam's shapes and holds no business logic (IR-G3). Delivery:
-`docs/specs/foundation/fe-gamification/delivery/`.
+LIF-181.
 
 ## Files (S1)
 
-- **`use-gamification.ts`** — the Overview DATA seam. TYPE-correct against the shipped `GamificationService`
-  (seam-contract.md), data **STUBBED** at M1 (IR-G1 — the fe-notes data-plane gap). M1 default = a fresh System
+- **`use-gamification.ts`** — the Overview DATA seam. TYPE-correct against the shipped `GamificationService`,
+  data **STUBBED** at M1 (IR-G1 — the fe-notes data-plane gap). M1 default = a fresh System
   (level 1, no currencies/unlocks) → `success` (the hero always renders; the hub is never a blank "empty").
   `?sample` = a populated System for the Visual Gate; `?force=loading|error` reaches the two terminal states the
   honest seam can't. Live swap = React Query over `svc.getProfile/getLevel/getBalances/listCurrencies/getUserAchievements`
