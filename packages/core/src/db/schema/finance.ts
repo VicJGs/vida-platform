@@ -9,7 +9,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/020_finance.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-finance-and-fiscal-legal/):
+// Shape:
 // - NO cross/within-domain FK — account_id/transfer_to_account_id/project_id/owner_id/
 //   linked_task_id are plain TEXT (no-FK, current-spec.md:176-177; §5.8 REFERENCES stale,
 //   superseded by ADR-016 §3.4). Cascade/orphan (FN-11) = app/sync-layer.

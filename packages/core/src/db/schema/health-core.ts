@@ -10,7 +10,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/027_health_core.ts). These Drizzle objects are the query mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-health-core/_index.md):
+// Shape:
 // - Enums: REUSE MEASUREMENT_KIND/BINDING_MODE (measurement.ts) + STATUS/FREQUENCY
 //   (common.ts); 14 net-new FIXED tuples → @vida/types health.ts (SQL CHECK). OPEN
 //   vocabs (physical_roles.type modality · experiment.type · exam.kind · metric

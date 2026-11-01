@@ -1,6 +1,6 @@
 // ============================================================================
 // SRP (Secure Remote Password) — Client-side protocol
-// ADR-001 §6 · architecture.md §3.3
+// ADR-001 §6
 //
 // Zero-knowledge auth: the server NEVER sees the user's password.
 // It stores only a salt + verifier. The protocol proves password knowledge

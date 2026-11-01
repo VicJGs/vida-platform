@@ -9,7 +9,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/025_relationships.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-relationships/_index.md):
+// Shape:
 // - NO cross-table FK — contact_id / reminder_group_id / network_group_id are plain TEXT
 //   (no-FK, superseding §5.9's REFERENCES/CASCADE/SET NULL). Cascade/orphan (RL-2) = app/sync-layer.
 // - FIXED enums → SQL CHECK from the @vida/types tuple. OPEN vocab (closeness_tier =

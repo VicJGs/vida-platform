@@ -11,7 +11,7 @@
 // DDL model (ADR-016 §3.5): CHECK + indexes live in the hand-written SQL migration
 // (migrations/021_skills.ts). These Drizzle objects are the type-safe QUERY mirror.
 //
-// Shape (spec docs/specs/foundation/db-4-skills/):
+// Shape:
 // - NO FK anywhere — parent_skill_id (self-ref), skill_id, level_id, activity_id,
 //   definition_id, session_id are plain TEXT (no-FK, ADR-016 §3.4; §5.9 REFERENCES stale).
 //   Cascade/set-null = app/sync-layer (BR-SK-3).

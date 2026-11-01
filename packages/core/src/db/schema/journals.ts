@@ -13,8 +13,6 @@
 // sections_data[E] · captured_at · sync. Hand-composed reduced column set —
 // captured_at IS the timestamp, so NO created_at/updated_at; a frozen ledger
 // record → NO deleted_at (the check_in_template_questions reduced-column precedent).
-//
-// Spec: docs/specs/foundation/db-4-journals/_index.md §3a.
 // ============================================================================
 
 import { sqliteTable, text, index } from 'drizzle-orm/sqlite-core'

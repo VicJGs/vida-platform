@@ -14,7 +14,7 @@
 // mirror only — `enumText` gives the TS union, not a SQL CHECK; `command_key`'s
 // UNIQUE is SQL-migration-only (the notes.ts precedent).
 //
-// Shape (spec docs/specs/foundation/db-4-preferences/):
+// Shape:
 // - Full `baseColumns` (incl. updated_at) on all 3 (P-R2, ADR-016 §3.4). NO deleted_at
 //   (config has no soft-delete; invariant #7 is opt-in). NOTE: @vida/types
 //   CommandBarHistory still extends SyncMetadata (created_at only) — same divergence
