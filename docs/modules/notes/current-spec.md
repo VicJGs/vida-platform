@@ -144,11 +144,11 @@ use-journal-summary.ts:6-7; use-note-entity.ts:3-5; use-notes-rows.ts:5-7; colle
 
 ### Components (contract · states · interactions)
 
-- **NotesSurface** (`/notes`) — 4 layouts list/gallery/calendar/graph [FACT: notes-surface.tsx:21]; "New note" (disabled
-  while pending) [FACT: :39-41]; `NotesSearch` above the collection; open → `/notes/$id` [FACT: :29];
-  `resolved = {rows, groups:[], state, degraded:[]}` [FACT: :32]; filter/sort/new-view → no-op [FACT: :50-52].
+- **NotesSurface** (`/notes`) — 3 layouts list/gallery/graph — no Calendar, EC-1 re-pinned (LIF-375) [FACT: note-renderers.tsx `NOTES_LAYOUTS`]; "New note" (disabled
+  while pending) [FACT: notes-surface.tsx:42-44]; `NotesSearch` above the collection; open → `/notes/$id` [FACT: :32];
+  `resolved = {rows, groups:[], state, degraded:[]}` [FACT: :35]; filter/sort/new-view → no-op [FACT: :56-58].
 - **renderNotesView** — list `NoteRowCard` + gallery tiles (interactive Card; accessible name = `cardName`: title · type ·
-  "edited …" · favorite, the type dropped when the title came from it); calendar on `r.date`, `empty`→`success`; graph
+  "edited …" · favorite, the type dropped when the title came from it); graph
   `NeuralGraph nodes=[]`. Icons + type labels from `note-chrome` (one set, R1 B-60) [FACT: note-renderers.tsx].
 - **NoteEntity** (`/notes/$id`) — loading (`aria-busy`) · error (`ReadErrorMessage` "Couldn’t load this page." + Retry,
   R1 BR-R1-8) · empty ("Note not found") · success → `NoteEntityView` [FACT: note-entity.tsx].

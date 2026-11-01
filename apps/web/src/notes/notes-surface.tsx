@@ -3,25 +3,22 @@
 // `CollectionView` + the generic `useCollection` view-config hook + `renderNotesView` +
 // the `useNotesRows` data seam. First CollectionView consumer in apps/web.
 //
-// Layouts offered (surface-map:48 — Notes top): List · Gallery · Calendar · Neural.
-// Data is M1-default empty (live swap drop-in — useNotesRows / useCollection); the
+// Layouts offered: List · Gallery · Neural (EC-1 re-pinned 2026-10-26 — notes have no Calendar; journal views are the
+// Journals module's, JR-1; docs/features/notes-and-pages/structure-data.md). Data is M1-default empty (live swap drop-in — useNotesRows / useCollection); the
 // `?sample` DEV param drives populated layouts for the blocking Visual Gate.
 // ============================================================================
 import { useRef } from 'react'
 import type { ResolvedView } from '@vida/core'
-import type { ViewLayout } from '@vida/types'
 import { useNavigate } from '@tanstack/react-router'
 import { View } from '@tamagui/core'
 import { Button, CollectionView } from '@vida/ui'
 import { useCollection } from '../collection/use-collection'
 import { NotesSearch } from './notes-search'
-import { renderNotesView } from './note-renderers'
+import { NOTES_LAYOUTS, renderNotesView } from './note-renderers'
 import { ReadErrorMessage } from './read-error-message'
 import { useFocusOnRecovery } from './use-focus-on-recovery'
 import { useNotesRows } from './use-notes-rows'
 import { useCreateNote } from './use-create-note'
-
-const NOTES_LAYOUTS: readonly ViewLayout[] = ['list', 'gallery', 'calendar', 'graph']
 
 export function NotesSurface() {
   const col = useCollection('notes-default', NOTES_LAYOUTS)

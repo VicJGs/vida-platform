@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import { cleanup, render, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
-import { renderNotesView } from './note-renderers'
+import { NOTES_LAYOUTS, renderNotesView } from './note-renderers'
 import type { NotesRow } from './use-notes-rows'
 
 afterEach(cleanup)
@@ -49,9 +49,8 @@ describe('renderNotesView (S1, NOT-48/49)', () => {
     expect(getByText('Project kickoff')).not.toBeNull()
   })
 
-  it('EC-1 — calendar layout renders the month grid with chips', () => {
-    const { getByText } = renderUI(<>{renderNotesView('calendar', 'success', ROWS, noop)}</>)
-    expect(getByText('Project kickoff')).not.toBeNull()
+  it('EC-1 — /notes offers List · Gallery · Neural, no Calendar (journal views are the Journals module’s)', () => {
+    expect(NOTES_LAYOUTS).toEqual(['list', 'gallery', 'graph'])
   })
 
   it('EC-3 — graph layout ALWAYS degrades to the empty terminal (AR-8 deferred), even with rows', () => {

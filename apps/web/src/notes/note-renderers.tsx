@@ -1,22 +1,13 @@
 // ============================================================================
 // renderNotesView — the Notes module's per-layout renderers (fe-notes-and-pages S1).
 // COMPOSES the shipped @vida/ui view-mode renderers (never rebuilt) with notes' real
-// row data + props. state-as-prop (BR-2). Legs NOT-48 (List·Gallery·Calendar) + NOT-49
+// row data + props. state-as-prop (BR-2). Legs NOT-48 (List·Gallery; no Calendar — EC-1 re-pinned 2026-10-26) + NOT-49
 // (Neural → empty terminal, AR-8 data-prep deferred). Icons = Lucide, tinted by token (EC-22); icons + type labels come
 // from note-chrome (one set — notes-rescope R1, B-60).
 // ============================================================================
 import type { ReactNode } from 'react'
 import { styled, Text, View } from '@tamagui/core'
-import {
-  ListView,
-  GalleryView,
-  CalendarView,
-  NeuralGraph,
-  EmptyState,
-  Card,
-  type ViewLayout,
-  type ViewState,
-} from '@vida/ui'
+import { ListView, GalleryView, NeuralGraph, EmptyState, Card, type ViewLayout, type ViewState } from '@vida/ui'
 import { Star } from 'lucide-react'
 import { Icon, typeLabel } from './note-chrome'
 import { pageIconFor } from './page-icons'
@@ -97,8 +88,13 @@ function NoteTile({ r, onOpen }: { r: NotesRow; onOpen: (id: string) => void }) 
   )
 }
 
+/** The layouts `/notes` offers (EC-1 re-pinned 2026-10-26): List · Gallery · Neural. Notes have no Calendar — journal
+ *  views are the Journals module's (JR-1; docs/features/notes-and-pages/structure-data.md). */
+export const NOTES_LAYOUTS: readonly ViewLayout[] = ['list', 'gallery', 'graph']
+
 /** Render the active layout's @vida/ui renderer with notes rows. `graph` always degrades to the `empty` terminal
- *  (AR-8 graph data-prep deferred, NOT-49) unless loading/error. `table`/`board`/`timeline` aren't offered for notes. */
+ *  (AR-8 graph data-prep deferred, NOT-49) unless loading/error. `calendar`/`table`/`board`/`timeline` aren't offered for
+ *  notes (NOTES_LAYOUTS). */
 export function renderNotesView(
   layout: ViewLayout,
   state: ViewState,
@@ -115,22 +111,6 @@ export function renderNotesView(
           state={state}
           minTileWidth={220}
           renderItem={(r) => <NoteTile r={r} onOpen={onOpen} />}
-        />
-      )
-    case 'calendar':
-      return (
-        <CalendarView
-          aria-label="Notes by day"
-          items={rows}
-          getKey={(r) => r.id}
-          getDate={(r) => r.date}
-          state={state === 'empty' ? 'success' : state}
-          renderItem={(r) => (
-            <Row>
-              <Icon icon={pageIconFor({ icon: r.icon ?? null, type: r.type })} size={12} />
-              <Text fontSize="$small">{r.title}</Text>
-            </Row>
-          )}
         />
       )
     case 'graph':
