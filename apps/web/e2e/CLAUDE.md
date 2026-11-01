@@ -50,8 +50,11 @@ exec playwright test` (CWD = apps/web) discovers it and does NOT scan `src/**/*.
 - **Serialization ceiling.** Backdoor return values cross `page.evaluate` and MUST be JSON-serializable. `query`
   object-rows are fine; a `bigint` (`web-driver.ts` `lastInsertRowId`) or `Date` would throw — stringify in the
   harness before returning if a future consumer needs them.
-- **Local run caveat.** The browser run requires a Playwright-supported OS (ubuntu in CI, or macOS 13+). macOS 12
-  cannot download the Chromium build; use `playwright test --list` locally and rely on the CI `e2e` job to run.
+- **Local run on macOS 12.** Playwright's Chromium build doesn't support macOS 12 (ubuntu in CI and macOS 13+ use it
+  as-is), so point Playwright at Brave with `PW_EXECUTABLE_PATH`, then run `pnpm test:e2e`:
+  `PW_EXECUTABLE_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser"`. `playwright.config.ts` reads it
+  and `turbo.json` passes it to the `e2e` task, so `pnpm check` honours it too. Without it, every spec fails at
+  `browserType.launch: Executable doesn't exist`.
 
 ## Extension points (how the following issues plug in — do not fork this)
 
