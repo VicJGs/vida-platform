@@ -3,7 +3,7 @@
 // This side DEFINES the ONE canonical spelling; `from-markdown.ts` is its exact inverse (BR-E6-2), so the round-trip
 // grammar is CLOSED and no general-GFM lexer is ever needed (BR-E6-8, the dissolved hazard).
 // Pure/headless/deterministic (BR-E6-7): EditorDocument JSON in, string out — no Editor, no DOM.
-// Spec: docs/specs/features/ui-3-vida-editor/e6-markdown-serializers.md.
+// Spec: LIF-88.
 import type { EditorDocument, EditorNode, EditorMark, MarkdownSerializeOptions } from '@vida/types'
 import { INTEGRATION_BLOCK_COMMANDS } from '../commands'
 

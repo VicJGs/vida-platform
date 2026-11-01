@@ -16,7 +16,7 @@ import { styled, Text, Theme, View } from '@tamagui/core'
 import { ensureSelectStyles } from '../internal/select-styles'
 
 // UI-1 · Select (primitive 4/10, first molecular + first floating/portalled) — implements
-// ds-5-primitive-contracts/select.md against Tamagui v2. Reconcile: ui-1-vida-ui-primitives/u4-select.md.
+// the ds-5 Select contract against Tamagui v2. Reconcile: LIF-86.
 // - WAI-ARIA 1.2 APG "select-only combobox": a real <button role="combobox"> trigger (render:'button', ref target =
 //   HTMLButtonElement) whose keyboard is 100% hand-handled; a listbox panel PORTALLED to document.body (zIndex.dropdown).
 // - Focus STAYS on the trigger the whole time; the highlighted option is tracked in state + surfaced via

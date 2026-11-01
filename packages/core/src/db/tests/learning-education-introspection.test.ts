@@ -8,7 +8,6 @@
 //
 // The enum-parity test checks only CHECK value-SETS; the runner test only that
 // migrations APPLY. Neither catches a NOT-NULL-in-mirror-but-nullable-in-SQL drift.
-// schema-foundation-build-flow.md §2 Phase 5.
 //
 // deleted_at exceptions (ics_feed_configs, ics_synced_events, class_sessions,
 // subject_documents omit it) are covered by the column-set dim: both mirror and

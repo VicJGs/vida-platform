@@ -11,7 +11,7 @@ import { Button } from './button'
 // read-only action slot · hairline) + a hosted-renderer region (children). It owns NO renderer state — it selects an
 // optional empty/error override by `state`, else delegates to the hosted renderer (BR-CB-S1-6).
 //
-// MEASURE (s1-canvas-view.md §4): EC-1 editorial masthead (.vida-canvas-eyebrow UPPERCASE · .vida-canvas-title serif
+// MEASURE: EC-1 editorial masthead (.vida-canvas-eyebrow UPPERCASE · .vida-canvas-title serif
 // $display · .vida-canvas-meta $small muted) — not a grid/switcher · EC-3 progress slot (meta→progress order) · EC-4
 // empty: teaching override shows when provided, else children · EC-6 read-only action slot · EC-7 preset re-voice ·
 // EC-8 AA ≥4.5 title/eyebrow/meta full matrix (incl warm-dark) · BR-CB-S1-12 responsive 375/768/1440 (actions reflow

@@ -1,7 +1,7 @@
 // E1 (UI-3) — <VidaEditor>: the @vida/editor spine. A headless Tiptap React editor in a Tamagui frame that
 // renders/edits an EditorDocument (TipTap JSON) and emits changes via onChange. Every later unit (blocks E2,
 // toolbar E3, slash-menu E4, registry E5, serializers E6–E8) extends this surface.
-// Spec: docs/specs/features/ui-3-vida-editor/e1-editor-core.md · BR-E1-1..5.
+// Spec: LIF-88 · BR-E1-1..5.
 import {
   forwardRef,
   useEffect,

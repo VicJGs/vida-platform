@@ -8,7 +8,7 @@ import { type ViewState } from './list-view'
 // A month grid (role="table") that buckets dated items onto days. Diverges from the linear spine: empty = the grid
 // with no chips (not a message); a table, not a list.
 //
-// MEASURE (v4-calendar-view.md §4 + P5 refinement): 6×7 grid (stable height) · serif $heading title · UPPERCASE tracked
+// MEASURE (P5 refinement): 6×7 grid (stable height) · serif $heading title · UPPERCASE tracked
 // weekday eyebrows (left-set) · $small tabular day figures · TODAY = accent number + underline (not a filled blob) ·
 // weekend + out-of-month = $colorSurfaceSecondary paper (oos number muted, weekend ink) · accent-dot chips + eyebrow
 // "+K more" · month nav (WithNav) · loading skeleton grid · error status · empty = grid (not a message) · dark mode ·

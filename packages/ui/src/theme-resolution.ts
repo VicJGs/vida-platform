@@ -1,6 +1,6 @@
 // fe-codec-theme S3 — pure theme resolution (no React, unit-testable).
 // The codec's typed selection contract + the scheme-first name resolver + density value tables. The provider
-// (provider.tsx) consumes these; the app owns the SELECTION state + persistence + switcher UI (R5, seam-contract.md).
+// (provider.tsx) consumes these; the app owns the SELECTION state + persistence + switcher UI (R5).
 
 /** A swappable token family = {palette + accent + display/body font-family} (R1). */
 export type ThemePreset = 'reader' | 'editorial' | 'quietDesk' | 'game'

@@ -8,21 +8,21 @@
 // import staging, add-only feed dedup, stable integration-identity + normalization
 // contract, opt-in/revocable grant lifecycle. Decides/normalizes/registers; holds
 // no credential, makes no network call. No schema at M1 — durable stores are M2
-// (the ports; [E] there, IR-12). Spec: docs/specs/foundation/xs-ingestion/.
+// (the ports; [E] there, IR-12). Spec: LIF-172.
 // ============================================================================
 
 // ── S1: classification + honest-leak disclosure ─────────────────────────────
 
 // Layer = who OWNS the connector (not the fetch mechanism), and it is temporal —
 // a source migrates user-managed → native over time (ADR-014 §3.2, :52). Not a
-// flat toggle (X2 anti-signal). `[FACT: ADR-014:44-52; capability-framework.md:196]`
+// flat toggle (X2 anti-signal). `[FACT: ADR-014:44-52]`
 export const INGESTION_LAYERS = ['native', 'public-reference', 'user-managed'] as const
 export type IngestionLayer = (typeof INGESTION_LAYERS)[number]
 
 // A source keyed on the stable integration-identity anchor (X10 / ADR-014 §3.8),
 // not a raw URL — so a Layer-3→Layer-1 upgrade keeps grant + staged + ingested
 // continuity. `normalizationContractId` binds it to the contract both layers emit
-// to (XCU-14). `[FACT: ADR-014:78; capability-framework.md:204]`
+// to (XCU-14). `[FACT: ADR-014:78]`
 export interface IngestionSource {
   integrationId: string
   layer: IngestionLayer
@@ -103,7 +103,7 @@ export interface IngestionDecision {
 // XCU-09 — the credential-custody seam. The capability NEVER holds the credential: it asks the guard,
 // the guard delegates to the OS mediator which injects `connection_config` + makes the call, returning
 // only the result. M1 default = ABSENT (deny-safe ⇒ mediator_unavailable). M2 wires the real mediator +
-// the `connection_config` store ([E], U-4). `[FACT: ADR-014:68 (§3.4); capability-framework.md:201 (X7)]`
+// the `connection_config` store ([E], U-4). `[FACT: ADR-014:68 (§3.4)]`
 export interface FetchRequest {
   path: string
   params?: Record<string, string>

@@ -7,7 +7,7 @@ import { Button } from './button'
 // UI-2 · FlowSessionView stories — the component Visual Gate surface. Toggle the toolbar Theme (preset × light｜dark × density).
 // The 4th archetype shell: a title-hero header + HonestProgress + the staged Timeline rail (done/current/upcoming + fulcrum)
 // + per-stage body (renderStage) + standardized affordances (attach · mark-done · require-proof, emitting intents) + the
-// read-only effect-rail log. MEASURE (flow-session-view.md EC-1…EC-11): serif $display title AA · progress BAR (not a text
+// read-only effect-rail log. MEASURE (EC-1…EC-11): serif $display title AA · progress BAR (not a text
 // subtitle) 16px below · done ✓/proof · current emphasized w/ affordances · upcoming faded · effect log calm (empty teach) ·
 // per-stage state degrade · type SCALE no px · preset accent flips · 375 no overflow.
 

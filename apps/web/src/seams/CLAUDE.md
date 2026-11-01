@@ -32,7 +32,7 @@ hook / a module singleton) — the first consumer (UI-3/#27) decides, because th
 main-thread Drizzle-proxy that currently throws (`db/CLAUDE.md`). Reads go through React Query over the existing
 `ProviderRead<T>` seam — see `apps/web/src/providers/provider-read.ts`; do not re-invent it.
 **Live wiring = the Entity Live Close.** Each engine/service is wired in the closing slice of its first consuming
-entity (golive-replan G0, `docs/specs/foundation/golive-replan/process.md` ELC-3…9); #13 stays convention-only.
+entity (golive-replan G0, LIF-240 ELC-3…9); #13 stays convention-only.
 
 ### 2. ReadProvider registration (SavedView seam — the gap `collection/CLAUDE.md` leaves)
 

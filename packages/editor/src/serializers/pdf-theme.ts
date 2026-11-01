@@ -3,7 +3,7 @@
 // resolve only in a browser DOM), so its styles MUST be literal values. The repo "no raw hex" grep-gate targets the
 // Tamagui/CSS component surface; the PDF engine's required literals are quarantined here (the DS-token-source-file
 // precedent). Print-neutral by design — brand fonts/palette are a deferred seam (BR-E7-1); the values are provisional.
-// Spec: docs/specs/features/ui-3-vida-editor/e7-pdf-serializer.md §5.
+// Spec: LIF-88.
 import { StyleSheet } from '@react-pdf/renderer'
 import type { CalloutVariant } from '../extensions/callout'
 

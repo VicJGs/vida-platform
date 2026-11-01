@@ -9,8 +9,7 @@ real entity elsewhere (habit · task · session). Composes and derives; owns onl
 
 ## Owning ADR / context
 
-routines context · durable docs `docs/modules/routines/current-{spec,business-rules}.md` · delivery
-`docs/features/routines/delivery/` (interpretation · reconciliation · slice-map · seam-contract · PLAN-S\*)
+routines context · durable docs `docs/modules/routines/current-{spec,business-rules}.md`
 
 ## Pattern
 

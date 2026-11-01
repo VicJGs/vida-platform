@@ -373,7 +373,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     return out
   }
 
-  // ── S3 + S5c — run/drive (PLAN-S3-run-drive.md, PLAN-S5c-q1-d3-correction.md) ─────
+  // ── S3 + S5c — run/drive ─────
   // Every step drives an entity (Q1/RT-4): a task (a check-off step IS a task), a habit, the focus timer, or a REGISTERED
   // session sub-type (routines registers none). Resolution (pin 1): focus → work (needs its task) → a registered sub-type
   // (exercise ⇒ workout) → task ref → habit ref → check-off (no ref; becomes a Task) → unavailable. An UNREGISTERED step_type
@@ -700,7 +700,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     else await loadStepOrThrow(target.id)
   }
 
-  // ── S7 — routine-level effects (PLAN-S7-effects.md, D3 + rule 21) ──
+  // ── S7 — routine-level effects (D3 + rule 21) ──
   // The routine's `award_xp` + `contribute_purpose_metric` fire on the WRITE whose date goes not-done → done (never on a read), only for a
   // scheduled occurrence, guarded by registry.resolve (N8), post-commit + isolated (rule 13). Keyed routine.id + completed:<date>.
   const EMITTED: readonly EffectType[] = ['award_xp', 'contribute_purpose_metric']
@@ -1204,7 +1204,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
   }
 
-  // ── S4 — policy evaluation (PLAN-S4-policy-evaluation.md) ───────────
+  // ── S4 — policy evaluation ───────────
   // E1b — the step set AS OF `date`: created on/before it and not deleted on/before it, plus any step with a ledger row that day
   // (RT-5 never discarded; no retroactive change). findWhere without the soft-delete filter is deliberate here (rule-7 exception).
   const stepsAsOf = (all: RoutineStepRow[], date: string, withRow: ReadonlySet<string>): RoutineStepRow[] =>
@@ -1397,7 +1397,7 @@ export function createRoutinesService(deps: RoutinesServiceDeps): RoutinesServic
     }
   }
 
-  // ── S5 — progress + analytics (PLAN-S5-progress-analytics.md) ──────
+  // ── S5 — progress + analytics ──────
   // One load per call: routine, policy (window validated), all steps, the ledger rows for [from, to], one reflection context.
   const loadWindow = async (routine: RoutineRow, from: string, to: string) => {
     const routineId = routine.id

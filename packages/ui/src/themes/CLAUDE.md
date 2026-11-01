@@ -2,7 +2,7 @@
 
 The Style Dictionary → Tamagui + CSS-vars token pipeline. Turns the 3-layer JSON seed into the design system's
 consumable outputs. Durable spec: `docs/ui/token-pipeline/current-spec.md` + `current-business-rules.md`.
-Source model: **code-first** (`docs/specs/foundation/frontend-source-of-truth.md`).
+Source model: **code-first**.
 
 ## Files
 

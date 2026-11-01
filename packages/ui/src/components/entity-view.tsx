@@ -9,7 +9,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 
 // ============================================================================
 // EntityView — the CODEC Entity shell (fe-codec-entity-facet S1).
-// "The facet system" — the 3rd archetype shell (decomposition.md:31 §1.2):
+// "The facet system" — the 3rd archetype shell:
 // a Layout facet (Title·bio·summary·dashboard·views) + an OPTIONAL Editor facet
 // (the entity's linked page), composed in a user-chosen merged | tabbed mode.
 // A facet FRAME, not a facet renderer — it owns the header + the mode + per-facet
@@ -17,7 +17,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 // DashboardView #5 + CollectionView #4; the Editor = Canvas: Editor #7, later).
 // Presentational, state-as-prop (BR-2); @vida/ui is Tamagui-only, so FacetMode is
 // a LOCAL union and the editor state reuses the intra-package ViewState canon.
-// Spec: docs/specs/components/ui-2-platform-views/entity-view.md.
+// Spec: LIF-87.
 //
 // REGISTRY GATE (the "registry-gated editor"): resolved in apps/web (S2) — it runs
 // isEntityType() + a page lookup and PASSES an `editor` node or omits it. The shell

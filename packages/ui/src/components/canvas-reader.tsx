@@ -15,7 +15,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 // header, reading column, and states so they gate independently.
 // Presentational, state-as-prop (BR-2); @vida/ui is Tamagui-only → all types LOCAL, no @vida/core import.
 // Non-generic → React-19 ref-as-prop (no forwardRef). The flow-session-view pattern.
-// Spec: docs/specs/foundation/fe-codec-canvas-reader/ (delivery/ + PLAN-S1-frame.md).
+// Spec: LIF-206.
 // ============================================================================
 
 /** The reading-column state (BR-S1-5): extends the shared `ViewState` with `unavailable` — access (a physical copy /

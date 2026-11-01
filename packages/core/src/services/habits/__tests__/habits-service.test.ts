@@ -3,7 +3,7 @@
 //
 // Node / better-sqlite3 live-store harness (mirrors finance/checkins): REAL data store, UNLOCKED
 // vault (the sync-hash path runs even with empty [E]), migrate() applies 017_habits so the tables
-// exist. Covers the slice-map.md S1 Verification Gate: CRUD happy + invalid-enum reject +
+// exist. Covers the S1 Verification Gate: CRUD happy + invalid-enum reject +
 // custom-without-days reject + soft-delete hides (ledger untouched) + faithful create echo
 // (defaults backfilled, nullables null, JSON round-trip) + listHabits filtering + co-transactional
 // sync_queue enqueue.
@@ -655,7 +655,7 @@ describe('mod-habits S5 — effect fan-out + cross-module seams', () => {
   })
 })
 
-// ── fe-calendar #19 · S6 — getCompletionGrid (BR-CAL-S6-1..6, PLAN-S6-first-consumer-reads.md) ───────────────
+// ── fe-calendar #19 · S6 — getCompletionGrid (BR-CAL-S6-1..6) ───────────────
 // The cross-habit grid the Living lens's habit threads read (EC-7): every day of an inclusive range per active habit,
 // with `scheduled` (the ONE BR-S2-4 predicate), `count` and `done`. Run under a negative AND a positive UTC offset —
 // each catches a different date-bug class (the tasks Asia/Tokyo precedent; the gate is TZ-blind otherwise).

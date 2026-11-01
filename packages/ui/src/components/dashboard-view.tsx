@@ -6,13 +6,13 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 
 // ============================================================================
 // DashboardView — the CODEC Dashboard shell (fe-codec-dashboard S1).
-// "A grid of integration blocks" — the 2nd archetype shell (decomposition.md:30
-// §1.2). COMPOSES blocks the consumer supplies via a `renderBlock` render-prop;
+// "A grid of integration blocks" — the 2nd archetype shell.
+// COMPOSES blocks the consumer supplies via a `renderBlock` render-prop;
 // it is NOT a block renderer (the 11 `standalone` block widgets ship elsewhere).
 // Presentational, state-as-prop (BR-2); @vida/ui is Tamagui-only (no @vida/core/
 // @vida/types), so `CellSize` is a LOCAL union and block state reuses the
 // intra-package `ViewState` canon (the gallery-view precedent).
-// Spec: docs/specs/components/ui-2-platform-views/dashboard-view.md.
+// Spec: LIF-87.
 //
 // NON-GENERIC: the shell holds no block data (`renderBlock` owns each block's
 // body), so there is no <T> to erase → a plain component + React-19 ref-as-prop.

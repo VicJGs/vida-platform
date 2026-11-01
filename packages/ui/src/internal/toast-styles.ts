@@ -3,7 +3,7 @@ import { shadow } from '../themes/shadow'
 import { reducedMotionCss } from './reduced-motion-css'
 
 // Injected CSS for the Toast primitive — the enter/exit motion a Tamagui styled(View) can't express across a
-// react-dom portal (the shipped Select/Menu/Dialog/Popover precedent). Contract (toast.md:37-42):
+// react-dom portal (the shipped Select/Menu/Dialog/Popover precedent). Contract:
 //   enter = duration.moderate / easing.out — opacity + translateY slide FROM the stack edge
 //   exit  = duration.fast     / easing.in  — opacity + translateY out
 // B12: only opacity + transform. The slide DIRECTION is per-placement, passed inline as `--vida-toast-from`
@@ -27,7 +27,7 @@ export function ensureToastStyles(): void {
     `.vida-toast[data-phase="entering"]{animation:vida-toast-in ${enter} both}`,
     // exit: fade + slide back out over duration.fast / easing.in.
     `.vida-toast[data-phase="exiting"]{opacity:0;transform:translateY(var(--vida-toast-from,16px));transition:opacity ${exit},transform ${exit}}`,
-    // P4b hover "slight elevation" (toast.md:27): the overlay's raised shadow fades in on wrapper :hover (opacity
+    // P4b hover "slight elevation": the overlay's raised shadow fades in on wrapper :hover (opacity
     // ONLY — B12-safe; the shadow is STATIC, never animated). shadow.raised self-cancels in dark — the ToastPanel
     // border-strengthen hoverStyle carries dark perceptibility (§VIII; the Card card.tsx:52 precedent).
     `.vida-toast-elevation{box-shadow:${shadow.raised};transition:opacity ${hover}}`,

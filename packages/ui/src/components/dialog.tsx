@@ -15,14 +15,14 @@ import { createPortal } from 'react-dom'
 import { styled, Text, Theme, View } from '@tamagui/core'
 import { ensureDialogStyles } from '../internal/dialog-styles'
 
-// UI-1 · Dialog (primitive 8/10, overlay/organism tier 1st of 3) — implements ds-5-primitive-contracts/dialog.md
-// against Tamagui v2. Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u8-dialog.md.
+// UI-1 · Dialog (primitive 8/10, overlay/organism tier 1st of 3) — implements the ds-5 Dialog contract
+// against Tamagui v2. Reconcile: LIF-86.
 // - The first MODAL primitive: a scrim + centered panel PORTALLED to a dedicated body-child <div>, blocking the app.
 //   Unlike Select/Menu (floating-but-non-modal): a real focus TRAP (Tab cycles WITHIN the panel), the background is
 //   `inert`/`aria-hidden`, and focus RETURNS to whatever was focused before open (§XIV; captured document.activeElement,
 //   NOT a trigger ref — Dialog is fully controlled, it owns no trigger).
 // - name:'Dialog' scopes the light_/dark_Dialog sub-theme ($background/$radius); the scrim reaches the base semantic
-//   $colorSurfaceInverse (no scrim component token — dialog.md:34 flags it, DEF-U8-c). Re-wrapped in <Theme name="Dialog">
+//   $colorSurfaceInverse (no scrim component token — DEF-U8-c). Re-wrapped in <Theme name="Dialog">
 //   because the portal detaches the name scope (the Menu/Select precedent; base light/dark still crosses via <html>).
 // - Motion (B12): a mount-triggered @keyframes ENTER (scrim opacity, panel opacity+scale/lift), resting base VISIBLE so a
 //   missed animation fails safe (internal/dialog-styles.ts). Reduced-motion → instant.

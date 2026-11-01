@@ -4,7 +4,7 @@
 rendered surface — Phase-1b)** · **Authority:** new-feature / add-frontend-component · intent `docs/features/journals`
 
 - ADR-004 provider-registry pattern + ADR-008 render-targets. Full model:
-  `docs/core/architecture/home-journal-dashboard.md`; fe-home delivery: `docs/specs/foundation/fe-home/delivery/`.
+  `docs/core/architecture/home-journal-dashboard.md`; fe-home delivery: LIF-224.
 
 ## The rendered Home surface (fe-home #18 — Phase-1b, SHIPPED)
 
@@ -28,7 +28,7 @@ entities (ADR-008 render-targets) — it owns no block body and no live data (al
   CRDT is M4. The **Dashboard** rail stays the honest stub (no journal providers registered — they land with each entity's live close / HARD-1 providers).
 - `home-surface.tsx` — **HomeSurface** (S3, EC-1/EC-2/EC-6/EC-7): the greet header + the **arrangement** layer composing
   S1+S2. `useHomeArrangement` = the READ seam (default `journalFirst`; the toggle CONTROL + persisted write = Settings/
-  `fe-settings`, `decomposition.md:71`). **Live since preferences-rescope R3:** it reads the persisted
+  `fe-settings`). **Live since preferences-rescope R3:** it reads the persisted
   `usePreferences().view.arrangement` (`dashboard_layout.arrangement`; no longer `preferences-store`). The boot seed fills
   the cache before the router mounts, so a persisted Dashboard-first is the FIRST arrangement drawn; loading / a failed read
   → `journalFirst` (PR-2). HomeSurface therefore needs the query provider + `compositionRootMock()` in tests. fe-home OWNS the arrangement layout (RP4): Journal-first = page hero + a compact

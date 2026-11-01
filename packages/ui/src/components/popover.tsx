@@ -20,8 +20,8 @@ import { createPortal } from 'react-dom'
 import { styled, Theme, View } from '@tamagui/core'
 import { ensurePopoverStyles } from '../internal/popover-styles'
 
-// UI-1 · Popover (primitive 9/10, overlay/organism tier 2nd of 3) — implements ds-5-primitive-contracts/popover.md
-// against Tamagui v2. Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u9-popover.md.
+// UI-1 · Popover (primitive 9/10, overlay/organism tier 2nd of 3) — implements the ds-5 Popover contract
+// against Tamagui v2. Reconcile: LIF-86.
 // - A genetic HYBRID: Menu's floating machinery (trigger cloneElement, portal-to-body under <Theme>, position:fixed
 //   seed→refine→reveal, outside/scroll/resize dismiss) + Dialog's focus model (role=dialog, focus MOVES into the
 //   panel, Esc returns focus to the trigger) — but NON-MODAL: no focus trap, no `inert`, background stays interactive.
@@ -33,7 +33,7 @@ import { ensurePopoverStyles } from '../internal/popover-styles'
 //   empty-click path). Esc closes + returns focus to the trigger.
 // - 8 placements with an AXIS-SPLIT: top/bottom = vertical primary (single `top` + horizontal align/flip), left/right
 //   = horizontal primary (single `left` + vertical center/flip). Single side property per axis (never top+bottom).
-// - Arrow toward the anchor (popover.md:27): a rotated 8px square, border on its 2 OUTER edges, bg=$background so it
+// - Arrow toward the anchor: a rotated 8px square, border on its 2 OUTER edges, bg=$background so it
 //   blends into the panel; repositioned instantly on flip (NOT animated — the Tabs indicator precedent). No
 //   `popover.arrow` token → reuses popover.background/border (DEF-U9-b).
 // - name:'Popover' scopes the light_/dark_Popover sub-theme ($background/$border); the portal detaches that scope so

@@ -258,7 +258,7 @@ describe('Toast — F6 + single-provider', () => {
     warn.mockRestore()
   })
 
-  // fe-codec-controls-refinement P4b — the hover "slight elevation" overlay (toast.md:27)
+  // fe-codec-controls-refinement P4b — the hover "slight elevation" overlay
   it('P4b: each toast renders an aria-hidden elevation overlay (the hover slight-elevation)', () => {
     renderProvider()
     act(() => {

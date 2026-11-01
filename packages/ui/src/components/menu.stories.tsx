@@ -6,7 +6,7 @@ import { Button } from './button'
 
 // UI-1 · Menu stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
-// MEASURE items (u7-menu.md §8 + §10/§16): the panel sits UNDER the trigger per `placement` (and FLIPS near a viewport
+// MEASURE items: the panel sits UNDER the trigger per `placement` (and FLIPS near a viewport
 // edge) · item hover/roving highlight (`menu.itemBackgroundHover`) · a DANGER item's label is red (`signal.danger`) ·
 // a disabled item is muted + skipped by ↑/↓ · the empty menu shows a muted "No actions" row · the panel ENTERS with
 // opacity + a small translate from the trigger edge (transform/opacity only — B12), instant under reduced-motion ·

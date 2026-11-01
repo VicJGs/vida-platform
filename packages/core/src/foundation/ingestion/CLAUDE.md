@@ -37,7 +37,7 @@ EgressGuard #43; holds no credential, makes no network call. **No schema at M1**
   XCU-16 user-managed connector, mediator-custody required). In-memory; durable rows = M2.
   Typed errors: `IngestionDenied(defId,reason)` · `UnknownIngestionLayer(layer)` · `PublicRefDenied(reason,datasetId?)`
   · `RegistryDenied(integrationId,reason)`. Fail-closed by construction (deny-safe/fail-closed default ports).
-  Spec: `docs/specs/foundation/xs-ingestion/`. Currency: `docs/core/ingestion/current-*`.
+  Spec: LIF-172. Currency: `docs/core/ingestion/current-*`.
   Delegated: external_in boolean + in/out union → CapabilityEnforcer #31 · outbound-fetch-as-egress →
   EgressGuard #43 (XCU-08) · the model call → XS-ai #45 / ADR-015 (XCU-17…27) · durable stores + real adapters +
   mirror/CDN + network fetch → M2 · consent/import-review/management UIs → P6 (XCU-03u/10u/16u) · native-set

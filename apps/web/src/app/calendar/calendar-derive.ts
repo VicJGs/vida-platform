@@ -1,6 +1,6 @@
 // ============================================================================
-// calendar-derive — the Global Calendar's PURE derivations (fe-calendar #19 · S7, PLAN-S7-entity-close.md G5–G11 + §2b
-// R1–R10, BR-CAL-S7-1/4). Every number/state the six @vida/ui renderers show is computed HERE, never in @vida/ui
+// calendar-derive — the Global Calendar's PURE derivations (fe-calendar #19 · S7,
+// BR-CAL-S7-1/4). Every number/state the six @vida/ui renderers show is computed HERE, never in @vida/ui
 // (seam-contract §B). No React, no I/O — `use-calendar.ts` feeds it the service reads.
 //
 // TIMEZONE (G7 — the user's timezone, their location): every day key is built from LOCAL calendar fields (never

@@ -4,7 +4,7 @@
 // graceful-degradation, never a crash. This is the "TipTap re-home" AR-7 deferred to UI-3 #29
 // (docs/core/capability/current-business-rules.md:26). E5 builds NO real body (MOD-* phases) and does NOT import the
 // @vida/core CapabilityRegistry (MOD-notes #31 wires it) — it builds the editor-side adapter + placeholders.
-// Spec: docs/specs/features/ui-3-vida-editor/e5-block-registry.md · BR-E5-1..7.
+// Spec: LIF-88 · BR-E5-1..7.
 import type { ReactElement } from 'react'
 import { Node, mergeAttributes, NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import type { Extensions } from '@tiptap/react'

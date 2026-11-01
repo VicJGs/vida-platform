@@ -1,7 +1,7 @@
 # packages/ui/src — @vida/ui source (Tamagui design system)
 
 The shared universal component library (ADR-001: Tamagui). Composes the token pipeline into a live Tamagui config +
-the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-config-dark-mode/_index.md` +
+the theme-switch provider. Durable spec: LIF-84 +
 `docs/ui/token-pipeline/current-*`.
 
 ## Files
@@ -41,7 +41,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   passed over it — sub-theme keys only resolve when a `light_<Name>` theme exists, direct tokens always do). Binary (no
   `indeterminate`), so `ref` goes straight to the input (no callback-merge — the checkbox merge exists only for the imperative
   `indeterminate` DOM prop). Hover = border-strengthen to `$colorTextMuted` (§VIII; no overflow-clipped overlay). Spec:
-  `docs/specs/foundation/fe-settings/delivery/s1-switch.md`. Visual Gate PASS (Brave, 3 presets × light/dark: ON-track
+  LIF-225. Visual Gate PASS (Brave, 3 presets × light/dark: ON-track
   flips blue(37,99,235)/oxblood(178,55,51)/olive(95,110,62) · knob slides 16px · focus ring · disabled 0.5 · invalid
   rgb(239,68,68) · label AA = `$colorTextPrimary` primary pairing · lg 44×24 · axe 0).
   **Select** is the first
@@ -56,7 +56,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   border carries dark elevation (design §V) — no theme detection. Resting elevation is a **2-layer** (ambient+tight)
   low-opacity `shadow.resting` token (Card is its sole consumer; fe-codec P2 BR-C-5). `header`/`footer` are plain
   `<div>` regions (**NOT** `<header>`/`<footer>` — a `<header>` nested in the `<div>` frame is a `banner`/`contentinfo`
-  LANDMARK, duplicated N× in a list row; `card.md:6` Intent "not a landmark" governs; **DEF-U5-g**, fe-codec P2 BR-C-11).
+  LANDMARK, duplicated N× in a list row; the contract's Intent "not a landmark" governs; **DEF-U5-g**, fe-codec P2 BR-C-11).
   Inset `padding` is the `pad` **variant** (compact/default/spacious → `$space` scale), NOT a variant literally named
   `padding` — that collided with Tamagui's built-in `padding` style prop so `padding="default"` applied 0px (**DEF-U5-h**,
   the shipped Card had no inset until fe-codec P2); public prop stays `padding`, mapped to `pad`. **Alive-hooks** (fe-codec
@@ -121,7 +121,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Esc closes + returns focus to the trigger. **8 placements via an AXIS-SPLIT:** top/bottom = vertical primary (single
   `top` + horizontal align/flip), left/right = horizontal primary (single `left` + vertical center/flip) — Menu's
   refine is vertical-only, so left/right needed the inverse axis; still ONE side property per axis (`offset` prop,
-  default 8). **Arrow toward the anchor** (popover.md:27): a rotated-45° 8px square, `borderWidth:0` FLOOR + only the 2
+  default 8). **Arrow toward the anchor**: a rotated-45° 8px square, `borderWidth:0` FLOOR + only the 2
   OUTER edges set to 1px inline (⚠ `borderStyle:'solid'` with no width → `border-width:medium`≈3px bleeds onto every
   unset edge — Visual-Gate catch; and the `rotate(45deg)` must be applied or it's an axis-aligned square, also a
   Visual-Gate catch), `bg=$background` blends the seam; the arrow's edge/offset is an INSTANT inline swap on flip (NOT
@@ -150,7 +150,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Toast). `borderRadius:'$lg'` via the token scale (DEF-U8-h); no `toast.border` token → base `$colorBorderDefault`.
   No `loading` prop (consumer-composed: `duration:0` + spinner in `description`; `aria-busy` unsettable, DEF-U10-b).
   Motion (B12): enter `moderate`/`out`, exit `fast`/`in`, opacity + translateY slide from the stack edge only.
-  **fe-codec-controls-refinement · P4b (LIF-231) — hover "slight elevation"** (the `toast.md:27` contract state, was
+  **fe-codec-controls-refinement · P4b (LIF-231) — hover "slight elevation"** (the contract state, was
   MISSING). A **non-clipping `ToastWrapper`** holds a sibling `aria-hidden` `ToastElevation` overlay (absolute, inset 0,
   `$lg` radius, `box-shadow:shadow.raised`, `opacity:0`) + the existing `ToastPanel` (keeps its `overflow:hidden` for the
   accent bar). `.vida-toast-wrap:hover .vida-toast-elevation{opacity:1}` fades the raised shadow in — **opacity-only
@@ -169,8 +169,8 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   elevation, not a halo). RATIFY (already shipped, no work): Dialog title `$display` serif · Menu item hover+active+disabled.
   Visual Gate PASS (Brave, 3 overlays × 3 presets × light/dark: shadow present all 18 cells · light lift · dark self-cancel ·
   axe 0 bar one PRE-EXISTING flag). **⚠ Pre-existing (NOT P3): the danger menu item label `#ef4444` on surface = 3.63
-  contrast** (< 4.5) — the provisional ds-2 signal palette; real values land via Figma at M4/P2 (`frontend-source-of-truth.md`).
-  Unrelated to the shadow; fixing it = palette-VALUE churn (M4). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P3-overlay-chrome.md`.
+  contrast** (< 4.5) — the provisional ds-2 signal palette; real values land via Figma at M4/P2.
+  Unrelated to the shadow; fixing it = palette-VALUE churn (M4). Spec: LIF-231.
   **list-view** is **UI-2 · V1** — the first platform view (`list` VIEW_LAYOUT renderer) and the **DATA-VIEW SPINE**
   V2–V4 reuse. A pure **presentational** generic `ListView<T>`: `items` + `renderItem` + `getKey` → a `role="list"`
   of `role="listitem"` rows. **Row interactivity is NOT list-view's** — the consumer's `renderItem` composes an
@@ -190,7 +190,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   (the `name` prop only scopes component sub-theme keys). `density` = the **between-row GAP** (`$8/$12/$24`), NOT
   per-row padding (a row's inset is its renderItem's — else double-pad with Card). LV-7 dev-warns on state/items
   contradictions + a missing accessible name (card.tsx guard precedent). No motion in V1 (LV-6). Spec:
-  `docs/specs/components/ui-2-platform-views/{_index,v1-list-view}.md`.
+  LIF-87.
   **fe-codec-primitives-refinement · P1 (LIF-230)** — editorial polish + alive-hooks, all PRESENTATIONAL (row CONTENT
   stays renderItem's, LV-5): **`sections?`** = `ListSection<T>{id,title,items}` grouped render + eyebrow headers (mirrors
   board's `BoardGroup`; a11y = the board model rotated vertical: outer `role="group"` + per-section eyebrow-`id`'d
@@ -225,7 +225,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   flex grid (GV-2 / ADR-001:111 — "not CSS grid"). Visual Gate PASS (Brave, 3 presets × light/dark: editorial tile serif
   title AA 15.84–17.29 + tabular caption/kicker 4.94–6.53 incl. warm-dark · axe 0 · **featured 496px vs base 248px = 2×** on
   desktop · 375 no-overflow [weighted shrinks to fit]). Spec:
-  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P4-gallery.md`.
+  LIF-230.
   **timeline** is **UI-2 · V3** — V1's spine laid out as a **CONTINUOUS vertical rail** (the `timeline` layout: temporal
   sequence). **The rail-continuity trick:** `TimelineRoot` has NO gap; the between-row spacing is the Content column's
   `paddingBottom` (skipped on the last row), so the rail columns sit **flush** and their full-height lines meet — an
@@ -253,7 +253,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   barrel. Visual Gate PASS (Brave, 3 presets × light/dark: serif date AA 15.84–17.29 · eyebrow AA 4.94–6.53 incl. warm-dark ·
   present accent FLIPS per preset [editorial blue / reader oxblood / quietDesk olive] + ring · future dot 0.55 w/ date held AA ·
   "now" AA 4.95–6.41 · dots=items+1 · axe 0 on editorial+fulcrum · 375 no-overflow). Spec:
-  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P3-timeline.md`.
+  LIF-230.
   **V3 also extracted `internal/data-view.tsx`** (rule of three) — the shared `ViewState` type + the `Message`
   default empty/error copy + `resolveDataViewState({state,itemCount,ariaLabel,ariaLabelledby,name})` (role +
   effectiveEmpty + the 3 dev-warns). list-view + gallery-view + timeline all consume it; list-view **re-exports
@@ -294,7 +294,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   day-number MIN 4.52–5.22 incl. warm-dark · today number 5.93–8.89 on BOTH paper + secondary · axe 0 · 42 cells · 375
   no-overflow). **⟹ P5 ships the FINAL primitives-refinement phase — all 5 views (list·gallery·timeline·calendar) +
   pomodoro refined.** The living/multi-range calendar is the separate `fe-calendar #19` (NO Layer-2 here). Spec:
-  `docs/specs/foundation/fe-codec-primitives-refinement/phases/P5-calendar.md`.
+  LIF-230.
   **fe-calendar #19 · S1 (LIF-203)** — **`hideHeader?: boolean`** (slice-map D4): suppresses the grid's own month
   title + nav so a hosting frame (the #19 `CanvasView` Global Calendar surface) owns the period title ONCE (envision
   EC-2 double-title fix). Default `false` — standalone grids unchanged; grid/roles/states untouched (+1 test, 22).
@@ -318,7 +318,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   TZ: date parsed by parts. Narrow reflow = `DayRow flexWrap` + items `minWidth:240` (rail stacks above at 375). Also:
   Chrome snaps a 1.5px border to 1px in `getComputedStyle` (Visual-Gate probes must not match `'1.5px'`). Visual Gate
   PASS (Brave, real CalendarSurface, 3 presets × L/D × 375/768/1440: AA 4.94–6.53 · box 3:1 · 46×46 · ring · real
-  Space/Enter toggle · axe 0). 21 tests. Spec: `docs/specs/components/ui-2-platform-views/v10-agenda-view.md`.
+  Space/Enter toggle · axe 0). 21 tests. Spec: LIF-87.
   **week-view** is **UI-2 · V11** (fe-calendar #19 · S3, LIF-203) — the Global Calendar's **Week AND Day ranges** (Day =
   `days.length === 1`, one component). Time-column grid: 64px `aria-hidden` hour gutter · headed day columns · ONE
   all-day strip of undated `CalChip`s · `TimedBlock`s positioned by `startHour`/`endHour` at 48px/h. **Geometry is pure
@@ -339,7 +339,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Empty (explicit or nothing renderable) = the designed empty grid + sr "Nothing scheduled", items never drawn under it.
   `timeFormat` mirrors `user_preferences.time_format`. 45 tests. Visual Gate PASS (Brave, real CalendarSurface, 3 presets
   × L/D × 375/768/1440 + overlap + states + 12h + Sunday: AA min 4.52–5.22 · 0 page overflow · lanes never intersect ·
-  ring unclipped · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v11-week-view.md`.
+  ring unclipped · axe 0). Spec: LIF-87.
   **year-view** is **UI-2 · V12** (fe-calendar #19 · S4, LIF-203) — the Global Calendar's **Year range**: 12 mini-months of
   activity-density dots (pre-derived `level` 0/1/2 — the renderer never thresholds). Layout = the RN-safe flex-wrap grid
   (`flexBasis:'22%'` caps a row at 4, `minWidth:128` → 2-up at 375). Mini-month = 7-slot rows: leading blanks from
@@ -355,7 +355,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Geometry pure in `internal/year-layout.ts` (`resolveYear` · `buildYear` · `indexDensity` · `localDate` — `setFullYear` at
   local noon). 19 + 11 tests. Visual Gate PASS (Brave, real CalendarSurface, 29 cells: has 3:1 min 3.54 · busy/ring 5.93 ·
   names 6.47 · 0 page overflow · Tab Jan→Dec · drill focus on "Month grid"). Spec:
-  `docs/specs/components/ui-2-platform-views/v12-year-view.md`.
+  LIF-87.
   **living-view** is **UI-2 · V13** (fe-calendar #19 · S5, LIF-203) — the Global Calendar's signature **Living** range:
   ④ purpose budget (accent bars; hours via `internal/living-format.ts` "6h"/"2h05"; 0 → "0h · none yet" in
   `$colorBrandEmphasis` — the greybox red is danger, which fails AA as text; null → "unmeasured", never 0; `stale` → "as of
@@ -367,7 +367,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   **⚠ SR suffixes go INSIDE the inline label Text** — a whitespace node between FLEX items gets no box and the browser drops it
   ("Title(done)"; jsdom keeps it, so the test passes anyway — g2-review-caught). Lanes degrade alone (absent = "unavailable
   right now"; `[]` = "No … yet"); an absent lane is never "empty". 26 + 4 tests. Visual Gate PASS (26 cells: text AA ≥ 4.52 ·
-  0 page overflow · axe 0). Spec: `docs/specs/components/ui-2-platform-views/v13-living-view.md`.
+  0 page overflow · axe 0). Spec: LIF-87.
   **`internal/calendar-shared.ts`** (S5): `SR_ONLY` · `DATE_KEY` · `parseLocalDate` shared by agenda/week/year/living (rule of
   three); `Eyebrow` stays per-file (agenda's lacks the paired line-height).
   **fe-calendar S7 (LIF-203, the entity close) — renderer amendments:** V13 **`color?`** on `PurposeBudget`/`HabitThread` (absent →
@@ -413,7 +413,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   pure. Internal `progress` fraction renamed `fraction` (frees the prop name). Timer/latch/controls logic UNTOUCHED.
   Visual Gate PASS (Brave, 3 presets × light/dark: tabular + eyebrow all cells · ring accent FLIPS per preset+mode —
   editorial blue / reader oxblood / quietDesk olive · AA 4.94–6.03 incl. warm-dark · axe 0 · 375 no-overflow). Spec:
-  `docs/specs/foundation/fe-codec-controls-refinement/phases/P1-pomodoro-widget.md`.
+  LIF-231.
   **export-dialog** is **UI-2 · V6** — the reusable export modal. **Composes UI-1 `Dialog`** (via its `footer` +
   `description` props — NOT children: `footer` renders the actions in a non-scrolling `<footer>`, `description` wires
   `aria-describedby`) + a **hand-rolled APG `role="radiogroup"`** format picker + `Button`. **PRESENTATIONAL (the V1
@@ -437,7 +437,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   outline; **no layout shift** — a `borderLeftWidth` 1→3 would jump a bordered box 2px). The bar + filled `Dot` are the
   sole accent (no doubled ~4px edge). Title/description stay Dialog's (→ P3). Visual Gate PASS (Brave, 3 presets ×
   light/dark: hover bg change · accent bar flips per preset+mode [editorial blue / reader oxblood / quietDesk olive] · AA
-  4.94–6.53 · axe 0 · 375 fit). Spec: `docs/specs/foundation/fe-codec-controls-refinement/phases/P2-export-dialog.md`.
+  4.94–6.53 · axe 0 · 375 fit). Spec: LIF-231.
   **neural-graph** is **UI-2 · V7** (the LAST view) — a **force-directed WebGL graph** (Sigma.js) for the `graph`
   VIEW_LAYOUT. First component with **WebGL + new deps** (`sigma`·`graphology`·`graphology-layout-forceatlas2`).
   PRESENTATIONAL: `nodes`/`edges` are props (AR-8's graph-prep, uncrossable) — own minimal `GraphNode`/`GraphEdge`.
@@ -456,7 +456,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   **fe-codec-canvas-graph · S1 (LIF-205) — the editorial "ink voice" extension** (#8; EXTEND, no new file). Three
   conformance fixes, all back-compat: **(1) themed node/edge default colours** — node = `$colorBrandPrimary`, edge =
   `$colorBorderDefault` (per-preset: editorial blue · reader oxblood · quietDesk olive), replacing the deleted fixed
-  `#6366f1`/`#cbd5e1` ("blue SaaS", surface-map.md:28 WRONG-risk). **⚠ Sigma renders in WebGL — a `var(--x)` is
+  `#6366f1`/`#cbd5e1` ("blue SaaS" WRONG-risk). **⚠ Sigma renders in WebGL — a `var(--x)` is
   uncolorable there**, and a CSS custom property's *computed* value does NOT substitute nested var() refs, so
   `useTheme().get('web')` (which returns `var(--colorBrandPrimary)`) is resolved to a CONCRETE `rgb(...)` via a **probe
   `<span>`**: append to the Sigma host, set a REAL `style.color = token`, read `getComputedStyle(probe).color`
@@ -473,7 +473,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   `Camera.animate` divides by the duration (0 → a NaN frame). Visual Gate PASS (Brave, 3 presets × light/dark:
   node ink concrete + DISTINCT per preset [blue/oxblood/olive] · edges hairline · canvas mounts · 12-node a11y list ·
   empty/loading/error AA 5.76–6.53 incl. warm reader-dark · slot override · axe 0 · 375 no overflow). @vida/ui 473 tests.
-  Spec: `docs/specs/foundation/fe-codec-canvas-graph/`.
+  Spec: LIF-205.
   **table-view** is **fe-codec-viewmodes · S1** (LIF-214) — the renderer for the **`table`** VIEW_LAYOUT, extending ui-2
   with the 6th canonical view-mode (G6 reshape: *"add table · board"* — supersedes the 2026-08-09 "table/board = degrade,
   not built" stance). A **READ-ONLY LENS** (quality-bar §4.3: a View renders, a Capability writes) — caller-declared
@@ -485,7 +485,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   for 375 (TV-6); density = cell vertical padding; 4 terminal states (loading skeleton rows + aria-busy · error status ·
   empty designed-row · success). NO write/sort/row-click props (read-only; interactivity composes in `column.render`, LV-5).
   Visual Gate: full-matrix AA (4.94–6.53 incl. warm-dark) · axe-clean · 375 scroll · `aria-colspan` serializes. Spec:
-  `docs/specs/components/ui-2-platform-views/v8-table-view.md`. Delivery: `docs/specs/foundation/fe-codec-viewmodes/`.
+  LIF-87. Delivery: LIF-214.
   **board-view** is **fe-codec-viewmodes · S2** (LIF-214) — the renderer for the **`board`** VIEW_LAYOUT, the **LAST**
   canonical view-mode (completes the 7). A **READ-ONLY LENS** grouped-column (kanban) grid over **PRE-GROUPED** data
   (`groups: BoardGroup<T>[]` = `{id · title · items}`; the provider groups upstream per ADR-007 §3.3 — the renderer
@@ -502,12 +502,12 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Bordered columns (1px `$colorBorderDefault` + `$lg`) + fixed `COLUMN_WIDTH 280` in `overflowX:auto` for 375; density =
   between-card gap; React-19 ref-prop, no sub-theme, DIRECT semantic tokens. Visual Gate: full-matrix AA (muted 4.94–6.53
   incl. warm-dark) · 375 scroll · 3 board-level terminal states. Spec:
-  `docs/specs/components/ui-2-platform-views/v9-board-view.md`.
+  LIF-87.
   **⟹ 8 UI-2 views shipped** (list·gallery·timeline·calendar·pomodoro·export-dialog·neural-graph) **+ table + board**
   (fe-codec-viewmodes S1/S2) + the shared `internal/data-view` spine. **All 7 canonical VIEW_LAYOUT renderers now ship**
   (list·gallery·timeline·calendar·graph·table·board) — the spine is complete.
-  **collection-view** is **fe-codec-collection · S1** (LIF-207) — the CODEC **Collection shell** (decomposition.md:29 §1.2,
-  "the workhorse"): *a Saved View rendered in a view-mode*. **A SHELL, not a renderer** — it COMPOSES the 7 renderers via a
+  **collection-view** is **fe-codec-collection · S1** (LIF-207) — the CODEC **Collection shell**
+  ("the workhorse"): *a Saved View rendered in a view-mode*. **A SHELL, not a renderer** — it COMPOSES the 7 renderers via a
   consumer **`renderView(layout, state)` render-prop** (so it stays agnostic of the 7 differing prop shapes — table→columns,
   board→groups, graph→nodes… — AND free of any `@vida/core` type), plus a view-mode **switcher** + title/count chrome +
   the threaded 8-state. **NON-GENERIC** (holds no `items` → no `<T>` to erase → a plain component + React-19 ref-as-prop).
@@ -528,9 +528,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   (`onFilter`/`filterActive` badge · `sortLabel`/`onSort` · `onNewView` the `+`, icon-only w/ aria-label) — optional,
   right-aligned, **ACTIVE in every state** (EC-2); entry points ONLY (filter/sort/create logic = the app's/ViewsService's).
   **S3** (next) = the apps/web SavedView↔Collection adapter (type+convention). Spec:
-  `docs/specs/components/ui-2-platform-views/collection-view.md`. Delivery: `docs/specs/foundation/fe-codec-collection/`.
-  **dashboard-view** is **fe-codec-dashboard · S1** (LIF-208) — the CODEC **Dashboard shell** (decomposition.md:30 §1.2,
-  "a grid of integration blocks"), the 2nd archetype shell. Like Collection, a **SHELL not a renderer** — it COMPOSES
+  LIF-87. Delivery: LIF-207.
+  **dashboard-view** is **fe-codec-dashboard · S1** (LIF-208) — the CODEC **Dashboard shell**
+  ("a grid of integration blocks"), the 2nd archetype shell. Like Collection, a **SHELL not a renderer** — it COMPOSES
   blocks the consumer supplies via a **`renderBlock(block)` render-prop** (the `standalone` integration-block widgets ship
   elsewhere; types-only today — `editor.ts:28-40`), over an **RN-safe flex grid** (the gallery-view precedent:
   `flexDirection:'row'`+`flexWrap:'wrap'`+density→`gap`). **NON-GENERIC** (holds no block data → no `<T>`), React-19
@@ -549,9 +549,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   use `$heading`/`$subheading` (collection-view.tsx:170 carries the latent `$h3` defect → M4 sibling fix). Visual Gate
   PASS (Brave, 3 presets × light/dark: heading serif AA 15.84–17.29 · cell text MIN 4.52–5.22 incl. warm-dark · axe 0 ·
   EC-1..EC-8). **S2** (next) = the apps/web placement↔Dashboard adapter (pure `block_instances`→cell mapping + convention,
-  live `useDashboard` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/dashboard-view.md`. Delivery:
-  `docs/specs/foundation/fe-codec-dashboard/`.
-  **entity-view** is **fe-codec-entity-facet · S1** (LIF-209) — the CODEC **Entity shell** (decomposition.md:31 §1.2, "the
+  live `useDashboard` hook deferred). Spec: LIF-87. Delivery:
+  LIF-208.
+  **entity-view** is **fe-codec-entity-facet · S1** (LIF-209) — the CODEC **Entity shell** ("the
   facet system"), the **3rd archetype shell**. A **SHELL not a renderer** — a facet FRAME composing a **Layout facet** (always
   present — the consumer's Title·bio·summary + `DashboardView` #5 + `CollectionView` #4) + an **OPTIONAL Editor facet** (the
   entity's linked page = Canvas: Editor #7, composed later) in a user-chosen **`mode`: merged | tabbed**. **NON-GENERIC**,
@@ -572,8 +572,8 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   AA **15.84** · facet text MIN **5.65–6.03** incl. warm-dark · 3 regions · toolbar aria-pressed · tabbed active-only
   (inactive editor NOT mounted) · page-less no toolbar/tablist · empty-editor≠page-less · loading=aria-busy · error=role=status
   · **axe 0** · 375 no overflow). **S2** (next) = the apps/web entity↔EntityView adapter (`offersEditor` gate + merged/tabbed
-  memory convention; live `useEntity` hook deferred). Spec: `docs/specs/components/ui-2-platform-views/entity-view.md`.
-  Delivery: `docs/specs/foundation/fe-codec-entity-facet/`.
+  memory convention; live `useEntity` hook deferred). Spec: LIF-87.
+  Delivery: LIF-209.
   **fix-entity-view-header (2026-10-07) — the title-hero canonical header.** `TitleGroup` gained **`gap:'$16'`** (was
   missing → the `$display` title + `$small` subtitle rendered flush; `design.md §IV` 4pt rhythm / §I breathing room).
   The pattern (EC-5, `fe-codec-flow-session/envision.md:53`; the flow shell mirrors it): the serif `$display` title
@@ -584,8 +584,8 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   No API change. **EntityView is the only archetype shell with a stacked title+subtitle** → the cram is unique to it:
   `collection-view` has a horizontal title+count `TitleGroup` (`gap:'$8'`, no subtitle) and `dashboard-view` a
   title-only header, so there is nothing to sweep there. The shared convention is the quiet-line subtitle (no dot-pile).
-  **flow-session-view** is **fe-codec-flow-session · S1** (LIF-210) — the CODEC **Flow/Session shell**
-  (decomposition.md:33 §4.5), the **4th archetype shell**. A flow FRAME for any staged do-this-then-that surface (a session
+  **flow-session-view** is **fe-codec-flow-session · S1** (LIF-210) — the CODEC **Flow/Session shell**,
+  the **4th archetype shell**. A flow FRAME for any staged do-this-then-that surface (a session
   run · routine step · wizard · drill · onboarding · check-in entry): a **title-hero header** (serif `$display` + a
   `HonestProgress` **bar** for progress — NOT a text subtitle · a quiet context line **16px** below the title · a saveStatus
   slot + `⋯`) + a **staged progression** over the shipped **`Timeline`** (`getTemporalState` done→past·current→present·
@@ -604,7 +604,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   bar · current affordances · fulcrum · effect-rail · axe 0 · no overflow). **S2** = the apps/web flow↔FlowSessionView
   adapter (`toFlowProps` + `mapEffectLog` [ADR-004 applied_effects → effect-rail] + `bindFlowIntents` against a
   `SessionsPort`; live `useFlowSession` hook deferred, R3). Spec:
-  `docs/specs/components/ui-2-platform-views/flow-session-view.md`. Delivery: `docs/specs/foundation/fe-codec-flow-session/`.
+  LIF-87. Delivery: LIF-210.
   **fe-gamification S4 — affordances are render-when-handler:** the standardized current-stage affordances (Mark done ·
   Require proof · Attach Document/Photo/Audio) now render PER-HANDLER (each only when its `onMarkDone`/`onRequireProof`/
   `onAttach` is passed; the row is omitted entirely when none are) — the DS `onFilter != null` idiom. A deliverable flow
@@ -681,9 +681,9 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   display-resolve mappers (parse `position`→chapter via TOC page-range → "Ch. N · p. P"; Unplaced bucket; degrade-never-crash)
   + `BooksReaderPort` + `bindReaderIntents`; live `useReader` hook deferred to fe-books #36. Verification Gate PASS (28/28).
   **⟹ fe-codec-canvas-reader COMPLETE — all 6 slices.**
-  Spec: `docs/specs/components/ui-2-platform-views/canvas-reader.md`. Delivery: `docs/specs/foundation/fe-codec-canvas-reader/`.
-  **canvas-view** is **fe-codec-canvas-board · S1** (LIF-204) — the CODEC **Canvas shell** (decomposition.md:32 §1.2,
-  "where the soul lives"), the **5th archetype shell**. A read-only, immersive editorial FRAME that hosts exactly ONE
+  Spec: LIF-87. Delivery: LIF-206.
+  **canvas-view** is **fe-codec-canvas-board · S1** (LIF-204) — the CODEC **Canvas shell**
+  ("where the soul lives"), the **5th archetype shell**. A read-only, immersive editorial FRAME that hosts exactly ONE
   view-mode renderer at canvas scale; the two worked examples — **Vision-board** (GalleryView over dreams, imagery-first)
   and **Calendar-grid** (shipped month CalendarView) — are consumer compositions (apps/web, S2), and **#19 later drops
   its multi-range renderer into the same frame** (R3 — `children` is renderer-agnostic). A FRAME not a renderer:
@@ -703,12 +703,12 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   — the frame bakes no style (the GV-1 boundary; baking the steps-bar in would break every non-milestone entity).
   **Responsive (BR-CB-S1-12):** the masthead is a `flexWrap` row (title-group · actions) so actions reflow below /
   title-group shrinks at 375 — no collision. `role="region"` named by the title (`useId`+`warnMissingName`); DIRECT
-  semantic tokens, no sub-theme. Read-only (R1 — overflow reveal / multi-range = `fe-calendar #19`, parked
-  `calendar-vision.md §6`). Visual Gate PASS (Brave, 3 presets × light/dark × 375/768/1440: title serif AA 15.84–17.29 ·
+  semantic tokens, no sub-theme. Read-only (R1 — overflow reveal / multi-range = `fe-calendar #19`, parked).
+  Visual Gate PASS (Brave, 3 presets × light/dark × 375/768/1440: title serif AA 15.84–17.29 ·
   eyebrow/meta 4.94–6.53 incl. warm-dark · no overflow · empty-teaching vs empty-delegate vs error). **S2** (next) = the
   apps/web `VisionBoardCanvas`/`CalendarGridCanvas` compositions (type+convention; measure-driven reference tile; live
   hooks deferred to first consumer — fe-purposes / #19). Spec:
-  `docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md` (delivery: `docs/specs/foundation/fe-codec-canvas-board/delivery/`).
+  LIF-204.
   **fe-calendar S1-chrome fix (2026-10-18) — two frame corrections the #19 Visual Gate surfaced:** (1) the **title pairs
   `lineHeight="$display"`** (was the 24px body line box → wrapped titles overlapped; see the Rules line-height entry);
   (2) the **`Actions` slot now `maxWidth:'100%'` + `flexWrap:'wrap'`** (keeps `flexShrink:0`) — before, wide action
@@ -765,7 +765,7 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
 - **Animation driver = per ADR-001 §9, per-platform:** **web = `@tamagui/animations-css`** (CSS-on-web, no
   `react-native-web`; consumes `motion.ts` duration+easing as `'<easing> <duration>ms'`); **native = reanimated**
   (ADR-001:258, when mobile is built). **Never** the web-only `@tamagui/animations-react-native` — it pulls
-  `react-native-web` (an extra dep VIOLATING ADR-001). See `docs/specs/fixes/ds-4-rn-driver-drift/`.
+  `react-native-web` (an extra dep VIOLATING ADR-001).
 - Keep `@tamagui/core` + `@tamagui/animations-css` pinned to the same version (family alignment; a skew breaks the
   `animations` config type).
 - **Dark mode = a switchable first-class Theme** (B14), never a runtime inversion. Theme STATE + toggle UI +
@@ -786,11 +786,10 @@ the theme-switch provider. Durable spec: `docs/specs/components/ds-4-tamagui-con
   Text falls back to the font's `$true` = BODY line box (**24px**) — a 36px title that wraps overlaps itself (DS-4 §1.1-D
   fixed the `fontSize` convention only; its render assertion checked size, never line-height). The role-keyed `lineScale`
   already holds the paired values (`display` 41 · `heading` 31 · `subheading` 25) — just select them. design.md §III pairs
-  every size with its leading. Never a raw px (`lineHeight={40}` breaks "semantic type scale only, no px", decisions.md:57).
+  every size with its leading. Never a raw px (`lineHeight={40}` breaks "semantic type scale only, no px").
   jsdom can't resolve the value: assert the `_lh-` atomic class equals a reference `lineHeight="$<role>"` Text's; measure
   px in the browser. Applied so far: the CanvasView title · the EntityView title (notes-rescope R1 DEV-R1-1 — its title
-  row also wraps: `flexBasis:240` title group, the action slot drops below at 375). Remaining unpaired sites = recorded sibling fixes
-  (`docs/specs/fixes/ds-type-lineheight-unpaired/`).
+  row also wraps: `flexBasis:240` title group, the action slot drops below at 375). Remaining unpaired sites = recorded sibling fixes.
 - JSX is `react-jsx` + `lib` includes `DOM` (this is the first real JSX in the package); `react` is a peer dep.
 
 ## Verify

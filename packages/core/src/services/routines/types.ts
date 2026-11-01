@@ -3,7 +3,7 @@
 //
 // Deps + the RoutinesService interface + input types. Factory-object shape, hoisted
 // closures, no `this.` (the finance/checkins/habits precedent). Slices follow the GOVERNING
-// docs/features/routines/delivery/slice-map.md (re-scoped 2026-10-21): S1 routine/step CRUD and
+// slice map (re-scoped 2026-10-21): S1 routine/step CRUD and
 // S2 ledger + skips are built; S2c floor conformance; S3–S9 append (run/drive · evaluate ·
 // progress/analytics · reschedule · effects · tags/notes · providers). Each dep lands in the
 // slice that first consumes it (habits precedent).

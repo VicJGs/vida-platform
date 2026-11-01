@@ -7,7 +7,7 @@ import { Checkbox } from './checkbox'
 // modes. Value states (unchecked/checked/indeterminate) render explicitly; hover/focus/active are verified live
 // (hover the mouse, Tab to focus, Space/click) — no static story without a pseudo-forcing addon.
 //
-// The MEASURE items for this gate (u3-checkbox.md §8): (1) checkmark scale+opacity on toggle; (2) dash on
+// The MEASURE items for this gate: (1) checkmark scale+opacity on toggle; (2) dash on
 // indeterminate; (3) focus ring on the BOX (not the label); (4) danger border on invalid; (5) checked × hover × dark
 // overlay perceptibility (F#8 — border-strengthen fallback if under-perceptible).
 

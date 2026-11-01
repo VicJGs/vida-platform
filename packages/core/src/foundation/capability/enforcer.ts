@@ -5,7 +5,7 @@
 // the AR-7 `capability_grants` structure. Fail-closed by default (INV-1). Shipped/trusted
 // defs bypass (INV-2). This service DECIDES; it does not execute — effect firing (#32),
 // egress mediation (#43), ingestion layer (#44), and the user-code sandbox (#116) are
-// delegated seams. Spec: docs/specs/foundation/xs-capability/.
+// delegated seams. Spec: LIF-169.
 //
 // S1 (this slice): decision core (checkAction/assertPermitted) + grant reads
 // (getGrant/isEnvelopeCurrent) + canonicalEnvelopeHash. S2 adds grant/revoke (writes).

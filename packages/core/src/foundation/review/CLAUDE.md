@@ -21,7 +21,7 @@ methods (the `kind='study_method'` partition of the ONE capability registry, ADR
 curves (`review_curves`, personalizable; SM-2 = one preset, seed deferred to S4), bindings (`method_bindings`,
 polymorphic, no-FK refs not asserted), + a 2-tier `resolveDefaultMethod` (`default_method_id` else null; the
 realm→method tier is an S7 forward seam). No schema authored (`008_knowledge_review` already shipped).
-Home per D1 (`docs/modules/knowledge/delivery/decomposition.md:11-19`) — the engine is Knowledge-owned but lives
+Home per D1 — the engine is Knowledge-owned but lives
 here because it is cross-consumed (flashcards S7 + future skills/languages/education). `createKnowledgeService`
 composes it as the required `review` dep. Spec/rules: `docs/modules/knowledge/current-{spec,business-rules}.md`
 (BR-KN-S3-\*). ⚠ Gotcha: `review_curves.params` is `json<T>()` → stringify-on-write / parse-on-read at the engine

@@ -5,7 +5,7 @@ import { Switch } from './switch'
 // UI-1 · Switch stories — the component Visual Gate surface (fe-settings S1, EC-3). Toggle the toolbar Theme
 // (light｜dark) + switch the preset (reader/editorial/quietDesk via the <body> class) to review the on-track accent flip.
 //
-// MEASURE (s1-switch.md §4): off/on track + knob slide · hover border-strengthen · focus-visible ring · disabled muted ·
+// MEASURE: off/on track + knob slide · hover border-strengthen · focus-visible ring · disabled muted ·
 // invalid danger border · ON track flips per preset (editorial blue / reader oxblood / quietDesk olive) · label AA ·
 // lg touch target ≈ 44×44 · reduced-motion = instant knob.
 

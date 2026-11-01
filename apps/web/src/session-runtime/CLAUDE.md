@@ -4,7 +4,7 @@
 
 The routed Session runtime page (`/sessions/$id`) — the first real consumer of the Flow/Session codec seam. Renders
 ONE session as a deliverable-per-stage flow via the shipped `@vida/ui` `FlowSessionView`. Codec-tier reuse: later
-consumed by Sessions #34 / Health / Pomodoro (reconstructed-structure.md:88).
+consumed by Sessions #34 / Health / Pomodoro.
 
 ## Pattern in use
 
@@ -27,5 +27,5 @@ consumed by Sessions #34 / Health / Pomodoro (reconstructed-structure.md:88).
 
 ## Spec
 
-`docs/specs/foundation/fe-session-runtime/` (delivery/ + sessions/PLAN-\*-s2-runtime-page.md). Shell spec:
-`docs/specs/components/ui-2-platform-views/flow-session-view.md`.
+LIF-218 (delivery/ + sessions/PLAN-\*-s2-runtime-page.md). Shell spec:
+LIF-87.

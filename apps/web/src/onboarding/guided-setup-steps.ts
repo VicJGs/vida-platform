@@ -1,5 +1,5 @@
 // fe-onboarding (LIF-216) · S1 — the guided-setup flow step model. Data/logic only; the chrome renders it
-// (the steps.ts/onboarding.tsx split precedent). The NET-NEW optional guided setup (surface-map.md:34; p5
+// (the steps.ts/onboarding.tsx split precedent). The NET-NEW optional guided setup (p5
 // specimen:164 "pick your modules & theme — optional, skippable"). Copy is sentence-case + honest (VOICE);
 // lintCopy-clean — M1.0 local-first, no ZK/encryption/cloud claim (BR-4; voice/voice-copy.ts). Step BODIES
 // (module picker · theme picker) are injected by S2/S3; S1 owns the model + the frame.

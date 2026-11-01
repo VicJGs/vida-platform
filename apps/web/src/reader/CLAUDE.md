@@ -48,4 +48,4 @@ collection/dashboard/entity/flow sibling precedent.
 
 ## Spec
 
-`docs/specs/components/ui-2-platform-views/canvas-reader.md` · delivery `docs/specs/foundation/fe-codec-canvas-reader/`.
+LIF-87 · delivery LIF-206.

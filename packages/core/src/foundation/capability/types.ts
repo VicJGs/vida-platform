@@ -67,7 +67,7 @@ export class CapabilityNotFound extends Error {
 // Enforcement services (XS-capability #31 · ADR-010 declare→grant→enforce)
 // The envelope-enforcement decision tier over the AR-7 `capability_grants` structure.
 // Pure decision logic — no user-code execution (sandbox = #116), no effect firing (#32),
-// no egress mediation (#43). See docs/specs/foundation/xs-capability/.
+// no egress mediation (#43). See LIF-169.
 // ============================================================================
 
 // The def's DECLARATION — the privilege parts of the ADR-008 6-part anatomy (parts 3 + 5).

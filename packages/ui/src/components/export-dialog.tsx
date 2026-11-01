@@ -5,7 +5,7 @@ import { Button } from './button'
 
 // UI-2 · V6 · export-dialog — the reusable export modal. Composes UI-1 Dialog (via its `footer` + `description` props)
 // + a hand-rolled APG radiogroup format picker + Button. Implements
-// docs/specs/components/ui-2-platform-views/v6-export-dialog.md.
+// LIF-87.
 // - PRESENTATIONAL (the V1 boundary): @vida/ui can't import @vida/core's serializers — the dialog emits
 //   `onExport(format)` and the APP wires serialization + download. `ExportFormat` is a LOCAL union (LV-3a), ≡
 //   @vida/types EXPORT_FORMAT. No cross-package edge, no new dep.

@@ -4,10 +4,10 @@ import { DashboardView, type DashboardBlock } from './dashboard-view'
 import { Button } from './button'
 
 // UI-2 · fe-codec-dashboard · DashboardView stories — the component Visual-Gate surface. Toggle Preset × Mode × Density.
-// DashboardView = the CODEC Dashboard shell ("a grid of integration blocks", decomposition.md:30 §1.2) — an RN-safe flex
+// DashboardView = the CODEC Dashboard shell ("a grid of integration blocks") — an RN-safe flex
 // grid of size-enum span cells; each cell is a Card frame (title + ⋯ slot) with the block body via renderBlock.
 //
-// MEASURE (dashboard-view.md §4 / envision EC-1…EC-8): the heterogeneous span grid (sm/md/lg/full distinct · EC-1) ·
+// MEASURE (envision EC-1…EC-8): the heterogeneous span grid (sm/md/lg/full distinct · EC-1) ·
 // Card cell frame + ⋯ slot (EC-2) · per-block state loading/empty/error/success INDEPENDENT (EC-3) · responsive reflow
 // to single column at 375 no-overflow (EC-4/EC-8) · empty-dashboard teach (EC-5) · a lone non-full cell capped (EC-6) ·
 // preset identity + dark elevation via border (EC-7). State-as-prop (BR-2). axe clean.

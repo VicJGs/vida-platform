@@ -2,25 +2,25 @@ import { forwardRef, type ComponentRef, type KeyboardEvent, type MouseEvent, typ
 import { styled, View, type GetProps } from '@tamagui/core'
 import { ensureCardStyles } from '../internal/card-styles'
 
-// UI-1 · Card (primitive 5/10, molecular) — implements ds-5-primitive-contracts/card.md against Tamagui v2.
-// Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u5-card.md.
+// UI-1 · Card (primitive 5/10, molecular) — implements the ds-5 Card contract against Tamagui v2.
+// Reconcile: LIF-86.
 // - A static grouped surface. Renders a <div> (default render) — NEVER a native <button>, even when `interactive`:
-//   the contract ref is HTMLDivElement (card.md:21) AND a native <button> can't legally contain the focusable
+//   the contract ref is HTMLDivElement AND a native <button> can't legally contain the focusable
 //   `actions`/`footer` controls. So an entirely-clickable card is a <div role="button"> + hand-handled keyboard.
 // - name:'Card' scopes the light_/dark_Card sub-theme ($background/$border/$radius).
 // - Elevation = the OPACITY of a raised-shadow overlay child (B12); resting shadow self-cancels in dark (its colour
 //   IS the dark surface) so the border carries dark elevation (design §V). See internal/card-styles.ts. The dark
 //   hover cue is an INSTANT `hoverStyle` border strengthen (a variant, not injected CSS — no `animation` prop on the
 //   frame → not transitioned → B12-legal).
-// - No `loading` prop: the contract's CardProps (card.md:10-20) authors none. The §VIII loading state is achieved by
+// - No `loading` prop: the contract's CardProps authors none. The §VIII loading state is achieved by
 //   composition (consumer renders a skeleton as `children` + passes `aria-busy`), exactly like `empty`. Matrix-vs-API
 //   gap flagged for DS as DEF-U5-f. [[deliverable-is-the-doc-not-my-discretion]]
 //
 // fe-codec-primitives-refinement · P2 (LIF-230) — aesthetic refinement + alive-hooks, all PRESENTATIONAL:
 //  · BR-C-11 landmark fix: `header`/`footer` are plain <div> regions, NOT <header>/<footer> — a <header> nested in the
-//    <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list row). card.md:6 Intent ("NOT a
+//    <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list row). The contract's Intent ("NOT a
 //    page section landmark by default") governs the :45 mechanism; a descoped <header> had no AT value. Frame stays a
-//    <div> → the HTMLDivElement ref contract (card.md:21 / u5-card.md:82-83) is preserved.
+//    <div> → the HTMLDivElement ref contract is preserved.
 //  · `status` (neutral|calm|warm|faded): an entity-state signal. calm/warm = a 3px left ACCENT bar (an absolute
 //    StatusEdge child — NOT borderLeftWidth, which fights the 1px border + radius per toast.tsx:133-135; NOT frame
 //    overflow:hidden, which would clip CardElevation's raised shadow). faded = a dimmed frame (disabled's 0.5 wins if
@@ -45,7 +45,7 @@ const CardFrame = styled(View, {
   variants: {
     // Inset padding drives the $space scale, NOT the `card.padding` sub-theme token — one token can't express three
     // options, and Tamagui resolves space props against the space scale, not a theme sub-theme (button.tsx lesson;
-    // u5-card.md §1.1 / DEF-U5-b). Values = the semantic space.inset.{compact,default,spacious} the token references.
+    // DEF-U5-b). Values = the semantic space.inset.{compact,default,spacious} the token references.
     // DEF-U5-h (P2 bug-fix): the variant key is `pad`, NOT `padding` — a variant named `padding` COLLIDES with
     // Tamagui's built-in `padding` style prop, so `padding="default"` was applied as an invalid CSS value → 0px inset
     // (the shipped Card rendered with NO padding; every card's content sat flush-left — latent until the status edge
@@ -111,7 +111,7 @@ const StatusEdge = styled(View, {
 })
 
 // BR-C-11 — header/footer are plain <div> regions (NO render:'header'/'footer'). A real <header>/<footer> nested in
-// the <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list); card.md:6 Intent forbids it.
+// the <div> frame is exposed as a banner/contentinfo LANDMARK (duplicated N× in a list); the contract's Intent forbids it.
 // Header lays content left + metric/actions top-right. `divider` adds the optional hairline rule (BR-C-6).
 const CardHeader = styled(View, {
   name: 'Card',
@@ -207,7 +207,7 @@ export const Card = forwardRef<ComponentRef<typeof CardFrame>, CardProps>(functi
   // the VISUAL `interactive` variant is gated to `active` so a disabled card gains no hover/focus affordance.
   const handleKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
     if (e.key === 'Enter') {
-      if (e.repeat) return // Enter would native-repeat while held — guard (u5-card.md §2.1)
+      if (e.repeat) return // Enter would native-repeat while held — guard
       e.preventDefault()
       onPress?.()
     } else if (e.key === ' ') {

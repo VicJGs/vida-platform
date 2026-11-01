@@ -3,7 +3,6 @@
 The editor archetype of the CODEC canvas: the shipped `<VidaEditor>` (@vida/editor, UI-3) framed as an editorial
 **notebook page**. Lives in `apps/web` because `@vida/ui` cannot import `@vida/editor` (editor→ui dep cycle, IR-1) —
 this is the one plane where the frame (`@vida/ui` `CanvasView`) and the body (`@vida/editor` `VidaEditor`) compose.
-Delivery docs: `docs/specs/foundation/fe-codec-canvas-editor/delivery/` (interpretation · envision · slice-map · seam-contract).
 
 ## Files
 

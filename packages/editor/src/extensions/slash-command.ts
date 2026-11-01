@@ -2,7 +2,7 @@
 // tracks the query, and positions a popup at the caret via `props.mount`) to the React `SlashMenu` popup through
 // `@tiptap/react` ReactRenderer. A second, tiny plugin sets the editor host's combobox ARIA through ProseMirror's OWN
 // decoration channel (so PM re-applies — never clobbers — it on every keystroke; gate-2 MAT). Not barrel-exported.
-// Spec: docs/specs/features/ui-3-vida-editor/e4-slash-menu.md · BR-E4-1/6/10, §5, §7 B3.
+// Spec: LIF-88 · BR-E4-1/6/10, §5, §7 B3.
 import { Extension, ReactRenderer } from '@tiptap/react'
 import { PluginKey, type EditorState } from '@tiptap/pm/state'
 import Suggestion, { exitSuggestion, type SuggestionKeyDownProps, type SuggestionProps } from '@tiptap/suggestion'

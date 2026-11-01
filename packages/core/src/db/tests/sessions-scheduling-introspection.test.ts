@@ -11,7 +11,7 @@
 //   - primary key (which column carries PK)
 //
 // Origin: group #2 P5 caught a `time_format` NOT NULL type-lie a CHECK-only pass
-// missed. schema-foundation-build-flow.md §2 Phase 5.
+// missed.
 //
 // Interface (@vida/types) divergences are DEFERRED to DB-11 (StudySession /
 // StudyPlanBatch / PomodoroSession carry pre-reframe shapes) — cited in the spec,

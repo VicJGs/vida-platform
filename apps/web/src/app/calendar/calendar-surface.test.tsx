@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 // TZ guard: the week maths keys dates locally; UTC−3 is where a UTC slip shows. Set before any Date use.
 process.env.TZ = 'America/Sao_Paulo'
-// fe-calendar #19 — S1 chrome fix (docs/specs/fixes/fe-calendar-s1-chrome-375): the <768 range-switcher condense (EC-1),
+// fe-calendar #19 — S1 chrome fix: the <768 range-switcher condense (EC-1),
 // lg range chrome, the honest period label, and clamped month/year nav. Breakpoint via the `__bp` override (the
 // global-bar-1 test precedent).
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest'

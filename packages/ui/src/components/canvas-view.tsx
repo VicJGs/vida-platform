@@ -4,7 +4,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 
 // ============================================================================
 // CanvasView — the CODEC Canvas shell (fe-codec-canvas-board S1).
-// The immersive archetype (decomposition.md:32 §1.2): a read-only, editorial
+// The immersive archetype: a read-only, editorial
 // frame that hosts exactly ONE view-mode renderer at canvas scale. The two
 // worked examples (Vision-board = GalleryView over dreams · Calendar-grid =
 // month CalendarView) are consumer compositions (apps/web, S2); #19 later drops
@@ -12,7 +12,7 @@ import { warnMissingName, type ViewState } from '../internal/data-view'
 // it owns the masthead + the body region; `children` is the hosted renderer.
 // Presentational, state-as-prop (BR-2); @vida/ui is Tamagui-only, so CanvasState
 // is a LOCAL alias of the intra-package ViewState canon (no @vida/core/@vida/types).
-// Spec: docs/specs/foundation/fe-codec-canvas-board/s1-canvas-view.md.
+// Spec: LIF-204.
 //
 // NON-GENERIC: holds no renderer data (the hosted renderer owns it) → no <T> →
 // React-19 ref-as-prop (no forwardRef).

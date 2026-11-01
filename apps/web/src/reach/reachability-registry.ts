@@ -1,5 +1,5 @@
 // fe-codec-patterns · S5 — ReachabilityRegistry (the ≥2-reachable-paths floor, as a runtime registry).
-// Reconcile: docs/specs/foundation/fe-codec-patterns/s5-conventions.md · interpretation R6 · frontend-quality-bar §2.4.
+// Reconcile: LIF-211 · interpretation R6 · frontend-quality-bar §2.4.
 //
 // The CAPABILITY-axis reach registry — the runtime companion to the G4 set-cover gate. A capability must be reachable
 // ≥2 ways (a hard floor: a 1-path capability FAILS G4). This is the capability axis (how a thing is reached), distinct

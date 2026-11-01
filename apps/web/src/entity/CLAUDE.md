@@ -32,4 +32,4 @@ boundary forbids this in `@vida/ui` (BR-2). The collection/dashboard adapter pre
 
 ## Spec
 
-`docs/specs/components/ui-2-platform-views/entity-view.md` · delivery `docs/specs/foundation/fe-codec-entity-facet/`.
+LIF-87 · delivery LIF-209.

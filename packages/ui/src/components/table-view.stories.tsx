@@ -7,7 +7,7 @@ import { type ViewState } from './list-view'
 // A columnar grid (role="table"): caller-declared columns × rows. Diverges from the linear spine like calendar: empty
 // = a designed row (not a message); a table, not a list. READ-ONLY lens — no sort toggle/row click (TV-1/TV-5).
 //
-// MEASURE (v8-table-view.md §4): role="table"/row/columnheader/cell · column grow + align + fixed width · aria-sort
+// MEASURE: role="table"/row/columnheader/cell · column grow + align + fixed width · aria-sort
 // DISPLAY (asc/desc arrows) · density (compact/default/spacious) · 4 states (loading skeleton · error status · empty
 // designed row · success) · dark mode × 3 presets · resize narrow → horizontal scroll (375, TV-6).
 

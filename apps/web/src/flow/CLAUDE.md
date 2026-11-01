@@ -44,4 +44,4 @@ HUD (#16) / runtime page (#23) / countdown (pomodoro V5) are separate units.
 
 ## Spec
 
-`docs/specs/components/ui-2-platform-views/flow-session-view.md` · delivery `docs/specs/foundation/fe-codec-flow-session/`.
+LIF-87 · delivery LIF-210.

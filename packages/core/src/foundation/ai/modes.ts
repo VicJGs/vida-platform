@@ -53,7 +53,7 @@ export function buildAiDisclosure(mode: AiMode): AiModeDisclosure {
 // XCU-24 — stamp model-generated content with `source = 'ai'` (the manual|ai|import
 // triad). A pure, idempotent helper; the row is WRITTEN by each module's own
 // service (over the ADR-004 §3.2.5 rail), never here — there is no store in this
-// tier. `[FACT: ADR-015:64 (§3.6); xcut-ingestion-ai.md:42 ("writes via each module's service")]`
+// tier. `[FACT: ADR-015:64 (§3.6)]`
 export function stampAiProvenance<T extends object>(row: T): T & { source: AiProvenance } {
   return { ...row, source: AI_PROVENANCE }
 }

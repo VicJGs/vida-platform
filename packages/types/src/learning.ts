@@ -386,7 +386,7 @@ export interface SubjectDocument extends SyncableEntity {
 // stale ADR-002 floor: `format`→`book_assets` (BK-2) · `current_page`→per-asset `native_position` (BR-BK-2) ·
 // `genre`/`tags`→`entity_tags` (BK-16). `progress` → nullable derived-override (BR-BK-2; NULL ⇒ derive, never a
 // stored counter). `total_pages` nullable (work-level, TOC-only planning, BK-17). `BOOK_FORMAT`/`BookFormatSchema`
-// intentionally kept (P-6 — other consumers). `[FACT: schema/books.ts:43-63; db-4-books/_index.md:68-72]`
+// intentionally kept (P-6 — other consumers). `[FACT: schema/books.ts:43-63]`
 export interface Book extends SyncableEntity {
   /** @encrypted */
   title: string
@@ -472,7 +472,7 @@ export interface BookQuote extends SyncableEntity {
  * `sessions.id` (UNIQUE, no FK); the shared timer/scheduling/lifecycle rides the base, these columns are the
  * mode-adaptive capture. NO `deleted_at` — the base `sessions` owns lifecycle (F1). `statistics` is the dormant
  * M2 granular-capture seam (a `json<Record>` column, parsed on read; M1 never writes it).
- * `[FACT: schema/books.ts:147-162; db-4-books/_index.md:49,91,125]`
+ * `[FACT: schema/books.ts:147-162]`
  */
 export interface ReadingSession extends SyncableEntity {
   session_id: Id
@@ -488,7 +488,7 @@ export interface ReadingSession extends SyncableEntity {
  * A reading plan — the Quota Planner (BK-11). Covers one or many books (via `reading_plan_books`). Holds
  * `arrangement`/`goal_type`/target dates + the computed `quota_distribution` + `recalculation_state` (both stored
  * json). **NO `measurement_kind`/`binding_mode`** — the pursuable goal is Purpose/target-owned, Books stores no axis
- * (C-M1). `[FACT: schema/books.ts:165-174; rerun C-M1 books.md:71]`
+ * (C-M1). `[FACT: schema/books.ts:165-174; C-M1]`
  */
 export interface ReadingPlan extends SyncableEntity {
   arrangement: ReadingPlanArrangement

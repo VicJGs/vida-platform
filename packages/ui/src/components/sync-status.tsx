@@ -3,7 +3,7 @@ import { styled, Text, View, type GetProps } from '@tamagui/core'
 import { ensureSyncStatusStyles } from '../internal/sync-status-styles'
 
 // fe-codec-patterns · S4 — SyncStatus + HonestProgress (the CODEC local-first status primitives).
-// Reconcile: docs/specs/foundation/fe-codec-patterns/s4-sync-status.md · interpretation R4 · p4-trust-reversibility-specimen.
+// Reconcile: LIF-211 · interpretation R4 · p4-trust-reversibility-specimen.
 //
 // HONEST M1 (P4 copy-honesty contract, p4 specimen:103,115): writes are instant on-device, so there is NO "Saving…"
 // state and NO "synced to cloud" claim — the indicator says "Saved on this device." The M1 union is `saved | error`;

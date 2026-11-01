@@ -4,7 +4,7 @@
 // fresh System — level 1, no currencies, no unlocks); the live swap is drop-in,
 // zero signature change.
 //
-// TYPE-CORRECT against the shipped ① `GamificationService` (seam-contract.md), data
+// TYPE-CORRECT against the shipped ① `GamificationService`, data
 // STUBBED (IR-G1 — the fe-notes data-plane gap: `live blocked by the worker-RPC
 // Drizzle values seam + no composition root`). Every shape here is exactly what the
 // service op returns, so the live swap changes only this file:

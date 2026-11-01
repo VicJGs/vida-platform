@@ -144,7 +144,7 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
     goRange('month')
   }
 
-  // Range chrome: lg buttons (48px ≥ the 44×44 touch floor at every width, decisions.md:82) with ≥8px gaps. Below 768
+  // Range chrome: lg buttons (48px ≥ the 44×44 touch floor at every width) with ≥8px gaps. Below 768
   // the 6-range toolbar condenses to a Menu (EC-1, the CollectionView condense) so the actions slot fits a 375 masthead.
   const switcher = isTabletUp ? (
     <View
@@ -260,7 +260,7 @@ export default function CalendarSurface({ __bp }: CalendarSurfaceProps = {}) {
 type RegionState = 'loading' | 'empty' | 'error' | 'success'
 
 // The active range's renderer, fed by the live (or DEV sample) `CalendarFeed`. Each renderer owns its terminal states
-// (state-as-prop, BR-2); write intents stay ABSENT (deny-safe — no dead controls, seam-contract.md:135-138).
+// (state-as-prop, BR-2); write intents stay ABSENT (deny-safe — no dead controls).
 function RangeBody({
   range,
   focused,

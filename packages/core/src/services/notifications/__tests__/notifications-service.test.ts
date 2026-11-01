@@ -2,7 +2,7 @@
 // mod-notifications #53 ① · S1 — inbox reads + lifecycle (LIF-132)
 //
 // Node / better-sqlite3 live-store harness (mirrors habits/finance/checkins): REAL data store,
-// UNLOCKED vault, migrate() applies 032_notifications so the table exists. Covers the slice-map.md S1
+// UNLOCKED vault, migrate() applies 032_notifications so the table exists. Covers the S1
 // Verification Gate: list status/type filters + newest-first + paging · unreadCounts derivation ·
 // markRead (+ idempotent) · markAllRead · archive (+ idempotent) · archiveExpired (NULL never matches) ·
 // faithful mapping (boolInt→boolean, no _sync_* in the view) · co-transactional sync_queue enqueue ·

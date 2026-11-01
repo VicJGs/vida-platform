@@ -3,7 +3,7 @@
 // + the 11 integration-block commands (DERIVED from E1's `INTEGRATION_BLOCK_COMMANDS`, shown DISABLED until E5 lands
 // their node-views — the graceful-degradation seam). `@vida/types.SlashCommand.block_type` is `IntegrationBlockType`,
 // so it structurally can't describe a standard block — hence this local `SlashMenuItem` (BR-E4-3).
-// Spec: docs/specs/features/ui-3-vida-editor/e4-slash-menu.md · BR-E4-3/4/4a/4b/5/7.
+// Spec: LIF-88 · BR-E4-3/4/4a/4b/5/7.
 // @tiptap/react `export *`s @tiptap/core, and it (not @tiptap/core, which pnpm doesn't expose directly) is the
 // codebase's import site for core types (toolbar.tsx precedent) — DEV-1 correction to preflight F5.
 import type { Editor, Range } from '@tiptap/react'

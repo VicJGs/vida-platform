@@ -3,7 +3,7 @@
 //
 // Node / better-sqlite3 live-store harness (mirrors habits/finance/checkins): REAL data store,
 // UNLOCKED vault (the sync-hash path runs even with empty [E]), migrate() applies 018_routines so
-// the reframe tables exist. Covers the slice-map.md S1 Verification Gate: CRUD happy + faithful
+// the reframe tables exist. Covers the S1 Verification Gate: CRUD happy + faithful
 // create echo (defaults backfilled, nullables null) + partial update (no blanking) + soft-delete
 // hides (ledger untouched) + listRoutines lifecycle filter + 2 failure paths (invalid-enum reject,
 // missing-name reject) + co-transactional sync_queue enqueue (persistence probe).
@@ -465,7 +465,7 @@ describe('mod-routines S3 — completion ledger + skip', () => {
 })
 
 // ============================================================================
-// S2c — floor conformance (PLAN-S2c-floor-conformance.md · Verification Gate 1–13)
+// S2c — floor conformance (Verification Gate 1–13)
 // ============================================================================
 describe('mod-routines S2c — floor conformance', () => {
   let h: Harness
@@ -647,7 +647,7 @@ describe('mod-routines S2c — floor conformance', () => {
 })
 
 // ============================================================================
-// S3 — run/drive: the RT-3 composition core (PLAN-S3-run-drive.md · Verification Gate 1–15)
+// S3 — run/drive: the RT-3 composition core (Verification Gate 1–15)
 // ============================================================================
 describe('mod-routines S3 — run/drive', () => {
   const DAY = '2026-10-21'
@@ -1009,7 +1009,7 @@ describe('mod-routines S3 — run/drive', () => {
 })
 
 // ============================================================================
-// S4 — policy evaluation (PLAN-S4-policy-evaluation.md · Verification Gate 1–14)
+// S4 — policy evaluation (Verification Gate 1–14)
 // The policy is the USER's: tests inject it through a stub RoutinesPrefsPort; no routines-side default exists.
 // ============================================================================
 describe('mod-routines S4 — policy evaluation', () => {
@@ -1314,7 +1314,7 @@ describe('mod-routines S4 — policy evaluation', () => {
 })
 
 // ============================================================================
-// S5 — progress + analytics (PLAN-S5-progress-analytics.md · Verification Gate 1–16)
+// S5 — progress + analytics (Verification Gate 1–16)
 // Clock pinned via Date.now (routines' clock = utcDay(Date.now())). Policies injected through a stub port.
 // ============================================================================
 describe('mod-routines S5 — progress + analytics', () => {
@@ -1610,7 +1610,7 @@ describe('mod-routines S5 — progress + analytics', () => {
 })
 
 // ============================================================================
-// S5c — Q1/RT-4/D3 correction (PLAN-S5c-q1-d3-correction.md · Verification Gate)
+// S5c — Q1/RT-4/D3 correction (Verification Gate)
 // ============================================================================
 describe('mod-routines S5c — every step drives an entity; occurrences are sessions', () => {
   const DAY = '2026-10-21'

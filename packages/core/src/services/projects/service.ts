@@ -52,7 +52,7 @@ import {
 import type { ProjectRow, MilestoneRow, DeliverableRow, ProjectDocumentRow } from '../../db/schema/projects'
 import type { PageRow } from '../../db/schema/notes'
 
-/** App-managed reserved titles for the two guiding project pages (PJ-7; db-4-projects/_index.md:32-33). */
+/** App-managed reserved titles for the two guiding project pages (PJ-7). */
 const PROJECT_PAGE_TITLE: Record<ProjectPageKind, string> = { vision: 'Vision', mission: 'Mission' }
 
 export function createProjectsService(deps: ProjectsServiceDeps): ProjectsService {
@@ -379,8 +379,8 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
   }
 
   // ---- S6: vision/mission pages + entity_tags ------------------------------
-  // Vision & Mission are `pages` with entity_type='project' — NOT a dedicated PAGE_TYPE (db-4-projects/_index.md:32-33
-  // "mission is a page, not a column"). The service find-or-creates each by a reserved, app-managed title (type='note').
+  // Vision & Mission are `pages` with entity_type='project' — NOT a dedicated PAGE_TYPE
+  // ("mission is a page, not a column"). The service find-or-creates each by a reserved, app-managed title (type='note').
   // General project/milestone/deliverable notes are the FE's to manage via NotesService directly (entity_type is
   // registered); the projects service only owns the two guiding pages + tag writes.
   async function getProjectPage(projectId: string, kind: ProjectPageKind): Promise<PageRow> {
@@ -404,7 +404,7 @@ export function createProjectsService(deps: ProjectsServiceDeps): ProjectsServic
 
   // ---- S7: deliverable derived-pull measurement (M5/R7 source seam) --------
   // Binding = an entity_links row (deliverable → source), WRITTEN via spaces.createLink (page_id=deliverableId as
-  // the source anchor; db-4-projects/_index.md:32-33 §3c). Resolution = the ADR-011 §3.6 measurement-source seam
+  // the source anchor). Resolution = the ADR-011 §3.6 measurement-source seam
   // (deriveDeliverableLeaf, above). The source `entityType` must be a registered taggable type (spaces validates).
   async function linkDeliverableSource(deliverableId: string, source: DeliverableSourceRef): Promise<void> {
     if (!(await deliverablesRepo.findById(deliverableId))) throw new DeliverableNotFoundError(deliverableId)

@@ -16,8 +16,8 @@ import {
 import { styled, Text, View } from '@tamagui/core'
 import { ensureTabsStyles } from '../internal/tabs-styles'
 
-// UI-1 · Tabs (primitive 6/10, molecular) — implements ds-5-primitive-contracts/tabs.md against Tamagui v2.
-// Reconcile: docs/specs/components/ui-1-vida-ui-primitives/u6-tabs.md.
+// UI-1 · Tabs (primitive 6/10, molecular) — implements the ds-5 Tabs contract against Tamagui v2.
+// Reconcile: LIF-86.
 // - name:'Tabs' scopes the light_/dark_Tabs sub-theme ($text/$colorTextPrimary/$colorBrandPrimary/$border) over the whole subtree.
 // - The tab strip is generated from `items`; the panels are supplied as <Tabs.Panel value> children (the ARIA
 //   contract forces a Tabs-owned role="tabpanel" wrapper — DEF-U6-a). Only the active panel is mounted (D5).

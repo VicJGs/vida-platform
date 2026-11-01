@@ -9,7 +9,7 @@
 // (fails closed). Decides / discloses / gates; holds no credential, makes no
 // network call, authors NO schema — the durable stores (ai_connections,
 // ai_conversations, AI-egress audit) + the real mediator/on-device runtime are M2
-// (behind the ports). Spec: docs/specs/foundation/xs-ai/.
+// (behind the ports). Spec: LIF-167.
 //
 // This file grows one slice at a time (ingestion precedent). S1 = modes,
 // disclosure, provenance.
@@ -19,7 +19,7 @@
 // setting): `on_device` (agentic; no vault content leaves; residual = the
 // model-acquisition leak; runtime telemetry-off/no-ambient-network) + `cloud`
 // (BYO-key, device→provider direct). Neither routes through our server.
-// `[FACT: ADR-015:41-46 (§3.1 table + prose); capability-framework.md:211 (AI1)]`
+// `[FACT: ADR-015:41-46 (§3.1 table + prose)]`
 export const AI_MODES = ['on_device', 'cloud'] as const
 export type AiMode = (typeof AI_MODES)[number]
 
@@ -195,7 +195,7 @@ export interface AiAgentGate {
 // user brings their own — Claude/ChatGPT/…). `requestedNoTrain` = no-train/zero-
 // retention REQUESTED where offered, disclosed as requested-not-guaranteed (IR-4).
 // `[FACT: ADR-015:114 (§5 ADD ai_connections: mode·provider·encrypted_key[L2/L3,
-// mediator custody]·default_scope·requested_no_train), :62 (§3.5); capability-framework.md:212 (AI2)]`
+// mediator custody]·default_scope·requested_no_train), :62 (§3.5)]`
 export interface AiConnection {
   integrationId: string
   mode: AiMode
