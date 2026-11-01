@@ -24,7 +24,7 @@ export interface NotesRow {
   type: PageType
   excerpt: string
   updated: string
-  /** YYYY-MM-DD for the calendar layout (live: journal_date ?? updated_at). */
+  /** YYYY-MM-DD row date (live: journal_date ?? updated_at). No /notes layout reads it since EC-1 dropped Calendar (LIF-375). */
   date: string
   favorite: boolean
   /** The title came from the type (an untitled page, `pageLabel`) — the card name then drops its doubled type segment. */
