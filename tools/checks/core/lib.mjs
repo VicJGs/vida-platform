@@ -10,6 +10,7 @@ export const DEFAULTS = {
   index: "docs/index.json",
   adrDirs: ["docs/decisions", ".adr"],
   ruleId: "RULE-[A-Z]+-\\d+",
+  rulesBaseline: "tools/checks/rules-baseline.txt",
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
 };
@@ -22,12 +23,12 @@ export function config() {
   return { ...DEFAULTS, ...own };
 }
 
-// Repo-relative paths with forward slashes, skipping dependencies, VCS and archives.
+// Repo-relative paths with forward slashes, skipping dependencies, VCS, build output and archives.
 export function walk(dir) {
   const abs = join(root, dir);
   if (!existsSync(abs)) return [];
   return readdirSync(abs).flatMap((name) => {
-    if (["node_modules", ".git", "archive", "_archive"].includes(name)) return [];
+    if (["node_modules", ".git", "dist", "build", "archive", "_archive"].includes(name)) return [];
     const rel = `${dir}/${name}`;
     return statSync(join(root, rel)).isDirectory() ? walk(rel) : [rel];
   });
