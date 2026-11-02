@@ -24,7 +24,7 @@ The Linear issue is the plan: scope, acceptance and status live there. Never wri
 
 ## 6. Landmines
 
-App-wide write lock (BR-RT-LOCK): no nested db.transaction. React Query errored queries need retryOnMount:false on state-swapped surfaces. Editing @vida/types needs a dist rebuild before @vida/core typecheck. better-sqlite3 ABI vs Node. macOS 12 cannot run the Chromium e2e locally: rely on CI.
+App-wide write lock (BR-RT-LOCK): no nested db.transaction. React Query errored queries need retryOnMount:false on state-swapped surfaces. Editing @vida/types needs a dist rebuild before @vida/core typecheck. better-sqlite3 ABI vs Node. On macOS 12, run e2e locally with PW_EXECUTABLE_PATH set to Brave (see apps/web/e2e/CLAUDE.md).
 
 ## 7. Validate
 
