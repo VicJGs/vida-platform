@@ -8,6 +8,8 @@ import { UIProvider } from '@vida/ui'
 import type { EditorDocument } from '@vida/types'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 import { calloutInsertContent } from './extensions/callout'
+import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
+import { MODULE_BLOCK_ITEMS, SLASH_MENU_ITEMS } from './slash-commands'
 import { EditorToolbar } from './toolbar'
 import { VidaEditor } from './editor'
 
@@ -171,8 +173,10 @@ describe('EditorToolbar — can()-gated disable + tab-stop invariants (BR-E3-5, 
     })
     renderToolbar(editor)
     await user.click(btn('Insert block'))
-    const callout = await screen.findByRole('menuitem', { name: 'Callout' })
-    expect(callout.getAttribute('aria-disabled')).toBe('true')
+    for (const name of ['Info callout', 'Success callout', 'Danger callout']) {
+      const callout = await screen.findByRole('menuitem', { name })
+      expect(callout.getAttribute('aria-disabled')).toBe('true')
+    }
   })
 })
 
@@ -212,5 +216,72 @@ describe('VidaEditor — toolbar mount gating (BR-E3-6)', () => {
     )
     await waitFor(() => expect(screen.getByRole('textbox')).toBeTruthy())
     expect(screen.queryByRole('toolbar')).toBeNull()
+  })
+})
+
+// LIF-354 — the Home journal entry points: the toolbar stays in view and its Insert menu reaches every module block.
+describe('EditorToolbar — LIF-354 sticky + module blocks + callout variants', () => {
+  function headlessWithModules(): Editor {
+    const e = new Editor({
+      extensions: [StarterKit, ...STANDARD_BLOCK_EXTENSIONS, ...INTEGRATION_BLOCK_EXTENSIONS],
+      content: '<p>x</p>',
+    })
+    editors.push(e)
+    return e
+  }
+
+  it('the toolbar row is sticky at the top of its scroll container (bullet 4)', () => {
+    renderToolbar(headless())
+    const toolbar = screen.getByRole('toolbar', { name: 'Formatting' })
+    const style = getComputedStyle(toolbar)
+    expect(style.position).toBe('sticky')
+    expect(style.top).toBe('0px')
+  })
+
+  it('Insert offers the same module blocks as the slash menu (bullet 4)', async () => {
+    const user = userEvent.setup()
+    renderToolbar(headlessWithModules())
+    await user.click(btn('Insert block'))
+    const offered = (await screen.findAllByRole('menuitem')).map((m) => m.textContent)
+    const slashModules = SLASH_MENU_ITEMS.filter((i) => MODULE_BLOCK_ITEMS.includes(i) && i.available)
+    expect(slashModules).toHaveLength(11)
+    for (const item of slashModules) expect(offered, item.id).toContain(item.title)
+  })
+
+  it('Insert → Task checklist inserts the task block at the caret (bullet 4)', async () => {
+    const user = userEvent.setup()
+    const editor = headlessWithModules()
+    renderToolbar(editor)
+    await user.click(btn('Insert block'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Task checklist' }))
+    await waitFor(() => expect(editor.getJSON().content?.map((n) => n.type)).toContain('taskChecklist'))
+    expect(JSON.stringify(editor.getJSON())).toContain('"text":"x"') // nothing deleted
+  })
+
+  it('Insert → Task checklist never replaces a selected block (it inserts after it)', async () => {
+    const user = userEvent.setup()
+    const editor = headlessWithModules()
+    editor.commands.setContent({ type: 'doc', content: [{ type: 'taskChecklist' }, { type: 'paragraph' }] })
+    editor.commands.setNodeSelection(0) // a click on the block body selects the node
+    renderToolbar(editor)
+    await user.click(btn('Insert block'))
+    await user.click(await screen.findByRole('menuitem', { name: 'Task checklist' }))
+    await waitFor(() => expect(editor.getJSON().content?.filter((n) => n.type === 'taskChecklist')).toHaveLength(2))
+  })
+
+  it.each([
+    ['Info callout', 'info'],
+    ['Success callout', 'success'],
+    ['Danger callout', 'danger'],
+  ])('Insert → %s inserts a %s callout (bullet 5)', async (name, variant) => {
+    const user = userEvent.setup()
+    const editor = headless('<p>x</p>')
+    renderToolbar(editor)
+    await user.click(btn('Insert block'))
+    await user.click(await screen.findByRole('menuitem', { name }))
+    await waitFor(() => {
+      const callout = editor.getJSON().content?.find((n) => n.type === 'callout')
+      expect(callout?.attrs?.variant).toBe(variant)
+    })
   })
 })

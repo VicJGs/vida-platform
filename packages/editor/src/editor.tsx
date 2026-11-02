@@ -19,7 +19,11 @@ import type { Content } from '@tiptap/react'
 import type { EditorDocument } from '@vida/types'
 import { ensureEditorStyles } from './internal/editor-styles'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
-import { INTEGRATION_BLOCK_EXTENSIONS } from './extensions/integration-blocks'
+import {
+  INTEGRATION_BLOCK_EXTENSIONS,
+  IntegrationBlockRenderersContext,
+  type IntegrationBlockRenderers,
+} from './extensions/integration-blocks'
 import { SlashCommand, slashActive, slashComboboxAttrs } from './extensions/slash-command'
 import { EditorToolbar } from './toolbar'
 
@@ -41,6 +45,9 @@ export interface VidaEditorProps {
    *  for the rest of the mount — TipTap would otherwise load an EMPTY doc and the host would persist it over the real
    *  content. The host decides what to show (e.g. a read-only notice). Optional + additive. */
   onInvalidContent?: (error: Error) => void
+  /** LIF-354 — live bodies for integration blocks, by type. The app passes them in (BR-E5-7: the editor imports no
+   *  module); a type without one keeps the placeholder node-view. Optional + additive; saved content is unchanged. */
+  blockRenderers?: IntegrationBlockRenderers
   /** Placeholder text for the empty state. */
   placeholder?: string
   /** Accessible name for the textbox (a11y — BR-6). One of these is REQUIRED. */
@@ -56,6 +63,7 @@ export interface VidaEditorHandle {
 }
 
 const EMPTY_DOC: EditorDocument = { type: 'doc', content: [] }
+const NO_RENDERERS: IntegrationBlockRenderers = {}
 
 /**
  * Validate a Tiptap `getJSON()` payload against the @vida/types.EditorDocument structural contract at RUNTIME
@@ -230,7 +238,9 @@ function VidaEditorImpl(props: VidaEditorProps, ref: React.ForwardedRef<VidaEdit
       {toolbar && editable && !invalid && editor ? (
         <EditorToolbar editor={editor} aria-label={ariaLabel ? `${ariaLabel} formatting` : undefined} />
       ) : null}
-      <EditorContent editor={editor} />
+      <IntegrationBlockRenderersContext.Provider value={props.blockRenderers ?? NO_RENDERERS}>
+        <EditorContent editor={editor} />
+      </IntegrationBlockRenderersContext.Provider>
     </EditorFrame>
   )
 }

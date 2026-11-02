@@ -179,6 +179,15 @@ describe('Menu — activation + close', () => {
     expect(document.activeElement).toBe(trigger())
   })
 
+  it('a scroll outside the panel closes the menu; the panel scrolling its own items does not (LIF-354)', () => {
+    renderMenu(<Basic />)
+    fireEvent.click(trigger())
+    fireEvent.scroll(screen.getByRole('menu'))
+    expect(screen.queryByRole('menu')).not.toBeNull()
+    fireEvent.scroll(window)
+    expect(screen.queryByRole('menu')).toBeNull()
+  })
+
   it('an outside pointerdown closes the menu', () => {
     renderMenu(<Basic />)
     fireEvent.click(trigger())

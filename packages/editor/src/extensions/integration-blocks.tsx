@@ -5,7 +5,7 @@
 // (docs/core/capability/current-business-rules.md:26). E5 builds NO real body (MOD-* phases) and does NOT import the
 // @vida/core CapabilityRegistry (MOD-notes #31 wires it) — it builds the editor-side adapter + placeholders.
 // Spec: LIF-88 · BR-E5-1..7.
-import type { ReactElement } from 'react'
+import { createContext, useContext, type ComponentType, type ReactElement } from 'react'
 import { Node, mergeAttributes, NodeViewWrapper, ReactNodeViewRenderer, type NodeViewProps } from '@tiptap/react'
 import type { Extensions } from '@tiptap/react'
 import { styled, Text, View } from '@tamagui/core'
@@ -158,6 +158,46 @@ function IntegrationBlockPlaceholder({ node }: NodeViewProps): ReactElement {
   )
 }
 
+// ── the live-body seam (LIF-354) ─────────────────────────────────────────────────────────────────────────────────────
+/** What a module's live body receives. `attrs` is the block's config (node attrs); `updateAttributes` writes it back. */
+export interface IntegrationBlockRendererProps {
+  blockType: IntegrationBlockType
+  attrs: Record<string, unknown>
+  updateAttributes: (attrs: Record<string, unknown>) => void
+  editable: boolean
+  selected: boolean
+}
+
+/** Per-type live bodies the APP passes in (`<VidaEditor blockRenderers>`); the editor imports no module (BR-E5-7). */
+export type IntegrationBlockRenderers = Partial<
+  Record<IntegrationBlockType, ComponentType<IntegrationBlockRendererProps>>
+>
+
+const NO_RENDERERS: IntegrationBlockRenderers = {}
+
+/** Provided around `<EditorContent>` by editor.tsx. TipTap renders React node-views as portals INSIDE EditorContent, so
+ *  every node-view reads the host's current renderers (a prop change re-renders the bodies, no editor rebuild). */
+export const IntegrationBlockRenderersContext = createContext<IntegrationBlockRenderers>(NO_RENDERERS)
+
+/** The node-view: the module's live body when the host passed one for this type, else the placeholder (CB6). */
+function IntegrationBlockView(props: NodeViewProps): ReactElement {
+  const renderers = useContext(IntegrationBlockRenderersContext)
+  const blockType = props.node.type.name as IntegrationBlockType
+  const Body = renderers[blockType]
+  if (!Body) return <IntegrationBlockPlaceholder {...props} />
+  return (
+    <NodeViewWrapper className="vida-integration-block" data-block-type={blockType} contentEditable={false}>
+      <Body
+        blockType={blockType}
+        attrs={props.node.attrs}
+        updateAttributes={props.updateAttributes}
+        editable={props.editor.isEditable}
+        selected={props.selected}
+      />
+    </NodeViewWrapper>
+  )
+}
+
 // ── the node factory (BR-E5-1) ───────────────────────────────────────────────────────────────────────────────────────
 /**
  * One inline TipTap node per integration capability. `atom:true` (no editable child content — a stub, not a container);
@@ -193,7 +233,7 @@ export function createIntegrationBlockNode(def: InlineBlockDef): Node {
     },
 
     addNodeView() {
-      return ReactNodeViewRenderer(IntegrationBlockPlaceholder)
+      return ReactNodeViewRenderer(IntegrationBlockView)
     },
   })
 }

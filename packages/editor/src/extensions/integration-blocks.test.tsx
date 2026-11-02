@@ -8,7 +8,12 @@ import { UIProvider } from '@vida/ui'
 import { INTEGRATION_BLOCK_TYPE, type EditorDocument, type EditorNode, type IntegrationBlockType } from '@vida/types'
 import { VidaEditor, type VidaEditorHandle } from '../editor'
 import { STANDARD_BLOCK_EXTENSIONS } from './standard-blocks'
-import { INTEGRATION_BLOCK_EXTENSIONS, INLINE_BLOCK_DEFS, AVAILABLE_INTEGRATION_BLOCKS } from './integration-blocks'
+import {
+  INTEGRATION_BLOCK_EXTENSIONS,
+  INLINE_BLOCK_DEFS,
+  AVAILABLE_INTEGRATION_BLOCKS,
+  type IntegrationBlockRendererProps,
+} from './integration-blocks'
 import { INTEGRATION_BLOCK_COMMANDS } from '../commands'
 import { SLASH_MENU_ITEMS, isBlockAvailable } from '../slash-commands'
 
@@ -200,5 +205,52 @@ describe('VidaEditor — placeholder node-views render for a seeded doc (RTL, bo
     for (const n of Array.from(notes)) {
       expect(n.getAttribute('aria-label')).toMatch(/available when its module ships$/)
     }
+  })
+})
+
+// LIF-354 (bullet 2) — the app passes a live body per type; a type without one keeps the placeholder.
+describe('VidaEditor blockRenderers — live bodies (LIF-354)', () => {
+  function TestTaskBlock({ attrs, updateAttributes, editable }: IntegrationBlockRendererProps) {
+    return (
+      <div role="group" aria-label="Test task block">
+        <span data-testid="due">{String(attrs.due_before)}</span>
+        <span data-testid="editable">{String(editable)}</span>
+        <button type="button" onClick={() => updateAttributes({ due_before: '2026-11-03' })}>
+          Set due
+        </button>
+      </div>
+    )
+  }
+
+  it('renders the live body for a block type that has one; others keep the placeholder', async () => {
+    const ref = createRef<VidaEditorHandle>()
+    const { container } = render(
+      <UIProvider>
+        <VidaEditor
+          ref={ref}
+          aria-label="Note body"
+          defaultValue={doc([{ type: 'taskChecklist', attrs: { due_before: '2026-11-02' } }, { type: 'habitsBlock' }])}
+          blockRenderers={{ taskChecklist: TestTaskBlock }}
+        />
+      </UIProvider>,
+    )
+    const body = await waitFor(() => {
+      const el = container.querySelector('[aria-label="Test task block"]')
+      if (el === null) throw new Error('live body not mounted yet')
+      return el as HTMLElement
+    })
+    expect(body.querySelector('[data-testid="due"]')?.textContent).toBe('2026-11-02')
+    expect(body.querySelector('[data-testid="editable"]')?.textContent).toBe('true')
+    // habitsBlock has no renderer → still the placeholder card
+    const notes = container.querySelectorAll('[role="note"]')
+    expect(notes).toHaveLength(1)
+    expect(notes[0]?.getAttribute('aria-label')).toMatch(/^Habits/)
+
+    // the body writes its config back through updateAttributes → saved content carries it
+    ;(body.querySelector('button') as HTMLButtonElement).click()
+    await waitFor(() => {
+      const task = ref.current?.getDocument().content.find((n) => n.type === 'taskChecklist')
+      expect(task?.attrs?.due_before).toBe('2026-11-03')
+    })
   })
 })

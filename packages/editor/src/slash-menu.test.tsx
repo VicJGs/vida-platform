@@ -8,7 +8,7 @@ import { Editor } from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { UIProvider } from '@vida/ui'
 import { SLASH_LISTBOX_ID, SlashMenu, slashOptionId, type SlashMenuHandle } from './slash-menu'
-import type { SlashMenuItem } from './slash-commands'
+import { SLASH_MENU_ITEMS, type SlashMenuItem } from './slash-commands'
 
 const A: SlashMenuItem = { id: 'a', title: 'Alpha', keywords: [], category: 'basic', available: true, run: () => {} }
 const B: SlashMenuItem = { id: 'b', title: 'Bravo', keywords: [], category: 'basic', available: true, run: () => {} }
@@ -124,5 +124,32 @@ describe('SlashMenu — pointer + empty', () => {
     const option = screen.getByRole('option')
     expect(option.getAttribute('aria-disabled')).toBe('true')
     expect(screen.getByText('No blocks')).toBeTruthy()
+  })
+})
+
+// LIF-354 — the full menu scrolls with the selection, and draws each category header once (bullet 3).
+describe('SlashMenu — LIF-354 scroll + single headers', () => {
+  it('ArrowDown scrolls the newly selected option into view', () => {
+    // jsdom implements no scrollIntoView — install a recorder for this test only.
+    const scrolled: string[] = []
+    const proto = Element.prototype as { scrollIntoView?: unknown }
+    const original = proto.scrollIntoView
+    proto.scrollIntoView = function (this: Element) {
+      scrolled.push(this.id)
+    }
+    try {
+      const { ref } = mount(SLASH_MENU_ITEMS)
+      press(ref, 'ArrowDown')
+      expect(scrolled.at(-1)).toBe(slashOptionId(1))
+    } finally {
+      proto.scrollIntoView = original
+    }
+  })
+
+  it('renders each category header exactly once for the full list', () => {
+    mount(SLASH_MENU_ITEMS)
+    for (const label of ['Basic', 'Media', 'Platform blocks', 'Embeds']) {
+      expect(screen.getAllByText(label), label).toHaveLength(1)
+    }
   })
 })

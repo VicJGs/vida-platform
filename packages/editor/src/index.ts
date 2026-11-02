@@ -5,6 +5,9 @@
 // E1 — editor core.
 export { VidaEditor, assertEditorDocument, type VidaEditorProps, type VidaEditorHandle } from './editor'
 
+// LIF-354 — the live-body seam: the app passes `blockRenderers` to <VidaEditor>.
+export type { IntegrationBlockRenderers, IntegrationBlockRendererProps } from './extensions/integration-blocks'
+
 // E1 — the integration-block command type map (BR-E1-4; the enum→command surface E4's slash menu lists).
 export { INTEGRATION_BLOCK_COMMANDS, INTEGRATION_BLOCK_COMMAND_COUNT } from './commands'
 

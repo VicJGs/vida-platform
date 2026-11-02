@@ -17,7 +17,8 @@ import { styled, View } from '@tamagui/core'
 import { Button, Menu, type MenuItem } from '@vida/ui'
 import type { Editor } from '@tiptap/react'
 import { useToolbarState, type BlockTypeKey } from './internal/toolbar-state'
-import { calloutInsertContent } from './extensions/callout'
+import { CALLOUT_VARIANT, calloutInsertContent } from './extensions/callout'
+import { CALLOUT_TITLE, MODULE_BLOCK_ITEMS } from './slash-commands'
 
 // ── ToolbarButton ─────────────────────────────────────────────────────────────────────────────
 // A ghost UI-1 Button wrapped in a frame that carries the toggle "active/pressed" state as a Tamagui VARIANT
@@ -67,6 +68,12 @@ const ToolbarButton = forwardRef<HTMLButtonElement, ToolbarButtonProps>(function
 
 // ── EditorToolbar ─────────────────────────────────────────────────────────────────────────────
 const ToolbarRow = styled(View, {
+  // LIF-354 — sticky: the toolbar stays in view while a long page scrolls under it. The surface bg keeps the text that
+  // scrolls beneath from showing through.
+  position: 'sticky',
+  top: 0,
+  zIndex: 1,
+  backgroundColor: '$colorSurfacePrimary',
   flexDirection: 'row',
   alignItems: 'center',
   flexWrap: 'wrap',
@@ -170,14 +177,25 @@ export function EditorToolbar({
     },
     // Callout insert via insertContent (DEV: the setCallout node-command augmentation didn't propagate to the
     // toolbar's ChainedCommands type in this pnpm monorepo — see callout.ts); this is the exact payload it would run.
-    // Disabled inside a callout (callout is isolating/block+, so it WOULD nest — unwanted).
-    {
-      id: 'callout',
-      label: 'Callout',
-      disabled: state.activeBlock === 'callout',
-      onSelect: () => run((c) => c.insertContent(calloutInsertContent())),
-    },
+    // One item per variant (LIF-354). Disabled inside a callout (callout is isolating/block+, so it WOULD nest — unwanted).
+    ...CALLOUT_VARIANT.map(
+      (variant): MenuItem => ({
+        id: variant === 'info' ? 'callout' : `callout-${variant}`,
+        label: CALLOUT_TITLE[variant],
+        disabled: state.activeBlock === 'callout',
+        onSelect: () => run((c) => c.insertContent(calloutInsertContent(variant))),
+      }),
+    ),
     { id: 'divider', label: 'Divider', onSelect: () => run((c) => c.setHorizontalRule()) },
+    // LIF-354 — the same module blocks as the slash menu (one list). Inserted AFTER the selection, never over it: a
+    // click on a block body selects that node, and `insertContent` would replace it.
+    ...MODULE_BLOCK_ITEMS.filter((item) => item.available && item.blockType).map(
+      (item): MenuItem => ({
+        id: item.id,
+        label: item.title,
+        onSelect: () => run((c) => c.insertContentAt(editor.state.selection.to, { type: item.blockType })),
+      }),
+    ),
   ]
 
   const controls: Control[] = [

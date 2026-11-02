@@ -8,7 +8,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { INTEGRATION_BLOCK_TYPE, type EditorDocument } from '@vida/types'
 import { STANDARD_BLOCK_EXTENSIONS } from './extensions/standard-blocks'
 import { INTEGRATION_BLOCK_COMMANDS } from './commands'
-import { SLASH_MENU_ITEMS, filterSlashItems, isBlockAvailable } from './slash-commands'
+import { SLASH_MENU_ITEMS, filterSlashItems, isBlockAvailable, type SlashMenuItem } from './slash-commands'
 
 const editors: Editor[] = []
 // A paragraph seeded with the trigger text `/x` (positions 1..3) — the range the Suggestion plugin would hand `run`.
@@ -156,5 +156,47 @@ describe('standard `run` closures dispatch the correct command (BR-E4-4/4b)', ()
     const callout = json.content.find((n) => n.type === 'callout')
     expect(callout?.attrs?.variant).toBe('info')
     expect(callout?.content?.[0]?.type).toBe('paragraph')
+  })
+})
+
+// LIF-354 — `/task` reaches the task block first; results stay grouped so each header renders once.
+describe('LIF-354 — ranking + grouping (bullet 3)', () => {
+  /** The categories in render order, collapsing consecutive repeats — a repeat here means a repeated header. */
+  const headers = (items: readonly SlashMenuItem[]) =>
+    items.map((i) => i.category).filter((c, i, all) => i === 0 || all[i - 1] !== c)
+
+  it('typing /task puts the task block (Task checklist) at the top', () => {
+    expect(filterSlashItems(SLASH_MENU_ITEMS, 'task')[0]?.id).toBe('taskChecklist')
+    expect(filterSlashItems(SLASH_MENU_ITEMS, 'tasks')[0]?.id).toBe('taskChecklist')
+    // the standard Task list stays reachable right after
+    expect(filterSlashItems(SLASH_MENU_ITEMS, 'task').map((i) => i.id)).toContain('taskList')
+  })
+
+  it.each(['', 'task', 'e', 'a', 'callout', 'h1', 'list'])('each category header appears once for "/%s"', (q) => {
+    const h = headers(filterSlashItems(SLASH_MENU_ITEMS, q))
+    expect(new Set(h).size).toBe(h.length)
+  })
+
+  it('a title prefix outranks a substring match ("head" → Heading 1 first)', () => {
+    expect(filterSlashItems(SLASH_MENU_ITEMS, 'head')[0]?.id).toBe('heading1')
+  })
+})
+
+// LIF-354 — inserting a callout chooses its variant (bullet 5). No new attr: `variant` already allows all three.
+describe('LIF-354 — callout variants (bullet 5)', () => {
+  it.each([
+    ['callout', 'info'],
+    ['callout-success', 'success'],
+    ['callout-danger', 'danger'],
+  ])('%s inserts a %s callout', (id, variant) => {
+    const editor = seeded()
+    SLASH_MENU_ITEMS.find((i) => i.id === id)?.run?.(editor, TRIGGER_RANGE)
+    const callout = (editor.getJSON() as EditorDocument).content.find((n) => n.type === 'callout')
+    expect(callout?.attrs?.variant).toBe(variant)
+  })
+
+  it('/callout lists all three variants', () => {
+    const ids = filterSlashItems(SLASH_MENU_ITEMS, 'callout').map((i) => i.id)
+    expect(ids).toEqual(['callout', 'callout-success', 'callout-danger'])
   })
 })
