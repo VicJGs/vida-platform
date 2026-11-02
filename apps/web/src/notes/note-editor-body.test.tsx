@@ -18,6 +18,8 @@ vi.mock('../db/composition-root', () => ({
 }))
 
 interface ProbeProps {
+  placeholder?: string
+  blockRenderers?: Record<string, unknown>
   onChange?: (doc: EditorDocument) => void
   onInvalidContent?: (e: Error) => void
 }
@@ -149,5 +151,19 @@ describe('NoteEditorBody — no save label of its own (notes-rescope R1, IR-R15 
     const { getByTestId, queryByRole } = renderBody(page({}))
     expect(getByTestId('editor')).not.toBeNull()
     expect(queryByRole('status')).toBeNull()
+  })
+})
+
+// LIF-354 (bullet 1) — the body Home's journal mounts tells the user how to bring in a block, and hands the editor the
+// app's live block bodies.
+describe('NoteEditorBody — LIF-354 hint + block renderers', () => {
+  it('passes "Type / for commands" as the empty-page placeholder', () => {
+    renderBody(page({ contentStatus: 'absent' }))
+    expect(probe.placeholder).toBe('Type / for commands')
+  })
+
+  it('passes the app block renderers (empty without ?testblock — no module body shipped yet)', () => {
+    renderBody(page({ contentStatus: 'absent' }))
+    expect(probe.blockRenderers).toEqual({})
   })
 })

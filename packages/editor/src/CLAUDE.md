@@ -5,6 +5,19 @@ Durable spec: LIF-88.
 Built unit-by-unit (E1→E8), each under the §XXVI double-gate + a real-browser component Visual Gate (rendered
 `@vida/ui`-consuming component).
 
+## Shipped (LIF-354 — Home journal ready for module blocks)
+
+- **`blockRenderers?: IntegrationBlockRenderers`** on `VidaEditor` (optional, additive). The app passes a live body per
+  integration type; `IntegrationBlockRenderersContext` wraps `<EditorContent>` (TipTap portals node-views inside it), and
+  `IntegrationBlockView` renders the body or the placeholder. Body props: `blockType · attrs · updateAttributes ·
+editable · selected`. No new node or attr; boundary unchanged (BR-E5-7). App side: `apps/web/src/notes/block-renderers.tsx`.
+- Slash menu: `filterSlashItems` ranks (shortcut prefix › title prefix › keyword prefix › substring) and keeps results
+  grouped by `SLASH_CATEGORY_ORDER`, so `/task` → Task checklist first and each header renders once; ↑/↓ scroll the
+  selection into view. Callout = three entries (info/success/danger, `CALLOUT_TITLE`).
+- Toolbar: sticky row; Insert offers the callout variants + `MODULE_BLOCK_ITEMS` (the slash menu's module list), inserted
+  at `selection.to` so a selected block is never replaced. Tests: the `LIF-354` describes in `toolbar`/`slash-*`/
+  `integration-blocks` tests; e2e `apps/web/e2e/home-journal-blocks.spec.ts`.
+
 ## Shipped (notes-rescope R0 — always-on content check, LIF-245)
 
 - `enableContentCheck: true` + `onContentError` in `useEditor`. A schema-rejected doc → read-only, toolbar hidden, zero

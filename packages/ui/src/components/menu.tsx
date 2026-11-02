@@ -369,7 +369,7 @@ export const Menu = forwardRef<HTMLButtonElement, MenuProps>(function Menu(
     itemEls.current[activeIndex]?.scrollIntoView?.({ block: 'nearest' }) // absent in jsdom → optional-call
   }, [isOpen, entered, activeIndex])
 
-  // ── dismiss: outside pointerdown · capture-phase scroll (nested containers) · resize ──────────────────
+  // ── dismiss: outside pointerdown · capture-phase scroll outside the panel (nested containers) · resize ──────────────────
   useEffect(() => {
     if (!isOpen) return
     const onPointerDown = (e: PointerEvent) => {
@@ -377,7 +377,12 @@ export const Menu = forwardRef<HTMLButtonElement, MenuProps>(function Menu(
       if (triggerRef.current?.contains(target) || panelRef.current?.contains(target)) return
       setOpenState(false)
     }
-    const onScroll = () => setOpenState(false)
+    // A scroll that moves the anchor dismisses; the panel's OWN overflow scroll does not (a long menu must stay
+    // scrollable — LIF-354, the 17-item editor Insert menu closed on its first wheel tick).
+    const onScroll = (e: Event) => {
+      if (e.target instanceof Node && panelRef.current?.contains(e.target)) return
+      setOpenState(false)
+    }
     const onResize = () => setOpenState(false)
     document.addEventListener('pointerdown', onPointerDown)
     window.addEventListener('scroll', onScroll, { capture: true })

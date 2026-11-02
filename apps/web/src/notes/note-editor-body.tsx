@@ -24,6 +24,10 @@ import type { NoteEntityData } from './use-note-entity'
 import { useNoteContent } from './use-note-content'
 import { copyFilename, downloadText } from './export-copy'
 import { pageLabel } from './note-chrome'
+import { blockRenderers } from './block-renderers'
+
+/** The empty-page hint (LIF-354): tells the user how to bring in a block. */
+export const EDITOR_HINT = 'Type / for commands'
 
 export interface NoteEditorBodyProps {
   page: NoteEntityData
@@ -98,6 +102,8 @@ export function NoteEditorBody({ page }: NoteEditorBodyProps) {
           chrome="bare"
           defaultValue={seed.doc ?? undefined}
           onChange={save}
+          placeholder={EDITOR_HINT}
+          blockRenderers={blockRenderers()}
           onInvalidContent={() => {
             lock() // synchronously, in the callback — no render window where a save could be armed (BR-R0-7)
             setInvalid(true)

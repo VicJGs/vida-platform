@@ -130,6 +130,12 @@ function SlashMenuImpl(props: SlashMenuProps, ref: React.ForwardedRef<SlashMenuH
     return () => dom.removeAttribute('aria-activedescendant')
   }, [editor, selectedIndex, items])
 
+  // ↑/↓ keep the selected row inside the scrolling panel (LIF-354). `nearest` scrolls only when the row is out of view.
+  useEffect(() => {
+    if (selectedIndex < 0 || typeof document === 'undefined') return
+    document.getElementById(slashOptionId(selectedIndex))?.scrollIntoView?.({ block: 'nearest' })
+  }, [selectedIndex, items])
+
   useImperativeHandle(
     ref,
     (): SlashMenuHandle => ({
