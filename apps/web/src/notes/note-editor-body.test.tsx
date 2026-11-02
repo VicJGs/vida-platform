@@ -10,6 +10,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { UIProvider } from '@vida/ui'
 import type { EditorDocument } from '@vida/types'
 import type { NoteEntityData } from './use-note-entity'
+import { TaskChecklistBlock } from '../tasks/task-checklist-block'
 
 const writeSpy = vi.fn<(id: string, doc: EditorDocument) => Promise<unknown>>()
 vi.mock('../db/composition-root', () => ({
@@ -162,8 +163,8 @@ describe('NoteEditorBody — LIF-354 hint + block renderers', () => {
     expect(probe.placeholder).toBe('Type / for commands')
   })
 
-  it('passes the app block renderers (empty without ?testblock — no module body shipped yet)', () => {
+  it('LIF-339 #1 — passes the app block renderers (the live tasks body for taskChecklist)', () => {
     renderBody(page({ contentStatus: 'absent' }))
-    expect(probe.blockRenderers).toEqual({})
+    expect(probe.blockRenderers).toEqual({ taskChecklist: TaskChecklistBlock })
   })
 })
