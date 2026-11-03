@@ -1,8 +1,8 @@
 // ============================================================================
 // TaskChecklistBlock — the live body of the task block (`taskChecklist`, LIF-339), registered in
-// ../notes/block-renderers.tsx (the editor imports no module, BR-E5-7). Reads through `useTasks(attrs)`; every write
-// goes through the tasks service (`createTask` / `completeTask` / `reopenTask`) and then invalidates the tasks query
-// (invalidate-and-reread, BR-RT-4).
+// ../notes/block-renderers.tsx (the editor imports no module, BR-E5-7). Reads through `useTasks(attrs)`; the composer,
+// alert, skeleton, empty line and copy are task-parts.tsx (shared with the /tasks route); ticks ride `useTaskWrites`.
+// Every write goes through the tasks service and then invalidates the tasks query (invalidate-and-reread, BR-RT-4).
 //
 // Terminal states (docs/features/tasks/business-rules.md "Task list"): loading (static skeleton bars), empty ("No tasks"
 // + the "New task" input is the create CTA), error (a calm message + Retry), success (one checkbox per task, named by
@@ -11,39 +11,19 @@
 // A failed create keeps the typed title in the input and says so.
 //
 // Inside TipTap: the body sits in a `contentEditable={false}` node-view. TipTap's node-view `stopEvent` already hands
-// events whose target is an <input> to the input, not ProseMirror; Enter also calls preventDefault/stopPropagation so
+// events whose target is an <input> to the input, not ProseMirror; the composer (`stopPropagation`) also stops Enter so
 // it can never split the block.
 // ============================================================================
-import { useState, type KeyboardEvent } from 'react'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import { Text, View } from '@tamagui/core'
-import { Checkbox, Input } from '@vida/ui'
+import { View } from '@tamagui/core'
+import { Checkbox } from '@vida/ui'
 import type { IntegrationBlockRendererProps } from '@vida/editor'
-import { getServices } from '../db/composition-root'
 import { ReadErrorMessage } from '../notes/read-error-message'
 import { retryState } from '../notes/read-error'
-import { TASKS_QUERY_KEY, useTasks, type TaskRow } from './use-tasks'
+import { TASK_COPY, TaskAlert, TaskComposer, TaskEmpty, TaskSkeleton } from './task-parts'
+import { useTaskWrites } from './use-task-writes'
+import { useTasks, type TaskRow } from './use-tasks'
 
-const COPY = {
-  group: 'Task checklist',
-  input: 'New task',
-  placeholder: 'Add a task and press Enter',
-  loading: 'Loading tasks',
-  empty: 'No tasks',
-  readError: 'Tasks could not be loaded.',
-  createError: 'The task was not saved. Press Enter to try again.',
-  toggleError: 'The change was not saved. Try again.',
-} as const
-
-function TaskSkeleton() {
-  return (
-    <View role="status" aria-label={COPY.loading} aria-busy="true" gap="$8">
-      {[0, 1].map((i) => (
-        <View key={i} height={20} width={180} borderRadius="$md" backgroundColor="$colorSurfacePrimary" />
-      ))}
-    </View>
-  )
-}
+const GROUP = 'Task checklist'
 
 function TaskItem({
   task,
@@ -69,56 +49,20 @@ function TaskItem({
 }
 
 export function TaskChecklistBlock({ attrs, editable }: IntegrationBlockRendererProps) {
-  const qc = useQueryClient()
   const tasks = useTasks(attrs)
   const read = retryState(tasks)
-  const [title, setTitle] = useState('')
+  const { toggle, tick, pendingDone } = useTaskWrites()
 
-  const refresh = () => qc.invalidateQueries({ queryKey: TASKS_QUERY_KEY })
-
-  const create = useMutation({
-    mutationFn: async (t: string) => (await getServices()).tasks.createTask({ title: t }),
-    onSuccess: async () => {
-      setTitle('')
-      await refresh()
-    },
-  })
-
-  const toggle = useMutation({
-    mutationFn: async ({ id, done }: { id: string; done: boolean }) => {
-      const s = await getServices()
-      return done ? s.tasks.completeTask(id) : s.tasks.reopenTask(id)
-    },
-    onSettled: refresh,
-  })
-
-  const submit = () => {
-    const t = title.trim()
-    if (t === '' || create.isPending) return
-    create.mutate(t)
-  }
-
-  const onKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
-    if (e.key !== 'Enter') return
-    e.preventDefault()
-    e.stopPropagation()
-    submit()
-  }
-
-  const onToggle = (task: TaskRow, done: boolean) => toggle.mutate({ id: task.id, done })
+  const onToggle = (task: TaskRow, done: boolean) => tick(task.id, done)
 
   const rows = tasks.data
   let body
   if (read.error) {
-    body = <ReadErrorMessage message={COPY.readError} retry={read.retry} retrying={read.retrying} />
+    body = <ReadErrorMessage message={TASK_COPY.readError} retry={read.retry} retrying={read.retrying} />
   } else if (rows === undefined) {
     body = <TaskSkeleton />
   } else if (rows.length === 0) {
-    body = (
-      <Text fontSize="$small" color="$colorTextMuted">
-        {COPY.empty}
-      </Text>
-    )
+    body = <TaskEmpty />
   } else {
     body = (
       <View gap="$8">
@@ -127,8 +71,8 @@ export function TaskChecklistBlock({ attrs, editable }: IntegrationBlockRenderer
             key={t.id}
             task={t}
             onToggle={onToggle}
-            pendingDone={toggle.isPending && toggle.variables.id === t.id ? toggle.variables.done : undefined}
-            disabled={!editable || (toggle.isPending && toggle.variables.id === t.id)}
+            pendingDone={pendingDone(t.id)}
+            disabled={!editable || pendingDone(t.id) !== undefined}
           />
         ))}
       </View>
@@ -138,7 +82,7 @@ export function TaskChecklistBlock({ attrs, editable }: IntegrationBlockRenderer
   return (
     <View
       role="group"
-      aria-label={COPY.group}
+      aria-label={GROUP}
       backgroundColor="$colorSurfaceSecondary"
       borderColor="$colorBorderDefault"
       borderWidth={1}
@@ -148,35 +92,8 @@ export function TaskChecklistBlock({ attrs, editable }: IntegrationBlockRenderer
       gap="$8"
     >
       {body}
-      {toggle.isError ? (
-        <View role="alert">
-          <Text fontSize="$small" color="$colorTextMuted">
-            {COPY.toggleError}
-          </Text>
-        </View>
-      ) : null}
-      {editable ? (
-        <Input
-          size="sm"
-          aria-label={COPY.input}
-          placeholder={COPY.placeholder}
-          value={title}
-          onChangeText={(v) => {
-            setTitle(v)
-            if (create.isError) create.reset()
-          }}
-          onKeyDown={onKeyDown}
-          invalid={create.isError}
-          aria-busy={create.isPending ? true : undefined}
-        />
-      ) : null}
-      {create.isError ? (
-        <View role="alert">
-          <Text fontSize="$small" color="$colorTextMuted">
-            {COPY.createError}
-          </Text>
-        </View>
-      ) : null}
+      {toggle.isError ? <TaskAlert>{TASK_COPY.toggleError}</TaskAlert> : null}
+      {editable ? <TaskComposer stopPropagation /> : null}
     </View>
   )
 }
