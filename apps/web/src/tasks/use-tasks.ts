@@ -6,6 +6,8 @@
 //
 // `retryOnMount: false`: the block swaps on query state, so an errored read must not re-fire on every remount; the
 // body's Retry re-reads. Writes invalidate `TASKS_QUERY_KEY` (no optimistic updates, BR-RT-4).
+//
+// LIF-389: the /tasks route reads the same hook with no attrs (all top-level tasks) and narrows it with `recentTasks`.
 // ============================================================================
 import { useQuery, type UseQueryResult } from '@tanstack/react-query'
 import type { ListTasksFilter } from '@vida/core'
@@ -27,7 +29,17 @@ export function taskFilter(attrs: Record<string, unknown>): ListTasksFilter {
   return filter
 }
 
-export function useTasks(attrs: Record<string, unknown>): UseQueryResult<TaskRow[]> {
+/** The /tasks list (LIF-389 #1, pure): newest first by `updated_at`, the first `limit`. Ties fall back to the newer
+ *  `created_at`, then the larger id (UUIDv7 is time-ordered), so the order is stable. */
+export function recentTasks(rows: readonly TaskRow[], limit = 10): TaskRow[] {
+  return [...rows]
+    .sort(
+      (a, b) => b.updated_at - a.updated_at || b.created_at - a.created_at || (a.id < b.id ? 1 : a.id > b.id ? -1 : 0),
+    )
+    .slice(0, limit)
+}
+
+export function useTasks(attrs: Record<string, unknown> = {}): UseQueryResult<TaskRow[]> {
   const filter = taskFilter(attrs)
   return useQuery({
     queryKey: [...TASKS_QUERY_KEY, filter],

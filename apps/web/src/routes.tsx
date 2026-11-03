@@ -119,6 +119,16 @@ const gamificationRoute = createRoute({
   component: lazyRouteComponent(() => import('./gamification/gamification-surface')),
 })
 
+// LIF-389 — the live /tasks route: the 10 most recently created or edited top-level tasks (lazy-split, BR-RT-8). The
+// ⌘K "Tasks" command (nav/module-map.ts `routePath: '/tasks'`) targets it. `staticData.entity` tags it for
+// check:entity-live.
+const tasksRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/tasks',
+  staticData: { entity: 'tasks' },
+  component: lazyRouteComponent(() => import('./tasks/tasks-surface')),
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   graphRoute,
@@ -129,6 +139,7 @@ const routeTree = rootRoute.addChildren([
   sessionRuntimeRoute,
   notificationsRoute,
   gamificationRoute,
+  tasksRoute,
 ])
 
 export const router = createRouter({
@@ -140,5 +151,9 @@ export const router = createRouter({
 declare module '@tanstack/react-router' {
   interface Register {
     router: typeof router
+  }
+  // LIF-389: a route may name the entity it makes live (read by tools/checks check:entity-live).
+  interface StaticDataRouteOption {
+    entity?: string
   }
 }
