@@ -43,6 +43,8 @@ Layer rules live in the `CLAUDE.md` beside the code and load when you work in th
 | `pnpm docs:index`                            | Rebuild `docs/index.json`; run after any doc unit edit                                                                                     |
 | `pnpm check:rules`                           | Rule IDs mapped to tests                                                                                                                   |
 
+**Local gate.** Run it the way the pre-push hook does, or it fails here: `PW_EXECUTABLE_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" pnpm check --concurrency=1`. On this 2-core Mac, parallel suites time out, and Playwright's bundled Chromium does not run on macOS 12 (see `apps/web/e2e/CLAUDE.md`). It takes about 20 minutes.
+
 ## Getting docs
 
 Docs are small units, each with an ID in its frontmatter: `MOD-<module>`, `FLOW-<module>-<flow>`, `ARCH-<topic>`, `ADR-NNN` and generated `REF-*` (schema, services, routes, rules). `docs/index.json` lists every unit; it is generated, never edited.
