@@ -1,0 +1,132 @@
+# Finance intent ledger: every intended, deferred or TBD Finance rule, keyed by its
+# docs/features/finance ID. proof = the built BR-S rules in current-business-rules.md;
+# work = the issue that builds the rest. check:rules derives each row's state.
+
+# Core (docs/features/finance/business-rules.md)
+- id: FN-1
+  says: Monetary values and identifying text are encrypted [E] (ZK-1); enums, currency, dates and flags stay plaintext.
+  work: LIF-67
+- id: FN-2
+  says: Money is integer cents and rates are basis points; no floats for money.
+- id: FN-3
+  says: An account balance is derived as opening_balance plus the signed ledger, never hand-edited.
+- id: FN-4
+  says: A transfer is one row with a distinct destination and is excluded from every income and expense aggregate.
+  proof: [BR-S3-3, BR-S4-3]
+- id: FN-5
+  says: Recurring transactions forecast by default; materializing real rows on the due date is opt-in and editable before confirm.
+  uses: [preferences]
+  proof: [BR-S5-1]
+  work: LIF-411
+- id: FN-6
+  says: Net worth, investment value and monthly totals are computed client-side; storing them is an opt-in the user owns.
+  uses: [preferences]
+  proof: [BR-S3-2, BR-S5-3]
+  work: LIF-411
+- id: FN-7
+  says: Net worth is the account balances plus asset values minus liability balances, in the base currency.
+  uses: [gamification, purposes]
+  proof: [BR-S3-1]
+  work: LIF-401
+- id: FN-8
+  says: Holdings keep their own currency; totals convert with device-side or manual FX rates, never fetched by the server.
+  uses: [preferences]
+  proof: [BR-S3-6, BR-S5-2]
+  work: LIF-180
+- id: FN-9
+  says: External ingestion is device-only under ADR-014 (X1/X5/X8); imports reconcile through import_staging and commit only on user confirm.
+  proof: [BR-S5-4, BR-S5-5]
+  work: LIF-143
+  open: The third-party aggregator path (a documented ZK dent) needs its own decision.
+- id: FN-10
+  says: Categories resolve to a managed list plus free-text subcategory; tags use the shared entity_tags, not inline JSON.
+  proof: [BR-S5-6, BR-S6-5]
+  work: LIF-411
+- id: FN-11
+  says: Deleting an account cascades its transactions and unlinks transfer targets and investments; soft delete hides without destroying.
+- id: FN-12
+  says: Every create, edit, import and transfer succeeds locally first; devices reconcile LWW on structured columns.
+- id: FN-13
+  says: Budgeting and liability-payment tracking are in scope but have no data model yet; no rule assumes their internals.
+  work: LIF-180
+- id: FN-14
+  says: Commitments is a management layer derived from existing entities (no table), with direction and progress to a total from the ledger.
+  uses: [calendar, journals, notifications]
+  work: LIF-180
+  open: Whether marking a flow as a commitment or a personal lending receivable needs a light marker.
+- id: FN-15
+  says: Finance owns the store tree that organizes money-holders and lockable reward-target boxes, never copying a balance.
+  uses: [gamification, purposes]
+  work: LIF-180
+- id: FN-16
+  says: Finance executes the move_money effect as an idempotent ledger movement; a penalty locks a box and never destroys money.
+  uses: [gamification]
+  proof: [BR-S4-1, BR-S4-2, BR-S4-4, BR-S4-5]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: FN-17
+  says: Finance views are the switchable dashboard, account pages with nested views, all-transactions with a timeframe page, and the all-assets, all-investments and all-liabilities pages with the liability-payment view.
+  work: LIF-180
+  open: The all-liabilities view design is TBD.
+- id: FN-18
+  says: Finance has an import and reconcile wizard screen and a bank or broker connection screen.
+  work: LIF-143
+
+# Fiscal-legal (docs/features/finance/fiscal-legal/business-rules.md)
+- id: FL-1
+  says: Fiscal-legal is a Finance sub-context that composes Finance, Projects, Purposes and Tasks, Notifications and Calendar, owning only its own situation.
+  uses: [projects, purposes, tasks, notifications, calendar]
+  proof: [BR-S7-1]
+- id: FL-2
+  says: The OS situates, tracks and models but never files; filing hands off to a professional or a third-party engine.
+  proof: [BR-S8-5]
+  work: LIF-413
+- id: FL-3
+  says: Every advisement, what-if and obligation is labeled not professional advice, and nothing on legal or tax matters auto-acts.
+  proof: [BR-S8-3, BR-S8-4]
+- id: FL-4
+  says: SITUATE (residency and money-touch) is the user's own [E] data computed on-device with no external integration.
+  proof: [BR-S7-1]
+- id: FL-5
+  says: Rule-packs come from the ADR-014 public-reference layer, device-mediated, whole-set, signed and versioned, gated by external_in_ok.
+  proof: [BR-S8-1, BR-S8-2]
+  work: LIF-146
+- id: FL-6
+  says: Obligations are derived on-device and surfaced as Tasks, Notifications and Calendar entries.
+  uses: [tasks, notifications, calendar]
+  proof: [BR-S8-3]
+  work: LIF-413
+- id: FL-7
+  says: Advise and what-if ride ADR-015 (on_device or a disclosed, scope-minimized cloud egress) and are informational only.
+  proof: [BR-S8-4]
+  work: LIF-145
+- id: FL-8
+  says: A legal entity is a Project or linked to one; personal and entity fiscal situations are tracked apart and viewable together.
+  uses: [projects]
+  proof: [BR-S7-3]
+- id: FL-9
+  says: Money-touch is a jurisdiction link on Finance entities, which stay unchanged in structure.
+  proof: [BR-S7-2]
+- id: FL-10
+  says: A modeled fiscal outcome feeds Purposes long-run planning through the ADR-011 contributions rails.
+  uses: [purposes]
+  proof: [BR-S8-6]
+  work: LIF-413
+- id: FL-11
+  says: The guarded capabilities are opt-in, revocable and fail-closed; SITUATE and TRACK work by hand without them.
+  proof: [BR-S7-4, BR-S8-3]
+- id: FL-12
+  says: Obligation derivation and what-if run on-device; a cloud advisement is the only sharing path, scope-minimized and egress-gated.
+  proof: [BR-S8-7]
+- id: FL-13
+  says: AI-authored output carries source = ai and the not-professional-advice label.
+  proof: [BR-S8-4]
+- id: FL-14
+  says: User fiscal-legal free text and amounts are [E]; rule-packs are public plaintext; codes, types, dates and FKs are structural.
+  work: LIF-67
+- id: FL-15
+  says: External and AI paths follow the ADR-014/015 grant and scope contract, with no AI4 agentic envelope and no new grant table.
+  proof: [BR-S7-4, BR-S8-1, BR-S8-4]
+# Proposed ID, no ID in docs/features today (approve in the PR)
+- id: FL-16
+  says: Fiscal-legal has a UI surface; none exists or was planned.
+  work: LIF-412

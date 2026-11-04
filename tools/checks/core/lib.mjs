@@ -11,6 +11,10 @@ export const DEFAULTS = {
   adrDirs: ["docs/decisions", ".adr"],
   ruleId: "RULE-[A-Z]+-\\d+",
   rulesBaseline: "tools/checks/rules-baseline.txt",
+  intentId: "[A-Z]+-\\d+",
+  intentLedger: "docs/modules/<module>/intent.yaml",
+  intentTests: {}, // module → test path prefixes; an unlisted module uses <src>/<module>
+  features: "docs/features",
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
 };

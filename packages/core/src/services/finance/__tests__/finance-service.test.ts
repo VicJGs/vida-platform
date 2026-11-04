@@ -377,7 +377,7 @@ describe('mod-finance S3 — derived analytics', () => {
 
   // ── getOverview (FIN-17) ──────────────────────────────────────────
   describe('getOverview (FIN-17)', () => {
-    it('netWorth = FN-7 simple sum; monthly totals EXCLUDE transfers (FN-12); clean path partial:false', async () => {
+    it('netWorth = FN-7 simple sum; monthly totals EXCLUDE transfers (FN-4); clean path partial:false', async () => {
       const a = await h.svc.createAccount({
         name: 'A',
         account_type: 'checking',
@@ -1098,7 +1098,7 @@ describe('mod-finance S7 — fiscal-legal SITUATE', () => {
   })
 
   // ── FL-10 typed-error contract (the name IS the contract) ─────────
-  it('FL-10 error classes carry their contract name', () => {
+  it('BR-S7-5 error classes carry their contract name', () => {
     expect(new RulePackUnverified('x').name).toBe('RulePackUnverified')
     expect(new ExternalGrantMissing('x').name).toBe('ExternalGrantMissing')
     expect(new AdviceIsInformational('x').name).toBe('AdviceIsInformational')

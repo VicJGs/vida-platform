@@ -6,7 +6,7 @@
 // Usage: node one-way-door.mjs [--base <ref>]   (default origin/main, else main)
 import { spawnSync } from "node:child_process";
 import { existsSync, readFileSync } from "node:fs";
-import { config, report, walk } from "./lib.mjs";
+import { config, DEFAULTS, report, walk } from "./lib.mjs";
 
 const cfg = config();
 const git = (...args) => spawnSync("git", args, { encoding: "utf8" });
@@ -17,11 +17,19 @@ if (!base) report("check:one-way-door", ["no base ref: pass --base <ref>"]);
 
 const lines = (out) => out.split(/\r?\n/).filter(Boolean);
 const under = (p, d) => `/${p}`.includes(`/${d}`);
-const isDoor = (p) => cfg.oneWayDoor.some((d) => under(p, d));
-// A door path that matches no tracked file guards nothing, whatever the diff.
-const tracked = lines(git("ls-files").stdout);
-const unguarded = cfg.oneWayDoor.filter((d) => !tracked.some((p) => under(p, d)))
-  .map((d) => `check:one-way-door: ${d} matches no tracked file; set "checks".oneWayDoor`);
+// config() keeps the DEFAULTS array when the repo sets no "checks".oneWayDoor.
+const configured = cfg.oneWayDoor !== DEFAULTS.oneWayDoor;
+// The default doors match any path segment, so they skip the docs root (docs/x/sync/
+// is prose, not a door). Doors the repo sets match as written.
+const isDoor = (p) => (configured || !under(p, `${cfg.docs}/`)) && cfg.oneWayDoor.some((d) => under(p, d));
+// A door that matches no tracked file guards nothing, whatever the diff. A configured
+// door fails on its own (likely a typo); the defaults fail only when none matches.
+const tracked = lines(git("ls-files").stdout).filter(isDoor);
+const unguarded = configured
+  ? cfg.oneWayDoor.filter((d) => !tracked.some((p) => under(p, d)))
+    .map((d) => `check:one-way-door: ${d} matches no tracked file; set "checks".oneWayDoor`)
+  : tracked.length ? []
+  : [`check:one-way-door: no default door (${cfg.oneWayDoor.join(", ")}) matches a tracked file outside ${cfg.docs}/; set "checks".oneWayDoor`];
 const changed = lines(git("diff", "--name-only", `${base}...HEAD`).stdout);
 const doors = changed.filter(isDoor);
 if (!doors.length) report(`check:one-way-door (${changed.length} files changed since ${base}, none one-way)`, unguarded);

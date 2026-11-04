@@ -20,6 +20,7 @@
     "storybook": "pnpm --filter @vida/ui storybook",
     "clean": "turbo run clean && rm -rf node_modules",
     "docs:index": "node tools/checks/core/docs-index.mjs",
+    "docs:intent": "node tools/checks/core/intent-units.mjs",
     "docs:inventory": "node tools/scripts/doc-inventory.ts",
     "check:docs": "node tools/checks/core/docs.mjs",
     "check:rules": "node tools/checks/core/rules.mjs",
@@ -39,6 +40,12 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC)-\\d+",
+    "intentTests": {
+      "finance": [
+        "packages/core/src/services/finance"
+      ]
+    },
     "adrDirs": [
       "docs/core/decisions",
       ".adr"
