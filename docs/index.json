@@ -234,7 +234,7 @@
         "docs/modules/finance/intent.yaml",
         "packages/core/src/services/finance/__tests__/finance-service.test.ts"
       ],
-      "tokens": 77,
+      "tokens": 79,
       "path": "docs/modules/finance/intent/FN-10.md"
     },
     {
@@ -420,7 +420,7 @@
         "docs/modules/finance/intent.yaml",
         "packages/core/src/services/finance/__tests__/finance-service.test.ts"
       ],
-      "tokens": 76,
+      "tokens": 77,
       "path": "docs/modules/finance/intent/FN-7.md"
     },
     {
@@ -456,7 +456,7 @@
       "module": "finance",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of finance: 34 rows, 5 tested, 2 partly tested, 27 intent only.",
+      "summary": "Intended rules of finance: 34 rows, 3 tested, 4 partly tested, 27 intent only.",
       "anchors": [
         "docs/modules/finance/intent.yaml"
       ],
@@ -464,365 +464,365 @@
       "path": "docs/modules/finance/intent.md"
     },
     {
-      "id": "INTENT-notes-and-pages",
+      "id": "INTENT-notes",
       "kind": "intent",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of notes-and-pages: 26 rows, 7 tested, 1 partly tested, 18 intent only.",
+      "summary": "Intended rules of notes: 26 rows, 6 tested, 2 partly tested, 18 intent only.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 136,
-      "path": "docs/modules/notes-and-pages/intent.md"
+      "tokens": 131,
+      "path": "docs/modules/notes/intent.md"
     },
     {
       "id": "NP-1",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "No inline notes columns, ever; every note for any entity is a pages row addressed by entity_type and entity_id.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 64,
-      "path": "docs/modules/notes-and-pages/intent/NP-1.md"
+      "tokens": 61,
+      "path": "docs/modules/notes/intent/NP-1.md"
     },
     {
       "id": "NP-10",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Every page type is editor-capable; the page surface gates on page type, never on the ENTITY_TYPES registry.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 57,
-      "path": "docs/modules/notes-and-pages/intent/NP-10.md"
+      "tokens": 54,
+      "path": "docs/modules/notes/intent/NP-10.md"
     },
     {
       "id": "NP-11",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "A rename is a metadata edit through updatePage; links are unaffected, with no optimistic patching.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 60,
-      "path": "docs/modules/notes-and-pages/intent/NP-11.md"
+      "tokens": 57,
+      "path": "docs/modules/notes/intent/NP-11.md"
     },
     {
       "id": "NP-12",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Page templates are live layouts; applying forks a saved layout into a new page, and capture takes authored structure only, never accumulated data.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 91,
-      "path": "docs/modules/notes-and-pages/intent/NP-12.md"
+      "tokens": 88,
+      "path": "docs/modules/notes/intent/NP-12.md"
     },
     {
       "id": "NP-13",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Notes stores summary_config only; the /summary sections come from the Journals engine, each degrades alone, and the full personalizable section menu is intended (G5).",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 102,
-      "path": "docs/modules/notes-and-pages/intent/NP-13.md"
+      "tokens": 100,
+      "path": "docs/modules/notes/intent/NP-13.md"
     },
     {
       "id": "NP-14",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Inline blocks are ADR-008 capability-registry entries; the palette offers the page's Spaces' capabilities plus the editor base, /summary, /entity-link and /backlink get bodies, and the rest stay honest placeholders.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 119,
-      "path": "docs/modules/notes-and-pages/intent/NP-14.md"
+      "tokens": 116,
+      "path": "docs/modules/notes/intent/NP-14.md"
     },
     {
       "id": "NP-15",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "The [[ candidates are every OS entity that is a page, binding page_links for a page and entity_links for an entity; hovering a link shows a title and type preview card.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 80,
-      "path": "docs/modules/notes-and-pages/intent/NP-15.md"
+      "tokens": 77,
+      "path": "docs/modules/notes/intent/NP-15.md"
     },
     {
       "id": "NP-16",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "A page's attachments upload as a blob with a lazy thumbnail, and the page lists its live attachments.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 82,
-      "path": "docs/modules/notes-and-pages/intent/NP-16.md"
+      "tokens": 81,
+      "path": "docs/modules/notes/intent/NP-16.md"
     },
     {
       "id": "NP-17",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "The /notes collection lists note pages that are not archived, in List, Gallery and Neural layouts; layout, filter and sort persist in a global ADR-007 views row, and tags filter the list.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 86,
-      "path": "docs/modules/notes-and-pages/intent/NP-17.md"
+      "tokens": 84,
+      "path": "docs/modules/notes/intent/NP-17.md"
     },
     {
       "id": "NP-18",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Card data is derived client-side; the excerpt comes from the decrypted content, the row date is journal_date or else the local day of updated_at, and word_count is derived.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 89,
-      "path": "docs/modules/notes-and-pages/intent/NP-18.md"
+      "tokens": 87,
+      "path": "docs/modules/notes/intent/NP-18.md"
     },
     {
       "id": "NP-19",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "The /pomodoro block launches a Sessions focus timer and the page links to that session.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 60,
-      "path": "docs/modules/notes-and-pages/intent/NP-19.md"
+      "tokens": 58,
+      "path": "docs/modules/notes/intent/NP-19.md"
     },
     {
       "id": "NP-2",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "One journal per calendar date among live rows, the user's local day; a second one is a typed JournalExistsError, never an overwrite.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 74,
-      "path": "docs/modules/notes-and-pages/intent/NP-2.md"
+      "tokens": 71,
+      "path": "docs/modules/notes/intent/NP-2.md"
     },
     {
       "id": "NP-20",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Each page type has its own Overview; note shows properties, attachments and backlinks, journal is the daily dashboard the Journals module owns, and merged mode renders the same sections as one page.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 88,
-      "path": "docs/modules/notes-and-pages/intent/NP-20.md"
+      "tokens": 85,
+      "path": "docs/modules/notes/intent/NP-20.md"
     },
     {
       "id": "NP-21",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "The task_note and task_group_note Overviews ride fe-tasks through the Overview registry.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 60,
-      "path": "docs/modules/notes-and-pages/intent/NP-21.md"
+      "tokens": 57,
+      "path": "docs/modules/notes/intent/NP-21.md"
     },
     {
       "id": "NP-22",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "The milestone_note and deliverable_note Overviews ride fe-projects through the Overview registry.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 63,
-      "path": "docs/modules/notes-and-pages/intent/NP-22.md"
+      "tokens": 60,
+      "path": "docs/modules/notes/intent/NP-22.md"
     },
     {
       "id": "NP-23",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Merged or tabbed mode is remembered per page on this device in app_state, with per-type defaults; a mere open never writes.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 61,
-      "path": "docs/modules/notes-and-pages/intent/NP-23.md"
+      "tokens": 58,
+      "path": "docs/modules/notes/intent/NP-23.md"
     },
     {
       "id": "NP-24",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Favorite and archive are booleans, the icon is a Lucide name, and the cover is an http(s) image URL or one of the page's attachments.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 63,
-      "path": "docs/modules/notes-and-pages/intent/NP-24.md"
+      "tokens": 61,
+      "path": "docs/modules/notes/intent/NP-24.md"
     },
     {
       "id": "NP-25",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Full-text search is FTS5 over decrypted content, rebuilt on unlock, with no plaintext mirror; until indexed the surface says search is unavailable.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 81,
-      "path": "docs/modules/notes-and-pages/intent/NP-25.md"
+      "tokens": 79,
+      "path": "docs/modules/notes/intent/NP-25.md"
     },
     {
       "id": "NP-26",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Backlinks merge page links and entity links grouped by source module, and the neural graph renders the link graph, honestly empty while its data prep is deferred.",
       "anchors": [
         "apps/web/src/notes/backlinks.test.ts",
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 90,
-      "path": "docs/modules/notes-and-pages/intent/NP-26.md"
+      "tokens": 88,
+      "path": "docs/modules/notes/intent/NP-26.md"
     },
     {
       "id": "NP-3",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Page title, content, cover and summary_config, link context and attachment files and thumbnails are encrypted client-side [E]; M1 is a pass-through.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 71,
-      "path": "docs/modules/notes-and-pages/intent/NP-3.md"
+      "tokens": 68,
+      "path": "docs/modules/notes/intent/NP-3.md"
     },
     {
       "id": "NP-4",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Editor content has its own write path (writePageContent), never the LWW metadata patch, and merges as a per-page Yjs CRDT at sync (M4).",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 78,
-      "path": "docs/modules/notes-and-pages/intent/NP-4.md"
+      "tokens": 75,
+      "path": "docs/modules/notes/intent/NP-4.md"
     },
     {
       "id": "NP-5",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Page links and entity links are unique and id-based; re-linking is an idempotent no-op or a revive.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 64,
-      "path": "docs/modules/notes-and-pages/intent/NP-5.md"
+      "tokens": 61,
+      "path": "docs/modules/notes/intent/NP-5.md"
     },
     {
       "id": "NP-6",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Entity links and entity notes target a registered type in the open ADR-006 registry, validated in-service (UnregisteredEntityTypeError).",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 77,
-      "path": "docs/modules/notes-and-pages/intent/NP-6.md"
+      "tokens": 75,
+      "path": "docs/modules/notes/intent/NP-6.md"
     },
     {
       "id": "NP-7",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Wiki-links resolve by page id, never by text or slug; the [[ picker binds a concrete target_page_id, so links survive renames and title clashes.",
       "anchors": [
         "apps/web/src/notes/wikilink.test.ts",
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 77,
-      "path": "docs/modules/notes-and-pages/intent/NP-7.md"
+      "tokens": 74,
+      "path": "docs/modules/notes/intent/NP-7.md"
     },
     {
       "id": "NP-8",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "Entity notes auto-exist with their parent entity and are never blank, seeded deterministically client-side from the parent's fields.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml",
+        "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 78,
-      "path": "docs/modules/notes-and-pages/intent/NP-8.md"
+      "tokens": 76,
+      "path": "docs/modules/notes/intent/NP-8.md"
     },
     {
       "id": "NP-9",
       "kind": "intent-row",
-      "module": "notes-and-pages",
+      "module": "notes",
       "status": "active",
       "supersedes": [],
       "summary": "A user delete is a soft delete with undo and a notes-scoped Trash kept 30 days; hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.",
       "anchors": [
-        "docs/modules/notes-and-pages/intent.yaml"
+        "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 98,
-      "path": "docs/modules/notes-and-pages/intent/NP-9.md"
+      "tokens": 96,
+      "path": "docs/modules/notes/intent/NP-9.md"
     }
   ]
 }

@@ -3,8 +3,9 @@
 // the rows and reports each one as tested, partly tested or intent only. intent-units.mjs
 // writes one unit per row (its ID is the row's, in <ledger dir>/intent/, a folder the
 // generator owns) plus the INTENT-<module> map beside the ledger; check:docs fails when
-// one is missing, stale or orphaned, and guards rows whose docs/features/<module> aspect
-// files are gone.
+// one is missing, stale or orphaned, and guards rows once all the module's features folders
+// are gone: "checks".intentFeatures (module → folders under "checks".features; default
+// <module>), since one module's aspect files can sit in several differently named folders.
 //
 // Proof is scoped: a row counts only tests under its module's paths, "checks".intentTests
 // (module → path prefixes; default <src>/<module>), since rule IDs can repeat across modules.
@@ -13,7 +14,8 @@
 // question; needs `work`) · `uses` (modules or substrates it connects to) · `proof` (built rule IDs,
 // matching "checks".ruleId) · `work` (a Linear issue, e.g. LIF-12). There is no status
 // field: a row is tested when a test is named with its own ID, or when every proof ID has a
-// test named with it, counting only tests under the module's paths.
+// test named with it, counting only tests under the module's paths. A row with `work` is at
+// most partly tested, since part of what it says is not built yet.
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { CODE_FILE, TEST_FILE, exists, read, root, walk } from "./lib.mjs";
@@ -116,10 +118,11 @@ export const skipped = (all) => (f) => all.some((l) => f === l.path || f === l.u
 
 // A row's state from its module's scoped tests (scope()).
 export function state(row, { tests, named }) {
-  if (named.has(row.fields.id)) return "tested";
+  const tested = row.fields.work ? "partly tested" : "tested";
+  if (named.has(row.fields.id)) return tested;
   const proof = [row.fields.proof ?? []].flat();
   const done = proof.filter((p) => tests.has(p)).length;
-  return !proof.length || !done ? "intent only" : done === proof.length ? "tested" : "partly tested";
+  return !proof.length || !done ? "intent only" : done === proof.length ? tested : "partly tested";
 }
 
 // Malformed rows, unknown proof IDs, IDs used twice and missing test paths, across all
@@ -201,12 +204,16 @@ const unit = ({ id, kind, module, summary, anchors }, body) => [
   `summary: "${summary}"`, `anchors: [${[...new Set(anchors)].sort().join(", ")}]`, `tokens: ${tokens(body)}`, "generated: true", "---", body,
 ].join("\n");
 
-// The archive guard: once docs/features/<module> is gone, a row must be tested, named in
-// the module's MOD or FLOW units, or linked to work; otherwise its intent is lost.
+// A module's features folders: "checks".intentFeatures[module] under <features>, default <module>.
+const featurePaths = (cfg, module) => [cfg.intentFeatures?.[module] ?? module].flat().map((f) => `${cfg.features}/${f.replace(/\/$/, "")}`);
+
+// The archive guard: once every features folder of the module is gone, a row must be tested,
+// named in the module's MOD or FLOW units, or linked to work; otherwise its intent is lost.
 export function guard(cfg, all, units, found) {
   const out = [];
   for (const l of all) {
-    if (exists(`${cfg.features}/${l.module}`)) continue;
+    const folders = featurePaths(cfg, l.module);
+    if (folders.some(exists)) continue;
     const mentions = units
       .filter((u) => u.fm?.status === "active" && (u.fm.id === `MOD-${l.module}` || u.fm.id?.startsWith(`FLOW-${l.module}-`)))
       .map((u) => u.body).join("\n");
@@ -214,7 +221,7 @@ export function guard(cfg, all, units, found) {
     for (const { line, fields } of l.rows) {
       if (typeof fields.id !== "string" || fields.work || state({ fields }, scoped) === "tested") continue;
       if (new RegExp(`\\b${fields.id.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}\\b`).test(mentions)) continue;
-      out.push(`${l.path}:${line}: archive guard, ${fields.id} has no tested proof, no mention in MOD-${l.module} or FLOW-${l.module}-*, and no work link, and ${cfg.features}/${l.module} is gone; add one`);
+      out.push(`${l.path}:${line}: archive guard, ${fields.id} has no tested proof, no mention in MOD-${l.module} or FLOW-${l.module}-*, and no work link, and ${folders.join(", ")} ${folders.length > 1 ? "are" : "is"} gone; add one`);
     }
   }
   return out;
