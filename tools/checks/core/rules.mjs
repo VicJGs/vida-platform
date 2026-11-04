@@ -3,35 +3,20 @@
 // IDs listed in the "checks".rulesBaseline file are known to lack a test; the list only
 // shrinks: a listed ID that gains a test fails until its line is removed.
 // `--write-baseline` writes the current untested IDs to that file, once, on adoption.
+// It also reads the intent ledgers (intent.mjs): each row is reported as tested, partly
+// tested or intent only, counting only tests under the module's "checks".intentTests paths,
+// and a malformed row, a reused ID, an unknown proof ID or a missing test path fails.
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { CODE_FILE, TEST_FILE, config, exists, read, report, root, walk } from "./lib.mjs";
+import { config, exists, read, report, root } from "./lib.mjs";
+import { ledgers, problems, ruleMap, scope, skipped, state } from "./intent.mjs";
 
 const cfg = config();
-const id = new RegExp(`\\b${cfg.ruleId}\\b`, "g");
-const repo = walk(".").map((f) => f.slice(2)).filter((f) => !f.startsWith(".claude/worktrees/"));
-const under = (dir) => (f) => dir === "." || f.startsWith(`${dir}/`);
+const intent = ledgers(cfg);
+const map = ruleMap(cfg, skipped(intent));
+const { stated, tests } = map;
 
-// Where each rule ID is stated: any docs file, or a comment in non-test code under src.
-const stated = new Map();
-const note = (rule, where) => stated.has(rule) || stated.set(rule, where);
-for (const path of repo.filter((p) => !TEST_FILE.test(p) && (under(cfg.src)(p) || under(cfg.docs)(p)))) {
-  const text = read(path);
-  const scope = under(cfg.docs)(path) ? text
-    : CODE_FILE.test(path) ? (text.match(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g) ?? []).join("\n")
-    : "";
-  for (const [rule] of scope.matchAll(id)) note(rule, path);
-}
-
-// Test names, from test files anywhere in the repo: the title string of it(), test() or
-// describe(), modifiers included.
-const tested = new Set();
-const title = /\b(?:it|test|describe)(?:\.\w+)*\(\s*(["'`])((?:(?!\1)[^\\]|\\.)*)\1/g;
-for (const path of repo.filter((p) => TEST_FILE.test(p) && CODE_FILE.test(p))) {
-  for (const [, , name] of read(path).matchAll(title)) for (const [rule] of name.matchAll(id)) tested.add(rule);
-}
-
-const untested = [...stated].filter(([rule]) => !tested.has(rule));
+const untested = [...stated].filter(([rule]) => !tests.has(rule));
 if (process.argv.includes("--write-baseline")) {
   mkdirSync(dirname(join(root, cfg.rulesBaseline)), { recursive: true });
   writeFileSync(join(root, cfg.rulesBaseline), untested.map(([rule]) => `${rule}\n`).sort().join(""));
@@ -45,8 +30,17 @@ if (exists(cfg.rulesBaseline)) {
 
 const findings = [
   ...untested.filter(([rule]) => !baseline.has(rule)).map(([rule, where]) => `${rule} (stated in ${where}) has no test named with it`),
-  ...[...baseline].filter(([rule]) => tested.has(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
+  ...[...baseline].filter(([rule]) => tests.has(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
+  ...problems(cfg, intent, map),
 ];
 if (!stated.size) findings.push(`check:rules: no rule ID matching ${cfg.ruleId} stated in ${cfg.docs}/ or code comments; set "checks".ruleId`);
 const baselined = untested.filter(([rule]) => baseline.has(rule)).length;
-report(`check:rules (${stated.size} rule IDs, ${tested.size} tested, ${baselined} baselined)`, findings);
+
+const rows = intent.flatMap((l) => {
+  const scoped = scope(cfg, l, map);
+  return l.rows.filter((r) => typeof r.fields.id === "string").map((r) => ({ l, r, s: state(r, scoped) }));
+});
+const notes = rows.map(({ l, r, s }) => `INTENT-${l.module} ${r.fields.id}: ${s}`);
+const count = (s) => rows.filter((x) => x.s === s).length;
+const intentPart = intent.length ? `; ${rows.length} intent rows: ${count("tested")} tested, ${count("partly tested")} partly tested, ${count("intent only")} intent only` : "";
+report(`check:rules (${stated.size} rule IDs, ${tests.size} tested, ${baselined} baselined${intentPart})`, findings, notes);

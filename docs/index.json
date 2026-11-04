@@ -1,4 +1,467 @@
 {
   "generated": "node tools/checks/core/docs-index.mjs; do not edit",
-  "units": []
+  "units": [
+    {
+      "id": "FL-1",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Fiscal-legal is a Finance sub-context that composes Finance, Projects, Purposes and Tasks, Notifications and Calendar, owning only its own situation.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/finance/intent/FL-1.md"
+    },
+    {
+      "id": "FL-10",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A modeled fiscal outcome feeds Purposes long-run planning through the ADR-011 contributions rails.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/finance/intent/FL-10.md"
+    },
+    {
+      "id": "FL-11",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The guarded capabilities are opt-in, revocable and fail-closed; SITUATE and TRACK work by hand without them.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/finance/intent/FL-11.md"
+    },
+    {
+      "id": "FL-12",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Obligation derivation and what-if run on-device; a cloud advisement is the only sharing path, scope-minimized and egress-gated.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/finance/intent/FL-12.md"
+    },
+    {
+      "id": "FL-13",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "AI-authored output carries source = ai and the not-professional-advice label.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/finance/intent/FL-13.md"
+    },
+    {
+      "id": "FL-14",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "User fiscal-legal free text and amounts are [E]; rule-packs are public plaintext; codes, types, dates and FKs are structural.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/finance/intent/FL-14.md"
+    },
+    {
+      "id": "FL-15",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "External and AI paths follow the ADR-014/015 grant and scope contract, with no AI4 agentic envelope and no new grant table.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/finance/intent/FL-15.md"
+    },
+    {
+      "id": "FL-16",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Fiscal-legal has a UI surface; none exists or was planned.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 47,
+      "path": "docs/modules/finance/intent/FL-16.md"
+    },
+    {
+      "id": "FL-2",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The OS situates, tracks and models but never files; filing hands off to a professional or a third-party engine.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/finance/intent/FL-2.md"
+    },
+    {
+      "id": "FL-3",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every advisement, what-if and obligation is labeled not professional advice, and nothing on legal or tax matters auto-acts.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/finance/intent/FL-3.md"
+    },
+    {
+      "id": "FL-4",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "SITUATE (residency and money-touch) is the user's own [E] data computed on-device with no external integration.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/finance/intent/FL-4.md"
+    },
+    {
+      "id": "FL-5",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Rule-packs come from the ADR-014 public-reference layer, device-mediated, whole-set, signed and versioned, gated by external_in_ok.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/finance/intent/FL-5.md"
+    },
+    {
+      "id": "FL-6",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Obligations are derived on-device and surfaced as Tasks, Notifications and Calendar entries.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/finance/intent/FL-6.md"
+    },
+    {
+      "id": "FL-7",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Advise and what-if ride ADR-015 (on_device or a disclosed, scope-minimized cloud egress) and are informational only.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/finance/intent/FL-7.md"
+    },
+    {
+      "id": "FL-8",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A legal entity is a Project or linked to one; personal and entity fiscal situations are tracked apart and viewable together.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/finance/intent/FL-8.md"
+    },
+    {
+      "id": "FL-9",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Money-touch is a jurisdiction link on Finance entities, which stay unchanged in structure.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/finance/intent/FL-9.md"
+    },
+    {
+      "id": "FN-1",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Monetary values and identifying text are encrypted [E] (ZK-1); enums, currency, dates and flags stay plaintext.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/finance/intent/FN-1.md"
+    },
+    {
+      "id": "FN-10",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Categories resolve to a managed list plus free-text subcategory; tags use the shared entity_tags, not inline JSON.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/finance/intent/FN-10.md"
+    },
+    {
+      "id": "FN-11",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting an account cascades its transactions and unlinks transfer targets and investments; soft delete hides without destroying.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 60,
+      "path": "docs/modules/finance/intent/FN-11.md"
+    },
+    {
+      "id": "FN-12",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every create, edit, import and transfer succeeds locally first; devices reconcile LWW on structured columns.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/finance/intent/FN-12.md"
+    },
+    {
+      "id": "FN-13",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Budgeting and liability-payment tracking are in scope but have no data model yet; no rule assumes their internals.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/finance/intent/FN-13.md"
+    },
+    {
+      "id": "FN-14",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Commitments is a management layer derived from existing entities (no table), with direction and progress to a total from the ledger.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/finance/intent/FN-14.md"
+    },
+    {
+      "id": "FN-15",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finance owns the store tree that organizes money-holders and lockable reward-target boxes, never copying a balance.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/finance/intent/FN-15.md"
+    },
+    {
+      "id": "FN-16",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finance executes the move_money effect as an idempotent ledger movement; a penalty locks a box and never destroys money.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/finance/intent/FN-16.md"
+    },
+    {
+      "id": "FN-17",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finance views are the switchable dashboard, account pages with nested views, all-transactions with a timeframe page, and the all-assets, all-investments and all-liabilities pages with the liability-payment view.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/finance/intent/FN-17.md"
+    },
+    {
+      "id": "FN-18",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finance has an import and reconcile wizard screen and a bank or broker connection screen.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/finance/intent/FN-18.md"
+    },
+    {
+      "id": "FN-2",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Money is integer cents and rates are basis points; no floats for money.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 45,
+      "path": "docs/modules/finance/intent/FN-2.md"
+    },
+    {
+      "id": "FN-3",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An account balance is derived as opening_balance plus the signed ledger, never hand-edited.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/finance/intent/FN-3.md"
+    },
+    {
+      "id": "FN-4",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A transfer is one row with a distinct destination and is excluded from every income and expense aggregate.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/finance/intent/FN-4.md"
+    },
+    {
+      "id": "FN-5",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Recurring transactions forecast by default; materializing real rows on the due date is opt-in and editable before confirm.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/finance/intent/FN-5.md"
+    },
+    {
+      "id": "FN-6",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Net worth, investment value and monthly totals are computed client-side; storing them is an opt-in the user owns.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/finance/intent/FN-6.md"
+    },
+    {
+      "id": "FN-7",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Net worth is the account balances plus asset values minus liability balances, in the base currency.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/finance/intent/FN-7.md"
+    },
+    {
+      "id": "FN-8",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Holdings keep their own currency; totals convert with device-side or manual FX rates, never fetched by the server.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/finance/intent/FN-8.md"
+    },
+    {
+      "id": "FN-9",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "External ingestion is device-only under ADR-014 (X1/X5/X8); imports reconcile through import_staging and commit only on user confirm.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml",
+        "packages/core/src/services/finance/__tests__/finance-service.test.ts"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/finance/intent/FN-9.md"
+    },
+    {
+      "id": "INTENT-finance",
+      "kind": "intent",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of finance: 34 rows, 5 tested, 2 partly tested, 27 intent only.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 139,
+      "path": "docs/modules/finance/intent.md"
+    }
+  ]
 }

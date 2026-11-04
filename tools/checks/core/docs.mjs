@@ -7,6 +7,7 @@ import { spawnSync } from "node:child_process";
 import { readdirSync } from "node:fs";
 import { config, exists, read, report, root, walk } from "./lib.mjs";
 import { ABSTRACT_MAX, BODY_MAX, REQUIRED, buildIndex, linksOf, serialize, tokens, unquote, units as load } from "./units.mjs";
+import { generate, guard, ledgers, ruleMap, skipped } from "./intent.mjs";
 
 const FORBIDDEN_HEADING = /^#{1,6}\s+(status|steps|next steps|history|changelog|progress|todo)\b/i;
 
@@ -138,6 +139,26 @@ for (const a of allow) {
   else if (!a.refs) findings.push(`check:docs: "checks".archiveAllow ${a.path} has no archive references left; remove the entry`);
 }
 const allowNotes = allow.filter((a) => a.refs).map((a) => `rule 10 allowlisted ${a.path} (${a.refs} archive references): ${a.why}`);
+
+// Rule 5 for intent: every unit generated from a ledger (one per row, plus the
+// INTENT-<module> map) exists and is current, no intent unit lacks its ledger row, and the
+// archive guard holds (intent.mjs).
+const intent = ledgers(cfg);
+const intentUnit = (u) => /^intent(-row)?$/.test(u.fm?.kind ?? "") || /^INTENT-/.test(u.fm?.id ?? "") || intent.some((l) => u.path.startsWith(l.rowDir));
+if (intent.length || units.some(intentUnit)) {
+  const map = ruleMap(cfg, skipped(intent));
+  const expected = new Map(intent.flatMap((l) => [...generate(cfg, l, map)]));
+  const run = "run node tools/checks/core/intent-units.mjs";
+  for (const [path, text] of expected) {
+    const id = text.match(/^id: (.+)$/m)[1];
+    if (!exists(path)) findings.push(`${path}: rule 5, ${id} missing; ${run}`);
+    else if (read(path).replace(/\r\n/g, "\n") !== text) findings.push(`${path}: rule 5, ${id} stale; ${run}`);
+  }
+  for (const u of units.filter((u) => intentUnit(u) && !expected.has(u.path))) {
+    findings.push(`${u.path}: rule 5, ${u.fm?.id ?? "this unit"} is generated from no ledger row (${cfg.intentLedger}); ${run}`);
+  }
+  findings.push(...guard(cfg, intent, units, map));
+}
 
 // Rule 10: agents fetch through get_context, which reads only the generated index.
 const index = serialize(buildIndex(units));
