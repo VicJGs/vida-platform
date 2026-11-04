@@ -234,7 +234,7 @@
         "docs/modules/finance/intent.yaml",
         "packages/core/src/services/finance/__tests__/finance-service.test.ts"
       ],
-      "tokens": 77,
+      "tokens": 79,
       "path": "docs/modules/finance/intent/FN-10.md"
     },
     {
@@ -420,7 +420,7 @@
         "docs/modules/finance/intent.yaml",
         "packages/core/src/services/finance/__tests__/finance-service.test.ts"
       ],
-      "tokens": 76,
+      "tokens": 77,
       "path": "docs/modules/finance/intent/FN-7.md"
     },
     {
@@ -456,7 +456,7 @@
       "module": "finance",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of finance: 34 rows, 5 tested, 2 partly tested, 27 intent only.",
+      "summary": "Intended rules of finance: 34 rows, 3 tested, 4 partly tested, 27 intent only.",
       "anchors": [
         "docs/modules/finance/intent.yaml"
       ],
@@ -469,7 +469,7 @@
       "module": "notes-and-pages",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of notes-and-pages: 26 rows, 7 tested, 1 partly tested, 18 intent only.",
+      "summary": "Intended rules of notes-and-pages: 26 rows, 6 tested, 2 partly tested, 18 intent only.",
       "anchors": [
         "docs/modules/notes-and-pages/intent.yaml"
       ],
@@ -579,7 +579,7 @@
         "docs/modules/notes-and-pages/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 82,
+      "tokens": 84,
       "path": "docs/modules/notes-and-pages/intent/NP-16.md"
     },
     {

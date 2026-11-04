@@ -6,10 +6,10 @@ status: active
 supersedes: []
 summary: "Net worth is the account balances plus asset values minus liability balances, in the base currency."
 anchors: [docs/modules/finance/intent.yaml, packages/core/src/services/finance/__tests__/finance-service.test.ts]
-tokens: 76
+tokens: 77
 generated: true
 ---
-# FN-7 (tested)
+# FN-7 (partly tested)
 
 Net worth is the account balances plus asset values minus liability balances, in the base currency.
 

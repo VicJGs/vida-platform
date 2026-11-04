@@ -15,6 +15,7 @@ export const DEFAULTS = {
   intentLedger: "docs/modules/<module>/intent.yaml",
   intentTests: {}, // module → test path prefixes; an unlisted module uses <src>/<module>
   features: "docs/features",
+  intentFeatures: {}, // module → folders under features; an unlisted module uses <module>
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
 };
