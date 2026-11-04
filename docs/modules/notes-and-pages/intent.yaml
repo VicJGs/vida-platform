@@ -1,0 +1,108 @@
+# Notes & Pages intent ledger: every intended, deferred or TBD Notes & Pages rule, keyed by
+# its docs/features/notes-and-pages ID. proof = the built rules in
+# docs/modules/notes/current-business-rules.md; work = the issue that builds the rest.
+# check:rules derives each row's state.
+
+# Invariants (docs/features/notes-and-pages/business-rules.md)
+- id: NP-1
+  says: No inline notes columns, ever; every note for any entity is a pages row addressed by entity_type and entity_id.
+  proof: [BR-13]
+- id: NP-2
+  says: One journal per calendar date among live rows, the user's local day; a second one is a typed JournalExistsError, never an overwrite.
+  proof: [BR-S1-1]
+- id: NP-3
+  says: Page title, content, cover and summary_config, link context and attachment files and thumbnails are encrypted client-side [E]; M1 is a pass-through.
+  work: LIF-67
+- id: NP-4
+  says: Editor content has its own write path (writePageContent), never the LWW metadata patch, and merges as a per-page Yjs CRDT at sync (M4).
+  uses: [sync]
+  proof: [BR-NEU-4]
+  work: LIF-98
+- id: NP-5
+  says: Page links and entity links are unique and id-based; re-linking is an idempotent no-op or a revive.
+  uses: [spaces]
+  proof: [BR-S3-1]
+- id: NP-6
+  says: Entity links and entity notes target a registered type in the open ADR-006 registry, validated in-service (UnregisteredEntityTypeError).
+  uses: [spaces]
+  proof: [BR-S1-3, BR-S4-1]
+- id: NP-7
+  says: Wiki-links resolve by page id, never by text or slug; the [[ picker binds a concrete target_page_id, so links survive renames and title clashes.
+  proof: [BR-S3-4]
+- id: NP-8
+  says: Entity notes auto-exist with their parent entity and are never blank, seeded deterministically client-side from the parent's fields.
+  proof: [BR-S2-1, BR-S2-2]
+- id: NP-9
+  says: A user delete is a soft delete with undo and a notes-scoped Trash kept 30 days; hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.
+  proof: [BR-6]
+  work: LIF-421
+  open: Purge timing and mechanics for the 30-day Trash.
+- id: NP-10
+  says: Every page type is editor-capable; the page surface gates on page type, never on the ENTITY_TYPES registry.
+- id: NP-11
+  says: A rename is a metadata edit through updatePage; links are unaffected, with no optimistic patching.
+  proof: [BR-S1-4]
+- id: NP-12
+  says: Page templates are live layouts; applying forks a saved layout into a new page, and capture takes authored structure only, never accumulated data.
+  uses: [templates]
+  work: LIF-360
+  open: What counts as authored prose inside a page document.
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: NP-13
+  says: Notes stores summary_config only; the /summary sections come from the Journals engine, each degrades alone, and the full personalizable section menu is intended (G5).
+  uses: [journals]
+  proof: [BR-9]
+  work: LIF-407
+  open: How summary_config maps to the engine's JournalSelection.
+- id: NP-14
+  says: Inline blocks are ADR-008 capability-registry entries; the palette offers the page's Spaces' capabilities plus the editor base, /summary, /entity-link and /backlink get bodies, and the rest stay honest placeholders.
+  uses: [capabilities, spaces, journals]
+  work: LIF-423
+  open: Whether CAP-12 block_instances placement applies to the page surface at all.
+- id: NP-15
+  says: The [[ candidates are every OS entity that is a page, binding page_links for a page and entity_links for an entity; hovering a link shows a title and type preview card.
+  uses: [spaces]
+  work: LIF-423
+- id: NP-16
+  says: A page's attachments upload as a blob with a lazy thumbnail, and the page lists its live attachments.
+  proof: [BR-S2-4]
+  work: LIF-422
+  open: The picker UX, the size limit, and storage (DB blob or OPFS).
+- id: NP-17
+  says: The /notes collection lists note pages that are not archived, in List, Gallery and Neural layouts; layout, filter and sort persist in a global ADR-007 views row, and tags filter the list.
+  uses: [views, spaces]
+  work: LIF-424
+- id: NP-18
+  says: Card data is derived client-side; the excerpt comes from the decrypted content, the row date is journal_date or else the local day of updated_at, and word_count is derived.
+  work: LIF-424
+  open: The excerpt rule (length, first block).
+- id: NP-19
+  says: The /pomodoro block launches a Sessions focus timer and the page links to that session.
+  uses: [sessions]
+  work: LIF-198
+- id: NP-20
+  says: Each page type has its own Overview; note shows properties, attachments and backlinks, journal is the daily dashboard the Journals module owns, and merged mode renders the same sections as one page.
+  uses: [journals]
+  work: LIF-406
+- id: NP-21
+  says: The task_note and task_group_note Overviews ride fe-tasks through the Overview registry.
+  uses: [tasks]
+  work: LIF-201
+- id: NP-22
+  says: The milestone_note and deliverable_note Overviews ride fe-projects through the Overview registry.
+  uses: [projects]
+  work: LIF-194
+- id: NP-23
+  says: Merged or tabbed mode is remembered per page on this device in app_state, with per-type defaults; a mere open never writes.
+- id: NP-24
+  says: Favorite and archive are booleans, the icon is a Lucide name, and the cover is an http(s) image URL or one of the page's attachments.
+- id: NP-25
+  says: Full-text search is FTS5 over decrypted content, rebuilt on unlock, with no plaintext mirror; until indexed the surface says search is unavailable.
+  uses: [search]
+  proof: [BR-SUR-9]
+  work: LIF-70
+- id: NP-26
+  says: Backlinks merge page links and entity links grouped by source module, and the neural graph renders the link graph, honestly empty while its data prep is deferred.
+  uses: [spaces]
+  proof: [BR-S4-4, BR-SUR-7]
+  work: LIF-114

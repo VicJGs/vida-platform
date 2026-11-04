@@ -44,6 +44,10 @@
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
+      ],
+      "notes-and-pages": [
+        "packages/core/src/services/notes",
+        "apps/web/src/notes"
       ]
     },
     "adrDirs": [
