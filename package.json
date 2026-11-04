@@ -45,10 +45,13 @@
       "finance": [
         "packages/core/src/services/finance"
       ],
-      "notes-and-pages": [
+      "notes": [
         "packages/core/src/services/notes",
         "apps/web/src/notes"
       ]
+    },
+    "intentFeatures": {
+      "notes": "notes-and-pages"
     },
     "adrDirs": [
       "docs/core/decisions",
