@@ -490,6 +490,19 @@
       "path": "docs/modules/preferences/intent.md"
     },
     {
+      "id": "INTENT-sessions",
+      "kind": "intent",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of sessions: 35 rows, 3 tested, 5 partly tested, 27 intent only.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 172,
+      "path": "docs/modules/sessions/intent.md"
+    },
+    {
       "id": "NP-1",
       "kind": "intent-row",
       "module": "notes",
@@ -864,6 +877,217 @@
       "path": "docs/modules/notes/intent/NP-9.md"
     },
     {
+      "id": "PD-1",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A pomodoro is always the runtime of a focus session and attaches to a session_id, never to a task, note or class; starting a timer is starting or resuming a focus session.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/sessions/intent/PD-1.md"
+    },
+    {
+      "id": "PD-10",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A completed focus session fires its declared award_xp effect (granted as grant_currency into the consequence_ledger) and surface_journal (the daily focus feed), with no bespoke Pomodoro wiring to Gamification or Journals.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/sessions/intent/PD-10.md"
+    },
+    {
+      "id": "PD-11",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Focus analytics (completed count, focus time, planned-vs-actual, focus streaks) are a derived cut of the session log, never a synced Pomodoro aggregate.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/sessions/intent/PD-11.md"
+    },
+    {
+      "id": "PD-12",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A pomodoro's effects are scoped to its session's attachments, never count one event twice, need opt-in consent for sensitive modules, and a failed effect is typed and logged while the completion still records.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/sessions/intent/PD-12.md"
+    },
+    {
+      "id": "PD-13",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Focus Mode is the runtime's low-distraction face; it composes the session type's declared tools per sub_type and per platform (mobile, desktop, web), and is never hard-wired to one module.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/sessions/intent/PD-13.md"
+    },
+    {
+      "id": "PD-14",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A config change during a run applies to the next interval and never edits the running one.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/sessions/intent/PD-14.md"
+    },
+    {
+      "id": "PD-15",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Starting focus without a session_id first creates a focus session carrying the caller's attachment, and a failed creation is a typed NoFocusSession, never a timer with no session.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/sessions/intent/PD-15.md"
+    },
+    {
+      "id": "PD-16",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Only interval boundaries persist (start, pause, complete, accumulated pause and interruption); the per-second countdown is client state, never written per tick.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/sessions/intent/PD-16.md"
+    },
+    {
+      "id": "PD-2",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The /pomodoro widget is a view, never an owner; in a page it lists the focus sessions, launches one and links the page's analytics to that session.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/sessions/intent/PD-2.md"
+    },
+    {
+      "id": "PD-3",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Interval durations are Preferences-owned and the runtime only obeys them; named focus templates are focus-session presets owned by Sessions, with at most one default.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/services/sessions/__tests__/sessions-service.test.ts"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/sessions/intent/PD-3.md"
+    },
+    {
+      "id": "PD-4",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Interval type (focus, short_break, long_break) and status (running, paused, completed, cancelled) are fixed enums mirrored by a database constraint, and a long break follows every sessions_before_long focus intervals.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/sessions/intent/PD-4.md"
+    },
+    {
+      "id": "PD-5",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Paused time is excluded from focus; real focus is elapsed minus total paused time.",
+      "anchors": [
+        "apps/web/src/session-hud/use-active-session.test.ts",
+        "apps/web/src/session-hud/use-hud-clock.test.ts",
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/sessions/intent/PD-5.md"
+    },
+    {
+      "id": "PD-6",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Cancelling mid-focus records was_interrupted and an optional reason, which feed focus analytics.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 58,
+      "path": "docs/modules/sessions/intent/PD-6.md"
+    },
+    {
+      "id": "PD-7",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Auto-start of breaks and of the next interval, notifications and sounds govern interval boundaries, each with a sane default and user-overridable.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/sessions/intent/PD-7.md"
+    },
+    {
+      "id": "PD-8",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A break carries per-session-type guidance in Focus Mode (hydrate, recompose, rest, a suggested activity), not a bare countdown.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/sessions/intent/PD-8.md"
+    },
+    {
+      "id": "PD-9",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Time to a task flows only through the focus session's log_time effect into task_time_logs; Pomodoro never writes actual_minutes.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/sessions/intent/PD-9.md"
+    },
+    {
       "id": "PR-1",
       "kind": "intent-row",
       "module": "preferences",
@@ -1125,6 +1349,259 @@
       ],
       "tokens": 71,
       "path": "docs/modules/preferences/intent/PR-9.md"
+    },
+    {
+      "id": "SS-1",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A session is exactly one sub_type over one shared spine; pomodoro is the focus runtime, never a sub_type, and each owning module registers its own sub_type.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/sessions/__tests__/registry.test.ts"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/sessions/intent/SS-1.md"
+    },
+    {
+      "id": "SS-10",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On completion the engine emits a signal (duration, resource, outcome); Knowledge owns mastery and Education owns pace, and Sessions never computes a domain measure.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/sessions/intent/SS-10.md"
+    },
+    {
+      "id": "SS-11",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Pomodoro is the focus sub_type's runtime, owned in the Sessions realm and keyed by session_id; the Notes /pomodoro block is a lens onto focus sessions, never the owner.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/sessions/intent/SS-11.md"
+    },
+    {
+      "id": "SS-12",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Session analytics (completion rate, average focus, planned-vs-actual, time per module, streaks) are derived on read from the session log, never stored in synced aggregate tables.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/sessions/intent/SS-12.md"
+    },
+    {
+      "id": "SS-13",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A dueIn provider lane that fails degrades only that lane with a typed ProviderUnavailable(module), the other lanes render, and the engine never writes another module's schedule to recover.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/sessions/intent/SS-13.md"
+    },
+    {
+      "id": "SS-14",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "generatePlan(scope, window) plans across every module, not one course, and a batch travels draft, pending_approval, approved, active, then completed or failed; no availability or nothing to schedule fails explicitly (NoAvailability, NothingToSchedule), never as an empty batch.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 131,
+      "path": "docs/modules/sessions/intent/SS-14.md"
+    },
+    {
+      "id": "SS-15",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A planned block whose target due work vanished before it ran resolves to empty and is dropped or flagged, never left as a dangling row.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/sessions/intent/SS-15.md"
+    },
+    {
+      "id": "SS-16",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A session with ended_at before started_at, or a duration beyond its block window, is a typed validation error and is never stored.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/sessions/intent/SS-16.md"
+    },
+    {
+      "id": "SS-17",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Editing a shipped type is allowed behind a not-recommended warning, scoped to the user's device and never pushed as a default.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/sessions/intent/SS-17.md"
+    },
+    {
+      "id": "SS-18",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sessions has its own view family (Hub, wizard, Management, Availability, per-type tools) and an empty state that offers a starter availability grid and the shipped types.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/sessions/intent/SS-18.md"
+    },
+    {
+      "id": "SS-19",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An effect whose attached entity was deleted no-ops loudly with a typed AttachmentTargetMissing; it never resurrects the entity or fails the whole completion.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/sessions/intent/SS-19.md"
+    },
+    {
+      "id": "SS-2",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "sub_type (the tool family and owner) and purpose (why) are separate axes and separate enums, never one conflated enum.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/sessions/intent/SS-2.md"
+    },
+    {
+      "id": "SS-3",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "No session type, shipped or user-made, exists without all four Integration Contract dimensions declared (attachment, effects, lifecycle, permissions).",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/sessions/__tests__/registry.test.ts"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/sessions/intent/SS-3.md"
+    },
+    {
+      "id": "SS-4",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every identified sub_type ships fully configured by us; the user never sets up the main ones, and user extensibility is for new long-tail types only.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/sessions/intent/SS-4.md"
+    },
+    {
+      "id": "SS-5",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A user-created type may attach to any entity and declare effects only inside its permission envelope, and sensitive-module effects (Finance, Health) need explicit opt-in consent.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/sessions/__tests__/registry.test.ts"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/sessions/intent/SS-5.md"
+    },
+    {
+      "id": "SS-6",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A session never affects an entity it is not attached to, two types never count the same event twice (deterministic effect_event_id over the applied_effects ledger), and a permission violation is a hard, logged rejection.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/sessions/__tests__/registry.test.ts"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/sessions/intent/SS-6.md"
+    },
+    {
+      "id": "SS-7",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine owns planned_blocks and its own generated sessions but never stores a copy of another module's due work; the agenda is its own blocks plus live dueIn provider reads.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/sessions/intent/SS-7.md"
+    },
+    {
+      "id": "SS-8",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A planned_block is the plan and never the log; completing it calls the owner's createSession(), which carries planned_block_id.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/services/sessions/__tests__/sessions-service.test.ts"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/sessions/intent/SS-8.md"
+    },
+    {
+      "id": "SS-9",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Availability windows and exceptions are Planner-owned scheduling input; Routines may preset recurring windows, and attended sessions consume availability while planned ones fill it.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/services/sessions/__tests__/sessions-service.test.ts"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/sessions/intent/SS-9.md"
     }
   ]
 }

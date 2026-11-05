@@ -1,0 +1,141 @@
+# Sessions intent ledger: every intended, deferred or TBD Sessions rule, keyed by its
+# docs/features/sessions-and-scheduling ID (SS) or its docs/features/pomodoro ID (PD; Pomodoro is
+# the focus sub-type's runtime, a feature inside Sessions). proof = the built rules in
+# docs/features/sessions-and-scheduling/current-business-rules.md; work = the issue that builds the rest.
+# check:rules derives each row's state. Rows with no work and an unbuilt part are left to the
+# sessions-rescope X1–X7 harvest run, which links them.
+
+# Invariants: the Session framework (docs/features/sessions-and-scheduling/business-rules.md)
+- id: SS-1
+  says: A session is exactly one sub_type over one shared spine; pomodoro is the focus runtime, never a sub_type, and each owning module registers its own sub_type.
+  uses: [books, tasks, learning, knowledge, health, languages]
+  proof: [BR-1]
+- id: SS-2
+  says: sub_type (the tool family and owner) and purpose (why) are separate axes and separate enums, never one conflated enum.
+  proof: [BR-2]
+- id: SS-3
+  says: No session type, shipped or user-made, exists without all four Integration Contract dimensions declared (attachment, effects, lifecycle, permissions).
+  proof: [BR-3]
+- id: SS-4
+  says: Every identified sub_type ships fully configured by us; the user never sets up the main ones, and user extensibility is for new long-tail types only.
+- id: SS-5
+  says: A user-created type may attach to any entity and declare effects only inside its permission envelope, and sensitive-module effects (Finance, Health) need explicit opt-in consent.
+  uses: [finance, health]
+  proof: [BR-4, BR-6, BR-12]
+- id: SS-6
+  says: A session never affects an entity it is not attached to, two types never count the same event twice (deterministic effect_event_id over the applied_effects ledger), and a permission violation is a hard, logged rejection.
+  uses: [effects]
+  proof: [BR-4, BR-9]
+# Invariants: the Scheduling engine
+- id: SS-7
+  says: The engine owns planned_blocks and its own generated sessions but never stores a copy of another module's due work; the agenda is its own blocks plus live dueIn provider reads.
+  uses: [books, knowledge, learning, languages, journals]
+  proof: [BR-34, BR-37]
+- id: SS-8
+  says: A planned_block is the plan and never the log; completing it calls the owner's createSession(), which carries planned_block_id.
+  proof: [BR-36]
+  work: LIF-442
+- id: SS-9
+  says: Availability windows and exceptions are Planner-owned scheduling input; Routines may preset recurring windows, and attended sessions consume availability while planned ones fill it.
+  uses: [routines]
+  proof: [BR-26, BR-27, BR-28]
+  work: LIF-442
+- id: SS-10
+  says: On completion the engine emits a signal (duration, resource, outcome); Knowledge owns mastery and Education owns pace, and Sessions never computes a domain measure.
+  uses: [knowledge, learning]
+  work: LIF-443
+# Invariants: runtime and analytics
+- id: SS-11
+  says: Pomodoro is the focus sub_type's runtime, owned in the Sessions realm and keyed by session_id; the Notes /pomodoro block is a lens onto focus sessions, never the owner.
+  uses: [notes]
+  proof: [BR-21, BR-24]
+- id: SS-12
+  says: Session analytics (completion rate, average focus, planned-vs-actual, time per module, streaks) are derived on read from the session log, never stored in synced aggregate tables.
+  proof: [BR-35]
+  work: LIF-443
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: SS-13
+  says: A dueIn provider lane that fails degrades only that lane with a typed ProviderUnavailable(module), the other lanes render, and the engine never writes another module's schedule to recover.
+  uses: [journals]
+  proof: [BR-34]
+- id: SS-14
+  says: generatePlan(scope, window) plans across every module, not one course, and a batch travels draft, pending_approval, approved, active, then completed or failed; no availability or nothing to schedule fails explicitly (NoAvailability, NothingToSchedule), never as an empty batch.
+  proof: [BR-32]
+  work: LIF-442
+  open: The placement algorithm (urgency scoring, recalculation on a miss), a G5 design pass.
+- id: SS-15
+  says: A planned block whose target due work vanished before it ran resolves to empty and is dropped or flagged, never left as a dangling row.
+  work: LIF-442
+- id: SS-16
+  says: A session with ended_at before started_at, or a duration beyond its block window, is a typed validation error and is never stored.
+  proof: [BR-13]
+  work: LIF-442
+- id: SS-17
+  says: Editing a shipped type is allowed behind a not-recommended warning, scoped to the user's device and never pushed as a default.
+  work: LIF-198
+- id: SS-18
+  says: Sessions has its own view family (Hub, wizard, Management, Availability, per-type tools) and an empty state that offers a starter availability grid and the shipped types.
+  work: LIF-198
+- id: SS-19
+  says: An effect whose attached entity was deleted no-ops loudly with a typed AttachmentTargetMissing; it never resurrects the entity or fails the whole completion.
+
+# Invariants: Pomodoro, placement and ownership (docs/features/pomodoro/business-rules.md)
+- id: PD-1
+  says: A pomodoro is always the runtime of a focus session and attaches to a session_id, never to a task, note or class; starting a timer is starting or resuming a focus session.
+  proof: [BR-14, BR-15]
+- id: PD-2
+  says: The /pomodoro widget is a view, never an owner; in a page it lists the focus sessions, launches one and links the page's analytics to that session.
+  uses: [notes]
+  work: LIF-198
+- id: PD-3
+  says: Interval durations are Preferences-owned and the runtime only obeys them; named focus templates are focus-session presets owned by Sessions, with at most one default.
+  uses: [preferences]
+  proof: [BR-24, BR-29, BR-30]
+  work: LIF-433
+# Invariants: Pomodoro runtime behaviour
+- id: PD-4
+  says: Interval type (focus, short_break, long_break) and status (running, paused, completed, cancelled) are fixed enums mirrored by a database constraint, and a long break follows every sessions_before_long focus intervals.
+  proof: [BR-21, BR-24]
+- id: PD-5
+  says: Paused time is excluded from focus; real focus is elapsed minus total paused time.
+  proof: [BR-22]
+- id: PD-6
+  says: Cancelling mid-focus records was_interrupted and an optional reason, which feed focus analytics.
+  proof: [BR-23]
+- id: PD-7
+  says: Auto-start of breaks and of the next interval, notifications and sounds govern interval boundaries, each with a sane default and user-overridable.
+  uses: [preferences, notifications]
+  work: LIF-444
+  open: Who owns the four settings, Preferences (as docs/features says) or session_templates (where the schema stores them), or a template value over a Preferences default.
+- id: PD-8
+  says: A break carries per-session-type guidance in Focus Mode (hydrate, recompose, rest, a suggested activity), not a bare countdown.
+  work: LIF-445
+# Invariants: Pomodoro effects and analytics (ride the Session Integration Contract)
+- id: PD-9
+  says: Time to a task flows only through the focus session's log_time effect into task_time_logs; Pomodoro never writes actual_minutes.
+  uses: [tasks]
+- id: PD-10
+  says: A completed focus session fires its declared award_xp effect (granted as grant_currency into the consequence_ledger) and surface_journal (the daily focus feed), with no bespoke Pomodoro wiring to Gamification or Journals.
+  uses: [gamification, journals]
+  work: LIF-401
+- id: PD-11
+  says: Focus analytics (completed count, focus time, planned-vs-actual, focus streaks) are a derived cut of the session log, never a synced Pomodoro aggregate.
+  proof: [BR-35]
+  work: LIF-443
+- id: PD-12
+  says: A pomodoro's effects are scoped to its session's attachments, never count one event twice, need opt-in consent for sensitive modules, and a failed effect is typed and logged while the completion still records.
+  uses: [effects]
+  proof: [BR-9]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: PD-13
+  says: Focus Mode is the runtime's low-distraction face; it composes the session type's declared tools per sub_type and per platform (mobile, desktop, web), and is never hard-wired to one module.
+  uses: [health, books, tasks]
+  work: LIF-445
+  open: The Focus Mode design pass, covering the per-type tools, the per-platform states, and enforced or skippable breaks.
+- id: PD-14
+  says: A config change during a run applies to the next interval and never edits the running one.
+  uses: [preferences]
+- id: PD-15
+  says: Starting focus without a session_id first creates a focus session carrying the caller's attachment, and a failed creation is a typed NoFocusSession, never a timer with no session.
+- id: PD-16
+  says: Only interval boundaries persist (start, pause, complete, accumulated pause and interruption); the per-second countdown is client state, never written per tick.

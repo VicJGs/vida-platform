@@ -53,10 +53,21 @@
         "packages/core/src/services/preferences",
         "apps/web/src/preferences",
         "apps/web/src/settings"
+      ],
+      "sessions": [
+        "packages/core/src/services/sessions",
+        "packages/core/src/foundation/sessions",
+        "apps/web/src/session-hud",
+        "apps/web/src/session-runtime",
+        "apps/web/src/flow"
       ]
     },
     "intentFeatures": {
-      "notes": "notes-and-pages"
+      "notes": "notes-and-pages",
+      "sessions": [
+        "sessions-and-scheduling",
+        "pomodoro"
+      ]
     },
     "adrDirs": [
       "docs/core/decisions",
