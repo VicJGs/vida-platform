@@ -33,7 +33,7 @@
   says: Entity notes auto-exist with their parent entity and are never blank, seeded deterministically client-side from the parent's fields.
   proof: [BR-S2-1, BR-S2-2]
 - id: NP-9
-  says: A user delete is a soft delete with undo and a notes-scoped Trash kept 30 days; hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.
+  says: A user delete is a soft delete with undo, and the page waits 30 days in the one Trash all modules share (NP-27); hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.
   proof: [BR-6]
   work: LIF-421
   open: Purge timing and mechanics for the 30-day Trash.
@@ -106,3 +106,12 @@
   uses: [spaces]
   proof: [BR-S4-4, BR-SUR-7]
   work: LIF-114
+# Proposed by LIF-349 run 7 from the notes-rescope slice-map R5 and R7 (approve in the PR)
+- id: NP-27
+  says: Trash is one system surface for every module, listed in the System panel and grouped by module; a cross-module provider registry (listDeleted, restore, purge) feeds it, notes registering first, and restore, delete forever and Empty Trash sit behind danger confirms.
+  uses: [shell]
+  work: LIF-421
+- id: NP-28
+  says: Each content write reconciles the page's page_links and entity_links rows to the wiki-links in its document, with set semantics.
+  uses: [spaces]
+  work: LIF-423
