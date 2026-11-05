@@ -477,6 +477,19 @@
       "path": "docs/modules/notes/intent.md"
     },
     {
+      "id": "INTENT-preferences",
+      "kind": "intent",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of preferences: 18 rows, 2 tested, 0 partly tested, 16 intent only.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 131,
+      "path": "docs/modules/preferences/intent.md"
+    },
+    {
       "id": "NP-1",
       "kind": "intent-row",
       "module": "notes",
@@ -849,6 +862,243 @@
       ],
       "tokens": 104,
       "path": "docs/modules/notes/intent/NP-9.md"
+    },
+    {
+      "id": "PR-1",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences are plaintext config, never field-encrypted [E]; the repository registers an empty [E] set.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/preferences/intent/PR-1.md"
+    },
+    {
+      "id": "PR-10",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences is the single writer of persona, motivation_style, active_modules and onboarding_* (E9 split off user_profile); personal data and focus_areas stay in user_profile, and no field has two writers.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 122,
+      "path": "docs/modules/preferences/intent/PR-10.md"
+    },
+    {
+      "id": "PR-11",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notification channels are in_app, push and email, never sms; the per-module push toggles ride the push channel.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/preferences/intent/PR-11.md"
+    },
+    {
+      "id": "PR-12",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences owns the user-managed integration surface (webhooks, external APIs, cookbooks); fetch, egress and connection_config custody stay with the ADR-014 guard, never a preferences column.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/preferences/intent/PR-12.md"
+    },
+    {
+      "id": "PR-13",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Quiet hours are applied when Notifications registers a scheduled alert, and changing a quiet-hours preference reschedules the affected reminders (N7).",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/preferences/intent/PR-13.md"
+    },
+    {
+      "id": "PR-14",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Enum preferences reject out-of-set values before persistence (theme, time_format, persona, dock_position, dock_size) through a schema constraint and a typed Zod error.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/preferences/intent/PR-14.md"
+    },
+    {
+      "id": "PR-15",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Module visibility can never hide its own escape hatch; Settings and Home are not hideable, and an unknown module key is a typed InvalidModuleError.",
+      "anchors": [
+        "apps/web/src/preferences/preferences-writer.test.ts",
+        "apps/web/src/preferences/use-preferences.test.tsx",
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/preferences/intent/PR-15.md"
+    },
+    {
+      "id": "PR-16",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Settings screen is tabbed and searchable over one settings index, with a calm no-match state, and the Cmd+K palette is a global overlay backed by command_bar_history.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/preferences/intent/PR-16.md"
+    },
+    {
+      "id": "PR-17",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Settings pane persists through the preferences seam, Locale and Notifications included.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 52,
+      "path": "docs/modules/preferences/intent/PR-17.md"
+    },
+    {
+      "id": "PR-18",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each consumer reads its preferences through the seam, never the raw table; Tasks, Pomodoro, Dashboard, the appearance and locale fields and the dock each read theirs.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/preferences/intent/PR-18.md"
+    },
+    {
+      "id": "PR-2",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A preference read is never undefined; the stored row, or its absence, is overlaid on the one defaults object, and a malformed map or list field degrades to its default.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/preferences/intent/PR-2.md"
+    },
+    {
+      "id": "PR-3",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "user_preferences and nav_preferences are one row per vault, created on the first write.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 58,
+      "path": "docs/modules/preferences/intent/PR-3.md"
+    },
+    {
+      "id": "PR-4",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Saving is debounced 500 ms and optimistic with no Save button; a failed save reverts the value and shows one typed toast, never a silent drop.",
+      "anchors": [
+        "apps/web/src/settings/settings-surface.test.tsx",
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/preferences/intent/PR-4.md"
+    },
+    {
+      "id": "PR-5",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Theme applies app-wide at once; the theme store is a derived cache of the stored row, never a second source.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/preferences/intent/PR-5.md"
+    },
+    {
+      "id": "PR-6",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "command_key is unique and recording it again increments use_count; the palette ranks pinned first, then by frecency.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/preferences/intent/PR-6.md"
+    },
+    {
+      "id": "PR-7",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Module visibility (nav show/hide), feature_gamification (whether gamification logic runs) and active_modules are distinct; a module can be hidden yet enabled, or shown yet off.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/preferences/intent/PR-7.md"
+    },
+    {
+      "id": "PR-8",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Settings renders Account/Security and data import/export sections but never stores their data; Auth/Account and Data/Sync own them.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/preferences/intent/PR-8.md"
+    },
+    {
+      "id": "PR-9",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every preference write succeeds locally first with a co-transactional sync_queue row, and config reconciles Last-Writer-Wins.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/preferences/intent/PR-9.md"
     }
   ]
 }

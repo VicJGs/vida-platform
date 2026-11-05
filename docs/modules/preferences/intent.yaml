@@ -1,0 +1,69 @@
+# Preferences intent ledger: every intended, deferred or TBD Preferences rule, keyed by its
+# docs/features/preferences ID. proof = the built rules in
+# docs/modules/preferences/current-business-rules.md; work = the issue that builds the rest.
+# check:rules derives each row's state.
+
+# Invariants (docs/features/preferences/business-rules.md)
+- id: PR-1
+  says: Preferences are plaintext config, never field-encrypted [E]; the repository registers an empty [E] set.
+  proof: [BR-PREF-1]
+- id: PR-2
+  says: A preference read is never undefined; the stored row, or its absence, is overlaid on the one defaults object, and a malformed map or list field degrades to its default.
+  proof: [BR-PREF-2, BR-PREF-7]
+- id: PR-3
+  says: user_preferences and nav_preferences are one row per vault, created on the first write.
+  proof: [BR-PREF-3]
+- id: PR-4
+  says: Saving is debounced 500 ms and optimistic with no Save button; a failed save reverts the value and shows one typed toast, never a silent drop.
+- id: PR-5
+  says: Theme applies app-wide at once; the theme store is a derived cache of the stored row, never a second source.
+- id: PR-6
+  says: command_key is unique and recording it again increments use_count; the palette ranks pinned first, then by frecency.
+  proof: [BR-PREF-10]
+- id: PR-7
+  says: Module visibility (nav show/hide), feature_gamification (whether gamification logic runs) and active_modules are distinct; a module can be hidden yet enabled, or shown yet off.
+  uses: [gamification, shell]
+  proof: [BR-PREF-5]
+  work: LIF-401
+- id: PR-8
+  says: Settings renders Account/Security and data import/export sections but never stores their data; Auth/Account and Data/Sync own them.
+  uses: [account, sync]
+- id: PR-9
+  says: Every preference write succeeds locally first with a co-transactional sync_queue row, and config reconciles Last-Writer-Wins.
+  uses: [sync]
+  proof: [BR-PREF-8]
+- id: PR-10
+  says: Preferences is the single writer of persona, motivation_style, active_modules and onboarding_* (E9 split off user_profile); personal data and focus_areas stay in user_profile, and no field has two writers.
+  uses: [gamification, check-ins, onboarding]
+  proof: [BR-PREF-1]
+  work: LIF-432
+  open: Reconcile active_modules with module_visibility, as one store or two.
+- id: PR-11
+  says: Notification channels are in_app, push and email, never sms; the per-module push toggles ride the push channel.
+  uses: [notifications]
+- id: PR-12
+  says: Preferences owns the user-managed integration surface (webhooks, external APIs, cookbooks); fetch, egress and connection_config custody stay with the ADR-014 guard, never a preferences column.
+  uses: [integrations, capabilities]
+  work: LIF-431
+  open: The integration tables and the integration-identity anchor (ADR-002 §5.20).
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: PR-13
+  says: Quiet hours are applied when Notifications registers a scheduled alert, and changing a quiet-hours preference reschedules the affected reminders (N7).
+  uses: [notifications]
+  work: LIF-402
+  open: N7 at registration versus the as-built NF-5 gate at delivery.
+- id: PR-14
+  says: Enum preferences reject out-of-set values before persistence (theme, time_format, persona, dock_position, dock_size) through a schema constraint and a typed Zod error.
+  proof: [BR-PREF-4]
+- id: PR-15
+  says: Module visibility can never hide its own escape hatch; Settings and Home are not hideable, and an unknown module key is a typed InvalidModuleError.
+  proof: [BR-PREF-6]
+- id: PR-16
+  says: The Settings screen is tabbed and searchable over one settings index, with a calm no-match state, and the Cmd+K palette is a global overlay backed by command_bar_history.
+- id: PR-17
+  says: Every Settings pane persists through the preferences seam, Locale and Notifications included.
+- id: PR-18
+  says: Each consumer reads its preferences through the seam, never the raw table; Tasks, Pomodoro, Dashboard, the appearance and locale fields and the dock each read theirs.
+  uses: [tasks, sessions, journals, shell]
+  work: LIF-433
+  open: The vocabulary of font_size and notification_frequency.
