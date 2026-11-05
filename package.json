@@ -48,6 +48,11 @@
       "notes": [
         "packages/core/src/services/notes",
         "apps/web/src/notes"
+      ],
+      "preferences": [
+        "packages/core/src/services/preferences",
+        "apps/web/src/preferences",
+        "apps/web/src/settings"
       ]
     },
     "intentFeatures": {
