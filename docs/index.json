@@ -482,11 +482,11 @@
       "module": "preferences",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of preferences: 18 rows, 2 tested, 0 partly tested, 16 intent only.",
+      "summary": "Intended rules of preferences: 20 rows, 2 tested, 0 partly tested, 18 intent only.",
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 131,
+      "tokens": 134,
       "path": "docs/modules/preferences/intent.md"
     },
     {
@@ -979,7 +979,7 @@
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 52,
+      "tokens": 56,
       "path": "docs/modules/preferences/intent/PR-17.md"
     },
     {
@@ -996,6 +996,19 @@
       "path": "docs/modules/preferences/intent/PR-18.md"
     },
     {
+      "id": "PR-19",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Onboarding commits only the steps the user continued, as one write through the preferences seam (module visibility seeded from the current visibility, the theme on the shared Settings path, the three non-game presets), and sets onboarding_completed on complete or skip-all, never on Skip for now.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 148,
+      "path": "docs/modules/preferences/intent/PR-19.md"
+    },
+    {
       "id": "PR-2",
       "kind": "intent-row",
       "module": "preferences",
@@ -1007,6 +1020,19 @@
       ],
       "tokens": 83,
       "path": "docs/modules/preferences/intent/PR-2.md"
+    },
+    {
+      "id": "PR-20",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The page transition is a preference (page-turn, cross-fade, slide or none) stored as a dashboard_layout sub-key with no schema change, and it reads none while reduce motion is on.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/preferences/intent/PR-20.md"
     },
     {
       "id": "PR-3",

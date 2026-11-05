@@ -62,8 +62,19 @@
   says: The Settings screen is tabbed and searchable over one settings index, with a calm no-match state, and the Cmd+K palette is a global overlay backed by command_bar_history.
 - id: PR-17
   says: Every Settings pane persists through the preferences seam, Locale and Notifications included.
+  work: LIF-435
 - id: PR-18
   says: Each consumer reads its preferences through the seam, never the raw table; Tasks, Pomodoro, Dashboard, the appearance and locale fields and the dock each read theirs.
   uses: [tasks, sessions, journals, shell]
   work: LIF-433
   open: The vocabulary of font_size and notification_frequency.
+# Proposed IDs from preferences-rescope R7 and R-T (LIF-349 run 9; approve in the PR)
+- id: PR-19
+  says: Onboarding commits only the steps the user continued, as one write through the preferences seam (module visibility seeded from the current visibility, the theme on the shared Settings path, the three non-game presets), and sets onboarding_completed on complete or skip-all, never on Skip for now.
+  uses: [onboarding]
+  work: LIF-436
+  open: Whether the synced onboarding_completed suppresses a new device's first run, which today keys only on the device-local first_run marker.
+- id: PR-20
+  says: The page transition is a preference (page-turn, cross-fade, slide or none) stored as a dashboard_layout sub-key with no schema change, and it reads none while reduce motion is on.
+  uses: [shell]
+  work: LIF-437
