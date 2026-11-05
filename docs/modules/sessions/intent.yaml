@@ -2,8 +2,8 @@
 # docs/features/sessions-and-scheduling ID (SS) or its docs/features/pomodoro ID (PD; Pomodoro is
 # the focus sub-type's runtime, a feature inside Sessions). proof = the built rules in
 # docs/features/sessions-and-scheduling/current-business-rules.md; work = the issue that builds the rest.
-# check:rules derives each row's state. Rows with no work and an unbuilt part are left to the
-# sessions-rescope X1–X7 harvest run, which links them.
+# check:rules derives each row's state. The sessions-rescope X1–X7 harvest run (LIF-349 run 11)
+# linked the rows it left open to LIF-447…LIF-453.
 
 # Invariants: the Session framework (docs/features/sessions-and-scheduling/business-rules.md)
 - id: SS-1
@@ -26,6 +26,7 @@
   says: A session never affects an entity it is not attached to, two types never count the same event twice (deterministic effect_event_id over the applied_effects ledger), and a permission violation is a hard, logged rejection.
   uses: [effects]
   proof: [BR-4, BR-9]
+  work: LIF-447
 # Invariants: the Scheduling engine
 - id: SS-7
   says: The engine owns planned_blocks and its own generated sessions but never stores a copy of another module's due work; the agenda is its own blocks plus live dueIn provider reads.
@@ -58,6 +59,7 @@
   says: A dueIn provider lane that fails degrades only that lane with a typed ProviderUnavailable(module), the other lanes render, and the engine never writes another module's schedule to recover.
   uses: [journals]
   proof: [BR-34]
+  work: LIF-449
 - id: SS-14
   says: generatePlan(scope, window) plans across every module, not one course, and a batch travels draft, pending_approval, approved, active, then completed or failed; no availability or nothing to schedule fails explicitly (NoAvailability, NothingToSchedule), never as an empty batch.
   proof: [BR-32]
@@ -78,6 +80,22 @@
   work: LIF-198
 - id: SS-19
   says: An effect whose attached entity was deleted no-ops loudly with a typed AttachmentTargetMissing; it never resurrects the entity or fails the whole completion.
+  work: LIF-447
+# Proposed IDs from sessions-rescope X1–X3 and the study decision (LIF-349 run 11; approve in the PR)
+- id: SS-20
+  says: Every completion goes through one door, transition(), which checks that every declared non-projection effect has a handler before any write (NoEffectHandler), treats a soft-deleted session as missing, and counts as fired only the effects the ledger applied.
+  uses: [effects]
+  proof: [BR-10, BR-20]
+  work: LIF-447
+- id: SS-21
+  says: Whether a completed session's effects were applied is derived on read from the applied_effects ledger, never stored as a flag, and a replay re-applies only the effects with no ledger row.
+  uses: [effects]
+  proof: [BR-9]
+  work: LIF-449
+- id: SS-22
+  says: Sessions ships the study sub_type, fully configured in all four dimensions, as the scheduling engine's own generated sessions; focus and study are the shipped roster.
+  proof: [BR-15]
+  work: LIF-442
 
 # Invariants: Pomodoro, placement and ownership (docs/features/pomodoro/business-rules.md)
 - id: PD-1
@@ -106,7 +124,6 @@
   says: Auto-start of breaks and of the next interval, notifications and sounds govern interval boundaries, each with a sane default and user-overridable.
   uses: [preferences, notifications]
   work: LIF-444
-  open: Who owns the four settings, Preferences (as docs/features says) or session_templates (where the schema stores them), or a template value over a Preferences default.
 - id: PD-8
   says: A break carries per-session-type guidance in Focus Mode (hydrate, recompose, rest, a suggested activity), not a bare countdown.
   work: LIF-445
@@ -114,6 +131,7 @@
 - id: PD-9
   says: Time to a task flows only through the focus session's log_time effect into task_time_logs; Pomodoro never writes actual_minutes.
   uses: [tasks]
+  work: LIF-448
 - id: PD-10
   says: A completed focus session fires its declared award_xp effect (granted as grant_currency into the consequence_ledger) and surface_journal (the daily focus feed), with no bespoke Pomodoro wiring to Gamification or Journals.
   uses: [gamification, journals]
@@ -126,6 +144,7 @@
   says: A pomodoro's effects are scoped to its session's attachments, never count one event twice, need opt-in consent for sensitive modules, and a failed effect is typed and logged while the completion still records.
   uses: [effects]
   proof: [BR-9]
+  work: LIF-447
 # Proposed IDs, no ID in docs/features today (approve in the PR)
 - id: PD-13
   says: Focus Mode is the runtime's low-distraction face; it composes the session type's declared tools per sub_type and per platform (mobile, desktop, web), and is never hard-wired to one module.
@@ -137,5 +156,16 @@
   uses: [preferences]
 - id: PD-15
   says: Starting focus without a session_id first creates a focus session carrying the caller's attachment, and a failed creation is a typed NoFocusSession, never a timer with no session.
+  work: LIF-448
 - id: PD-16
   says: Only interval boundaries persist (start, pause, complete, accumulated pause and interruption); the per-second countdown is client state, never written per tick.
+  work: LIF-451
+# Proposed IDs from sessions-rescope X2 (LIF-349 run 11; approve in the PR)
+- id: PD-17
+  says: A completed focus session declares surface_journal, a projection with no handler that feeds the daily focus feed; this is the Sessions half of PD-10, whose award_xp half is Gamification's.
+  uses: [journals]
+  work: LIF-448
+- id: PD-18
+  says: Completing focus closes its session through the one firing path, and cancelling it closes the session as skipped with no effects; a focus run's state changes only through startFocus, pauseFocus, completeFocus and cancelFocus.
+  proof: [BR-21, BR-23]
+  work: LIF-448

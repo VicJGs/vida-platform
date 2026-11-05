@@ -6,7 +6,7 @@ status: active
 supersedes: []
 summary: "Time to a task flows only through the focus session's log_time effect into task_time_logs; Pomodoro never writes actual_minutes."
 anchors: [docs/modules/sessions/intent.yaml]
-tokens: 64
+tokens: 68
 generated: true
 ---
 # PD-9 (intent only)
@@ -14,5 +14,6 @@ generated: true
 Time to a task flows only through the focus session's log_time effect into task_time_logs; Pomodoro never writes actual_minutes.
 
 - Uses: tasks
+- Work: LIF-448
 
 Generated from `docs/modules/sessions/intent.yaml`; edit the ledger, never this unit.

@@ -495,11 +495,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sessions: 35 rows, 3 tested, 5 partly tested, 27 intent only.",
+      "summary": "Intended rules of sessions: 40 rows, 3 tested, 5 partly tested, 32 intent only.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 172,
+      "tokens": 180,
       "path": "docs/modules/sessions/intent.md"
     },
     {
@@ -925,7 +925,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 91,
+      "tokens": 95,
       "path": "docs/modules/sessions/intent/PD-12.md"
     },
     {
@@ -964,7 +964,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 73,
+      "tokens": 77,
       "path": "docs/modules/sessions/intent/PD-15.md"
     },
     {
@@ -977,8 +977,34 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 68,
+      "tokens": 72,
       "path": "docs/modules/sessions/intent/PD-16.md"
+    },
+    {
+      "id": "PD-17",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A completed focus session declares surface_journal, a projection with no handler that feeds the daily focus feed; this is the Sessions half of PD-10, whose award_xp half is Gamification's.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/sessions/intent/PD-17.md"
+    },
+    {
+      "id": "PD-18",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completing focus closes its session through the one firing path, and cancelling it closes the session as skipped with no effects; a focus run's state changes only through startFocus, pauseFocus, completeFocus and cancelFocus.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/sessions/intent/PD-18.md"
     },
     {
       "id": "PD-2",
@@ -1058,7 +1084,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 121,
+      "tokens": 77,
       "path": "docs/modules/sessions/intent/PD-7.md"
     },
     {
@@ -1084,7 +1110,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 64,
+      "tokens": 68,
       "path": "docs/modules/sessions/intent/PD-9.md"
     },
     {
@@ -1413,7 +1439,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 86,
+      "tokens": 90,
       "path": "docs/modules/sessions/intent/SS-13.md"
     },
     {
@@ -1491,7 +1517,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 67,
+      "tokens": 72,
       "path": "docs/modules/sessions/intent/SS-19.md"
     },
     {
@@ -1506,6 +1532,45 @@
       ],
       "tokens": 64,
       "path": "docs/modules/sessions/intent/SS-2.md"
+    },
+    {
+      "id": "SS-20",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every completion goes through one door, transition(), which checks that every declared non-projection effect has a handler before any write (NoEffectHandler), treats a soft-deleted session as missing, and counts as fired only the effects the ledger applied.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/sessions/intent/SS-20.md"
+    },
+    {
+      "id": "SS-21",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Whether a completed session's effects were applied is derived on read from the applied_effects ledger, never stored as a flag, and a replay re-applies only the effects with no ledger row.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/sessions/intent/SS-21.md"
+    },
+    {
+      "id": "SS-22",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sessions ships the study sub_type, fully configured in all four dimensions, as the scheduling engine's own generated sessions; focus and study are the shipped roster.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/sessions/intent/SS-22.md"
     },
     {
       "id": "SS-3",
@@ -1559,7 +1624,7 @@
         "docs/modules/sessions/intent.yaml",
         "packages/core/src/foundation/sessions/__tests__/registry.test.ts"
       ],
-      "tokens": 97,
+      "tokens": 101,
       "path": "docs/modules/sessions/intent/SS-6.md"
     },
     {
