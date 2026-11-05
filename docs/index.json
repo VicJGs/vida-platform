@@ -469,11 +469,11 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of notes: 26 rows, 6 tested, 2 partly tested, 18 intent only.",
+      "summary": "Intended rules of notes: 28 rows, 6 tested, 2 partly tested, 20 intent only.",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 131,
+      "tokens": 134,
       "path": "docs/modules/notes/intent.md"
     },
     {
@@ -729,6 +729,32 @@
       "path": "docs/modules/notes/intent/NP-26.md"
     },
     {
+      "id": "NP-27",
+      "kind": "intent-row",
+      "module": "notes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Trash is one system surface for every module, listed in the System panel and grouped by module; a cross-module provider registry (listDeleted, restore, purge) feeds it, notes registering first, and restore, delete forever and Empty Trash sit behind danger confirms.",
+      "anchors": [
+        "docs/modules/notes/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/notes/intent/NP-27.md"
+    },
+    {
+      "id": "NP-28",
+      "kind": "intent-row",
+      "module": "notes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each content write reconciles the page's page_links and entity_links rows to the wiki-links in its document, with set semantics.",
+      "anchors": [
+        "docs/modules/notes/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/notes/intent/NP-28.md"
+    },
+    {
       "id": "NP-3",
       "kind": "intent-row",
       "module": "notes",
@@ -817,11 +843,11 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "A user delete is a soft delete with undo and a notes-scoped Trash kept 30 days; hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.",
+      "summary": "A user delete is a soft delete with undo, and the page waits 30 days in the one Trash all modules share (NP-27); hard delete is an explicit confirm and an app-layer cascade, since there are no SQL foreign keys.",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 96,
+      "tokens": 104,
       "path": "docs/modules/notes/intent/NP-9.md"
     }
   ]
