@@ -64,10 +64,12 @@
     },
     "intentFeatures": {
       "notes": "notes-and-pages",
+      "purposes": "purposes-and-goals",
       "sessions": [
         "sessions-and-scheduling",
         "pomodoro"
-      ]
+      ],
+      "spaces": "languages"
     },
     "adrDirs": [
       "docs/core/decisions",
