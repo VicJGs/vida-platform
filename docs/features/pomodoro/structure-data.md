@@ -81,7 +81,7 @@ long_break} · status CHECK{running,paused,completed,cancelled} · completed_cou
 - **Time-to-task** — Tasks `task_time_logs` (one ledger, TK-5) via the Session `log_time` effect; never a
   second Pomodoro counter.
 - **Focus stats** — derived on-read from the session log (SS-12); no synced aggregate.
-- **`PomodoroType`/`PomodoroStatus` enums** — canonical in `@vida/types/note.ts`; SQL CHECK mirrors them.
+- **`PomodoroType`/`PomodoroStatus` enums** — canonical in `@vida/types/session.ts` (ADR-021); SQL CHECK mirrors them.
 
 ## Completion checklist
 
