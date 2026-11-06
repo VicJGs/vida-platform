@@ -68,8 +68,7 @@
       "sessions": [
         "sessions-and-scheduling",
         "pomodoro"
-      ],
-      "spaces": "languages"
+      ]
     },
     "adrDirs": [
       "docs/core/decisions",
