@@ -1,0 +1,110 @@
+# Tasks intent ledger: every intended, deferred or TBD Tasks rule, keyed by its docs/features/tasks
+# ID. proof = the built rules in docs/modules/tasks/current-business-rules.md; work = the issue that
+# builds the rest. check:rules derives each row's state.
+
+# Invariants (docs/features/tasks/business-rules.md)
+- id: TK-1
+  says: A task's title, description and tag associations are encrypted client-side [E]; status, priority, difficulty, dates and estimates are plaintext config. M1 is a pass-through.
+  uses: [encryption]
+  work: LIF-67
+- id: TK-2
+  says: A task sets at most one of project_id, milestone_id, course_id and contact_id, and a milestone implies its project; two parent FKs are a typed MultipleParentError, and a task with none is a first-class standalone task.
+  proof: [BR-TK-S1-1]
+- id: TK-3
+  says: Sub-tasks are one level; the parent shows the ADR-011 M4 weighted rollup of its children (per-child nesting weight, equal by default), derived on read with no stored progress, and completing a parent never completes its children, nor the reverse.
+  proof: [BR-TK-S2-1, BR-TK-S2-2, BR-TK-S2-3]
+- id: TK-4
+  says: Deleting a task deletes its sub-tasks and its task_time_logs.
+  proof: [BR-TK-S1-3]
+- id: TK-5
+  says: Time is one ledger; actual_minutes is the sum of the task's task_time_logs, written only by the log_time effect of the work session the timer opens, never a direct client write, and a task may opt out of time tracking (no logs, no rollup).
+  uses: [sessions]
+  proof: [BR-TK-S4-1, BR-TK-S4-2, BR-TK-S4-3, BR-TK-S4-4]
+  work: LIF-469
+- id: TK-6
+  says: A task is complete when status is completed and completed_at is set, and reopening clears it; the completion is the task's event trigger and fires the S4 effects through the rail, idempotently, so in the app the tasks service is composed with the effect rail.
+  uses: [sessions]
+  proof: [BR-TK-S3-1, BR-TK-S3-2, BR-TK-S3-3, BR-TK-S3-5, BR-TK-S3-6]
+  work: LIF-450
+- id: TK-7
+  says: Only an obligation recurs; completing an obligation with a recurrence rule spawns exactly one next occurrence with the next due_date, even after a reopen and re-complete, and standard tasks never recur.
+  proof: [BR-TK-S5-1, BR-TK-S5-2, BR-TK-S5-3, BR-TK-S5-4, BR-TK-S5-5, BR-TK-S5-6]
+  work: LIF-470
+- id: TK-8
+  says: Tasks tag through the shared entity_tags primitive with entity_type task, never a private inline tag list.
+  uses: [spaces]
+  proof: [BR-TK-S8-1, BR-TK-S8-2, BR-TK-S8-3]
+- id: TK-9
+  says: The aggregated view reads only the tasks table and resolves parent-module data through the R7 read seam (the shared ViewProviderRegistry); a source that is down degrades only its own group, and standalone tasks form the Inbox group.
+  uses: [views, projects, learning, relationships]
+  proof: [BR-TK-S7-1, BR-TK-S7-2, BR-TK-S7-5, BR-TK-S7-6, BR-TK-S7-8]
+- id: TK-10
+  says: Every create, edit, complete and timer action succeeds locally first with a co-transactional sync_queue row, and structured columns reconcile Last-Writer-Wins across devices.
+  uses: [sync]
+  proof: [BR-TK-S1-7]
+- id: TK-11
+  says: A task is a pursuable with measurement_kind (natural milestone) and binding_mode (completion is the event trigger); it stores no progress column, is never an M5 measure source, and contributes up to a purpose only through contributions.
+  uses: [purposes]
+  proof: [BR-TK-S6-1, BR-TK-S6-2, BR-TK-S6-6, BR-TK-S6-7]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: TK-12
+  says: Deleting a parent module's entity (project, milestone, course or contact) unlinks its tasks and never deletes them (the unlink half of TK-4, done in code because the schema has no foreign keys).
+  uses: [projects, learning, relationships]
+  work: LIF-471
+  open: On a soft delete of the parent, clear the link or keep it so a restore brings the tasks back.
+- id: TK-13
+  says: A project, course or contact page lists its tasks through the Tasks service by its parent link, never a table read; Tasks serves the read port Projects declares (listProjectTasks, getFocusMinutes).
+  uses: [projects, learning, relationships]
+  work: LIF-471
+- id: TK-14
+  says: A focus run bound to a task writes its real minutes into the task's one ledger through attach_pomodoro and log_time, the same ledger the work timer writes (TK-5's deferred task_time_logs and session reconciliation).
+  uses: [sessions]
+  work: LIF-448
+- id: TK-15
+  says: Completing a task grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger; one task grants once, ever, each obligation occurrence grants anew, and Tasks never writes points itself.
+  uses: [gamification]
+  proof: [BR-TK-S3-4, BR-TK-S3-6]
+  work: LIF-401
+- id: TK-16
+  says: A task's completion reaches its purpose and the measurement engine through the contribute_purpose_metric and emit_measurement_signal handlers, which the consuming modules register.
+  uses: [purposes, measurement]
+  proof: [BR-TK-S3-3, BR-TK-S6-8]
+  work: LIF-113
+- id: TK-17
+  says: The journal's daily summary pulls the tasks completed, due or scheduled on the day through the Tasks journal contribution; Tasks never pushes surface_journal.
+  uses: [journals]
+  proof: [BR-TK-S9-1, BR-TK-S9-2, BR-TK-S9-7]
+  work: LIF-112
+- id: TK-18
+  says: A task's scheduled_date is the planned work date, distinct from due_date; both feed Today, the Calendar and the Sessions due-work lane, with the deadline carried as hard_deadline.
+  uses: [calendar, sessions]
+  proof: [BR-TK-S9-4, BR-TK-S9-5, BR-TK-S9-6]
+- id: TK-19
+  says: The All-Tasks screen hosts the base task layouts as selectable renderers over one saved-view config, with a view-builder that saves named views rows (filter, layout, grouping), global or Space-owned, and offers a preset when no custom view exists.
+  uses: [views]
+  proof: [BR-TK-S8-5, BR-TK-S8-6, BR-TK-S8-7, BR-TK-S9-8]
+  work: LIF-201
+- id: TK-20
+  says: The twelve task layouts map onto the seven ADR-007 view layouts as layout, filter and grouping configs, and no task_views table exists.
+  uses: [views]
+  work: LIF-399
+- id: TK-21
+  says: A task preset is a saved views config plus per-type defaults, bound to the task kind discriminator (standard or obligation); the preset never owns a discriminator of its own.
+  uses: [views, spaces]
+  proof: [BR-TK-S8-11]
+- id: TK-22
+  says: The user pins and reorders saved task views per Space, stored by Preferences as per-view nav placement and read by the Tasks view switcher.
+  uses: [preferences, views]
+  work: LIF-472
+- id: TK-23
+  says: The task detail shows the task's fields, its sub-tasks with the rollup, its time logs and timer, its linked note and its focus runs; a sub-task is created only through addSubtask.
+  uses: [notes, sessions]
+  proof: [BR-TK-S2-1, BR-TK-S8-4]
+  work: LIF-201
+- id: TK-24
+  says: Every Tasks surface renders its terminal states (task list or view, create and edit, sub-task rollup, timer, obligation completion, view-builder); a failed save or timer action reverts and shows a typed error, and an obligation that can't regenerate completes and is flagged.
+  work: LIF-201
+- id: TK-25
+  says: React Query owns task reads and writes, paginated for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection).
+  work: LIF-201
+  open: Optimistic writes, as the state map says, or the invalidate-and-reread the /tasks route ships (BR-RT-4).
