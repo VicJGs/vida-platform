@@ -4,9 +4,9 @@ kind: intent
 module: habits
 status: active
 supersedes: []
-summary: "Intended rules of habits: 26 rows, 7 tested, 2 partly tested, 17 intent only."
+summary: "Intended rules of habits: 28 rows, 7 tested, 2 partly tested, 19 intent only."
 anchors: [docs/modules/habits/intent.yaml]
-tokens: 126
+tokens: 130
 generated: true
 ---
 # Intended rules: habits
@@ -15,4 +15,4 @@ Generated from `docs/modules/habits/intent.yaml`; edit the ledger, never this un
 
 - Tested: HB-2, HB-3, HB-4, HB-5, HB-7, HB-10, HB-12
 - Partly tested: HB-6, HB-11
-- Intent only: HB-1, HB-8, HB-9, HB-13, HB-14, HB-15, HB-16, HB-17, HB-18, HB-19, HB-20, HB-21, HB-22, HB-23, HB-24, HB-25, HB-26
+- Intent only: HB-1, HB-8, HB-9, HB-13, HB-14, HB-15, HB-16, HB-17, HB-18, HB-19, HB-20, HB-21, HB-22, HB-23, HB-24, HB-25, HB-26, HB-27, HB-28

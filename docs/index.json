@@ -672,7 +672,7 @@
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 111,
+      "tokens": 106,
       "path": "docs/modules/habits/intent/HB-24.md"
     },
     {
@@ -700,6 +700,32 @@
       ],
       "tokens": 81,
       "path": "docs/modules/habits/intent/HB-26.md"
+    },
+    {
+      "id": "HB-27",
+      "kind": "intent-row",
+      "module": "habits",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Routines habit step completes its habit through the Habits contract, one native tick per occurrence on the habit's own ledger; the habit stays the single source of truth and fires its own completion effects, and a missing habit or a date beyond the backfill window fails the step loudly.",
+      "anchors": [
+        "docs/modules/habits/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/habits/intent/HB-27.md"
+    },
+    {
+      "id": "HB-28",
+      "kind": "intent-row",
+      "module": "habits",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Habits serves a completion grid of every active habit across a date range, each day carrying whether it is scheduled, its count and whether it is done, in one ledger read; the Global Calendar draws its habits from it.",
+      "anchors": [
+        "docs/modules/habits/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/habits/intent/HB-28.md"
     },
     {
       "id": "HB-3",
@@ -816,11 +842,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of habits: 26 rows, 7 tested, 2 partly tested, 17 intent only.",
+      "summary": "Intended rules of habits: 28 rows, 7 tested, 2 partly tested, 19 intent only.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 126,
+      "tokens": 130,
       "path": "docs/modules/habits/intent.md"
     },
     {

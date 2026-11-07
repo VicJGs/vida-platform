@@ -62,7 +62,7 @@
   work: LIF-475
 - id: HB-16
   says: A done completion fires complete_habit_occurrence, contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
-  uses: [sessions]
+  uses: [effects]
   proof: [BR-HB-29, BR-HB-30]
   work: LIF-450
 - id: HB-17
@@ -96,7 +96,7 @@
 - id: HB-24
   says: Habits has four surfaces, the Dashboard (check off any habit), today's list in Calendar, List and Checkbox modes, the per-habit page (streak, completion rate and mood charts, a calendar of completions and the linked note page) and the All-Habits Overview.
   uses: [notes]
-  proof: [BR-HB-26, BR-HB-35]
+  proof: [BR-HB-26]
   work: LIF-182
 - id: HB-25
   says: Every Habits surface renders its terminal states (today's list, Dashboard and Overview, quick and detailed log, analytics, backfill, the per-habit page); a failed log or backfill reverts and shows a typed error.
@@ -104,3 +104,11 @@
 - id: HB-26
   says: React Query owns habit reads and writes, with optimistic completion logging, and Zustand owns the ephemeral screen state (active view and today mode, per-habit tab, detailed-log draft, selection).
   work: LIF-182
+- id: HB-27
+  says: A Routines habit step completes its habit through the Habits contract, one native tick per occurrence on the habit's own ledger; the habit stays the single source of truth and fires its own completion effects, and a missing habit or a date beyond the backfill window fails the step loudly.
+  uses: [routines]
+  proof: [BR-HB-10, BR-HB-17, BR-HB-19]
+- id: HB-28
+  says: Habits serves a completion grid of every active habit across a date range, each day carrying whether it is scheduled, its count and whether it is done, in one ledger read; the Global Calendar draws its habits from it.
+  uses: [calendar]
+  proof: [BR-HB-35]
