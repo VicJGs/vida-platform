@@ -37,10 +37,16 @@ Because the code is greenfield (only the ICS feed tables exist; no ingestion ser
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **X1** (§3.1) device-mediated ingestion · **X6** (§3.1) compositional exfiltration
+
 **3.1 The universal ingestion shape: device-mediated, never server-proxied.**
 Every external datum enters through the **user's device**: the device fetches/reads the source, **parses and normalizes on-device**, **encrypts** (L2/L3 per EN), and writes vault rows that sync as opaque blobs. **The server is never a fetch proxy and never receives a plaintext import** — it stays a blind relay (ZK-1, EX-1). There is **no ambient network** in an authored capability (ADR-010 §3.5); any reach is a declared, consented, mediated call. A fetch that _could only_ work by having the server read plaintext is **refused, not silently downgraded**. `[FACT: FN-9; ZK-1 hard-refusal (INTERP from PJ-11); ADR-010 §3.5 no-ambient-network]`
 
 **An `external_in` fetch is itself an outbound request — so ingress can carry egress.** A fetch's URL/path/params leave the device; a buggy or malicious capability could encode vault data into them (`GET rulepack/?q=<secret>`), making an "ingress" a disguised exfiltration. Therefore the **compositional-exfiltration rule applies to ANY external reach, in or out**: a capability holding **both** a sensitive read **and** any external grant (`external_in_ok` or `external_out_ok`) is a consented exfiltration channel and takes the **union-of-consents** (ADR-010 §3.5) — the outbound fetch's URL/params are treated as egress, not assumed safe because the _intent_ is to pull data in. `[FACT: ADR-010 §3.5 compositional-exfiltration; INTERP: a fetch is an outbound request]`
+
+> **Codes (temporary):** **X2** (§3.2) three integration layers (`native`, `public-reference`, `user-managed`) · **X3** (§3.2, §5) whole-set bulk fetch
 
 **3.2 Three integration layers, organized by _who owns the integration_.** The guard is not a flat "external toggle"; it is three layers, each with a different builder and a different, disclosed leak profile. All three run on the §3.1 device-mediated mechanism and the §3.3–§3.4 rails.
 
@@ -62,7 +68,11 @@ Every external datum enters through the **user's device**: the device fetches/re
 
 **LLM connections are a separate layer → ADR-015.** Connecting a user's own model (Claude/ChatGPT via their key), and later first-party native LLM integrations, get a **dedicated management page** and are governed by ADR-015 (§3.7), not folded into Layer 3. `[INTENT: RESOLUTION — Victor: LLM via a separate page = ADR-015 foundation]`
 
+> **Codes (temporary):** **X4** (§3.3) the egress guard
+
 **3.3 Egress is a separate, stricter guard.** Ingestion done right never exposes vault content; **egress** — data _leaving_ the vault (Health CI-6: push to a medical system) — by definition does, so it gets its own gate: **per-target explicit consent** (not a blanket "allow external"), the **union-of-consents** rule (ADR-010 §3.5 — a capability granted _both_ a sensitive read _and_ external-out is a consented exfiltration channel and must present that combination conspicuously), an **audit trail** of what left and when, and **never auto-transmit** — egress is always a user-initiated act. Egress is the **most tightly gated grant** in the system. `[FACT: HC-22; CI-6; ADR-010 §3.5 compositional-exfiltration + egress-strictest + "OS never auto-transmits"; PC-4; INTERP from SU-1]`
+
+> **Codes (temporary):** **X5** (§3.4, §5) external grant semantics (`external_in_ok`, `external_out_ok`) · **X7** (§3.4) mediator credential custody · **X9** (§3.4) revocation stops future fetches and keeps ingested rows
 
 **3.4 Consent is a grant on the ADR-010 envelope — this ADR supplies its external-data semantics.** An integration is enabled by a **declare→grant→enforce** grant (ADR-010) whose already-declared fields this ADR gives meaning: **`external_in_ok`** (per-source), **`external_out_ok`** (per-target, egress), plus the **layer** (§3.2) and **data scope** (which entities it may read/write). Grants are **revocable**, **fail closed**, and **re-consented on scope change** — reusing ADR-010's machinery, not a parallel one. Shipped integrations (a first-party CSV parser) are trusted code but bound by the same single-mediated-path; user-authored ones (a Spaces Block reaching external data) run in the ADR-010 sandbox. `[FACT: ADR-010 §3.1-3.5 + §3.2 grant fields; PC-3]`
 
@@ -70,11 +80,17 @@ Every external datum enters through the **user's device**: the device fetches/re
 
 **Revocation stops future ingestion; already-ingested rows remain user-owned.** Revoking a grant halts all future fetch/import and fails closed. Data **already committed** to the vault (imported transactions, synced ICS events, ingested metrics) **stays** — it is now indistinguishable from manually-entered user data and is the user's to keep or delete via normal per-entity delete. (Revocation cannot un-see what a third-party aggregator already saw, §3.2 — so a local purge would restore no privacy; the row is kept as normal vault data unless the user deletes it.) `[INTENT: RESOLUTION — revoke = stop-future, keep-ingested]`
 
+> **Codes (temporary):** **X8** (§3.5, §5) reconcile on import (`import_staging`)
+
 **3.5 Reconcile-on-import via staging (never silent overwrite).** An import that merges into existing user data (Finance CSV/OFX ↔ manual transactions) follows: **parse on-device → `import_staging` (parsed rows + match metadata) → auto-match** (by date±tolerance, amount±tolerance) **→ user reviews/merges → commit** to the ledger (idempotent write, ADR-004 §3.2.5). The user is **always the final authority**; a parse error flags per-row and **fails loud** (constitution §5); nothing is committed unconfirmed. Feeds that only _add_ (ICS events) skip staging but still **dedup by natural key** (`feed_id, uid`) and mark `is_ignored` rather than deleting.
 
 **3.6 Opt-in, user-owns-risk, manual fallback — unconditionally.** Every integration is **off by default**; the **manual core is 100% functional without any of them** (EX-1). Enabling one surfaces a **labeled, per-integration consent** stating the layer (§3.2) and what leaves the device; the user **owns the risk**; consent is **revocable** and **standing until revoked**. No integration is ever a precondition of a core capability. `[FACT: EX-1; HC-10; SK-12; every module's "manual fallback always"]`
 
+> **Codes (temporary):** **X11** (§3.7) LLM calls split to ADR-015
+
 **3.7 The LLM layer is separate → ADR-015 (transport vs. cognition).** Connecting a model — the user's own key (Claude/ChatGPT) now, first-party native LLM later — is **not** folded into Layer 3; it gets its **own dedicated management page** and is governed by **ADR-015** (AI under ZK). The split: this ADR owns the **movement + consent** of external data (fetch, parse, encrypt, stage, egress); ADR-015 owns the **model call**. A photo→text pipeline is _both_: ADR-014 consents+moves the image, ADR-015 governs the recognition. **Interim (ADR-015 not yet written):** a model-involving pipeline is **not ungoverned** — the model call falls back to **EX-1/EX-2 defaults** (opt-in · on-device-preferred · cloud model = a consented, disclosed plaintext dent). Nothing runs unguarded in the gap. `[FACT: books OCR "rides AI ADR"; EX-2 two-ADR split; ADR-015 pending]` `[INTENT: RESOLUTION — Victor: LLM on a separate page]`
+
+> **Codes (temporary):** **X10** (§3.8, §5) integration identity + normalization contract
 
 **3.8 A native connector must be able to REPLACE a user-managed one for the same source (upgrade path).** A source a user wired up in Layer 3 today should **upgrade to a Layer 1 native connector later** ("once we have a good source of users") **without breaking their data**. This requires two things: a **stable integration identity** (a per-source id the grant + ingested rows key to, independent of which layer implements it) **and — the load-bearing half — a declared per-source _normalization contract_** (the field shape/units/timestamps/dedup-key the ingested rows must conform to). The upgrade is "migration of the connector, not the data" **only if both layers emit rows to the same normalization contract**; if the native connector's data shape differs, it is a genuine data migration and must be documented as one. Layers are implementation tiers of one integration contract — _provided that contract is normalized_ — not three incompatible silos. `[INTENT: RESOLUTION — Victor: native "once we have users"; the interchangeability constraint + normalization contract]`
 

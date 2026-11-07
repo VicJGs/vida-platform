@@ -42,6 +42,10 @@ consequence. `[FACT: intake SP5-RESOLVED — "FORK … deep-copies … no templa
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **T1** (§3.1, §3.3) the portable seed-bundle template
+
 **3.1 A Template is a serialized, portable seed bundle.** Its content is **structure + configuration**, not personal
 data:
 `{ root_tag (+ nested tags) · seed entities (e.g. Knowledge kinds, a starter Goal, empty logger targets) · views
@@ -57,6 +61,8 @@ can only be expressed by pointing at accumulated data is **not capturable** into
 capability-instance-references-accumulated-data hole: a bundle cannot smuggle vault data in through a capability's
 config the way it is barred from smuggling it in through seed entities.
 
+> **Codes (temporary):** **T2** (§3.2) fork on instantiate: no `template_id` on instances
+
 **3.2 Instantiate = FORK (deep copy, no back-link).** Instantiation **deep-copies** the bundle into fresh entities
 with new client-generated UUIDs (DATA-1); the resulting Space/entities carry **no `template_id`** and no reference to
 the template. Therefore:
@@ -71,6 +77,8 @@ the template. Therefore:
 configuration into a bundle — and instantiate it again elsewhere. Shipped templates are **bundled assets**;
 user-saved templates are rows in a light **`templates`** store (id · name `[E]` · serialized bundle `[E]`),
 syncable (`_sync_*` + `deleted_at`, DATA-4), the bundle encrypted per EN-2.
+
+> **Codes (temporary):** **T3** (§3.1, §3.4) authored-vs-accumulated capture invariant
 
 **3.4 Templates are the OS's _only_ sharing bridge, and they are ZK-clean by design — enforced at capture, not literally "by construction".** The capture line is
 **authored vs accumulated**: "save this Space as a template" captures the user's **authored structure +
@@ -99,6 +107,8 @@ untrusted" and runs under the grant + sandbox. Importing a template is thus **ne
 importer grants the capability's envelope exactly as if they had authored it. Shipped-preset capabilities stay
 trusted (ours).
 
+> **Codes (temporary):** **T4** (§3.5) the preset primitive
+
 **3.5 A "preset" is a lighter sibling, not a Template.** The Duties worked-example surfaced the **preset** primitive:
 a **thin tab** = `{ a saved View (ADR-007, e.g. over a `tasks` filter) + per-type UI/UX + default fields/deliverables
 
@@ -107,6 +117,8 @@ discriminator; the preset is the Space-side tab). A preset is essentially **a li
 per-type defaults; it *may reference* a starter Template (§3.1) but is not itself a full bundle. So: **Template =
 seed a whole structure; preset = a saved tab + defaults over existing entities.** They compose; they are not the same
 thing.`[FACT: intake L170-177, Duties worked-example]`
+
+> **Codes (temporary):** **T5** (Terminal states) instantiation terminal states
 
 **Terminal states.** Instantiation defines **in-progress / success / partial-failure** (a bundle referencing a
 capability not present on this device seeds what it can and flags the rest — a declared degraded state, never a
