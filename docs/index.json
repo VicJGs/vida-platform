@@ -503,6 +503,19 @@
       "path": "docs/modules/sessions/intent.md"
     },
     {
+      "id": "INTENT-tasks",
+      "kind": "intent",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of tasks: 25 rows, 4 tested, 1 partly tested, 20 intent only.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 129,
+      "path": "docs/modules/tasks/intent.md"
+    },
+    {
       "id": "NP-1",
       "kind": "intent-row",
       "module": "notes",
@@ -1667,6 +1680,336 @@
       ],
       "tokens": 103,
       "path": "docs/modules/sessions/intent/SS-9.md"
+    },
+    {
+      "id": "TK-1",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task's title, description and tag associations are encrypted client-side [E]; status, priority, difficulty, dates and estimates are plaintext config. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/tasks/intent/TK-1.md"
+    },
+    {
+      "id": "TK-10",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every create, edit, complete and timer action succeeds locally first with a co-transactional sync_queue row, and structured columns reconcile Last-Writer-Wins across devices.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/tasks/intent/TK-10.md"
+    },
+    {
+      "id": "TK-11",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task is a pursuable with measurement_kind (natural milestone) and binding_mode (completion is the event trigger); it stores no progress column, is never an M5 measure source, and contributes up to a purpose only through contributions.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 115,
+      "path": "docs/modules/tasks/intent/TK-11.md"
+    },
+    {
+      "id": "TK-12",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a parent module's entity (project, milestone, course or contact) unlinks its tasks and never deletes them (the unlink half of TK-4, done in code because the schema has no foreign keys).",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/tasks/intent/TK-12.md"
+    },
+    {
+      "id": "TK-13",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A project, course or contact page lists its tasks through the Tasks service by its parent link, never a table read; Tasks serves the read port Projects declares (listProjectTasks, getFocusMinutes).",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/tasks/intent/TK-13.md"
+    },
+    {
+      "id": "TK-14",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A focus run bound to a task writes its real minutes into the task's one ledger through attach_pomodoro and log_time, the same ledger the work timer writes (TK-5's deferred task_time_logs and session reconciliation).",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/tasks/intent/TK-14.md"
+    },
+    {
+      "id": "TK-15",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completing a task grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger; one task grants once, ever, each obligation occurrence grants anew, and Tasks never writes points itself.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/tasks/intent/TK-15.md"
+    },
+    {
+      "id": "TK-16",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task's completion reaches its purpose and the measurement engine through the contribute_purpose_metric and emit_measurement_signal handlers, which the consuming modules register.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/tasks/intent/TK-16.md"
+    },
+    {
+      "id": "TK-17",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal's daily summary pulls the tasks completed, due or scheduled on the day through the Tasks journal contribution; Tasks never pushes surface_journal.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/tasks/intent/TK-17.md"
+    },
+    {
+      "id": "TK-18",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task's scheduled_date is the planned work date, distinct from due_date; both feed Today, the Calendar and the Sessions due-work lane, with the deadline carried as hard_deadline.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/tasks/intent/TK-18.md"
+    },
+    {
+      "id": "TK-19",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The All-Tasks screen hosts the base task layouts as selectable renderers over one saved-view config, with a view-builder that saves named views rows (filter, layout, grouping), global or Space-owned, and offers a preset when no custom view exists.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/tasks/intent/TK-19.md"
+    },
+    {
+      "id": "TK-2",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task sets at most one of project_id, milestone_id, course_id and contact_id, and a milestone implies its project; two parent FKs are a typed MultipleParentError, and a task with none is a first-class standalone task.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml",
+        "packages/core/src/services/tasks/__tests__/service.test.ts"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/tasks/intent/TK-2.md"
+    },
+    {
+      "id": "TK-20",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The twelve task layouts map onto the seven ADR-007 view layouts as layout, filter and grouping configs, and no task_views table exists.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/tasks/intent/TK-20.md"
+    },
+    {
+      "id": "TK-21",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task preset is a saved views config plus per-type defaults, bound to the task kind discriminator (standard or obligation); the preset never owns a discriminator of its own.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/tasks/intent/TK-21.md"
+    },
+    {
+      "id": "TK-22",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user pins and reorders saved task views per Space, stored by Preferences as per-view nav placement and read by the Tasks view switcher.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/tasks/intent/TK-22.md"
+    },
+    {
+      "id": "TK-23",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The task detail shows the task's fields, its sub-tasks with the rollup, its time logs and timer, its linked note and its focus runs; a sub-task is created only through addSubtask.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/tasks/intent/TK-23.md"
+    },
+    {
+      "id": "TK-24",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Tasks surface renders its terminal states (task list or view, create and edit, sub-task rollup, timer, obligation completion, view-builder); a failed save or timer action reverts and shows a typed error, and an obligation that can't regenerate completes and is flagged.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/tasks/intent/TK-24.md"
+    },
+    {
+      "id": "TK-25",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "React Query owns task reads and writes, paginated for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection).",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/tasks/intent/TK-25.md"
+    },
+    {
+      "id": "TK-3",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sub-tasks are one level; the parent shows the ADR-011 M4 weighted rollup of its children (per-child nesting weight, equal by default), derived on read with no stored progress, and completing a parent never completes its children, nor the reverse.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml",
+        "packages/core/src/services/tasks/__tests__/service.test.ts"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/tasks/intent/TK-3.md"
+    },
+    {
+      "id": "TK-4",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a task deletes its sub-tasks and its task_time_logs.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml",
+        "packages/core/src/services/tasks/__tests__/service.test.ts"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/tasks/intent/TK-4.md"
+    },
+    {
+      "id": "TK-5",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Time is one ledger; actual_minutes is the sum of the task's task_time_logs, written only by the log_time effect of the work session the timer opens, never a direct client write, and a task may opt out of time tracking (no logs, no rollup).",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/tasks/intent/TK-5.md"
+    },
+    {
+      "id": "TK-6",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task is complete when status is completed and completed_at is set, and reopening clears it; the completion is the task's event trigger and fires the S4 effects through the rail, idempotently, so in the app the tasks service is composed with the effect rail.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/tasks/intent/TK-6.md"
+    },
+    {
+      "id": "TK-7",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Only an obligation recurs; completing an obligation with a recurrence rule spawns exactly one next occurrence with the next due_date, even after a reopen and re-complete, and standard tasks never recur.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml",
+        "packages/core/src/services/tasks/__tests__/service.test.ts"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/tasks/intent/TK-7.md"
+    },
+    {
+      "id": "TK-8",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tasks tag through the shared entity_tags primitive with entity_type task, never a private inline tag list.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/tasks/intent/TK-8.md"
+    },
+    {
+      "id": "TK-9",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The aggregated view reads only the tasks table and resolves parent-module data through the R7 read seam (the shared ViewProviderRegistry); a source that is down degrades only its own group, and standalone tasks form the Inbox group.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml",
+        "packages/core/src/services/tasks/__tests__/service.test.ts"
+      ],
+      "tokens": 131,
+      "path": "docs/modules/tasks/intent/TK-9.md"
     }
   ]
 }

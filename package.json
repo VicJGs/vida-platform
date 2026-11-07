@@ -60,6 +60,10 @@
         "apps/web/src/session-hud",
         "apps/web/src/session-runtime",
         "apps/web/src/flow"
+      ],
+      "tasks": [
+        "packages/core/src/services/tasks",
+        "apps/web/src/tasks"
       ]
     },
     "intentFeatures": {
