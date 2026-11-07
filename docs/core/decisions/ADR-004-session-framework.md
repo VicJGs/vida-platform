@@ -42,6 +42,10 @@ all `wc -l = 0`), so this is a greenfield structural decision, not a migration o
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **S1** (§3.1) sessions supertype: base `sessions` + a 1:1 extension keyed by `session_id` · **S2** (§3.1, §5) plan↔actual link: `planned_blocks` + nullable `planned_block_id`
+
 **3.1 Storage — table-per-type inheritance.**
 
 - A thin base **`sessions`** table (owned by Sessions & Scheduling) holds the shared spine:
@@ -54,15 +58,21 @@ focus_rating? · energy_level? · distraction_count? · key_learnings [E] · _sy
   **extension**. The base provides the single stable `session_id` that effects, attachments, `pomodoro_sessions`,
   and `planned_blocks` all reference.
 
+> **Codes (temporary):** **S3** (§3.2) the session integration contract (4 dimensions)
+
 **3.2 The Integration Contract — 4 dimensions every type declares.**
 
 **§3.2.1 Attachment** — polymorphic links to OS entities (`session_attachments`, `entity_links`-style), at
 _type-level_ ("this type is always attached to a habit") and _instance-level_ ("this session is about Topic X").
 
+> **Codes (temporary):** **S4** (§3.2.2) the effects catalogue
+
 **§3.2.2 Effects (penetration)** — a declared, catalogued set of writes the framework fires on lifecycle events:
 `complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
 award_xp · surface_journal · surface_calendar · attach_pomodoro`. Effects go through each target module's
 documented write API — **never a direct table write** (that API is specified in **§3.2.5**).
+
+> **Codes (temporary):** **S5** (§3.2.3) the lifecycle state machine
 
 **§3.2.3 Lifecycle** — the shared state machine `scheduled|planned → in_progress → completed | skipped | missed
 (attended only) | rescheduled`, with per-type legal transitions + hooks (review → fires SM-2; class →
@@ -72,6 +82,8 @@ records attendance; workout → writes training volume).
 (one XP / one habit-occurrence per event — the _mechanism_ is **§3.2.5**); user-created types get a **strict
 subset** of shipped-type capabilities; effects on sensitive modules (Finance/Health) require explicit opt-in
 consent. This is the guarded opt-in extension-model principle applied inside the module.
+
+> **Codes (temporary):** **S6** (§3.2.5) guarded write + idempotency for every effect producer · **R1** (§3.2.5) idempotency rail: deterministic `effect_event_id`, `applied_effects`, UNIQUE on output rows (shared rail) · **R2** (§3.2.5) guarded write (INT-2): write another module only through its documented write API (shared rail)
 
 **§3.2.5 The write-API contract + idempotency — how §3.2.2 (Effects) and §3.2.4 (no-double-count) are actually
 enforced.** _This subsection is the single **owner** of the guarded-write + idempotency mechanism; ADR-008 and
@@ -134,6 +146,8 @@ collision-merge algorithm (build-phase / F10) — it locks the **contract + inva
 **3.3 Shipped types are fully configured.** Every _identified_ sub-type ships with all 4 dimensions authored
 by us; the user never sets up the main ones. Editing a shipped type is allowed but warned as
 _not recommended_. User-extensibility exists for **new long-tail types**, not for wiring defaults.
+
+> **Codes (temporary):** **S7** (§3.4) base + extension co-sync
 
 **3.4 The base+extension sync rule.** Because the base row and its extension row are **separate encrypted
 sync blobs** (ADR-003), they **travel together**: a device applies an extension only once its base is present;

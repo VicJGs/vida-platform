@@ -45,6 +45,10 @@ Languages pronunciation tool.
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **CB1** (§3.1) the open capability registry (`kind`)
+
 **3.1 One open capability registry — the single canonical composability registry.** Retire the closed `BlockType`
 union as the _definition of what a capability is_. A capability **registers** here; the OS's block/widget set is the
 registry's contents, not a core enum. Adding a shipped capability = registering a definition, not editing a union.
@@ -55,12 +59,16 @@ review-engine machinery (curves · `method_bindings` · `review_events` · maste
 extension — exactly as an ADR-004 Session sub-type extends the Session supertype. Knowledge owns the _engine_; this
 foundation owns the _registry_. The is-a is _shown_ in the anatomy crosswalk (§3.3a), not asserted.
 
+> **Codes (temporary):** **CB2** (§3.2) render targets (`inline`, `standalone`) + placement
+
 **3.2 A capability declares its render targets; the user chooses placement.** A definition declares which of
 `inline` (editor block) and `standalone` (widget / Space surface / mini-app) it supports (one or both). **Per
 instance, the user chooses where to place it** among the targets it supports. The model is **non-dogmatic (A-shaped)**
 — it can lean toward inline-blocks or standalone-widgets as the product matures, without re-architecting; the
 registry does not force a single packaging religion. `[FACT: intake SP4 render-model — "declares render targets …
 placement is the user's per-instance choice … not hard to be on about; will lean B if we want"]`
+
+> **Codes (temporary):** **CB3** (§3.3) the 6-part anatomy · **CB4** (§3.3 item 5) guarded-write emitted signals
 
 **3.3 A capability is a plugin — 6-part anatomy.** A study-method service (ADR-005) does not merely _resemble_ this
 anatomy; it **instantiates** it as `kind=study_method` (§3.3a shows every ADR-005 part landing).
@@ -127,6 +135,8 @@ carrying `_sync_*` + `deleted_at` (DATA-4). Instance config with user literals e
 `view` (ADR-007) can also host a placed instance is an open build seam — ADR-007 defines `filter × layout × grouping`
 over read APIs, with no widget-placement slot today; not asserted here.)_
 
+> **Codes (temporary):** **CB5** (enabled_blocks) `enabled_blocks` (the palette) vs `block_instances` (placements)
+
 **A Space's `enabled_blocks` — the offered palette vs the placements (O2 resolved, F3/D3).** ADR-006's `spaces` row
 carries **`enabled_blocks`**: the _per-Space set of capability **definitions** (this registry) the Space offers as
 tools_ — its **menu**, distinct from `block_instances`, which are the **placements**. The palette is **authored
@@ -140,6 +150,8 @@ page can belong to several Spaces). Curating the palette gates _adding_; it does
 placements (grandfathered). This is what makes "a `block_instances` row referenced by a Space" concrete. Storage of
 the offered set (a Space↔definition junction) settles at build under the ADR-002 amendment + sync work (F10); its
 row-based lean follows ADR-006 §3.3's sync-robustness rationale.
+
+> **Codes (temporary):** **CB6** (Terminal states) terminal states per render target
 
 **Terminal states.** Every capability declares **loading / empty / error / success** for each render target it
 supports (a standalone chart with no data ≠ a crash); specified at the contract level.

@@ -130,6 +130,10 @@ journal_date TEXT,       -- '2026-03-13'
 
 ## 3. Sync Metadata
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **R4** (§3) sync metadata: `_sync_*` + `deleted_at` on every syncable table (DATA-4; shared rail)
+
 Every **syncable** table includes these columns for LWW (Last-Writer-Wins) conflict resolution:
 
 ```sql
@@ -167,6 +171,8 @@ _sync_hash      TEXT                   -- SHA-256 of row content for change dete
 **Key insight:** L1 (SQLCipher) protects everything when the device is locked. L2 adds defense-in-depth for the most sensitive fields — even if SQLCipher is unlocked (app running), these fields remain encrypted in the SQLite file until the app explicitly decrypts them for rendering. L3 ensures the sync server is zero-knowledge.
 
 ### 4.2 Classification Rules
+
+> **Codes (temporary):** **R3** (§4.2) field encryption: user free-text and sensitive fields marked `-- [E]` (EN-2; shared rail)
 
 Every column falls into one of two categories:
 

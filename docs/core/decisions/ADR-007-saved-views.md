@@ -43,8 +43,14 @@ page per module). `[FACT: intake L55-58, legacy]`
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **V1** (§3.1) `views` is a first-class primitive
+
 **3.1 `views` is a first-class entity.** A saved view is a row, not a component. `@vida/ui`'s view components become
 the **renderers** a view _selects_; they stop being the unit of "a view." `[FACT: intake SP3-RESOLVED]`
+
+> **Codes (temporary):** **V2** (§3.2) view ownership: `views.space_id`, NULL = global
 
 **3.2 Ownership — Space-owned or global, user-driven (both).** `views.space_id` is nullable: **NULL = a global,
 reusable view**; **set = a view owned by one Space** (created for it, e.g. its default). The OS **ships a default
@@ -53,6 +59,8 @@ a Space or vice-versa (clone = independent copy, consistent with ADR-009's fork 
 … ship default views + the user creates new ones and edits them"]`
 A Space may own **many** views (`views.space_id = spaces.id`); the `spaces.default_view_id` from ADR-006 §3.4 simply
 names which one opens first — it is one of the Space's views, not a separate slot.
+
+> **Codes (temporary):** **V3** (§3.3) view anatomy + cross-type resolution · **V5** (§3.3) view sync, encryption and states
 
 **3.3 Anatomy — filter × layout × grouping/sort.**
 
@@ -77,6 +85,8 @@ predicates (status, date range, module-specific fields) }`, stored as JSON TEXT 
 the filter JSON encrypt per EN-2 (tag/entity IDs are references, not secrets; free-text predicate values are user
 content) — personalization never leaks plaintext (SP8).
 
+> **Codes (temporary):** **V4** (§3.4) provider fan-out (INT-1) · **R7** (§3.4) read seam (INT-1): read another module only through its documented read API (shared rail; also ADR-011 §3.6)
+
 **3.4 The view engine reads through documented per-module read APIs — never direct cross-module table reads.** A
 cross-module view (e.g. the Global Calendar over events + tasks + reminders) fans its filter out to **each entity
 type's documented list/query API** and merges the results — the **same provider pattern** Journals' registry (J2)
@@ -89,6 +99,8 @@ per-module custom views collapse into `views` (a Task board is a `views` row wit
 surfaces (SP9) — Spaces is the substrate beneath them, not a competitor. Nav placement / default-view preference
 lives in **Preferences** (generalizing per-module visibility to per-Space), as established in ADR-006. `[FACT:
 intake SP9-CONFIRMED; SP3]`
+
+> **Codes (temporary):** **R5** (Terminal states) every surface declares `loading · empty · error · success` (shared rail; also ADR-008, ADR-009)
 
 **Terminal states.** Every view defines **loading / empty (filter matches nothing) / error (a provider failed) /
 success**; empty and provider-error are first-class rendered states, specified at the contract level, not here.

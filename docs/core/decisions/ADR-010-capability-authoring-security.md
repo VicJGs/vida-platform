@@ -53,10 +53,16 @@ constitution item]`
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **A1** (§3.1) two-tier trust boundary (`trusted` / `untrusted`)
+
 **3.1 Trust boundary.** **Shipped capabilities are trusted** (authored by us, fully configured, ADR-008 §3.5) and run
 in-process. **Every non-shipped capability — user-authored _or_ arriving inside an imported template (ADR-009) — is
 untrusted** and runs under §3.2–§3.5. There is no third tier; there is no "review-and-promote-to-trusted" pipeline
 (that would be a marketplace, which SU-1 / community-is-external forbids).
+
+> **Codes (temporary):** **A2** (§3.2) declare → grant → enforce (`capability_grants`) · **A3** (§3.2) re-grant on envelope change (`granted_envelope_hash`) · **A8** (§3.2) grant revocation, never permanent
 
 **3.2 declare → grant → enforce (least privilege).** The spine of the model.
 
@@ -79,6 +85,8 @@ external_in_ok · external_out_ok · consented_sensitive_modules · granted_enve
   **fails closed until the user re-grants** the new envelope. **Privilege never grows silently on edit or update** —
   a broader declaration always re-prompts.
 
+> **Codes (temporary):** **A4** (§3.3) the five-constraint permission envelope
+
 **3.3 The permission envelope (ADR-004 SS-6, generalized).** Within the grant, a capability is bound by:
 
 1. **Attachment-scoped** — it may read/write **only** entities it is explicitly bound/attached to (ADR-008 §3.3). No
@@ -97,6 +105,8 @@ external_in_ok · external_out_ok · consented_sensitive_modules · granted_enve
 5. **Strict subset** — a user capability's envelope is a **strict subset** of what shipped capabilities may do; new
    privilege classes are added to shipped first and only exposed to user-authoring deliberately.
 
+> **Codes (temporary):** **A5** (§3.4) the no-ambient-authority sandbox · **A9** (§3.4) sandbox resource limits
+
 **3.4 The sandbox — no ambient authority.** User capability code executes in an **isolated runtime** with **no
 direct access** to SQLite, the network, the filesystem, or other capabilities' state. Its **only** channel to the OS
 is the **mediated capability API**, which applies §3.2–§3.3 on every call. The sandbox also enforces:
@@ -105,6 +115,8 @@ is the **mediated capability API**, which applies §3.2–§3.3 on every call. T
   app never hangs) — closing the resource-abuse threat.
 - **Identity** — a user-authored capability is **visibly marked untrusted** in the UI and **cannot register a shipped
   capability's id** or claim trusted status — closing impersonation.
+
+> **Codes (temporary):** **A6** (§3.5) hard zero-knowledge invariants under authoring
 
 **3.5 Zero-knowledge is never broken (the hard invariants).**
 
@@ -123,6 +135,8 @@ is the **mediated capability API**, which applies §3.2–§3.3 on every call. T
   exfiltration channel. Because the risk is compositional, the grant must present the **combination conspicuously**
   and require the **union** of consents (sensitive-read consent **and** external-out consent, per target). The OS
   never silently permits the pair; within an explicit dual grant, the user owns the risk (§3.7).
+
+> **Codes (temporary):** **A7** (§3.6) uniform cross-platform enforcement
 
 **3.6 Uniform cross-platform enforcement.** The envelope + the invariants (§3.3, §3.5) are **platform-agnostic and
 identical** on web, mobile, and desktop; a capability definition and its `capability_grants` **sync together**

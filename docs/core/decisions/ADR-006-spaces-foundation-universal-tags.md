@@ -57,6 +57,8 @@ not a data migration of live behavior.
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
 **3.1 Spaces is a new foundation tier that sits _beneath_ Notes & Pages; N&P becomes a consumer.** Spaces is a
 Level-Foundation context, but in the dependency graph it sits **below** Notes & Pages — N&P (and every module)
 _depends on_ it for the tag/view/block/template primitives, so it is **not a flat sibling**: it is the lower
@@ -64,6 +66,8 @@ foundation the others consume. (Manifest re-sequence at Accept must place Spaces
 this.) It owns the universal personalization primitives (tags here; views, blocks, templates in ADR-007…010). N&P
 keeps _using_ tags on pages (the journal/page tag UX is unchanged for the user) but no longer owns the tag
 _primitive_. This **closes the standing "N&P tag-scoping: universal vs module-specific" backlog item.**
+
+> **Codes (temporary):** **SP1** (§3.2) universal tagging: `entity_tags` · **SP2** (§3.2) the open taggable-type registry · **SP3** (§3.2) nestable tags (`parent_tag_id`)
 
 **3.2 Universal tagging — `entity_tags`.** A tag attaches to **any** entity.
 
@@ -79,6 +83,8 @@ _primitive_. This **closes the standing "N&P tag-scoping: universal vs module-sp
   content → encrypted per EN-2.)
 - **Syncable.** `entity_tags` is a syncable table → carries the `_sync_*` metadata + `deleted_at` soft-delete per
   DATA-4 (orphan-tag cleanup rides the same soft-delete discipline as `entity_links`).
+
+> **Codes (temporary):** **SP4** (§3.3) tags and links stay distinct and resolvable
 
 **3.3 Distinct primitives at the storage layer; the OS _resolves_ them into one association surface on the user's
 choice.** Two things are separate: the storage (always two tables) and the resolution (unify or separate, the user's
@@ -96,6 +102,8 @@ switch).
   untouched either way. **Capability (two distinct primitives) underneath, resolution (unify ⇄ separate) on top,
   user owns the switch.** `[FACT: intake SP2 — "the user will choose how he wants them to interact, if he wants them
 to be one or if not"]`
+
+> **Codes (temporary):** **SP5** (§3.4) `spaces` is a first-class entity · **SP6** (§3.4) the `enabled_blocks` palette
 
 **3.4 A Space is a lightweight first-class entity — `spaces`.** So a Space is nav-addressable and nestable, not a
 purely emergent "just a tag." A `spaces` row binds:
@@ -122,6 +130,8 @@ carried **row-based** (a Space↔capability-def junction) for the same sync-robu
 as rows — rows survive concurrent multi-device edits where a JSON-array column would field-LWW-clobber one device's
 change; the exact sync/storage strategy for Spaces' ordered fields settles with the sync work (F10), and the DDL is a
 build-phase ADR-002 amendment (recorded in the durable owed-tables ledger, **ADR-002 §5.20**; F4-body/D5).
+
+> **Codes (temporary):** **SP7** (§3.2, §3.4, §3.5) Spaces-tier sync and encryption
 
 **3.5 Personalization never breaks zero-knowledge (framing; enforced in ADR-010 + business-rules).** Tag names and
 descriptions are user content and encrypt (EN-2). This tier introduces _no_ server-visible plaintext and _no_

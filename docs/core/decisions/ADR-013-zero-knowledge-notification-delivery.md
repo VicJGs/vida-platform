@@ -37,6 +37,10 @@ Because the code is greenfield (the server has `auth`/`sync`/`billing` routes an
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **N1** (§3.1) three-tier delivery (`in-app`, `local-scheduled`, `wake-signal`)
+
 **3.1 Three delivery tiers, chosen by the notification's nature — push the least off-device.**
 
 | Tier                         | Applies to                                                                                                      | Mechanism                                                                                                                                                                     | Server role                  | ZK exposure                                                                  |
@@ -47,15 +51,21 @@ Because the code is greenfield (the server has `auth`/`sync`/`billing` routes an
 
 The tier is a property of the notification **and platform**: a reminder on a native device is _pre-known_ → local-scheduled (server-free); an event, or anything on web, is _reactive_ → wake-signal. In-app underlies both.
 
+> **Codes (temporary):** **N7** (§3.2) quiet hours applied at registration
+
 **3.2 Time-based reminders are LOCAL-SCHEDULED on native platforms — the server is not in the loop.** Because `dueIn(range)` yields upcoming reminders on-device (NF-3), the dispatcher **registers them with the native platform's local scheduler** (Expo Notifications' scheduled trigger on mobile · Tauri notification on desktop) at their due time. The OS delivers them even when the app is backgrounded or killed, **offline, with zero network** — the ZK-cleanest path. **Web is exempt:** browsers/PWAs have no reliable background local scheduling (the `Notification` constructor needs the page alive; `showTrigger` is not shipped cross-browser), so a **web** time-based reminder is delivered via the wake-signal tier (service worker + Web Push, §3.3) — accepting that path's metadata cost. On any change to the underlying schedule, the device **reschedules** (cancel + re-register).
 
 **Quiet-hours must be baked into the schedule, not enforced at fire.** A pre-scheduled OS alert fires **without the dispatcher running** (app closed), so the dispatcher cannot gate it live. It therefore **pre-applies Preferences quiet-hours at registration** — a reminder that would land inside quiet hours is scheduled shifted/suppressed per the user's setting — and a change to the quiet-hours preference triggers a **reschedule** of affected reminders. This keeps the Notifications contract's "respect quiet hours" invariant true for a channel the live dispatcher never touches. A reminder that fires while the app is open also creates its `notifications` row (materialize-at-fire, NF-3). `[INTENT; FACT: NF-3; §5.17 `quiet*hours*\*`; notifications/contract quiet-hours gate; ADR-001 platform layer]`
+
+> **Codes (temporary):** **N2** (§3.3) the content-free wake payload
 
 **3.3 Event-driven cross-device alerts use a CONTENT-FREE wake-signal; the device composes locally.** When device A writes a notification (`surface_notification`, ADR-012), the blob syncs. **Online** peer devices are _already_ notified by ADR-003's per-user WebSocket room, sync the blob, and compose the OS notification locally — **no new mechanism**. For a **closed/offline** peer, the wake-relay sends a **content-minimal OS push** whose payload contains **no `title`, no `message`, no `entity_type`/`entity_id`**.
 
 **The trigger reads nothing.** The wake-relay fires purely on **"a blob for this user arrived"** — routed by the **per-user room** ADR-003 already maintains (the server authenticates connections by `device_id` and rooms by user). Deciding _whom_ to wake needs the blob's **owner routing metadata the server legitimately holds**, never the blob's **contents**. "Server composes nothing" and "server sends a push" are consistent: the server decides _when_ (arrival) and _to whom_ (routing), never _what_. `[FACT: ADR-003 per-user rooms L74-76 + auth `device_id` L262/L273]`
 
 **Reliability is bounded honestly (not the silent-push overclaim Option D was rejected for).** A _silent_ `content-available` wake is **throttled and not guaranteed** to run code on a fully-killed iOS app. So a closed device receives a **generic, user-visible push** ("You have activity in Vida") — a real banner that renders with **zero `[E]` detail** — which the app **replaces with the real, locally-composed notification** on next sync/open. Delivery of the _banner_ is thus reliable (a normal visible push); delivery of _rich local content_ is best-effort (on wake). This is strictly better than Option D (a killed app receives _nothing_), and it never stakes content on a silent wake. `[FACT: ZK-1; iOS content-available is best-effort]`
+
+> **Codes (temporary):** **N6** (§3.4) the channel matrix collapse (no SMS)
 
 **3.4 Email is a generic nudge; SMS is dropped.** Email inherently reaches a plaintext-visible SMTP server, so it can carry **only** a fixed, content-free template ("You have new activity in Vida — open the app"); it never includes `[E]` detail and is opt-in. **SMS is removed** from the platform (un-encryptable, carrier-plaintext, no wake-signal possible). This **collapses v1's four-channel matrix** (v1 offered `in_app | email | push | sms`) to: **in-app (full) · push (wake-only) · email (generic) — no SMS.** `[FACT: v1 `NotificationChannel`had`sms` — ../life-os/src/types/notifications.ts]` `[INTENT: dropping sms is this ADR's decision]`
 
@@ -67,6 +77,8 @@ The tier is a property of the notification **and platform**: a reminder on a nat
 - **Never exposed to anyone:** the notification's content, `type`, or subject entity.
 
 **The accepted bound:** off-device delivery under ZK costs **notification timing/frequency to Apple/Google + a token held by our server** — content, type, and subject stay client-only. A user who refuses even that runs **in-app + native local-scheduled** only (no third party, ever). `[FACT: ADR-003 relay sees blob-push timing + device registry §12; ZK-1/ZK-2]` `[INTERP: APNs/FCM as a new third-party observer]`
+
+> **Codes (temporary):** **N3** (§3.6, §5) the wake relay routes and never reads · **N4** (§3.6, §5) push tokens on the device registry
 
 **3.6 Ownership boundaries.**
 
@@ -98,6 +110,8 @@ The tier is a property of the notification **and platform**: a reminder on a nat
 - **Why rejected:** mobile OSes **kill background sockets and throttle background polling**; a fully-closed app receives nothing. It is battery-hostile and unreliable precisely when delivery matters (app closed overnight → miss the morning reminder). Option A is strictly better on exactly this axis: a **user-visible push reliably renders a banner** on a closed device (native push delivery is reliable, unlike D's dead socket), and the app upgrades it to locally-composed content on wake (§3.3). A carries no more content than D's socket would have pulled — and unlike D, it actually arrives.
 
 ## 5. Consequences
+
+> **Codes (temporary):** **N5** (§5) delivery-audit columns on `notifications`
 
 **Easier:**
 

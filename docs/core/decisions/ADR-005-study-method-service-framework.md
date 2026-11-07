@@ -42,6 +42,10 @@ The v2 flashcard code is schema-only (0 logic), so this is a structural decision
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **SM1** (§3.1.3) a study method is a capability of `kind=study_method` · **SM3** (§3.1.2) a run is a session sub-type (`review_session`) · **SM4** (§3.1.5–3.1.6) content units are OS citizens
+
 **3.1 A study-method service is a plugin, defined by a 6-part anatomy.**
 
 1. **Content unit** — the _only_ data the service owns (Flashcards: the card; Assessment: the item; Feynman:
@@ -58,6 +62,8 @@ The v2 flashcard code is schema-only (0 logic), so this is a structural decision
    (KN-10). The service never computes mastery.
 6. **Universal properties** — content units are **first-class OS citizens**: the **universal tag system**,
    **pages/notes links** via `entity_links`, and attachments. A service is never an island.
+
+> **Codes (temporary):** **SM2** (§3.2) the generic review engine (`review_events`, `method_bindings`)
 
 **3.2 The generic engine owns everything except content + interaction.** Scheduling, curves, the review log,
 mastery, and grouping are Knowledge's — never re-implemented per service. Consequently, for Flashcards:
