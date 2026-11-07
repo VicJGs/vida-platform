@@ -38,6 +38,15 @@ Every **syncable** table carries: `_sync_id`, `_sync_version`, `_sync_device_id`
 A field is encrypted **iff** marked `-- [E]` in the SQL schema and `@encrypted` in `@vida/types`.
 Defined once, honored everywhere. See **EN-2**.
 
+## Two-tier feature docs (As-is / Intended) `[FACT: capability framework §2 R6, archived; Victor 2026-11-07]`
+
+> **Codes (temporary):** **R6** (conventions) the two-tier structure: every feature doc separates the As-is (FACT floor) from the `[INTENT]` Intended model and names the ADRs it is subject to. The label is a bridge (LIF-462); it goes once the docs reshape reorganizes this information.
+
+A context doc in `docs/features` keeps what exists today (**As-is**, cited as FACT) apart from what the OS
+intends (**`[INTENT]`**), and names the ADRs it answers to. A flat doc with no As-is / Intended split breaks
+this convention. A retired token that appears only in a flagged As-is floor, which `[INTENT]` explicitly
+retires, does not make the doc stale.
+
 ## Package / workspace `[FACT: CLAUDE.md; survey workspaces]`
 
 - Scope: `@vida/*` — packages `core` · `editor` · `ui` · `types`; apps `web` · `mobile` · `desktop` · `server`.
