@@ -61,6 +61,9 @@
         "apps/web/src/session-runtime",
         "apps/web/src/flow"
       ],
+      "habits": [
+        "packages/core/src/services/habits"
+      ],
       "tasks": [
         "packages/core/src/services/tasks",
         "apps/web/src/tasks"
