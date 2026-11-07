@@ -1726,11 +1726,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "Deleting a parent module's entity (project, milestone, course or contact) unlinks its tasks and never deletes them (the unlink half of TK-4, done in code because the schema has no foreign keys).",
+      "summary": "Deleting a parent module's entity (project, milestone, course or contact) asks the user what happens to its tasks, deleting them with it, unlinking them into standalone tasks, or moving them to another entity, either nested inside it (a milestone) or at its top level; tasks are never deleted silently.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 116,
+      "tokens": 118,
       "path": "docs/modules/tasks/intent/TK-12.md"
     },
     {
@@ -1909,11 +1909,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "React Query owns task reads and writes, paginated for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection).",
+      "summary": "React Query owns task reads and writes, with optimistic create, edit and complete that show at once and revert on failure, and paginated lists for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection). The /tasks route's invalidate-and-reread is replaced.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 104,
+      "tokens": 113,
       "path": "docs/modules/tasks/intent/TK-25.md"
     },
     {

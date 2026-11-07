@@ -48,10 +48,9 @@
   proof: [BR-TK-S6-1, BR-TK-S6-2, BR-TK-S6-6, BR-TK-S6-7]
 # Proposed IDs, no ID in docs/features today (approve in the PR)
 - id: TK-12
-  says: Deleting a parent module's entity (project, milestone, course or contact) unlinks its tasks and never deletes them (the unlink half of TK-4, done in code because the schema has no foreign keys).
+  says: Deleting a parent module's entity (project, milestone, course or contact) asks the user what happens to its tasks, deleting them with it, unlinking them into standalone tasks, or moving them to another entity, either nested inside it (a milestone) or at its top level; tasks are never deleted silently.
   uses: [projects, learning, relationships]
   work: LIF-471
-  open: On a soft delete of the parent, clear the link or keep it so a restore brings the tasks back.
 - id: TK-13
   says: A project, course or contact page lists its tasks through the Tasks service by its parent link, never a table read; Tasks serves the read port Projects declares (listProjectTasks, getFocusMinutes).
   uses: [projects, learning, relationships]
@@ -105,6 +104,5 @@
   says: Every Tasks surface renders its terminal states (task list or view, create and edit, sub-task rollup, timer, obligation completion, view-builder); a failed save or timer action reverts and shows a typed error, and an obligation that can't regenerate completes and is flagged.
   work: LIF-201
 - id: TK-25
-  says: React Query owns task reads and writes, paginated for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection).
+  says: React Query owns task reads and writes, with optimistic create, edit and complete that show at once and revert on failure, and paginated lists for large sets; Zustand owns the ephemeral screen state (active view, view-builder draft, running timer, board drag, selection). The /tasks route's invalidate-and-reread is replaced.
   work: LIF-201
-  open: Optimistic writes, as the state map says, or the invalidate-and-reread the /tasks route ships (BR-RT-4).
