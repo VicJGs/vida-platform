@@ -38,6 +38,10 @@ Because the code is greenfield (schema-only), this is a **structural decision, n
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information.
+
+> **Codes (temporary):** **E4** (§3.1, §5) the four typed Additive effects
+
 **3.1 A rule = a binding + TYPED consequence effects, each idempotent on its own key (the load-bearing decision).**
 A System rule is `IF [measured condition] THEN [consequence]`. The **condition** is an **ADR-011 binding** — `event-trigger` (a linked entity fires a state change) or `derived-pull` (a measurement-source crosses a threshold) — acyclic, enforced at author time (ADR-011 §3.7, and see the consequence-cycle note below). The **consequence** dispatches **one or more typed effects on the ADR-004 §3.2.5 rail**. The four gamification-owned effects are **all Additive-class** — each appends a **durable output row with no domain natural key**, so per §3.2.5's Additive definition a deterministic `effect_event_id` is the **only** cross-device convergence key:
 
@@ -52,6 +56,8 @@ A System rule is `IF [measured condition] THEN [consequence]`. The **condition**
 
 **Consequence-cycle guard (extends ADR-011 §3.7).** A consequence-driven currency change can itself be a **measurement-source** (e.g. a `real-money` grant moves `net_worth`), so a rule whose consequence feeds another rule's `derived-pull` condition is a **new edge type** in the binding graph that ADR-011 §3.7 (built for measurement edges) did not originally enumerate. This ADR **extends the §3.7 DAG guard** to count consequence→source→condition edges: such a cycle is rejected at author time exactly as a measurement cycle is. ⚠ This edge-type extension is **owed back to ADR-011 §3.7** at consolidation. `[FACT: ADR-011 §3.7 DAG guard]` `[INTENT: consequence-edge extension]`
 
+> **Codes (temporary):** **E1** (§3.2, §5) the multi-currency economy (`currencies`, `backing_kind`) · **E2** (§3.2, §5) `grant_currency` feeders
+
 **3.2 The economy is MULTI-CURRENCY; XP is one currency.**
 A **`currency`** is a user-definable resource with a **`backing_kind`**:
 
@@ -61,13 +67,19 @@ A **`currency`** is a user-definable resource with a **`backing_kind`**:
 
 XP is not privileged: it is the canonical **`grant_currency(XP)`** case, so the **§3.2.2-catalogued `award_xp` effect slot** (0-logic today) and its ~9 **documented** feeders (Habits · Tasks · Sessions · Routines · Check-ins · Skills · Pomodoro · …) remain **valid** — `grant_currency` _generalizes_ `award_xp`, it does not retire it (no running code exists to break; the feeders are documented emission points). `[FACT: ADR-004 §3.2.2 catalogue L62 lists `award_xp`; feeders as business-rule IDs HB-9/RT-13/CK-11/PD-10/SK-10]` `[INTENT: GM-3]`
 
+> **Codes (temporary):** **E3** (§3.3, §5) the derived-balance ledger (`consequence_ledger`)
+
 **3.3 Currency balances are DERIVED, not stored (the house rule).**
 Per currency, **earned · locked · current recompute on read** from the **`consequence_ledger`** (the generalized `xp_history`: `currency_id · amount(±) · kind{earn,lock,spend,distribute} · entity_type · entity_id · effect_event_id(UNIQUE) · at`). The stored `total_xp`/`current_level` counters become **caches, never the source of truth**. This is the same derive-not-store discipline ADR-011 §3.2 (`NULL = derive`) and SS-12 ("analytics derived, never stored") already lock. `[FACT: sessions SS-12; ADR-011 §3.2]` `[INTENT: GM-4]`
 
 **The pool (`to-distribute`) is a config ceiling, not a ledger sum.** `to-distribute` is categorically different from the other three: it is the **budget the user funds**, not a consequence of past entries. Its **ceiling is a `currencies`-config value** (e.g. "20 vacation days/year") — for a `self-granted allowance` there is **no backing entity** to derive it from, so it **cannot** come from the append-only ledger. `current ≤ ceiling` is the enforced invariant; the ledger records `distribute`/`spend`/`lock` entries **against** that ceiling, and `to-distribute = ceiling − Σ(distributed)`. For a `real-money` currency the ceiling is instead the backing Storage box's real balance (§3.5). This resolves the apparent contradiction: three quantities are ledger-derived, `to-distribute` is `ceiling − ledger`. `[INTENT: GM-3/GM-4 — pool source resolved]`
 
+> **Codes (temporary):** **E5** (§3.4) penalties lock, never destroy
+
 **3.4 Penalties LOCK, never destroy.**
 A penalty moves currency/money into a **locked** pool via a `lock_currency`/`move_money` effect (Additive, §3.1) — held and **recoverable**, not deleted. A penalty that would drive a currency below its floor **clamps + flags** (money cannot go below a box's real balance; an allowance cannot lock more than exists). `[INTENT: RESOLUTION §A/§B — "not truly lost, but locked"]`
+
+> **Codes (temporary):** **E6** (§3.5, §5) the Finance-owned `store` layer
 
 **3.5 Storage = a Finance-owned nestable composition LAYER, not a rewrite.**
 A **`store`** node is a `group` (folder) **or** a `wrapper` (→ an existing `account`/`investment`/`asset`), self-nesting via `parent_id`, carrying `is_locked` · `dream_id?`/`purpose_id?` · a currency overlay. **Existing Finance entities are UNTOUCHED.** The worth-tree is a **domain structural hierarchy** — single-parent, exactly like Projects `parent_milestone` / Tasks `parent_task_id` — and is **orthogonal to Spaces**, which owns many-to-many **tag** grouping (`entity_tags`, INT-1a). A structural worth-hierarchy is _not_ a tag-set: the tree is **canonical single-parent** (each value-holder wrapped once → **no double-count**); Spaces tags an entity into any number of themed views _on top_. Net worth = Σ store tree − Σ liabilities. **Owned by Finance**, consumed by the System. `[INTENT: RESOLUTION §C — Victor]` `[FACT: Commitments precedent FN-14; projects/tasks parent-FK; core INT-1a]`
@@ -75,14 +87,20 @@ A **`store`** node is a `group` (folder) **or** a `wrapper` (→ an existing `ac
 **3.6 Real-money moves through Finance; self-granted needs no Finance; rewards can fund Dreams.**
 A `real-money` reward is a **transfer** into a Storage box (native `transaction_type='transfer'`) — a real entry in the user's own money-truth, **not** a bank API call; the OS is the ledger truth. The `move_money` effect routes through a **Finance-owned transfer handler** (`finance.*`) — which is **INTENDED, not yet built**: today `transfer` exists only as a schema/type value (`transaction_type='transfer'` + `transfer_to_account_id`), and `finance-service.ts` is 0-logic. A **self-granted-allowance** consequence needs **no Finance** — the OS tracks the honored balance against its config ceiling (§3.3). Finance/Health writes require explicit capability consent (**PC-3**). A reward routed into a box may earmark a **Dream** (`estimated_cost`) / Purpose, **laddering the consequence into Purposes progress** via ADR-011 contributions. `[FACT: transfer as type/schema value — packages/types/src/finance.ts L22, L88-89; finance-service.ts = 0 bytes (handler INTENDED); dreams `estimated_cost` ADR-002 L1941; ADR-010 §3.3 sensitive-module consent]` `[INTENT: GM-6/GM-7; the recordTransfer handler]`
 
+> **Codes (temporary):** **E8** (§3.7, §5) achievements as measurable predicates
+
 **3.7 Achievements = predicates over measured state + the event stream.**
 An achievement `condition` is a **measurable predicate** (streak ≥ N · count ≥ N · `level_reached` · `net_worth ≥ X`) evaluated on the **ADR-011 measurement seam** (pull) + consequence events (push) + a reconcile pass — **not** v1's 22+ bespoke per-category checkers. The v1 catalogue is **app-curated for v1**; user-authored achievements/challenges are the capability model (⚠ INTENDED). `[FACT: ../life-os/src/features/onboarding/constants/achievementDefinitions.ts ~22 distinct condition types (v1, out-of-repo); ADR-011 §3.6]` `[INTENT: GM-13]`
 
 **3.8 Leveling = a pure function of a currency total.**
 A level is **derived** from a currency's cumulative total against a **fixed non-linear curve + titles** (v1: 0·100·300·…·5500) — **no new table**. Level-**unlocks** (rewards that _do_ something) are ⚠ INTENDED-later. `[FACT: ../life-os/src/features/onboarding/constants/levelConfig.ts (v1, out-of-repo)]` `[INTENT: GM-14]`
 
+> **Codes (temporary):** **E7** (§3.9, §5) rules are headless ADR-010 automations
+
 **3.9 Rules are HEADLESS automations under ADR-010 — NOT ADR-008 render-Blocks.**
 Shipped rules are trusted; **user-authored** rules run under ADR-010's declare→grant→enforce sandbox (attachment-scoped · guarded-write · no double-count · sensitive-module consent · revocable · fails closed) — **reusing that machinery without being an ADR-008 capability**. ADR-008 capabilities are **render-targeted Blocks** (inline/standalone); a rule has **no render target** — it is background automation. This is the same "reuse the sandbox, not the render model" boundary ADR-011 draws for bindings. `[FACT: ADR-010 §3.1-3.3; ADR-008 §3.2 render-targets; core PC-3]` `[INTENT: GM-8]`
+
+> **Codes (temporary):** **E9** (§3.10, §5) the `user_profile` single-writer split
 
 **3.10 `user_profile` splits by single-writer; PII stays for now.**
 The System owns only **per-currency total + level** (both DERIVED, §3.3). `check_in_streak*` → **Check-ins** (owner exists, CK-11); `persona`/`motivation_style`/`active_modules`/`onboarding_*` → **Preferences** (which owes a receiving amendment). **PII (`display_name`/`avatar_url`/`birth_date`) STAYS in `user_profile`** ⚠ — no account/identity entity exists yet to receive it; relocation is INTENDED once that model is designed. **No field ends with two writers.** `[FACT: overloaded ADR-002 L3366-3396; no account entity today]` `[INTENT: GM-12]`

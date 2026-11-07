@@ -32,6 +32,10 @@ Because the code is greenfield (schema-only), this is a **structural decision, n
 
 ## 3. Decision
 
+> **Temporary code labels (LIF-462).** `docs/features` cites this ADR's clauses by short codes (for example SP1, M2 or X5), defined in the archived capability framework. Each code is labelled at its clause. The labels are a bridge: they go once the docs reshape reorganizes this information. Here M1–M7 are measurability codes, not the roadmap milestones M1–M4 (ADR-019).
+
+> **Codes (temporary):** **M1** (§3.1) the `measurement_kind` discriminator
+
 **3.1 `measurement_kind` — the solid/abstract discriminator (supersedes v1 `target_type`).**
 
 | Kind           | Class    | Normalization to `[0,1]`                                                                                                  |
@@ -47,6 +51,8 @@ A `qualitative` measurable with **no scale set** is **"unmeasured"** (an empty s
 
 **3.2 Derive-by-default + manual override.** A measurable computes its value from its kind and sources on read; the stored column (`purposes.progress`, `targets.current_value`, …) is an **override slot** — `NULL ⇒ derive`, a set value ⇒ the user's explicit override. This **requires amending** those columns, which today are `NOT NULL DEFAULT 0`, to **nullable** (owed schema below). `[FACT: ADR-002 §5.7 `purposes.progress INTEGER NOT NULL DEFAULT 0` L1804]` Analytics are **derived, never trusted as a stored counter** (the house rule). `[FACT: sessions SS-12 "analytics derived, never stored"; knowledge KN-9/10 "tune the curve, not the number"]`
 
+> **Codes (temporary):** **M4** (§3.3) the fractal weighted rollup
+
 **3.3 Fractal rollup — one weighted rule at every scale.** The same normalization runs DOWN a nesting (sub-tasks · deliverables · milestones → parent) and UP a ladder (contributor → target → purpose): `progress = Σ(child.progress × weight) / Σ weight`. Weights need not sum to 100 (normalized by `Σ weight`); a `NULL`/`0` weight ⇒ **equal-weight** (`1/n` across the set).
 
 **Where the weight lives (the substrate this formula rests on):**
@@ -55,7 +61,11 @@ A `qualitative` measurable with **no scale set** is **"unmeasured"** (an empty s
 - **Nesting** (child → parent inside one module, e.g. sub-task → task): an **owed per-child weight column** on the child (default `NULL` ⇒ equal-weight), added per module → §5.20 stream ii. A module with no explicit weights rolls up **equal-weight**, which is the correct default for v1.
   The formula is thus fully grounded for laddering _today_ and defaults safely for nesting; the only owed piece is the optional per-child nesting weight.
 
+> **Codes (temporary):** **M3** (§3.4, §3.2) the `progress(): [0,1]` contract; stored progress is a nullable override
+
 **3.4 The `progress()` contract — cross-cutting, consumed-not-owned.** Every **pursuable** entity implements `progress(): [0,1]` + declares its `measurement_kind`. **Predicate (the decision rule, not just a list):** an entity is _pursuable_ **iff its owning module intends it as a goal or cascadable work-unit** — i.e. it can meaningfully declare a `measurement_kind` and compute `progress()`. Illustrative set: targets · tasks (incl. sub-tasks) · habits · routines · projects · deliverables · dreams · knowledge objectives · health/finance measurables. The predicate governs edge cases the list can't: a **sub-task** is pursuable (a real work-unit); a **`plan_step`** is **not** (it's documentation — it never declares a kind); **reference data** (contacts, notes, plain links) is **not**. Purposes & Goals **consumes** the contract to roll up; it does **not** own it — the owner is this ADR, at core level.
+
+> **Codes (temporary):** **M2** (§3.5) `binding_mode` (`manual · derived-pull · event-trigger`)
 
 **3.5 `binding_mode` — how a measurable is fed (auto-metric ≡ auto-completion).** A measurable declares one of:
 
@@ -65,7 +75,11 @@ A `qualitative` measurable with **no scale set** is **"unmeasured"** (an empty s
 
 `binding_mode` (how a measurable is fed) is **distinct from** a value's provenance **`source`** `{manual, auto}` (where a recorded value came from) — the two never collide, and `source` stays compatible with Health's existing provenance axis. `[FACT: ADR-004 §3.2.2/§3.2.5; health metric-value `source`]`
 
+> **Codes (temporary):** **M5** (§3.6) the measurement-source read seam
+
 **3.6 The measurement-source READ seam (the one genuinely new mechanism).** A module may **advertise a queryable measure** (`net_worth` ← Finance, `streak(habit)` ← Habits, `body_weight` ← Health, `progress(project)` ← Projects); a `derived-pull` measurable reads it through this seam. It is a **read contract** — advertise + query, **no direct table access** — so it honors **INT-1** exactly as `summary(date)`/`dueIn(range)` do on the write/agenda side. A source outage yields **last-known + a flag**, never a fabricated or stale-as-fresh value.
+
+> **Codes (temporary):** **M6** (§3.7) the acyclic binding DAG guard
 
 **3.7 Bindings are acyclic (DAG).** A binding where A auto-advances B while B feeds A is **rejected at author time** with a typed error; an edit that would introduce a cycle is likewise rejected. **Both** binding edge-types count in the graph — a `derived-pull` A→B and an `event-trigger` B→A together form a cycle. The §3.2.5 rail's idempotency stops runaway _replay_; this guard stops a _semantic_ cycle the idempotency key would not catch. **Enforcement:** cycle detection is owned by the **core measurement service** (the same layer that owns the `progress()` contract and the measurement-source registry); the traversal algorithm + performance envelope (cached adjacency vs. on-write DFS) are a **build-phase** decision — named here, not designed here.
 
@@ -98,6 +112,8 @@ A `qualitative` measurable with **no scale set** is **"unmeasured"** (an empty s
 - **Why rejected:** measurability is a **value contract**, not an _association_ primitive; `contributions` is a _weighted goal-edge_, semantically Purpose-domain. Forcing them into the Spaces tier **reopens the settled ADR-006** (which fixed the universal primitives at exactly two) for no gain. Domain-ownership is the right altitude.
 
 ## 5. Consequences
+
+> **Codes (temporary):** **M7** (Amends, §5) the Purposes rollup tables (`values`, `contributions`, `purpose_reviews`, `plan_steps`)
 
 **Easier:**
 
