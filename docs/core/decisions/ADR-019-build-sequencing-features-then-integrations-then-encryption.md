@@ -3,6 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-07-25
 **Decision Makers:** Victor J.
+**Amended:** 2026-11-07 (LIF-349 gap register EN-5; Victor) — added **§3.3a** (secrets before M3 live only in the OS keychain, never in the database), so the M2-before-M3 order keeps ADR-014/015's credential-custody rule true. Sequencing and architecture are unchanged.
 **Context:** Vida Platform — Part 3 of the foundation-realignment campaign (the build-roadmap resequence). ADR-017 established features-first (encryption/sync/auth deferred to a hardening pass) but left the _order_ of external integrations vs the hardening pass, and the internal-vs-external integration boundary, unspecified. This ADR fixes the milestone spine that `docs/roadmap.md` is rewritten to.
 **Tags:** architecture · process · foundation · sequencing · delivery · roadmap
 **Amends (sequencing only — no architecture is changed):**
@@ -37,6 +38,14 @@
 
 **3.3 External integrations (M2) precede encryption-at-rest (M3), built against the seam.** The `encryptRow`/`decryptRow` seam (pass-through today) and the ADR-014/015 ingestion guard are respected as integrations are built, so M3 is a **verified flip**, not a retrofit. The security _boundary_ (ingestion guard, leak decisions) is **co-built with** the integrations (one design surface); encryption-_at-rest_ is the later whole-OS flip.
 
+**3.3a Secrets before M3 live only in the OS keychain, never in the database.** _(Amended 2026-11-07.)_ ADR-014 (line 10, §3.4) stores connection credentials as encrypted `connection_config` (L2/L3, held by the OS mediator), and ADR-015 (line 10, §5) stores BYO model keys the same way in `ai_connections`. §3.3 builds those integrations in M2, before L2 exists in M3, and §2 argued that this touches no ADR-014/015 invariant; it missed this custody rule, which governs local at-rest state. So the §3.4 plaintext window never covers a secret. Until M3:
+
+- On a venue that can reach the OS keychain (the desktop app), credentials and model keys live only in the keychain, held by the Integrations module (the mediator). The database stores no secret.
+- The web app stores no credential and offers no credentialed connection.
+- At M3, ADR-014/015's encrypted storage applies as written.
+
+This changes no architecture and no order. It is the M2 stopgap that keeps ADR-014/015 true while §3.3 stands. `[DECISION: Victor 2026-11-07, gap sheet IN-Q4, FU-6, EN-Q7]`
+
 **3.4 Encryption gates release.** `[DECISION]` The plaintext-at-rest window (M2→M3) is acceptable **only for solo-localhost** (Victor's machine; ADR-017 §4-5 already books this tradeoff for M1 data — M2 enlarges the _volume_, not the _class_). **Before the product reaches any other user, M3 must be complete and every integration re-verified against the live boundary.**
 
 **3.5 Schema per-feature; substrates by first-consumer pull.** Per ADR-016/018: each module authors its `db/schema/<domain>.ts` + `services/<domain>/`; a `foundation/` substrate is built when its first M1 consumer needs it (the hubs Notes/Journals pull most early), never "substrate-first regardless."
@@ -46,6 +55,7 @@
 - **Fastest path to a usable, shareable-later Real Product**, validated by daily localhost use before the hardest layers are built.
 - **Encryption is a scoped, verified flip** (M3) rather than a retrofit — because integrations were built against the seam.
 - **A managed plaintext window** (M2→M3) exists on localhost; the hard release gate (3.4) contains it. Testers, if any before M3, consent / steer off the most sensitive real data (ADR-017 §5).
+- **No secret is ever in the plaintext window** (3.3a): credentialed integrations exist before M3 only where the OS keychain can hold their secrets.
 - **Multi-device is genuinely last** (M4) — sync needs a second device and encryption beneath it.
 - **The old roadmap's 35 Phase-1.0 issues (LIF-61…95) are re-scoped**, not duplicated (mapping recorded at U3).
 
