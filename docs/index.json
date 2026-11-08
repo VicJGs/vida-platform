@@ -550,11 +550,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A done completion fires complete_habit_occurrence, contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
+      "summary": "A done completion fires contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 120,
+      "tokens": 113,
       "path": "docs/modules/habits/intent/HB-16.md"
     },
     {
@@ -728,6 +728,19 @@
       "path": "docs/modules/habits/intent/HB-28.md"
     },
     {
+      "id": "HB-29",
+      "kind": "intent-row",
+      "module": "habits",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Habits handles complete_habit_occurrence, the effect a session or a consequence fires to complete a habit occurrence; the handler logs it through the Habits completion path as one keyed write per habit and date, so the streak and the habit's own effects move once, and a missing habit or a date beyond the backfill window fails loudly; a habit's own completion never fires it.",
+      "anchors": [
+        "docs/modules/habits/intent.yaml"
+      ],
+      "tokens": 136,
+      "path": "docs/modules/habits/intent/HB-29.md"
+    },
+    {
       "id": "HB-3",
       "kind": "intent-row",
       "module": "habits",
@@ -842,11 +855,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of habits: 28 rows, 7 tested, 2 partly tested, 19 intent only.",
+      "summary": "Intended rules of habits: 29 rows, 7 tested, 2 partly tested, 20 intent only.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 130,
+      "tokens": 131,
       "path": "docs/modules/habits/intent.md"
     },
     {
