@@ -67,6 +67,9 @@
       "tasks": [
         "packages/core/src/services/tasks",
         "apps/web/src/tasks"
+      ],
+      "routines": [
+        "packages/core/src/services/routines"
       ]
     },
     "intentFeatures": {

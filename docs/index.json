@@ -889,6 +889,19 @@
       "path": "docs/modules/preferences/intent.md"
     },
     {
+      "id": "INTENT-routines",
+      "kind": "intent",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of routines: 33 rows, 6 tested, 6 partly tested, 21 intent only.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/routines/intent.md"
+    },
+    {
       "id": "INTENT-sessions",
       "kind": "intent",
       "module": "sessions",
@@ -1787,6 +1800,447 @@
       ],
       "tokens": 71,
       "path": "docs/modules/preferences/intent/PR-9.md"
+    },
+    {
+      "id": "RT-1",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine's name and description, a step's title and description and a completion's skip_reason are encrypted client-side [E]; lifecycle, the recurrence rule, step type and order, time_of_day, skip_dates and dates are plaintext config. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/routines/intent/RT-1.md"
+    },
+    {
+      "id": "RT-10",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One repeatable step may be scoped to all routines, one routine or a subset, one action with many routine memberships.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/routines/intent/RT-10.md"
+    },
+    {
+      "id": "RT-11",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine's cadence is broad (a day, a weekday, a day of the month, a day of the year, at day grain) and validated at write; its occurrences reach the Calendar and the agenda through the Sessions due agenda, with no Routines-owned scheduler.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/routines/intent/RT-11.md"
+    },
+    {
+      "id": "RT-12",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A done routine-day contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric and the mapping, and only the up-edge to the purpose is weighted.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/routines/intent/RT-12.md"
+    },
+    {
+      "id": "RT-13",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines is a due provider; it serves its scheduled, still-owed occurrences through dueIn as one Sessions due lane, read live by the Calendar and the agenda, with nothing mirrored.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/routines/intent/RT-13.md"
+    },
+    {
+      "id": "RT-14",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Streaks, completion rate, step ranking and period comparison recompute from routine_completions on every read; Routines keeps no cached counters, and editing or deleting a past completion re-derives them.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/routines/intent/RT-14.md"
+    },
+    {
+      "id": "RT-15",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notes attach to a routine and to a step through a linked note page, never inline.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/routines/intent/RT-15.md"
+    },
+    {
+      "id": "RT-16",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines and steps are tagged through the shared entity_tags primitive that Spaces owns, as a consumer, never a Routines tag store.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/routines/intent/RT-16.md"
+    },
+    {
+      "id": "RT-17",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a step deletes its completions and deleting a routine deletes its steps; a soft delete (archive) hides them and keeps the ledger.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/routines/intent/RT-17.md"
+    },
+    {
+      "id": "RT-18",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every create, edit, complete, skip and reschedule succeeds locally first with a co-transactional sync_queue row; structured columns reconcile Last-Writer-Wins, and the ledger merges by step and date.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/routines/intent/RT-18.md"
+    },
+    {
+      "id": "RT-19",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine is a pursuable with measurement_kind (natural rate) and binding_mode (derived-pull); it has no goal-type column, progress derives on read with a nullable 0 to 100 override, and it is not a measurement source.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/routines/intent/RT-19.md"
+    },
+    {
+      "id": "RT-2",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine is a named, ordered sequence that owns its list of steps, not a loose time-of-day bucket of single actions.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/routines/intent/RT-2.md"
+    },
+    {
+      "id": "RT-20",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user's routine policy (the completion kind and its params, how a logged skip counts, the acceptance window) is stored once outside Routines and served through the Routines policy port, with editable shipped presets; Routines hardcodes none and flags a routine with no policy (RT-5 and RT-6's store half).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 143,
+      "path": "docs/modules/routines/intent/RT-20.md"
+    },
+    {
+      "id": "RT-21",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Steps may be done in any order, unless the user's policy marks a step as a prerequisite, which gates the steps after it.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/routines/intent/RT-21.md"
+    },
+    {
+      "id": "RT-22",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Rescheduling a missed occurrence writes one intent block for it, and the scheduling engine places that block in an open slot that fits (RT-4's reschedule half).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/routines/intent/RT-22.md"
+    },
+    {
+      "id": "RT-23",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A done routine-day grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger, once per routine and date; Routines never writes points (RT-7's economy half).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/routines/intent/RT-23.md"
+    },
+    {
+      "id": "RT-24",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal's daily summary pulls each routine with activity on the day, its steps done and skipped and its evaluation, through the Routines journal contribution (RT-13's summary half).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/routines/intent/RT-24.md"
+    },
+    {
+      "id": "RT-25",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines presets its recurring windows into the Planner's availability, so the scheduling engine plans around them (the Routines side of SS-9).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/routines/intent/RT-25.md"
+    },
+    {
+      "id": "RT-26",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the routines service is composed with Tasks, Sessions and its sub-type registry, Habits, the policy port, the shared effect rail and registry, Spaces and Notes; Routines owns no effect handler of its own.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/routines/intent/RT-26.md"
+    },
+    {
+      "id": "RT-27",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines serves a routine_step read provider on the shared view-provider registry, so Sessions shows a step's title and detects a deleted step.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/routines/intent/RT-27.md"
+    },
+    {
+      "id": "RT-28",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine's due-time reminders are gated by the Preferences push_routines toggle.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/routines/intent/RT-28.md"
+    },
+    {
+      "id": "RT-29",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines has its cockpit surfaces, today's routines grouped by time of day with each step's live entity state, running a step in place, and the per-routine page (streak, trend, calendar, step ranking, period comparison), plus the policy settings.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/routines/intent/RT-29.md"
+    },
+    {
+      "id": "RT-3",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A step references the entity it drives by type and ref, and running it drives that entity, through a session sub-type or the entity's own completion; the routine reflects the entity and stamps only its own occurrence row, never a parallel completion or a second effect.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/routines/intent/RT-3.md"
+    },
+    {
+      "id": "RT-30",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Routines surface renders its terminal states (today's list, running a step, the alarm step, the routine's evaluation, skip and reschedule, the per-routine page, the provider read); a failed write leaves the step open and shows a typed error.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/routines/intent/RT-30.md"
+    },
+    {
+      "id": "RT-31",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user extends the step and session types and saves routine views through Spaces; Routines never invents a step mode where a session sub-type exists.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/routines/intent/RT-31.md"
+    },
+    {
+      "id": "RT-32",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A failed purpose contribution, effect or provider read never fails the routine; the write is flagged, the contribution can be re-driven, and one routine's failure leaves the other routines unaffected.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/routines/intent/RT-32.md"
+    },
+    {
+      "id": "RT-33",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A driven entity that is missing, terminal or not drivable gives the step a typed error before any routine write; the step stays open and is never marked done silently.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/routines/intent/RT-33.md"
+    },
+    {
+      "id": "RT-4",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An actionable step with no rich entity is a Task that recurs within a timeframe, alarm-like; checked inside the timeframe it is done, missed it is not done.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/routines/intent/RT-4.md"
+    },
+    {
+      "id": "RT-5",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "At the timeframe's end the routine computes what was done and what was not; that partial record is always kept and shown positively, and whether the routine counts as done is the user's completion policy (all-or-nothing, a required step, or a threshold).",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/routines/intent/RT-5.md"
+    },
+    {
+      "id": "RT-6",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user sets how misses count and the acceptance window, how long a miss stays make-good-able before it is a real miss, and a make-good past the window is refused with a typed error; a routine is active, paused or off, and a paused or off routine generates no misses.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/routines/intent/RT-6.md"
+    },
+    {
+      "id": "RT-7",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A routine streak is derived from the routine's own completion and miss policy, not a fixed rule; Gamification reads that policy-derived streak and never assumes the Habits rule.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/routines/intent/RT-7.md"
+    },
+    {
+      "id": "RT-8",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A pre-planned skip (the step's skip_dates) and a skip logged on the day (a completion row with its reason) are distinct; a planned skip is neutral, and a logged skip counts as the miss policy says.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml",
+        "packages/core/src/services/routines/__tests__/routines-service.test.ts"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/routines/intent/RT-8.md"
+    },
+    {
+      "id": "RT-9",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A habit is one tracked behavior and a routine the orchestrator that sequences steps; they never merge, and a habit step drives its habit without redefining it.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/routines/intent/RT-9.md"
     },
     {
       "id": "SS-1",

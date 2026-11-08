@@ -1,0 +1,146 @@
+# Routines intent ledger: every intended, deferred or TBD Routines rule, keyed by its docs/features/routines
+# ID. proof = the built rules in docs/modules/routines/current-business-rules.md; work = the issue that
+# builds the rest. check:rules derives each row's state.
+
+# Invariants (docs/features/routines/business-rules.md)
+- id: RT-1
+  says: A routine's name and description, a step's title and description and a completion's skip_reason are encrypted client-side [E]; lifecycle, the recurrence rule, step type and order, time_of_day, skip_dates and dates are plaintext config. M1 is a pass-through.
+  uses: [encryption]
+  work: LIF-67
+- id: RT-2
+  says: A routine is a named, ordered sequence that owns its list of steps, not a loose time-of-day bucket of single actions.
+  proof: [BR-RT-S1-6, BR-RT-S2-6]
+  # proof checks.ruleId can't read yet: BR-RT-S2c-2
+- id: RT-3
+  says: A step references the entity it drives by type and ref, and running it drives that entity, through a session sub-type or the entity's own completion; the routine reflects the entity and stamps only its own occurrence row, never a parallel completion or a second effect.
+  uses: [sessions, tasks, habits]
+  # proof checks.ruleId can't read yet: BR-RT-S3d-1, BR-RT-S3d-2, BR-RT-S3d-3, BR-RT-S3d-5, BR-RT-S3d-6
+  work: LIF-448
+- id: RT-4
+  says: An actionable step with no rich entity is a Task that recurs within a timeframe, alarm-like; checked inside the timeframe it is done, missed it is not done.
+  uses: [tasks]
+  # proof checks.ruleId can't read yet: BR-RT-S3d-2, BR-RT-S3d-3
+  work: LIF-484
+- id: RT-5
+  says: At the timeframe's end the routine computes what was done and what was not; that partial record is always kept and shown positively, and whether the routine counts as done is the user's completion policy (all-or-nothing, a required step, or a threshold).
+  uses: [journals]
+  # proof checks.ruleId can't read yet: BR-RT-S4e-1, BR-RT-S4e-3, BR-RT-S4e-5, BR-RT-S4e-6
+  work: LIF-482
+- id: RT-6
+  says: The user sets how misses count and the acceptance window, how long a miss stays make-good-able before it is a real miss, and a make-good past the window is refused with a typed error; a routine is active, paused or off, and a paused or off routine generates no misses.
+  proof: [BR-RT-S6-1]
+  # proof checks.ruleId can't read yet: BR-RT-S2c-1, BR-RT-S5a-3
+  work: LIF-482
+- id: RT-7
+  says: A routine streak is derived from the routine's own completion and miss policy, not a fixed rule; Gamification reads that policy-derived streak and never assumes the Habits rule.
+  uses: [gamification]
+  # proof checks.ruleId can't read yet: BR-RT-S5a-4
+- id: RT-8
+  says: A pre-planned skip (the step's skip_dates) and a skip logged on the day (a completion row with its reason) are distinct; a planned skip is neutral, and a logged skip counts as the miss policy says.
+  proof: [BR-RT-S3-3]
+  # proof checks.ruleId can't read yet: BR-RT-S4e-4
+- id: RT-9
+  says: A habit is one tracked behavior and a routine the orchestrator that sequences steps; they never merge, and a habit step drives its habit without redefining it.
+  uses: [habits, HB-27]
+  # proof checks.ruleId can't read yet: BR-RT-S3d-4
+- id: RT-10
+  says: One repeatable step may be scoped to all routines, one routine or a subset, one action with many routine memberships.
+  open: Its internals, a routine_step_membership table or steps sharing one driven entity, are a design pass.
+  work: LIF-483
+- id: RT-11
+  says: A routine's cadence is broad (a day, a weekday, a day of the month, a day of the year, at day grain) and validated at write; its occurrences reach the Calendar and the agenda through the Sessions due agenda, with no Routines-owned scheduler.
+  uses: [sessions]
+  proof: [BR-RT-S9-2]
+  # proof checks.ruleId can't read yet: BR-RT-S5a-1, BR-RT-S5a-2
+- id: RT-12
+  says: A done routine-day contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric and the mapping, and only the up-edge to the purpose is weighted.
+  uses: [purposes, effects]
+  proof: [BR-RT-S7-1, BR-RT-S7-2]
+  work: LIF-113
+- id: RT-13
+  says: Routines is a due provider; it serves its scheduled, still-owed occurrences through dueIn as one Sessions due lane, read live by the Calendar and the agenda, with nothing mirrored.
+  uses: [sessions, calendar]
+  proof: [BR-RT-S9-1, BR-RT-S9-2, BR-RT-S9-3, BR-RT-S9-5]
+  work: LIF-450
+- id: RT-14
+  says: Streaks, completion rate, step ranking and period comparison recompute from routine_completions on every read; Routines keeps no cached counters, and editing or deleting a past completion re-derives them.
+  proof: [BR-RT-S1-3]
+  # proof checks.ruleId can't read yet: BR-RT-S5a-4, BR-RT-S5a-5
+- id: RT-15
+  says: Notes attach to a routine and to a step through a linked note page, never inline.
+  uses: [notes]
+  proof: [BR-RT-S8-1, BR-RT-S8-4, BR-RT-S8-5]
+- id: RT-16
+  says: Routines and steps are tagged through the shared entity_tags primitive that Spaces owns, as a consumer, never a Routines tag store.
+  uses: [spaces]
+  proof: [BR-RT-S8-1, BR-RT-S8-2, BR-RT-S8-3]
+- id: RT-17
+  says: Deleting a step deletes its completions and deleting a routine deletes its steps; a soft delete (archive) hides them and keeps the ledger.
+  proof: [BR-RT-S1-5, BR-RT-S2-5, BR-RT-S3-5, BR-RT-S8-6]
+  work: LIF-485
+- id: RT-18
+  says: Every create, edit, complete, skip and reschedule succeeds locally first with a co-transactional sync_queue row; structured columns reconcile Last-Writer-Wins, and the ledger merges by step and date.
+  uses: [sync]
+  proof: [BR-RT-S1-7, BR-RT-S3-1]
+- id: RT-19
+  says: A routine is a pursuable with measurement_kind (natural rate) and binding_mode (derived-pull); it has no goal-type column, progress derives on read with a nullable 0 to 100 override, and it is not a measurement source.
+  uses: [purposes, measurement]
+  proof: [BR-RT-S1-1, BR-RT-S1-2]
+  # proof checks.ruleId can't read yet: BR-RT-S2c-4, BR-RT-S5a-6
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: RT-20
+  says: The user's routine policy (the completion kind and its params, how a logged skip counts, the acceptance window) is stored once outside Routines and served through the Routines policy port, with editable shipped presets; Routines hardcodes none and flags a routine with no policy (RT-5 and RT-6's store half).
+  uses: [preferences, spaces]
+  open: The home, Preferences or Spaces presets, or the user's value in one and the presets in the other.
+  work: LIF-482
+- id: RT-21
+  says: Steps may be done in any order, unless the user's policy marks a step as a prerequisite, which gates the steps after it.
+  work: LIF-482
+- id: RT-22
+  says: Rescheduling a missed occurrence writes one intent block for it, and the scheduling engine places that block in an open slot that fits (RT-4's reschedule half).
+  uses: [sessions]
+  proof: [BR-RT-S6-2, BR-RT-S6-3, BR-RT-S6-4, BR-RT-S6-5]
+  work: LIF-442
+- id: RT-23
+  says: A done routine-day grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger, once per routine and date; Routines never writes points (RT-7's economy half).
+  uses: [gamification, effects]
+  proof: [BR-RT-S7-1, BR-RT-S7-2, BR-RT-S7-4]
+  work: LIF-401
+- id: RT-24
+  says: The journal's daily summary pulls each routine with activity on the day, its steps done and skipped and its evaluation, through the Routines journal contribution (RT-13's summary half).
+  uses: [journals]
+  proof: [BR-RT-S9-4]
+  work: LIF-112
+- id: RT-25
+  says: Routines presets its recurring windows into the Planner's availability, so the scheduling engine plans around them (the Routines side of SS-9).
+  uses: [sessions, SS-9]
+  work: LIF-442
+- id: RT-26
+  says: In the app the routines service is composed with Tasks, Sessions and its sub-type registry, Habits, the policy port, the shared effect rail and registry, Spaces and Notes; Routines owns no effect handler of its own.
+  uses: [effects]
+  work: LIF-450
+- id: RT-27
+  says: Routines serves a routine_step read provider on the shared view-provider registry, so Sessions shows a step's title and detects a deleted step.
+  uses: [sessions, views]
+  work: LIF-197
+- id: RT-28
+  says: A routine's due-time reminders are gated by the Preferences push_routines toggle.
+  uses: [notifications, preferences]
+  work: LIF-479
+- id: RT-29
+  says: Routines has its cockpit surfaces, today's routines grouped by time of day with each step's live entity state, running a step in place, and the per-routine page (streak, trend, calendar, step ranking, period comparison), plus the policy settings.
+  work: LIF-197
+- id: RT-30
+  says: Every Routines surface renders its terminal states (today's list, running a step, the alarm step, the routine's evaluation, skip and reschedule, the per-routine page, the provider read); a failed write leaves the step open and shows a typed error.
+  work: LIF-197
+# RT-31 is deferred to the Spaces run (LIF-349 checklist line "Spaces, which generates Languages, with Templates · Views · Capabilities folded in"), which owns user-defined types and saved views.
+- id: RT-31
+  says: The user extends the step and session types and saves routine views through Spaces; Routines never invents a step mode where a session sub-type exists.
+  uses: [spaces, sessions, views]
+- id: RT-32
+  says: A failed purpose contribution, effect or provider read never fails the routine; the write is flagged, the contribution can be re-driven, and one routine's failure leaves the other routines unaffected.
+  uses: [effects]
+  proof: [BR-RT-S7-3, BR-RT-S9-5]
+- id: RT-33
+  says: A driven entity that is missing, terminal or not drivable gives the step a typed error before any routine write; the step stays open and is never marked done silently.
+  # proof checks.ruleId can't read yet: BR-RT-S3d-1, BR-RT-S3d-2
