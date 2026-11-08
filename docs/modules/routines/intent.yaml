@@ -129,7 +129,6 @@
   work: LIF-479
 - id: RT-29
   says: Routines has its cockpit surfaces, today's routines grouped by time of day with each step's live entity state, running a step in place, and the per-routine page (streak, trend, calendar, step ranking, period comparison), plus the policy settings.
-  uses: [notes]
   work: LIF-197
 - id: RT-30
   says: Every Routines surface renders its terminal states (today's list, running a step, the alarm step, the routine's evaluation, skip and reschedule, the per-routine page, the provider read); a failed write leaves the step open and shows a typed error.
