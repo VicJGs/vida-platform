@@ -868,11 +868,11 @@
       "module": "journals",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of journals: 19 rows, 4 tested, 5 partly tested, 10 intent only.",
+      "summary": "Intended rules of journals: 20 rows, 4 tested, 5 partly tested, 11 intent only.",
       "anchors": [
         "docs/modules/journals/intent.yaml"
       ],
-      "tokens": 194,
+      "tokens": 196,
       "path": "docs/modules/journals/intent.md"
     },
     {
@@ -987,11 +987,11 @@
       "module": "journals",
       "status": "active",
       "supersedes": [],
-      "summary": "The journal of the day renders from the engine; the /summary block and the Home journal read the dashboard the engine builds, with the user's selection, instead of the inert summary seam.",
+      "summary": "The journal of the day, in Notes and on Home, is composed of each module's own blocks (capability-registry entries with an inline target, shown as checklists, lists, number cards or graphs), switched on per module by the journal's toggles; there is no single aggregated summary block, and each block reads its module's day live through its journal contribution, so a change in the module shows in the journal.",
       "anchors": [
         "docs/modules/journals/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 145,
       "path": "docs/modules/journals/intent/JR-12.md"
     },
     {
@@ -1013,11 +1013,11 @@
       "module": "journals",
       "status": "active",
       "supersedes": [],
-      "summary": "Preferences stores the global default journal selection, the per-module data points shown when a journal has no override (JR-4's default half).",
+      "summary": "Preferences stores the global default journal selection, which modules' blocks show, and in which form, when a journal has no override (JR-4's default half).",
       "anchors": [
         "docs/modules/journals/intent.yaml"
       ],
-      "tokens": 73,
+      "tokens": 77,
       "path": "docs/modules/journals/intent/JR-14.md"
     },
     {
@@ -1065,13 +1065,13 @@
       "module": "journals",
       "status": "active",
       "supersedes": [],
-      "summary": "The journal of the day renders its terminal states, loading, first day with each section's own nothing-yet, a failed provider degrading only its section, and populated; it is never blank.",
+      "summary": "The journal of the day renders its terminal states, loading, first day with each module block's own nothing-yet, a failed contribution degrading only its block, and populated; it is never blank.",
       "anchors": [
         "docs/modules/journals/intent.yaml",
         "packages/core/src/services/journals/__tests__/dashboard.test.ts",
         "packages/core/src/services/journals/__tests__/registry.test.ts"
       ],
-      "tokens": 95,
+      "tokens": 97,
       "path": "docs/modules/journals/intent/JR-18.md"
     },
     {
@@ -1102,6 +1102,19 @@
       "path": "docs/modules/journals/intent/JR-2.md"
     },
     {
+      "id": "JR-20",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user works from the journal; a module block is interactive (tick a task, check a habit, start a session) and writes only through its module's own service, so the journal is the one place to see and act on the day without going to each module.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/journals/intent/JR-20.md"
+    },
+    {
       "id": "JR-3",
       "kind": "intent-row",
       "module": "journals",
@@ -1121,12 +1134,12 @@
       "module": "journals",
       "status": "active",
       "supersedes": [],
-      "summary": "The user picks, per module and per data point, what the journal shows; each contribution advertises its data points, the selection filters the summary, and a per-journal override in summary_config, generalized from the five fixed toggles to a per-module selection, wins over the global default.",
+      "summary": "The user picks, per module, which of the module's blocks the journal shows and in which form, with each contribution advertising what it offers; a per-journal override in summary_config, generalized from the five fixed toggles to a per-module selection, wins over the global default.",
       "anchors": [
         "docs/modules/journals/intent.yaml",
         "packages/core/src/services/journals/__tests__/dashboard.test.ts"
       ],
-      "tokens": 121,
+      "tokens": 118,
       "path": "docs/modules/journals/intent/JR-4.md"
     },
     {
