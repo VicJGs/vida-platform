@@ -5,7 +5,7 @@
 
 # Invariants (docs/features/projects/business-rules.md)
 - id: PJ-1
-  says: A project's title, description and vision, a milestone's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.
+  says: A project's title, description and vision, a milestone's and a deliverable's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.
   uses: [encryption]
   proof: [BR-PJ-S1-1]
   work: LIF-67

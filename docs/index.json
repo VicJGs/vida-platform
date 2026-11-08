@@ -1842,11 +1842,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "A project's title, description and vision, a milestone's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.",
+      "summary": "A project's title, description and vision, a milestone's and a deliverable's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 118,
       "path": "docs/modules/projects/intent/PJ-1.md"
     },
     {
