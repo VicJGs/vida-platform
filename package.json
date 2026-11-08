@@ -70,6 +70,16 @@
       ],
       "routines": [
         "packages/core/src/services/routines"
+      ],
+      "journals": [
+        "packages/core/src/services/journals",
+        "apps/web/src/home/journal-contribution.test.ts",
+        "apps/web/src/home/journal-page-region.test.tsx",
+        "apps/web/src/home/use-journal-entry.test.ts",
+        "apps/web/src/home/home-surface.test.tsx",
+        "apps/web/src/home/section-model.test.ts",
+        "apps/web/src/home/section-state.test.ts",
+        "apps/web/src/home/selection.test.ts"
       ]
     },
     "intentFeatures": {
