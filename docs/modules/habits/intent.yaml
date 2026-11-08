@@ -1,0 +1,114 @@
+# Habits intent ledger: every intended, deferred or TBD Habits rule, keyed by its docs/features/habits
+# ID. proof = the built rules in docs/modules/habits/current-business-rules.md; work = the issue that
+# builds the rest. check:rules derives each row's state.
+
+# Invariants (docs/features/habits/business-rules.md)
+- id: HB-1
+  says: A habit's name, description, unit, cue, reward and success_criteria and a completion's location are encrypted client-side [E]; habit_type, frequency, days_of_week, domain, time_of_day and the counters are plaintext config, and tags are entity_tags rows, not an inline column. M1 is a pass-through.
+  uses: [encryption]
+  work: LIF-67
+- id: HB-2
+  says: A streak is the run of consecutive scheduled occurrences that are done, and an elapsed scheduled miss resets it to 0 with no grace; current_streak, longest_streak and total_completions are a cache recomputed from the habit_completions ledger on every log, edit, delete and backfill, never adjusted by hand.
+  proof: [BR-HB-12, BR-HB-13, BR-HB-14, BR-HB-15]
+- id: HB-3
+  says: A habit has at most one completion per date; logging a date already logged updates that row, never adds a second.
+  proof: [BR-HB-10]
+- id: HB-4
+  says: For a build habit a completion means it was done; for a break habit it means the user abstained that day, so a break streak counts clean scheduled days and a day with no completion is the relapse.
+- id: HB-5
+  says: A habit is done for the day when count reaches target_count, and over-achieving still counts as done; a partial is logged for analytics but never advances the streak, and value is a measured quantity for analytics only.
+  proof: [BR-HB-11]
+- id: HB-6
+  says: Today's list holds the active habits whose frequency and days_of_week match today, computed on read, never stored, and shown grouped by time_of_day.
+  proof: [BR-HB-12, BR-HB-23]
+  work: LIF-182
+- id: HB-7
+  says: Mood before and after, ease and satisfaction (each 1 to 5) are optional and captured only by an explicit detailed log; the default completion is a single tap.
+  proof: [BR-HB-16]
+- id: HB-8
+  says: A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values.
+  uses: [purposes]
+  proof: [BR-HB-29, BR-HB-31]
+  work: LIF-113
+- id: HB-9
+  says: A done completion grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger, once per habit and date; Habits never writes points itself.
+  uses: [gamification]
+  proof: [BR-HB-29, BR-HB-31]
+  work: LIF-401
+- id: HB-10
+  says: The user may log or edit a completion for a past date, which recomputes the streak; a future date, or a date beyond the backfill window, is rejected with a typed BackfillWindowError and writes nothing.
+  proof: [BR-HB-18, BR-HB-19, BR-HB-20, BR-HB-22]
+- id: HB-11
+  says: Deleting a habit deletes its habit_completions; a soft delete hides the habit and keeps its ledger until the hard delete.
+  proof: [BR-HB-5, BR-HB-6]
+  work: LIF-476
+- id: HB-12
+  says: Every create, edit, complete and backfill succeeds locally first with a co-transactional sync_queue row; structured columns reconcile Last-Writer-Wins across devices, and the completion ledger merges by habit and date.
+  uses: [sync]
+- id: HB-13
+  says: A habit is a pursuable with measurement_kind (natural rate, how often it happens) and binding_mode (a completion is the event trigger); it has no bespoke goal-type column, and its rate and progress derive on read.
+  uses: [purposes, measurement]
+  proof: [BR-HB-1, BR-HB-3]
+  work: LIF-477
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: HB-14
+  says: Each time in a due habit's times_of_day becomes a reminder, gated by the Preferences push_habits toggle; Habits feeds the Sessions due agenda that Notifications reads (HB-6's reminder half).
+  uses: [sessions, notifications, preferences]
+  work: LIF-474
+- id: HB-15
+  says: The backfill window is a user setting that Preferences owns (habit_backfill_window_days), set in Settings and read by Habits through its Preferences port; unset means no limit, never a hidden default (HB-10's window half).
+  uses: [preferences]
+  proof: [BR-HB-21]
+  work: LIF-475
+- id: HB-16
+  says: A done completion fires complete_habit_occurrence, contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
+  uses: [effects]
+  proof: [BR-HB-29, BR-HB-30]
+  work: LIF-450
+- id: HB-17
+  says: A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently (HB-8's failure half).
+  proof: [BR-HB-30]
+  work: LIF-478
+- id: HB-18
+  says: A custom frequency needs days_of_week; a create or a patch without it is refused with HabitScheduleError, since the habit could never be due.
+  proof: [BR-HB-2]
+- id: HB-19
+  says: The v1 fields are restored, success_criteria and difficulty (very_easy to very_hard) on a habit and location and completion_time on a completion.
+  proof: [BR-HB-1]
+- id: HB-20
+  says: Habits tags through the shared entity_tags primitive with entity_type habit, never an inline tag list, and reads a habit's tags through the association resolver, which returns none when absent.
+  uses: [spaces]
+  proof: [BR-HB-32]
+- id: HB-21
+  says: project_habits stays a live junction that links a habit to projects; linking again restores a removed link, and only the purpose junctions retire into contributions.
+  uses: [projects]
+  proof: [BR-HB-33]
+- id: HB-22
+  says: The journal's daily summary pulls the habits due and done on the day through the Habits journal contribution; Habits never pushes to the journal.
+  uses: [journals]
+  proof: [BR-HB-34]
+  work: LIF-112
+- id: HB-23
+  says: Habits serves a habit's streak and completion rate as measures that Journal and Purposes read through the measurement seam, never a table read.
+  uses: [measurement, journals, purposes]
+  proof: [BR-HB-24, BR-HB-25, BR-HB-27]
+  work: LIF-477
+- id: HB-24
+  says: Habits has four surfaces, the Dashboard (check off any habit), today's list in Calendar, List and Checkbox modes, the per-habit page (streak, completion rate and mood charts, a calendar of completions and the linked note page) and the All-Habits Overview.
+  uses: [notes]
+  proof: [BR-HB-26]
+  work: LIF-182
+- id: HB-25
+  says: Every Habits surface renders its terminal states (today's list, Dashboard and Overview, quick and detailed log, analytics, backfill, the per-habit page); a failed log or backfill reverts and shows a typed error.
+  work: LIF-182
+- id: HB-26
+  says: React Query owns habit reads and writes, with optimistic completion logging, and Zustand owns the ephemeral screen state (active view and today mode, per-habit tab, detailed-log draft, selection).
+  work: LIF-182
+- id: HB-27
+  says: A Routines habit step completes its habit through the Habits contract, one native tick per occurrence on the habit's own ledger; the habit stays the single source of truth and fires its own completion effects, and a missing habit or a date beyond the backfill window fails the step loudly.
+  uses: [routines]
+  proof: [BR-HB-10, BR-HB-17, BR-HB-19]
+- id: HB-28
+  says: Habits serves a completion grid of every active habit across a date range, each day carrying whether it is scheduled, its count and whether it is done, in one ledger read; the Global Calendar draws its habits from it.
+  uses: [calendar]
+  proof: [BR-HB-35]
