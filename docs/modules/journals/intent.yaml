@@ -1,0 +1,94 @@
+# Journals intent ledger: every intended, deferred or TBD Journals rule, keyed by its docs/features/journals
+# ID. proof = the built rules in docs/modules/journals/current-business-rules.md; work = the issue that
+# builds the rest. check:rules derives each row's state.
+
+# Invariants (docs/features/journals/business-rules.md)
+- id: JR-1
+  says: Journals is the engine and Notes owns the page; Journals owns the engine that turns sources into sections, the agenda, snapshots, reviews and the journal views, and never the pages row, one journal per date, the /summary block interface or the free-form entry.
+  uses: [notes]
+  proof: [BR-S2-1, BR-S3-1, BR-S4-1]
+  work: LIF-406
+- id: JR-2
+  says: The engine sits above the modules; Journals depends downward on the modules and on Notes, and Notes, a foundation, never depends on Journals.
+  uses: [notes]
+  proof: [BR-S1-1]
+- id: JR-3
+  says: Modules contribute through a registry and the journal names no module; each module registers a journal contribution, and the engine iterates the registry, so adding a module never edits the journal.
+  proof: [BR-S1-1, BR-S1-2, BR-S1-3]
+- id: JR-4
+  says: The user picks, per module, which of the module's blocks the journal shows and in which form, with each contribution advertising what it offers; a per-journal override in summary_config, generalized from the five fixed toggles to a per-module selection, wins over the global default.
+  uses: [notes]
+  proof: [BR-S2-3, BR-S2-4]
+  work: LIF-407
+- id: JR-5
+  says: The journal of the day has two halves, the summary (what happened) and the agenda (what's due); the agenda reads the shared Sessions due agenda that also feeds Sessions and the Global Calendar.
+  uses: [sessions, SS-7]
+  proof: [BR-S2-5]
+  work: LIF-487
+- id: JR-6
+  says: Today's journal is live and re-aggregates on open; a past day shows the snapshot of that day, with an optional live then-vs-now comparison the user opts into.
+  proof: [BR-S3-4, BR-S3-6]
+- id: JR-7
+  says: A summary contribution answers for a given date deterministically, from data keyed to that date, so a snapshot is a faithful record of the day.
+  proof: [BR-S1-2, BR-S3-1]
+- id: JR-8
+  says: Reviews compose snapshots over time-frames the user defines (day, week, month, year and custom ones such as bi-week, bimester or semester), arrive when the user schedules them, and render in a dedicated Wrapped-style view; a period with too little history is an explicit not-enough-data state.
+  proof: [BR-S4-1, BR-S4-2, BR-S4-6]
+  work: LIF-488
+- id: JR-9
+  says: A review shows improvement as a trajectory, progress against goals, dreams and purposes, how projects developed, and the workload and output in the period, never a list.
+  uses: [purposes, projects, gamification]
+  work: LIF-488
+- id: JR-10
+  says: Each module computes its metrics and Journals presents them; Journals never re-implements metric math, it schedules and personalizes the presentation.
+  proof: [BR-S4-3]
+  work: LIF-488
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: JR-11
+  says: In the app the journal registry holds every built module contribution; the composition root calls each module's journal registration helper, and Journals itself names none.
+  uses: [tasks, habits, routines, TK-17, HB-22, RT-24, finance, gamification, projects, books, knowledge, learning, purposes, relationships, notifications]
+  work: LIF-112
+- id: JR-12
+  says: The journal of the day, in Notes and on Home, is composed of each module's own blocks (capability-registry entries with an inline target, shown as checklists, lists, number cards or graphs), switched on per module by the journal's toggles; there is no single aggregated summary block, and each block reads its module's day live through its journal contribution, so a change in the module shows in the journal.
+  uses: [notes, capabilities, NP-13, NP-14]
+  work: LIF-405
+- id: JR-13
+  says: The journal types and the selection logic have one home, the core Journals module; the web layer re-imports them and its inert copies (the signature-only contribution registry and the selection storage seams) are retired.
+  work: LIF-405
+- id: JR-14
+  says: Preferences stores the global default journal selection, which modules' blocks show, and in which form, when a journal has no override (JR-4's default half).
+  uses: [preferences]
+  work: LIF-407
+- id: JR-15
+  says: A snapshot's frozen section data is encrypted client-side [E]; the snapshot date and capture time are plaintext. M1 is a pass-through.
+  uses: [encryption]
+  work: LIF-67
+- id: JR-16
+  says: Each past day is captured as a snapshot by a defined trigger, against a strict local-time today; snapshots stay immutable and freeze degraded sections as they are, and whether a backfill after capture re-captures the day is a design pass.
+  proof: [BR-S3-7, BR-S3-8]
+  open: Re-capture or freeze when backfilled data lands after a day is captured, and whether a degraded section is retried.
+  work: LIF-488
+- id: JR-17
+  says: The user plans when each review arrives, and the scheduled review is delivered through a scheduled item, a Sessions planned item or a Notifications delivery.
+  uses: [notifications, sessions]
+  work: LIF-488
+- id: JR-18
+  says: The journal of the day renders its terminal states, loading, first day with each module block's own nothing-yet, a failed contribution degrading only its block, and populated; it is never blank.
+  proof: [BR-S1-4, BR-S2-2, BR-S2-7]
+  work: LIF-407
+- id: JR-19
+  says: The data-model record shows the journal_snapshots table and the generalized summary_config selection.
+  uses: [notes]
+  work: LIF-63
+- id: JR-20
+  says: The user works from the journal; a module block is interactive (tick a task, check a habit, start a session) and writes only through its module's own service, so the journal is the one place to see and act on the day without going to each module.
+  uses: [capabilities, tasks, habits, sessions]
+  work: LIF-405
+# Consumers with no row here. Each built contribution is a row in its own module's ledger when that ledger
+# exists (TK-17, HB-22, RT-24, linked from JR-11). Finance has a ledger but no row for its built contribution
+# (LIF-349 run 17 findings). Gamification, Projects, Books, Knowledge, Learning, Purposes, Relationships and
+# Notifications have built contributions and get their rows in their own module runs (LIF-349 checklist).
+# Designed but not built: Sessions' study, review and focus feed (PD-17 declares the projection; no
+# contribution, recorded on LIF-112); Check-ins (CK-7, J8 deferred to the Check-ins run); Health (HN-10,
+# HT-11, the Health run); Skills (the Skills run); Books' page photos (BK-10, the Books run). Notes' journal
+# Overview is NP-20 (LIF-406). The Global Calendar reads the same due agenda but is its own surface (J7).

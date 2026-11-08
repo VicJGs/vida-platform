@@ -863,6 +863,19 @@
       "path": "docs/modules/habits/intent.md"
     },
     {
+      "id": "INTENT-journals",
+      "kind": "intent",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of journals: 20 rows, 4 tested, 5 partly tested, 11 intent only.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 196,
+      "path": "docs/modules/journals/intent.md"
+    },
+    {
       "id": "INTENT-notes",
       "kind": "intent",
       "module": "notes",
@@ -928,6 +941,278 @@
       "path": "docs/modules/tasks/intent.md"
     },
     {
+      "id": "JR-1",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Journals is the engine and Notes owns the page; Journals owns the engine that turns sources into sections, the agenda, snapshots, reviews and the journal views, and never the pages row, one journal per date, the /summary block interface or the free-form entry.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/dashboard.test.ts",
+        "packages/core/src/services/journals/__tests__/journals-service.test.ts"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/journals/intent/JR-1.md"
+    },
+    {
+      "id": "JR-10",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each module computes its metrics and Journals presents them; Journals never re-implements metric math, it schedules and personalizes the presentation.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/journals/intent/JR-10.md"
+    },
+    {
+      "id": "JR-11",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the journal registry holds every built module contribution; the composition root calls each module's journal registration helper, and Journals itself names none.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/journals/intent/JR-11.md"
+    },
+    {
+      "id": "JR-12",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal of the day, in Notes and on Home, is composed of each module's own blocks (capability-registry entries with an inline target, shown as checklists, lists, number cards or graphs), switched on per module by the journal's toggles; there is no single aggregated summary block, and each block reads its module's day live through its journal contribution, so a change in the module shows in the journal.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/journals/intent/JR-12.md"
+    },
+    {
+      "id": "JR-13",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal types and the selection logic have one home, the core Journals module; the web layer re-imports them and its inert copies (the signature-only contribution registry and the selection storage seams) are retired.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/journals/intent/JR-13.md"
+    },
+    {
+      "id": "JR-14",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences stores the global default journal selection, which modules' blocks show, and in which form, when a journal has no override (JR-4's default half).",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/journals/intent/JR-14.md"
+    },
+    {
+      "id": "JR-15",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A snapshot's frozen section data is encrypted client-side [E]; the snapshot date and capture time are plaintext. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/journals/intent/JR-15.md"
+    },
+    {
+      "id": "JR-16",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each past day is captured as a snapshot by a defined trigger, against a strict local-time today; snapshots stay immutable and freeze degraded sections as they are, and whether a backfill after capture re-captures the day is a design pass.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 134,
+      "path": "docs/modules/journals/intent/JR-16.md"
+    },
+    {
+      "id": "JR-17",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user plans when each review arrives, and the scheduled review is delivered through a scheduled item, a Sessions planned item or a Notifications delivery.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/journals/intent/JR-17.md"
+    },
+    {
+      "id": "JR-18",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal of the day renders its terminal states, loading, first day with each module block's own nothing-yet, a failed contribution degrading only its block, and populated; it is never blank.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/dashboard.test.ts",
+        "packages/core/src/services/journals/__tests__/registry.test.ts"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/journals/intent/JR-18.md"
+    },
+    {
+      "id": "JR-19",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the journal_snapshots table and the generalized summary_config selection.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/journals/intent/JR-19.md"
+    },
+    {
+      "id": "JR-2",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine sits above the modules; Journals depends downward on the modules and on Notes, and Notes, a foundation, never depends on Journals.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/registry.test.ts"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/journals/intent/JR-2.md"
+    },
+    {
+      "id": "JR-20",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user works from the journal; a module block is interactive (tick a task, check a habit, start a session) and writes only through its module's own service, so the journal is the one place to see and act on the day without going to each module.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/journals/intent/JR-20.md"
+    },
+    {
+      "id": "JR-3",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Modules contribute through a registry and the journal names no module; each module registers a journal contribution, and the engine iterates the registry, so adding a module never edits the journal.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/registry.test.ts"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/journals/intent/JR-3.md"
+    },
+    {
+      "id": "JR-4",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user picks, per module, which of the module's blocks the journal shows and in which form, with each contribution advertising what it offers; a per-journal override in summary_config, generalized from the five fixed toggles to a per-module selection, wins over the global default.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/dashboard.test.ts"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/journals/intent/JR-4.md"
+    },
+    {
+      "id": "JR-5",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal of the day has two halves, the summary (what happened) and the agenda (what's due); the agenda reads the shared Sessions due agenda that also feeds Sessions and the Global Calendar.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/dashboard.test.ts"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/journals/intent/JR-5.md"
+    },
+    {
+      "id": "JR-6",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Today's journal is live and re-aggregates on open; a past day shows the snapshot of that day, with an optional live then-vs-now comparison the user opts into.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/journals-service.test.ts"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/journals/intent/JR-6.md"
+    },
+    {
+      "id": "JR-7",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A summary contribution answers for a given date deterministically, from data keyed to that date, so a snapshot is a faithful record of the day.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/journals-service.test.ts",
+        "packages/core/src/services/journals/__tests__/registry.test.ts"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/journals/intent/JR-7.md"
+    },
+    {
+      "id": "JR-8",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Reviews compose snapshots over time-frames the user defines (day, week, month, year and custom ones such as bi-week, bimester or semester), arrive when the user schedules them, and render in a dedicated Wrapped-style view; a period with too little history is an explicit not-enough-data state.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml",
+        "packages/core/src/services/journals/__tests__/journals-service.test.ts"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/journals/intent/JR-8.md"
+    },
+    {
+      "id": "JR-9",
+      "kind": "intent-row",
+      "module": "journals",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A review shows improvement as a trajectory, progress against goals, dreams and purposes, how projects developed, and the workload and output in the period, never a list.",
+      "anchors": [
+        "docs/modules/journals/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/journals/intent/JR-9.md"
+    },
+    {
       "id": "NP-1",
       "kind": "intent-row",
       "module": "notes",
@@ -986,11 +1271,11 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Notes stores summary_config only; the /summary sections come from the Journals engine, each degrades alone, and the full personalizable section menu is intended (G5).",
+      "summary": "Notes stores summary_config only, the journal's per-module toggles; the journal page holds each module's own blocks, switched on by those toggles and read live through the Journals contributions, never one summary block; each block degrades alone, and the full personalizable menu of module blocks is intended (G5).",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 100,
+      "tokens": 146,
       "path": "docs/modules/notes/intent/NP-13.md"
     },
     {
