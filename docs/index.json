@@ -907,11 +907,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of projects: 33 rows, 2 tested, 1 partly tested, 30 intent only.",
+      "summary": "Intended rules of projects: 35 rows, 2 tested, 1 partly tested, 32 intent only.",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 140,
+      "tokens": 143,
       "path": "docs/modules/projects/intent.md"
     },
     {
@@ -1894,11 +1894,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "A task can sit under a deliverable, so a deliverable's progress can come from its tasks (the task leaf of PJ-4).",
+      "summary": "A task can sit under a deliverable (which implies its milestone and project), and a deliverable's task leaf counts only the tasks nested in it, never the milestone's tasks outside it (Victor, 2026-11-08).",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 61,
+      "tokens": 88,
       "path": "docs/modules/projects/intent/PJ-13.md"
     },
     {
@@ -1907,11 +1907,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "Deleting a project or a milestone asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.",
+      "summary": "Deleting a project, a milestone or a deliverable asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 90,
+      "tokens": 94,
       "path": "docs/modules/projects/intent/PJ-14.md"
     },
     {
@@ -1985,11 +1985,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project or a milestone through the Tasks parent links (a task under a deliverable is PJ-13).",
+      "summary": "A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project, a milestone or a deliverable through the Tasks parent links (the deliverable link is PJ-13; every milestone has a deliverable, PJ-35).",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 140,
+      "tokens": 153,
       "path": "docs/modules/projects/intent/PJ-2.md"
     },
     {
@@ -2187,6 +2187,32 @@
       ],
       "tokens": 98,
       "path": "docs/modules/projects/intent/PJ-33.md"
+    },
+    {
+      "id": "PJ-34",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A milestone's progress is the weighted rollup, through the measurement engine, of its sub-milestones, its deliverables and each of its own tasks outside a deliverable as one child (equal weight unless set); a task inside a deliverable counts only through that deliverable (Victor, 2026-11-08).",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/projects/intent/PJ-34.md"
+    },
+    {
+      "id": "PJ-35",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every milestone has at least one deliverable; creating a milestone takes at least one deliverable, and deleting a milestone's last deliverable is refused (Victor, 2026-11-08).",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/projects/intent/PJ-35.md"
     },
     {
       "id": "PJ-4",

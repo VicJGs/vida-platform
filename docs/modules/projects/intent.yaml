@@ -10,7 +10,7 @@
   proof: [BR-PJ-S1-1]
   work: LIF-67
 - id: PJ-2
-  says: A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project or a milestone through the Tasks parent links (a task under a deliverable is PJ-13).
+  says: A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project, a milestone or a deliverable through the Tasks parent links (the deliverable link is PJ-13; every milestone has a deliverable, PJ-35).
   uses: [tasks, TK-2]
   proof: [BR-PJ-S2-1, BR-PJ-S2-2, BR-PJ-S2-3, BR-PJ-S3-1]
 - id: PJ-3
@@ -60,12 +60,12 @@
   uses: [spaces, sync]
   proof: [BR-PJ-S6-3]
 # Proposed IDs, no ID in docs/features today (approve in the PR)
-# PJ-13 has no work link: Tasks has no deliverable link (TK-2), so the question is in the run-18 findings.
 - id: PJ-13
-  says: A task can sit under a deliverable, so a deliverable's progress can come from its tasks (the task leaf of PJ-4).
+  says: A task can sit under a deliverable (which implies its milestone and project), and a deliverable's task leaf counts only the tasks nested in it, never the milestone's tasks outside it (Victor, 2026-11-08).
   uses: [tasks, TK-2]
+  work: LIF-471
 - id: PJ-14
-  says: Deleting a project or a milestone asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.
+  says: Deleting a project, a milestone or a deliverable asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.
   uses: [tasks, TK-12]
   work: LIF-471
 - id: PJ-15
@@ -145,6 +145,13 @@
   says: In the app the composition root builds Projects with its deps (spaces, notes, the entity registry, the measurement sources, the Tasks port and the effect rail); Projects owns no effect handler, so it has no registration step.
   uses: [tasks, effects, measurement]
   work: LIF-450
+- id: PJ-34
+  says: A milestone's progress is the weighted rollup, through the measurement engine, of its sub-milestones, its deliverables and each of its own tasks outside a deliverable as one child (equal weight unless set); a task inside a deliverable counts only through that deliverable (Victor, 2026-11-08).
+  uses: [measurement, tasks, TK-2]
+  work: LIF-494
+- id: PJ-35
+  says: Every milestone has at least one deliverable; creating a milestone takes at least one deliverable, and deleting a milestone's last deliverable is refused (Victor, 2026-11-08).
+  work: LIF-494
 # Consumers with no row here. Built and already in their own ledgers: Habits project_habits (HB-21), Tasks
 # parent links (TK-2, TK-9, TK-12, TK-13), Fiscal-legal legal entities (FL-1, FL-8), Notes milestone and
 # deliverable Overviews (NP-22), the Journals contribution and look-back (JR-9, JR-11). Built with no ledger
