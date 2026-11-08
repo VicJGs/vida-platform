@@ -1,0 +1,154 @@
+# Projects intent ledger: every intended, deferred or TBD Projects rule, keyed by its docs/features/projects
+# ID. proof = the built rules in docs/modules/projects/current-business-rules.md; work = the issue that
+# builds the rest. check:rules derives each row's state. No Projects test names its BR-PJ ID yet, so built
+# rows read intent only (LIF-349 run 18 findings).
+
+# Invariants (docs/features/projects/business-rules.md)
+- id: PJ-1
+  says: A project's title, description and vision, a milestone's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.
+  uses: [encryption]
+  proof: [BR-PJ-S1-1]
+  work: LIF-67
+- id: PJ-2
+  says: A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project or a milestone through the Tasks parent links (a task under a deliverable is PJ-13).
+  uses: [tasks, TK-2]
+  proof: [BR-PJ-S2-1, BR-PJ-S2-2, BR-PJ-S2-3, BR-PJ-S3-1]
+- id: PJ-3
+  says: Progress is derived bottom-up on read (task, deliverable, milestone, project); the stored progress is a nullable manual override that wins when set, children weigh by their nesting_weight (empty means equal), an unmeasured child is left out and flags the rollup partial, and an all-unmeasured set is null, never 0. The project to purpose step is weighted by the contribution percentage, not by counting.
+  uses: [measurement, purposes]
+  proof: [BR-PJ-S1-2, BR-PJ-S2-6, BR-PJ-S4-1, BR-PJ-S4-2, BR-PJ-S4-3, BR-PJ-S4-4, BR-PJ-S4-5]
+- id: PJ-4
+  says: A deliverable carries measurement_kind (natural milestone) and binding_mode; the five former backends (financial, task statistics, third-party metric, activity log, artifact) become kind by binding by source, a derived-pull deliverable reads its bound source through the measurement-source seam, and the order is manual override, then its tasks, then its source, then unmeasured.
+  uses: [measurement, finance, tasks]
+  proof: [BR-PJ-S3-2, BR-PJ-S3-3, BR-PJ-S7-1, BR-PJ-S7-2, BR-PJ-S7-3, BR-PJ-S8-3]
+  open: How a raw source value becomes progress (baseline and target), which sources each kind may bind, and what an event-trigger deliverable listens to.
+  work: LIF-492
+- id: PJ-5
+  says: Tasks belong to Tasks; Projects reaches them only through the dedicated Tasks to Projects read port, for the project task list, the task leaf of a deliverable and project time, and never reads the tasks table.
+  uses: [tasks, TK-13]
+  proof: [BR-PJ-S8-1]
+  work: LIF-471
+- id: PJ-6
+  says: Project time derives from the focus time of the project's tasks (Tasks' one ledger); there is no project timer and no project time log. PJ-15 extends it to sessions attached to the project.
+  uses: [tasks, TK-5]
+  proof: [BR-PJ-S8-2]
+  work: LIF-471
+- id: PJ-7
+  says: Vision and Mission are guiding pages of the project, not columns; the vision column is a one-line summary at most.
+  uses: [notes]
+  proof: [BR-PJ-S6-2]
+# PJ-8's large-file half rides the attachment pipeline, deferred to the Sync & Venues run (LIF-349 checklist line
+# "Sync & Venues (ADR-003, docs/core/sync, docs/platform)"); Projects then adds the storage reference column.
+- id: PJ-8
+  says: Project documents are a confidential vault, always client-encrypted; small files are stored inline, large files go through the attachment pipeline as ciphertext only, and the server never sees plaintext.
+  uses: [encryption, sync]
+  proof: [BR-PJ-S5-1, BR-PJ-S5-2, BR-PJ-S5-3]
+- id: PJ-9
+  says: Deleting a project removes its milestones, their deliverables and its documents; deleting a milestone removes its deliverables, moves its sub-milestones to the top level and keeps its documents under the project; a soft delete hides the row and still syncs. What happens to the tasks is PJ-14.
+  proof: [BR-PJ-S1-6, BR-PJ-S2-5, BR-PJ-S3-5, BR-PJ-S5-4]
+- id: PJ-10
+  says: Projects links to other modules only through junctions and documented integration points; project_habits stays (Habits), purpose_projects is retired into the weighted contributions (Purposes), a dream keeps its project link, and Projects owns project contacts with roles, project to account links and project events.
+  uses: [habits, HB-21, purposes, relationships, finance, calendar]
+  work: LIF-491
+# PJ-11 (third-party ingestion) is deferred to the Integrations run (LIF-349 checklist line "Integrations
+# (ADR-014, docs/core/ingestion and egress)"); its assistant half is PJ-16.
+- id: PJ-11
+  says: Third-party metric ingestion for a deliverable is opt-in and device-mediated under an external-in grant, never a server-side fetch; an ingestion that would need the server to see plaintext is refused with a typed consent error unless the user opted in.
+  uses: [integrations]
+- id: PJ-12
+  says: Projects, milestones and deliverables are tagged through the shared scoped entity_tags, never an inline tag list; every write succeeds locally first and structured columns sync last-writer-wins.
+  uses: [spaces, sync]
+  proof: [BR-PJ-S6-3]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+# PJ-13 has no work link: Tasks has no deliverable link (TK-2), so the question is in the run-18 findings.
+- id: PJ-13
+  says: A task can sit under a deliverable, so a deliverable's progress can come from its tasks (the task leaf of PJ-4).
+  uses: [tasks, TK-2]
+- id: PJ-14
+  says: Deleting a project or a milestone asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.
+  uses: [tasks, TK-12]
+  work: LIF-471
+- id: PJ-15
+  says: Project time also counts sessions attached to the project, one of its milestones or one of its deliverables, derived on read from the session log and counted once per session; a time log on a project target still writes nothing.
+  uses: [sessions, SS-12]
+  work: LIF-456
+# PJ-16 is deferred to the AI run (LIF-349 checklist line "AI (ADR-015, docs/core/ai; LIF-460)"). Other
+# modules' docs (Fiscal-legal, Nutrition) name Projects' agent as the agentic-actor contract.
+- id: PJ-16
+  says: An agent over the vault runs on-device or in the cloud as the user picks per use, acts only within its granted envelope through a mediated model call, marks what it writes with source ai, and never sends vault plaintext to the cloud without the user's opt-in.
+  uses: [ai]
+- id: PJ-17
+  says: Listing projects filters by status and scope and hides soft-deleted rows; archived is a status filter (completed or cancelled), not a separate state.
+  proof: [BR-PJ-S1-6, BR-PJ-S1-7]
+# PJ-18 is built by migration 016 (f1c16183, mod-projects S1); no BR-PJ rule names it.
+- id: PJ-18
+  says: Scope, complexity, status and priority are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas), progress is 0 to 100 or empty, and estimated and actual hours are stored as minutes despite the name.
+- id: PJ-19
+  says: The user picks how to see projects; the Projects Dashboard, the Projects Timeline, a pinned project, and the project, milestone, deliverable and project task standalone pages, each in a layout the user chooses (timeline, board, Kanban or archived), with reads and optimistic writes refreshed up the hierarchy.
+  uses: [views, tasks, notes, NP-22]
+  work: LIF-194
+- id: PJ-20
+  says: Each Projects capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a measured deliverable whose source fails shows a flag and its last-known value, and a rollup over a partial read is flagged.
+  proof: [BR-PJ-S4-4]
+  work: LIF-194
+- id: PJ-21
+  says: A project page is a hub; it shows the project's habits, the purposes it contributes to, its dreams, accounts, contacts, events and check-in reviews, each read through its owning module's service.
+  uses: [habits, HB-21, purposes, finance, relationships, calendar, check-ins]
+  work: LIF-194
+# PJ-22 is deferred to the Knowledge run (LIF-349 checklist line "knowledge + review engine"): a lab entry isn't
+# a registered entity type, so a deliverable can't link one yet.
+- id: PJ-22
+  says: A research or investigation is an artifact deliverable (milestone kind, manual binding) linked to a Knowledge Lab entry; Projects tracks the deliverable, Knowledge holds the exploration, and there is no investigations table.
+  uses: [knowledge, spaces]
+- id: PJ-23
+  says: Completing a project or a milestone emits emit_measurement_signal only, once, after the write, failure-isolated and dormant without a handler; Projects grants no points itself, and Gamification's rule turns the signal into points.
+  uses: [effects, gamification]
+  proof: [BR-PJ-S9-1, BR-PJ-S9-2]
+  work: LIF-113
+- id: PJ-24
+  says: Projects' journal contribution answers a date with the active projects and the milestones due that day, empty on an idle day; it is registered into the journal registry through registerProjectsJournal.
+  uses: [journals, JR-11]
+  proof: [BR-PJ-S9-3]
+  work: LIF-112
+- id: PJ-25
+  says: Projects has its own blocks (capability entries with an inline target), such as a milestone with its progress, tasks and deliverables, a project's progress and the milestones due; each reads Projects live and writes only through the Projects service, so the journal and any page can show and work on projects.
+  uses: [capabilities, journals, JR-12, JR-20, notes]
+  work: LIF-194
+- id: PJ-26
+  says: Projects advertises the derived progress of each project, milestone and deliverable as a measurement source, so a goal a project contributes to reads it; an unmeasured project stays unmeasured.
+  uses: [measurement, purposes]
+  work: LIF-490
+- id: PJ-27
+  says: Projects feeds the Sessions due agenda with its live, not completed milestones that have a due date, so the journal agenda and the Global Calendar show them.
+  uses: [sessions, SS-7, calendar, journals, JR-5]
+  work: LIF-490
+- id: PJ-28
+  says: Projects serves a read provider for projects and milestones in the shared view registry, so the Tasks aggregated view and the session engine resolve a project parent instead of degrading it.
+  uses: [views, tasks, TK-9]
+  work: LIF-490
+- id: PJ-29
+  says: Projects computes its own metrics for a look-back period (progress change, milestones and deliverables completed); Journals presents them and never recomputes them.
+  uses: [journals, JR-9, JR-10]
+  work: LIF-488
+- id: PJ-30
+  says: A failed rollup or measurement shows a flagged partial or the last-known value, never a wrong progress as truth; a vault read failure is a typed error that never loses or exposes a file.
+  proof: [BR-PJ-S4-4]
+  work: LIF-492
+- id: PJ-31
+  says: The data-model record shows the deliverables table, nullable progress, nesting_weight, the retired inline tags and the code-held cascades, and the shared Projects types match the built rows.
+  work: LIF-63
+- id: PJ-32
+  says: Project, milestone and deliverable notes are pages with that entity type, never inline fields.
+  uses: [notes]
+  proof: [BR-PJ-S6-3]
+- id: PJ-33
+  says: In the app the composition root builds Projects with its deps (spaces, notes, the entity registry, the measurement sources, the Tasks port and the effect rail); Projects owns no effect handler, so it has no registration step.
+  uses: [tasks, effects, measurement]
+  work: LIF-450
+# Consumers with no row here. Built and already in their own ledgers: Habits project_habits (HB-21), Tasks
+# parent links (TK-2, TK-9, TK-12, TK-13), Fiscal-legal legal entities (FL-1, FL-8), Notes milestone and
+# deliverable Overviews (NP-22), the Journals contribution and look-back (JR-9, JR-11). Built with no ledger
+# yet: Purposes reads a project contributor (the Purposes run). Designed only: Check-ins reviews read project
+# progress (CK-6, the Check-ins run), Gamification's project-completion points (the Gamification run), Skills
+# sends project-type activities to Projects (SK-6, the Skills run). Learning reuses the measurement axes in its
+# own storage and never reads Projects.

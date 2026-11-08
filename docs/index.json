@@ -902,6 +902,19 @@
       "path": "docs/modules/preferences/intent.md"
     },
     {
+      "id": "INTENT-projects",
+      "kind": "intent",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of projects: 33 rows, 2 tested, 1 partly tested, 30 intent only.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/projects/intent.md"
+    },
+    {
       "id": "INTENT-routines",
       "kind": "intent",
       "module": "routines",
@@ -1822,6 +1835,438 @@
       ],
       "tokens": 68,
       "path": "docs/modules/sessions/intent/PD-9.md"
+    },
+    {
+      "id": "PJ-1",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A project's title, description and vision, a milestone's title and description, a document's name and file, and the tag associations are encrypted client-side [E]; scope, complexity, status, priority, dates, progress, color and icon are plaintext config. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/projects/intent/PJ-1.md"
+    },
+    {
+      "id": "PJ-10",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects links to other modules only through junctions and documented integration points; project_habits stays (Habits), purpose_projects is retired into the weighted contributions (Purposes), a dream keeps its project link, and Projects owns project contacts with roles, project to account links and project events.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/projects/intent/PJ-10.md"
+    },
+    {
+      "id": "PJ-11",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Third-party metric ingestion for a deliverable is opt-in and device-mediated under an external-in grant, never a server-side fetch; an ingestion that would need the server to see plaintext is refused with a typed consent error unless the user opted in.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/projects/intent/PJ-11.md"
+    },
+    {
+      "id": "PJ-12",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects, milestones and deliverables are tagged through the shared scoped entity_tags, never an inline tag list; every write succeeds locally first and structured columns sync last-writer-wins.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/projects/intent/PJ-12.md"
+    },
+    {
+      "id": "PJ-13",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A task can sit under a deliverable, so a deliverable's progress can come from its tasks (the task leaf of PJ-4).",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/projects/intent/PJ-13.md"
+    },
+    {
+      "id": "PJ-14",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a project or a milestone asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice; Projects never leaves a task pointing at a deleted parent.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/projects/intent/PJ-14.md"
+    },
+    {
+      "id": "PJ-15",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Project time also counts sessions attached to the project, one of its milestones or one of its deliverables, derived on read from the session log and counted once per session; a time log on a project target still writes nothing.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/projects/intent/PJ-15.md"
+    },
+    {
+      "id": "PJ-16",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An agent over the vault runs on-device or in the cloud as the user picks per use, acts only within its granted envelope through a mediated model call, marks what it writes with source ai, and never sends vault plaintext to the cloud without the user's opt-in.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/projects/intent/PJ-16.md"
+    },
+    {
+      "id": "PJ-17",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Listing projects filters by status and scope and hides soft-deleted rows; archived is a status filter (completed or cancelled), not a separate state.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/projects/intent/PJ-17.md"
+    },
+    {
+      "id": "PJ-18",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Scope, complexity, status and priority are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas), progress is 0 to 100 or empty, and estimated and actual hours are stored as minutes despite the name.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/projects/intent/PJ-18.md"
+    },
+    {
+      "id": "PJ-19",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user picks how to see projects; the Projects Dashboard, the Projects Timeline, a pinned project, and the project, milestone, deliverable and project task standalone pages, each in a layout the user chooses (timeline, board, Kanban or archived), with reads and optimistic writes refreshed up the hierarchy.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/projects/intent/PJ-19.md"
+    },
+    {
+      "id": "PJ-2",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A project has four levels, Project > Milestone > Deliverable > Task; a milestone belongs to one project and nests under a milestone of the same project with no cycle, a deliverable sits under exactly one milestone, and a task sits under the project or a milestone through the Tasks parent links (a task under a deliverable is PJ-13).",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/projects/intent/PJ-2.md"
+    },
+    {
+      "id": "PJ-20",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each Projects capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a measured deliverable whose source fails shows a flag and its last-known value, and a rollup over a partial read is flagged.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/projects/intent/PJ-20.md"
+    },
+    {
+      "id": "PJ-21",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A project page is a hub; it shows the project's habits, the purposes it contributes to, its dreams, accounts, contacts, events and check-in reviews, each read through its owning module's service.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/projects/intent/PJ-21.md"
+    },
+    {
+      "id": "PJ-22",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A research or investigation is an artifact deliverable (milestone kind, manual binding) linked to a Knowledge Lab entry; Projects tracks the deliverable, Knowledge holds the exploration, and there is no investigations table.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/projects/intent/PJ-22.md"
+    },
+    {
+      "id": "PJ-23",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completing a project or a milestone emits emit_measurement_signal only, once, after the write, failure-isolated and dormant without a handler; Projects grants no points itself, and Gamification's rule turns the signal into points.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/projects/intent/PJ-23.md"
+    },
+    {
+      "id": "PJ-24",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects' journal contribution answers a date with the active projects and the milestones due that day, empty on an idle day; it is registered into the journal registry through registerProjectsJournal.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/projects/intent/PJ-24.md"
+    },
+    {
+      "id": "PJ-25",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects has its own blocks (capability entries with an inline target), such as a milestone with its progress, tasks and deliverables, a project's progress and the milestones due; each reads Projects live and writes only through the Projects service, so the journal and any page can show and work on projects.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 123,
+      "path": "docs/modules/projects/intent/PJ-25.md"
+    },
+    {
+      "id": "PJ-26",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects advertises the derived progress of each project, milestone and deliverable as a measurement source, so a goal a project contributes to reads it; an unmeasured project stays unmeasured.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/projects/intent/PJ-26.md"
+    },
+    {
+      "id": "PJ-27",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects feeds the Sessions due agenda with its live, not completed milestones that have a due date, so the journal agenda and the Global Calendar show them.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/projects/intent/PJ-27.md"
+    },
+    {
+      "id": "PJ-28",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects serves a read provider for projects and milestones in the shared view registry, so the Tasks aggregated view and the session engine resolve a project parent instead of degrading it.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/projects/intent/PJ-28.md"
+    },
+    {
+      "id": "PJ-29",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Projects computes its own metrics for a look-back period (progress change, milestones and deliverables completed); Journals presents them and never recomputes them.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/projects/intent/PJ-29.md"
+    },
+    {
+      "id": "PJ-3",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Progress is derived bottom-up on read (task, deliverable, milestone, project); the stored progress is a nullable manual override that wins when set, children weigh by their nesting_weight (empty means equal), an unmeasured child is left out and flags the rollup partial, and an all-unmeasured set is null, never 0. The project to purpose step is weighted by the contribution percentage, not by counting.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml",
+        "packages/core/src/services/projects/__tests__/service.test.ts"
+      ],
+      "tokens": 181,
+      "path": "docs/modules/projects/intent/PJ-3.md"
+    },
+    {
+      "id": "PJ-30",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A failed rollup or measurement shows a flagged partial or the last-known value, never a wrong progress as truth; a vault read failure is a typed error that never loses or exposes a file.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/projects/intent/PJ-30.md"
+    },
+    {
+      "id": "PJ-31",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the deliverables table, nullable progress, nesting_weight, the retired inline tags and the code-held cascades, and the shared Projects types match the built rows.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/projects/intent/PJ-31.md"
+    },
+    {
+      "id": "PJ-32",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Project, milestone and deliverable notes are pages with that entity type, never inline fields.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/projects/intent/PJ-32.md"
+    },
+    {
+      "id": "PJ-33",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Projects with its deps (spaces, notes, the entity registry, the measurement sources, the Tasks port and the effect rail); Projects owns no effect handler, so it has no registration step.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/projects/intent/PJ-33.md"
+    },
+    {
+      "id": "PJ-4",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A deliverable carries measurement_kind (natural milestone) and binding_mode; the five former backends (financial, task statistics, third-party metric, activity log, artifact) become kind by binding by source, a derived-pull deliverable reads its bound source through the measurement-source seam, and the order is manual override, then its tasks, then its source, then unmeasured.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml",
+        "packages/core/src/services/projects/__tests__/service.test.ts"
+      ],
+      "tokens": 216,
+      "path": "docs/modules/projects/intent/PJ-4.md"
+    },
+    {
+      "id": "PJ-5",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tasks belong to Tasks; Projects reaches them only through the dedicated Tasks to Projects read port, for the project task list, the task leaf of a deliverable and project time, and never reads the tasks table.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/projects/intent/PJ-5.md"
+    },
+    {
+      "id": "PJ-6",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Project time derives from the focus time of the project's tasks (Tasks' one ledger); there is no project timer and no project time log. PJ-15 extends it to sessions attached to the project.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/projects/intent/PJ-6.md"
+    },
+    {
+      "id": "PJ-7",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vision and Mission are guiding pages of the project, not columns; the vision column is a one-line summary at most.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/projects/intent/PJ-7.md"
+    },
+    {
+      "id": "PJ-8",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Project documents are a confidential vault, always client-encrypted; small files are stored inline, large files go through the attachment pipeline as ciphertext only, and the server never sees plaintext.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/projects/intent/PJ-8.md"
+    },
+    {
+      "id": "PJ-9",
+      "kind": "intent-row",
+      "module": "projects",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a project removes its milestones, their deliverables and its documents; deleting a milestone removes its deliverables, moves its sub-milestones to the top level and keeps its documents under the project; a soft delete hides the row and still syncs. What happens to the tasks is PJ-14.",
+      "anchors": [
+        "docs/modules/projects/intent.yaml",
+        "packages/core/src/services/projects/__tests__/service.test.ts"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/projects/intent/PJ-9.md"
     },
     {
       "id": "PR-1",

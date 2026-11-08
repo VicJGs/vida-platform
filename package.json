@@ -71,6 +71,9 @@
       "routines": [
         "packages/core/src/services/routines"
       ],
+      "projects": [
+        "packages/core/src/services/projects"
+      ],
       "journals": [
         "packages/core/src/services/journals",
         "apps/web/src/home/journal-contribution.test.ts",
