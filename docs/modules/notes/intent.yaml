@@ -49,11 +49,11 @@
   open: What counts as authored prose inside a page document.
 # Proposed IDs, no ID in docs/features today (approve in the PR)
 - id: NP-13
-  says: Notes stores summary_config only; the /summary sections come from the Journals engine, each degrades alone, and the full personalizable section menu is intended (G5).
-  uses: [journals]
+  says: Notes stores summary_config only, the journal's per-module toggles; the journal page holds each module's own blocks, switched on by those toggles and read live through the Journals contributions, never one summary block; each block degrades alone, and the full personalizable menu of module blocks is intended (G5).
+  uses: [journals, capabilities, JR-12]
   proof: [BR-9]
   work: LIF-407
-  open: How summary_config maps to the engine's JournalSelection.
+  open: How summary_config maps to the journal selection of module blocks (JR-4).
 - id: NP-14
   says: Inline blocks are ADR-008 capability-registry entries; the palette offers the page's Spaces' capabilities plus the editor base, /summary, /entity-link and /backlink get bodies, and the rest stay honest placeholders.
   uses: [capabilities, spaces, journals]

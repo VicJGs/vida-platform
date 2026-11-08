@@ -1271,11 +1271,11 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Notes stores summary_config only; the /summary sections come from the Journals engine, each degrades alone, and the full personalizable section menu is intended (G5).",
+      "summary": "Notes stores summary_config only, the journal's per-module toggles; the journal page holds each module's own blocks, switched on by those toggles and read live through the Journals contributions, never one summary block; each block degrades alone, and the full personalizable menu of module blocks is intended (G5).",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 100,
+      "tokens": 146,
       "path": "docs/modules/notes/intent/NP-13.md"
     },
     {
