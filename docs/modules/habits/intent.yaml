@@ -61,7 +61,7 @@
   proof: [BR-HB-21]
   work: LIF-475
 - id: HB-16
-  says: A done completion fires complete_habit_occurrence, contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
+  says: A done completion fires contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
   uses: [effects]
   proof: [BR-HB-29, BR-HB-30]
   work: LIF-450
@@ -112,3 +112,7 @@
   says: Habits serves a completion grid of every active habit across a date range, each day carrying whether it is scheduled, its count and whether it is done, in one ledger read; the Global Calendar draws its habits from it.
   uses: [calendar]
   proof: [BR-HB-35]
+- id: HB-29
+  says: Habits handles complete_habit_occurrence, the effect a session or a consequence fires to complete a habit occurrence; the handler logs it through the Habits completion path as one keyed write per habit and date, so the streak and the habit's own effects move once, and a missing habit or a date beyond the backfill window fails loudly; a habit's own completion never fires it.
+  uses: [effects, sessions, gamification]
+  work: LIF-481
