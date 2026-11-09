@@ -915,6 +915,19 @@
       "path": "docs/modules/projects/intent.md"
     },
     {
+      "id": "INTENT-relationships",
+      "kind": "intent",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of relationships: 32 rows, 1 tested, 0 partly tested, 31 intent only.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 143,
+      "path": "docs/modules/relationships/intent.md"
+    },
+    {
       "id": "INTENT-routines",
       "kind": "intent",
       "module": "routines",
@@ -2556,6 +2569,423 @@
       ],
       "tokens": 71,
       "path": "docs/modules/preferences/intent/PR-9.md"
+    },
+    {
+      "id": "RL-1",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact's identifying fields (names, nickname, email, phone, avatar, company, job title, location, birthday, how we met, social links) and the free text (an interaction's summary, follow-up notes and key takeaways, an event's title and description, a reminder's title, a group's name and message template, a network's name) are encrypted client-side [E]; the type, sentiment and frequency enums, dates, flags and counts are plaintext config. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 167,
+      "path": "docs/modules/relationships/intent/RL-1.md"
+    },
+    {
+      "id": "RL-10",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Contact and network tags are shared entity_tags rows written through Spaces, nestable by parent tag, never an inline tag list; the universal versus module tag scope is a Notes and Spaces concern.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/relationships/intent/RL-10.md"
+    },
+    {
+      "id": "RL-11",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Importing phone contacts is device-mediated; the device parses, normalizes and encrypts, the server never sees plaintext and a server-plaintext path is refused, and the merge stages each row against existing contacts (matched, new or a parse error) and commits only on the user's confirmation, never overwriting a contact.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 142,
+      "path": "docs/modules/relationships/intent/RL-11.md"
+    },
+    {
+      "id": "RL-12",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every create, edit, log and import succeeds locally first, and structured columns sync last-writer-wins.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/relationships/intent/RL-12.md"
+    },
+    {
+      "id": "RL-13",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user picks the default top view among the Dashboard, the neural Graph and the grouped All-Contacts list; there are contact and network standalone pages, a Reminders page for creating reminders and an All-Events page, while reminders and events are viewed on the Global Calendar; reads and optimistic writes refresh the derived stats and health.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 132,
+      "path": "docs/modules/relationships/intent/RL-13.md"
+    },
+    {
+      "id": "RL-14",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each Relationships capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a failed save, log or import reverts its optimistic state with a typed error, and a failed health compute shows a flagged partial.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/relationships/intent/RL-14.md"
+    },
+    {
+      "id": "RL-15",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The neural graph view renders the network and contact membership graph with Sigma.js (WebGL), and falls back to the list when the graph fails to build.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/relationships/intent/RL-15.md"
+    },
+    {
+      "id": "RL-16",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationships feeds the Sessions due agenda with everything it schedules; besides due reminders, stay-in-touch nudges and group fires, it adds each event's occurrence and its reminder days and each open follow-up date, so the Global Calendar, the journal agenda and Notifications see birthdays and follow-ups.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/relationships/intent/RL-16.md"
+    },
+    {
+      "id": "RL-17",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationships has its own blocks (capability entries with an inline target), such as the people to reach out to, the day's events and the reminders due; each reads Relationships live and writes only through the Relationships service, so the journal and any page can show and work on them.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/relationships/intent/RL-17.md"
+    },
+    {
+      "id": "RL-18",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationships' journal contribution answers a date with that day's interactions, events and due reminders, empty on an idle day; it is registered into the journal registry through registerRelationshipsJournal.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/relationships/intent/RL-18.md"
+    },
+    {
+      "id": "RL-19",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An event can be edited and deleted and read per contact, and a network can be deleted (its memberships go, its contacts stay), each through the Relationships service.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/relationships/intent/RL-19.md"
+    },
+    {
+      "id": "RL-2",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a contact removes its events, interactions, reminders and its group and network memberships; a soft delete hides the contact and still syncs, and groups and networks survive. What happens to its tasks is RL-26.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/relationships/intent/RL-2.md"
+    },
+    {
+      "id": "RL-20",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A schedule group at every frequency fires on time; biweekly, monthly, quarterly and yearly groups have a phase anchor, so the due agenda projects them like daily and weekly groups.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/relationships/intent/RL-20.md"
+    },
+    {
+      "id": "RL-21",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An event (a birthday's present) or an interaction's follow-up can create a Task linked to the contact through the Tasks service; the event never becomes the task.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/relationships/intent/RL-21.md"
+    },
+    {
+      "id": "RL-22",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationships reads the user's reminder defaults, closeness tier definitions and import settings from Preferences, never its own store.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/relationships/intent/RL-22.md"
+    },
+    {
+      "id": "RL-23",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Interaction streaks feed Gamification, which owns the rule and the reward; Relationships adds no economy contract.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/relationships/intent/RL-23.md"
+    },
+    {
+      "id": "RL-24",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact's due-time reminders are gated by the Preferences push_contacts toggle.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/relationships/intent/RL-24.md"
+    },
+    {
+      "id": "RL-25",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationships serves a read provider for contacts in the shared view registry, so the Tasks aggregated view and the session engine resolve a contact parent instead of degrading it.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/relationships/intent/RL-25.md"
+    },
+    {
+      "id": "RL-26",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a contact asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice before the cascade; Relationships never leaves a task pointing at a deleted contact.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/relationships/intent/RL-26.md"
+    },
+    {
+      "id": "RL-27",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact page lists the contact's tasks through the Tasks service by its contact link, never a table read.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/relationships/intent/RL-27.md"
+    },
+    {
+      "id": "RL-28",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Other modules link a contact (a project's contacts with roles) through the Relationships contact read, and deleting a contact never leaves those links pointing at it.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/relationships/intent/RL-28.md"
+    },
+    {
+      "id": "RL-29",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Relationships with its deps (spaces, notes) and registers its due lane; once they exist it also passes tasks (RL-21) and a Preferences port (RL-22), and registers the contact read provider (RL-25) and the journal contribution (RL-18). Relationships owns no effect handler and emits nothing, so it has no effects dep or registration step.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 134,
+      "path": "docs/modules/relationships/intent/RL-29.md"
+    },
+    {
+      "id": "RL-3",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact's last interaction date and interaction count recompute from the interactions ledger on every interaction change, and its next contact date is the last interaction plus the stay-in-touch cadence (exact days override the frequency); the columns are a cache and the ledger is the truth.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/relationships/intent/RL-3.md"
+    },
+    {
+      "id": "RL-30",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the eight Relationships tables (networks and their junction included), the closeness tier, how we met, the interaction energy and key takeaways, reminder snooze and priority, the group birthday anchor, the retired inline tags and the code-held cascades.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/relationships/intent/RL-30.md"
+    },
+    {
+      "id": "RL-31",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationship type, interaction type, sentiment, event type and frequency are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas); closeness tier is open vocabulary; an event date is `MM-DD` or `YYYY-MM-DD`.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/relationships/intent/RL-31.md"
+    },
+    {
+      "id": "RL-32",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Contact and network descriptions are pages with that entity type, only an interaction's short summary stays inline, and a contact is a valid entity link target.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/relationships/intent/RL-32.md"
+    },
+    {
+      "id": "RL-4",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact may belong to many networks through the membership junction; the neural graph links each contact node to its network nodes and draws no contact to contact edges.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml",
+        "packages/core/src/services/relationships/__tests__/service.test.ts"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/relationships/intent/RL-4.md"
+    },
+    {
+      "id": "RL-5",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Relationship health is derived on read and never stored; it comes from the time since the last interaction against the cadence and the recent sentiment, weighted by closeness (inner tiers penalize neglect more), banded Healthy, At-risk or Overdue, new for a contact with no interactions, and a network's health aggregates its members. It is a derived analytic, never an ADR-011 pursuable or a measurement source.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 156,
+      "path": "docs/modules/relationships/intent/RL-5.md"
+    },
+    {
+      "id": "RL-6",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Three reminder mechanisms each produce notifications through the Sessions due agenda; the stay-in-touch cadence gives an overdue-to-reach-out nudge, an explicit contact reminder fires one-off or recurring, and a reminder group nudges for its members; Notifications dispatches and Relationships only produces.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/relationships/intent/RL-6.md"
+    },
+    {
+      "id": "RL-7",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A reminder group's message template reminds the user and never sends anything; no contact data leaves in an off-device push (the device composes the nudge after decrypting); a group can fire relative to each member's birthday, and can target the user's important people by closeness.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 131,
+      "path": "docs/modules/relationships/intent/RL-7.md"
+    },
+    {
+      "id": "RL-8",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contact event is time-anchored (a year-agnostic `MM-DD` date recurs yearly) and never completes; creating a task or a nudge from it is RL-21 and RL-16.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/relationships/intent/RL-8.md"
+    },
+    {
+      "id": "RL-9",
+      "kind": "intent-row",
+      "module": "relationships",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An interaction can flag a follow-up with a date; the actual to-do is a Task linked by its contact link and owned by Tasks. Surfacing the follow-up date is RL-16, and creating the task is RL-21.",
+      "anchors": [
+        "docs/modules/relationships/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/relationships/intent/RL-9.md"
     },
     {
       "id": "RT-1",

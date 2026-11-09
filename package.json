@@ -83,6 +83,9 @@
         "apps/web/src/home/section-model.test.ts",
         "apps/web/src/home/section-state.test.ts",
         "apps/web/src/home/selection.test.ts"
+      ],
+      "relationships": [
+        "packages/core/src/services/relationships"
       ]
     },
     "intentFeatures": {
