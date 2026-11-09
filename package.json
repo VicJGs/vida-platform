@@ -40,7 +40,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -92,6 +92,10 @@
       ],
       "check-ins": [
         "packages/core/src/services/checkins"
+      ],
+      "purposes": [
+        "packages/core/src/services/purposes",
+        "packages/core/src/foundation/measurement"
       ]
     },
     "intentFeatures": {
