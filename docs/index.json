@@ -2,6 +2,441 @@
   "generated": "node tools/checks/core/docs-index.mjs; do not edit",
   "units": [
     {
+      "id": "BK-1",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A book's title, author, isbn, review and cover, a chapter's title, an asset's file reference, a bookmark's label, a highlight's captured text, a quote's text and every page photo are encrypted client-side [E]; enums, page numbers, positions, dates and counters are plaintext. Book files and page photos are client-encrypted attachments. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 134,
+      "path": "docs/modules/books/intent/BK-1.md"
+    },
+    {
+      "id": "BK-10",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A reading session is a base session with the reading sub_type plus a Books-owned extension keyed by session_id, never a study session and never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 167,
+      "path": "docs/modules/books/intent/BK-10.md"
+    },
+    {
+      "id": "BK-11",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A plan covers one or many books, sequenced (one after another) or parallel (the quota split); its goal is set by hand or calculated to a target (a date, a weekday or a day of the month) and is a pursuable target; a missed day, week or month reshapes the plan and proposes how to catch up, never dropping the target silently.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 151,
+      "path": "docs/modules/books/intent/BK-11.md"
+    },
+    {
+      "id": "BK-12",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books owns reading plans; the study planner and every other consumer reads plans, deadlines and sessions and never writes them, and the Calendar reconciles while Books handles only its own end.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/books/intent/BK-12.md"
+    },
+    {
+      "id": "BK-13",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Education partition links books and subjects through a many-to-many junction and a Books read contract; Education reads books per subject and their pace against the next class or assessment, Books reads subject schedules and assessment dates to pace the student ahead, and neither reads the other's tables.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 139,
+      "path": "docs/modules/books/intent/BK-13.md"
+    },
+    {
+      "id": "BK-14",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Integrations never touch the zero-knowledge core; the isbn lookup is a device-mediated public-reference fetch under the external-in grant, revocable, and speech, transcription and photo reading are scoped model calls on device or in the cloud, never agents, with derived rows marked source=ai; each is opt-in behind a consent step and keeps a manual fallback.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 154,
+      "path": "docs/modules/books/intent/BK-14.md"
+    },
+    {
+      "id": "BK-15",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Reader is core and in-app; one surface with three modes (read, listen including speech-converted files, annotate live in every mode) on all three platforms, files never leave the encrypted store to be read, and opening an asset starts a reading session.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/books/intent/BK-15.md"
+    },
+    {
+      "id": "BK-16",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Publisher, genre and category are Books-scoped entity_tags, never columns; a book's summary and key takeaways are notes with their own per-type views; skill and purpose links are owned by Skills and Purposes; the book row stays lean.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/books/intent/BK-16.md"
+    },
+    {
+      "id": "BK-17",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every view ships a default; books with only a table of contents, books with no copy, unsynced mappings and empty shelves render gracefully and invite the next step.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/books/intent/BK-17.md"
+    },
+    {
+      "id": "BK-18",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every write (a position, an annotation, a session, a plan) succeeds locally first; sync is last-writer-wins per entity, and files ride the attachment pipeline.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/books/intent/BK-18.md"
+    },
+    {
+      "id": "BK-19",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books has a Reading Hub (current reads, today's quotas and pace, resume, recent bookmarks and quotes, statistics, plan alerts), a Bookshelf (gallery, list or table, by tag, status and format), All Plans and each plan's page, the All Quotes library, a tabbed Book Hub (an Education tab once a subject is linked), the physical companion mode, and the add-book and plan wizards with conflict prompts in context.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/books/intent/BK-19.md"
+    },
+    {
+      "id": "BK-2",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A book is the work and exists without any copy; it has zero or more per-format assets, each with its own native position (a page, an e-book location or an audio timestamp), and a physical or braille asset holds a position the user enters.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/books/intent/BK-2.md"
+    },
+    {
+      "id": "BK-20",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each Books capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a broken file never renders as an empty book, an unreachable target shows the catch-up options, and an unresolved conflict is flagged.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/books/intent/BK-20.md"
+    },
+    {
+      "id": "BK-21",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books has its own blocks (capability entries with an inline target), such as the books being read with a resume action, today's quotas, the day's page photos and a quote; each reads Books live and writes only through the Books service, so the journal and any page can show and work on them.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/books/intent/BK-21.md"
+    },
+    {
+      "id": "BK-22",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books' journal contribution answers a date with that day's pages read, reading sessions logged and the plans on pace or behind, empty on an idle day; it is registered into the journal registry through registerBooksJournal.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/books/intent/BK-22.md"
+    },
+    {
+      "id": "BK-23",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books feeds the Sessions due agenda with each active plan's quota for the day and its target date, so the Global Calendar, the journal agenda and the study planner see reading quotas without copying them.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/books/intent/BK-23.md"
+    },
+    {
+      "id": "BK-24",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books serves a read provider for books in the shared view registry, so the Bookshelf's saved views and any view or session that targets a book resolve it instead of degrading.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/books/intent/BK-24.md"
+    },
+    {
+      "id": "BK-25",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books advertises each book's reading progress in the measurement source registry, so a Purposes goal or a reading plan's pursuable target derive-pulls it; a conflicted or unmeasured book reads null, and Books stores no measurement axes.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 133,
+      "path": "docs/modules/books/intent/BK-25.md"
+    },
+    {
+      "id": "BK-26",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Editing a plan's quota or target mid-plan runs the same recalculation as a missed quota.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/books/intent/BK-26.md"
+    },
+    {
+      "id": "BK-27",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Bookshelf filters books by status, tag, owned format and linked subject, and the All Quotes library filters quotes by tag, each through the Books service.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/books/intent/BK-27.md"
+    },
+    {
+      "id": "BK-28",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Books reads the quote-embed toggles (global and per book), the conflict rule and the Reader and companion defaults from Preferences through its narrow port, never its own store.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/books/intent/BK-28.md"
+    },
+    {
+      "id": "BK-29",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A book and a chapter are entity link targets; Knowledge objects, Skills and Purposes own their links to books, and Books authors none of them.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/books/intent/BK-29.md"
+    },
+    {
+      "id": "BK-3",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A book's unified progress is derived from its assets' positions through the cross-format mapping under the conflict rule (BK-8), never hand-set as a separate truth; books.progress is a nullable override (null derives), never a counter that defaults to zero.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/books/intent/BK-3.md"
+    },
+    {
+      "id": "BK-30",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Books with its deps (spaces, notes, sessions, the session registry) and calls registerBooks so the reading sub_type exists; it passes the Preferences port (BK-28) and the effects rail with its reachable registry, and later the ingestion, attachment and model ports; it registers the due lane (BK-23), the book read provider (BK-24) and the measure source (BK-25), and passes Books to Education as its books port.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 155,
+      "path": "docs/modules/books/intent/BK-30.md"
+    },
+    {
+      "id": "BK-31",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the ten Books tables (assets, the three annotation tables, the reading session extension, plans and their books, the subject junction), progress as a nullable override, and the retired format, current page, genre and tags columns.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/books/intent/BK-31.md"
+    },
+    {
+      "id": "BK-32",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Book status, asset format, annotation kind, plan arrangement, goal type and conflict rule are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas); the mapping state (synced, pending, failed) joins them with the mapping.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/books/intent/BK-32.md"
+    },
+    {
+      "id": "BK-33",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A completed reading session emits one measurement signal for its book and never an economy grant; a reading grant rides the base session sub_type.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/books/intent/BK-33.md"
+    },
+    {
+      "id": "BK-4",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Positions map between formats automatically, from a transcription and table-of-contents anchors near the stopped point, never by manual calibration; while the mapping is pending, failed or absent, the user sees the native position and an explicit \"not synced yet\" state, and a mapped position is never guessed.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/books/intent/BK-4.md"
+    },
+    {
+      "id": "BK-5",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Bookmarks, highlights and quotes anchor to the work and show from every asset through the mapping (a bookmark at minute 52 of the audiobook appears on the mapped page); under an unsynced mapping they show at their native position with the BK-4 state, and removing an asset never removes them.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/books/intent/BK-5.md"
+    },
+    {
+      "id": "BK-6",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "There are three annotation natures; a highlight is a light span marker in digital content with no notes and no links, while bookmarks and quotes take notes as pages and link to each other; quotes are stored per book.",
+      "anchors": [
+        "docs/modules/books/intent.yaml",
+        "packages/core/src/services/books/__tests__/service.test.ts"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/books/intent/BK-6.md"
+    },
+    {
+      "id": "BK-7",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Any note or page can embed a stored quote by reference, never a copy; embedding is toggled globally and per book, and the per-book toggle overrides the global one.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/books/intent/BK-7.md"
+    },
+    {
+      "id": "BK-8",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A clash between position sources (assets, photo capture) is asked of the user in context by default; the user may preset a rule (a chosen source of truth, the last valid one, or the photo) that then resolves it automatically, and an unresolved clash shows unified progress as conflicted, never either value.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 137,
+      "path": "docs/modules/books/intent/BK-8.md"
+    },
+    {
+      "id": "BK-9",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The table of contents is a flat chapter list owned by Books and usable before owning a copy, entered by hand or by an isbn or metadata lookup; the syllabus and schedule are Education's and meet the table of contents only through the partition (BK-13).",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/books/intent/BK-9.md"
+    },
+    {
       "id": "FL-1",
       "kind": "intent-row",
       "module": "finance",
@@ -835,6 +1270,19 @@
       ],
       "tokens": 99,
       "path": "docs/modules/habits/intent/HB-9.md"
+    },
+    {
+      "id": "INTENT-books",
+      "kind": "intent",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of books: 33 rows, 4 tested, 2 partly tested, 27 intent only.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 138,
+      "path": "docs/modules/books/intent.md"
     },
     {
       "id": "INTENT-finance",
