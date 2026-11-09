@@ -1,0 +1,122 @@
+# Check-ins intent ledger: every intended, deferred or TBD Check-ins rule, keyed by its docs/features/check-ins ID.
+# work = the issue that builds the rest. check:rules derives each row's state.
+# No row has proof: the Check-ins module docs state their rules as CK-n (the intent IDs themselves) and the code
+# cites build-leg IDs (CHE-n), so there is no BR-CK rule ID to cite (LIF-349 run 21 findings). Test names carry
+# only CK-2, so the other built rows read intent only.
+
+# Invariants (docs/features/check-ins/business-rules.md)
+- id: CK-1
+  says: A check-in's intentions, wins, gratitude, challenges, tomorrow's focus, reflection and custom answers, and a template's name, description and question labels and placeholders, are encrypted client-side [E]; mood, energy, the type, the date and the schedule stay plaintext for the trend charts. M1 is a pass-through.
+  uses: [encryption, sync]
+  work: LIF-67
+# CK-2's "bug to fix" framing in the feature docs is stale: the schema has the composite unique slot.
+- id: CK-2
+  says: There is one check-in per date and type, so morning, afternoon, evening and the reviews coexist on a day; a second check-in for a taken slot is a typed DuplicateCheckInError, never an overwrite, and the slot is immutable on update.
+- id: CK-3
+  says: The check-in type is one of six, morning, afternoon, evening, weekly_review, monthly_review and yearly_review.
+# CK-4 is built only in part: one type-agnostic default template is seeded, templates carry no type, and
+# getActiveTemplate ignores its type.
+- id: CK-4
+  says: Each check-in type has a ready default template, so the user checks in with zero setup; the check-in's standard columns are the built-in default template, and custom_data holds only the answers to extra questions the user added, never a copy of a standard field.
+  work: LIF-510
+- id: CK-5
+  says: A template owns ordered, typed questions (mood_scale, energy_scale, text_list, text_area, rating, boolean) with a field key unique per template; a required question blocks completion until answered, and min_value and max_value bound a scale or rating answer.
+  work: LIF-510
+# CK-6's Purpose target review is Purposes' half: its row comes with the Purposes ledger (LIF-349 checklist line
+# "purposes + Measurement"). Whether reviews ride the Journals review engine (JR-8…JR-10) is a design pass on LIF-509.
+- id: CK-6
+  says: A weekly, monthly or yearly review reads Purposes, Projects and Tasks progress through their services, never their tables, holds the Purpose target review, and backlinks what it covered; a failed read shows what is available with a flag, never a falsely complete review, and a review with nothing linked saves as free reflection.
+  uses: [purposes, projects, PJ-3, tasks, journals, JR-8, JR-9, JR-10]
+  work: LIF-509
+# CK-7's day-page link is built (create and update, idempotent, best effort); with no day page yet nothing links,
+# and nothing re-drives the link once the page exists. The review backlinks are CK-6's; the journal's view of the
+# day is CK-13 and CK-14.
+- id: CK-7
+  says: A check-in links to its day's journal page through entity_links, never a copy of its answers, and editing a past check-in re-feeds its day page.
+  uses: [notes, journals]
+- id: CK-8
+  says: A template's schedule (daily, weekly or custom days and a preferred time), set in its own editor, fires the check-in reminders through Preferences and Notifications.
+  uses: [preferences, notifications, sessions]
+  work: LIF-508
+- id: CK-9
+  says: Check-ins carry no tags; they relate to other entities only through entity_links, a deliberate opt-out from the shared entity_tags.
+  uses: [spaces]
+# CK-10's "SET NULL / CASCADE" foreign keys in the feature docs are stale: the tables have no foreign keys and no
+# deleted_at, and the service does the cascade.
+- id: CK-10
+  says: Check-ins are hard-deleted with no foreign keys; deleting a template keeps its check-ins with their template cleared and removes its questions, in application code.
+# CK-11's direct grant_currency emit carries no payload and departs from the measurement-signal pattern (LIF-511);
+# Gamification's half, applying the reward and reading the streak (GM-11), comes with the Gamification ledger
+# (LIF-349 checklist line "gamification + Economy").
+- id: CK-11
+  says: Check-ins owns its streak, derived on read from the check-ins and never written to user_profile; a completion emits the reward feeder that Gamification applies to the consequence ledger, and Check-ins never writes points itself.
+  uses: [effects, gamification]
+  open: Whether a check-in is a session. CK-11 says it is not, while the flow shell lists the check-in screens as a consumer of its session-bound view (the BK-35 question).
+  work: LIF-511
+- id: CK-12
+  says: Every check-in and template edit succeeds locally first, and structured columns sync last-writer-wins.
+  uses: [sync]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: CK-13
+  says: Check-ins' journal contribution answers a date with that day's check-ins (which slots are done, mood and energy), empty on a day with none; it is registered into the journal registry through a Check-ins journal registration helper, which does not exist yet.
+  uses: [journals, JR-11]
+  work: LIF-112
+- id: CK-14
+  says: Check-ins has its own blocks (capability entries with an inline target), such as today's check-in slots with a start action, the mood and energy trend and the streak; each reads Check-ins live and writes only through the Check-ins service, so the journal and any page can show and work on them.
+  uses: [capabilities, journals, JR-12, JR-20, notes]
+  work: LIF-179
+- id: CK-15
+  says: Check-ins has an entry wizard that renders the active template for the chosen type, a standalone page with the history list, a calendar and a trends dashboard tab, a standalone editor per template with its schedule, and the review screens; the daily entry also opens from the journal.
+  uses: [views, journals]
+  work: LIF-179
+- id: CK-16
+  says: Each Check-ins capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a failed save reverts with a typed error and never loses an entry, and a failed trend or streak shows a flagged partial, never a wrong number.
+  work: LIF-179
+- id: CK-17
+  says: Check-ins feeds the Sessions due agenda with each scheduled check-in and review for the day at its preferred time, so the Global Calendar and the journal agenda show them without copying them.
+  uses: [sessions, SS-7, calendar, journals, JR-5]
+  open: Whether a review's schedule is its template's or the Journals review schedule (JR-17).
+  work: LIF-508
+- id: CK-18
+  says: Check-ins serves a read provider for check-ins in the shared view registry, so a saved view and anything that targets a check-in resolve it instead of degrading.
+  uses: [views]
+  work: LIF-508
+- id: CK-19
+  says: Check-ins advertises mood, energy, completion and the streak in the measurement source registry, so a Purposes goal with a check-in contributor, Gamification's streak read and Health derive-pull them; Check-ins stores no measurement axes.
+  uses: [measurement, purposes, gamification, health]
+  open: The registry's resolver is synchronous and takes no entity or range.
+  work: LIF-508
+- id: CK-20
+  says: Preferences gates check-in reminders with their own push toggle, keyed so the toggle matches the reminder's due rows; there is no Check-ins toggle today.
+  uses: [preferences, notifications]
+  work: LIF-508
+- id: CK-21
+  says: A custom answer is checked against its question; a scale or rating outside its bounds, or an answer of the wrong kind for its field type, is a typed validation error.
+  work: LIF-510
+- id: CK-22
+  says: The template and question library ships with Vida as an opt-in default dataset the user accepts or declines; it refreshes as a whole set and is read from a local copy, and picking a template copies it into the user's own templates.
+  uses: [integrations]
+  open: Which templates and questions ship, and whether the per-type defaults (CK-4) live inside it.
+  work: LIF-510
+- id: CK-23
+  says: The user can delete a check-in; it is removed for good with its journal day-page link.
+  uses: [notes]
+  open: Whether it goes through the shared Trash (NP-27).
+  work: LIF-510
+- id: CK-24
+  says: In the app the composition root builds Check-ins with the notes service as its journal link and the effects rail with its registry; it registers the journal contribution (CK-13), the due lane (CK-17), the read provider (CK-18) and the measure sources (CK-19).
+  uses: [notes, effects, sessions, views, measurement]
+  work: LIF-450
+- id: CK-25
+  says: The data-model record shows the three Check-ins tables as built, the composite unique slot, six types, no foreign keys and no deleted_at, and the streak gone from user_profile.
+  work: LIF-63
+- id: CK-26
+  says: Check-in type, question field type, schedule type and preferred time are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas), and mood and energy are integers from 1 to 10.
+# Consumers with no row here. Built and in their own ledgers: none. Built with no ledger yet: Purposes accepts a
+# check_in contributor on a goal and reads it through the empty measurement-source seam (CK-19, the purposes +
+# Measurement run). In their own ledgers, not built yet: the journal registry (JR-11; Check-ins has no helper,
+# CK-13), the module blocks (JR-12, JR-20; CK-14), the project hub's check-in reviews (PJ-21; CK-6's backlinks),
+# Preferences as the E9 config writer (PR-10). Designed only: Gamification's check-in achievements and streak read
+# (GM-11, the gamification + Economy run), Health's subjective mood and energy cross-refs (the Health run), the
+# Calendar and Notifications reminders (CK-17, CK-20). Not consumers: Relationships (RL ledger note), Habits (its
+# streak generalizes Check-ins' computeStreak; no call).

@@ -89,6 +89,9 @@
       ],
       "books": [
         "packages/core/src/services/books"
+      ],
+      "check-ins": [
+        "packages/core/src/services/checkins"
       ]
     },
     "intentFeatures": {
