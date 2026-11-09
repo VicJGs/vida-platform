@@ -144,9 +144,10 @@
   says: Contact and network descriptions are pages with that entity type, only an interaction's short summary stays inline, and a contact is a valid entity link target.
   uses: [notes, spaces]
   proof: [BR-RL-S8-2, BR-RL-S8-3]
-# Consumers with no row here. Built and already in their own ledgers: Tasks' contact parent link (TK-2), the
-# aggregated view's contact group (TK-9), the parent delete choice and the contact page read (TK-12, TK-13),
-# Projects' project contacts and hub (PJ-10, PJ-21), the journal registry (JR-11). Built with no ledger yet: the
+# Consumers with no row here. Built and in their own ledgers: Tasks' contact parent link (TK-2), the aggregated
+# view's contact group (TK-9), the journal registry (JR-11). In their own ledgers, not built yet: the parent delete
+# choice and the contact page read (TK-12, TK-13; LIF-471), Projects' project contacts (PJ-10; LIF-491) and the
+# project hub (PJ-21; LIF-194). Built with no ledger yet: the
 # Global Calendar places the relationships due lane with its carry-forward (the Calendar run); Notifications
 # materializes due rows and keeps the wake payload content-free (the notifications + delivery run). Designed
 # only: Gamification's interaction streaks (RL-23, the Gamification run). Not consumers: the relationships life
