@@ -946,11 +946,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of tasks: 25 rows, 4 tested, 1 partly tested, 20 intent only.",
+      "summary": "Intended rules of tasks: 26 rows, 4 tested, 1 partly tested, 21 intent only.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 129,
+      "tokens": 131,
       "path": "docs/modules/tasks/intent.md"
     },
     {
@@ -3524,6 +3524,19 @@
       ],
       "tokens": 113,
       "path": "docs/modules/tasks/intent/TK-25.md"
+    },
+    {
+      "id": "TK-26",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tasks has its own block, the task checklist, an inline capability entry; it lists tasks filtered by project, milestone, deliverable or due date with its terminal states, reads Tasks live, and ticks, unticks and creates tasks only through the Tasks service; on a journal page it shows that day's tasks through the Tasks journal contribution.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 199,
+      "path": "docs/modules/tasks/intent/TK-26.md"
     },
     {
       "id": "TK-3",
