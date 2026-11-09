@@ -1,0 +1,153 @@
+# Relationships intent ledger: every intended, deferred or TBD Relationships rule, keyed by its
+# docs/features/relationships ID. proof = the built rules in docs/modules/relationships/current-business-rules.md;
+# work = the issue that builds the rest. check:rules derives each row's state. Only RL-4 is named in a
+# Relationships test, so the other built rows read intent only (LIF-349 run 19 findings).
+
+# Invariants (docs/features/relationships/business-rules.md)
+- id: RL-1
+  says: A contact's identifying fields (names, nickname, email, phone, avatar, company, job title, location, birthday, how we met, social links) and the free text (an interaction's summary, follow-up notes and key takeaways, an event's title and description, a reminder's title, a group's name and message template, a network's name) are encrypted client-side [E]; the type, sentiment and frequency enums, dates, flags and counts are plaintext config. M1 is a pass-through.
+  uses: [encryption]
+  proof: [BR-RL-S1-4, BR-RL-S1-5]
+  work: LIF-67
+- id: RL-2
+  says: Deleting a contact removes its events, interactions, reminders and its group and network memberships; a soft delete hides the contact and still syncs, and groups and networks survive. What happens to its tasks is RL-26.
+  proof: [BR-RL-S1-2]
+- id: RL-3
+  says: A contact's last interaction date and interaction count recompute from the interactions ledger on every interaction change, and its next contact date is the last interaction plus the stay-in-touch cadence (exact days override the frequency); the columns are a cache and the ledger is the truth.
+  proof: [BR-RL-S2-4]
+- id: RL-4
+  says: A contact may belong to many networks through the membership junction; the neural graph links each contact node to its network nodes and draws no contact to contact edges.
+  proof: [BR-RL-S5-2, BR-RL-S5-3]
+# RL-5 is built with the build-phase call the docs allowed: the closeness weight derives from relationship_type
+# plus is_favorite, closeness_tier stays display-only, and the energy fields are not an input. Network health's
+# mean score is the measurement engine's equal-weight rollup in effect; whether it should call rollup is a
+# question in the run-19 findings issue. Health is never a measurement source.
+- id: RL-5
+  says: Relationship health is derived on read and never stored; it comes from the time since the last interaction against the cadence and the recent sentiment, weighted by closeness (inner tiers penalize neglect more), banded Healthy, At-risk or Overdue, new for a contact with no interactions, and a network's health aggregates its members. It is a derived analytic, never an ADR-011 pursuable or a measurement source.
+  proof: [BR-RL-S6-1, BR-RL-S6-2, BR-RL-S6-3, BR-RL-S6-4]
+- id: RL-6
+  says: Three reminder mechanisms each produce notifications through the Sessions due agenda; the stay-in-touch cadence gives an overdue-to-reach-out nudge, an explicit contact reminder fires one-off or recurring, and a reminder group nudges for its members; Notifications dispatches and Relationships only produces.
+  uses: [notifications, sessions, SS-7]
+  proof: [BR-RL-S4-1, BR-RL-S4-2, BR-RL-S4-4, BR-RL-S9-2]
+# RL-7's content-free wake payload is Notifications' half: built there (BR-NT-S2-6), its row comes with the
+# Notifications ledger (LIF-349 checklist line "notifications + delivery").
+- id: RL-7
+  says: A reminder group's message template reminds the user and never sends anything; no contact data leaves in an off-device push (the device composes the nudge after decrypting); a group can fire relative to each member's birthday, and can target the user's important people by closeness.
+  uses: [notifications, encryption]
+  proof: [BR-RL-S4-2, BR-RL-S4-4, BR-RL-S4-5]
+  work: LIF-496
+- id: RL-8
+  says: A contact event is time-anchored (a year-agnostic `MM-DD` date recurs yearly) and never completes; creating a task or a nudge from it is RL-21 and RL-16.
+  proof: [BR-RL-S3-1, BR-RL-S3-3, BR-RL-S3-4, BR-RL-S3-5]
+- id: RL-9
+  says: An interaction can flag a follow-up with a date; the actual to-do is a Task linked by its contact link and owned by Tasks. Surfacing the follow-up date is RL-16, and creating the task is RL-21.
+  uses: [tasks, TK-2]
+  proof: [BR-RL-S2-1]
+- id: RL-10
+  says: Contact and network tags are shared entity_tags rows written through Spaces, nestable by parent tag, never an inline tag list; the universal versus module tag scope is a Notes and Spaces concern.
+  uses: [spaces]
+  proof: [BR-RL-S1-7, BR-RL-S8-1]
+# RL-11's device bridge, the durable import_staging store, the external-in grant check and merging into a matched
+# contact are deferred to the Integrations run (LIF-349 checklist line "Integrations (ADR-014, docs/core/ingestion
+# and egress)"); M1 has the pure pipeline behind a deny-safe port.
+- id: RL-11
+  says: Importing phone contacts is device-mediated; the device parses, normalizes and encrypts, the server never sees plaintext and a server-plaintext path is refused, and the merge stages each row against existing contacts (matched, new or a parse error) and commits only on the user's confirmation, never overwriting a contact.
+  uses: [integrations, encryption]
+  proof: [BR-RL-S7-1, BR-RL-S7-2, BR-RL-S7-3, BR-RL-S7-4]
+- id: RL-12
+  says: Every create, edit, log and import succeeds locally first, and structured columns sync last-writer-wins.
+  uses: [sync]
+  proof: [BR-RL-S1-6]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: RL-13
+  says: The user picks the default top view among the Dashboard, the neural Graph and the grouped All-Contacts list; there are contact and network standalone pages, a Reminders page for creating reminders and an All-Events page, while reminders and events are viewed on the Global Calendar; reads and optimistic writes refresh the derived stats and health.
+  uses: [views, notes, calendar, preferences]
+  work: LIF-196
+- id: RL-14
+  says: Each Relationships capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a failed save, log or import reverts its optimistic state with a typed error, and a failed health compute shows a flagged partial.
+  proof: [BR-RL-S6-2, BR-RL-S7-1]
+  work: LIF-196
+# The OS /graph surface is Graph + Backlinks' (LIF-467); RL-15 is Relationships' own network view.
+- id: RL-15
+  says: The neural graph view renders the network and contact membership graph with Sigma.js (WebGL), and falls back to the list when the graph fails to build.
+  uses: [graph]
+  proof: [BR-RL-S5-3]
+  work: LIF-196
+- id: RL-16
+  says: Relationships feeds the Sessions due agenda with everything it schedules; besides due reminders, stay-in-touch nudges and group fires, it adds each event's occurrence and its reminder days and each open follow-up date, so the Global Calendar, the journal agenda and Notifications see birthdays and follow-ups.
+  uses: [sessions, SS-7, calendar, journals, JR-5, notifications]
+  proof: [BR-RL-S4-4, BR-RL-S9-2]
+  work: LIF-495
+- id: RL-17
+  says: Relationships has its own blocks (capability entries with an inline target), such as the people to reach out to, the day's events and the reminders due; each reads Relationships live and writes only through the Relationships service, so the journal and any page can show and work on them.
+  uses: [capabilities, journals, JR-12, JR-20, notes]
+  work: LIF-196
+- id: RL-18
+  says: Relationships' journal contribution answers a date with that day's interactions, events and due reminders, empty on an idle day; it is registered into the journal registry through registerRelationshipsJournal.
+  uses: [journals, JR-11]
+  proof: [BR-RL-S9-1]
+  work: LIF-112
+- id: RL-19
+  says: An event can be edited and deleted and read per contact, and a network can be deleted (its memberships go, its contacts stay), each through the Relationships service.
+  work: LIF-496
+- id: RL-20
+  says: A schedule group at every frequency fires on time; biweekly, monthly, quarterly and yearly groups have a phase anchor, so the due agenda projects them like daily and weekly groups.
+  open: A start date on the group (a schema change) or another anchor.
+  work: LIF-496
+- id: RL-21
+  says: An event (a birthday's present) or an interaction's follow-up can create a Task linked to the contact through the Tasks service; the event never becomes the task.
+  uses: [tasks, TK-2]
+  open: Whether the task is created on the user's action only, or automatically ahead of the event.
+  work: LIF-497
+- id: RL-22
+  says: Relationships reads the user's reminder defaults, closeness tier definitions and import settings from Preferences, never its own store.
+  uses: [preferences]
+  open: Which reminder defaults (cadence, reminder time, a group's days) the user sets.
+  work: LIF-498
+# RL-23 is deferred to the Gamification run (LIF-349 checklist line "gamification + Economy"); Gamification's own
+# docs don't name it yet.
+- id: RL-23
+  says: Interaction streaks feed Gamification, which owns the rule and the reward; Relationships adds no economy contract.
+  uses: [gamification, effects]
+- id: RL-24
+  says: A contact's due-time reminders are gated by the Preferences push_contacts toggle.
+  uses: [notifications, preferences]
+  work: LIF-479
+- id: RL-25
+  says: Relationships serves a read provider for contacts in the shared view registry, so the Tasks aggregated view and the session engine resolve a contact parent instead of degrading it.
+  uses: [views, tasks, TK-9]
+  work: LIF-495
+- id: RL-26
+  says: Deleting a contact asks the user what happens to its tasks (delete, unlink or move them) and calls the Tasks operations for the choice before the cascade; Relationships never leaves a task pointing at a deleted contact.
+  uses: [tasks, TK-12]
+  work: LIF-471
+- id: RL-27
+  says: A contact page lists the contact's tasks through the Tasks service by its contact link, never a table read.
+  uses: [tasks, TK-13]
+  work: LIF-196
+- id: RL-28
+  says: Other modules link a contact (a project's contacts with roles) through the Relationships contact read, and deleting a contact never leaves those links pointing at it.
+  uses: [projects, PJ-10]
+  open: Whether Relationships' delete clears the links or the linking module reacts to it.
+  work: LIF-491
+- id: RL-29
+  says: In the app the composition root builds Relationships with its deps (spaces, notes) and registers its due lane; once they exist it also passes tasks (RL-21) and a Preferences port (RL-22), and registers the contact read provider (RL-25) and the journal contribution (RL-18). Relationships owns no effect handler and emits nothing, so it has no effects dep or registration step.
+  uses: [sessions, views]
+  work: LIF-450
+- id: RL-30
+  says: The data-model record shows the eight Relationships tables (networks and their junction included), the closeness tier, how we met, the interaction energy and key takeaways, reminder snooze and priority, the group birthday anchor, the retired inline tags and the code-held cascades.
+  work: LIF-63
+- id: RL-31
+  says: Relationship type, interaction type, sentiment, event type and frequency are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas); closeness tier is open vocabulary; an event date is `MM-DD` or `YYYY-MM-DD`.
+  proof: [BR-RL-S1-3, BR-RL-S2-5, BR-RL-S3-5]
+- id: RL-32
+  says: Contact and network descriptions are pages with that entity type, only an interaction's short summary stays inline, and a contact is a valid entity link target.
+  uses: [notes, spaces]
+  proof: [BR-RL-S8-2, BR-RL-S8-3]
+# Consumers with no row here. Built and already in their own ledgers: Tasks' contact parent link (TK-2), the
+# aggregated view's contact group (TK-9), the parent delete choice and the contact page read (TK-12, TK-13),
+# Projects' project contacts and hub (PJ-10, PJ-21), the journal registry (JR-11). Built with no ledger yet: the
+# Global Calendar places the relationships due lane with its carry-forward (the Calendar run); Notifications
+# materializes due rows and keeps the wake payload content-free (the notifications + delivery run). Designed
+# only: Gamification's interaction streaks (RL-23, the Gamification run). Not consumers: the relationships life
+# domain in Purposes, Habits and Skills is an enum value; Check-ins' "relationships" are entity links.
