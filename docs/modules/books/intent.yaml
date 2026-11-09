@@ -47,16 +47,19 @@
   uses: [preferences]
   proof: [BR-BK-S8-4, BR-BK-S8-5, BR-BK-S8-7, BR-BK-S8-8]
   work: LIF-501
-# BK-9's real isbn lookup (the device-mediated public-reference fetch and its normalization) is deferred to the
-# Integrations run (LIF-349 checklist line "Integrations (ADR-014, docs/core/ingestion and egress)"); M1 has the
-# deny-safe port and the manual path.
+# BK-9's lookup follows the public-reference dataset pattern (BK-34, Victor 2026-11-09): the book dataset's bundling,
+# mirror and verification are deferred to the Integrations run (LIF-349 checklist line "Integrations (ADR-014,
+# docs/core/ingestion and egress)"); M1 has the deny-safe per-item port and the manual path.
 - id: BK-9
   says: The table of contents is a flat chapter list owned by Books and usable before owning a copy, entered by hand or by an isbn or metadata lookup; the syllabus and schedule are Education's and meet the table of contents only through the partition (BK-13).
   uses: [integrations]
   proof: [BR-BK-S2-1, BR-BK-S2-2, BR-BK-S2-3, BR-BK-S2-4, BR-BK-S2-5]
+  work: LIF-506
+# BK-10's "never a study session" is superseded by Victor's rule (2026-11-09): every reading is a session the user
+# can name and type, reading by default (BK-35).
 - id: BK-10
-  says: A reading session is a base session with the reading sub_type plus a Books-owned extension keyed by session_id, never a study session and never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.
-  uses: [sessions, SS-1, journals, ai]
+  says: A reading session is a base session (the reading sub_type by default) plus a Books-owned extension keyed by session_id, never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.
+  uses: [sessions, SS-1, SS-2, journals, ai]
   proof: [BR-BK-S6-1, BR-BK-S6-2, BR-BK-S6-3, BR-BK-S6-4, BR-BK-S6-5]
   work: LIF-504
 # BK-11's pursuable goal is Purpose-owned (C-M1): Books writes no measurement axes and serves its measure (BK-25);
@@ -84,6 +87,7 @@
   says: Integrations never touch the zero-knowledge core; the isbn lookup is a device-mediated public-reference fetch under the external-in grant, revocable, and speech, transcription and photo reading are scoped model calls on device or in the cloud, never agents, with derived rows marked source=ai; each is opt-in behind a consent step and keeps a manual fallback.
   uses: [integrations, ai]
   proof: [BR-BK-S2-5, BR-BK-S2-7, BR-BK-S6-4, BR-BK-S10-1, BR-BK-S10-2]
+  work: LIF-506
 # BK-15's mobile face rides the hybrid WebView pattern, deferred to the Sync & Venues run (LIF-349 checklist line
 # "Sync & Venues"). The Books to Reader adapter (apps/web/src/reader) is built; its useReader hook and the chrome are
 # LIF-178's.
@@ -166,14 +170,26 @@
   says: Book status, asset format, annotation kind, plan arrangement, goal type and conflict rule are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas); the mapping state (synced, pending, failed) joins them with the mapping.
   proof: [BR-BK-S1-3, BR-BK-S3-1]
 - id: BK-33
-  says: A completed reading session emits one measurement signal for its book and never an economy grant; a reading grant rides the base session sub_type.
+  says: A completed reading session emits one measurement signal for its book and never an economy grant; whether reading earns a grant is Gamification's rule on the base session, and the reading sub_type declares no effect today.
   uses: [effects, sessions, gamification]
   proof: [BR-BK-S6-7, BR-BK-S10-4]
   work: LIF-113
+- id: BK-34
+  says: The book dataset (metadata, covers, page counts, tables of contents and classification) ships with Vida as an opt-in public-reference default that the user accepts or declines; it refreshes as a whole set and is read from a local copy, and picking a book from it fills the work, its chapters and its tags in one step, never one item fetched at a time; hand entry always stays.
+  uses: [integrations, spaces]
+  proof: [BR-BK-S2-5, BR-BK-S2-7]
+  open: Which dataset source and licence, and whether covers ship in the bundle.
+  work: LIF-506
+- id: BK-35
+  says: Every reading is a session; opening the Reader, the companion mode or a routine step starts one through Sessions, the user can name it and choose its type (reading by default) as Sessions allows, and Books records its capture on that session.
+  uses: [sessions, SS-1, SS-2, SS-4, routines, RT-3]
+  proof: [BR-BK-S6-2, BR-BK-S6-6]
+  open: Whether a session typed other than reading still gets the Books extension, and where the session name lives (the spine has no column).
+  work: LIF-507
 # Consumers with no row here. Built and in their own ledgers: the reading sub_type on the shared session spine
-# (SS-1), the journal registry (JR-11). In their own ledgers, not built yet: the due agenda's provider reads (SS-7),
-# Focus Mode's reading tools (PD-13; LIF-445), a Routines step that drives a reading session (RT-3; it needs the
-# reading sub_type registered, BK-30). Built with no ledger yet: Education's getBookPlansForSubject passes through to
+# (SS-1), the due agenda's provider reads (SS-7; Books' provider is BK-23), the journal registry (JR-11), a Routines
+# step that drives a session sub_type (RT-3; a reading step needs registerBooks, BK-30). In their own ledgers, not
+# built yet: Focus Mode's reading tools (PD-13; LIF-445). Built with no ledger yet: Education's getBookPlansForSubject passes through to
 # Books' plans with no subject filter (BR-LE-S10-2, the learning run); Knowledge links many books per object
 # (BR-KN-S2-5, the knowledge + review engine run). Designed only: Knowledge's gather from Book quotes (LIF-363) and
 # Flashcards from Book quotes (the knowledge + review engine run), Skills retiring its book junction for entity links

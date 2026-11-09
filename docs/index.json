@@ -20,11 +20,11 @@
       "module": "books",
       "status": "active",
       "supersedes": [],
-      "summary": "A reading session is a base session with the reading sub_type plus a Books-owned extension keyed by session_id, never a study session and never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.",
+      "summary": "A reading session is a base session (the reading sub_type by default) plus a Books-owned extension keyed by session_id, never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.",
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 167,
+      "tokens": 164,
       "path": "docs/modules/books/intent/BK-10.md"
     },
     {
@@ -77,7 +77,7 @@
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 154,
+      "tokens": 158,
       "path": "docs/modules/books/intent/BK-14.md"
     },
     {
@@ -348,12 +348,38 @@
       "module": "books",
       "status": "active",
       "supersedes": [],
-      "summary": "A completed reading session emits one measurement signal for its book and never an economy grant; a reading grant rides the base session sub_type.",
+      "summary": "A completed reading session emits one measurement signal for its book and never an economy grant; whether reading earns a grant is Gamification's rule on the base session, and the reading sub_type declares no effect today.",
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 91,
+      "tokens": 110,
       "path": "docs/modules/books/intent/BK-33.md"
+    },
+    {
+      "id": "BK-34",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The book dataset (metadata, covers, page counts, tables of contents and classification) ships with Vida as an opt-in public-reference default that the user accepts or declines; it refreshes as a whole set and is read from a local copy, and picking a book from it fills the work, its chapters and its tags in one step, never one item fetched at a time; hand entry always stays.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 166,
+      "path": "docs/modules/books/intent/BK-34.md"
+    },
+    {
+      "id": "BK-35",
+      "kind": "intent-row",
+      "module": "books",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every reading is a session; opening the Reader, the companion mode or a routine step starts one through Sessions, the user can name it and choose its type (reading by default) as Sessions allows, and Books records its capture on that session.",
+      "anchors": [
+        "docs/modules/books/intent.yaml"
+      ],
+      "tokens": 154,
+      "path": "docs/modules/books/intent/BK-35.md"
     },
     {
       "id": "BK-4",
@@ -433,7 +459,7 @@
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 125,
+      "tokens": 129,
       "path": "docs/modules/books/intent/BK-9.md"
     },
     {
@@ -1277,11 +1303,11 @@
       "module": "books",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of books: 33 rows, 4 tested, 2 partly tested, 27 intent only.",
+      "summary": "Intended rules of books: 35 rows, 4 tested, 2 partly tested, 29 intent only.",
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 138,
+      "tokens": 141,
       "path": "docs/modules/books/intent.md"
     },
     {
