@@ -463,6 +463,345 @@
       "path": "docs/modules/books/intent/BK-9.md"
     },
     {
+      "id": "CK-1",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A check-in's intentions, wins, gratitude, challenges, tomorrow's focus, reflection and custom answers, and a template's name, description and question labels and placeholders, are encrypted client-side [E]; mood, energy, the type, the date and the schedule stay plaintext for the trend charts. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/check-ins/intent/CK-1.md"
+    },
+    {
+      "id": "CK-10",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins are hard-deleted with no foreign keys; deleting a template keeps its check-ins with their template cleared and removes its questions, in application code.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/check-ins/intent/CK-10.md"
+    },
+    {
+      "id": "CK-11",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins owns its streak, derived on read from the check-ins and never written to user_profile; a completion emits the reward feeder that Gamification applies to the consequence ledger, and Check-ins never writes points itself.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/check-ins/intent/CK-11.md"
+    },
+    {
+      "id": "CK-12",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every check-in and template edit succeeds locally first, and structured columns sync last-writer-wins.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/check-ins/intent/CK-12.md"
+    },
+    {
+      "id": "CK-13",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins' journal contribution answers a date with that day's check-ins (which slots are done, mood and energy), empty on a day with none; it is registered into the journal registry through a Check-ins journal registration helper, which does not exist yet.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/check-ins/intent/CK-13.md"
+    },
+    {
+      "id": "CK-14",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins has its own blocks (capability entries with an inline target), such as today's check-in slots with a start action, the mood and energy trend and the streak; each reads Check-ins live and writes only through the Check-ins service, so the journal and any page can show and work on them.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/check-ins/intent/CK-14.md"
+    },
+    {
+      "id": "CK-15",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins has an entry wizard that renders the active template for the chosen type, a standalone page with the history list, a calendar and a trends dashboard tab, a standalone editor per template with its schedule, and the review screens; the daily entry also opens from the journal.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/check-ins/intent/CK-15.md"
+    },
+    {
+      "id": "CK-16",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each Check-ins capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a failed save reverts with a typed error and never loses an entry, and a failed trend or streak shows a flagged partial, never a wrong number.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/check-ins/intent/CK-16.md"
+    },
+    {
+      "id": "CK-17",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins feeds the Sessions due agenda with each scheduled check-in and review for the day at its preferred time, so the Global Calendar and the journal agenda show them without copying them.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/check-ins/intent/CK-17.md"
+    },
+    {
+      "id": "CK-18",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins serves a read provider for check-ins in the shared view registry, so a saved view and anything that targets a check-in resolve it instead of degrading.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/check-ins/intent/CK-18.md"
+    },
+    {
+      "id": "CK-19",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins advertises mood, energy, completion and the streak in the measurement source registry, so a Purposes goal with a check-in contributor, Gamification's streak read and Health derive-pull them; Check-ins stores no measurement axes.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/check-ins/intent/CK-19.md"
+    },
+    {
+      "id": "CK-2",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "There is one check-in per date and type, so morning, afternoon, evening and the reviews coexist on a day; a second check-in for a taken slot is a typed DuplicateCheckInError, never an overwrite, and the slot is immutable on update.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml",
+        "packages/core/src/services/checkins/__tests__/checkins-service.test.ts"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/check-ins/intent/CK-2.md"
+    },
+    {
+      "id": "CK-20",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences gates check-in reminders with their own push toggle, keyed so the toggle matches the reminder's due rows; there is no Check-ins toggle today.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/check-ins/intent/CK-20.md"
+    },
+    {
+      "id": "CK-21",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A custom answer is checked against its question; a scale or rating outside its bounds, or an answer of the wrong kind for its field type, is a typed validation error.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/check-ins/intent/CK-21.md"
+    },
+    {
+      "id": "CK-22",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The template and question library ships with Vida as an opt-in default dataset the user accepts or declines; it refreshes as a whole set and is read from a local copy, and picking a template copies it into the user's own templates.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/check-ins/intent/CK-22.md"
+    },
+    {
+      "id": "CK-23",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user can delete a check-in; it is removed for good with its journal day-page link.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/check-ins/intent/CK-23.md"
+    },
+    {
+      "id": "CK-24",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Check-ins with the notes service as its journal link and the effects rail with its registry; it registers the journal contribution (CK-13), the due lane (CK-17), the read provider (CK-18) and the measure sources (CK-19).",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/check-ins/intent/CK-24.md"
+    },
+    {
+      "id": "CK-25",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the three Check-ins tables as built, the composite unique slot, six types, no foreign keys and no deleted_at, and the streak gone from user_profile.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/check-ins/intent/CK-25.md"
+    },
+    {
+      "id": "CK-26",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-in type, question field type, schedule type and preferred time are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas), and mood and energy are integers from 1 to 10.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/check-ins/intent/CK-26.md"
+    },
+    {
+      "id": "CK-3",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The check-in type is one of six, morning, afternoon, evening, weekly_review, monthly_review and yearly_review.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/check-ins/intent/CK-3.md"
+    },
+    {
+      "id": "CK-4",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each check-in type has a ready default template, so the user checks in with zero setup; the check-in's standard columns are the built-in default template, and custom_data holds only the answers to extra questions the user added, never a copy of a standard field.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/check-ins/intent/CK-4.md"
+    },
+    {
+      "id": "CK-5",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A template owns ordered, typed questions (mood_scale, energy_scale, text_list, text_area, rating, boolean) with a field key unique per template; a required question blocks completion until answered, and min_value and max_value bound a scale or rating answer.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/check-ins/intent/CK-5.md"
+    },
+    {
+      "id": "CK-6",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A weekly, monthly or yearly review reads Purposes, Projects and Tasks progress through their services, never their tables, holds the Purpose target review, and backlinks what it covered; a failed read shows what is available with a flag, never a falsely complete review, and a review with nothing linked saves as free reflection.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 132,
+      "path": "docs/modules/check-ins/intent/CK-6.md"
+    },
+    {
+      "id": "CK-7",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A check-in links to its day's journal page through entity_links, never a copy of its answers, and editing a past check-in re-feeds its day page.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/check-ins/intent/CK-7.md"
+    },
+    {
+      "id": "CK-8",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A template's schedule (daily, weekly or custom days and a preferred time), set in its own editor, fires the check-in reminders through Preferences and Notifications.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/check-ins/intent/CK-8.md"
+    },
+    {
+      "id": "CK-9",
+      "kind": "intent-row",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Check-ins carry no tags; they relate to other entities only through entity_links, a deliberate opt-out from the shared entity_tags.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/check-ins/intent/CK-9.md"
+    },
+    {
       "id": "FL-1",
       "kind": "intent-row",
       "module": "finance",
@@ -1309,6 +1648,19 @@
       ],
       "tokens": 141,
       "path": "docs/modules/books/intent.md"
+    },
+    {
+      "id": "INTENT-check-ins",
+      "kind": "intent",
+      "module": "check-ins",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of check-ins: 26 rows, 1 tested, 0 partly tested, 25 intent only.",
+      "anchors": [
+        "docs/modules/check-ins/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/check-ins/intent.md"
     },
     {
       "id": "INTENT-finance",
