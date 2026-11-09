@@ -86,6 +86,9 @@
       ],
       "relationships": [
         "packages/core/src/services/relationships"
+      ],
+      "books": [
+        "packages/core/src/services/books"
       ]
     },
     "intentFeatures": {

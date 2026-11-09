@@ -1,0 +1,197 @@
+# Books intent ledger: every intended, deferred or TBD Books rule, keyed by its docs/features/books ID.
+# proof = the built rules in docs/modules/books/current-business-rules.md; work = the issue that builds the rest.
+# check:rules derives each row's state. Test names carry BK-4, BK-6, BK-12, BK-17 and one proof ID (BR-BK-S3-4);
+# no other BR-BK ID is in a test name, so the other built rows read intent only. BK-2 reads tested only because the
+# intent ID pattern also matches inside the test name BR-BK-2 (LIF-349 run 20 findings).
+
+# Invariants (docs/features/books/business-rules.md)
+- id: BK-1
+  says: A book's title, author, isbn, review and cover, a chapter's title, an asset's file reference, a bookmark's label, a highlight's captured text, a quote's text and every page photo are encrypted client-side [E]; enums, page numbers, positions, dates and counters are plaintext. Book files and page photos are client-encrypted attachments. M1 is a pass-through.
+  uses: [encryption, sync]
+  proof: [BR-BK-S1-8]
+  work: LIF-67
+- id: BK-2
+  says: A book is the work and exists without any copy; it has zero or more per-format assets, each with its own native position (a page, an e-book location or an audio timestamp), and a physical or braille asset holds a position the user enters.
+  proof: [BR-BK-S1-2, BR-BK-S3-1, BR-BK-S3-3]
+# BK-3 is built for page-unit assets through the measurement engine's normalize; resolveProgress is inlined on
+# purpose because it can't carry 'conflicted'. Progress for e-book and audio assets needs the mapping (BK-4), and
+# nothing can set the override yet.
+- id: BK-3
+  says: A book's unified progress is derived from its assets' positions through the cross-format mapping under the conflict rule (BK-8), never hand-set as a separate truth; books.progress is a nullable override (null derives), never a counter that defaults to zero.
+  uses: [measurement]
+  proof: [BR-BK-S1-1, BR-BK-S8-1, BR-BK-S8-2, BR-BK-S8-3]
+  work: LIF-501
+- id: BK-4
+  says: Positions map between formats automatically, from a transcription and table-of-contents anchors near the stopped point, never by manual calibration; while the mapping is pending, failed or absent, the user sees the native position and an explicit "not synced yet" state, and a mapped position is never guessed.
+  uses: [ai]
+  proof: [BR-BK-S3-5]
+  work: LIF-501
+- id: BK-5
+  says: Bookmarks, highlights and quotes anchor to the work and show from every asset through the mapping (a bookmark at minute 52 of the audiobook appears on the mapped page); under an unsynced mapping they show at their native position with the BK-4 state, and removing an asset never removes them.
+  proof: [BR-BK-S3-4, BR-BK-S4-7]
+  work: LIF-501
+- id: BK-6
+  says: There are three annotation natures; a highlight is a light span marker in digital content with no notes and no links, while bookmarks and quotes take notes as pages and link to each other; quotes are stored per book.
+  uses: [notes, spaces]
+  proof: [BR-BK-S4-1, BR-BK-S4-5, BR-BK-S4-6]
+# BK-7's other half, the quote-embed block in the editor, is the editor's: it comes with the Editor run (LIF-349
+# checklist line "Editor (docs/editor)"). Books' half, the feed and the toggle precedence, is built.
+- id: BK-7
+  says: Any note or page can embed a stored quote by reference, never a copy; embedding is toggled globally and per book, and the per-book toggle overrides the global one.
+  uses: [notes, editor, preferences]
+  proof: [BR-BK-S5-1, BR-BK-S5-2, BR-BK-S5-4, BR-BK-S5-5]
+  work: LIF-503
+# BK-8's photo-valid rule resolves only once a photo yields a position (the AI run); the stored rule is BK-28.
+- id: BK-8
+  says: A clash between position sources (assets, photo capture) is asked of the user in context by default; the user may preset a rule (a chosen source of truth, the last valid one, or the photo) that then resolves it automatically, and an unresolved clash shows unified progress as conflicted, never either value.
+  uses: [preferences]
+  proof: [BR-BK-S8-4, BR-BK-S8-5, BR-BK-S8-7, BR-BK-S8-8]
+  work: LIF-501
+# BK-9's lookup follows the public-reference dataset pattern (BK-34, Victor 2026-11-09): the book dataset's bundling,
+# mirror and verification are deferred to the Integrations run (LIF-349 checklist line "Integrations (ADR-014,
+# docs/core/ingestion and egress)"); M1 has the deny-safe per-item port and the manual path.
+- id: BK-9
+  says: The table of contents is a flat chapter list owned by Books and usable before owning a copy, entered by hand or by an isbn or metadata lookup; the syllabus and schedule are Education's and meet the table of contents only through the partition (BK-13).
+  uses: [integrations]
+  proof: [BR-BK-S2-1, BR-BK-S2-2, BR-BK-S2-3, BR-BK-S2-4, BR-BK-S2-5]
+  work: LIF-506
+# BK-10's "never a study session" is superseded by Victor's rule (2026-11-09): every reading is a session the user
+# can name and type, reading by default (BK-35).
+- id: BK-10
+  says: A reading session is a base session (the reading sub_type by default) plus a Books-owned extension keyed by session_id, never its own table; manual capture records time, pages and the stop point, digital capture a granular position and statistics, and a page photo is read for position and always stored encrypted as a visual reading journal shown in the daily journal.
+  uses: [sessions, SS-1, SS-2, journals, ai]
+  proof: [BR-BK-S6-1, BR-BK-S6-2, BR-BK-S6-3, BR-BK-S6-4, BR-BK-S6-5]
+  work: LIF-504
+# BK-11's pursuable goal is Purpose-owned (C-M1): Books writes no measurement axes and serves its measure (BK-25);
+# the goal's row comes with the Purposes ledger (LIF-349 checklist line "purposes + Measurement"). Calendar-slot
+# reconciliation and quotas over free time ride the scheduling engine (LIF-442).
+- id: BK-11
+  says: A plan covers one or many books, sequenced (one after another) or parallel (the quota split); its goal is set by hand or calculated to a target (a date, a weekday or a day of the month) and is a pursuable target; a missed day, week or month reshapes the plan and proposes how to catch up, never dropping the target silently.
+  uses: [purposes, calendar, sessions]
+  proof: [BR-BK-S7-1, BR-BK-S7-2, BR-BK-S7-3, BR-BK-S7-5, BR-BK-S7-6]
+  work: LIF-502
+- id: BK-12
+  says: Books owns reading plans; the study planner and every other consumer reads plans, deadlines and sessions and never writes them, and the Calendar reconciles while Books handles only its own end.
+  uses: [learning, sessions]
+  proof: [BR-BK-S7-7, BR-BK-S10-3]
+# BK-13's pace derivation waits on Education's schedules and assessments; Education's half comes with the
+# Learning ledger (LIF-349 checklist line "learning"). Books ships the deny-safe null.
+- id: BK-13
+  says: The Education partition links books and subjects through a many-to-many junction and a Books read contract; Education reads books per subject and their pace against the next class or assessment, Books reads subject schedules and assessment dates to pace the student ahead, and neither reads the other's tables.
+  uses: [learning]
+  proof: [BR-BK-S9-2, BR-BK-S9-3, BR-BK-S9-4, BR-BK-S9-5, BR-BK-S9-8]
+# BK-14's real model pipelines (speech, transcription, photo reading), source=ai rows and the consent gate that
+# throws IntegrationConsentError are deferred to the AI run (LIF-349 checklist line "AI (ADR-015, docs/core/ai)");
+# the real lookup to the Integrations run.
+- id: BK-14
+  says: Integrations never touch the zero-knowledge core; the isbn lookup is a device-mediated public-reference fetch under the external-in grant, revocable, and speech, transcription and photo reading are scoped model calls on device or in the cloud, never agents, with derived rows marked source=ai; each is opt-in behind a consent step and keeps a manual fallback.
+  uses: [integrations, ai]
+  proof: [BR-BK-S2-5, BR-BK-S2-7, BR-BK-S6-4, BR-BK-S10-1, BR-BK-S10-2]
+  work: LIF-506
+# BK-15's mobile face rides the hybrid WebView pattern, deferred to the Sync & Venues run (LIF-349 checklist line
+# "Sync & Venues"). The Books to Reader adapter (apps/web/src/reader) is built; its useReader hook and the chrome are
+# LIF-178's.
+- id: BK-15
+  says: The Reader is core and in-app; one surface with three modes (read, listen including speech-converted files, annotate live in every mode) on all three platforms, files never leave the encrypted store to be read, and opening an asset starts a reading session.
+  uses: [ai, editor]
+  proof: [BR-BK-S6-6]
+  work: LIF-178
+- id: BK-16
+  says: Publisher, genre and category are Books-scoped entity_tags, never columns; a book's summary and key takeaways are notes with their own per-type views; skill and purpose links are owned by Skills and Purposes; the book row stays lean.
+  uses: [spaces, notes]
+  proof: [BR-BK-S1-2, BR-BK-S9-1]
+  work: LIF-178
+- id: BK-17
+  says: Every view ships a default; books with only a table of contents, books with no copy, unsynced mappings and empty shelves render gracefully and invite the next step.
+  proof: [BR-BK-S1-6, BR-BK-S2-6, BR-BK-S3-8]
+- id: BK-18
+  says: Every write (a position, an annotation, a session, a plan) succeeds locally first; sync is last-writer-wins per entity, and files ride the attachment pipeline.
+  uses: [sync]
+  proof: [BR-BK-S10-6]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: BK-19
+  says: Books has a Reading Hub (current reads, today's quotas and pace, resume, recent bookmarks and quotes, statistics, plan alerts), a Bookshelf (gallery, list or table, by tag, status and format), All Plans and each plan's page, the All Quotes library, a tabbed Book Hub (an Education tab once a subject is linked), the physical companion mode, and the add-book and plan wizards with conflict prompts in context.
+  uses: [views, notes, preferences, calendar]
+  work: LIF-178
+- id: BK-20
+  says: Each Books capability renders its terminal states (loading, empty with a call to action, a typed error with retry, populated); a broken file never renders as an empty book, an unreachable target shows the catch-up options, and an unresolved conflict is flagged.
+  proof: [BR-BK-S3-2, BR-BK-S7-5]
+  work: LIF-178
+- id: BK-21
+  says: Books has its own blocks (capability entries with an inline target), such as the books being read with a resume action, today's quotas, the day's page photos and a quote; each reads Books live and writes only through the Books service, so the journal and any page can show and work on them.
+  uses: [capabilities, journals, JR-12, JR-20, notes]
+  work: LIF-178
+- id: BK-22
+  says: Books' journal contribution answers a date with that day's pages read, reading sessions logged and the plans on pace or behind, empty on an idle day; it is registered into the journal registry through registerBooksJournal.
+  uses: [journals, JR-11]
+  proof: [BR-BK-S10-5]
+  work: LIF-112
+- id: BK-23
+  says: Books feeds the Sessions due agenda with each active plan's quota for the day and its target date, so the Global Calendar, the journal agenda and the study planner see reading quotas without copying them.
+  uses: [sessions, SS-7, calendar, journals, JR-5]
+  open: Whether a quota is also a reminder; Preferences has no push toggle for Books (the LIF-479 keying applies if it is).
+  work: LIF-500
+- id: BK-24
+  says: Books serves a read provider for books in the shared view registry, so the Bookshelf's saved views and any view or session that targets a book resolve it instead of degrading.
+  uses: [views]
+  work: LIF-500
+- id: BK-25
+  says: Books advertises each book's reading progress in the measurement source registry, so a Purposes goal or a reading plan's pursuable target derive-pulls it; a conflicted or unmeasured book reads null, and Books stores no measurement axes.
+  uses: [measurement, purposes]
+  proof: [BR-BK-S9-6]
+  open: The registry's resolver is synchronous and takes no entity, while Books' source is async and per book.
+  work: LIF-500
+- id: BK-26
+  says: Editing a plan's quota or target mid-plan runs the same recalculation as a missed quota.
+  work: LIF-502
+- id: BK-27
+  says: The Bookshelf filters books by status, tag, owned format and linked subject, and the All Quotes library filters quotes by tag, each through the Books service.
+  uses: [spaces, learning]
+  proof: [BR-BK-S1-7]
+  work: LIF-502
+- id: BK-28
+  says: Books reads the quote-embed toggles (global and per book), the conflict rule and the Reader and companion defaults from Preferences through its narrow port, never its own store.
+  uses: [preferences]
+  proof: [BR-BK-S5-3, BR-BK-S8-10]
+  open: Which Reader and companion defaults the user sets.
+  work: LIF-503
+- id: BK-29
+  says: A book and a chapter are entity link targets; Knowledge objects, Skills and Purposes own their links to books, and Books authors none of them.
+  uses: [spaces, knowledge, skills, purposes]
+  proof: [BR-BK-S9-7]
+- id: BK-30
+  says: In the app the composition root builds Books with its deps (spaces, notes, sessions, the session registry) and calls registerBooks so the reading sub_type exists; it passes the Preferences port (BK-28) and the effects rail with its reachable registry, and later the ingestion, attachment and model ports; it registers the due lane (BK-23), the book read provider (BK-24) and the measure source (BK-25), and passes Books to Education as its books port.
+  uses: [sessions, views, effects, learning]
+  work: LIF-450
+- id: BK-31
+  says: The data-model record shows the ten Books tables (assets, the three annotation tables, the reading session extension, plans and their books, the subject junction), progress as a nullable override, and the retired format, current page, genre and tags columns.
+  work: LIF-63
+- id: BK-32
+  says: Book status, asset format, annotation kind, plan arrangement, goal type and conflict rule are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas); the mapping state (synced, pending, failed) joins them with the mapping.
+  proof: [BR-BK-S1-3, BR-BK-S3-1]
+- id: BK-33
+  says: A completed reading session emits one measurement signal for its book and never an economy grant; whether reading earns a grant is Gamification's rule on the base session, and the reading sub_type declares no effect today.
+  uses: [effects, sessions, gamification]
+  proof: [BR-BK-S6-7, BR-BK-S10-4]
+  work: LIF-113
+- id: BK-34
+  says: The book dataset (metadata, covers, page counts, tables of contents and classification) ships with Vida as an opt-in public-reference default that the user accepts or declines; it refreshes as a whole set and is read from a local copy, and picking a book from it fills the work, its chapters and its tags in one step, never one item fetched at a time; hand entry always stays.
+  uses: [integrations, spaces]
+  proof: [BR-BK-S2-5, BR-BK-S2-7]
+  open: Which dataset source and licence, and whether covers ship in the bundle.
+  work: LIF-506
+- id: BK-35
+  says: Every reading is a session; opening the Reader, the companion mode or a routine step starts one through Sessions, the user can name it and choose its type (reading by default) as Sessions allows, and Books records its capture on that session.
+  uses: [sessions, SS-1, SS-2, SS-4, routines, RT-3]
+  proof: [BR-BK-S6-2, BR-BK-S6-6]
+  open: Whether a session typed other than reading still gets the Books extension, and where the session name lives (the spine has no column).
+  work: LIF-507
+# Consumers with no row here. Built and in their own ledgers: the reading sub_type on the shared session spine
+# (SS-1), the due agenda's provider reads (SS-7; Books' provider is BK-23), the journal registry (JR-11), a Routines
+# step that drives a session sub_type (RT-3; a reading step needs registerBooks, BK-30). In their own ledgers, not
+# built yet: Focus Mode's reading tools (PD-13; LIF-445). Built with no ledger yet: Education's getBookPlansForSubject passes through to
+# Books' plans with no subject filter (BR-LE-S10-2, the learning run); Knowledge links many books per object
+# (BR-KN-S2-5, the knowledge + review engine run). Designed only: Knowledge's gather from Book quotes (LIF-363) and
+# Flashcards from Book quotes (the knowledge + review engine run), Skills retiring its book junction for entity links
+# (the skills run), a Purposes goal on reading progress (BK-25, the purposes + Measurement run). Not consumers:
+# Gamification (no Books grant, BK-33), Notifications (Books schedules no reminder yet, BK-23).
