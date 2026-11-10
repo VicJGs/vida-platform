@@ -242,6 +242,6 @@
 # run), Gamification's goal-completion reward and rewards that fund dreams (GM-7), Education's study progress
 # signals. Not consumers: Relationships (health is never a source, RL-5), Routines as a source (RT-19).
 # Not Purposes': contribute_purpose_metric is a separate component, not measurement; Purposes only reads and keeps
-# no copy (Victor, 2026-11-09), so HB-8, RT-12 and TK-16's "Purposes owns the metric write" is drift (LIF-520).
+# no copy (Victor, 2026-11-09), so HB-8 and RT-12's "Purposes owns the metric", from the Sessions effect catalogue, is drift (LIF-520).
 # Withdrawn in review: PG-29 (that handler) and PG-33 (a goal can fail; a goal is there to be reached).
 # Feature datasets: none; the Purposes docs ship no bulk reference data.
