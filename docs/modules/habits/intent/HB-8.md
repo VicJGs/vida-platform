@@ -4,17 +4,16 @@ kind: intent-row
 module: habits
 status: active
 supersedes: []
-summary: "A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values."
+summary: "Habits pushes nothing to Purposes; a purpose, goal or dream a habit relates to reads the habit's completions through the Habits service and computes them into that day's progress, and Habits never writes purpose data."
 anchors: [docs/modules/habits/intent.yaml]
-tokens: 115
+tokens: 92
 generated: true
 ---
 # HB-8 (intent only)
 
-A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values.
+Habits pushes nothing to Purposes; a purpose, goal or dream a habit relates to reads the habit's completions through the Habits service and computes them into that day's progress, and Habits never writes purpose data.
 
-- Proof: BR-HB-29 (no test), BR-HB-31 (no test)
-- Uses: purposes
-- Work: LIF-113
+- Uses: purposes, PG-37
+- Work: LIF-521
 
 Generated from `docs/modules/habits/intent.yaml`; edit the ledger, never this unit.

@@ -1,0 +1,257 @@
+# Purposes intent ledger: every intended, deferred or TBD Purposes rule, keyed by its docs/features/purposes-and-goals
+# ID, plus the measurement substrate Purposes owns (LIF-426: measurement → Purposes, its own prefix MS).
+# work = the issue that builds the rest. check:rules derives each row's state.
+# Proof cites the BR-PG-Sn-n rules in docs/modules/purposes/current-business-rules.md and the bare BR-n rules in
+# docs/core/measurement/current-business-rules.md. Test names carry no BR-PG ID, only PG-4, PG-10, PG-18, PG-19 (a
+# describe name) and one measurement BR-2, so the other built rows read intent only (LIF-349 run 22 findings).
+# MS-2 is tested by the measurement test; its second anchor is a Purposes test naming Spaces' own BR-2, a bare
+# rule ID that collides across modules.
+
+# Invariants (docs/features/purposes-and-goals/business-rules.md)
+- id: PG-1
+  says: Values' names and descriptions, purposes' titles, descriptions, visions and whys, targets' titles, descriptions, units and success criteria, metric names, descriptions and units, metric context notes, review reflections and notes, contribution notes, plan step titles and notes, and dreams' titles, descriptions and estimated cost are encrypted client-side [E]; enums, dates, numeric measures and references stay plaintext. M1 is a pass-through.
+  uses: [encryption, sync]
+  work: LIF-67
+# PG-2's surfacing of the laddering is each consumer's (the project hub PJ-21, the journal blocks PG-22, the
+# Purposes pages PG-23).
+- id: PG-2
+  says: Nothing in Vida requires a purpose and anything may ladder into one; Purposes is the meaning plane (where life is going), a separate axis from the journal's operational plane (what happened and what is due), never merged with it.
+  uses: [journals]
+  proof: [BR-PG-S1-1]
+# PG-3's progress is Purposes' own computation, off the engine by default (PG-37, MS-15). PG-3 is built in part: a quantitative target has no direction or baseline (baseline 0, higher-better), and a
+# qualitative target has no scale, so it is always unmeasured.
+- id: PG-3
+  says: Every pursuable exposes progress from 0 to 1 through its measurement_kind (quantitative with direction and baseline, milestone or checklist, rate, qualitative by a self-rating scale or a status ladder); an abstract goal is measured by judgment, never left untracked, and reference data contributes no progress.
+  proof: [BR-PG-S1-4, BR-PG-S5-1]
+  work: LIF-513
+- id: PG-4
+  says: A measurable derives its value from its kind and sources by default; the stored progress and current value columns are override slots, null means derive, and they are never the source of truth.
+  proof: [BR-PG-S1-2, BR-PG-S2-4, BR-PG-S3-2, BR-PG-S5-3, BR-PG-S5-4]
+# PG-5's "same weighted normalization" as the measurement engine is drift by default (Victor, 2026-11-09): Purposes
+# computes its own day progress (PG-37) and stays off the engine unless the user overrides it to personalize (MS-15).
+# Today's code still rolls up through the engine in two channels (BR-PG-S5-3); the change is LIF-514.
+- id: PG-5
+  says: Progress rolls down from children and up from contributor to target to purpose by the same weighted normalization, the sum of progress times weight over the sum of weights, so heterogeneous kinds compose into one goal.
+  proof: [BR-PG-S5-3, BR-PG-S5-5, BR-PG-S5-7]
+# PG-6's event-trigger write is dormant (BR-PG-S6-6): nothing handles the signal a linked entity fires.
+- id: PG-6
+  says: A measurable declares how it is fed, manual, derived-pull (computed from a linked entity's source on read) or event-trigger (set when a linked entity changes state); auto-sourced metrics and auto-completing tasks are the same primitive, distinct from a value's provenance source.
+  uses: [measurement, MS-5, effects]
+  proof: [BR-PG-S1-4, BR-PG-S6-1, BR-PG-S6-3]
+  work: LIF-113
+- id: PG-7
+  says: An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's day (PG-37).
+  uses: [effects, measurement, journals]
+  work: LIF-113
+- id: PG-8
+  says: Bindings form an acyclic graph; a binding that would close a cycle, made directly or by an edit, is rejected at author time with a typed error and not saved.
+  uses: [measurement, MS-7]
+  proof: [BR-PG-S6-2, BR-PG-S6-5]
+- id: PG-9
+  says: The spine is values above purposes above targets, with dreams beside them, and every joint is optional, so a standalone value, purpose, target or dream is valid.
+  proof: [BR-PG-S1-1, BR-PG-S2-1]
+# PG-10's contributor set is built; Purposes reads a cross-module contributor through its service (PG-37, LIF-514).
+# A finance target is a Finance figure: net worth, a storage balance, an investment, a liability, an asset or an
+# acquisition (Victor, 2026-11-09); finance contributions are FL-10's (LIF-413). Education contributors are PG-39's (LIF-522).
+- id: PG-10
+  says: A contribution is a first-class weighted edge from a habit, routine, project, task, dream, finance target or check-in into a purpose or target, holding only the weight and notes, never a copied value; it is Purposes' own mechanism, not a shared association primitive.
+  uses: [habits, routines, projects, tasks, finance, check-ins, spaces]
+  proof: [BR-PG-S4-1, BR-PG-S4-2, BR-PG-S4-3]
+- id: PG-11
+  says: A goal decomposes into action through Tasks and Projects, milestones and deliverables; plan steps are an ordered, checkable documentation layer on a task or target, and a step that needs real tracking graduates into a sub-task, never a parallel registry.
+  uses: [tasks, projects]
+  proof: [BR-PG-S7-7]
+  work: LIF-513
+# PG-12's shared review substrate (with Knowledge and Check-ins) is deferred to the design pass on LIF-509 and
+# LIF-488, and to the knowledge + review engine run (LIF-349 checklist).
+- id: PG-12
+  says: Target reviews (a progress rating, a reflection and next actions) and purpose reviews (alignment and fulfillment) are two distinct shapes, never merged.
+  proof: [BR-PG-S7-2, BR-PG-S7-3]
+- id: PG-13
+  says: A due purpose or target review is a review session surfaced through the due agenda to the Global Calendar, the journal agenda and Notifications, never a Purposes reminder; it shares the scheduling seam with Check-ins reviews but not their content.
+  uses: [sessions, SS-1, calendar, journals, notifications]
+  proof: [BR-PG-S7-1, BR-PG-S7-4]
+  work: LIF-515
+- id: PG-14
+  says: Purposes registers as a provider, a day summary of goals, targets, reviews due and progress deltas for the journal and a due lane of review dates for the Calendar and the agenda; the aggregators iterate their registries, and neither side names the other.
+  uses: [journals, JR-11, sessions, SS-7, calendar]
+  proof: [BR-PG-S9-1, BR-PG-S9-2]
+  work: LIF-514
+- id: PG-15
+  says: A quantitative metric may derive-pull its value from a module that advertises a queryable measure, through the measurement source read seam and never a table read; a metric value keeps a manual or auto provenance, and metrics carry their direction and baseline.
+  uses: [measurement, MS-6, finance, habits, health]
+  proof: [BR-PG-S3-1, BR-PG-S3-3, BR-PG-S3-4, BR-PG-S6-3]
+- id: PG-16
+  says: Dreams are the single aspiration entity and absorb the retired bucket list items; the Bucket List is a Space over dreams (a tag and a gallery view), not a module.
+  uses: [spaces, views]
+  proof: [BR-PG-S2-1, BR-PG-S2-2]
+- id: PG-17
+  says: Progress, contribution rollups and alignment trends recompute from current state and the review and metric ledgers; no stored progress or streak counter is trusted, override slots excepted.
+  uses: [measurement]
+  proof: [BR-PG-S3-2, BR-PG-S5-5]
+  work: LIF-514
+- id: PG-18
+  says: Values, purposes, targets and dreams get standalone pages, tags come from the Spaces vocabulary and links from entity_links, all written through the Spaces and Notes services; a metric value is a tag and link target only, and no inline notes column exists.
+  uses: [notes, spaces, graph]
+  proof: [BR-PG-S8-1, BR-PG-S8-2, BR-PG-S8-3, BR-PG-S8-4]
+- id: PG-19
+  says: Deleting a purpose clears its targets' purpose (they survive standalone) and a value clears its purposes' value; contributions, reviews and metric values go with their owner, and soft delete hides while keeping history.
+  proof: [BR-PG-S1-6, BR-PG-S9-5, BR-PG-S9-6]
+- id: PG-20
+  says: Every create, edit, measure, review and bind succeeds locally first; structured columns sync last-writer-wins and the ledgers merge by natural key.
+  uses: [sync]
+# Proposed IDs, no ID in docs/features today (approve in the PR)
+- id: PG-21
+  says: Purposes' journal contribution answers a date with the active purposes and the targets whose review is due, empty on an idle day; the root composes Purposes, so registering it is one call that nobody makes yet.
+  uses: [journals, JR-11]
+  proof: [BR-PG-S9-1, BR-PG-S9-2]
+  work: LIF-112
+- id: PG-22
+  says: Purposes has its own blocks (capability entries with an inline target), such as goal progress, reviews due and the values ladder; each reads Purposes live and writes only through the Purposes service, so the journal and any page can show and work on them.
+  uses: [capabilities, journals, JR-12, JR-20, notes]
+  work: LIF-195
+- id: PG-23
+  says: Purposes has standalone pages for values, purposes, targets and dreams with derived progress, contributors and reviews, a values layer, a view of the life domains, and the Bucket List vision board as a gallery over dreams.
+  uses: [views, spaces, notes]
+  work: LIF-195
+- id: PG-24
+  says: Each Purposes capability renders its terminal states (loading, empty with a call to action, a typed error with retry, success); an unmeasured goal shows unmeasured, never 0 percent, and a failed source read shows a flagged partial.
+  work: LIF-195
+- id: PG-25
+  says: Purposes feeds the Sessions due agenda with target reviews (built), purpose reviews and the deadlines of targets, purposes and dreams, so the Global Calendar and the journal agenda show them without copying them.
+  uses: [sessions, SS-7, calendar, journals, JR-5]
+  proof: [BR-PG-S9-3]
+  work: LIF-514
+- id: PG-26
+  says: Purposes serves a ReadProvider for purposes, targets, values and dreams into the shared view registry, so saved views and other modules list and title them.
+  uses: [views, sessions]
+  work: LIF-514
+- id: PG-27
+  says: Preferences gates review reminders with their own push toggle, keyed so the toggle matches the purposes due rows; there is no Purposes toggle today, so only the global push switch governs them.
+  uses: [preferences, notifications]
+  work: LIF-514
+# PG-28's reward is Gamification's rule over the signal (designed only; the gamification + Economy run). The signal
+# carries no payload, like every emit_measurement_signal (the pattern LIF-511 compares against).
+- id: PG-28
+  says: Completing a purpose or target emits emit_measurement_signal only, once per transition into completed, after the write, failure-isolated and dormant without a handler; Purposes grants no points, and Gamification's rule turns the signal into a reward.
+  uses: [effects, gamification]
+  proof: [BR-PG-S9-4]
+- id: PG-30
+  says: A review check-in records target reviews through Purposes, the same openTargetReview path, so the review lands in the target's ledger and reschedules its next review.
+  uses: [check-ins, CK-6]
+  work: LIF-509
+- id: PG-31
+  says: In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins, Finance and Education services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).
+  uses: [tasks, habits, routines, projects, check-ins, finance, learning, measurement, MS-12, effects, sessions, views]
+  work: LIF-450
+- id: PG-32
+  says: Reviewing a goal is a session the user can name and type (review by default), attached to the target or purpose it reviews, and completing it records the review; the review sub_type has one owner.
+  uses: [sessions, SS-1]
+  open: The review sub_type is registered by both Purposes and Flashcards, first-wins.
+  work: LIF-515
+- id: PG-34
+  says: Deleting a contributor in its own module removes its contributions, so the goal's rollup re-derives and its contributor list never shows a deleted entity.
+  uses: [habits, routines, projects, tasks, check-ins]
+  open: Who triggers it, the contributor module on delete, Purposes on read, or a delete event on the rail.
+  work: LIF-519
+- id: PG-35
+  says: The data-model record shows the ten built Purposes tables (values, purposes, targets, metrics, metric values, target and purpose reviews, contributions, plan steps, dreams), no junctions and no foreign keys, targets with measurement_kind and an optional purpose, and no bucket list table.
+  work: LIF-63
+- id: PG-36
+  says: Status, priority, life domain, review frequency, calculation method, metric source, contribution goal and contributor types, plan step owner type and dream category and status are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas).
+# PG-37 replaces the feature docs' "deltas come from Journals snapshots" (PG-7, PG-14) and the retired
+# contribute_purpose_metric (LIF-521), drift at Victor's call (2026-11-09).
+- id: PG-37
+  says: Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance, Education) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or, by default, the measurement engine or registry; the user can override a goal to compute through measurements (MS-15).
+  uses: [tasks, TK-16, habits, HB-8, routines, RT-12, projects, check-ins, finance, learning, PG-39, MS-15]
+  work: LIF-514
+- id: PG-38
+  says: A value's progress rolls up its purposes, and a dream derives its progress from its steps or its project when no override is set, so every spine entity measures.
+  uses: [projects]
+  work: LIF-513
+- id: PG-39
+  says: An Education subject, grade or assessment, and its components, can relate to a purpose, goal or dream as a contributor; Purposes reads them through the Education service like its other contributors, and grades and their averages stay Education's own computation.
+  uses: [learning, PG-10, PG-37]
+  open: Which Education entities are contributors, which the learning run settles.
+  work: LIF-522
+
+# The measurement substrate (docs/core/measurement/current-business-rules.md, BR-1…BR-8; ADR-011)
+- id: MS-1
+  says: Four measurement kinds normalize to 0 to 1; quantitative is a direction-aware clamp over current, baseline and target, milestone is done or n of m, rate is a clamped ratio, and qualitative is the rating over its scale.
+  proof: [BR-1]
+- id: MS-2
+  says: A qualitative measure with no scale or no rating is null (unmeasured), never 0.
+  proof: [BR-2]
+- id: MS-3
+  says: The rollup is the sum of child progress times weight over the sum of weights; a null or 0 weight counts as equal weight, unmeasured children are excluded, and an empty or all-unmeasured set is null, never 0.
+  proof: [BR-3]
+- id: MS-4
+  says: Progress derives on read; a stored value is an override, null means derive, and it is never a stored counter.
+  proof: [BR-4]
+# MS-5's event-trigger side fires an existing rail effect, but nothing registers a handler for
+# emit_measurement_signal yet (Tasks, Projects, Books, Knowledge, Education and Purposes all emit it).
+- id: MS-5
+  says: A binding mode is manual, derived-pull or event-trigger, and an event-trigger fires an existing rail effect, never a new engine.
+  uses: [effects]
+  proof: [BR-5]
+  work: LIF-113
+- id: MS-6
+  says: A module advertises a queryable measure in the measurement source registry and a consumer queries it, never a table read; an unadvertised key reads null, never a fabricated value, and real sources are each module's own.
+  uses: [projects, PJ-26, books, BK-25, check-ins, CK-19, habits, HB-23, health]
+  proof: [BR-6]
+- id: MS-7
+  says: The acyclic guard rejects a binding cycle over both edge modes with a typed error; the binding edge type is shared contract, and the economy's rule edges reuse it.
+  uses: [gamification]
+  proof: [BR-7]
+- id: MS-8
+  says: A pursuable declares its measurement_kind and computes its own progress; the substrate owns the contract, and Purposes consumes it.
+  proof: [BR-8]
+# Proposed IDs, no ID in docs/core/measurement today (approve in the PR)
+- id: MS-9
+  says: A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range of days, day by day; a stored type:id reference still resolves, so a derived-pull binding (PG-6, PG-15) reads the measures Projects, Books, Check-ins, Habits, Health and Finance advertise.
+  uses: [purposes, projects, PJ-26, books, BK-25, check-ins, CK-19, habits, HB-23, health]
+  work: LIF-516
+- id: MS-10
+  says: A source outage reads the last-known value with a flag, never null as if fresh and never a fabricated number, and raises the typed SourceUnavailable.
+  work: LIF-516
+- id: MS-11
+  says: Bindings live in one shared table of source, target and mode for every module, which the acyclic guard reads; no module stores a binding reference in its own columns.
+  uses: [gamification, tasks, habits, routines, projects]
+  open: The table's shape, moving the references already stored in targets.measurement_method, and whether the economy's rule edges live in it.
+  work: LIF-517
+- id: MS-12
+  says: In the app the composition root builds one shared measurement source registry, passes it to every module that reads it (Purposes, Projects) and lets each composed module advertise its sources into it.
+  uses: [projects, PJ-33, check-ins, CK-24]
+  work: LIF-450
+- id: MS-13
+  says: The engine adds non-linear progress curves and a size limit for the binding graph, so a large graph stays fast and a curve shapes a measure without changing its stored value.
+  work: LIF-523
+# MS-14 covers multi-condition and user-authored automation: ADR-011 sends it to a Spaces/capability-Blocks
+# expansion on the ADR-010 capability-authoring rail, and the substrate docs to the economy's rules (ADR-012) with
+# capability authoring (unit 85).
+- id: MS-14
+  says: Multi-condition and user-authored automation over measures rides the economy's rules and the capability-authoring rail, never a second automation engine in the measurement substrate.
+  uses: [gamification, capabilities]
+  work: LIF-523
+- id: MS-15
+  says: The user personalizes measurement with their own parameters; they can override how a goal computes onto measurements and bindings, make one measure count for more than one goal or meaning, map a qualitative ladder to values, pick a progress curve, and add a plugin measurement kind when the four don't fit.
+  uses: [purposes, PG-37, capabilities]
+  work: LIF-523
+
+# Consumers with no row here. Built and in their own ledgers: the emitters of
+# emit_measurement_signal (TK-16, PJ-23, BK-33; the signal's handler is MS-5), the engine calls
+# (BK-3 normalize, PJ-3 and TK-3 rollup, RT-19 resolveProgress). In their own ledgers, not built yet: the
+# measure sources for derived-pull bindings (PJ-26, BK-25, CK-19, HB-23; Purposes reads contributors through their services instead), the review check-in (CK-6), the look-back (JR-9, JR-10), the
+# journal registry (JR-11) and blocks (JR-12, JR-20), the project hub's purposes (PJ-21), the milestone rollup
+# (PJ-34), fiscal outcomes as contributions (FL-10), a reading goal (BK-11). Built with no ledger yet: the
+# Calendar's purposes due lane and time budget (`listPurposes`, hours and fraction null; the Calendar run),
+# Knowledge's rollup and the review engine's normalize (the knowledge + review engine run), Education's normalize
+# and rollup (the learning run), Gamification's acyclic check over its rules (the gamification + Economy run),
+# Notifications dispatching the purposes due rows (the notifications + delivery run). Designed only: Health's body
+# metrics as a ranged source (HC-5, the Health run), Skills' target mastery as a Purposes target (SK-10, the skills
+# run), Gamification's goal-completion reward and rewards that fund dreams (GM-7), Education's study progress
+# signals. Not consumers: Relationships (health is never a source, RL-5), Routines as a source (RT-19).
+# Retired: contribute_purpose_metric was a wrong design (Victor, 2026-11-09). Purposes reads each related entity
+# through its service instead (PG-37); HB-8, RT-12 and TK-16 are reworded, and LIF-521 removes the emits.
+# Withdrawn in review: PG-29 (a contribute_purpose_metric handler) and PG-33 (a goal can fail; a goal is there to be reached).
+# Feature datasets: none; the Purposes docs ship no bulk reference data.

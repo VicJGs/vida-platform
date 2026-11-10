@@ -1350,11 +1350,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A done completion fires contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
+      "summary": "A done completion fires `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 105,
       "path": "docs/modules/habits/intent/HB-16.md"
     },
     {
@@ -1363,11 +1363,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently (HB-8's failure half).",
+      "summary": "A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 71,
+      "tokens": 66,
       "path": "docs/modules/habits/intent/HB-17.md"
     },
     {
@@ -1616,11 +1616,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values.",
+      "summary": "Habits pushes nothing to Purposes; a purpose, goal or dream a habit relates to reads the habit's completions through the Habits service and computes them into that day's progress, and Habits never writes purpose data.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 115,
+      "tokens": 92,
       "path": "docs/modules/habits/intent/HB-8.md"
     },
     {
@@ -1739,6 +1739,19 @@
       ],
       "tokens": 143,
       "path": "docs/modules/projects/intent.md"
+    },
+    {
+      "id": "INTENT-purposes",
+      "kind": "intent",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of purposes: 52 rows, 5 tested, 0 partly tested, 47 intent only.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 183,
+      "path": "docs/modules/purposes/intent.md"
     },
     {
       "id": "INTENT-relationships",
@@ -2063,6 +2076,203 @@
       ],
       "tokens": 85,
       "path": "docs/modules/journals/intent/JR-9.md"
+    },
+    {
+      "id": "MS-1",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Four measurement kinds normalize to 0 to 1; quantitative is a direction-aware clamp over current, baseline and target, milestone is done or n of m, rate is a clamped ratio, and qualitative is the rating over its scale.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/purposes/intent/MS-1.md"
+    },
+    {
+      "id": "MS-10",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A source outage reads the last-known value with a flag, never null as if fresh and never a fabricated number, and raises the typed SourceUnavailable.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/purposes/intent/MS-10.md"
+    },
+    {
+      "id": "MS-11",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Bindings live in one shared table of source, target and mode for every module, which the acyclic guard reads; no module stores a binding reference in its own columns.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/purposes/intent/MS-11.md"
+    },
+    {
+      "id": "MS-12",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds one shared measurement source registry, passes it to every module that reads it (Purposes, Projects) and lets each composed module advertise its sources into it.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/purposes/intent/MS-12.md"
+    },
+    {
+      "id": "MS-13",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine adds non-linear progress curves and a size limit for the binding graph, so a large graph stays fast and a curve shapes a measure without changing its stored value.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/purposes/intent/MS-13.md"
+    },
+    {
+      "id": "MS-14",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Multi-condition and user-authored automation over measures rides the economy's rules and the capability-authoring rail, never a second automation engine in the measurement substrate.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/purposes/intent/MS-14.md"
+    },
+    {
+      "id": "MS-15",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user personalizes measurement with their own parameters; they can override how a goal computes onto measurements and bindings, make one measure count for more than one goal or meaning, map a qualitative ladder to values, pick a progress curve, and add a plugin measurement kind when the four don't fit.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/purposes/intent/MS-15.md"
+    },
+    {
+      "id": "MS-2",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A qualitative measure with no scale or no rating is null (unmeasured), never 0.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml",
+        "packages/core/src/foundation/measurement/__tests__/measurement.test.ts",
+        "packages/core/src/services/purposes/__tests__/service.test.ts"
+      ],
+      "tokens": 52,
+      "path": "docs/modules/purposes/intent/MS-2.md"
+    },
+    {
+      "id": "MS-3",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The rollup is the sum of child progress times weight over the sum of weights; a null or 0 weight counts as equal weight, unmeasured children are excluded, and an empty or all-unmeasured set is null, never 0.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/purposes/intent/MS-3.md"
+    },
+    {
+      "id": "MS-4",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Progress derives on read; a stored value is an override, null means derive, and it is never a stored counter.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/purposes/intent/MS-4.md"
+    },
+    {
+      "id": "MS-5",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A binding mode is manual, derived-pull or event-trigger, and an event-trigger fires an existing rail effect, never a new engine.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/purposes/intent/MS-5.md"
+    },
+    {
+      "id": "MS-6",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module advertises a queryable measure in the measurement source registry and a consumer queries it, never a table read; an unadvertised key reads null, never a fabricated value, and real sources are each module's own.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/purposes/intent/MS-6.md"
+    },
+    {
+      "id": "MS-7",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The acyclic guard rejects a binding cycle over both edge modes with a typed error; the binding edge type is shared contract, and the economy's rule edges reuse it.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/purposes/intent/MS-7.md"
+    },
+    {
+      "id": "MS-8",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A pursuable declares its measurement_kind and computes its own progress; the substrate owns the contract, and Purposes consumes it.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/purposes/intent/MS-8.md"
+    },
+    {
+      "id": "MS-9",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range of days, day by day; a stored type:id reference still resolves, so a derived-pull binding (PG-6, PG-15) reads the measures Projects, Books, Check-ins, Habits, Health and Finance advertise.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/purposes/intent/MS-9.md"
     },
     {
       "id": "NP-1",
@@ -2674,6 +2884,491 @@
       ],
       "tokens": 68,
       "path": "docs/modules/sessions/intent/PD-9.md"
+    },
+    {
+      "id": "PG-1",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Values' names and descriptions, purposes' titles, descriptions, visions and whys, targets' titles, descriptions, units and success criteria, metric names, descriptions and units, metric context notes, review reflections and notes, contribution notes, plan step titles and notes, and dreams' titles, descriptions and estimated cost are encrypted client-side [E]; enums, dates, numeric measures and references stay plaintext. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 149,
+      "path": "docs/modules/purposes/intent/PG-1.md"
+    },
+    {
+      "id": "PG-10",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A contribution is a first-class weighted edge from a habit, routine, project, task, dream, finance target or check-in into a purpose or target, holding only the weight and notes, never a copied value; it is Purposes' own mechanism, not a shared association primitive.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml",
+        "packages/core/src/services/purposes/__tests__/service.test.ts"
+      ],
+      "tokens": 136,
+      "path": "docs/modules/purposes/intent/PG-10.md"
+    },
+    {
+      "id": "PG-11",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A goal decomposes into action through Tasks and Projects, milestones and deliverables; plan steps are an ordered, checkable documentation layer on a task or target, and a step that needs real tracking graduates into a sub-task, never a parallel registry.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/purposes/intent/PG-11.md"
+    },
+    {
+      "id": "PG-12",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Target reviews (a progress rating, a reflection and next actions) and purpose reviews (alignment and fulfillment) are two distinct shapes, never merged.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/purposes/intent/PG-12.md"
+    },
+    {
+      "id": "PG-13",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A due purpose or target review is a review session surfaced through the due agenda to the Global Calendar, the journal agenda and Notifications, never a Purposes reminder; it shares the scheduling seam with Check-ins reviews but not their content.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 122,
+      "path": "docs/modules/purposes/intent/PG-13.md"
+    },
+    {
+      "id": "PG-14",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes registers as a provider, a day summary of goals, targets, reviews due and progress deltas for the journal and a due lane of review dates for the Calendar and the agenda; the aggregators iterate their registries, and neither side names the other.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/purposes/intent/PG-14.md"
+    },
+    {
+      "id": "PG-15",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A quantitative metric may derive-pull its value from a module that advertises a queryable measure, through the measurement source read seam and never a table read; a metric value keeps a manual or auto provenance, and metrics carry their direction and baseline.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/purposes/intent/PG-15.md"
+    },
+    {
+      "id": "PG-16",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Dreams are the single aspiration entity and absorb the retired bucket list items; the Bucket List is a Space over dreams (a tag and a gallery view), not a module.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/purposes/intent/PG-16.md"
+    },
+    {
+      "id": "PG-17",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Progress, contribution rollups and alignment trends recompute from current state and the review and metric ledgers; no stored progress or streak counter is trusted, override slots excepted.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/purposes/intent/PG-17.md"
+    },
+    {
+      "id": "PG-18",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Values, purposes, targets and dreams get standalone pages, tags come from the Spaces vocabulary and links from entity_links, all written through the Spaces and Notes services; a metric value is a tag and link target only, and no inline notes column exists.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml",
+        "packages/core/src/services/purposes/__tests__/service.test.ts"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/purposes/intent/PG-18.md"
+    },
+    {
+      "id": "PG-19",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a purpose clears its targets' purpose (they survive standalone) and a value clears its purposes' value; contributions, reviews and metric values go with their owner, and soft delete hides while keeping history.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml",
+        "packages/core/src/services/purposes/__tests__/service.test.ts"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/purposes/intent/PG-19.md"
+    },
+    {
+      "id": "PG-2",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Nothing in Vida requires a purpose and anything may ladder into one; Purposes is the meaning plane (where life is going), a separate axis from the journal's operational plane (what happened and what is due), never merged with it.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/purposes/intent/PG-2.md"
+    },
+    {
+      "id": "PG-20",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every create, edit, measure, review and bind succeeds locally first; structured columns sync last-writer-wins and the ledgers merge by natural key.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/purposes/intent/PG-20.md"
+    },
+    {
+      "id": "PG-21",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes' journal contribution answers a date with the active purposes and the targets whose review is due, empty on an idle day; the root composes Purposes, so registering it is one call that nobody makes yet.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/purposes/intent/PG-21.md"
+    },
+    {
+      "id": "PG-22",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes has its own blocks (capability entries with an inline target), such as goal progress, reviews due and the values ladder; each reads Purposes live and writes only through the Purposes service, so the journal and any page can show and work on them.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/purposes/intent/PG-22.md"
+    },
+    {
+      "id": "PG-23",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes has standalone pages for values, purposes, targets and dreams with derived progress, contributors and reviews, a values layer, a view of the life domains, and the Bucket List vision board as a gallery over dreams.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/purposes/intent/PG-23.md"
+    },
+    {
+      "id": "PG-24",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each Purposes capability renders its terminal states (loading, empty with a call to action, a typed error with retry, success); an unmeasured goal shows unmeasured, never 0 percent, and a failed source read shows a flagged partial.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/purposes/intent/PG-24.md"
+    },
+    {
+      "id": "PG-25",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes feeds the Sessions due agenda with target reviews (built), purpose reviews and the deadlines of targets, purposes and dreams, so the Global Calendar and the journal agenda show them without copying them.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/purposes/intent/PG-25.md"
+    },
+    {
+      "id": "PG-26",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes serves a ReadProvider for purposes, targets, values and dreams into the shared view registry, so saved views and other modules list and title them.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/purposes/intent/PG-26.md"
+    },
+    {
+      "id": "PG-27",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences gates review reminders with their own push toggle, keyed so the toggle matches the purposes due rows; there is no Purposes toggle today, so only the global push switch governs them.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/purposes/intent/PG-27.md"
+    },
+    {
+      "id": "PG-28",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completing a purpose or target emits emit_measurement_signal only, once per transition into completed, after the write, failure-isolated and dormant without a handler; Purposes grants no points, and Gamification's rule turns the signal into a reward.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/purposes/intent/PG-28.md"
+    },
+    {
+      "id": "PG-3",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every pursuable exposes progress from 0 to 1 through its measurement_kind (quantitative with direction and baseline, milestone or checklist, rate, qualitative by a self-rating scale or a status ladder); an abstract goal is measured by judgment, never left untracked, and reference data contributes no progress.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 123,
+      "path": "docs/modules/purposes/intent/PG-3.md"
+    },
+    {
+      "id": "PG-30",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A review check-in records target reviews through Purposes, the same openTargetReview path, so the review lands in the target's ledger and reschedules its next review.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/purposes/intent/PG-30.md"
+    },
+    {
+      "id": "PG-31",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins, Finance and Education services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 162,
+      "path": "docs/modules/purposes/intent/PG-31.md"
+    },
+    {
+      "id": "PG-32",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Reviewing a goal is a session the user can name and type (review by default), attached to the target or purpose it reviews, and completing it records the review; the review sub_type has one owner.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/purposes/intent/PG-32.md"
+    },
+    {
+      "id": "PG-34",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Deleting a contributor in its own module removes its contributions, so the goal's rollup re-derives and its contributor list never shows a deleted entity.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/purposes/intent/PG-34.md"
+    },
+    {
+      "id": "PG-35",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the ten built Purposes tables (values, purposes, targets, metrics, metric values, target and purpose reviews, contributions, plan steps, dreams), no junctions and no foreign keys, targets with measurement_kind and an optional purpose, and no bucket list table.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/purposes/intent/PG-35.md"
+    },
+    {
+      "id": "PG-36",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Status, priority, life domain, review frequency, calculation method, metric source, contribution goal and contributor types, plan step owner type and dream category and status are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas).",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/purposes/intent/PG-36.md"
+    },
+    {
+      "id": "PG-37",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance, Education) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or, by default, the measurement engine or registry; the user can override a goal to compute through measurements (MS-15).",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 197,
+      "path": "docs/modules/purposes/intent/PG-37.md"
+    },
+    {
+      "id": "PG-38",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A value's progress rolls up its purposes, and a dream derives its progress from its steps or its project when no override is set, so every spine entity measures.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/purposes/intent/PG-38.md"
+    },
+    {
+      "id": "PG-39",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An Education subject, grade or assessment, and its components, can relate to a purpose, goal or dream as a contributor; Purposes reads them through the Education service like its other contributors, and grades and their averages stay Education's own computation.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/purposes/intent/PG-39.md"
+    },
+    {
+      "id": "PG-4",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A measurable derives its value from its kind and sources by default; the stored progress and current value columns are override slots, null means derive, and they are never the source of truth.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml",
+        "packages/core/src/services/purposes/__tests__/service.test.ts"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/purposes/intent/PG-4.md"
+    },
+    {
+      "id": "PG-5",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Progress rolls down from children and up from contributor to target to purpose by the same weighted normalization, the sum of progress times weight over the sum of weights, so heterogeneous kinds compose into one goal.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/purposes/intent/PG-5.md"
+    },
+    {
+      "id": "PG-6",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A measurable declares how it is fed, manual, derived-pull (computed from a linked entity's source on read) or event-trigger (set when a linked entity changes state); auto-sourced metrics and auto-completing tasks are the same primitive, distinct from a value's provenance source.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 129,
+      "path": "docs/modules/purposes/intent/PG-6.md"
+    },
+    {
+      "id": "PG-7",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's day (PG-37).",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/purposes/intent/PG-7.md"
+    },
+    {
+      "id": "PG-8",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Bindings form an acyclic graph; a binding that would close a cycle, made directly or by an edit, is rejected at author time with a typed error and not saved.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/purposes/intent/PG-8.md"
+    },
+    {
+      "id": "PG-9",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The spine is values above purposes above targets, with dreams beside them, and every joint is optional, so a standalone value, purpose, target or dream is valid.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/purposes/intent/PG-9.md"
     },
     {
       "id": "PJ-1",
@@ -3859,11 +4554,11 @@
       "module": "routines",
       "status": "active",
       "supersedes": [],
-      "summary": "A done routine-day contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric and the mapping, and only the up-edge to the purpose is weighted.",
+      "summary": "Routines pushes nothing to Purposes; a purpose, goal or dream a routine relates to reads the routine's days through the Routines service and computes them into that day's progress, and only the up-edge to the purpose is weighted.",
       "anchors": [
         "docs/modules/routines/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 96,
       "path": "docs/modules/routines/intent/RT-12.md"
     },
     {
@@ -4643,11 +5338,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "A task's completion reaches its purpose and the measurement engine through the contribute_purpose_metric and emit_measurement_signal handlers, which the consuming modules register.",
+      "summary": "A task's completion emits emit_measurement_signal for the measurement engine and pushes nothing to Purposes; a purpose, goal or dream a task relates to reads it through the Tasks service and computes it into that day's progress.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 97,
+      "tokens": 99,
       "path": "docs/modules/tasks/intent/TK-16.md"
     },
     {

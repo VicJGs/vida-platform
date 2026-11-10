@@ -52,11 +52,12 @@
   uses: [sessions]
   proof: [BR-RT-S9-2]
   # proof checks.ruleId can't read yet: BR-RT-S5a-1, BR-RT-S5a-2
+# RT-12 was reworded at Victor's call (2026-11-09, LIF-349 run 22): contribute_purpose_metric was a wrong design, and
+# Purposes reads the routine through its service and computes the day's progress. Retiring the emit is LIF-521.
 - id: RT-12
-  says: A done routine-day contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric and the mapping, and only the up-edge to the purpose is weighted.
-  uses: [purposes, effects]
-  proof: [BR-RT-S7-1, BR-RT-S7-2]
-  work: LIF-113
+  says: Routines pushes nothing to Purposes; a purpose, goal or dream a routine relates to reads the routine's days through the Routines service and computes them into that day's progress, and only the up-edge to the purpose is weighted.
+  uses: [purposes, PG-37]
+  work: LIF-521
 - id: RT-13
   says: Routines is a due provider; it serves its scheduled, still-owed occurrences through dueIn as one Sessions due lane, read live by the Calendar and the agenda, with nothing mirrored.
   uses: [sessions, calendar]
