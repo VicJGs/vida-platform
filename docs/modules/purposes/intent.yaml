@@ -18,22 +18,20 @@
   says: Nothing in Vida requires a purpose and anything may ladder into one; Purposes is the meaning plane (where life is going), a separate axis from the journal's operational plane (what happened and what is due), never merged with it.
   uses: [journals]
   proof: [BR-PG-S1-1]
-# PG-3 is built in part: a quantitative target has no direction or baseline (baseline 0, higher-better), and a
+# PG-3's progress is Purposes' own computation, off the engine by default (PG-37, MS-15). PG-3 is built in part: a quantitative target has no direction or baseline (baseline 0, higher-better), and a
 # qualitative target has no scale, so it is always unmeasured.
 - id: PG-3
   says: Every pursuable exposes progress from 0 to 1 through its measurement_kind (quantitative with direction and baseline, milestone or checklist, rate, qualitative by a self-rating scale or a status ladder); an abstract goal is measured by judgment, never left untracked, and reference data contributes no progress.
-  uses: [measurement, MS-1, MS-2]
   proof: [BR-PG-S1-4, BR-PG-S5-1]
   work: LIF-513
 - id: PG-4
   says: A measurable derives its value from its kind and sources by default; the stored progress and current value columns are override slots, null means derive, and they are never the source of truth.
-  uses: [measurement, MS-4]
   proof: [BR-PG-S1-2, BR-PG-S2-4, BR-PG-S3-2, BR-PG-S5-3, BR-PG-S5-4]
-# PG-5's two-channel combine (in-module leaves and weighted contributions, equal-weight between channels) is a
-# build-phase reading the feature docs don't fix (BR-PG-S5-3).
+# PG-5's "same weighted normalization" as the measurement engine is drift by default (Victor, 2026-11-09): Purposes
+# computes its own day progress (PG-37) and stays off the engine unless the user overrides it to personalize (MS-15).
+# Today's code still rolls up through the engine in two channels (BR-PG-S5-3); the change is LIF-514.
 - id: PG-5
   says: Progress rolls down from children and up from contributor to target to purpose by the same weighted normalization, the sum of progress times weight over the sum of weights, so heterogeneous kinds compose into one goal.
-  uses: [measurement, MS-3]
   proof: [BR-PG-S5-3, BR-PG-S5-5, BR-PG-S5-7]
 # PG-6's event-trigger write is dormant (BR-PG-S6-6): nothing handles the signal a linked entity fires.
 - id: PG-6
@@ -54,7 +52,7 @@
   proof: [BR-PG-S1-1, BR-PG-S2-1]
 # PG-10's contributor set is built; Purposes reads a cross-module contributor through its service (PG-37, LIF-514).
 # A finance target is a Finance figure: net worth, a storage balance, an investment, a liability, an asset or an
-# acquisition (Victor, 2026-11-09); finance contributions are FL-10's (LIF-413).
+# acquisition (Victor, 2026-11-09); finance contributions are FL-10's (LIF-413). Education contributors are PG-39's (LIF-522).
 - id: PG-10
   says: A contribution is a first-class weighted edge from a habit, routine, project, task, dream, finance target or check-in into a purpose or target, holding only the weight and notes, never a copied value; it is Purposes' own mechanism, not a shared association primitive.
   uses: [habits, routines, projects, tasks, finance, check-ins, spaces]
@@ -143,8 +141,8 @@
   uses: [check-ins, CK-6]
   work: LIF-509
 - id: PG-31
-  says: In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins and Finance services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).
-  uses: [tasks, habits, routines, projects, check-ins, finance, measurement, MS-12, effects, sessions, views]
+  says: In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins, Finance and Education services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).
+  uses: [tasks, habits, routines, projects, check-ins, finance, learning, measurement, MS-12, effects, sessions, views]
   work: LIF-450
 - id: PG-32
   says: Reviewing a goal is a session the user can name and type (review by default), attached to the target or purpose it reviews, and completing it records the review; the review sub_type has one owner.
@@ -164,13 +162,18 @@
 # PG-37 replaces the feature docs' "deltas come from Journals snapshots" (PG-7, PG-14) and the retired
 # contribute_purpose_metric (LIF-521), drift at Victor's call (2026-11-09).
 - id: PG-37
-  says: Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or the measurement source registry for a contributor.
-  uses: [tasks, TK-16, habits, HB-8, routines, RT-12, projects, check-ins, finance]
+  says: Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance, Education) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or, by default, the measurement engine or registry; the user can override a goal to compute through measurements (MS-15).
+  uses: [tasks, TK-16, habits, HB-8, routines, RT-12, projects, check-ins, finance, learning, PG-39, MS-15]
   work: LIF-514
 - id: PG-38
   says: A value's progress rolls up its purposes, and a dream derives its progress from its steps or its project when no override is set, so every spine entity measures.
-  uses: [measurement, MS-3, projects]
+  uses: [projects]
   work: LIF-513
+- id: PG-39
+  says: An Education subject, grade or assessment, and its components, can relate to a purpose, goal or dream as a contributor; Purposes reads them through the Education service like its other contributors, and grades and their averages stay Education's own computation.
+  uses: [learning, PG-10, PG-37]
+  open: Which Education entities are contributors, which the learning run settles.
+  work: LIF-522
 
 # The measurement substrate (docs/core/measurement/current-business-rules.md, BR-1…BR-8; ADR-011)
 - id: MS-1
@@ -222,12 +225,18 @@
   work: LIF-450
 - id: MS-13
   says: The engine adds non-linear progress curves and a size limit for the binding graph, so a large graph stays fast and a curve shapes a measure without changing its stored value.
-  work: LIF-516
-# MS-14 covers multi-condition automation, which the substrate leaves to the economy's rules (ADR-012), with
-# user-authored rules sandboxed by capability authoring (unit 85); the gamification + Economy run covers it.
+  work: LIF-523
+# MS-14 covers multi-condition and user-authored automation: ADR-011 sends it to a Spaces/capability-Blocks
+# expansion on the ADR-010 capability-authoring rail, and the substrate docs to the economy's rules (ADR-012) with
+# capability authoring (unit 85).
 - id: MS-14
-  says: Multi-condition automation is the economy's rules, built over the shared binding edge and the acyclic guard, never a second automation engine in the measurement substrate.
-  uses: [gamification]
+  says: Multi-condition and user-authored automation over measures rides the economy's rules and the capability-authoring rail, never a second automation engine in the measurement substrate.
+  uses: [gamification, capabilities]
+  work: LIF-523
+- id: MS-15
+  says: The user personalizes measurement with their own parameters; they can override how a goal computes onto measurements and bindings, make one measure count for more than one goal or meaning, map a qualitative ladder to values, pick a progress curve, and add a plugin measurement kind when the four don't fit.
+  uses: [purposes, PG-37, capabilities]
+  work: LIF-523
 
 # Consumers with no row here. Built and in their own ledgers: the emitters of
 # emit_measurement_signal (TK-16, PJ-23, BK-33; the signal's handler is MS-5), the engine calls

@@ -1746,11 +1746,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of purposes: 50 rows, 5 tested, 0 partly tested, 45 intent only.",
+      "summary": "Intended rules of purposes: 52 rows, 5 tested, 0 partly tested, 47 intent only.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 180,
+      "tokens": 183,
       "path": "docs/modules/purposes/intent.md"
     },
     {
@@ -2148,12 +2148,25 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Multi-condition automation is the economy's rules, built over the shared binding edge and the acyclic guard, never a second automation engine in the measurement substrate.",
+      "summary": "Multi-condition and user-authored automation over measures rides the economy's rules and the capability-authoring rail, never a second automation engine in the measurement substrate.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 76,
+      "tokens": 87,
       "path": "docs/modules/purposes/intent/MS-14.md"
+    },
+    {
+      "id": "MS-15",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user personalizes measurement with their own parameters; they can override how a goal computes onto measurements and bindings, make one measure count for more than one goal or meaning, map a qualitative ladder to values, pick a progress curve, and add a plugin measurement kind when the four don't fit.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/purposes/intent/MS-15.md"
     },
     {
       "id": "MS-2",
@@ -3158,7 +3171,7 @@
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 131,
+      "tokens": 123,
       "path": "docs/modules/purposes/intent/PG-3.md"
     },
     {
@@ -3180,11 +3193,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins and Finance services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
+      "summary": "In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins, Finance and Education services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 157,
+      "tokens": 162,
       "path": "docs/modules/purposes/intent/PG-31.md"
     },
     {
@@ -3245,11 +3258,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or the measurement source registry for a contributor.",
+      "summary": "Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance, Education) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or, by default, the measurement engine or registry; the user can override a goal to compute through measurements (MS-15).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 171,
+      "tokens": 197,
       "path": "docs/modules/purposes/intent/PG-37.md"
     },
     {
@@ -3262,8 +3275,21 @@
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 82,
+      "tokens": 77,
       "path": "docs/modules/purposes/intent/PG-38.md"
+    },
+    {
+      "id": "PG-39",
+      "kind": "intent-row",
+      "module": "purposes",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An Education subject, grade or assessment, and its components, can relate to a purpose, goal or dream as a contributor; Purposes reads them through the Education service like its other contributors, and grades and their averages stay Education's own computation.",
+      "anchors": [
+        "docs/modules/purposes/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/purposes/intent/PG-39.md"
     },
     {
       "id": "PG-4",
@@ -3276,7 +3302,7 @@
         "docs/modules/purposes/intent.yaml",
         "packages/core/src/services/purposes/__tests__/service.test.ts"
       ],
-      "tokens": 117,
+      "tokens": 110,
       "path": "docs/modules/purposes/intent/PG-4.md"
     },
     {
@@ -3289,7 +3315,7 @@
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 108,
+      "tokens": 101,
       "path": "docs/modules/purposes/intent/PG-5.md"
     },
     {
