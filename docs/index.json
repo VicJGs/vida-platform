@@ -802,6 +802,176 @@
       "path": "docs/modules/check-ins/intent/CK-9.md"
     },
     {
+      "id": "DLV-1",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The tier follows the notification's nature and the platform; a time-based reminder on a native device is a local scheduled alert, a time-based reminder on the web and any event use the wake signal, and in-app underlies all three.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/notifications/intent/DLV-1.md"
+    },
+    {
+      "id": "DLV-10",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine executes an already-gated delivery decision; channel, permission and quiet-hours gating is the dispatcher's, and governing the server relay's transmit is the server's.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/notifications/intent/DLV-10.md"
+    },
+    {
+      "id": "DLV-11",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "No port makes a network call before real reach; the engine decides when and to whom, never what, and authors no schema, so real reach replaces the ports with no signature change.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/notifications/intent/DLV-11.md"
+    },
+    {
+      "id": "DLV-12",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each product shape delivers a time-based reminder its own way; the localhost web product the user runs on their machine delivers it locally, with no server; the desktop and mobile apps register each upcoming reminder with the native local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedule (cancel and re-register) when the schedule or the quiet hours change; only the server product, which serves the web and manages its information, adds the wake signal.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 243,
+      "path": "docs/modules/notifications/intent/DLV-12.md"
+    },
+    {
+      "id": "DLV-13",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "With the server product, the wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web the server serves uses a service worker with Web Push, and email sends the generic nudge.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 156,
+      "path": "docs/modules/notifications/intent/DLV-13.md"
+    },
+    {
+      "id": "DLV-2",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Only the wake-signal tier reaches off the device (push wake-only and the generic email); local scheduled alerts and in-app compose on the device, and `sms` is never a channel.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/notifications/intent/DLV-2.md"
+    },
+    {
+      "id": "DLV-3",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The wake payload carries the owner's routing only and refuses at run time any content, type or subject key with PayloadNotContentFree, never a silent strip.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/notifications/intent/DLV-3.md"
+    },
+    {
+      "id": "DLV-4",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Quiet hours are baked in when a local alert is registered (shifted or suppressed per the user's policy), since a pre-scheduled alert fires with the dispatcher not running.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/notifications/intent/DLV-4.md"
+    },
+    {
+      "id": "DLV-5",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A reschedule diffs the registered alerts by their dedup key, cancels the dropped, registers the new and leaves the unchanged alone.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/notifications/intent/DLV-5.md"
+    },
+    {
+      "id": "DLV-6",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The dedup key passes an event's effect_event_id through unchanged and keys a due reminder by its due occurrence id, namespaced so the two never collide.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/notifications/intent/DLV-6.md"
+    },
+    {
+      "id": "DLV-7",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A durable row materializes only when the occurrence's time has arrived, never written ahead with a future date.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/notifications/intent/DLV-7.md"
+    },
+    {
+      "id": "DLV-8",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Any external port that doesn't deliver (the deny-safe default included) folds back to in-app and flags it; in-app is the unconditional baseline and a delivery never rejects.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/foundation/notifications/__tests__/service.test.ts"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/notifications/intent/DLV-8.md"
+    },
+    {
+      "id": "DLV-9",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the no-third-party mode the engine never calls an off-device port (no push service, no email, no relay), even if the decision lists those channels.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/notifications/intent/DLV-9.md"
+    },
+    {
       "id": "ECO-1",
       "kind": "intent-row",
       "module": "gamification",
@@ -2328,6 +2498,19 @@
       "path": "docs/modules/notes/intent.md"
     },
     {
+      "id": "INTENT-notifications",
+      "kind": "intent",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of notifications: 37 rows, 6 tested, 4 partly tested, 27 intent only.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 163,
+      "path": "docs/modules/notifications/intent.md"
+    },
+    {
       "id": "INTENT-preferences",
       "kind": "intent",
       "module": "preferences",
@@ -2886,6 +3069,329 @@
       ],
       "tokens": 135,
       "path": "docs/modules/purposes/intent/MS-9.md"
+    },
+    {
+      "id": "NF-1",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notifications reads every module through seams and writes only its own rows; nothing in Vida depends on it, so it can be switched off and no core function breaks.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/notifications/intent/NF-1.md"
+    },
+    {
+      "id": "NF-10",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A notification points at its subject through entity_type, entity_id and a deep-link action_url and never copies the subject's data beyond the title and message the producer supplied; a deleted subject leaves the row readable.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/notifications/intent/NF-10.md"
+    },
+    {
+      "id": "NF-11",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The title, message, action label and metadata are encrypted; the type, the subject link, the action link, the read and archive flags, the timestamps, the delivery audit and the effect key stay plaintext.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/notifications/intent/NF-11.md"
+    },
+    {
+      "id": "NF-12",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The type is one of info, success, warning, error, reminder and achievement, fixed for v1; every documented producer maps onto them and no type is added.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/notifications/intent/NF-12.md"
+    },
+    {
+      "id": "NF-13",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A notification is marked read on view, archived on dismiss, auto-archived once expired and purged after a long time archived; the unread badge derives from live rows.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 149,
+      "path": "docs/modules/notifications/intent/NF-13.md"
+    },
+    {
+      "id": "NF-14",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Achievement and level-up notifications come from Gamification through surface_notification; Notifications records and delivers them and never evaluates an achievement.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/notifications/intent/NF-14.md"
+    },
+    {
+      "id": "NF-15",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Grouping reminders into a daily or weekly digest through the Preferences notification_frequency is target vision; v1 delivers each notification in real time.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/notifications/intent/NF-15.md"
+    },
+    {
+      "id": "NF-16",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds Notifications with the delivery engine, the Sessions due agenda and a Preferences port, registers its surface_notification handler into the one shared effect registry before any write can emit, registers its journal contribution, and runs an on-device loop that ticks the dispatcher and the expire and purge sweeps.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 136,
+      "path": "docs/modules/notifications/intent/NF-16.md"
+    },
+    {
+      "id": "NF-17",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notifications' journal contribution answers a date with the unread badge by attention type (unread, alerts, warnings, reminders), empty when nothing is unread, and is registered through registerNotificationsJournal.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/notifications/intent/NF-17.md"
+    },
+    {
+      "id": "NF-18",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notifications has its own journal blocks, such as the day's alerts and the reminders that fired; each reads Notifications live and acts only through its service (mark read, archive), separate from its journal contribution.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/notifications/intent/NF-18.md"
+    },
+    {
+      "id": "NF-19",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notifications serves a notification read provider in the one shared view registry, so a view or a block lists notifications without reading the table.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/notifications/intent/NF-19.md"
+    },
+    {
+      "id": "NF-2",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A notification comes either from the surface_notification effect (a thing happened) or from the dispatcher firing a due reminder read from the Sessions due agenda (a thing is due); both land as one row shape in one stream, and no module writes the table directly.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/notifications/intent/NF-2.md"
+    },
+    {
+      "id": "NF-20",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A due reminder converges to one row across devices; the time row carries a deterministic occurrence key (source, subject, deadline) that sync resolves like the event key.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/notifications/intent/NF-20.md"
+    },
+    {
+      "id": "NF-21",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The inbox reads live through the Notifications service, its read and archive actions persist, it shows each capability's loading, empty, error and success states, and a link to a deleted subject resolves to a calm \"no longer available\" state.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/notifications/intent/NF-21.md"
+    },
+    {
+      "id": "NF-22",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The surface_notification payload is the fire input (one of the six types, a non-empty title, and optional message, action, subject link, expiry and metadata); Notifications exports its schema so a producer validates before it emits and a rule's consequence is checked when saved, and the handler still skips a bad payload without throwing but flags it.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 151,
+      "path": "docs/modules/notifications/intent/NF-22.md"
+    },
+    {
+      "id": "NF-23",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The dispatcher reads the user's refuse-every-third-party choice from Preferences at each delivery and runs the engine in that mode, so only in-app and native local alerts are used.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/notifications/intent/NF-23.md"
+    },
+    {
+      "id": "NF-24",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data-model record shows the notifications delivery audit (delivered in-app, push and email), the encrypted metadata, the nullable effect_event_id with its `UNIQUE` constraint and the read, archive and expiry lifecycle.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/notifications/intent/NF-24.md"
+    },
+    {
+      "id": "NF-3",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Upcoming reminders are derived from the due agenda and never stored; a row materializes only when a reminder actually fires, so the table is the history of what already fired.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/foundation/notifications/__tests__/scheduling.test.ts",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 153,
+      "path": "docs/modules/notifications/intent/NF-3.md"
+    },
+    {
+      "id": "NF-4",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Channels, quiet hours and the per-module push toggles belong to Preferences; Notifications reads them at each delivery and stores none of them, and with no Preferences port every channel is on.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/notifications/intent/NF-4.md"
+    },
+    {
+      "id": "NF-5",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Before delivering, the dispatcher checks the channel, the per-module toggle and quiet hours; a suppressed notification is still recorded in-app, so suppression means not pushed or emailed, never lost.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/notifications/intent/NF-5.md"
+    },
+    {
+      "id": "NF-6",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Push is a content-free wake signal and the device composes the notification after it syncs and decrypts; the server never sees a title, message or subject link, email is a generic nudge only and there is no `sms`.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/notifications/intent/NF-6.md"
+    },
+    {
+      "id": "NF-7",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In-app is the always-available local channel; it has no zero-knowledge limit and is never gated away, only the external channels can be off.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/foundation/notifications/__tests__/service.test.ts",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/notifications/intent/NF-7.md"
+    },
+    {
+      "id": "NF-8",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An event notification converges to one row by its deterministic effect_event_id, and a due reminder is keyed by its due occurrence, so a retry or two devices waking fire it once.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/notifications/intent/NF-8.md"
+    },
+    {
+      "id": "NF-9",
+      "kind": "intent-row",
+      "module": "notifications",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fire succeeds on the device first, and the row with its read and archive state syncs to the other devices, so reading it on one clears it on the rest.",
+      "anchors": [
+        "docs/modules/notifications/intent.yaml",
+        "packages/core/src/services/notifications/__tests__/notifications-service.test.ts"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/notifications/intent/NF-9.md"
     },
     {
       "id": "NP-1",
