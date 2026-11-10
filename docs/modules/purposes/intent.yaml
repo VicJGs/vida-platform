@@ -42,7 +42,7 @@
   proof: [BR-PG-S1-4, BR-PG-S6-1, BR-PG-S6-3]
   work: LIF-113
 - id: PG-7
-  says: An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's daily measures (PG-37).
+  says: An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's day (PG-37).
   uses: [effects, measurement, journals]
   work: LIF-113
 - id: PG-8
@@ -160,11 +160,11 @@
   work: LIF-63
 - id: PG-36
   says: Status, priority, life domain, review frequency, calculation method, metric source, contribution goal and contributor types, plan step owner type and dream category and status are closed enums declared once (string unions, `CHECK` constraints and `Zod` schemas).
-# PG-37 replaces the feature docs' "deltas come from Journals snapshots" (PG-7, PG-14), drift at Victor's call
-# (2026-11-09): Purposes reads the entities' days through measurement and keeps no copy.
+# PG-37 replaces the feature docs' "deltas come from Journals snapshots" (PG-7, PG-14) and the retired
+# contribute_purpose_metric (LIF-521), drift at Victor's call (2026-11-09).
 - id: PG-37
-  says: Purposes reads what was done each day in every entity related to a goal, through that entity's measurement sources over a day range, and computes from it how close the user is to each goal, vision, dream and purpose and how that changed; it stores no copy, so the data stays cross-referenced, and Journals' look-back presents the result.
-  uses: [measurement, MS-9, journals, JR-9, JR-10]
+  says: Purposes reads the information of each entity related to a purpose, goal or dream through that entity's own service, as other modules read each other, and computes it as that day's progress with the measurement engine; it keeps no copy, nothing is pushed to it, and it never reads the journal.
+  uses: [measurement, MS-3, tasks, TK-16, habits, HB-8, routines, RT-12, projects, books, check-ins]
   work: LIF-514
 - id: PG-38
   says: A value's progress rolls up its purposes, and a dream derives its progress from its steps or its project when no override is set, so every spine entity measures.
@@ -228,8 +228,8 @@
   says: Multi-condition automation is the economy's rules, built over the shared binding edge and the acyclic guard, never a second automation engine in the measurement substrate.
   uses: [gamification]
 
-# Consumers with no row here. Built and in their own ledgers: the emitters of contribute_purpose_metric and
-# emit_measurement_signal (HB-8, RT-12, TK-16, PJ-23, BK-33; the signal's handler is MS-5), the engine calls
+# Consumers with no row here. Built and in their own ledgers: the emitters of
+# emit_measurement_signal (TK-16, PJ-23, BK-33; the signal's handler is MS-5), the engine calls
 # (BK-3 normalize, PJ-3 and TK-3 rollup, RT-19 resolveProgress). In their own ledgers, not built yet: the
 # measure sources (PJ-26, BK-25, CK-19, HB-23), the review check-in (CK-6), the look-back (JR-9, JR-10), the
 # journal registry (JR-11) and blocks (JR-12, JR-20), the project hub's purposes (PJ-21), the milestone rollup
@@ -241,7 +241,7 @@
 # metrics as a ranged source (HC-5, the Health run), Skills' target mastery as a Purposes target (SK-10, the skills
 # run), Gamification's goal-completion reward and rewards that fund dreams (GM-7), Education's study progress
 # signals. Not consumers: Relationships (health is never a source, RL-5), Routines as a source (RT-19).
-# Not Purposes': contribute_purpose_metric is a separate component, not measurement; Purposes only reads and keeps
-# no copy (Victor, 2026-11-09), so HB-8 and RT-12's "Purposes owns the metric", from the Sessions effect catalogue, is drift (LIF-520).
-# Withdrawn in review: PG-29 (that handler) and PG-33 (a goal can fail; a goal is there to be reached).
+# Retired: contribute_purpose_metric was a wrong design (Victor, 2026-11-09). Purposes reads each related entity
+# through its service instead (PG-37); HB-8, RT-12 and TK-16 are reworded, and LIF-521 removes the emits.
+# Withdrawn in review: PG-29 (a contribute_purpose_metric handler) and PG-33 (a goal can fail; a goal is there to be reached).
 # Feature datasets: none; the Purposes docs ship no bulk reference data.

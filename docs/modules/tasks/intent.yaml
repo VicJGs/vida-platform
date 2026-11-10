@@ -64,11 +64,13 @@
   uses: [gamification]
   proof: [BR-TK-S3-4, BR-TK-S3-6]
   work: LIF-401
+# TK-16 was reworded at Victor's call (2026-11-09, LIF-349 run 22): contribute_purpose_metric was a wrong design, and
+# Purposes reads the task through its service and computes the day's progress. Retiring the emit is LIF-521.
+# Its emit_measurement_signal half stands (BR-TK-S3-3); that signal's handler is LIF-113 (MS-5).
 - id: TK-16
-  says: A task's completion reaches its purpose and the measurement engine through the contribute_purpose_metric and emit_measurement_signal handlers, which the consuming modules register.
-  uses: [purposes, measurement]
-  proof: [BR-TK-S3-3, BR-TK-S6-8]
-  work: LIF-113
+  says: A task's completion emits emit_measurement_signal for the measurement engine and pushes nothing to Purposes; a purpose, goal or dream a task relates to reads it through the Tasks service and computes it into that day's progress.
+  uses: [measurement, MS-5, purposes, PG-37]
+  work: LIF-521
 - id: TK-17
   says: The journal's daily summary pulls the tasks completed, due or scheduled on the day through the Tasks journal contribution; Tasks never pushes surface_journal.
   uses: [journals]

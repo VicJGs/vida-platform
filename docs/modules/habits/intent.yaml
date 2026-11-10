@@ -25,11 +25,12 @@
 - id: HB-7
   says: Mood before and after, ease and satisfaction (each 1 to 5) are optional and captured only by an explicit detailed log; the default completion is a single tap.
   proof: [BR-HB-16]
+# HB-8 was reworded at Victor's call (2026-11-09, LIF-349 run 22): contribute_purpose_metric was a wrong design, and
+# Purposes reads the habit through its service and computes the day's progress. Retiring the emit is LIF-521.
 - id: HB-8
-  says: A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values.
-  uses: [purposes]
-  proof: [BR-HB-29, BR-HB-31]
-  work: LIF-113
+  says: Habits pushes nothing to Purposes; a purpose, goal or dream a habit relates to reads the habit's completions through the Habits service and computes them into that day's progress, and Habits never writes purpose data.
+  uses: [purposes, PG-37]
+  work: LIF-521
 - id: HB-9
   says: A done completion grants experience points through `award_xp`, applied by Gamification as `grant_currency(XP)` into the consequence_ledger, once per habit and date; Habits never writes points itself.
   uses: [gamification]
@@ -61,12 +62,12 @@
   proof: [BR-HB-21]
   work: LIF-475
 - id: HB-16
-  says: A done completion fires contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
+  says: A done completion fires `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.
   uses: [effects]
   proof: [BR-HB-29, BR-HB-30]
   work: LIF-450
 - id: HB-17
-  says: A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently (HB-8's failure half).
+  says: A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently.
   proof: [BR-HB-30]
   work: LIF-478
 - id: HB-18

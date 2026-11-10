@@ -1350,11 +1350,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A done completion fires contribute_purpose_metric and `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
+      "summary": "A done completion fires `award_xp` after the commit, once per habit and date, from every log, detailed log, backfill or edit that leaves it done; in the app the habits service is composed with the effect rail and the tag resolver.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 105,
       "path": "docs/modules/habits/intent/HB-16.md"
     },
     {
@@ -1363,11 +1363,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently (HB-8's failure half).",
+      "summary": "A failed completion effect never fails the completion, and it is flagged for retry, never dropped silently.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 71,
+      "tokens": 66,
       "path": "docs/modules/habits/intent/HB-17.md"
     },
     {
@@ -1616,11 +1616,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "A done completion contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric write and the completion-to-metric mapping, and Habits never writes purpose metric values.",
+      "summary": "Habits pushes nothing to Purposes; a purpose, goal or dream a habit relates to reads the habit's completions through the Habits service and computes them into that day's progress, and Habits never writes purpose data.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 115,
+      "tokens": 92,
       "path": "docs/modules/habits/intent/HB-8.md"
     },
     {
@@ -3245,11 +3245,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Purposes reads what was done each day in every entity related to a goal, through that entity's measurement sources over a day range, and computes from it how close the user is to each goal, vision, dream and purpose and how that changed; it stores no copy, so the data stays cross-referenced, and Journals' look-back presents the result.",
+      "summary": "Purposes reads the information of each entity related to a purpose, goal or dream through that entity's own service, as other modules read each other, and computes it as that day's progress with the measurement engine; it keeps no copy, nothing is pushed to it, and it never reads the journal.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 129,
+      "tokens": 130,
       "path": "docs/modules/purposes/intent/PG-37.md"
     },
     {
@@ -3311,11 +3311,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's daily measures (PG-37).",
+      "summary": "An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's day (PG-37).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 108,
+      "tokens": 105,
       "path": "docs/modules/purposes/intent/PG-7.md"
     },
     {
@@ -4528,11 +4528,11 @@
       "module": "routines",
       "status": "active",
       "supersedes": [],
-      "summary": "A done routine-day contributes to every purpose linked through the weighted contributions primitive, as the contribute_purpose_metric effect on the rail; Purposes owns the metric and the mapping, and only the up-edge to the purpose is weighted.",
+      "summary": "Routines pushes nothing to Purposes; a purpose, goal or dream a routine relates to reads the routine's days through the Routines service and computes them into that day's progress, and only the up-edge to the purpose is weighted.",
       "anchors": [
         "docs/modules/routines/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 96,
       "path": "docs/modules/routines/intent/RT-12.md"
     },
     {
@@ -5312,11 +5312,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "A task's completion reaches its purpose and the measurement engine through the contribute_purpose_metric and emit_measurement_signal handlers, which the consuming modules register.",
+      "summary": "A task's completion emits emit_measurement_signal for the measurement engine and pushes nothing to Purposes; a purpose, goal or dream a task relates to reads it through the Tasks service and computes it into that day's progress.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 97,
+      "tokens": 99,
       "path": "docs/modules/tasks/intent/TK-16.md"
     },
     {
