@@ -140,17 +140,18 @@
 # economy handlers when composed. The feeders' emits carry no payload, so the amount comes from a shipped rule.
 # Check-ins moves to award_xp (Victor, 2026-11-09, LIF-511). PD-10's focus def doesn't declare award_xp yet.
 - id: GM-21
-  says: Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward.
+  says: Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward; the user can retune or replace those defaults with rules of their own (GM-36).
   uses: [effects, tasks, TK-15, habits, HB-9, routines, RT-7, RT-23, sessions, PD-10, check-ins, CK-11, knowledge, preferences]
   work: LIF-524
 # GM-22 is Gamification's rule side. The emit_measurement_signal handler itself is MS-5's (LIF-113): one handler per
-# effect type, so it hands each signal to both the event-trigger bindings and Gamification's rules.
+# effect type, so it hands each signal to both the event-trigger bindings and Gamification's rules. The emitters
+# named here are today's; any module's entity can be a rule's subject (GM-36).
 - id: GM-22
-  says: Gamification's rules hear the completion signals other modules emit (a project, milestone, purpose or target completed) as events keyed by source and transition, derive the entity from the target reference, and grant the project-completion points and goal-completion reward through shipped rules; the emitter grants nothing itself.
-  uses: [effects, MS-5, projects, PJ-23, purposes, PG-28, tasks, TK-16, books, BK-33]
+  says: Gamification's rules hear the signals other modules emit (a project, milestone, purpose, target or task completed, a reading session ended, a review or assessment recorded) as events keyed by source and transition, derive the entity from the target reference, and reward or penalize it through shipped or user rules; the emitter grants nothing itself.
+  uses: [effects, MS-5, projects, PJ-23, purposes, PG-28, tasks, TK-16, books, BK-33, knowledge, learning]
   work: LIF-524
 - id: GM-23
-  says: Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up.
+  says: Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up; a rule over something that didn't happen is checked when its window closes (a homework not done by its due date, fewer pages read than set by the end of the week).
   uses: [measurement, effects]
   work: LIF-525
 - id: GM-24
@@ -166,7 +167,7 @@
   open: What an unlock does (a currency grant, a feature, an allowance) and who defines it.
   work: LIF-526
 - id: GM-27
-  says: The user authors their own achievements and challenges under the capability sandbox, on the same predicates as the curated catalogue.
+  says: The user authors their own achievements and challenges over any entity in Vida under the capability sandbox, on the same predicates as the curated catalogue.
   uses: [capabilities]
   work: LIF-528
 - id: GM-28
@@ -205,6 +206,15 @@
   says: The curated achievement and challenge library ships as an opt-in default dataset the user accepts or declines; it refreshes as a whole set and is read from a local copy.
   uses: [integrations]
   work: LIF-528
+
+# GM-36 is the System's personalization (Victor, 2026-11-09): the default feeders, emitters and rules are examples.
+# On main a rule's condition is an event-type string or one measure key against a threshold: it can't name an
+# entity, filter on its attributes, or check that something didn't happen.
+- id: GM-36
+  says: Any entity in Vida can be a rule's subject; the user picks an entity type or one entity from any module (a task, a homework, a grade, a book's pages, a study session, a habit) and rewards or penalizes what they choose, an event that happened, a measure crossing a threshold, or something that didn't happen by a deadline or within a period; the shipped feeders and rules are defaults and examples, never the limit.
+  uses: [measurement, MS-6, MS-9, MS-5, effects, capabilities, tasks, habits, routines, projects, books, learning, knowledge, check-ins, finance, health, relationships, purposes, sessions]
+  open: How each module exposes its entities' events and measures to rules (today only some modules emit a signal, mostly on completion), and how a rule names one entity and filters on its attributes (a grade below a mark).
+  work: LIF-532
 
 # The economy substrate (docs/core/economy/current-business-rules.md, BR-1…BR-8; ADR-012)
 - id: ECO-1
@@ -264,8 +274,8 @@
 # engine run), the emit_measurement_signal emits of Knowledge and Education (those runs), the Notifications
 # surface_notification handler (the notifications + delivery run; the unlock payload doesn't fit it, LIF-529), the
 # fe-gamification surface in apps/web/src/gamification (LIF-181; its stub legs are LIF-401's). Designed only: Skills'
-# grant (the skills run). Not consumers: Books and Education grant nothing (C-E2; the reading session declares no
-# effect, BK-33).
+# grant (the skills run). Every module is a potential rule subject (GM-36): C-E2 only means an emitter grants
+# nothing itself (Projects, Purposes, Books, Education), never that the user can't reward or penalize its entities.
 # Sessions: nothing here is a session; a rule is headless automation and a challenge is a saved view (GM-17).
 # Due lane: Gamification produces no due-time item, so it needs no push toggle key (LIF-479); unlock alerts ride
 # the event path.

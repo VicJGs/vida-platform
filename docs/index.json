@@ -1557,11 +1557,11 @@
       "module": "gamification",
       "status": "active",
       "supersedes": [],
-      "summary": "Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward.",
+      "summary": "Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward; the user can retune or replace those defaults with rules of their own (GM-36).",
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 162,
+      "tokens": 182,
       "path": "docs/modules/gamification/intent/GM-21.md"
     },
     {
@@ -1570,11 +1570,11 @@
       "module": "gamification",
       "status": "active",
       "supersedes": [],
-      "summary": "Gamification's rules hear the completion signals other modules emit (a project, milestone, purpose or target completed) as events keyed by source and transition, derive the entity from the target reference, and grant the project-completion points and goal-completion reward through shipped rules; the emitter grants nothing itself.",
+      "summary": "Gamification's rules hear the signals other modules emit (a project, milestone, purpose, target or task completed, a reading session ended, a review or assessment recorded) as events keyed by source and transition, derive the entity from the target reference, and reward or penalize it through shipped or user rules; the emitter grants nothing itself.",
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 137,
+      "tokens": 147,
       "path": "docs/modules/gamification/intent/GM-22.md"
     },
     {
@@ -1583,11 +1583,11 @@
       "module": "gamification",
       "status": "active",
       "supersedes": [],
-      "summary": "Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up.",
+      "summary": "Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up; a rule over something that didn't happen is checked when its window closes (a homework not done by its due date, fewer pages read than set by the end of the week).",
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 99,
+      "tokens": 140,
       "path": "docs/modules/gamification/intent/GM-23.md"
     },
     {
@@ -1635,11 +1635,11 @@
       "module": "gamification",
       "status": "active",
       "supersedes": [],
-      "summary": "The user authors their own achievements and challenges under the capability sandbox, on the same predicates as the curated catalogue.",
+      "summary": "The user authors their own achievements and challenges over any entity in Vida under the capability sandbox, on the same predicates as the curated catalogue.",
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 72,
+      "tokens": 78,
       "path": "docs/modules/gamification/intent/GM-27.md"
     },
     {
@@ -1758,6 +1758,19 @@
       ],
       "tokens": 81,
       "path": "docs/modules/gamification/intent/GM-35.md"
+    },
+    {
+      "id": "GM-36",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Any entity in Vida can be a rule's subject; the user picks an entity type or one entity from any module (a task, a homework, a grade, a book's pages, a study session, a habit) and rewards or penalizes what they choose, an event that happened, a measure crossing a threshold, or something that didn't happen by a deadline or within a period; the shipped feeders and rules are defaults and examples, never the limit.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 240,
+      "path": "docs/modules/gamification/intent/GM-36.md"
     },
     {
       "id": "GM-4",
@@ -2268,11 +2281,11 @@
       "module": "gamification",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of gamification: 45 rows, 2 tested, 0 partly tested, 43 intent only.",
+      "summary": "Intended rules of gamification: 46 rows, 2 tested, 0 partly tested, 44 intent only.",
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 176,
+      "tokens": 177,
       "path": "docs/modules/gamification/intent.md"
     },
     {
