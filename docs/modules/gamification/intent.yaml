@@ -1,0 +1,272 @@
+# Gamification intent ledger: every intended, deferred or TBD Gamification rule, keyed by its docs/features/gamification
+# ID, plus the economy substrate Gamification owns (LIF-426 SB-Q9: economy → Gamification, its own prefix ECO).
+# work = the issue that builds the rest. check:rules derives each row's state.
+# Proof cites the BR-GM-n rules in docs/modules/gamification/current-business-rules.md and the bare BR-n rules in
+# docs/core/economy/current-business-rules.md. Test names carry no BR-GM or bare BR ID, only GM-2 and GM-14, so the
+# other built rows read intent only (LIF-349 run 23 findings). No test name holds a BR-GM-n, so no GM ID matches
+# inside a rule ID (the LIF-505 item 1 pattern). The economy's bare BR-1…BR-8 collide with the measurement
+# substrate's BR-1…BR-8 (MS-1…MS-8) and Spaces' own bare IDs (the LIF-520 item 4 pattern).
+
+# Invariants (docs/features/gamification/business-rules.md)
+# GM-1 is unbuilt end to end: isFeatureEnabled is a stub that always returns false, Settings has no control for the
+# flag (PR-7), and the root doesn't compose Gamification (GM-33).
+- id: GM-1
+  says: Nothing in Vida requires the System; it runs only when the user turns feature_gamification on, and then any action can earn or lose a consequence that the System surfaces; it is the motivation partner to Purposes, never a gate on core function.
+  uses: [preferences, PR-7, purposes]
+  work: LIF-401
+# GM-2's consequences fire one rail effect each; the move_money and surface_notification legs are validated by
+# their owners' handlers (FN-16, the Notifications handler). Multi-condition rules are GM-28.
+- id: GM-2
+  says: A rule is a measured condition and a consequence; the condition is an acyclic event-trigger or derived-pull binding, and the consequence dispatches separate typed effects (grant_currency with award_xp as its experience case, lock_currency, move_money, surface_notification), each in its own Additive write class, never one umbrella effect or a new engine.
+  uses: [measurement, MS-7, effects, ECO-1, ECO-7]
+  proof: [BR-GM-9, BR-GM-10, BR-GM-13]
+# GM-3's measured-time backing is a label only: nothing derives session or task time into a currency. Editing and
+# archiving a currency are GM-24.
+- id: GM-3
+  says: The economy runs many user-definable currencies at once, each backed by real money (through Finance), a self-granted allowance (a vacation day, a cheat meal, hours of play, no wealth needed) or measured time, and a reward or penalty can be denominated in any of them.
+  uses: [ECO-2, finance, sessions]
+  proof: [BR-GM-2]
+# GM-4's caches are never refreshed: every read derives live, so total_xp and current_level hold their defaults.
+- id: GM-4
+  says: Each currency's to-distribute, earned, locked and current quantities derive from the consequence ledger on read; stored totals and levels are caches, never the source of truth.
+  uses: [ECO-3, ECO-4]
+  proof: [BR-GM-1, BR-GM-8]
+  open: Whether the total_xp and current_level cache columns are refreshed on each fire or dropped, since every read derives live.
+  work: LIF-526
+# GM-5's clamp is built for one lock per fire; two locks in one fire each clamp against the same balance and
+# over-draw it (flag LIF-530). Releasing a lock is ECO-10.
+- id: GM-5
+  says: A penalty locks currency or money into a held, recoverable pool through a lock_currency or move_money effect and never destroys it; a penalty that would drive a balance below its floor clamps and flags.
+  uses: [ECO-5, ECO-10, finance, FN-16]
+  proof: [BR-GM-5, BR-GM-12]
+  work: LIF-530
+# GM-6's money move is Finance's FN-16 (built). The fire-time consent gate for a sensitive-module write waits on
+# capability authoring (auth is off in M1, ADR-017).
+- id: GM-6
+  says: A real-money reward is a transfer into a storage box through Finance's guarded handler, a real entry in the user's own ledger and never a bank call; a self-granted allowance needs no Finance, and a Finance or Health write needs the user's explicit capability consent.
+  uses: [finance, FN-16, capabilities]
+  work: LIF-156
+# GM-7 is designed only. The box with its dream or purpose earmark is Finance's store (FN-15). Purposes reads the
+# box's balance through Finance as a finance target (PG-10), and never keeps a copy (the run-22 model).
+- id: GM-7
+  says: A reward routed into a storage box can earmark a Dream or a Purpose, so the consequence ladders into that goal's progress, which Purposes reads from the box through Finance.
+  uses: [finance, FN-15, purposes, PG-10]
+  work: LIF-180
+# GM-8's envelope is a fail-closed hook: grant_id is passed as the capability identity, and resolving it to a
+# capability definition, plus the authoring surface, is capability authoring's.
+- id: GM-8
+  says: Rules can be user-authored; shipped rules are trusted, and a user-authored rule runs headless under the capability sandbox (declare, grant, enforce, revocable, failing closed), reusing that machinery without being a render block.
+  uses: [capabilities]
+  proof: [BR-GM-14]
+  work: LIF-156
+# GM-9 is Finance's (FN-15); Gamification only consumes the tree. Net worth today is Finance's simple sum (FN-7),
+# not the tree.
+- id: GM-9
+  says: Storage is a Finance-owned single-parent tree of group and wrapper nodes over existing accounts, investments and assets, with a lock flag, a dream or purpose earmark and a currency overlay; each money-holder is wrapped once, any other grouping is a Spaces tag, and net worth is the tree minus liabilities.
+  uses: [finance, FN-15, FN-7, spaces]
+  work: LIF-180
+# GM-10's reads are built over the synchronous source registry (BR-GM-19): an unmeasured source never fires, but it
+# returns a reason, not a typed SignalUnavailable flag. The root builds no registry (MS-12), and the registry's
+# shape changes (MS-9). Screen-time and budgeting signals are the Integrations line.
+- id: GM-10
+  says: The System reads behavioral signals only through the measurement sources the owning modules advertise and stores none of them; a missing or stale source suppresses the rule with a typed flag and never fires on made-up data.
+  uses: [measurement, MS-6, MS-9, MS-10, health, finance]
+  proof: [BR-GM-19]
+  work: LIF-525
+# GM-11's streaks are each module's: Habits caches its own, Routines derives it from the policy (RT-7), Check-ins
+# derives it on read (CK-11). No Gamification code reads any of them. Interaction streaks are RL-23's.
+- id: GM-11
+  says: Streaks are module-owned (Habits, Routines, Check-ins, Relationships' interactions); the System reads each one through its measurement source and awards milestone consequences, and never computes or stores a streak.
+  uses: [habits, HB-23, routines, RT-7, check-ins, CK-11, CK-19, relationships, RL-23, measurement]
+  work: LIF-525
+# GM-12's split is built in the schema (migration 031), but the types still declare the moved fields and nothing
+# writes active_modules (PR-10, LIF-432). Gamification is the only writer left on user_profile, personal fields
+# included; moving those waits on an account model.
+- id: GM-12
+  says: The overloaded profile splits by single writer; the System keeps only each currency's total and level, the check-in streak goes to Check-ins, persona, motivation, modules and onboarding go to Preferences, and personal details stay in the profile until an account model exists, so no field ends with two writers.
+  uses: [check-ins, CK-11, preferences, PR-10]
+  proof: [BR-GM-7]
+  work: LIF-432
+# GM-13's predicates are built over a measure or a currency quantity (BR-GM-19). The push side (consequence events),
+# the reconcile pass (GM-23), partial progress and multi-currency rewards are not; net worth reaches it only once
+# Finance advertises FN-7 as a source. User-authored achievements are GM-27.
+- id: GM-13
+  says: An achievement is a measurable predicate (a streak or count of at least N, a level reached, net worth of at least a sum) evaluated on the measurement sources, the consequence events and a reconcile pass, never a bespoke checker; the app curates the catalogue.
+  uses: [measurement, finance, FN-7]
+  proof: [BR-GM-17, BR-GM-19, BR-GM-20]
+  work: LIF-525
+# GM-14's curve is built; its config and progress to next are GM-25, and level unlocks are GM-26.
+- id: GM-14
+  says: A level is a pure function of a currency's lifetime total over a fixed non-linear curve with titles; it never de-levels on a spend.
+  proof: [BR-GM-4]
+# GM-15's contribution is built (BR-GM-21) and registers once the root composes Gamification (GM-33, LIF-112). The
+# unlock notification fires, but its payload has no type or title, so the Notifications handler skips it (flag
+# LIF-529). In the block model the journal shows Gamification through its own blocks (GM-31).
+- id: GM-15
+  says: The System gives the journal a contribution for the day (currency earned and locked, achievements unlocked, level-ups) and raises a notification on an unlock, a level-up or a consequence through surface_notification; Notifications reading it is its only in-edge.
+  uses: [journals, JR-11, notifications]
+  proof: [BR-GM-17, BR-GM-18, BR-GM-21]
+  work: LIF-529
+# GM-16's persona read has no port: usePersona returns the neutral register though Settings persists persona.
+- id: GM-16
+  says: Persona weighting, module guidance and template suggestions belong to Preferences, Onboarding and Spaces templates; the System at most reads persona to frame its rewards.
+  uses: [preferences, spaces]
+  work: LIF-401
+# GM-17's challenge view is the Spaces run's (LIF-349 checklist line "Spaces"); Gamification serves its rules to it
+# (GM-32). SB-Q3 wants quests in M1.
+- id: GM-17
+  says: A quest or challenge is a time-boxed saved view over rules and goals in Spaces, never a bespoke quest table.
+  uses: [spaces, views]
+  work: LIF-527
+- id: GM-18
+  says: Currency names, box and store names, rule and user-authored achievement titles and descriptions, and ledger notes are encrypted client-side [E]; enums, amounts, levels, timestamps and references stay plaintext. M1 is a pass-through.
+  uses: [encryption]
+  proof: [BR-GM-6]
+  work: LIF-67
+- id: GM-19
+  says: Every earn, lock, spend and consequence succeeds locally first; structured columns merge last-writer-wins, and the ledger converges on the deterministic effect event key, so a consequence never applies twice across devices.
+  uses: [sync, effects, ECO-6]
+  proof: [BR-GM-10, BR-GM-20]
+# GM-20's effects are atomic one by one and re-driven as a set (BR-GM-10), with no recorded flag; two locks in one
+# fire over-draw silently (flag LIF-530).
+- id: GM-20
+  says: A failed money move or consequence leaves state unchanged and flags it; a retry never double-applies, and a penalty never silently over-applies.
+  uses: [effects]
+  proof: [BR-GM-10, BR-GM-11]
+  work: LIF-530
+
+# Proposed IDs, no ID in docs/features/gamification today (approve in the PR)
+# GM-21 settles the award_xp handler (SB-Q2, SB-Q9; ADR-012 §3.2 and §3.11): Gamification registers it with the
+# economy handlers when composed. The feeders' emits carry no payload, so the amount comes from a shipped rule.
+# Check-ins moves to award_xp (Victor, 2026-11-09, LIF-511). PD-10's focus def doesn't declare award_xp yet.
+- id: GM-21
+  says: Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward.
+  uses: [effects, tasks, TK-15, habits, HB-9, routines, RT-7, RT-23, sessions, PD-10, check-ins, CK-11, knowledge, preferences]
+  work: LIF-524
+# GM-22 is Gamification's rule side. The emit_measurement_signal handler itself is MS-5's (LIF-113): one handler per
+# effect type, so it hands each signal to both the event-trigger bindings and Gamification's rules.
+- id: GM-22
+  says: Gamification's rules hear the completion signals other modules emit (a project, milestone, purpose or target completed) as events keyed by source and transition, derive the entity from the target reference, and grant the project-completion points and goal-completion reward through shipped rules; the emitter grants nothing itself.
+  uses: [effects, MS-5, projects, PJ-23, purposes, PG-28, tasks, TK-16, books, BK-33]
+  work: LIF-524
+- id: GM-23
+  says: Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up.
+  uses: [measurement, effects]
+  work: LIF-525
+- id: GM-24
+  says: The user edits and archives a currency they defined; an archived currency keeps its ledger and stops taking new consequences, and a shipped currency can't be archived.
+  uses: [ECO-2]
+  work: LIF-526
+- id: GM-25
+  says: A currency's level reports its title and the progress to the next level, over a curve and title bands kept as config rather than code.
+  open: Which thresholds the curve uses; the docs cite v1's 0, 100, 300 … 5500, and the build uses 100 times the square of one less than the level.
+  work: LIF-526
+- id: GM-26
+  says: Reaching a level can unlock a reward that does something, granted once per level and kept when the balance is later spent.
+  open: What an unlock does (a currency grant, a feature, an allowance) and who defines it.
+  work: LIF-526
+- id: GM-27
+  says: The user authors their own achievements and challenges under the capability sandbox, on the same predicates as the curated catalogue.
+  uses: [capabilities]
+  work: LIF-528
+- id: GM-28
+  says: A rule's condition can combine several bindings, all or any, on the economy's rules and the capability-authoring rail, never a second automation engine.
+  uses: [measurement, MS-14, capabilities]
+  work: LIF-523
+# GM-29: rulesToBindings already draws an edge when a rule's measure key equals a currency code, but nothing
+# advertises a currency as a source, so a derived-pull rule over a currency always reads unmeasured.
+- id: GM-29
+  says: Gamification advertises each currency's derived quantities and level as measurement sources, so a derived-pull rule, an achievement or a user's measurement override can read them, and the acyclic guard covers those edges.
+  uses: [measurement, MS-6, MS-9, MS-15]
+  work: LIF-525
+- id: GM-30
+  says: The journal contribution reads the day itself, the currency earned and locked, the achievements unlocked and the level-ups on that local day, not a snapshot of totals.
+  uses: [journals, JR-11]
+  work: LIF-527
+- id: GM-31
+  says: The journal of the day shows Gamification through its own inline blocks, live and worked from, never one summary block.
+  uses: [journals, JR-12, JR-20, editor]
+  work: LIF-527
+- id: GM-32
+  says: Gamification serves its rules, achievements and currencies as a read provider in the shared view registry, so a challenge view (GM-17) and other saved views resolve them.
+  uses: [views, spaces]
+  work: LIF-527
+- id: GM-33
+  says: In the app the composition root composes Gamification behind feature_gamification with the rail, the effect registry, the shared measurement sources and the capability enforcer, and Gamification registers its effect handlers, its journal contribution and its read provider.
+  uses: [effects, journals, JR-11, views, measurement, MS-12, preferences, PR-7, capabilities]
+  work: LIF-401
+- id: GM-34
+  says: The consequence ledger is readable as an activity history per currency, newest first, so the user sees what earned, locked or spent each amount.
+  uses: [ECO-3]
+  work: LIF-401
+# GM-35 is the feature-dataset pattern (ADR-014 Layer 2 used for a feature, LIF-506): the catalogue is bulk app
+# content, built even if declined.
+- id: GM-35
+  says: The curated achievement and challenge library ships as an opt-in default dataset the user accepts or declines; it refreshes as a whole set and is read from a local copy.
+  uses: [integrations]
+  work: LIF-528
+
+# The economy substrate (docs/core/economy/current-business-rules.md, BR-1…BR-8; ADR-012)
+- id: ECO-1
+  says: A consequence dispatches typed effects on the rail; the economy's effects are all Additive, each appending its own output row keyed by a deterministic effect event key.
+  uses: [effects]
+  proof: [BR-1]
+- id: ECO-2
+  says: A currency declares a backing kind of real money, self-granted or measured time; experience points are one currency, not privileged.
+  proof: [BR-2]
+- id: ECO-3
+  says: Earned, locked, spent and distributed recompute on read from the consequence ledger, and current is earned minus locked minus spent; stored counters are caches, never truth.
+  proof: [BR-3]
+- id: ECO-4
+  says: To-distribute is a configured ceiling minus what has been distributed, not a ledger sum, and is null with no ceiling.
+  proof: [BR-4]
+# ECO-5's clamp and flag are Gamification's (GM-5, BR-GM-5, BR-GM-12).
+- id: ECO-5
+  says: A penalty writes a recoverable lock row; the ledger is append-only, with corrections as compensating rows, and the below-floor clamp and flag belong to the enforcing surface.
+  uses: [GM-5]
+  proof: [BR-5]
+- id: ECO-6
+  says: The grant and lock handlers write one ledger row inside the rail's transaction, unique on the effect event key, kind and target; the rail's applied-effects log guards replay, and the ledger's unique key converges devices.
+  uses: [effects, sync]
+  proof: [BR-6]
+- id: ECO-7
+  says: The consequence coordinator fans a fire out to the rail per typed effect, with no new write path and no new idempotency.
+  uses: [effects]
+  proof: [BR-7]
+# ECO-8's deferrals: the store and move_money → Finance (FN-15, FN-16 built), surface_notification → Notifications
+# (built), rules, achievements, level and clamp → Gamification (GM-2, GM-13, GM-14, GM-5), the sandbox → capability
+# authoring (GM-8), level unlocks, user achievements and quests → GM-26, GM-27, GM-17 (in M1, SB-Q3).
+- id: ECO-8
+  says: The economy owns currencies, the ledger, the four derived quantities, lock-not-destroy, the coordinator and the effect classes; it does not own the rail, conditions (a condition is a measurement binding) or the sandbox.
+  uses: [effects, measurement, capabilities]
+  proof: [BR-8]
+# Proposed IDs, no ID in docs/core/economy today (approve in the PR)
+# ECO-9 and ECO-10: the spend and distribute kinds exist in the enum and computeBalance, but no handler or service op
+# writes them, and nothing releases a lock.
+- id: ECO-9
+  says: The user spends a currency (redeems an allowance) and distributes from its pool through ledger rows keyed by a deterministic event key, and a spend clamps at the floor.
+  uses: [GM-5]
+  work: LIF-526
+- id: ECO-10
+  says: A locked amount is recoverable; a release appends a compensating row that returns it to current, never a delete.
+  uses: [GM-5]
+  open: What releases a lock (a rule, the user, a time limit) and whether a release is its own effect.
+  work: LIF-526
+
+# Consumers with no row here. Built and in their own ledgers: the award_xp feeders (TK-15, HB-9, RT-7 and RT-23,
+# whose handler is GM-21), the emit_measurement_signal emitters (TK-16, PJ-23, BK-33, PG-28; Gamification's rule side
+# is GM-22, the handler MS-5), the module streaks (Habits' cache, RT-7's policy streak, CK-11's derived streak), net
+# worth as Finance's simple sum (FN-7), the move_money handler (FN-16), the shared binding edge and acyclic guard
+# (MS-7). In their own ledgers, not built yet: the streaks and figures as measurement sources (HB-23, CK-19), the
+# Check-ins grant on award_xp (CK-11, LIF-511), the focus session's award_xp (PD-10), the store tree (FN-15), the
+# feature flag and persona reads (PR-7, PR-10), the journal registration and blocks (JR-11, JR-12, JR-20), the
+# interaction streaks (RL-23). Built with no ledger yet: Knowledge's award_xp on a review (the knowledge + review
+# engine run), the emit_measurement_signal emits of Knowledge and Education (those runs), the Notifications
+# surface_notification handler (the notifications + delivery run; the unlock payload doesn't fit it, LIF-529), the
+# fe-gamification surface in apps/web/src/gamification (LIF-181; its stub legs are LIF-401's). Designed only: Skills'
+# grant (the skills run). Not consumers: Books and Education grant nothing (C-E2; the reading session declares no
+# effect, BK-33).
+# Sessions: nothing here is a session; a rule is headless automation and a challenge is a saved view (GM-17).
+# Due lane: Gamification produces no due-time item, so it needs no push toggle key (LIF-479); unlock alerts ride
+# the event path.
+# Feature datasets: the achievement and challenge library (GM-35).

@@ -802,6 +802,136 @@
       "path": "docs/modules/check-ins/intent/CK-9.md"
     },
     {
+      "id": "ECO-1",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A consequence dispatches typed effects on the rail; the economy's effects are all Additive, each appending its own output row keyed by a deterministic effect event key.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/gamification/intent/ECO-1.md"
+    },
+    {
+      "id": "ECO-10",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A locked amount is recoverable; a release appends a compensating row that returns it to current, never a delete.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/gamification/intent/ECO-10.md"
+    },
+    {
+      "id": "ECO-2",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A currency declares a backing kind of real money, self-granted or measured time; experience points are one currency, not privileged.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/gamification/intent/ECO-2.md"
+    },
+    {
+      "id": "ECO-3",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Earned, locked, spent and distributed recompute on read from the consequence ledger, and current is earned minus locked minus spent; stored counters are caches, never truth.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/gamification/intent/ECO-3.md"
+    },
+    {
+      "id": "ECO-4",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "To-distribute is a configured ceiling minus what has been distributed, not a ledger sum, and is null with no ceiling.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/gamification/intent/ECO-4.md"
+    },
+    {
+      "id": "ECO-5",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A penalty writes a recoverable lock row; the ledger is append-only, with corrections as compensating rows, and the below-floor clamp and flag belong to the enforcing surface.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/gamification/intent/ECO-5.md"
+    },
+    {
+      "id": "ECO-6",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The grant and lock handlers write one ledger row inside the rail's transaction, unique on the effect event key, kind and target; the rail's applied-effects log guards replay, and the ledger's unique key converges devices.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/gamification/intent/ECO-6.md"
+    },
+    {
+      "id": "ECO-7",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The consequence coordinator fans a fire out to the rail per typed effect, with no new write path and no new idempotency.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/gamification/intent/ECO-7.md"
+    },
+    {
+      "id": "ECO-8",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The economy owns currencies, the ledger, the four derived quantities, lock-not-destroy, the coordinator and the effect classes; it does not own the rail, conditions (a condition is a measurement binding) or the sandbox.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/gamification/intent/ECO-8.md"
+    },
+    {
+      "id": "ECO-9",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user spends a currency (redeems an allowance) and distributes from its pool through ledger rows keyed by a deterministic event key, and a spend clamps at the floor.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/gamification/intent/ECO-9.md"
+    },
+    {
       "id": "FL-1",
       "kind": "intent-row",
       "module": "finance",
@@ -1251,6 +1381,463 @@
       "path": "docs/modules/finance/intent/FN-9.md"
     },
     {
+      "id": "GM-1",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Nothing in Vida requires the System; it runs only when the user turns feature_gamification on, and then any action can earn or lose a consequence that the System surfaces; it is the motivation partner to Purposes, never a gate on core function.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/gamification/intent/GM-1.md"
+    },
+    {
+      "id": "GM-10",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The System reads behavioral signals only through the measurement sources the owning modules advertise and stores none of them; a missing or stale source suppresses the rule with a typed flag and never fires on made-up data.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/gamification/intent/GM-10.md"
+    },
+    {
+      "id": "GM-11",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Streaks are module-owned (Habits, Routines, Check-ins, Relationships' interactions); the System reads each one through its measurement source and awards milestone consequences, and never computes or stores a streak.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/gamification/intent/GM-11.md"
+    },
+    {
+      "id": "GM-12",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The overloaded profile splits by single writer; the System keeps only each currency's total and level, the check-in streak goes to Check-ins, persona, motivation, modules and onboarding go to Preferences, and personal details stay in the profile until an account model exists, so no field ends with two writers.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 129,
+      "path": "docs/modules/gamification/intent/GM-12.md"
+    },
+    {
+      "id": "GM-13",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An achievement is a measurable predicate (a streak or count of at least N, a level reached, net worth of at least a sum) evaluated on the measurement sources, the consequence events and a reconcile pass, never a bespoke checker; the app curates the catalogue.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/gamification/intent/GM-13.md"
+    },
+    {
+      "id": "GM-14",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A level is a pure function of a currency's lifetime total over a fixed non-linear curve with titles; it never de-levels on a spend.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml",
+        "packages/core/src/services/gamification/__tests__/gamification-service.test.ts"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/gamification/intent/GM-14.md"
+    },
+    {
+      "id": "GM-15",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The System gives the journal a contribution for the day (currency earned and locked, achievements unlocked, level-ups) and raises a notification on an unlock, a level-up or a consequence through surface_notification; Notifications reading it is its only in-edge.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/gamification/intent/GM-15.md"
+    },
+    {
+      "id": "GM-16",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Persona weighting, module guidance and template suggestions belong to Preferences, Onboarding and Spaces templates; the System at most reads persona to frame its rewards.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/gamification/intent/GM-16.md"
+    },
+    {
+      "id": "GM-17",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A quest or challenge is a time-boxed saved view over rules and goals in Spaces, never a bespoke quest table.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/gamification/intent/GM-17.md"
+    },
+    {
+      "id": "GM-18",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Currency names, box and store names, rule and user-authored achievement titles and descriptions, and ledger notes are encrypted client-side [E]; enums, amounts, levels, timestamps and references stay plaintext. M1 is a pass-through.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/gamification/intent/GM-18.md"
+    },
+    {
+      "id": "GM-19",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every earn, lock, spend and consequence succeeds locally first; structured columns merge last-writer-wins, and the ledger converges on the deterministic effect event key, so a consequence never applies twice across devices.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/gamification/intent/GM-19.md"
+    },
+    {
+      "id": "GM-2",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A rule is a measured condition and a consequence; the condition is an acyclic event-trigger or derived-pull binding, and the consequence dispatches separate typed effects (grant_currency with award_xp as its experience case, lock_currency, move_money, surface_notification), each in its own Additive write class, never one umbrella effect or a new engine.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml",
+        "packages/core/src/services/gamification/__tests__/gamification-service.test.ts"
+      ],
+      "tokens": 151,
+      "path": "docs/modules/gamification/intent/GM-2.md"
+    },
+    {
+      "id": "GM-20",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A failed money move or consequence leaves state unchanged and flags it; a retry never double-applies, and a penalty never silently over-applies.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/gamification/intent/GM-20.md"
+    },
+    {
+      "id": "GM-21",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gamification registers the award_xp handler with the grant and lock handlers when it is composed; a feeder's award_xp carries no amount, and the handler grants experience points from the shipped-default reward rule for that feeder's event (static seed, not synced, deterministic, weighted by difficulty or priority under the Preferences default), so a feeder never decides its own reward.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 162,
+      "path": "docs/modules/gamification/intent/GM-21.md"
+    },
+    {
+      "id": "GM-22",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gamification's rules hear the completion signals other modules emit (a project, milestone, purpose or target completed) as events keyed by source and transition, derive the entity from the target reference, and grant the project-completion points and goal-completion reward through shipped rules; the emitter grants nothing itself.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 137,
+      "path": "docs/modules/gamification/intent/GM-22.md"
+    },
+    {
+      "id": "GM-23",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Derived-pull rules and achievements are evaluated on each consequence event and by a reconcile pass on a recurring occasion, each fire keyed by its occasion so a recurring rule fires once per occasion and a missed event is caught up.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/gamification/intent/GM-23.md"
+    },
+    {
+      "id": "GM-24",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user edits and archives a currency they defined; an archived currency keeps its ledger and stops taking new consequences, and a shipped currency can't be archived.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/gamification/intent/GM-24.md"
+    },
+    {
+      "id": "GM-25",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A currency's level reports its title and the progress to the next level, over a curve and title bands kept as config rather than code.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/gamification/intent/GM-25.md"
+    },
+    {
+      "id": "GM-26",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Reaching a level can unlock a reward that does something, granted once per level and kept when the balance is later spent.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/gamification/intent/GM-26.md"
+    },
+    {
+      "id": "GM-27",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user authors their own achievements and challenges under the capability sandbox, on the same predicates as the curated catalogue.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/gamification/intent/GM-27.md"
+    },
+    {
+      "id": "GM-28",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A rule's condition can combine several bindings, all or any, on the economy's rules and the capability-authoring rail, never a second automation engine.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/gamification/intent/GM-28.md"
+    },
+    {
+      "id": "GM-29",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gamification advertises each currency's derived quantities and level as measurement sources, so a derived-pull rule, an achievement or a user's measurement override can read them, and the acyclic guard covers those edges.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/gamification/intent/GM-29.md"
+    },
+    {
+      "id": "GM-3",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The economy runs many user-definable currencies at once, each backed by real money (through Finance), a self-granted allowance (a vacation day, a cheat meal, hours of play, no wealth needed) or measured time, and a reward or penalty can be denominated in any of them.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/gamification/intent/GM-3.md"
+    },
+    {
+      "id": "GM-30",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal contribution reads the day itself, the currency earned and locked, the achievements unlocked and the level-ups on that local day, not a snapshot of totals.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/gamification/intent/GM-30.md"
+    },
+    {
+      "id": "GM-31",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The journal of the day shows Gamification through its own inline blocks, live and worked from, never one summary block.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/gamification/intent/GM-31.md"
+    },
+    {
+      "id": "GM-32",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gamification serves its rules, achievements and currencies as a read provider in the shared view registry, so a challenge view (GM-17) and other saved views resolve them.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/gamification/intent/GM-32.md"
+    },
+    {
+      "id": "GM-33",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root composes Gamification behind feature_gamification with the rail, the effect registry, the shared measurement sources and the capability enforcer, and Gamification registers its effect handlers, its journal contribution and its read provider.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/gamification/intent/GM-33.md"
+    },
+    {
+      "id": "GM-34",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The consequence ledger is readable as an activity history per currency, newest first, so the user sees what earned, locked or spent each amount.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/gamification/intent/GM-34.md"
+    },
+    {
+      "id": "GM-35",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The curated achievement and challenge library ships as an opt-in default dataset the user accepts or declines; it refreshes as a whole set and is read from a local copy.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/gamification/intent/GM-35.md"
+    },
+    {
+      "id": "GM-4",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each currency's to-distribute, earned, locked and current quantities derive from the consequence ledger on read; stored totals and levels are caches, never the source of truth.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 127,
+      "path": "docs/modules/gamification/intent/GM-4.md"
+    },
+    {
+      "id": "GM-5",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A penalty locks currency or money into a held, recoverable pool through a lock_currency or move_money effect and never destroys it; a penalty that would drive a balance below its floor clamps and flags.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/gamification/intent/GM-5.md"
+    },
+    {
+      "id": "GM-6",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A real-money reward is a transfer into a storage box through Finance's guarded handler, a real entry in the user's own ledger and never a bank call; a self-granted allowance needs no Finance, and a Finance or Health write needs the user's explicit capability consent.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/gamification/intent/GM-6.md"
+    },
+    {
+      "id": "GM-7",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A reward routed into a storage box can earmark a Dream or a Purpose, so the consequence ladders into that goal's progress, which Purposes reads from the box through Finance.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/gamification/intent/GM-7.md"
+    },
+    {
+      "id": "GM-8",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Rules can be user-authored; shipped rules are trusted, and a user-authored rule runs headless under the capability sandbox (declare, grant, enforce, revocable, failing closed), reusing that machinery without being a render block.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/gamification/intent/GM-8.md"
+    },
+    {
+      "id": "GM-9",
+      "kind": "intent-row",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Storage is a Finance-owned single-parent tree of group and wrapper nodes over existing accounts, investments and assets, with a lock flag, a dream or purpose earmark and a currency overlay; each money-holder is wrapped once, any other grouping is a Spaces tag, and net worth is the tree minus liabilities.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/gamification/intent/GM-9.md"
+    },
+    {
       "id": "HB-1",
       "kind": "intent-row",
       "module": "habits",
@@ -1674,6 +2261,19 @@
       ],
       "tokens": 139,
       "path": "docs/modules/finance/intent.md"
+    },
+    {
+      "id": "INTENT-gamification",
+      "kind": "intent",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of gamification: 45 rows, 2 tested, 0 partly tested, 43 intent only.",
+      "anchors": [
+        "docs/modules/gamification/intent.yaml"
+      ],
+      "tokens": 176,
+      "path": "docs/modules/gamification/intent.md"
     },
     {
       "id": "INTENT-habits",
