@@ -13,7 +13,7 @@
 # Invariants (docs/features/notifications/business-rules.md)
 # NF-1 also covers "not a scheduler, not the Global Calendar": Sessions schedules, the Calendar aggregates,
 # Notifications fires. Whether a Gamification rule can take a notification as its subject (GM-36), when nothing may
-# depend on Notifications, is asked in this run's findings issue.
+# depend on Notifications, is asked on LIF-538.
 - id: NF-1
   says: Notifications reads every module through seams and writes only its own rows; nothing in Vida depends on it, so it can be switched off and no core function breaks.
   proof: [BR-NT-S1-1, BR-NT-S3-4]
@@ -147,9 +147,13 @@
   work: LIF-63
 
 # Delivery (docs/core/notifications-delivery/current-business-rules.md, BR-ND-1…BR-ND-11)
+# DLV-1's "web" assumes a served web with a server behind it. Today the web is the localhost product the user runs on
+# their own machine, with no server, so its wake signal folds to in-app; the tier per product shape is DLV-12.
 - id: DLV-1
   says: The tier follows the notification's nature and the platform; a time-based reminder on a native device is a local scheduled alert, a time-based reminder on the web and any event use the wake signal, and in-app underlies all three.
   proof: [BR-ND-1]
+  open: The tier for a time-based reminder on the localhost web product, which runs on the user's machine with no server, so it has no wake signal.
+  work: LIF-402
 - id: DLV-2
   says: Only the wake-signal tier reaches off the device (push wake-only and the generic email); local scheduled alerts and in-app compose on the device, and `sms` is never a channel.
   proof: [BR-ND-2]
@@ -189,18 +193,20 @@
   says: No port makes a network call before real reach; the engine decides when and to whom, never what, and authors no schema, so real reach replaces the ports with no signature change.
   proof: [BR-ND-11]
 # Proposed IDs, no ID in docs/core/notifications-delivery today (approve in the PR)
-# DLV-12 is ADR-013 §3.2 and §5's client build: on main tick arms a local alert only after the row materializes, and
-# nothing calls reschedulePlan or cancelLocal. The shift-or-suppress policy has no Preferences field (it's fixed to
-# suppress).
+# DLV-12 is ADR-013 §3.2 and §5's client build, and it stays a delivery row though the dispatcher runs it (Victor,
+# 2026-11-10). On main tick arms a local alert only after the row materializes, and nothing calls reschedulePlan or
+# cancelLocal. The shift-or-suppress policy has no Preferences field (it's fixed to suppress). ADR-013 §3.2's web
+# exemption assumes a served web; the localhost product has no server behind it.
 - id: DLV-12
-  says: On a native device the dispatcher registers each upcoming time-based reminder with the local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedules (cancel and re-register) when the schedule or the quiet hours change; on the web the reminder falls to the wake signal.
-  uses: [preferences, PR-13, sessions, DLV-4, DLV-5]
-  open: Where the user's shift or suppress choice lives, and whether the native scheduler port lands with LIF-151 or with the desktop venue.
+  says: Each product shape delivers a time-based reminder its own way; the localhost web product the user runs on their machine delivers it locally, with no server; the desktop and mobile apps register each upcoming reminder with the native local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedule (cancel and re-register) when the schedule or the quiet hours change; only the server product, which serves the web and manages its information, adds the wake signal.
+  uses: [preferences, PR-13, sessions, DLV-4, DLV-5, DLV-13]
+  open: How the localhost product fires a reminder when it isn't open (a background task is the Integrations feature), where the user's shift or suppress choice lives, and whether the native scheduler port lands with LIF-151 or with the desktop and mobile apps.
   work: LIF-402
-# DLV-13 is ADR-013 §3.3, §3.6 and §5's server and client reach. The docs say M2; Linear keeps it in M4 (LIF-151).
-# Rich or actionable push and a server history backup stay intended later (ADR-013 §3.6).
+# DLV-13 is ADR-013 §3.3, §3.6 and §5's server and client reach, so it exists only with the server product; the
+# localhost web product has no server. The docs say M2; Linear keeps it in M4 (LIF-151). Rich or actionable push and
+# a server history backup stay intended later (ADR-013 §3.6).
 - id: DLV-13
-  says: The wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web uses a service worker with Web Push, and email sends the generic nudge.
+  says: With the server product, the wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web the server serves uses a service worker with Web Push, and email sends the generic nudge.
   uses: [sync, encryption, DLV-3]
   open: The push vendor and the email provider, and whether the email nudge rides LIF-151 too.
   work: LIF-151

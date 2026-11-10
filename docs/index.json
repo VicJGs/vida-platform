@@ -811,7 +811,7 @@
       "anchors": [
         "docs/modules/notifications/intent.yaml"
       ],
-      "tokens": 94,
+      "tokens": 135,
       "path": "docs/modules/notifications/intent/DLV-1.md"
     },
     {
@@ -846,11 +846,11 @@
       "module": "notifications",
       "status": "active",
       "supersedes": [],
-      "summary": "On a native device the dispatcher registers each upcoming time-based reminder with the local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedules (cancel and re-register) when the schedule or the quiet hours change; on the web the reminder falls to the wake signal.",
+      "summary": "Each product shape delivers a time-based reminder its own way; the localhost web product the user runs on their machine delivers it locally, with no server; the desktop and mobile apps register each upcoming reminder with the native local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedule (cancel and re-register) when the schedule or the quiet hours change; only the server product, which serves the web and manages its information, adds the wake signal.",
       "anchors": [
         "docs/modules/notifications/intent.yaml"
       ],
-      "tokens": 163,
+      "tokens": 243,
       "path": "docs/modules/notifications/intent/DLV-12.md"
     },
     {
@@ -859,11 +859,11 @@
       "module": "notifications",
       "status": "active",
       "supersedes": [],
-      "summary": "The wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web uses a service worker with Web Push, and email sends the generic nudge.",
+      "summary": "With the server product, the wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web the server serves uses a service worker with Web Push, and email sends the generic nudge.",
       "anchors": [
         "docs/modules/notifications/intent.yaml"
       ],
-      "tokens": 145,
+      "tokens": 156,
       "path": "docs/modules/notifications/intent/DLV-13.md"
     },
     {
