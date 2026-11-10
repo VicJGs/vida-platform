@@ -1746,11 +1746,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of purposes: 52 rows, 5 tested, 0 partly tested, 47 intent only.",
+      "summary": "Intended rules of purposes: 50 rows, 5 tested, 0 partly tested, 45 intent only.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 183,
+      "tokens": 180,
       "path": "docs/modules/purposes/intent.md"
     },
     {
@@ -2254,11 +2254,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range; a stored type:id reference still resolves, so Projects, Books, Check-ins, Habits and Health can advertise their measures.",
+      "summary": "A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range of days, day by day; a stored type:id reference still resolves, so Projects, Books, Check-ins, Habits and Health can advertise their measures.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 118,
+      "tokens": 123,
       "path": "docs/modules/purposes/intent/MS-9.md"
     },
     {
@@ -3149,19 +3149,6 @@
       "path": "docs/modules/purposes/intent/PG-28.md"
     },
     {
-      "id": "PG-29",
-      "kind": "intent-row",
-      "module": "purposes",
-      "status": "active",
-      "supersedes": [],
-      "summary": "Purposes handles contribute_purpose_metric, the effect a done task, habit or routine emits, writing it once per effect into the goals it contributes to; Purposes owns the metric and the mapping, and the emitter never writes them.",
-      "anchors": [
-        "docs/modules/purposes/intent.yaml"
-      ],
-      "tokens": 132,
-      "path": "docs/modules/purposes/intent/PG-29.md"
-    },
-    {
       "id": "PG-3",
       "kind": "intent-row",
       "module": "purposes",
@@ -3193,11 +3180,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "In the app the composition root builds Purposes with the shared measurement source registry and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21), its read provider (PG-26) and its contribute_purpose_metric handler (PG-29).",
+      "summary": "In the app the composition root builds Purposes with the shared measurement source registry and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 125,
+      "tokens": 113,
       "path": "docs/modules/purposes/intent/PG-31.md"
     },
     {
@@ -3212,19 +3199,6 @@
       ],
       "tokens": 109,
       "path": "docs/modules/purposes/intent/PG-32.md"
-    },
-    {
-      "id": "PG-33",
-      "kind": "intent-row",
-      "module": "purposes",
-      "status": "active",
-      "supersedes": [],
-      "summary": "A goal can fail, distinct from cancelled; the failure is documented and reshapes the plan, and the failed goal stays in the history and the look-back.",
-      "anchors": [
-        "docs/modules/purposes/intent.yaml"
-      ],
-      "tokens": 108,
-      "path": "docs/modules/purposes/intent/PG-33.md"
     },
     {
       "id": "PG-34",
@@ -3271,11 +3245,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Purposes serves period metrics for the look-back, each goal's progress change and the alignment trend over a period, read from the journal snapshots its contribution fills; Journals presents them and never recomputes them.",
+      "summary": "Purposes reads what was done each day in every entity related to a goal, through that entity's measurement sources over a day range, and computes from it how close the user is to each goal, vision, dream and purpose and how that changed; it stores no copy, so the data stays cross-referenced, and Journals' look-back presents the result.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 95,
+      "tokens": 129,
       "path": "docs/modules/purposes/intent/PG-37.md"
     },
     {
@@ -3337,11 +3311,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, rollups derive on read, and what changed comes from journal snapshots.",
+      "summary": "An event-trigger write goes through the owning module's single service method on the effect rail, idempotent per effect_event_id, never a new engine; writes are sparse, and rollups and what changed derive on read from each related entity's daily measures (PG-37).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 102,
+      "tokens": 108,
       "path": "docs/modules/purposes/intent/PG-7.md"
     },
     {
