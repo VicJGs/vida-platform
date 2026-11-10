@@ -2254,11 +2254,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range of days, day by day; a stored type:id reference still resolves, so Projects, Books, Check-ins, Habits and Health can advertise their measures.",
+      "summary": "A measurement source registers per entity type and answers asynchronously for one entity, optionally for a named measure over a range of days, day by day; a stored type:id reference still resolves, so a derived-pull binding (PG-6, PG-15) reads the measures Projects, Books, Check-ins, Habits, Health and Finance advertise.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 123,
+      "tokens": 135,
       "path": "docs/modules/purposes/intent/MS-9.md"
     },
     {
@@ -3180,11 +3180,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "In the app the composition root builds Purposes with the shared measurement source registry and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
+      "summary": "In the app the composition root builds Purposes with the Tasks, Habits, Routines, Projects, Check-ins and Finance services it reads (PG-37), the shared measurement source registry for its bindings (PG-6, PG-15) and the effects rail with its registry, next to its sessions, spaces and notes, and registers its due lane (built), its journal contribution (PG-21) and its read provider (PG-26).",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 157,
       "path": "docs/modules/purposes/intent/PG-31.md"
     },
     {
@@ -3245,11 +3245,11 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Purposes reads the information of each entity related to a purpose, goal or dream through that entity's own service, as other modules read each other, and computes it as that day's progress with the measurement engine; it keeps no copy, nothing is pushed to it, and it never reads the journal.",
+      "summary": "Purposes takes the services of the modules that can relate to a goal (Tasks, Habits, Routines, Projects, Check-ins, Finance) as deps, like Routines, and reads each related entity's day through them, done or not done and its own figure or progress, reflection only and never a write; it computes that day's progress for each purpose, goal and dream, keeps no copy, nothing is pushed to it, and it never reads the journal or the measurement source registry for a contributor.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 130,
+      "tokens": 171,
       "path": "docs/modules/purposes/intent/PG-37.md"
     },
     {
