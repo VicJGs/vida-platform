@@ -40,7 +40,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -96,6 +96,10 @@
       "purposes": [
         "packages/core/src/services/purposes",
         "packages/core/src/foundation/measurement"
+      ],
+      "gamification": [
+        "packages/core/src/services/gamification",
+        "packages/core/src/foundation/economy"
       ]
     },
     "intentFeatures": {
