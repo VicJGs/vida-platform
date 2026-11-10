@@ -40,7 +40,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -100,6 +100,10 @@
       "gamification": [
         "packages/core/src/services/gamification",
         "packages/core/src/foundation/economy"
+      ],
+      "notifications": [
+        "packages/core/src/services/notifications",
+        "packages/core/src/foundation/notifications"
       ]
     },
     "intentFeatures": {

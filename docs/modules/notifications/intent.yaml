@@ -1,0 +1,224 @@
+# Notifications intent ledger: every intended, deferred or TBD Notifications rule, keyed by its
+# docs/features/notifications ID, plus the delivery substrate Notifications owns (LIF-426 SB-Q9: notifications rail →
+# Notifications, its own prefix DLV). work = the issue that builds the rest. check:rules derives each row's state.
+# Proof cites the BR-NT-Sn-n rules in docs/modules/notifications/current-business-rules.md and the BR-ND-n rules in
+# docs/core/notifications-delivery/current-business-rules.md; DLV-1…DLV-11 are BR-ND-1…BR-ND-11. Test names carry
+# NF-1, 2, 3, 5, 6, 7, 8, 9 and 10, and one proof ID each (BR-NT-S4-9, BR-ND-8); the other built rows read intent only
+# (LIF-349 run 24 findings). The prefix isn't ND: BR-ND-8 sits in a test name, so ND-8 would match inside it (the
+# LIF-505 item 1 pattern). No test under these paths names a BR-NF-n (docs/infrastructure/database-layer's
+# BR-NF-1…BR-NF-5), so no NF ID matches inside one today; it's latent.
+# Measurement: Notifications hand-rolls nothing the engine owns (the unread badge is a count) and calls no engine.
+# Datasets: none fits Notifications. Sessions: nothing here is a session; a reminder only points at its subject.
+
+# Invariants (docs/features/notifications/business-rules.md)
+# NF-1 also covers "not a scheduler, not the Global Calendar": Sessions schedules, the Calendar aggregates,
+# Notifications fires. Whether a Gamification rule can take a notification as its subject (GM-36), when nothing may
+# depend on Notifications, is asked in this run's findings issue.
+- id: NF-1
+  says: Notifications reads every module through seams and writes only its own rows; nothing in Vida depends on it, so it can be switched off and no core function breaks.
+  proof: [BR-NT-S1-1, BR-NT-S3-4]
+# NF-2's time path and event path are built; nothing runs them in the app until the root composes Notifications
+# (NF-16). The contract's NotificationService.fire is the time entry, and applyNotificationEffect the handler.
+# Finance's obligation port (FL-6) names a notificationId, a direct write NF-2 rules out; it should emit or lane.
+- id: NF-2
+  says: A notification comes either from the surface_notification effect (a thing happened) or from the dispatcher firing a due reminder read from the Sessions due agenda (a thing is due); both land as one row shape in one stream, and no module writes the table directly.
+  uses: [effects, sessions, SS-7]
+  proof: [BR-NT-S3-1, BR-NT-S4-1]
+# NF-3 fires at hard_deadline, a deadline and not a reminder time: a planned block's end, or the day's UTC midnight
+# for the Tasks, Purposes, Routines and Relationships lanes (LIF-534).
+- id: NF-3
+  says: Upcoming reminders are derived from the due agenda and never stored; a row materializes only when a reminder actually fires, so the table is the history of what already fired.
+  uses: [sessions, SS-7, DLV-7]
+  proof: [BR-NT-S4-2, BR-NT-S4-3, BR-ND-7]
+  open: Which instant a due item fires at (its own reminder time or a lane's lead time) and in which time zone, since habits, check-ins and contact reminders have a time of day.
+  work: LIF-534
+- id: NF-4
+  says: Channels, quiet hours and the per-module push toggles belong to Preferences; Notifications reads them at each delivery and stores none of them, and with no Preferences port every channel is on.
+  uses: [preferences, PR-11]
+  proof: [BR-NT-S2-1, BR-NT-S2-8]
+# NF-5's per-module gate misses every time-path row: a due row carries the plural source module, while the toggle
+# map is keyed by singular entity type (LIF-479). Quiet hours are gated at delivery; applying them when a native
+# alert is registered is DLV-12 (PR-13). The contract's ChannelDisabled and QuietHours aren't typed errors; the
+# build returns the gated channel set.
+- id: NF-5
+  says: Before delivering, the dispatcher checks the channel, the per-module toggle and quiet hours; a suppressed notification is still recorded in-app, so suppression means not pushed or emailed, never lost.
+  uses: [preferences, PR-13]
+  proof: [BR-NT-S2-2, BR-NT-S2-3, BR-NT-S2-4, BR-NT-S2-5, BR-NT-S4-6]
+  work: LIF-479
+# NF-6's payload guard is built; the reach it guards (the wake relay, Web Push, the email nudge) is DLV-13.
+- id: NF-6
+  says: Push is a content-free wake signal and the device composes the notification after it syncs and decrypts; the server never sees a title, message or subject link, email is a generic nudge only and there is no `sms`.
+  uses: [DLV-2, DLV-3, encryption]
+  proof: [BR-NT-S2-6, BR-ND-3]
+- id: NF-7
+  says: In-app is the always-available local channel; it has no zero-knowledge limit and is never gated away, only the external channels can be off.
+  proof: [BR-NT-S2-2, BR-ND-8]
+# NF-8's event path converges by effect_event_id (per device through the rail's ledger, across devices by the
+# UNIQUE). The time path's per-device dedup skips every later occurrence of the same subject (flag LIF-533).
+# Converging a time row across devices is NF-20. The contract's DuplicateFire isn't a typed error; a repeat is a skip.
+- id: NF-8
+  says: An event notification converges to one row by its deterministic effect_event_id, and a due reminder is keyed by its due occurrence, so a retry or two devices waking fire it once.
+  uses: [effects, DLV-6]
+  proof: [BR-NT-S3-2, BR-NT-S3-3, BR-NT-S4-4, BR-NT-S4-5, BR-ND-6]
+  work: LIF-533
+- id: NF-9
+  says: A fire succeeds on the device first, and the row with its read and archive state syncs to the other devices, so reading it on one clears it on the rest.
+  uses: [sync]
+  proof: [BR-NT-S3-5]
+# NF-10's time-path link is wrong: entity_type is the plural module name, and entity_id is the lane's ref_id, which is
+# composite for a Relationships group fire and a routine day; a time row has no action_url. The fix keys due rows by
+# the subject (LIF-479). The "no longer available" link state is the inbox surface's (NF-21). DanglingSubject isn't
+# a typed error.
+- id: NF-10
+  says: A notification points at its subject through entity_type, entity_id and a deep-link action_url and never copies the subject's data beyond the title and message the producer supplied; a deleted subject leaves the row readable.
+  uses: [sessions, SS-7]
+  proof: [BR-NT-S5-5]
+  work: LIF-479
+- id: NF-11
+  says: The title, message, action label and metadata are encrypted; the type, the subject link, the action link, the read and archive flags, the timestamps, the delivery audit and the effect key stay plaintext.
+  uses: [encryption]
+  proof: [BR-NT-S1-9]
+  work: LIF-67
+- id: NF-12
+  says: The type is one of info, success, warning, error, reminder and achievement, fixed for v1; every documented producer maps onto them and no type is added.
+  proof: [BR-NT-S3-7]
+# NF-13's sweeps are built; nothing calls them in the app (NF-16). The conventions' "soft archive, not hard delete"
+# conflicts with the purge, which hard-deletes and syncs the delete; the build follows NF-13.
+- id: NF-13
+  says: A notification is marked read on view, archived on dismiss, auto-archived once expired and purged after a long time archived; the unread badge derives from live rows.
+  proof: [BR-NT-S1-2, BR-NT-S1-3, BR-NT-S1-4, BR-NT-S1-6, BR-NT-S5-4]
+  open: The retention period and how often the expire and purge sweeps run; a row created with a past expiry is created archived and never delivered, which the build doesn't do.
+  work: LIF-402
+# NF-14's recording is built; Gamification's unlock payload doesn't fit the handler (flag LIF-529), and the payload
+# contract is NF-22.
+- id: NF-14
+  says: Achievement and level-up notifications come from Gamification through surface_notification; Notifications records and delivers them and never evaluates an achievement.
+  uses: [gamification, GM-15]
+  proof: [BR-NT-S3-8]
+  work: LIF-529
+# NF-15 is deferred: ADR-013 §3.6 lists digest and batching delivery as intended later, and the frequency's
+# vocabulary is PR-18's open question. notification_frequency exists in Preferences and nothing reads it.
+- id: NF-15
+  says: Grouping reminders into a daily or weekly digest through the Preferences notification_frequency is target vision; v1 delivers each notification in real time.
+  uses: [preferences, PR-18]
+
+# Proposed IDs, no ID in docs/features/notifications today (approve in the PR)
+# NF-16: on main the root builds no delivery engine and no Notifications service, its effect registry is inline and
+# empty (LIF-450), and no loop calls tick, archiveExpired or purgeExpired. The journal registration is LIF-112's.
+- id: NF-16
+  says: In the app the composition root builds Notifications with the delivery engine, the Sessions due agenda and a Preferences port, registers its surface_notification handler into the one shared effect registry before any write can emit, registers its journal contribution, and runs an on-device loop that ticks the dispatcher and the expire and purge sweeps.
+  uses: [sessions, preferences, effects, journals, JR-11]
+  work: LIF-402
+- id: NF-17
+  says: Notifications' journal contribution answers a date with the unread badge by attention type (unread, alerts, warnings, reminders), empty when nothing is unread, and is registered through registerNotificationsJournal.
+  uses: [journals, JR-11]
+  proof: [BR-NT-S5-1, BR-NT-S5-2, BR-NT-S5-3]
+  open: Whether the recap becomes what arrived on that date, and on the local or the `UTC` day, instead of today's unread snapshot.
+  work: LIF-112
+- id: NF-18
+  says: Notifications has its own journal blocks, such as the day's alerts and the reminders that fired; each reads Notifications live and acts only through its service (mark read, archive), separate from its journal contribution.
+  uses: [journals, JR-12, JR-20, editor]
+  work: LIF-535
+- id: NF-19
+  says: Notifications serves a notification read provider in the one shared view registry, so a view or a block lists notifications without reading the table.
+  uses: [views]
+  work: LIF-535
+- id: NF-20
+  says: A due reminder converges to one row across devices; the time row carries a deterministic occurrence key (source, subject, deadline) that sync resolves like the event key.
+  uses: [sync, NF-8]
+  work: LIF-534
+# NF-21: the fe-notifications surface (LIF-192, done) is honest-empty with a session-only lifecycle; its live swap
+# is LIF-402's.
+- id: NF-21
+  says: The inbox reads live through the Notifications service, its read and archive actions persist, it shows each capability's loading, empty, error and success states, and a link to a deleted subject resolves to a calm "no longer available" state.
+  uses: [shell]
+  work: LIF-402
+- id: NF-22
+  says: The surface_notification payload is the fire input (one of the six types, a non-empty title, and optional message, action, subject link, expiry and metadata); Notifications exports its schema so a producer validates before it emits and a rule's consequence is checked when saved, and the handler still skips a bad payload without throwing but flags it.
+  uses: [gamification, GM-2, GM-15, effects]
+  open: How a skipped payload is flagged without throwing into the rail.
+  work: LIF-536
+- id: NF-23
+  says: The dispatcher reads the user's refuse-every-third-party choice from Preferences at each delivery and runs the engine in that mode, so only in-app and native local alerts are used.
+  uses: [preferences, DLV-9]
+  work: LIF-537
+- id: NF-24
+  says: The data-model record shows the notifications delivery audit (delivered in-app, push and email), the encrypted metadata, the nullable effect_event_id with its `UNIQUE` constraint and the read, archive and expiry lifecycle.
+  work: LIF-63
+
+# Delivery (docs/core/notifications-delivery/current-business-rules.md, BR-ND-1…BR-ND-11)
+- id: DLV-1
+  says: The tier follows the notification's nature and the platform; a time-based reminder on a native device is a local scheduled alert, a time-based reminder on the web and any event use the wake signal, and in-app underlies all three.
+  proof: [BR-ND-1]
+- id: DLV-2
+  says: Only the wake-signal tier reaches off the device (push wake-only and the generic email); local scheduled alerts and in-app compose on the device, and `sms` is never a channel.
+  proof: [BR-ND-2]
+- id: DLV-3
+  says: The wake payload carries the owner's routing only and refuses at run time any content, type or subject key with PayloadNotContentFree, never a silent strip.
+  proof: [BR-ND-3]
+# DLV-4's bake is built but only reached after a row materializes, when the deadline is past; registering ahead is
+# DLV-12.
+- id: DLV-4
+  says: Quiet hours are baked in when a local alert is registered (shifted or suppressed per the user's policy), since a pre-scheduled alert fires with the dispatcher not running.
+  uses: [preferences, PR-13]
+  proof: [BR-ND-4]
+# DLV-5 is built and never called; DLV-12 calls it.
+- id: DLV-5
+  says: A reschedule diffs the registered alerts by their dedup key, cancels the dropped, registers the new and leaves the unchanged alone.
+  proof: [BR-ND-5]
+# DLV-6's key function is right; the dispatcher passes a time row's id instead of its occurrence id (LIF-533).
+- id: DLV-6
+  says: The dedup key passes an event's effect_event_id through unchanged and keys a due reminder by its due occurrence id, namespaced so the two never collide.
+  proof: [BR-ND-6]
+- id: DLV-7
+  says: A durable row materializes only when the occurrence's time has arrived, never written ahead with a future date.
+  proof: [BR-ND-7]
+- id: DLV-8
+  says: Any external port that doesn't deliver (the deny-safe default included) folds back to in-app and flags it; in-app is the unconditional baseline and a delivery never rejects.
+  proof: [BR-ND-8]
+# DLV-9's mode is built; the user's choice is NF-23 (LIF-537).
+- id: DLV-9
+  says: In the no-third-party mode the engine never calls an off-device port (no push service, no email, no relay), even if the decision lists those channels.
+  proof: [BR-ND-9]
+- id: DLV-10
+  says: The engine executes an already-gated delivery decision; channel, permission and quiet-hours gating is the dispatcher's, and governing the server relay's transmit is the server's.
+  proof: [BR-ND-10]
+# DLV-11's "M2" is stale: real reach is LIF-151 (M4 Venues, decided 2026-11-06), and the delivery-audit columns are
+# already built by Notifications' own migration (032).
+- id: DLV-11
+  says: No port makes a network call before real reach; the engine decides when and to whom, never what, and authors no schema, so real reach replaces the ports with no signature change.
+  proof: [BR-ND-11]
+# Proposed IDs, no ID in docs/core/notifications-delivery today (approve in the PR)
+# DLV-12 is ADR-013 §3.2 and §5's client build: on main tick arms a local alert only after the row materializes, and
+# nothing calls reschedulePlan or cancelLocal. The shift-or-suppress policy has no Preferences field (it's fixed to
+# suppress).
+- id: DLV-12
+  says: On a native device the dispatcher registers each upcoming time-based reminder with the local scheduler ahead of its time, with quiet hours baked in per the user's shift or suppress choice, and reschedules (cancel and re-register) when the schedule or the quiet hours change; on the web the reminder falls to the wake signal.
+  uses: [preferences, PR-13, sessions, DLV-4, DLV-5]
+  open: Where the user's shift or suppress choice lives, and whether the native scheduler port lands with LIF-151 or with the desktop venue.
+  work: LIF-402
+# DLV-13 is ADR-013 §3.3, §3.6 and §5's server and client reach. The docs say M2; Linear keeps it in M4 (LIF-151).
+# Rich or actionable push and a server history backup stay intended later (ADR-013 §3.6).
+- id: DLV-13
+  says: The wake signal reaches closed devices; on a blob's arrival the server's wake relay sends a content-minimal push to the user's registered devices (push tokens on the device registry), the device syncs and composes the notification locally, the web uses a service worker with Web Push, and email sends the generic nudge.
+  uses: [sync, encryption, DLV-3]
+  open: The push vendor and the email provider, and whether the email nudge rides LIF-151 too.
+  work: LIF-151
+
+# Consumers with no row here. Built and in their own ledgers: the registered due lanes, Tasks (TK-18), Purposes'
+# target reviews (PG-13, PG-14) and Relationships' reminders, nudges and group fires (RL-6), plus Sessions' own planned
+# blocks (SS-7); the channel and push-toggle fields (PR-11); the journal registry (JR-11). Built, not registered: the
+# Routines lane (RT-13, LIF-450). In their own ledgers, not built yet: Habits' times-of-day reminders (HB-14, LIF-474),
+# check-in reminders (CK-8, LIF-508), Books' quotas (BK-23, LIF-500), Projects' milestones (PJ-27, LIF-490),
+# Relationships' events and follow-ups (RL-16, LIF-495), Purposes' reviews and deadlines (PG-14, LIF-514), the review
+# delivery (JR-17, LIF-488), the push-toggle keying for routines, contacts, purposes and check-ins (RT-28, RL-24, PG-27,
+# CK-20), quiet hours at registration (PR-13, LIF-402), the Notifications pane (PR-17, LIF-435), the frequency
+# vocabulary (PR-18), Finance's obligations and commitments (FL-6, LIF-413; FN-14, LIF-180), the journal blocks
+# (JR-12, JR-20). Built with no ledger yet: Gamification's unlock emit (GM-15, payload flag LIF-529) and a rule's
+# surface_notification consequence (GM-2, unchecked payload, NF-22); Knowledge's review engine getDue, which feeds no
+# due lane (the knowledge + review engine run); the fe-notifications surface in apps/web/src/notifications (LIF-192),
+# whose life-area map has the same plural-versus-singular gap. Designed only: Health's reminders, deload and safety
+# flags (the health run) and Skills' decay nudges (the skills run). Any entity's due time can become a reminder once
+# its module serves a due lane; no module is ruled out. Pomodoro's interval-boundary notifications (PD-7, LIF-444) are
+# a session runtime cue, not a dispatcher row. Push toggles: due rows carry the plural source module, the toggle map
+# is keyed by singular entity type (LIF-479). Preferences has no refuse-every-third-party field (LIF-537).
