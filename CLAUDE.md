@@ -32,18 +32,22 @@ Layer rules live in the `CLAUDE.md` beside the code and load when you work in th
 
 ## Commands
 
-| Command                                      | Does                                                                                                                                       |
-| -------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| `pnpm dev:app`                               | Web app and package watchers, no server. Use this for M1 (local-only) work                                                                 |
-| `pnpm dev`                                   | Everything, including the Worker via `wrangler dev` (needs macOS 13.5+)                                                                    |
-| `pnpm check`                                 | The full gate: guardrail scan, format, one-way-door, types-derived, boundaries, then lint, typecheck, test and e2e. Pre-push and CI run it |
-| `pnpm test` · `pnpm typecheck` · `pnpm lint` | One stage of the gate, through Turborepo                                                                                                   |
-| `pnpm format`                                | Prettier on code, JSON and Markdown                                                                                                        |
-| `pnpm check:docs`                            | Doc unit rules: frontmatter, token budgets, archive links, current index                                                                   |
-| `pnpm docs:index`                            | Rebuild `docs/index.json`; run after any doc unit edit                                                                                     |
-| `pnpm check:rules`                           | Rule IDs mapped to tests                                                                                                                   |
+| Command                                      | Does                                                                                                                          |
+| -------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| `pnpm dev:app`                               | Web app and package watchers, no server. Use this for M1 (local-only) work                                                    |
+| `pnpm dev`                                   | Everything, including the Worker via `wrangler dev` (needs macOS 13.5+)                                                       |
+| `pnpm check`                                 | The full gate: guardrail scan, format, one-way-door, types-derived, boundaries, then lint, typecheck, test and e2e. Code tier |
+| `pnpm check:fast`                            | The docs tier: guardrail scan, format, one-way-door, rules, and no new `check:docs` findings against `origin/main`            |
+| `pnpm check:tier`                            | Prints `docs` or `code` for the branch; pre-push and CI run the matching tier, and a push to `main` always runs the full gate |
+| `pnpm test` · `pnpm typecheck` · `pnpm lint` | One stage of the gate, through Turborepo                                                                                      |
+| `pnpm format`                                | Prettier on code, JSON and Markdown                                                                                           |
+| `pnpm check:docs`                            | Doc unit rules: frontmatter, token budgets, archive links, current index                                                      |
+| `pnpm docs:index`                            | Rebuild `docs/index.json`; run after any doc unit edit                                                                        |
+| `pnpm check:rules`                           | Rule IDs mapped to tests                                                                                                      |
 
-**Local gate.** Run it the way the pre-push hook does, or it fails here: `PW_EXECUTABLE_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" pnpm check --concurrency=1`. On this 2-core Mac, parallel suites time out, and Playwright's bundled Chromium does not run on macOS 12 (see `apps/web/e2e/CLAUDE.md`). It takes about 20 minutes.
+**Two tiers.** A branch whose every change since `origin/main` is docs (`docs/**`, any `.md`, a `"checks"`-only `package.json`; `"checks".docsTier`) runs `pnpm check:fast`; anything else, including `.claude/hooks` and `tools/checks`, runs the full gate. The pre-push hook is `tools/hooks/pre-push`, copied into `.git/hooks`.
+
+**Local gate.** Run the full gate the way the pre-push hook does, or it fails here: `PW_EXECUTABLE_PATH="/Applications/Brave Browser.app/Contents/MacOS/Brave Browser" pnpm check --concurrency=1`. On this 2-core Mac, parallel suites time out, and Playwright's bundled Chromium does not run on macOS 12 (see `apps/web/e2e/CLAUDE.md`). It takes about 20 minutes.
 
 ## Getting docs
 
