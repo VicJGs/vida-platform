@@ -3,8 +3,14 @@
 // current docs/index.json. Rule 6 (structured facts as data) and "agents never browse"
 // (rule 10) describe where facts live and how agents read them; no file check can
 // prove them, so they stay with the reviewer.
+// Usage: node docs.mjs [--base <ref>]
+//   --base: fail only on findings absent at the merge base with <ref>, keyed by file and
+//   rule, so a repo with a backlog can gate on new findings. Without it, every finding fails.
 import { spawnSync } from "node:child_process";
-import { readdirSync } from "node:fs";
+import { mkdtempSync, readdirSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { config, exists, read, report, root, walk } from "./lib.mjs";
 import { ABSTRACT_MAX, BODY_MAX, REQUIRED, buildIndex, linksOf, serialize, tokens, unquote, units as load } from "./units.mjs";
 import { generate, guard, ledgers, ruleMap, skipped } from "./intent.mjs";
@@ -21,12 +27,14 @@ function glossaryTerms(path) {
   return terms;
 }
 
-// All-caps codes in prose: code, links and IDs (anything ending in -<digits>) removed.
-function codes(body) {
+// All-caps codes in prose: code, links and IDs (a "checks".ruleId match, which may carry
+// a letter suffix like BR-KN-S2-8b, or anything ending in -<digits>) removed.
+function codes(body, ruleId) {
   const prose = body
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`[^`]*`/g, "")
     .replace(/\]\([^)]*\)/g, "]")
+    .replace(ruleId, "")
     .replace(/\b[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*-\d+\b/g, "");
   return [...new Set(prose.match(/\b[A-Z][A-Z0-9]*[A-Z](?:-[A-Z0-9]+)*\b/g) ?? [])];
 }
@@ -34,6 +42,7 @@ function codes(body) {
 const cfg = config();
 const units = load(cfg);
 const glossary = glossaryTerms(cfg.glossary);
+const ruleId = new RegExp(`\\b(?:${cfg.ruleId})\\b`, "g");
 const findings = [];
 const ids = new Map();
 if (!units.length) findings.push(`check:docs: no doc units under ${cfg.docs}/; set "checks".docs`);
@@ -67,7 +76,7 @@ for (const u of units) {
     if (FORBIDDEN_HEADING.test(line)) findings.push(`${u.path}:${u.bodyLine + i}: rule 7, "${line.trim()}": status, steps and history live in Linear and git`);
   });
 
-  const unknown = codes(u.body).filter((c) => !glossary?.has(c));
+  const unknown = codes(u.body, ruleId).filter((c) => !glossary?.has(c));
   if (unknown.length) findings.push(`${u.path}: rule 9, ${unknown.join(", ")} not in ${cfg.glossary}`);
 }
 
@@ -165,4 +174,36 @@ const index = serialize(buildIndex(units));
 if (!exists(cfg.index)) findings.push(`${cfg.index}: rule 10, missing; run node tools/checks/core/docs-index.mjs`);
 else if (read(cfg.index).replace(/\r\n/g, "\n") !== index) findings.push(`${cfg.index}: rule 10, stale; run node tools/checks/core/docs-index.mjs`);
 
-report(`check:docs ${cfg.docs}/ (${units.length} units)`, findings, ["rule 6 and the fetch-only half of rule 10 are not file-checkable; the reviewer covers them", ...allowNotes]);
+// --base: this same script runs on a detached worktree at the merge base; a finding whose
+// file and rule (or, without a rule number, whose whole text) also fails there is old.
+const name = `check:docs ${cfg.docs}/ (${units.length} units)`;
+const notes = ["rule 6 and the fetch-only half of rule 10 are not file-checkable; the reviewer covers them", ...allowNotes];
+const baseArg = process.argv.indexOf("--base");
+if (baseArg > 0) {
+  const ref = process.argv[baseArg + 1] ?? "";
+  const git = (...args) => spawnSync("git", args, { cwd: root, encoding: "utf8" });
+  const mergeBase = git("merge-base", ref, "HEAD");
+  if (mergeBase.status !== 0) report(name, [`check:docs: --base ${ref}: no merge base with HEAD`]);
+  const sha = mergeBase.stdout.trim();
+  const dir = join(mkdtempSync(join(tmpdir(), "check-docs-base-")), "base");
+  const added = git("worktree", "add", "-q", "--detach", dir, sha);
+  if (added.status !== 0) report(name, [`check:docs: --base ${ref}: git worktree add failed: ${added.stderr.trim()}`]);
+  let run;
+  try {
+    run = spawnSync(process.execPath, [fileURLToPath(import.meta.url)], { cwd: dir, encoding: "utf8" });
+  } finally {
+    git("worktree", "remove", "--force", dir);
+    rmSync(dir, { recursive: true, force: true });
+  }
+  if (run.status !== 0 && run.status !== 1) report(name, [`check:docs: --base ${ref}: the check failed to run at ${sha.slice(0, 7)}: ${run.stderr.trim()}`]);
+  const key = (f) => {
+    const m = f.match(/^([^:\s]+)(?::\d+)?: (rule \d+)?/);
+    return m ? `${m[1]} ${m[2] ?? f.slice(m[0].length)}` : f;
+  };
+  // The last line is the summary, not a finding.
+  const old = new Set(run.stdout.trim().split(/\r?\n/).slice(0, -1).filter((l) => l.startsWith("FAIL ")).map((l) => key(l.slice(5))));
+  const fresh = findings.filter((f) => !old.has(key(f)));
+  notes.push(`--base ${ref}: ${findings.length - fresh.length} findings also fail at ${sha.slice(0, 7)} (by file and rule); only new ones count`);
+  report(`${name} new since ${ref}`, fresh, notes);
+}
+report(name, findings, notes);

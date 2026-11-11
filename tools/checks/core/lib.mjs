@@ -18,6 +18,7 @@ export const DEFAULTS = {
   intentFeatures: {}, // module → folders under features; an unlisted module uses <module>
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
+  docsTier: ["docs/**", "**/*.md", ".claude/**/*.md", "package.json"], // changed.mjs; package.json = a "checks"-only change
 };
 
 export const root = process.cwd();
