@@ -116,6 +116,9 @@
         "packages/core/src/db/tests/health-core-introspection.test.ts",
         "packages/core/src/db/tests/health-nutrition-introspection.test.ts",
         "packages/core/src/db/tests/health-training-introspection.test.ts"
+      ],
+      "learning": [
+        "packages/core/src/services/learning-education"
       ]
     },
     "intentFeatures": {
