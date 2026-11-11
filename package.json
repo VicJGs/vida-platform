@@ -111,6 +111,11 @@
         "packages/core/src/services/knowledge",
         "packages/core/src/services/flashcards",
         "packages/core/src/foundation/review"
+      ],
+      "health": [
+        "packages/core/src/db/tests/health-core-introspection.test.ts",
+        "packages/core/src/db/tests/health-nutrition-introspection.test.ts",
+        "packages/core/src/db/tests/health-training-introspection.test.ts"
       ]
     },
     "intentFeatures": {
