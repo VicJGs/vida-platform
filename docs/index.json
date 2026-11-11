@@ -2576,6 +2576,903 @@
       "path": "docs/modules/habits/intent/HB-9.md"
     },
     {
+      "id": "HC-1",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every tracked attribute is one metric of kind body-measure, performance-capacity, test-result or biomarker, with a unit, a direction (higher or lower is better), a category and an optional side (left, right or bilateral); the biomarker kind ships an editable starter clinical panel, and there are no separate body, performance or test systems.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 138,
+      "path": "docs/modules/health/intent/HC-1.md"
+    },
+    {
+      "id": "HC-10",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "All Health data is encrypted (most fields), and every external or model path (wearable sync, food database, barcode, photo analysis, plan or meal generation, prescription import) is opt-in, on-device-preferred and at the user's own risk, never a precondition of the manual Core.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/health/intent/HC-10.md"
+    },
+    {
+      "id": "HC-11",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Weights, lengths and energy are stored canonical (kg, cm, kcal) and shown in the units the user picks in Preferences.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/health/intent/HC-11.md"
+    },
+    {
+      "id": "HC-12",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Testing and recovery protocols are Knowledge objects of a protocol kind, referenced by id, never Health tables.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/health/intent/HC-12.md"
+    },
+    {
+      "id": "HC-13",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health composes Sessions, Knowledge, Notes and Pages, Spaces and Preferences and never rebuilds sessions, scheduling, tags, views or notes.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/health/intent/HC-13.md"
+    },
+    {
+      "id": "HC-14",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user has full sovereignty over their own body; Health records, advises and safety-nets, but never gatekeeps, prescribes, credentials or blocks, with a one-time explicit acknowledgment and the user always free to proceed.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/health/intent/HC-14.md"
+    },
+    {
+      "id": "HC-15",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Danger signals (overtraining, extreme or rapid weight change, an extreme caloric deficit, a concerning biomarker, an injury or pain pattern, a warning response) raise an advisory safety flag, surfaced in Health and as a notification, that says when medical attention is warranted; a flag is dismissible, logged and never blocking.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 131,
+      "path": "docs/modules/health/intent/HC-15.md"
+    },
+    {
+      "id": "HC-16",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health owns the medical profile (conditions, allergies, injuries, medications, supplements, prescriptions, clearances, contraindications) and exposes it to both pillars; injuries filter exercises, allergies filter foods, prescriptions inform targets, and every filter advises, so an excluded item is flagged with a reason, never removed.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 133,
+      "path": "docs/modules/health/intent/HC-16.md"
+    },
+    {
+      "id": "HC-17",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Medical data is the most sensitive class; every medical field is encrypted, imported doctor input is opt-in and on-device-preferred, and Vida never sends medical data in plaintext.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/health/intent/HC-17.md"
+    },
+    {
+      "id": "HC-18",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A prescription from a doctor, the community or the user may spawn an experiment to validate it on the user's own body; imported prescription content is untrusted input whose provenance travels into any model prompt, the outgoing slice is user-reviewed, and injected tool calls can't widen the scope.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/health/intent/HC-18.md"
+    },
+    {
+      "id": "HC-19",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health Domains contain Health Factors, a user-extensible monitoring hierarchy with a shipped starter set that groups metrics; a factor result is a metric value, never a separate store.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/health/intent/HC-19.md"
+    },
+    {
+      "id": "HC-2",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A metric value enters by direct measure, derived computation, a test protocol or an exam result, and carries its provenance source (manual, photo, wearable, derived, exam, import or a model) with an optional photo and life-context; the source is the value's provenance, distinct from a goal's binding mode, and wearable or import values arrive only through device-mediated ingestion under the user's grant.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 149,
+      "path": "docs/modules/health/intent/HC-2.md"
+    },
+    {
+      "id": "HC-20",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An exam (a blood panel, a checkup, imaging) is set up by the user with a schedule and reminders; each occurrence is a task of a Health exam type (an obligation when the schedule recurs) that reaches Today, the Calendar and reminders through Tasks, never a session, and Health extends it with the metrics it produces, so its results come back as metric values with the exam as their source.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 176,
+      "path": "docs/modules/health/intent/HC-20.md"
+    },
+    {
+      "id": "HC-21",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Derived metrics (basal metabolic rate, energy expenditure, lean mass, fat mass, one-rep max) are computed on the device from other metric values by a formula declared on the metric, never by a model or a server; a stored value is a cache and the source rows are the truth.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/health/intent/HC-21.md"
+    },
+    {
+      "id": "HC-22",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "External integrations are opt-in, bidirectional and intent-only for now; input from health platforms, wearables and open sources becomes metric values through device-mediated ingestion under the user's input grant, reconciled add-only, and output to medical systems is egress under the stricter guard (per-target consent, the union of consents, an audit, never sent automatically); neither is a precondition of the manual Core.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/health/intent/HC-22.md"
+    },
+    {
+      "id": "HC-23",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Biomarker ranges inform and flag, never diagnose, prescribe or block; they are soft context under autonomy with clarity, and biomarker data is the most sensitive class.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/health/intent/HC-23.md"
+    },
+    {
+      "id": "HC-24",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health's surfaces show every capability's terminal states (metric series, monitoring, exams, goals, roles, experiments, the profile, the medical profile, safety flags), and the Training, Nutrition and role surfaces are Spaces (tags and saved views), never a hand-built page per pillar.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/health/intent/HC-24.md"
+    },
+    {
+      "id": "HC-25",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health contributes its day to the journal (workouts done, meals and macros, calories burned and consumed, metrics logged), read live through its contribution.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/health/intent/HC-25.md"
+    },
+    {
+      "id": "HC-26",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health has its own journal blocks and capability blocks, a workout logger and a photo food logger among them; each reads Health live and writes only through Health's service, separate from its journal contribution.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/health/intent/HC-26.md"
+    },
+    {
+      "id": "HC-27",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health runs no due lane of its own; its due items ride their base entities, so an exam occurrence or a planned meal is due as a task and an assigned workout as a planned session, and they reach Today, the Calendar and reminders like any task or session, where the user's push toggles can gate a Health type.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 164,
+      "path": "docs/modules/health/intent/HC-27.md"
+    },
+    {
+      "id": "HC-28",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Health entity is a potential Gamification rule subject; Health exposes its events (a workout done, a record set, an exam logged, a flag raised) and its measures (streaks, adherence, goal progress) so a user's rule can reward or penalize them, including something that didn't happen.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/health/intent/HC-28.md"
+    },
+    {
+      "id": "HC-29",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health reads the user's subjective energy, mood and sleep from Check-ins live (Health owns the objective measures) and keeps no copy.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/health/intent/HC-29.md"
+    },
+    {
+      "id": "HC-3",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health has one goal system, and the goal is the pursuable; it carries a measurement kind and a binding mode in place of a goal type, and its progress is a nullable override that derives on read from its target metrics or role mastery over a short, medium or long horizon, never hand-typed for a measurable goal.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/health/intent/HC-3.md"
+    },
+    {
+      "id": "HC-30",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health's entity types register in the open taggable-type registry, so tags, links and pages reach every metric, goal, role, experiment, exam, medical entry, flag, food, meal, plan, exercise and workout; Health owns no tag table.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/health/intent/HC-30.md"
+    },
+    {
+      "id": "HC-31",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health serves a read provider, so its entities show in views, search and links like any other module's.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/health/intent/HC-31.md"
+    },
+    {
+      "id": "HC-32",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When the root composes Health, Health registers its own session sub_types and task types, its effect handlers, its measurement sources, its journal contribution and its read provider; nothing is wired centrally.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/health/intent/HC-32.md"
+    },
+    {
+      "id": "HC-33",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The starter biomarker panel, the starter domains and factors, and the curated physical-role library ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/health/intent/HC-33.md"
+    },
+    {
+      "id": "HC-34",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data model's record shows the Health tables migrations 027-029 built (twelve Core, six Nutrition, five Training, no foreign keys, deleted_at only where the floor marks it).",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/health/intent/HC-34.md"
+    },
+    {
+      "id": "HC-35",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Health module toggle and the dietary defaults are Preferences keys that Health reads.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/health/intent/HC-35.md"
+    },
+    {
+      "id": "HC-36",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health builds on other modules' entities instead of copying them; a workout is a session of a Health type, an exam occurrence and a planned meal are tasks of a Health type, each tracked Health's way with the fields and features the base entity lacks, and habits, routines and the other modules attach and link to Health entities (a supplement or medication habit, a routine's exercise step) as they do to any entity.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 197,
+      "path": "docs/modules/health/intent/HC-36.md"
+    },
+    {
+      "id": "HC-4",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A goal drives programming; in the Core the user builds the training and nutrition plans by hand toward the goal, and model generation or library and prescription import are opt-in layers whose rows carry their source.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/health/intent/HC-4.md"
+    },
+    {
+      "id": "HC-5",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Body-metric series and goal progress are measurement sources (body weight, body fat, one-rep max per lift); Purposes and derived-pull goals read them through the measurement read seam, never a table read, and an outage keeps the last-known value with a flag.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/health/intent/HC-5.md"
+    },
+    {
+      "id": "HC-6",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The energy loop is closed and dynamic; calories burned come from the user's chosen method (a formula from duration, intensity and body weight by default, a wearable, or manual entry), the nutrition intake target recomputes against each day's burn, volume is sets times reps times weight, cardio is duration times intensity, and calories are protein and carbs at 4 and fat at 9 per gram.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/health/intent/HC-6.md"
+    },
+    {
+      "id": "HC-7",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An experiment states a hypothesis, defines a control arm and a test arm, runs for a duration, is measured through Health metrics and subjective responses, and resolves to a winner and a key learning; hypotheses come from the user, community claims or a doctor's prescription.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/health/intent/HC-7.md"
+    },
+    {
+      "id": "HC-8",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Responses and resolved experiments accumulate into a derived response profile (how this body responds to a training type, a food or a timing), computed on read and never a base table, which a planning model may take as context.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/health/intent/HC-8.md"
+    },
+    {
+      "id": "HC-9",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A physical role is the trainable-capability unit (calisthenics, swimming, a martial art, triathlon); it owns objectives, a can-do definition and a mastery that derives as a weighted rollup over its linked exercises and goals, generates or links the exercises that build it, binds a Knowledge subject and a Skill, reads the medical profile to exclude or adjust exercises, and is authored by hand or by opt-in model or curated import.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 165,
+      "path": "docs/modules/health/intent/HC-9.md"
+    },
+    {
+      "id": "HN-1",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Ingredients hold atomic macros, a dish's macros are the sum of its ingredients, a meal's are the sum of its dishes, a day's total is the sum of its meals, and calories are protein and carbs at 4 and fat at 9 per gram; a dish never stores its macros as the truth.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/health/intent/HN-1.md"
+    },
+    {
+      "id": "HN-10",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Logged meals, macros and calories consumed reach the journal and the Core energy loop, adherence and goal progress reach Gamification, and meal reminders reach Notifications.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/health/intent/HN-10.md"
+    },
+    {
+      "id": "HN-11",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Allergies and intolerances from the medical profile filter foods and plans by their allergens, and conditions and prescriptions inform intake targets and the supplement protocol; filtering advises with a reason, never removes, and an imported prescription is a device-mediated ingest whose untrusted text carries provenance into any model prompt.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/health/intent/HN-11.md"
+    },
+    {
+      "id": "HN-12",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Ingredients and dishes carry a functional area (the eight body systems they serve, from digestive and gut to systemic resilience), so meals and plans can target a system; it is taggable, ships as an editable starter and is never hard-coded as truth.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/health/intent/HN-12.md"
+    },
+    {
+      "id": "HN-13",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Ingredients carry a whole-food type (leafy greens, cruciferous, roots, bioactive fruits, nuts and seeds, legumes, whole grains, animal proteins, spices, functional beverages) for grouping and filtering, as an editable starter.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/health/intent/HN-13.md"
+    },
+    {
+      "id": "HN-14",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A dish is documented data with an optional recipe page by default; only when the user turns on cooking tracking does a dish gain a learn-to-cook status as a Skill or Knowledge object.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/health/intent/HN-14.md"
+    },
+    {
+      "id": "HN-15",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every external, model and tag path is layered; the food database and barcode are a device-mediated public-reference whole-set import under the input grant, a fetch without the grant fails closed with a typed error, meal generation and photo analysis are scoped model calls that fall back to manual and never act as an agent, every model row is tagged as model-sourced, and every Nutrition entity tags through the universal tags, never an inline column.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 160,
+      "path": "docs/modules/health/intent/HN-15.md"
+    },
+    {
+      "id": "HN-16",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Nutrition's surfaces show their terminal states (empty libraries, a plan planning, active, on hold or completed, a day planned through modified, a meal planned through skipped or substituted, shopping needed through cancelled, a failed generation or photo falling back to manual).",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/health/intent/HN-16.md"
+    },
+    {
+      "id": "HN-17",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The food-composition database and the functional-area and whole-food-type starters ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy, and a barcode looks up that copy.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/health/intent/HN-17.md"
+    },
+    {
+      "id": "HN-2",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A planned meal is a task of a Health meal type, never a session; it reaches Today, the Calendar and reminders through Tasks, and Nutrition extends it with its dishes, macros, cost, satisfaction, photo and provenance.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/health/intent/HN-2.md"
+    },
+    {
+      "id": "HN-3",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The nutritional plan derives a calorie and macro target from the user's Health goals and recomputes it against each day's burn (a training day means eating more); a stored target is a cache.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/health/intent/HN-3.md"
+    },
+    {
+      "id": "HN-4",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A nutrition goal phase (fat loss, muscle gain, recomposition, event prep) is a Core Health goal; Nutrition references it and owns no parallel goal system.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/health/intent/HN-4.md"
+    },
+    {
+      "id": "HN-5",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Meal-timing, portion and food-choice tests and food responses are the Core adaptation engine's experiments and responses for the nutrition pillar.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/health/intent/HN-5.md"
+    },
+    {
+      "id": "HN-6",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A plan or a day's meal plan is built by hand, by an opt-in model call, or by import (a doctor's prescription included, then validated by an experiment), and the row carries its manual, model or import source; the manual path is always enough.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/health/intent/HN-6.md"
+    },
+    {
+      "id": "HN-7",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Shopping items and meal costs, in integer cents, bridge to Finance's budget, and the shopping list derives from the day's or period's meal plan.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/health/intent/HN-7.md"
+    },
+    {
+      "id": "HN-8",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Meals and responses carry a life-context (normal, training, rest, travel, social, sick), so intake and analysis are schedule- and travel-aware.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/health/intent/HN-8.md"
+    },
+    {
+      "id": "HN-9",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A meal may be logged by photo through an opt-in block whose photo-to-macros inference is a model call, on-device-preferred, with the photo's provenance carried into the prompt and the row tagged as model-sourced; the food database behind the libraries is a whole-set public-reference import under the user's input grant, and manual entry is always there when the photo fails.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 137,
+      "path": "docs/modules/health/intent/HN-9.md"
+    },
+    {
+      "id": "HT-1",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Training follows a five-layer spine, catalog then plan then template then instance then log; a plan references catalog exercises, a template composes them into a session shape, an instance is a performed session and the logs record the actual sets.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/health/intent/HT-1.md"
+    },
+    {
+      "id": "HT-10",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Testing and recovery protocols are Knowledge objects that a workout or a test references, never inlines.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/health/intent/HT-10.md"
+    },
+    {
+      "id": "HT-11",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completed workouts reach the journal and Gamification (streaks and records), scheduled workouts reach the Calendar and agenda, and burn reaches the Core energy loop.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/health/intent/HT-11.md"
+    },
+    {
+      "id": "HT-12",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Injuries and contraindications from the medical profile filter the exercise catalog and plans by each exercise's risk level, and overtraining signals raise a Core safety flag; an excluded exercise is flagged with a reason, never removed.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/health/intent/HT-12.md"
+    },
+    {
+      "id": "HT-13",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When a physical role generates its exercises or plan, it filters through the medical profile; the manual builder is the Core path, and model generation and curated role-library import are opt-in.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/health/intent/HT-13.md"
+    },
+    {
+      "id": "HT-14",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health ships the workout sub_type and its physical roles' sub_types fully configured and registers them with Sessions; every workout is a session the user can name and type, attached to its plan or template and extended with its sets, burn and recovery, so a Routines exercise step and the agenda drive it.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/health/intent/HT-14.md"
+    },
+    {
+      "id": "HT-15",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The exercise library (with form cues and risk levels) and shipped programs (plans and workout templates) ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; shipped programs follow save-as-template and create-from-template.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 115,
+      "path": "docs/modules/health/intent/HT-15.md"
+    },
+    {
+      "id": "HT-16",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Training's surfaces show their terminal states (an empty catalog, a plan in draft, active, deload week or completed, a workout scheduled, in progress, paused, completed, skipped or modified, a set planned, logged or failed, a failed generation falling back to manual).",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/health/intent/HT-16.md"
+    },
+    {
+      "id": "HT-2",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A performed workout is a Sessions workout sub_type with a Training-owned extension; Training never reimplements the session runtime or scheduler.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/health/intent/HT-2.md"
+    },
+    {
+      "id": "HT-3",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An exercise plan projects onto days through the scheduling engine, which the Global Calendar renders; Training never duplicates scheduling.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/health/intent/HT-3.md"
+    },
+    {
+      "id": "HT-4",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each assigned exercise records planned and actual sets, reps and weight, form quality and perceived exertion; volume is sets times reps times weight, and cardio is duration times intensity.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/health/intent/HT-4.md"
+    },
+    {
+      "id": "HT-5",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Records, one-rep max, max reps and volume become Core metric values (performance kind, derived source) per lift and per side, never Training-local figures.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/health/intent/HT-5.md"
+    },
+    {
+      "id": "HT-6",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A plan carries a progression model, a deload frequency and an energy-system focus, which govern how assigned load advances week to week toward its goals, and a coming deload can raise a reminder.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/health/intent/HT-6.md"
+    },
+    {
+      "id": "HT-7",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Training focus, workout type, movement pattern and exercise category are properties on one spine, never a table per modality.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/health/intent/HT-7.md"
+    },
+    {
+      "id": "HT-8",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A workout that serves a physical role uses that role's session sub_types (a class, sparring) and links its technique in Knowledge, generic strength work needs no role, and a role generates or links the exercises that build it.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/health/intent/HT-8.md"
+    },
+    {
+      "id": "HT-9",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A plan or template is built by hand, by an opt-in model call or by library import, and carries its source; the manual path is always enough.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/health/intent/HT-9.md"
+    },
+    {
       "id": "INTENT-books",
       "kind": "intent",
       "module": "books",
@@ -2639,6 +3536,19 @@
       ],
       "tokens": 131,
       "path": "docs/modules/habits/intent.md"
+    },
+    {
+      "id": "INTENT-health",
+      "kind": "intent",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of health: 69 rows, 0 tested, 0 partly tested, 69 intent only.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 241,
+      "path": "docs/modules/health/intent.md"
     },
     {
       "id": "INTENT-journals",
