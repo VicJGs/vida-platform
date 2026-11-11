@@ -89,10 +89,13 @@
   says: The twelve task layouts map onto the seven ADR-007 view layouts as layout, filter and grouping configs, and no task_views table exists.
   uses: [views]
   work: LIF-399
+# TK-21 reworded in LIF-349 run 29 (Spaces): a preset binds to a task type (TK-27), which Spaces groups (SPC-10,
+# TMP-4); the built preset binds to the kind, so the row is partly built.
 - id: TK-21
-  says: A task preset is a saved views config plus per-type defaults, bound to the task kind discriminator (standard or obligation); the preset never owns a discriminator of its own.
-  uses: [views, spaces]
+  says: A task preset is Spaces' tab over a task type (a saved views config plus per-type defaults), bound to the type Tasks defines (TK-27); the preset never owns a discriminator of its own.
+  uses: [views, spaces, TK-27, SPC-10, TMP-4]
   proof: [BR-TK-S8-11]
+  work: LIF-564
 - id: TK-22
   says: The user pins and reorders saved task views per Space, stored by Preferences as per-view nav placement and read by the Tasks view switcher.
   uses: [preferences, views]
@@ -115,3 +118,11 @@
   uses: [capabilities, notes, journals, JR-12, JR-20, TK-17, projects, PJ-13]
   open: On a journal page the block lists every top-level task, not the day's; the milestone filter is dropped (the list filter has no milestone field) and there is no deliverable filter; the block is an editor renderer, not a capability-registry entry.
   work: LIF-201
+# TK-27 (LIF-349 run 29, Spaces): the July Duties and Tasks intakes (recorded on LIF-566) make the task type
+# user-extensible (standard, obligation, duty and more, each with its own patterns, contexts and deliverables). Victor (2026-11-11):
+# the kind stays a behaviour axis, and the type is the grouping Spaces owns (SPC-10). Not built: TASK_KIND is the
+# fixed standard | obligation.
+- id: TK-27
+  says: Tasks owns a type registry beside the kind, holding shipped types, types modules register when composed (Health's exam and meal, Education's assessment and homework, Skills' assessment) and types the user creates through Spaces, each extended by its domain module keyed on the task.
+  uses: [spaces, SPC-10, TK-21, health, HC-36, learning, ED-31, skills, SK-17]
+  work: LIF-566
