@@ -1,0 +1,233 @@
+# Learning intent ledger: every intended, deferred or TBD Learning rule, keyed by its docs/features/learning ID.
+# Learning is one sub-context today, Education (ED, LIF-426); Books, Knowledge, Skills and Sessions left it as their
+# own modules (docs/features/learning/README.md). work = the issue that builds the rest. check:rules derives each
+# row's state.
+# Education's backend is built: mod-learning-education S1-S10 (6fa23297…37c372da, LIF-130) over migration 024 and
+# schema/learning.ts (group #12, 15 tables, 327b535f). The feature docs' "3 tables", "0 lines", "no service" and
+# "⚠ INTENDED (no schema)" lines are stale; the code is the truth. fe-learning-education (LIF-190) has no commits.
+# Proof cites docs/modules/learning-education/current-business-rules.md (BR-LE-S1-1…S10-6) and, for the schema,
+# docs/infrastructure/database-layer/current-business-rules.md (BR-ED-1…10).
+# Tests: services/learning-education/__tests__/service.test.ts. Test names carry ED-2 (two it() titles) and, in
+# describe() titles, ED-6, ED-7, ED-8, ED-10 and ED-11; ED-3, ED-4, ED-5, ED-12, ED-13 and ED-16 sit only in comments,
+# which prove nothing. No test name holds a BR-LE ID (they're all in comments), so every other built row reads intent
+# only. The database layer states unsliced BR-ED-1…10, so ED-n would match inside one in a scoped test name; none
+# names one today (latent, the LIF-505 item 1 pattern). No bare BR-n, BR-Sn-n or zero-padded ED-0n in the tests.
+# Measurement: grades, the grade average and progress are Education's, derived through the engine's normalize and
+# rollup (BR-LE-S7-4, S7-5, S8-6); Purposes and Gamification read them live and never copy (ED-28).
+# Base entities (Victor, 2026-11-11, HC-36): a class is a session (built), a study block is a session (ED-21), an
+# assessment and homework are tasks of an Education type linked to their subject and to Knowledge entities (ED-31,
+# LIF-555). Types wait for the Spaces run (RT-31). Datasets: ED-30.
+
+# Invariants (docs/features/learning/education/business-rules.md)
+# ED-1: the schema marks the [E] fields (schema/learning.ts); every repository passes them through at M1.0
+# (BR-LE-S1-7). The inline subject tags ED-1 names are retired (BR-ED-1).
+- id: ED-1
+  says: Education's names and free text (a subject's title, description, provider, instructor, url and metadata; a feed's url, name and last error; a synced event's summary, description, location and raw event; every hierarchy, grading, assessment and vault name or description) are encrypted client-side; enums, dates, scores, progress and counters stay plaintext.
+  uses: [encryption]
+  proof: [BR-LE-S1-7]
+  work: LIF-67
+# ED-2: course_type stays as a nullable subject modality (BR-LE-S2-3), and the formal or self-taught mode lives on the
+# program's parent. The identity's "not a certification authority" folds here: the OS records, it never credentials.
+- id: ED-2
+  says: Every program parents to an institution or a self-taught path, two separate tables, and must resolve on create; below the program, formal and self-taught study are structurally identical, and Vida records study without ever credentialing it.
+  proof: [BR-LE-S1-1, BR-LE-S1-2, BR-ED-6]
+# ED-3: reconciled at S2 (BR-LE-S2-1): an empty routing is allowed (A1, ED-14); a given ref must resolve. The degree
+# tier is a field on the subject (BR-ED-6).
+- id: ED-3
+  says: A subject routes up its chain (curriculum, an optional term, a degree tier); a given curriculum or term must resolve to a live, consistent chain or the create is a typed UnroutedSubjectError, skipped levels collapse, and a subject with no routing yet is allowed and organized later.
+  proof: [BR-LE-S1-5, BR-LE-S2-1, BR-ED-6]
+- id: ED-4
+  says: A class is a session of a subject, the class sub_type with its one-to-one extension, the base session owning time and lifecycle; assessments, grades, documents, homework and notes attach to the subject, never to a meeting, and a retake is a new subject in a new term.
+  uses: [sessions, SS-1]
+  proof: [BR-LE-S4-1, BR-LE-S4-2, BR-LE-S4-4, BR-LE-S4-5, BR-ED-7]
+# ED-5 is split (two owners): the single schedule and its source are Education's; document extraction is ED-36
+# (LIF-147), and the weekly pattern that generates class sessions is Sessions' planned blocks (ED-23, LIF-442).
+- id: ED-5
+  says: Each subject has one schedule, fed by exactly one of three sources (calendar feed sync, document extraction or manual shaping); the meetings and the weekly view derive from it and never read a feed directly.
+  uses: [sessions, integrations, ED-23, ED-36]
+  proof: [BR-LE-S4-3, BR-LE-S4-7]
+  work: LIF-442
+# ED-6: the add-only feed is built (S5). Live fetch is deny-safe (IcsUnavailableError) until the Integrations feature
+# brings it (LIF-147); the localhost product has no server, so the fetch is the device's. auto_create_sessions is
+# stored but spawns no class session at M1 (BR-LE-S5-2, S5-6). Folded here: an unmatched event surfaces for manual
+# match (BR-LE-S5-7), and an ingest needing server plaintext is refused.
+- id: ED-6
+  says: A calendar feed fetches on the device every sync interval as a user-added source under its external grant; events dedup by feed and uid and are ignored rather than deleted, unmatched events wait for a manual match, a failed fetch is kept in last error and never leaves a silently stale schedule, revoking a feed stops future fetches and keeps synced events, and the server never sees feed plaintext.
+  uses: [integrations, sessions, ED-4]
+  proof: [BR-LE-S5-1, BR-LE-S5-3, BR-LE-S5-4, BR-LE-S5-5, BR-LE-S5-6, BR-LE-S5-7, BR-ED-4]
+  open: Whether a revoked feed is skipped by the sync loop (the S5 forward note), and how a matched event becomes a class session.
+  work: LIF-147
+# ED-7: the builder, the weight rule, nearest-scope resolution and the derived grade are built (S6, S7). The scale
+# label and credit weights are ED-34 (LIF-553). Folded here: components summing to other than 100% are flagged, never
+# normalized (BR-LE-S6-2); a failed compute returns a flagged partial, never a wrong number (BR-LE-S7-8).
+- id: ED-7
+  says: A grading system (per institution, program or subject override) defines weighted components and a scale; a subject's grade and any term or curriculum average derive from assessments through the nearest system, components that don't sum to 100% are flagged and never normalized, and a partial result is flagged, never hand-set or fabricated.
+  uses: [measurement, ED-34]
+  proof: [BR-LE-S6-1, BR-LE-S6-2, BR-LE-S7-3, BR-LE-S7-4, BR-LE-S7-5, BR-LE-S7-8, BR-ED-8]
+  work: LIF-553
+# ED-8: built as a standalone table (S7). Under the base-entity model an assessment occurrence is a typed task with
+# this row as its extension (ED-31, LIF-555). Auto-record from a feed or a document is ED-6 / ED-36.
+- id: ED-8
+  says: An assessment (exam, quiz, test, presentation or work) belongs to a subject and carries its date, weight or points, modality and score; recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.
+  uses: [tasks, ED-31, ai]
+  proof: [BR-LE-S7-1, BR-LE-S7-2, BR-LE-S7-7]
+  work: LIF-555
+# ED-9: Education's read is deny-safe (BR-LE-S10-1); Tasks implements no listForEducation yet, which LIF-471's
+# "Learning gets the same read by its parent link" covers. Tasks keys the parent as course_id (TK-2).
+- id: ED-9
+  says: Homework is a task owned by Tasks, scoped to Education through its subject parent and read through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.
+  uses: [tasks, TK-2, TK-9, TK-13]
+  proof: [BR-LE-S10-1, BR-ED-10]
+  work: LIF-471
+# ED-10: built (S8). Manual progress and per-kind derivation are ED-35 (LIF-553).
+- id: ED-10
+  says: Subject and program progress lives in an Education-only measure, its kind and binding mode on the Projects axes but separate storage, a nullable override that derives on read (a subject from its grade, a program by rolling up its subjects), and unmeasured reads null, never zero.
+  uses: [measurement, projects, ED-35]
+  proof: [BR-LE-S8-1, BR-LE-S8-2, BR-LE-S8-3, BR-LE-S8-4, BR-LE-S8-5, BR-LE-S8-6, BR-LE-S8-8, BR-ED-2, BR-ED-3]
+  work: LIF-553
+# ED-11: the fork is built (S3). A program's default curriculum as a shipped base is the dataset row ED-30.
+# TemplateImmutableError is exported, never thrown: the base is untouched by construction (BR-LE-S3-2b).
+- id: ED-11
+  says: A curriculum is user-shaped and forkable; a fork deep-copies the live terms and subjects into a new tree with a lineage pointer, remaps their refs and resets progress, never writes the base, and deleting a fork leaves the base.
+  uses: [ED-30]
+  proof: [BR-LE-S3-1, BR-LE-S3-2, BR-LE-S3-2b, BR-LE-S3-3, BR-LE-S3-4, BR-LE-S3-5, BR-LE-S3-6, BR-LE-S3-8, BR-LE-S3-9]
+- id: ED-12
+  says: Terms are hierarchical time containers (year, semester, term) with an optional parent that must resolve when given, and they're optional.
+  proof: [BR-LE-S1-3]
+# ED-13: built (S9). The real attachment pipeline is a deny-safe port; with none, the file goes inline, raw at M1
+# (encryption is ED-1, LIF-67).
+- id: ED-13
+  says: Each subject has one vault holding its documents (inline when small, an attachment reference when large) and its notes together, and a write succeeds locally first.
+  uses: [notes, sync]
+  proof: [BR-LE-S9-1, BR-LE-S9-2, BR-LE-S9-3, BR-ED-9]
+- id: ED-14
+  says: From subject down to topic, Education's data is progressively fillable; pages render partial data gracefully and invite increments, and empty is never an error.
+  uses: [views, ED-17]
+  proof: [BR-LE-S2-1]
+  work: LIF-190
+- id: ED-15
+  says: Every personalizable Education view ships a sensible default so the user isn't lost personalizing instead of studying.
+  uses: [views]
+  work: LIF-190
+- id: ED-16
+  says: Every Education write succeeds locally first, and Education tags its programs, curricula and subjects through the shared entity tags, never an inline tags column.
+  uses: [spaces, sync]
+  proof: [BR-LE-S9-4, BR-LE-S9-5, BR-ED-1]
+
+# Proposed IDs, no ID in docs/features/learning today (approve in the PR)
+- id: ED-17
+  says: Below the subject, a subject holds modules and a module holds topics, the planning topics Knowledge objects link to and that assessments, homework and study sessions target; deleting a planning topic never deletes acquired knowledge.
+  uses: [knowledge, KN-2, KN-28, ED-31]
+  open: Whether a module is its own entity or a level of the topic tree.
+  work: LIF-553
+- id: ED-18
+  says: Education's surfaces show their terminal states (the programs dashboard, every hub tab, the curriculum, grading-system and schedule builders, calendar feed sync, assessment entry, the subject page and its vault), each with loading, empty, typed error and success.
+  uses: [views]
+  work: LIF-190
+# ED-19 folds the identity's views (H9), the route map, the state map and the flagged delta's immature views.
+- id: ED-19
+  says: Education has a programs dashboard (acing and lacking areas), a hub with a tab per entity and user-chosen view modes, a page per institution, program, curriculum (builder and template gallery), degree, term and subject, a page per assessment type, and a week view, a cross-subject assessments view and a grade report.
+  uses: [views, spaces, ED-15]
+  work: LIF-190
+- id: ED-20
+  says: The Subjects-or-Courses display name (visual only), Education's view defaults and the calendar feed sync interval are Preferences keys that Education reads.
+  uses: [preferences]
+  work: LIF-552
+# ED-21: activities are sessions (BK-35, PG-32, KN-22, HT-14). Sessions emits the completion signal (SS-10, LIF-443);
+# Education owns pace and reads sessions live.
+- id: ED-21
+  says: Studying a subject or topic is a study session the user can name and type, targeting the subject or topic; Education derives pace against the syllabus from completed study and class sessions, read live through Sessions, and never stores a copy.
+  uses: [sessions, SS-1, SS-10, knowledge, KN-10, ED-17]
+  work: LIF-553
+- id: ED-22
+  says: Education has no due lane of its own; assessments and homework are due as tasks on Tasks' lane, class meetings are sessions on Sessions' agenda, and their reminders follow the base entity's push toggle.
+  uses: [tasks, TK-18, sessions, SS-7, notifications, ED-31]
+  open: Which push toggle gates an assessment or homework reminder (subject maps to push_study, assessment has no entry; LIF-479).
+  work: LIF-555
+- id: ED-23
+  says: A subject's weekly class pattern is Sessions' planned blocks targeting the subject, and the scheduling engine turns them into class sessions; Education keeps no recurrence of its own.
+  uses: [sessions, SS-7, ED-4, ED-5]
+  open: Whether subject_schedules stays once the pattern is planned blocks, or records only the source.
+  work: LIF-442
+# ED-24: Education's half of BK-13 (LIF-505 item 8); BR-LE-S10-2 passes through with no subject filter.
+- id: ED-24
+  says: Education reads the books linked to a subject through Books' partition and their pace against the next class or assessment; it never reads every plan as if it were the subject's.
+  uses: [books, BK-12, BK-13]
+  proof: [BR-LE-S10-2]
+  work: LIF-552
+# ED-25: Education's half of KN-10. BR-LE-S10-3 passes its own subject id to getMasterySource, which takes a Knowledge
+# Subject object id (flag LIF-545).
+- id: ED-25
+  says: Education reads a subject's mastery from Knowledge through the Knowledge Subject linked to it, and an unlinked subject reads the deny-safe all-null mastery, never a throw.
+  uses: [knowledge, KN-2, KN-10, KN-11]
+  proof: [BR-LE-S10-3]
+  work: LIF-545
+# ED-26/27: the block model (JR-12, JR-20). The contribution is built (S10) and unregistered (the root composes no
+# Education). Its journal.ts still frames it as /summary (the LIF-489 item 10 pattern); the digest reads the UTC day.
+- id: ED-26
+  says: Education's journal contribution reports the day's class sessions and due assessments, live and read on demand, and the journal registers it once the root composes Education.
+  uses: [journals, JR-11, JR-12]
+  proof: [BR-LE-S10-4]
+  work: LIF-112
+- id: ED-27
+  says: Education's own journal blocks (today's classes, the assessments due, recent grades) are inline blocks the journal page holds and switches on, read live; the editor's classesBlock placeholder becomes the classes block.
+  uses: [journals, JR-20, notes, editor]
+  work: LIF-190
+# ED-28: read, never copy (the run-22 model). PG-39 (LIF-522) is Purposes' half; GM-36 (LIF-532) is Gamification's.
+- id: ED-28
+  says: Education exposes its subjects, grades, assessments and their components, and their events (an assessment recorded, a grade below a mark, homework not done by its date), as measurement sources and rule subjects that Purposes and Gamification read live; nothing copies Education's data.
+  uses: [measurement, purposes, PG-39, gamification, GM-36, effects]
+  proof: [BR-LE-S10-5]
+  work: LIF-552
+- id: ED-29
+  says: The data model's record shows the Education tables migration 024 built (fifteen tables, the class extension excluded from the entity types, no foreign keys, deleted_at on eleven).
+  proof: [BR-ED-5, BR-ED-6, BR-ED-10]
+  work: LIF-63
+- id: ED-30
+  says: Grading-scale presets, program and curriculum catalogs, an institution list and term and holiday calendars ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.
+  uses: [integrations, ED-7, ED-11, ED-12]
+  work: LIF-554
+# ED-31 (Victor, 2026-11-11): the HC-36 model. Homework and assessments relate to any kind of course (a subject) and
+# to many Knowledge entities.
+- id: ED-31
+  says: Education builds on other modules' entities instead of copying them; a class and a study block are sessions, an assessment and homework are tasks of an Education type extended with Education's fields, each linked to its subject and to the Knowledge entities it covers, and a term is a dated container, not a base entity.
+  uses: [sessions, SS-1, tasks, TK-2, TK-21, knowledge, KN-6, KN-28, spaces, RT-31]
+  open: Task and session types don't exist as user or module types yet; the Spaces run settles them first (RT-31), then this row and LIF-555 are revisited.
+  work: LIF-555
+# ED-32: SB-Q2, each module registers its own handlers when composed. Education owns no effect handler (it only emits).
+- id: ED-32
+  says: When the root composes Education, it passes its deps (sessions, the session registry, spaces, notes, tasks, books, knowledge, effects) and Education registers its class sub_type, its journal contribution, its measurement sources and its read provider; nothing is wired centrally.
+  uses: [sessions, spaces, notes, tasks, books, knowledge, effects, journals, views, ED-26, ED-28, ED-33]
+  work: LIF-450
+- id: ED-33
+  says: Education registers a read provider on the shared view registry, so the Tasks aggregator and any view resolve a subject; Tasks' course parent and Education's subject meet in one key.
+  uses: [views, tasks, TK-2, TK-9]
+  work: LIF-552
+# ED-34: BR-LE-S7-6 leaves the scale mapping undefined; BR-LE-S7-5 rolls up equal-weight (no credit hours). ADR-011 M4.
+- id: ED-34
+  says: A subject's grade reads on its system's scale (letter, 0-10, pass or fail, or the user's own), and the term and curriculum averages weight each subject by its credits through the engine's weighted rollup.
+  uses: [measurement, ED-7]
+  open: Where credits live (the subject, or the curriculum's link to it).
+  work: LIF-553
+# ED-35: no setter writes the override (BR-LE-S8-4), so manual reads null; derivation ignores the kind (BR-LE-S8-2).
+- id: ED-35
+  says: The user sets a manually measured subject's or program's progress, and a subject measured by deliverables, a goal or a count derives through the engine by its kind, so a subject with no grading system still measures.
+  uses: [measurement, ED-10]
+  work: LIF-553
+# ED-36: split from ED-5 (the second owner). ADR-014 X11, ADR-015 AI1, AI3, AI5, AI6.
+- id: ED-36
+  says: Document extraction (a syllabus to the schedule and assessments) is an opt-in scoped extract whose model call runs on the device or in the cloud as egress, bounds the untrusted document's provenance, marks its rows source ai, and is never an agent.
+  uses: [ai, integrations, ED-5, ED-8]
+  work: LIF-147
+
+# Consumers with no row here. Built and in their own ledgers: the class sub_type (SS-1), Tasks' course parent and its
+# aggregation (TK-2, TK-9; parent type still course), Books' subject junction (BK-13), Knowledge's mastery source (KN-10,
+# flag LIF-545). In their own ledgers, not built: Purposes' contributors (PG-39, LIF-522; Education's set is ED-28),
+# Purposes' reads and composition (PG-37, PG-31), the any-entity rule and the assessment signal (GM-36, GM-22), the
+# journal registry (JR-11), Tasks' course page read and parent delete (TK-12, TK-13, LIF-471), Sessions' completion
+# signal (SS-10, LIF-443) and agenda (SS-7), Knowledge's links, compound sets and topic-assessment link (KN-6, KN-11,
+# KN-28). Designed only: Flashcards decks per subject (through KN-11), Routines' study steps (RT, through sessions),
+# the Calendar's classes and assessments (they arrive as sessions and tasks, ED-22), an exported calendar feed (the
+# Integrations feature), Notifications' class and assessment reminders (ED-22). Skills' own assessment activities are
+# Skills', not Education's. Every Education entity is a potential Gamification rule subject (GM-36, ED-28); no module
+# is ruled out.

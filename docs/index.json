@@ -1102,6 +1102,480 @@
       "path": "docs/modules/gamification/intent/ECO-9.md"
     },
     {
+      "id": "ED-1",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education's names and free text (a subject's title, description, provider, instructor, url and metadata; a feed's url, name and last error; a synced event's summary, description, location and raw event; every hierarchy, grading, assessment and vault name or description) are encrypted client-side; enums, dates, scores, progress and counters stay plaintext.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 133,
+      "path": "docs/modules/learning/intent/ED-1.md"
+    },
+    {
+      "id": "ED-10",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Subject and program progress lives in an Education-only measure, its kind and binding mode on the Projects axes but separate storage, a nullable override that derives on read (a subject from its grade, a program by rolling up its subjects), and unmeasured reads null, never zero.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 168,
+      "path": "docs/modules/learning/intent/ED-10.md"
+    },
+    {
+      "id": "ED-11",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A curriculum is user-shaped and forkable; a fork deep-copies the live terms and subjects into a new tree with a lineage pointer, remaps their refs and resets progress, never writes the base, and deleting a fork leaves the base.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/learning/intent/ED-11.md"
+    },
+    {
+      "id": "ED-12",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Terms are hierarchical time containers (year, semester, term) with an optional parent that must resolve when given, and they're optional.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/learning/intent/ED-12.md"
+    },
+    {
+      "id": "ED-13",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each subject has one vault holding its documents (inline when small, an attachment reference when large) and its notes together, and a write succeeds locally first.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/learning/intent/ED-13.md"
+    },
+    {
+      "id": "ED-14",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "From subject down to topic, Education's data is progressively fillable; pages render partial data gracefully and invite increments, and empty is never an error.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/learning/intent/ED-14.md"
+    },
+    {
+      "id": "ED-15",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every personalizable Education view ships a sensible default so the user isn't lost personalizing instead of studying.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/learning/intent/ED-15.md"
+    },
+    {
+      "id": "ED-16",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Education write succeeds locally first, and Education tags its programs, curricula and subjects through the shared entity tags, never an inline tags column.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/learning/intent/ED-16.md"
+    },
+    {
+      "id": "ED-17",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Below the subject, a subject holds modules and a module holds topics, the planning topics Knowledge objects link to and that assessments, homework and study sessions target; deleting a planning topic never deletes acquired knowledge.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/learning/intent/ED-17.md"
+    },
+    {
+      "id": "ED-18",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education's surfaces show their terminal states (the programs dashboard, every hub tab, the curriculum, grading-system and schedule builders, calendar feed sync, assessment entry, the subject page and its vault), each with loading, empty, typed error and success.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/learning/intent/ED-18.md"
+    },
+    {
+      "id": "ED-19",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education has a programs dashboard (acing and lacking areas), a hub with a tab per entity and user-chosen view modes, a page per institution, program, curriculum (builder and template gallery), degree, term and subject, a page per assessment type, and a week view, a cross-subject assessments view and a grade report.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/learning/intent/ED-19.md"
+    },
+    {
+      "id": "ED-2",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every program parents to an institution or a self-taught path, two separate tables, and must resolve on create; below the program, formal and self-taught study are structurally identical, and Vida records study without ever credentialing it.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/learning/intent/ED-2.md"
+    },
+    {
+      "id": "ED-20",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Subjects-or-Courses display name (visual only), Education's view defaults and the calendar feed sync interval are Preferences keys that Education reads.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/learning/intent/ED-20.md"
+    },
+    {
+      "id": "ED-21",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Studying a subject or topic is a study session the user can name and type, targeting the subject or topic; Education derives pace against the syllabus from completed study and class sessions, read live through Sessions, and never stores a copy.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/learning/intent/ED-21.md"
+    },
+    {
+      "id": "ED-22",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education has no due lane of its own; assessments and homework are due as tasks on Tasks' lane, class meetings are sessions on Sessions' agenda, and their reminders follow the base entity's push toggle.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/learning/intent/ED-22.md"
+    },
+    {
+      "id": "ED-23",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A subject's weekly class pattern is Sessions' planned blocks targeting the subject, and the scheduling engine turns them into class sessions; Education keeps no recurrence of its own.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/learning/intent/ED-23.md"
+    },
+    {
+      "id": "ED-24",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education reads the books linked to a subject through Books' partition and their pace against the next class or assessment; it never reads every plan as if it were the subject's.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/learning/intent/ED-24.md"
+    },
+    {
+      "id": "ED-25",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education reads a subject's mastery from Knowledge through the Knowledge Subject linked to it, and an unlinked subject reads the deny-safe all-null mastery, never a throw.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/learning/intent/ED-25.md"
+    },
+    {
+      "id": "ED-26",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education's journal contribution reports the day's class sessions and due assessments, live and read on demand, and the journal registers it once the root composes Education.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/learning/intent/ED-26.md"
+    },
+    {
+      "id": "ED-27",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education's own journal blocks (today's classes, the assessments due, recent grades) are inline blocks the journal page holds and switches on, read live; the editor's classesBlock placeholder becomes the classes block.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/learning/intent/ED-27.md"
+    },
+    {
+      "id": "ED-28",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education exposes its subjects, grades, assessments and their components, and their events (an assessment recorded, a grade below a mark, homework not done by its date), as measurement sources and rule subjects that Purposes and Gamification read live; nothing copies Education's data.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/learning/intent/ED-28.md"
+    },
+    {
+      "id": "ED-29",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data model's record shows the Education tables migration 024 built (fifteen tables, the class extension excluded from the entity types, no foreign keys, deleted_at on eleven).",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/learning/intent/ED-29.md"
+    },
+    {
+      "id": "ED-3",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A subject routes up its chain (curriculum, an optional term, a degree tier); a given curriculum or term must resolve to a live, consistent chain or the create is a typed UnroutedSubjectError, skipped levels collapse, and a subject with no routing yet is allowed and organized later.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/learning/intent/ED-3.md"
+    },
+    {
+      "id": "ED-30",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Grading-scale presets, program and curriculum catalogs, an institution list and term and holiday calendars ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/learning/intent/ED-30.md"
+    },
+    {
+      "id": "ED-31",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education builds on other modules' entities instead of copying them; a class and a study block are sessions, an assessment and homework are tasks of an Education type extended with Education's fields, each linked to its subject and to the Knowledge entities it covers, and a term is a dated container, not a base entity.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 172,
+      "path": "docs/modules/learning/intent/ED-31.md"
+    },
+    {
+      "id": "ED-32",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When the root composes Education, it passes its deps (sessions, the session registry, spaces, notes, tasks, books, knowledge, effects) and Education registers its class sub_type, its journal contribution, its measurement sources and its read provider; nothing is wired centrally.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/learning/intent/ED-32.md"
+    },
+    {
+      "id": "ED-33",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Education registers a read provider on the shared view registry, so the Tasks aggregator and any view resolve a subject; Tasks' course parent and Education's subject meet in one key.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/learning/intent/ED-33.md"
+    },
+    {
+      "id": "ED-34",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A subject's grade reads on its system's scale (letter, 0-10, pass or fail, or the user's own), and the term and curriculum averages weight each subject by its credits through the engine's weighted rollup.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/learning/intent/ED-34.md"
+    },
+    {
+      "id": "ED-35",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user sets a manually measured subject's or program's progress, and a subject measured by deliverables, a goal or a count derives through the engine by its kind, so a subject with no grading system still measures.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/learning/intent/ED-35.md"
+    },
+    {
+      "id": "ED-36",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Document extraction (a syllabus to the schedule and assessments) is an opt-in scoped extract whose model call runs on the device or in the cloud as egress, bounds the untrusted document's provenance, marks its rows source ai, and is never an agent.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/learning/intent/ED-36.md"
+    },
+    {
+      "id": "ED-4",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A class is a session of a subject, the class sub_type with its one-to-one extension, the base session owning time and lifecycle; assessments, grades, documents, homework and notes attach to the subject, never to a meeting, and a retake is a new subject in a new term.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 129,
+      "path": "docs/modules/learning/intent/ED-4.md"
+    },
+    {
+      "id": "ED-5",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each subject has one schedule, fed by exactly one of three sources (calendar feed sync, document extraction or manual shaping); the meetings and the weekly view derive from it and never read a feed directly.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/learning/intent/ED-5.md"
+    },
+    {
+      "id": "ED-6",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A calendar feed fetches on the device every sync interval as a user-added source under its external grant; events dedup by feed and uid and are ignored rather than deleted, unmatched events wait for a manual match, a failed fetch is kept in last error and never leaves a silently stale schedule, revoking a feed stops future fetches and keeps synced events, and the server never sees feed plaintext.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 220,
+      "path": "docs/modules/learning/intent/ED-6.md"
+    },
+    {
+      "id": "ED-7",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A grading system (per institution, program or subject override) defines weighted components and a scale; a subject's grade and any term or curriculum average derive from assessments through the nearest system, components that don't sum to 100% are flagged and never normalized, and a partial result is flagged, never hand-set or fabricated.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 170,
+      "path": "docs/modules/learning/intent/ED-7.md"
+    },
+    {
+      "id": "ED-8",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An assessment (exam, quiz, test, presentation or work) belongs to a subject and carries its date, weight or points, modality and score; recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml",
+        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/learning/intent/ED-8.md"
+    },
+    {
+      "id": "ED-9",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Homework is a task owned by Tasks, scoped to Education through its subject parent and read through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/learning/intent/ED-9.md"
+    },
+    {
       "id": "FC-1",
       "kind": "intent-row",
       "module": "knowledge",
@@ -3575,6 +4049,19 @@
       ],
       "tokens": 198,
       "path": "docs/modules/knowledge/intent.md"
+    },
+    {
+      "id": "INTENT-learning",
+      "kind": "intent",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of learning: 36 rows, 2 tested, 4 partly tested, 30 intent only.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 148,
+      "path": "docs/modules/learning/intent.md"
     },
     {
       "id": "INTENT-notes",
