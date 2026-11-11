@@ -120,8 +120,10 @@
   uses: [spaces, notes, habits, health, finance, purposes, projects, books, learning, knowledge, sessions, tasks, KN-6, BK-29, HC-9, SK-5]
   proof: [BR-SK-5]
   work: LIF-562
+# SK-16 (Victor, 2026-11-11): Skills uses Health as an integration, as it uses the other modules; the engine stays
+# Health's (HC-7, HC-8).
 - id: SK-16
-  says: A dev-log is the reflection on a practice session (how it felt, what worked, what to improve, the next plan, key insights) through the adaptation engine Skills shares with Health, so a skill can run experiments on the user's own learning; it reads the session's date and length instead of storing them.
+  says: A dev-log is the reflection on a practice session (how it felt, what worked, what to improve, the next plan, key insights), and Skills uses Health's adaptation engine as an integration, as it uses the other modules, so a skill can run experiments on the user's own learning; it reads the session's date and length instead of storing them.
   uses: [sessions, health, HC-7, HC-8, SK-7, SK-11]
   work: LIF-558
 # SK-17 (Victor, 2026-11-11): the HC-36 model. skill_actions fits (it extends sessions) but stores scheduled_at and
