@@ -1422,11 +1422,11 @@
       "module": "learning",
       "status": "active",
       "supersedes": [],
-      "summary": "Education builds on other modules' entities instead of copying them; a class and a study block are sessions, an assessment and homework are tasks of an Education type extended with Education's fields, each linked to its subject and to the Knowledge entities it covers, and a term is a dated container, not a base entity.",
+      "summary": "Education builds on other modules' entities instead of copying them; a class and a study block are sessions, a term is a dated container, and an assessment and homework are tasks of an Education type extended with Education's fields, each anchored in the hierarchy the syllabus and the program's setup define (its subject and the module or topic it covers) and linked to the Knowledge entities the user studies for it; being tasks gives them a due date and completion, and Education adds what tasks lack, such as preparation (ED-37).",
       "anchors": [
         "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 172,
+      "tokens": 229,
       "path": "docs/modules/learning/intent/ED-31.md"
     },
     {
@@ -1495,6 +1495,19 @@
       "path": "docs/modules/learning/intent/ED-36.md"
     },
     {
+      "id": "ED-37",
+      "kind": "intent-row",
+      "module": "learning",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user prepares inside Learning following the hierarchy; preparation (study sessions they schedule, reminders, and sessions scheduled automatically over a timeframe before a due or meeting date) is set on a program and passed down to its courses, classes, assessments, homework and the Knowledge structure tied to them, and any entity below can override it; each session targets the item and the subject, module, topic and Knowledge entities it covers.",
+      "anchors": [
+        "docs/modules/learning/intent.yaml"
+      ],
+      "tokens": 212,
+      "path": "docs/modules/learning/intent/ED-37.md"
+    },
+    {
       "id": "ED-4",
       "kind": "intent-row",
       "module": "learning",
@@ -1554,12 +1567,12 @@
       "module": "learning",
       "status": "active",
       "supersedes": [],
-      "summary": "An assessment (exam, quiz, test, presentation or work) belongs to a subject and carries its date, weight or points, modality and score; recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.",
+      "summary": "An assessment (exam, quiz, test, presentation or work) sits in the Learning hierarchy where the syllabus and the program's setup place it, under its subject and the module or topic it covers, never free of its parent; it carries its date, weight or points, modality and score, recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.",
       "anchors": [
         "docs/modules/learning/intent.yaml",
         "packages/core/src/services/learning-education/__tests__/service.test.ts"
       ],
-      "tokens": 128,
+      "tokens": 166,
       "path": "docs/modules/learning/intent/ED-8.md"
     },
     {
@@ -1568,11 +1581,11 @@
       "module": "learning",
       "status": "active",
       "supersedes": [],
-      "summary": "Homework is a task owned by Tasks, scoped to Education through its subject parent and read through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.",
+      "summary": "Homework is a task owned by Tasks that sits in the Learning hierarchy where the syllabus and the program's setup place it, under its subject and the module or topic it covers, never free of its parent, and Education reads it through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.",
       "anchors": [
         "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 101,
+      "tokens": 140,
       "path": "docs/modules/learning/intent/ED-9.md"
     },
     {
@@ -4056,11 +4069,11 @@
       "module": "learning",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of learning: 36 rows, 2 tested, 4 partly tested, 30 intent only.",
+      "summary": "Intended rules of learning: 37 rows, 2 tested, 4 partly tested, 31 intent only.",
       "anchors": [
         "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 148,
+      "tokens": 149,
       "path": "docs/modules/learning/intent.md"
     },
     {

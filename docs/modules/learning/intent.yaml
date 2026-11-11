@@ -68,15 +68,15 @@
 # ED-8: built as a standalone table (S7). Under the base-entity model an assessment occurrence is a typed task with
 # this row as its extension (ED-31, LIF-555). Auto-record from a feed or a document is ED-6 / ED-36.
 - id: ED-8
-  says: An assessment (exam, quiz, test, presentation or work) belongs to a subject and carries its date, weight or points, modality and score; recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.
-  uses: [tasks, ED-31, ai]
+  says: An assessment (exam, quiz, test, presentation or work) sits in the Learning hierarchy where the syllabus and the program's setup place it, under its subject and the module or topic it covers, never free of its parent; it carries its date, weight or points, modality and score, recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.
+  uses: [tasks, ED-17, ED-31, ED-37, ai]
   proof: [BR-LE-S7-1, BR-LE-S7-2, BR-LE-S7-7]
   work: LIF-555
 # ED-9: Education's read is deny-safe (BR-LE-S10-1); Tasks implements no listForEducation yet, which LIF-471's
 # "Learning gets the same read by its parent link" covers. Tasks keys the parent as course_id (TK-2).
 - id: ED-9
-  says: Homework is a task owned by Tasks, scoped to Education through its subject parent and read through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.
-  uses: [tasks, TK-2, TK-9, TK-13]
+  says: Homework is a task owned by Tasks that sits in the Learning hierarchy where the syllabus and the program's setup place it, under its subject and the module or topic it covers, never free of its parent, and Education reads it through the Tasks-to-Education read; Education never keeps a homework table or reads the tasks table.
+  uses: [tasks, TK-2, TK-9, TK-13, ED-17, ED-31, ED-37]
   proof: [BR-LE-S10-1, BR-ED-10]
   work: LIF-471
 # ED-10: built (S8). Manual progress and per-kind derivation are ED-35 (LIF-553).
@@ -187,11 +187,12 @@
   says: Grading-scale presets, program and curriculum catalogs, an institution list and term and holiday calendars ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.
   uses: [integrations, ED-7, ED-11, ED-12]
   work: LIF-554
-# ED-31 (Victor, 2026-11-11): the HC-36 model. Homework and assessments relate to any kind of course (a subject) and
-# to many Knowledge entities.
+# ED-31 (Victor, 2026-11-11, PR #305 review): the HC-36 model. Homework and assessments follow the hierarchy the
+# syllabus and the program's setup define, never hanging free of their parent, and link to Knowledge because the user
+# studies for them. assessments.subject_id is required today; modules and topics don't exist yet (ED-17).
 - id: ED-31
-  says: Education builds on other modules' entities instead of copying them; a class and a study block are sessions, an assessment and homework are tasks of an Education type extended with Education's fields, each linked to its subject and to the Knowledge entities it covers, and a term is a dated container, not a base entity.
-  uses: [sessions, SS-1, tasks, TK-2, TK-21, knowledge, KN-6, KN-28, spaces, RT-31]
+  says: Education builds on other modules' entities instead of copying them; a class and a study block are sessions, a term is a dated container, and an assessment and homework are tasks of an Education type extended with Education's fields, each anchored in the hierarchy the syllabus and the program's setup define (its subject and the module or topic it covers) and linked to the Knowledge entities the user studies for it; being tasks gives them a due date and completion, and Education adds what tasks lack, such as preparation (ED-37).
+  uses: [sessions, SS-1, tasks, TK-2, TK-21, knowledge, KN-6, KN-28, spaces, RT-31, ED-17, ED-37]
   open: Task and session types don't exist as user or module types yet; the Spaces run settles them first (RT-31), then this row and LIF-555 are revisited.
   work: LIF-555
 # ED-32: SB-Q2, each module registers its own handlers when composed. Education owns no effect handler (it only emits).
@@ -219,6 +220,16 @@
   says: Document extraction (a syllabus to the schedule and assessments) is an opt-in scoped extract whose model call runs on the device or in the cloud as egress, bounds the untrusted document's provenance, marks its rows source ai, and is never an agent.
   uses: [ai, integrations, ED-5, ED-8]
   work: LIF-147
+
+# ED-37 (Victor, 2026-11-11, PR #305 review): not new, spread across the docs. Sessions generates and owns the
+# sessions (G2, SS-7; purposes exam_prep, pre_class, post_class, SS-2; generatePlan over a scope and a window); the
+# Education compound set structures the Knowledge to prepare from (KN-2, KN-11). The effective setting resolves like
+# the nearest grading system (BR-LE-S7-3).
+- id: ED-37
+  says: The user prepares inside Learning following the hierarchy; preparation (study sessions they schedule, reminders, and sessions scheduled automatically over a timeframe before a due or meeting date) is set on a program and passed down to its courses, classes, assessments, homework and the Knowledge structure tied to them, and any entity below can override it; each session targets the item and the subject, module, topic and Knowledge entities it covers.
+  uses: [sessions, SS-2, SS-7, notifications, knowledge, KN-2, KN-11, ED-21, ED-22, ED-31]
+  open: Which settings a preparation carries (timeframe, session count, purpose and length, reminder lead), and how auto-scheduling meets the engine's placement pass (LIF-442).
+  work: LIF-557
 
 # Consumers with no row here. Built and in their own ledgers: the class sub_type (SS-1), Tasks' course parent and its
 # aggregation (TK-2, TK-9; parent type still course), Books' subject junction (BK-13), Knowledge's mastery source (KN-10,
