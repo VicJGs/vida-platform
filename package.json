@@ -119,6 +119,9 @@
       ],
       "learning": [
         "packages/core/src/services/learning-education"
+      ],
+      "skills": [
+        "packages/core/src/db/tests/skills-introspection.test.ts"
       ]
     },
     "intentFeatures": {

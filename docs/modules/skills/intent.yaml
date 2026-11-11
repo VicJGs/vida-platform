@@ -1,0 +1,218 @@
+# Skills intent ledger: every intended, deferred or TBD Skills rule, keyed by its docs/features/skills ID (SK,
+# LIF-426). work = the issue that builds the rest. check:rules derives each row's state.
+# The model (Victor, 2026-11-11, PR #306 review): Skills is a learning module focused on skills, things the user wants
+# to learn with Knowledge related to them, tied to their physical, mental, spiritual and other factors, each measured
+# its own way. A skill is a hub that uses and incorporates any entity in the OS as a component (habits, exercises,
+# meals, Finance items, purposes, projects, books, programs and courses, Knowledge, sessions, tasks), organized by a
+# Learning-shaped syllabus with Projects-shaped deliverables that the user plans and follows (SK-30, SK-31, SK-15). Its
+# life domains are many and are tags (SK-1). A canonical definition library is drift: a skill is composed by the user,
+# helped by templates and opt-in datasets (SK-3, SK-27). The feature docs and the archived intake (its 2026-07-14
+# "current intent" CI-1…CI-4) center the library and a global ~50+ skill graph; this ledger follows Victor's model.
+# Skills has no service and no web code beyond a nav entry (/skills, no page). What's built is the schema only:
+# migration 021 and schema/skills.ts, seven tables (74a4793a). No path under services/skills has ever existed in git,
+# and mod-skills (LIF-140) and fe-skills (LIF-200) have no commits. A built table with no service isn't a built
+# behavior, so a schema-backed row cites its database-layer rule as proof and keeps its work link (Victor, 2026-11-11,
+# the Health precedent): it reads intent only today and at most partly tested later. Proof cites
+# docs/infrastructure/database-layer/current-business-rules.md (BR-SK-1…7). Where the schema contradicts the model
+# (one domain column, no syllabus unit or deliverable, a library table), the row cites no proof and LIF-562 carries
+# the change.
+# Tests: the DDL-introspection test (db/tests/skills-introspection.test.ts) is the only Skills test, and its describe()
+# and it() titles name no rule ID, so every row reads intent only. No test anywhere names an SK ID, padded or not; the
+# only SK-n strings in code sit inside BR-SK-n in schema and migration comments. The database layer states unsliced
+# BR-SK-1…7, so SK-n would match inside one in a scoped test name; none names one today (latent, the LIF-505 item 1
+# pattern). No bare BR-n or BR-Sn-n in the Skills test. SK1…SK8 in the feature docs are the archived intake's gap
+# codes, with no hyphen, so they can't match an SK row.
+# Measurement: level, progress and mastery are Skills', derived on read from the syllabus and its components'
+# own measures (BR-SK-1, SK-4); Purposes and Gamification read them live and never copy (SK-10, SK-21).
+# Base entities (Victor, 2026-11-11): each activity creates its entity in the owning module, anchored to its place in
+# the syllabus: practice is a session, study a Knowledge study session, project a Projects project, assessment a task
+# of a Skills type, review the review engine (SK-6, SK-17). Preparation is set on the skill, passed down and
+# overridable (SK-18, the ED-37 model). Skills runs no due lane (SK-19). Types wait for the Spaces run (RT-31).
+
+# Invariants (docs/features/skills/business-rules.md)
+# SK-1: the docs' six skill domains are stale, and so is the schema's single NOT NULL domain column (BR-SK-6): a skill
+# has many life domains, as tags (Victor, 2026-11-11). No proof until LIF-562 reshapes the column.
+- id: SK-1
+  says: A skill is a goal-driven capability with why it matters and the mastery and date it targets; it spans many life domains (physical, mental, spiritual, career, finance and the others), each one a tag, so everything related to the skill is tracked down across Vida.
+  uses: [spaces, SK-15]
+  work: LIF-562
+- id: SK-2
+  says: Each skill defines its own ladder as data, ordered levels with completion criteria and success indicators, never one universal scale; ladder templates (belts, ranks, milestones, language levels) seed a ladder from a template or an opt-in dataset.
+  uses: [templates, SK-27, SK-30]
+  proof: [BR-SK-6]
+  work: LIF-140
+# SK-3 (Victor, 2026-11-11): the docs' "Definition Library" with locale variants is drift. The fill source "llm" is
+# built as "ai" (SKILL_FILL_SOURCE, provenance AI6). The community stays outside Vida.
+- id: SK-3
+  says: The user composes each skill; there is no canonical definition library; a skill, its syllabus and its components fill by hand, from a template (save as template, create from template), from an opt-in dataset, or with an opt-in model draft, and Vida never submits to a community, the user's own template export being the only bridge.
+  uses: [templates, integrations, ai, SK-14, SK-27]
+  open: Whether skill_definitions (migration 021) retires or becomes the datasets' local copy and the template store.
+  work: LIF-562
+# SK-4: the stored current_level and progress are caches; the override is flagged (M3).
+- id: SK-4
+  says: Mastery and progress derive on read from the syllabus, its level gates and deliverables, and each component's own measures read live (a habit's adherence, a workout's records, a book's progress, a course's grade, Knowledge mastery, practice consistency), weighted as the user set them in the Composer; an ability that can't be measured digitally is qualitative, self-rated or evidence-based, a manual override is flagged, and Vida never fakes a number.
+  uses: [measurement, MS-9, knowledge, KN-30, SK-5, SK-30, SK-31]
+  proof: [BR-SK-1]
+  work: LIF-140
+- id: SK-5
+  says: In the Skill Composer the user defines each skill, picks the entities from any module it incorporates and where each sits in the syllabus, what's tracked and how each counts toward progress and mastery (a measurement kind with derived-pull binding, referenced and never stored as a pursuable column), in a quick mode from a template or dataset or an advanced custom mode.
+  uses: [measurement, MS-15, SK-15, SK-30]
+  proof: [BR-SK-4]
+  open: Whether `components_tracked` (a plain list today) holds component kinds or the tracked entities themselves, which belong in entity links (LIF-562).
+  work: LIF-140
+# SK-6: activities are one kind of component; the five types and what each creates are Victor's (2026-11-11). Skills
+# references the created entity by id and never duplicates it.
+- id: SK-6
+  says: An activity's type sends its work to the owning module and anchors the entity there to its place in the syllabus; practice is a session, study a Knowledge study session on the skill's compound set, a project a Projects project, an assessment a task of a Skills type linked to Knowledge, and a review the review engine; any other entity joins the skill as a linked component, and Skills orchestrates like Routines.
+  uses: [sessions, knowledge, KN-11, projects, tasks, RV-4, SK-15, SK-17, SK-30]
+  proof: [BR-SK-6]
+  work: LIF-140
+# SK-7 split: practice (Sessions) stays here; the dev-log's reflection through Health's adaptation engine is SK-16.
+- id: SK-7
+  says: A practice action is a session of the practice sub_type with Skills' one-to-one extension, the base session owning time and lifecycle, and practice time derives from the sessions.
+  uses: [sessions, SS-1, SK-20]
+  proof: [BR-SK-2]
+  work: LIF-140
+# SK-8 (Victor, 2026-11-11): the personal graph plus a dataset; the docs' global canonical graph of ~50+ skills goes
+# with the library.
+- id: SK-8
+  says: The user's skill graph links their skills by requires, unlocks and synergy edges, and an opt-in dataset contributes a starter graph with shared foundational skills that the user incorporates; the graph recommends a path and detects synergies between goals.
+  uses: [SK-27]
+  proof: [BR-SK-6]
+  work: LIF-140
+- id: SK-9
+  says: An unpracticed skill decays through the review engine's curve, and its maintenance due item and reminder are advisory, configurable per skill and never nagging.
+  uses: [knowledge, RV-4, RV-8, notifications, SK-19]
+  work: LIF-140
+# SK-10 split: the Purposes target stays here; the Gamification feeder is SK-22. Purposes reads mastery live (the
+# run-22 model); nothing is pushed or copied to it.
+- id: SK-10
+  says: Target mastery is a Purposes target, the pursuable that carries the measurement kind and binding mode; Purposes reads a skill's mastery live through Skills and keeps no copy.
+  uses: [purposes, PG-37, measurement, MS-9, SK-21]
+  work: LIF-140
+- id: SK-11
+  says: Evidence (a project, a recording, a certificate) proves mastery through pages, attachments and deliverables, and a dev-log's key insights become Knowledge objects, created through Knowledge's service, in the user's principles store.
+  uses: [notes, projects, knowledge, SK-16, SK-31]
+  work: LIF-140
+# SK-12: the opt-in clause folds into SK-3 and SK-14, and the advisory clause into SK-9.
+- id: SK-12
+  says: Skills' names and free text (a skill's name, description and why it matters, a level's criteria, indicators, challenges and key skills, an activity's instructions, prerequisites and success criteria, a dev-log's reflections and insights, the measurement config) are encrypted client-side; enums, dates, ratings and counters stay plaintext.
+  uses: [encryption]
+  work: LIF-67
+- id: SK-13
+  says: Skills composes the other modules' entities instead of rebuilding them and adds only the syllabus, the deliverables, the Composer and the graph, never parallel machinery.
+  uses: [sessions, knowledge, projects, purposes, spaces, health, SK-15]
+  proof: [BR-SK-2, BR-SK-5]
+  work: LIF-140
+# SK-14: on the localhost product there's no server, so the device makes every fetch; the import is the
+# Integrations feature (LIF-426).
+- id: SK-14
+  says: Datasets and community templates arrive by a device-mediated public-reference whole-set fetch under the external-in grant, add-only, revocable and normalized per source, and the server never proxies it; a model draft is a scoped generate on the device or in the cloud as egress, never an agent, imported content carries its provenance into any prompt, and generated rows carry the ai source.
+  uses: [integrations, ai, SK-27]
+  work: LIF-560
+
+# Proposed (unnumbered items and the method's items; Victor approves in the PR)
+# SK-15 (Victor, 2026-11-11): a skill incorporates any entity. The registry half is built (BR-SK-5: skill,
+# skill_level, skill_activity, skill_dev_log, skill_dependency, skill_definition in ENTITY_TYPES; skill_action is
+# excluded, its rows tag the base session); the outbound half is not. skill_definition is left out of the row: it
+# follows SK-3's open line (LIF-562).
+- id: SK-15
+  says: A skill incorporates any entity in any module as a component (habits, exercises and workouts, meals, Finance items, purposes, projects, books to read, programs and courses to take, Knowledge, sessions, tasks), many per skill, through entity links and never limited by a resource type; every Skills entity (`skill`, `skill_level`, `skill_activity`, `skill_dev_log`, `skill_dependency`) is in turn a target of tags, notes, pages and links, a practice being reached through its base session, and Skills owns no tag or link table.
+  uses: [spaces, notes, habits, health, finance, purposes, projects, books, learning, knowledge, sessions, tasks, KN-6, BK-29, HC-9, SK-5]
+  proof: [BR-SK-5]
+  work: LIF-562
+# SK-16 (Victor, 2026-11-11): Skills uses Health as an integration, as it uses the other modules; the engine stays
+# Health's (HC-7, HC-8).
+- id: SK-16
+  says: A dev-log is the reflection on a practice session (how it felt, what worked, what to improve, the next plan, key insights), and Skills uses Health's adaptation engine as an integration, as it uses the other modules, so a skill can run experiments on the user's own learning; it reads the session's date and length instead of storing them.
+  uses: [sessions, health, HC-7, HC-8, SK-7, SK-11]
+  work: LIF-558
+# SK-17 (Victor, 2026-11-11): the HC-36 model. skill_actions fits (it extends sessions) but stores scheduled_at and
+# completed again, which BR-SK-2 leaves to the spine. skill_dev_logs is standalone with its own date and duration.
+- id: SK-17
+  says: Skills builds on other modules' entities instead of copying them; practice is a session of the practice sub_type, an assessment is a task of a Skills type, a study activity is a Knowledge study session and a project activity a Projects project, each anchored to its place in the syllabus and tracked Skills' way with what the base lacks, and habits, routines and the other modules attach and link to Skills entities.
+  uses: [sessions, SS-1, SS-5, tasks, TK-21, knowledge, projects, habits, routines, RT-3, spaces, RT-31, SK-6, SK-30]
+  open: Task, session and habit types don't exist as user or module types yet; the Spaces run settles them first (RT-31), then this row is revisited.
+  work: LIF-558
+# SK-18 (Victor, 2026-11-11): the ED-37 model, over every component, not only practice.
+- id: SK-18
+  says: The user prepares inside Skills following its syllabus; preparation (the practice cadence, reminders, and sessions scheduled automatically before a level's target, a deliverable's date or the target mastery date) is set on a skill and passed down to its levels, units, deliverables and components, and any entity below can override it; Sessions generates the sessions as planned blocks next to the other modules' entities.
+  uses: [sessions, SS-2, SS-7, notifications, knowledge, KN-11, projects, tasks, SK-6, SK-17, SK-30, SK-31]
+  open: Which settings a preparation carries (cadence, timeframe, session count and length, reminder lead), how the skill's practice frequency and an activity's frequency map onto it, and how auto-scheduling meets the engine's placement pass (LIF-442).
+  work: LIF-559
+- id: SK-19
+  says: Skills runs no due lane of its own; its due items ride their base entities, so practice is due as a planned session, an assessment as a task and decay maintenance as a review on Knowledge's lane, and they reach Today, the Calendar and reminders like any session, task or review.
+  uses: [sessions, SS-7, tasks, TK-18, knowledge, KN-19, notifications, preferences, SK-9, SK-17]
+  open: Whether a reminder for a Skills-typed session or task is gated by the study push toggle (the skill entity maps to it today) or by the base module's (LIF-479).
+  work: LIF-558
+- id: SK-20
+  says: Skills ships the practice sub_type fully configured and registers it with Sessions; every practice is a session the user can name and type, attached to its activity, so the agenda and a routine step drive it.
+  uses: [sessions, SS-1, SS-4, routines, RT-3, SK-7]
+  work: LIF-140
+- id: SK-21
+  says: Skills exposes its skills, levels, deliverables and activities and their events (a level reached, a deliverable done, a practice done or missed, a skill at risk of decay) and measures (level, progress, mastery, practice consistency) as measurement sources and rule subjects that Purposes and Gamification read live; nothing copies Skills' data.
+  uses: [measurement, MS-9, purposes, gamification, GM-36, SK-31]
+  work: LIF-140
+# SK-22: split from SK-10. award_xp is the points case of the grant-currency feeder (E2), with no payload (the
+# LIF-511 decision).
+- id: SK-22
+  says: A level-up, a mastery reached and a practice streak emit `award_xp` with no payload, and Gamification's handler applies the amount; Skills emits the signal and never writes points.
+  uses: [gamification, effects, GM-21, SK-21]
+  work: LIF-140
+- id: SK-23
+  says: Skills contributes its day to the journal (practice done, levels reached, deliverables done, skills at risk), read live through its contribution.
+  uses: [journals, JR-11]
+  work: LIF-112
+# SK-24: the intake's "Becoming" view (skills across domains, laddering to purpose) folds here.
+- id: SK-24
+  says: Skills has its own journal blocks and capability blocks, the syllabus view, the life skill tree over the graph and a view of the user's skills across their domains among them; each reads Skills live and writes only through Skills' service, separate from its journal contribution.
+  uses: [journals, JR-12, JR-20, capabilities, spaces, SK-8, SK-30]
+  work: LIF-200
+- id: SK-25
+  says: Skills serves a read provider for its entity types, so links, views, the graph and search resolve a skill, level, unit, deliverable, activity or dev-log through Skills.
+  uses: [views, spaces]
+  work: LIF-140
+- id: SK-26
+  says: When the root composes Skills, Skills registers its practice sub_type and task types, its measurement sources, its journal contribution and its read provider; nothing is wired centrally.
+  uses: [sessions, tasks, measurement, journals, views, SK-20, SK-21, SK-23, SK-25]
+  work: LIF-140
+# SK-27 (Victor, 2026-11-11): datasets help fill and connect a skill; they don't define it (no library).
+- id: SK-27
+  says: Skill syllabus templates (levels, units, deliverables and suggested components), a starter skill graph with shared foundational skills, ladder templates, their locale variants and curated resources ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy, filling and connecting the skills the user composes; the pattern is built even when declined.
+  uses: [integrations, templates, SK-2, SK-3, SK-8, SK-14, SK-30]
+  work: LIF-560
+- id: SK-28
+  says: The data model's record shows the Skills tables migration 021 built (seven tables, no foreign keys, the practice extension excluded from the entity types and without deleted_at, the resource junction retired, the older stored mastery default resolved out).
+  proof: [BR-SK-1, BR-SK-3, BR-SK-5]
+  work: LIF-63
+- id: SK-29
+  says: Skills' surfaces show every capability's terminal states (a skill planning, active, maintaining or completed, a Composer setup quick, advanced or incomplete, a fill by hand, from a template or dataset, drafting or failed, a level upcoming, active or complete, a deliverable open or done, a practice planned, in progress, complete or skipped, mastery with too little data, derived or overridden, a graph with no edges, a recommended path or a synergy, a decay flag none, at risk or dismissed).
+  uses: [views]
+  work: LIF-200
+# SK-30 and SK-31 (Victor, 2026-11-11, PR #306 review): the syllabus and its deliverables. migration 021 has only
+# skill_levels and skill_activities, with no unit level and no deliverable.
+- id: SK-30
+  says: A skill is organized by its own syllabus, shaped like Learning's hierarchy, the skill, its levels or stages and the units under them, with every component, activity and deliverable placed where the syllabus puts it and never free of its parent, so the user plans the skill and then follows it.
+  uses: [learning, ED-31, ED-37, SK-2, SK-15, SK-18, SK-31]
+  open: Which levels sit under a stage (units, modules, topics), and whether the parent_skill_id grouping is a level above the skill.
+  work: LIF-562
+- id: SK-31
+  says: Each stage of a syllabus has Skills' own deliverables, shaped like Projects', a required output that holds its own tasks and measures, where only what's nested in a deliverable counts toward it, and deliverables track the skill's progress; an assessment, a task of a Skills type (SK-17), can be one of a deliverable's tasks.
+  uses: [projects, PJ-13, PJ-14, PJ-34, PJ-35, measurement, SK-4, SK-17, SK-30]
+  open: Whether a stage needs at least one deliverable at create, as a Projects milestone does (PJ-35).
+  work: LIF-562
+
+# Consumers with no row here. Built and in their own ledgers: Knowledge's entity links to skills and the skills
+# compound set (KN-6, KN-11; buildCompoundSet('skills') is tested), Books leaving skill links to Skills (BK-16, BK-29),
+# the one-sub_type rule (SS-1; practice is in the shipped vocabulary but not the shipped registry, SK-20), the
+# taggable-type registry (SK-15). Built with no ledger row: Notifications maps the skill entity to the study push
+# toggle (PUSH_TOGGLE_BY_ENTITY; SK-19, LIF-479). In their own ledgers, not built: Health's physical role and cooking
+# links (HC-9, HN-14; skill_id and cooking_skill_id are schema only), the adaptation engine (HC-7, HC-8; SK-16),
+# Purposes' live reads (PG-37 lists no Skills dep yet; SK-10), the measurement sources (MS-9; SK-21), the any-entity
+# rule (GM-36; SK-21), the journal blocks (JR-12, JR-20; SK-24), Knowledge's review lane (KN-19; SK-9, SK-19),
+# Routines' step reference (RT-3; SK-20), Projects' deliverable model that SK-31 follows (PJ-13, PJ-14, PJ-34, PJ-35).
+# Designed only: Projects' project-type activities (SK-6), Gamification's Skills feeder (SK-22), Notifications' decay
+# nudges (SK-9), Sessions' future Skills provider (SK-18), the Spaces life skill tree block (SK-24), dataset and
+# template import and export (SK-14, the Integrations feature). As components (SK-15), every module's entities are
+# incorporated by Skills; habits, exercises, meals, Finance items, purposes, projects, books and courses are named by
+# Victor. Every Skills entity is a potential Gamification rule subject (GM-36, SK-21); no module is ruled out.
