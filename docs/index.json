@@ -463,6 +463,255 @@
       "path": "docs/modules/books/intent/BK-9.md"
     },
     {
+      "id": "CB-1",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One open capability registry holds every capability definition, shipped ones registered in code and the user's persisted and synced; Knowledge's study methods are a kind of it, not a parallel registry.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/spaces/intent/CB-1.md"
+    },
+    {
+      "id": "CB-10",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An untrusted capability touches only the entities it's attached to, writes only through module write interfaces with no double count, needs explicit consent for sensitive modules (Finance, Health), and is a strict subset of what shipped capabilities may do.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 123,
+      "path": "docs/modules/spaces/intent/CB-10.md"
+    },
+    {
+      "id": "CB-11",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "User capability code runs in a sandbox with no ambient authority (no direct database, network, file system or other capabilities' state), reaching Vida only through the mediated capability interface, and is marked untrusted and can't claim a shipped id.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/spaces/intent/CB-11.md"
+    },
+    {
+      "id": "CB-12",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Zero knowledge holds under authoring; media a capability captures is encrypted, there is no ambient network, external reach is declared, consented and mediated, and a sensitive read combined with egress needs both consents.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/spaces/intent/CB-12.md"
+    },
+    {
+      "id": "CB-13",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The envelope and its invariants are the same on every platform, a definition and its grant sync together, and a device that can't enforce the envelope refuses to run the capability.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/spaces/intent/CB-13.md"
+    },
+    {
+      "id": "CB-14",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A grant is never permanent; revoking it syncs and the capability stops on its next call.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/spaces/intent/CB-14.md"
+    },
+    {
+      "id": "CB-15",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The sandbox enforces processor time, memory and wall-clock budgets and terminates a runaway capability, so the local app never hangs.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/spaces/intent/CB-15.md"
+    },
+    {
+      "id": "CB-16",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Capabilities can be code and in-depth personalization engines (a video playlist, levels tied to a Skills hub), and the user connects them, with other modules' features, into new features inside a Space.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/spaces/intent/CB-16.md"
+    },
+    {
+      "id": "CB-17",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A standalone placement is a block_instances row on a Space surface, created, configured and removed through a placement service and rendered with its declared terminal states.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/spaces/intent/CB-17.md"
+    },
+    {
+      "id": "CB-18",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Community capability blocks and curated libraries come in as imports over the Integrations feature, never a marketplace, and run as untrusted.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/spaces/intent/CB-18.md"
+    },
+    {
+      "id": "CB-2",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A capability declares its render targets (inline, standalone or both), and the user picks each placement among them.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/spaces/intent/CB-2.md"
+    },
+    {
+      "id": "CB-3",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A capability is a plugin with six parts (identity and kind, config, entity bindings scoped to what it's attached to, render targets, emitted signals, and universal properties, so it's taggable, linkable and attachable).",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/spaces/intent/CB-3.md"
+    },
+    {
+      "id": "CB-4",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A capability writes only through the target module's documented write interface under the guarded-write contract, and a timed or measurable outcome drives a session, which owns the effects; a pure-render capability emits nothing.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/spaces/intent/CB-4.md"
+    },
+    {
+      "id": "CB-5",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A standalone placement on a Space is drawn from that Space's offered palette, an inline placement from the union of the page's Spaces and the editor base, and curating the palette gates adding without removing existing placements.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/spaces/intent/CB-5.md"
+    },
+    {
+      "id": "CB-6",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every capability declares loading, empty, error and success for each render target it supports.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/spaces/intent/CB-6.md"
+    },
+    {
+      "id": "CB-7",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Shipped capabilities are trusted and every other one, user-authored or arriving in an imported template, is untrusted; there is no promotion to trusted.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/spaces/intent/CB-7.md"
+    },
+    {
+      "id": "CB-8",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An untrusted capability declares what it needs, the user grants that envelope, and only the granted set is allowed; nothing is implicit and every unknown denies.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/spaces/intent/CB-8.md"
+    },
+    {
+      "id": "CB-9",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A capability whose declared envelope changes fails closed until the user grants it again, so privilege never grows silently.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/spaces/intent/CB-9.md"
+    },
+    {
       "id": "CK-1",
       "kind": "intent-row",
       "module": "check-ins",
@@ -4194,16 +4443,29 @@
       "path": "docs/modules/skills/intent.md"
     },
     {
+      "id": "INTENT-spaces",
+      "kind": "intent",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of spaces: 60 rows, 11 tested, 8 partly tested, 41 intent only.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 214,
+      "path": "docs/modules/spaces/intent.md"
+    },
+    {
       "id": "INTENT-tasks",
       "kind": "intent",
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of tasks: 26 rows, 4 tested, 1 partly tested, 21 intent only.",
+      "summary": "Intended rules of tasks: 27 rows, 4 tested, 1 partly tested, 22 intent only.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 131,
+      "tokens": 133,
       "path": "docs/modules/tasks/intent.md"
     },
     {
@@ -4874,6 +5136,123 @@
       ],
       "tokens": 117,
       "path": "docs/modules/knowledge/intent/KN-9.md"
+    },
+    {
+      "id": "LG-1",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Languages is a Space Vida ships, #languages with a sub-Space per language, composed of other modules' entities, its views, its blocks and a starter template, with no Languages tables.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/spaces/intent/LG-1.md"
+    },
+    {
+      "id": "LG-2",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A vocabulary word is a Knowledge object of a word kind, reviewed by the review engine with derived mastery, and the dictionary is a saved view over them.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/spaces/intent/LG-2.md"
+    },
+    {
+      "id": "LG-3",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each practice is a session of a practice type the Languages starter ships, which the user can name and type, attached to its language and what it practices.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/spaces/intent/LG-3.md"
+    },
+    {
+      "id": "LG-4",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Languages Space's day block shows what to do today for the language (its practice, reviews and immersion items), the Space form of a module's blocks.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/spaces/intent/LG-4.md"
+    },
+    {
+      "id": "LG-5",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The A-B-A pronunciation block records the user and compares the recording with a native one; recordings are encrypted attachments linked to the practice session they came from.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/spaces/intent/LG-5.md"
+    },
+    {
+      "id": "LG-6",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The immersion plan, the video playlists and the base-words progression are capability engines of the Languages Space, reading what they track from the owning modules (planned sessions, Knowledge and Books resources, Knowledge mastery).",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/spaces/intent/LG-6.md"
+    },
+    {
+      "id": "LG-7",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A language's levels (`CEFR`, per skill) run through a Skills hub, so proficiency is read live from the syllabus and its components, never copied.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/spaces/intent/LG-7.md"
+    },
+    {
+      "id": "LG-8",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Languages starter is Victor's method (Knowledge kinds, the practice session type, a goal, the views and blocks), shipped as a template, and the base-words list ships as an opt-in dataset.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/spaces/intent/LG-8.md"
+    },
+    {
+      "id": "LG-9",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Languages owns no journal contribution, due lane or streak of its own; they come from its sessions, Knowledge reviews and a practice habit.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/spaces/intent/LG-9.md"
     },
     {
       "id": "MS-1",
@@ -8657,6 +9036,225 @@
       "path": "docs/modules/skills/intent/SK-9.md"
     },
     {
+      "id": "SPC-1",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/spaces/intent/SPC-1.md"
+    },
+    {
+      "id": "SPC-10",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A type groups a module's entities so they're tracked together, nest their information and get their own capabilities; types are life groupings (finances, relationships, spiritual life, family, health and more) that serve every module, Spaces owns the grouping and the user creates types through it, the base module owns the type's discriminator and the domain module owns its extension.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 199,
+      "path": "docs/modules/spaces/intent/SPC-10.md"
+    },
+    {
+      "id": "SPC-11",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user sets how tags and links interact (unified or separate) in a surface, and the switch is persisted; the resolution service stays stateless.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/spaces/intent/SPC-11.md"
+    },
+    {
+      "id": "SPC-12",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Spaces serves its reads (list and get a Space, its views, its palette and its contents), so the shell scope, nav and every surface can address a Space; nav placement and per-Space visibility are Preferences'.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/spaces/intent/SPC-12.md"
+    },
+    {
+      "id": "SPC-13",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Space reads its contents and their progress live through each module's read providers and measures; it stores no copy of another module's data.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/spaces/intent/SPC-13.md"
+    },
+    {
+      "id": "SPC-14",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Space has its own blocks, the way modules do; its day block shows what to do today in that Space, drawn from its member modules' due items and blocks, and it works for every Space.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/spaces/intent/SPC-14.md"
+    },
+    {
+      "id": "SPC-15",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The composition root builds the whole Spaces module (the views engine and its shared provider registry, the association resolver, the templates service, the capability registry, enforcer and offered set) and each module registers its taggable types, read providers and template writers when it's composed.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/spaces/intent/SPC-15.md"
+    },
+    {
+      "id": "SPC-16",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "ADR-002 records the Spaces module's tables (tags, entity_tags, entity_links, spaces, space_enabled_blocks, views, templates, capability_definitions, block_instances, capability_grants) as built.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/spaces/intent/SPC-16.md"
+    },
+    {
+      "id": "SPC-2",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Taggable and linkable entity types come from one open registry; a module makes its entities taggable by registering a type, never by a schema edit, and an unregistered type is refused with a typed error.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/spaces/intent/SPC-2.md"
+    },
+    {
+      "id": "SPC-3",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tags nest through a parent tag, so a Space sub-groups (#languages contains #languages/spanish); a tag's name and description are user content, and a nesting cycle is refused.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/spaces/intent/SPC-3.md"
+    },
+    {
+      "id": "SPC-4",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tags (grouping) and links (typed reference) stay two tables drawing on the one registry, and Vida resolves an entity's associations into one unified space or two separate ones on the user's choice, a real behavioral resolution over untouched storage.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/spaces/intent/SPC-4.md"
+    },
+    {
+      "id": "SPC-5",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Space is a first-class spaces record (root tag, name, icon, default view, offered palette, parent Space), nav-addressable and nestable, not just a tag; its contents are everything carrying its root tag, and a nesting cycle is refused.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/spaces/intent/SPC-5.md"
+    },
+    {
+      "id": "SPC-6",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Space's offered palette is a stored set of capability definitions (space_enabled_blocks), authored configuration distinct from its placements, never a projection over them.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/spaces/intent/SPC-6.md"
+    },
+    {
+      "id": "SPC-7",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every Spaces-tier table syncs and soft-deletes, and tag, Space and link names, descriptions and contexts are encrypted client-side; in M1 encryption is a pass-through with an empty [E] set.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/spaces/intent/SPC-7.md"
+    },
+    {
+      "id": "SPC-8",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Spaces is the module where the user builds their own modules out of Vida's modules, bringing in other modules' entities, features and capabilities and connecting them into new features, then using them to personalize Vida; nothing a module owns is lost or copied along the way.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/spaces/intent/SPC-8.md"
+    },
+    {
+      "id": "SPC-9",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A Space makes something abstract real inside Vida, such as a language, family, work or church, by grouping the entities of every module that belong to it under its root tag.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/spaces/intent/SPC-9.md"
+    },
+    {
       "id": "SS-1",
       "kind": "intent-row",
       "module": "sessions",
@@ -9124,11 +9722,11 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "A task preset is a saved views config plus per-type defaults, bound to the task kind discriminator (standard or obligation); the preset never owns a discriminator of its own.",
+      "summary": "A task preset is Spaces' tab over a task type (a saved views config plus per-type defaults), bound to the type Tasks defines (TK-27); the preset never owns a discriminator of its own.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 96,
       "path": "docs/modules/tasks/intent/TK-21.md"
     },
     {
@@ -9195,6 +9793,19 @@
       ],
       "tokens": 199,
       "path": "docs/modules/tasks/intent/TK-26.md"
+    },
+    {
+      "id": "TK-27",
+      "kind": "intent-row",
+      "module": "tasks",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tasks owns a type registry beside the kind, holding shipped types, types modules register when composed (Health's exam and meal, Education's assessment and homework, Skills' assessment) and types the user creates through Spaces, each extended by its domain module keyed on the task.",
+      "anchors": [
+        "docs/modules/tasks/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/tasks/intent/TK-27.md"
     },
     {
       "id": "TK-3",
@@ -9290,6 +9901,230 @@
       ],
       "tokens": 131,
       "path": "docs/modules/tasks/intent/TK-9.md"
+    },
+    {
+      "id": "TMP-1",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A template is a portable seed bundle of a Space's root tag, seed entities, views, offered capabilities with their config and child Space structure, a document with no live foreign keys; shipped templates are bundled assets and the user's are rows in a light templates store with no edit in place.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/spaces/intent/TMP-1.md"
+    },
+    {
+      "id": "TMP-2",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Creating from a template forks it, deep-copying the bundle into fresh entities that carry no template id, so template and instance never affect each other.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/spaces/intent/TMP-2.md"
+    },
+    {
+      "id": "TMP-3",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Saving a Space as a template captures only authored structure and configuration, never accumulated runtime data (logs, completions, entries, live entity ids), and a capability config that can only point at accumulated data is not capturable.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/spaces/intent/TMP-3.md"
+    },
+    {
+      "id": "TMP-4",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A preset is a type's tab, lighter than a template, made of a saved view over the type's entities plus per-type screens, default fields and deliverables and an optional starter template, owned by Spaces and bound to a type the base module defines.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/spaces/intent/TMP-4.md"
+    },
+    {
+      "id": "TMP-5",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Creating from a template ends in-progress, success or partial-failure; a bundle that names a capability missing on the device seeds what it can and flags the rest.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/spaces/intent/TMP-5.md"
+    },
+    {
+      "id": "TMP-6",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user saves any Space as a template and creates a Space from one, through a writer each module registers for its entity types; an unregistered type is a partial failure.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/spaces/intent/TMP-6.md"
+    },
+    {
+      "id": "TMP-7",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Shipped templates and starter Spaces (the Languages starter, Health's training programs and the presets) come as opt-in datasets the user accepts or declines, read from a local copy.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/spaces/intent/TMP-7.md"
+    },
+    {
+      "id": "TMP-8",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Exporting and importing a template is the Integrations feature on the localhost product, which has no server; templates are Vida's only sharing bridge, and capability code arriving in an imported template is untrusted.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/spaces/intent/TMP-8.md"
+    },
+    {
+      "id": "VW-1",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A saved surface is a views row (filter × layout × grouping and sort), not a component; the view components are the renderers a view selects.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/spaces/intent/VW-1.md"
+    },
+    {
+      "id": "VW-2",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A view is global (no Space) or owned by one Space, a Space may own many views and its default view names the one that opens first, and cloning a view makes an independent copy for a Space or the global set, with no back-link.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/spaces/intent/VW-2.md"
+    },
+    {
+      "id": "VW-3",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A view's layout is one of list, table, board, gallery, calendar, graph or timeline; filter, grouping and sort are stored as documents, a group-by field a row lacks goes to an ungrouped bucket, and a layout missing a field degrades, never crashes.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/spaces/intent/VW-3.md"
+    },
+    {
+      "id": "VW-4",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A cross-module view fans out to each entity type's registered read provider and merges the results, never reading another module's tables; a type with no provider degrades to a note and an empty contribution.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/spaces/intent/VW-4.md"
+    },
+    {
+      "id": "VW-5",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A view's name and the user-literal values in its filter are encrypted client-side, every view declares loading, empty, error and success, and a provider error resolves to error, never a crash.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/spaces/intent/VW-5.md"
+    },
+    {
+      "id": "VW-6",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "listViews returns every live view in a stable order with no scoping on the primitive; a module scopes by its own identity rule, and pinning and ordering views in nav are Preferences', never a views column.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/spaces/intent/VW-6.md"
+    },
+    {
+      "id": "VW-7",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida ships a default set of views per entity type and per shipped Space, the user creates, edits and clones their own, and views help the user find their way around Vida.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/spaces/intent/VW-7.md"
+    },
+    {
+      "id": "VW-8",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A view's predicates follow one grammar (including a multi-tag intersection), each provider advertises the predicates it supports, and a predicate a provider doesn't support is ignored for that type, never silently dropping it, unless the view opts to exclude it.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/spaces/intent/VW-8.md"
+    },
+    {
+      "id": "VW-9",
+      "kind": "intent-row",
+      "module": "spaces",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each layout declares the entity fields it needs, and the task layouts map onto the seven layouts as layout, filter and grouping configs.",
+      "anchors": [
+        "docs/modules/spaces/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/spaces/intent/VW-9.md"
     }
   ]
 }

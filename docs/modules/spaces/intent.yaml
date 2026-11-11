@@ -1,0 +1,312 @@
+# Spaces intent ledger: every intended, deferred or TBD Spaces rule, in one module with five prefixes (LIF-426, Victor
+# 2026-11-11): Spaces' own rows (SPC), Views (VW), Templates (TMP), Capability blocks (CB) and Languages, the first
+# Space built this way (LG). work = the issue that builds the rest. check:rules derives each row's state.
+# The model (Victor, 2026-11-11, before the rows were written): Spaces is the module where the user builds their own
+# "modules" out of the OS's modules, using their features and connecting their capabilities into new features, then
+# uses them to personalize the OS. A Space is something abstract made real inside the OS: a language, family, work,
+# church. It groups entities from every module under its root tag and reads them live through each module's
+# providers; it stores no copy (the run-22 model). Types are Spaces' other grouping: a type groups a module's entities
+# (a life grouping such as finances, family, spiritual life or health, serving every module), nests their
+# information and gives them capabilities (SPC-10). The base module owns the type's discriminator (Tasks' task type
+# registry TK-27, Sessions' sub_type registry SS-4/SS-5), the domain module owns its extension keyed 1:1 on the base
+# row (workout_sessions, class_sessions), and Spaces owns the grouping: the preset tab, its views, capabilities and
+# defaults, and the place the user creates types (the July Duties, Tasks, Sessions and Routines intakes, recorded on
+# LIF-564: "Tasks provides the type + the data; Spaces owns the preset"). Behaviour axes
+# such as task kind (standard, obligation) and habit type (build, break) are not Spaces types. Views help the user
+# find their way around the OS. Capabilities can be code and in-depth personalization engines, and a Space has its
+# own blocks the way modules do (SPC-14).
+# Built (code and schema are the truth): the Spaces tier (AR-6 e2a170d6, LIF-77; migration 003): tags, entity_tags,
+# entity_links, spaces, space_enabled_blocks, views; the association resolver (2f5ece78, LIF-175); cloneView
+# (701eca8e, LIF-177) and listViews (c7eafa68, mod-tasks S8); the templates store (7d808552, LIF-176; migration 011);
+# the capability registry, block_instances and capability_grants (9a2c34f5, migration 005) and the enforcer and
+# offered set (f4937e96, LIF-169). No Space has any surface: there is no listSpaces or getSpace (LIF-220), and the
+# composition root builds only the taggable-type registry and SpacesService (SPC-15).
+# Proof cites the bare rule IDs of docs/core/spaces/current-business-rules.md (BR-1…BR-22) and
+# docs/core/capability/current-business-rules.md (BR-1…BR-17), at Victor's call (a): the same strings are also stated
+# by economy, measurement, effects, sessions-and-scheduling, notes, editor and backlinks, and checks.ruleId reads
+# each as one global ID. Inside this module the two sets collide too, since intentTests.spaces covers both test
+# folders: spaces.test.ts names BR-2, 3, 5, 10, 11, 12 in it() titles and BR-2, 3, 14, 15 in describe() titles,
+# association-resolver.test.ts BR-2 and BR-4, and capability.test.ts BR-2…6. So a capability row citing BR-10 or
+# BR-14 reads tested from a Spaces test, and SPC-6 (BR-6) from a capability test. Those reads are ambiguous; the
+# enforcer tests name INV-n and IR-n, never a BR ID. No test names an SPC, VW, TMP, CB or LG ID, and none of the five
+# prefixes matches anywhere in Vida, inside another ID included. No test was renamed.
+# Spaces has no features folder (LIF-426), so the archive guard applies from the start: a built row whose proof has
+# no test keeps a work link.
+# ADR-006 §3.6 (per-instance facet-mode memory, notes-rescope R2) is built in apps/web/src/entity (app_state
+# entity_mode keys) and belongs to the entity page, not to a Spaces rule; no row.
+
+# Spaces' own rows. SPC-1…SPC-7 are ADR-006's SP1…SP7 (the temporary labels, LIF-462), which current-business-rules
+# states as BR-1…BR-7.
+- id: SPC-1
+  says: A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.
+  uses: [notes]
+  proof: [BR-1, BR-14, BR-15]
+  work: LIF-570
+- id: SPC-2
+  says: Taggable and linkable entity types come from one open registry; a module makes its entities taggable by registering a type, never by a schema edit, and an unregistered type is refused with a typed error.
+  proof: [BR-2]
+- id: SPC-3
+  says: Tags nest through a parent tag, so a Space sub-groups (#languages contains #languages/spanish); a tag's name and description are user content, and a nesting cycle is refused.
+  proof: [BR-3]
+- id: SPC-4
+  says: Tags (grouping) and links (typed reference) stay two tables drawing on the one registry, and Vida resolves an entity's associations into one unified space or two separate ones on the user's choice, a real behavioral resolution over untouched storage.
+  uses: [notes, graph]
+  proof: [BR-4, BR-16, BR-17]
+  work: LIF-570
+- id: SPC-5
+  says: A Space is a first-class spaces record (root tag, name, icon, default view, offered palette, parent Space), nav-addressable and nestable, not just a tag; its contents are everything carrying its root tag, and a nesting cycle is refused.
+  proof: [BR-5]
+- id: SPC-6
+  says: A Space's offered palette is a stored set of capability definitions (space_enabled_blocks), authored configuration distinct from its placements, never a projection over them.
+  uses: [CB-5]
+  proof: [BR-6]
+# SPC-6: BR-6 reads tested from capability.test.ts's BR-6 (DuplicateCapabilityId), not from a Spaces test.
+- id: SPC-7
+  says: Every Spaces-tier table syncs and soft-deletes, and tag, Space and link names, descriptions and contexts are encrypted client-side; in M1 encryption is a pass-through with an empty [E] set.
+  uses: [sync, encryption]
+  proof: [BR-7, BR-13]
+  work: LIF-67
+
+# Proposed (unnumbered items and the method's items; Victor approves in the PR)
+# SPC-8 (Victor, 2026-11-11): the anchor row. ADR-006 frames Spaces as a foundation tier of primitives with Languages,
+# Duties and Bucket List as worked examples; Victor's model is a module where the user builds their own modules.
+- id: SPC-8
+  says: Spaces is the module where the user builds their own modules out of Vida's modules, bringing in other modules' entities, features and capabilities and connecting them into new features, then using them to personalize Vida; nothing a module owns is lost or copied along the way.
+  uses: [CB-16, VW-7, TMP-6, SPC-10, SPC-14]
+  work: LIF-563
+# SPC-9 (Victor, 2026-11-11): the name. The docs' examples (a Languages hub, a #before-i-die vision board, a Duties tab)
+# are kept as examples; Bucket List lives in Purposes' Dreams (migration 019) and Duties in Tasks' types (TK-27).
+- id: SPC-9
+  says: A Space makes something abstract real inside Vida, such as a language, family, work or church, by grouping the entities of every module that belong to it under its root tag.
+  uses: [SPC-1, SPC-5, purposes, tasks]
+  work: LIF-563
+- id: SPC-10
+  says: A type groups a module's entities so they're tracked together, nest their information and get their own capabilities; types are life groupings (finances, relationships, spiritual life, family, health and more) that serve every module, Spaces owns the grouping and the user creates types through it, the base module owns the type's discriminator and the domain module owns its extension.
+  uses: [tasks, TK-27, TK-21, sessions, SS-1, SS-4, SS-5, habits, routines, RT-31, health, HC-36, learning, ED-31, skills, SK-17, TMP-4]
+  open: Whether a type carries its own fields (the intakes' patterns, contexts and deliverables) and how a type maps to a push toggle (LIF-479).
+  work: LIF-564
+- id: SPC-11
+  says: The user sets how tags and links interact (unified or separate) in a surface, and the switch is persisted; the resolution service stays stateless.
+  uses: [SPC-4, preferences]
+  work: LIF-220
+- id: SPC-12
+  says: Spaces serves its reads (list and get a Space, its views, its palette and its contents), so the shell scope, nav and every surface can address a Space; nav placement and per-Space visibility are Preferences'.
+  uses: [preferences, views, shell]
+  work: LIF-220
+# SPC-13: the run-22 model. The Bucket List example's "derived progress per item" is the owning module's measure, read
+# live (Dreams in Purposes).
+- id: SPC-13
+  says: A Space reads its contents and their progress live through each module's read providers and measures; it stores no copy of another module's data.
+  uses: [views, VW-4, measurement, purposes]
+  work: LIF-563
+# SPC-14 (Victor, 2026-11-11): the Languages "daily wizard" generalized. Module blocks are each module's own (JR-12,
+# JR-20); a Space's blocks are the Space's.
+- id: SPC-14
+  says: A Space has its own blocks, the way modules do; its day block shows what to do today in that Space, drawn from its member modules' due items and blocks, and it works for every Space.
+  uses: [capabilities, CB-17, journals, JR-12, JR-20, sessions, SS-7, tasks, TK-18]
+  work: LIF-565
+- id: SPC-15
+  says: The composition root builds the whole Spaces module (the views engine and its shared provider registry, the association resolver, the templates service, the capability registry, enforcer and offered set) and each module registers its taggable types, read providers and template writers when it's composed.
+  uses: [views, templates, capabilities, sessions]
+  work: LIF-450
+- id: SPC-16
+  says: ADR-002 records the Spaces module's tables (tags, entity_tags, entity_links, spaces, space_enabled_blocks, views, templates, capability_definitions, block_instances, capability_grants) as built.
+  work: LIF-63
+
+# Views. VW-1…VW-5 are ADR-007's V1…V5, which current-business-rules states as BR-8…BR-12.
+- id: VW-1
+  says: A saved surface is a views row (filter × layout × grouping and sort), not a component; the view components are the renderers a view selects.
+  proof: [BR-8]
+  work: LIF-570
+- id: VW-2
+  says: A view is global (no Space) or owned by one Space, a Space may own many views and its default view names the one that opens first, and cloning a view makes an independent copy for a Space or the global set, with no back-link.
+  proof: [BR-9, BR-18]
+  work: LIF-570
+- id: VW-3
+  says: A view's layout is one of list, table, board, gallery, calendar, graph or timeline; filter, grouping and sort are stored as documents, a group-by field a row lacks goes to an ungrouped bucket, and a layout missing a field degrades, never crashes.
+  proof: [BR-10]
+- id: VW-4
+  says: A cross-module view fans out to each entity type's registered read provider and merges the results, never reading another module's tables; a type with no provider degrades to a note and an empty contribution.
+  uses: [SPC-15]
+  proof: [BR-11]
+- id: VW-5
+  says: A view's name and the user-literal values in its filter are encrypted client-side, every view declares loading, empty, error and success, and a provider error resolves to error, never a crash.
+  uses: [encryption]
+  proof: [BR-12]
+  work: LIF-67
+# Proposed
+- id: VW-6
+  says: listViews returns every live view in a stable order with no scoping on the primitive; a module scopes by its own identity rule, and pinning and ordering views in nav are Preferences', never a views column.
+  uses: [preferences, tasks, TK-22]
+  proof: [BR-22]
+  work: LIF-472
+# VW-7 (Victor, 2026-11-11): views help the user find their way around the OS.
+- id: VW-7
+  says: Vida ships a default set of views per entity type and per shipped Space, the user creates, edits and clones their own, and views help the user find their way around Vida.
+  uses: [SPC-12, notes, tasks]
+  work: LIF-567
+- id: VW-8
+  says: A view's predicates follow one grammar (including a multi-tag intersection), each provider advertises the predicates it supports, and a predicate a provider doesn't support is ignored for that type, never silently dropping it, unless the view opts to exclude it.
+  work: LIF-358
+- id: VW-9
+  says: Each layout declares the entity fields it needs, and the task layouts map onto the seven layouts as layout, filter and grouping configs.
+  uses: [tasks, TK-20]
+  work: LIF-399
+
+# Templates. TMP-1…TMP-5 are ADR-009's T1…T5.
+- id: TMP-1
+  says: A template is a portable seed bundle of a Space's root tag, seed entities, views, offered capabilities with their config and child Space structure, a document with no live foreign keys; shipped templates are bundled assets and the user's are rows in a light templates store with no edit in place.
+  proof: [BR-19, BR-20]
+  work: LIF-568
+- id: TMP-2
+  says: Creating from a template forks it, deep-copying the bundle into fresh entities that carry no template id, so template and instance never affect each other.
+  proof: [BR-20]
+  work: LIF-360
+- id: TMP-3
+  says: Saving a Space as a template captures only authored structure and configuration, never accumulated runtime data (logs, completions, entries, live entity ids), and a capability config that can only point at accumulated data is not capturable.
+  work: LIF-360
+- id: TMP-4
+  says: A preset is a type's tab, lighter than a template, made of a saved view over the type's entities plus per-type screens, default fields and deliverables and an optional starter template, owned by Spaces and bound to a type the base module defines.
+  uses: [SPC-10, tasks, TK-21, TK-27, routines]
+  work: LIF-564
+- id: TMP-5
+  says: Creating from a template ends in-progress, success or partial-failure; a bundle that names a capability missing on the device seeds what it can and flags the rest.
+  proof: [BR-20]
+  work: LIF-360
+# Proposed
+- id: TMP-6
+  says: The user saves any Space as a template and creates a Space from one, through a writer each module registers for its entity types; an unregistered type is a partial failure.
+  uses: [notes, NP-12, SPC-15]
+  work: LIF-360
+# TMP-7: the datasets pattern (ADR-014 Layer 2 as a feature). SB-Q6b's order: the Languages starter, then Health's
+# shipped programs (HT-15), then presets with Routines.
+- id: TMP-7
+  says: Shipped templates and starter Spaces (the Languages starter, Health's training programs and the presets) come as opt-in datasets the user accepts or declines, read from a local copy.
+  uses: [integrations, health, HT-15, LG-8]
+  work: LIF-568
+- id: TMP-8
+  says: Exporting and importing a template is the Integrations feature on the localhost product, which has no server; templates are Vida's only sharing bridge, and capability code arriving in an imported template is untrusted.
+  uses: [integrations, CB-7]
+  work: LIF-568
+
+# Capability blocks. CB-1…CB-6 are ADR-008's CB1…CB6; CB-7…CB-15 are ADR-010's A1…A9.
+- id: CB-1
+  says: One open capability registry holds every capability definition, shipped ones registered in code and the user's persisted and synced; Knowledge's study methods are a kind of it, not a parallel registry.
+  uses: [knowledge, RV-1]
+  proof: [BR-1]
+  work: LIF-570
+- id: CB-2
+  says: A capability declares its render targets (inline, standalone or both), and the user picks each placement among them.
+  proof: [BR-2]
+- id: CB-3
+  says: A capability is a plugin with six parts (identity and kind, config, entity bindings scoped to what it's attached to, render targets, emitted signals, and universal properties, so it's taggable, linkable and attachable).
+  uses: [spaces, SPC-1]
+  proof: [BR-1]
+  work: LIF-569
+- id: CB-4
+  says: A capability writes only through the target module's documented write interface under the guarded-write contract, and a timed or measurable outcome drives a session, which owns the effects; a pure-render capability emits nothing.
+  uses: [effects, sessions]
+  proof: [BR-3]
+  work: LIF-569
+- id: CB-5
+  says: A standalone placement on a Space is drawn from that Space's offered palette, an inline placement from the union of the page's Spaces and the editor base, and curating the palette gates adding without removing existing placements.
+  uses: [SPC-6, notes]
+  proof: [BR-7, BR-16]
+  work: LIF-569
+- id: CB-6
+  says: Every capability declares loading, empty, error and success for each render target it supports.
+  proof: [BR-4]
+- id: CB-7
+  says: Shipped capabilities are trusted and every other one, user-authored or arriving in an imported template, is untrusted; there is no promotion to trusted.
+  proof: [BR-10]
+# CB-7: BR-10 also reads tested from spaces.test.ts's BR-10 (view layouts).
+- id: CB-8
+  says: An untrusted capability declares what it needs, the user grants that envelope, and only the granted set is allowed; nothing is implicit and every unknown denies.
+  proof: [BR-8, BR-9, BR-11]
+  work: LIF-156
+- id: CB-9
+  says: A capability whose declared envelope changes fails closed until the user grants it again, so privilege never grows silently.
+  proof: [BR-14]
+# CB-9: BR-14 also reads tested from spaces.test.ts's describe title (junction idempotency).
+- id: CB-10
+  says: An untrusted capability touches only the entities it's attached to, writes only through module write interfaces with no double count, needs explicit consent for sensitive modules (Finance, Health), and is a strict subset of what shipped capabilities may do.
+  uses: [finance, health, effects]
+  proof: [BR-5, BR-11, BR-13, BR-17]
+  work: LIF-156
+- id: CB-11
+  says: User capability code runs in a sandbox with no ambient authority (no direct database, network, file system or other capabilities' state), reaching Vida only through the mediated capability interface, and is marked untrusted and can't claim a shipped id.
+  proof: [BR-6]
+  work: LIF-156
+- id: CB-12
+  says: Zero knowledge holds under authoring; media a capability captures is encrypted, there is no ambient network, external reach is declared, consented and mediated, and a sensitive read combined with egress needs both consents.
+  uses: [integrations, encryption]
+  proof: [BR-12, BR-13]
+  work: LIF-156
+- id: CB-13
+  says: The envelope and its invariants are the same on every platform, a definition and its grant sync together, and a device that can't enforce the envelope refuses to run the capability.
+  uses: [sync]
+  work: LIF-156
+- id: CB-14
+  says: A grant is never permanent; revoking it syncs and the capability stops on its next call.
+  proof: [BR-15]
+- id: CB-15
+  says: The sandbox enforces processor time, memory and wall-clock budgets and terminates a runaway capability, so the local app never hangs.
+  work: LIF-156
+# Proposed
+# CB-16 (Victor, 2026-11-11): capabilities can involve code and in-depth personalization engines.
+- id: CB-16
+  says: Capabilities can be code and in-depth personalization engines (a video playlist, levels tied to a Skills hub), and the user connects them, with other modules' features, into new features inside a Space.
+  uses: [SPC-8, skills, SK-15, LG-6, LG-7]
+  work: LIF-569
+- id: CB-17
+  says: A standalone placement is a block_instances row on a Space surface, created, configured and removed through a placement service and rendered with its declared terminal states.
+  uses: [SPC-14, ui]
+  proof: [BR-7]
+  work: LIF-569
+- id: CB-18
+  says: Community capability blocks and curated libraries come in as imports over the Integrations feature, never a marketplace, and run as untrusted.
+  uses: [integrations, CB-7, TMP-8]
+  work: LIF-409
+
+# Languages, the first Space built this way (ADR-006 SP7; the archived intake LG1…LG9, dissolved 2026-07-13). It owns
+# no tables: the nine v1 language tables live only in db/_legacy/schema.v1.ts, and services/languages holds only a
+# CLAUDE.md (LIF-468). The docs/features/languages files are 0-byte stubs, not a source.
+- id: LG-1
+  says: Languages is a Space Vida ships, #languages with a sub-Space per language, composed of other modules' entities, its views, its blocks and a starter template, with no Languages tables.
+  uses: [SPC-8, SPC-9, TMP-7]
+  work: LIF-129
+- id: LG-2
+  says: A vocabulary word is a Knowledge object of a word kind, reviewed by the review engine with derived mastery, and the dictionary is a saved view over them.
+  uses: [knowledge, KN-6, KN-11, RV-1, views, VW-7]
+  work: LIF-129
+- id: LG-3
+  says: Each practice is a session of a practice type the Languages starter ships, which the user can name and type, attached to its language and what it practices.
+  uses: [sessions, SS-1, SS-4, SPC-10]
+  open: Where per-practice fields (skill, activity, new words, accuracy) live, a type's own fields (SPC-10) or an extension.
+  work: LIF-129
+- id: LG-4
+  says: The Languages Space's day block shows what to do today for the language (its practice, reviews and immersion items), the Space form of a module's blocks.
+  uses: [SPC-14]
+  work: LIF-129
+- id: LG-5
+  says: The A-B-A pronunciation block records the user and compares the recording with a native one; recordings are encrypted attachments linked to the practice session they came from.
+  uses: [CB-12, sessions, integrations]
+  work: LIF-129
+- id: LG-6
+  says: The immersion plan, the video playlists and the base-words progression are capability engines of the Languages Space, reading what they track from the owning modules (planned sessions, Knowledge and Books resources, Knowledge mastery).
+  uses: [CB-16, sessions, SS-7, knowledge, books]
+  open: Where an engine keeps its own state (a playlist's position, the week's plan) when no module owns it.
+  work: LIF-129
+- id: LG-7
+  says: A language's levels (`CEFR`, per skill) run through a Skills hub, so proficiency is read live from the syllabus and its components, never copied.
+  uses: [skills, SK-15, SK-30, CB-16]
+  work: LIF-129
+- id: LG-8
+  says: The Languages starter is Victor's method (Knowledge kinds, the practice session type, a goal, the views and blocks), shipped as a template, and the base-words list ships as an opt-in dataset.
+  uses: [TMP-7, purposes, knowledge]
+  work: LIF-129
+# LG-9: the intake's LG9. The journal contribution, the due items and the streak come from what the Space composes.
+- id: LG-9
+  says: Languages owns no journal contribution, due lane or streak of its own; they come from its sessions, Knowledge reviews and a practice habit.
+  uses: [journals, sessions, knowledge, habits, gamification]
+  work: LIF-129

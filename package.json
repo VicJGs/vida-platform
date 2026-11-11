@@ -42,7 +42,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -122,6 +122,12 @@
       ],
       "skills": [
         "packages/core/src/db/tests/skills-introspection.test.ts"
+      ],
+      "spaces": [
+        "packages/core/src/foundation/spaces",
+        "packages/core/src/foundation/views",
+        "packages/core/src/foundation/templates",
+        "packages/core/src/foundation/capability"
       ]
     },
     "intentFeatures": {
