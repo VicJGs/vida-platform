@@ -4,17 +4,17 @@ kind: intent-row
 module: health
 status: active
 supersedes: []
-summary: "A meal is a logged entity with a scheduled time and a status, never a session; a planned meal is a due item on the agenda."
+summary: "A planned meal is a task of a Health meal type, never a session; it reaches Today, the Calendar and reminders through Tasks, and Nutrition extends it with its dishes, macros, cost, satisfaction, photo and provenance."
 anchors: [docs/modules/health/intent.yaml]
-tokens: 75
+tokens: 99
 generated: true
 ---
 # HN-2 (intent only)
 
-A meal is a logged entity with a scheduled time and a status, never a session; a planned meal is a due item on the agenda.
+A planned meal is a task of a Health meal type, never a session; it reaches Today, the Calendar and reminders through Tasks, and Nutrition extends it with its dishes, macros, cost, satisfaction, photo and provenance.
 
 - Proof: BR-NT-5 (no test)
-- Uses: sessions, HC-27
-- Work: LIF-164
+- Uses: tasks, TK-18, HC-36
+- Work: LIF-551
 
 Generated from `docs/modules/health/intent.yaml`; edit the ledger, never this unit.

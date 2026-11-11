@@ -13,8 +13,10 @@
 # database layer states unsliced BR-HC-n and BR-HT-n, so HC-n and HT-n would match inside one in a scoped test name;
 # none names one today (latent, LIF-349 run 26 findings).
 # Measurement: Health advertises its measures as sources and stores no copy of another module's data (HC-5, HC-28).
-# Datasets: HC-33, HN-17, HT-15. Sessions: a workout is a session the user can name and type (HT-14); a meal and an
-# exam are due items, not sessions (HN-2, HC-20).
+# Datasets: HC-33, HN-17, HT-15. Base entities (Victor, 2026-11-11, HC-36): Health's entities are other modules'
+# entities of a Health type, tracked Health's way with what the base lacks. A workout is a session (HT-14), an exam
+# occurrence and a planned meal are tasks (HC-20, HN-2; LIF-551), and habits and the other modules link to Health
+# entities. The schema fits for workouts only; assigned_exams and meals are standalone tables today.
 
 # Invariants: Core (docs/features/health/core/business-rules.md)
 - id: HC-1
@@ -86,11 +88,13 @@
   says: Health Domains contain Health Factors, a user-extensible monitoring hierarchy with a shipped starter set that groups metrics; a factor result is a metric value, never a separate store.
   proof: [BR-HC-1]
   work: LIF-126
+# HC-20: assigned_exams is a standalone table with its own due_date and status, no task link (LIF-551).
 - id: HC-20
-  says: An exam (a blood panel, a checkup, imaging) is set up by the user with a schedule and reminders; each occurrence is a due item on the agenda, not a session, moves through scheduled, due, overdue, logged or skipped, and its results come back as metric values with the exam as their source.
-  uses: [sessions, notifications, HC-27]
+  says: An exam (a blood panel, a checkup, imaging) is set up by the user with a schedule and reminders; each occurrence is a task of a Health exam type (an obligation when the schedule recurs) that reaches Today, the Calendar and reminders through Tasks, never a session, and Health extends it with the metrics it produces, so its results come back as metric values with the exam as their source.
+  uses: [tasks, TK-7, TK-18, notifications, HC-36]
   proof: [BR-HC-1, BR-HC-7]
-  work: LIF-126
+  open: Whether an exam is a task or a Calendar event, once the Calendar run settles events.
+  work: LIF-551
 - id: HC-21
   says: Derived metrics (basal metabolic rate, energy expenditure, lean mass, fat mass, one-rep max) are computed on the device from other metric values by a formula declared on the metric, never by a model or a server; a stored value is a cache and the source rows are the truth.
   work: LIF-126
@@ -133,11 +137,12 @@
   says: Ingredients hold atomic macros, a dish's macros are the sum of its ingredients, a meal's are the sum of its dishes, a day's total is the sum of its meals, and calories are protein and carbs at 4 and fat at 9 per gram; a dish never stores its macros as the truth.
   proof: [BR-NT-1]
   work: LIF-164
+# HN-2: meals is a standalone table with its own scheduled_at and status, no task link (LIF-551).
 - id: HN-2
-  says: A meal is a logged entity with a scheduled time and a status, never a session; a planned meal is a due item on the agenda.
-  uses: [sessions, HC-27]
+  says: A planned meal is a task of a Health meal type, never a session; it reaches Today, the Calendar and reminders through Tasks, and Nutrition extends it with its dishes, macros, cost, satisfaction, photo and provenance.
+  uses: [tasks, TK-18, HC-36]
   proof: [BR-NT-5]
-  work: LIF-164
+  work: LIF-551
 - id: HN-3
   says: The nutritional plan derives a calorie and macro target from the user's Health goals and recomputes it against each day's burn (a training day means eating more); a stored target is a cache.
   uses: [HC-3, HC-6]
@@ -274,9 +279,10 @@
   uses: [journals, JR-12, JR-20, capabilities, editor]
   work: LIF-183
 - id: HC-27
-  says: Health serves the due agenda; exam occurrences, planned meals and assigned workouts are due items keyed by their own entity, so they reach the Calendar and fire reminders that a Health push toggle gates.
-  uses: [sessions, notifications, preferences, HC-20, HN-2, HT-3]
-  work: LIF-126
+  says: Health runs no due lane of its own; its due items ride their base entities, so an exam occurrence or a planned meal is due as a task and an assigned workout as a planned session, and they reach Today, the Calendar and reminders like any task or session, where the user's push toggles can gate a Health type.
+  uses: [tasks, TK-18, sessions, SS-7, notifications, preferences, HC-20, HN-2, HT-3, HC-36]
+  open: Whether a reminder for a Health-typed task or session is gated by a Health push toggle or by the base module's (LIF-479).
+  work: LIF-551
 - id: HC-28
   says: Every Health entity is a potential Gamification rule subject; Health exposes its events (a workout done, a record set, an exam logged, a flag raised) and its measures (streaks, adherence, goal progress) so a user's rule can reward or penalize them, including something that didn't happen.
   uses: [gamification, GM-36, measurement, MS-9, HC-5]
@@ -296,8 +302,8 @@
 # HC-32: SB-Q2, each module registers its own handlers when composed. ADR-004 names the workout's effect (training
 # volume); BR-HC-5 routes XP through the Sessions effect.
 - id: HC-32
-  says: When the root composes Health, Health registers its own session sub_types, its effect handlers, its measurement sources, its due lane, its journal contribution and its read provider; nothing is wired centrally.
-  uses: [sessions, effects, measurement, journals, views, HT-14, HC-25, HC-27, HC-31]
+  says: When the root composes Health, Health registers its own session sub_types and task types, its effect handlers, its measurement sources, its journal contribution and its read provider; nothing is wired centrally.
+  uses: [sessions, tasks, effects, measurement, journals, views, HT-14, HC-36, HC-25, HC-31]
   work: LIF-126
 - id: HC-33
   says: The starter biomarker panel, the starter domains and factors, and the curated physical-role library ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.
@@ -311,6 +317,12 @@
   says: The Health module toggle and the dietary defaults are Preferences keys that Health reads.
   uses: [preferences]
   work: LIF-126
+# HC-36 (Victor, 2026-11-11): the anchor for HC-20, HC-27, HN-2 and HT-14. Tasks has only the standard or obligation
+# kind today (TK-21), and user-defined types wait for the Spaces run (RT-31).
+- id: HC-36
+  says: Health builds on other modules' entities instead of copying them; a workout is a session of a Health type, an exam occurrence and a planned meal are tasks of a Health type, each tracked Health's way with the fields and features the base entity lacks, and habits, routines and the other modules attach and link to Health entities (a supplement or medication habit, a routine's exercise step) as they do to any entity.
+  uses: [sessions, SS-1, SS-5, tasks, TK-21, habits, routines, RT-3, spaces, RT-31]
+  work: LIF-551
 
 # Proposed IDs, no ID in docs/features/health/nutrition today (approve in the PR)
 - id: HN-16
@@ -325,8 +337,8 @@
 # Proposed IDs, no ID in docs/features/health/training today (approve in the PR)
 # HT-14: no workout sub_type is registered; Routines' exercise step maps to workout and gets EntityUnavailable (RT-3).
 - id: HT-14
-  says: Health registers the workout sub_type and its physical roles' sub_types with Sessions; every workout is a session the user can name and type, attached to its plan or template, so a Routines exercise step and the agenda drive it.
-  uses: [sessions, SS-1, routines, RT-3, HT-2, HT-8]
+  says: Health ships the workout sub_type and its physical roles' sub_types fully configured and registers them with Sessions; every workout is a session the user can name and type, attached to its plan or template and extended with its sets, burn and recovery, so a Routines exercise step and the agenda drive it.
+  uses: [sessions, SS-1, SS-4, routines, RT-3, HT-2, HT-8, HC-36]
   work: LIF-165
 - id: HT-15
   says: The exercise library (with form cues and risk levels) and shipped programs (plans and workout templates) ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; shipped programs follow save-as-template and create-from-template.
@@ -336,6 +348,7 @@
   says: Training's surfaces show their terminal states (an empty catalog, a plan in draft, active, deload week or completed, a workout scheduled, in progress, paused, completed, skipped or modified, a set planned, logged or failed, a failed generation falling back to manual).
   uses: [views]
   work: LIF-183
+
 # Consumers with no row here. Built and in their own ledgers: the sensitive-module consent (SS-5; Health is in
 # SENSITIVE_MODULE_CLASSES), the one-sub_type rule (SS-1), Routines' step reference (RT-3; its exercise step maps to the
 # unregistered workout sub_type, HT-14). In their own ledgers, not built: Purposes' derived-pull reads (PG-15, MS-9,
@@ -344,5 +357,6 @@
 # Designed only: Notifications' Health reminders, deload alerts and safety flags (HC-15, HC-27, HT-6), Skills' role and
 # cooking bindings (HC-9, HN-14, the skills run), Knowledge's technique links (exercises.knowledge_object_id,
 # physical_roles.knowledge_subject_id) and protocol kind (HC-12), Finance's costs (HN-7), wearables (HC-22, LIF-144).
-# The README's Duties and Obligations stub has no module in LIF-426; its due items are HC-27. Every Health entity is a
+# The README's Duties and Obligations stub has no module in LIF-426; its assigned exams and meals are typed tasks
+# (obligations when they recur, HC-36), and its workouts are typed sessions. Every Health entity is a
 # potential Gamification rule subject (GM-36, HC-28); no module is ruled out.

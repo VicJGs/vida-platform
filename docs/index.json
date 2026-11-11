@@ -2737,11 +2737,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "An exam (a blood panel, a checkup, imaging) is set up by the user with a schedule and reminders; each occurrence is a due item on the agenda, not a session, moves through scheduled, due, overdue, logged or skipped, and its results come back as metric values with the exam as their source.",
+      "summary": "An exam (a blood panel, a checkup, imaging) is set up by the user with a schedule and reminders; each occurrence is a task of a Health exam type (an obligation when the schedule recurs) that reaches Today, the Calendar and reminders through Tasks, never a session, and Health extends it with the metrics it produces, so its results come back as metric values with the exam as their source.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 125,
+      "tokens": 176,
       "path": "docs/modules/health/intent/HC-20.md"
     },
     {
@@ -2828,11 +2828,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "Health serves the due agenda; exam occurrences, planned meals and assigned workouts are due items keyed by their own entity, so they reach the Calendar and fire reminders that a Health push toggle gates.",
+      "summary": "Health runs no due lane of its own; its due items ride their base entities, so an exam occurrence or a planned meal is due as a task and an assigned workout as a planned session, and they reach Today, the Calendar and reminders like any task or session, where the user's push toggles can gate a Health type.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 99,
+      "tokens": 164,
       "path": "docs/modules/health/intent/HC-27.md"
     },
     {
@@ -2906,11 +2906,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "When the root composes Health, Health registers its own session sub_types, its effect handlers, its measurement sources, its due lane, its journal contribution and its read provider; nothing is wired centrally.",
+      "summary": "When the root composes Health, Health registers its own session sub_types and task types, its effect handlers, its measurement sources, its journal contribution and its read provider; nothing is wired centrally.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 105,
+      "tokens": 107,
       "path": "docs/modules/health/intent/HC-32.md"
     },
     {
@@ -2951,6 +2951,19 @@
       ],
       "tokens": 59,
       "path": "docs/modules/health/intent/HC-35.md"
+    },
+    {
+      "id": "HC-36",
+      "kind": "intent-row",
+      "module": "health",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Health builds on other modules' entities instead of copying them; a workout is a session of a Health type, an exam occurrence and a planned meal are tasks of a Health type, each tracked Health's way with the fields and features the base entity lacks, and habits, routines and the other modules attach and link to Health entities (a supplement or medication habit, a routine's exercise step) as they do to any entity.",
+      "anchors": [
+        "docs/modules/health/intent.yaml"
+      ],
+      "tokens": 156,
+      "path": "docs/modules/health/intent/HC-36.md"
     },
     {
       "id": "HC-4",
@@ -3153,11 +3166,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "A meal is a logged entity with a scheduled time and a status, never a session; a planned meal is a due item on the agenda.",
+      "summary": "A planned meal is a task of a Health meal type, never a session; it reaches Today, the Calendar and reminders through Tasks, and Nutrition extends it with its dishes, macros, cost, satisfaction, photo and provenance.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 75,
+      "tokens": 99,
       "path": "docs/modules/health/intent/HN-2.md"
     },
     {
@@ -3322,11 +3335,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "Health registers the workout sub_type and its physical roles' sub_types with Sessions; every workout is a session the user can name and type, attached to its plan or template, so a Routines exercise step and the agenda drive it.",
+      "summary": "Health ships the workout sub_type and its physical roles' sub_types fully configured and registers them with Sessions; every workout is a session the user can name and type, attached to its plan or template and extended with its sets, burn and recovery, so a Routines exercise step and the agenda drive it.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 102,
+      "tokens": 124,
       "path": "docs/modules/health/intent/HT-14.md"
     },
     {
@@ -3530,11 +3543,11 @@
       "module": "health",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of health: 68 rows, 0 tested, 0 partly tested, 68 intent only.",
+      "summary": "Intended rules of health: 69 rows, 0 tested, 0 partly tested, 69 intent only.",
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 239,
+      "tokens": 241,
       "path": "docs/modules/health/intent.md"
     },
     {
