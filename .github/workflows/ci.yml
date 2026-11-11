@@ -36,9 +36,30 @@ jobs:
           name: doc-inventory
           path: inventory.csv
 
-      - run: pnpm --filter @vida/web exec playwright install --with-deps chromium
+      # Two tiers, as in the pre-push hook. A branch or PR whose every change is on the docs
+      # allow-list ("checks".docsTier) runs check:fast; anything else runs the full gate, and a
+      # push to main always does (the post-merge safety net).
+      - name: Tier
+        id: tier
+        run: |
+          if [ "$GITHUB_EVENT_NAME" = push ] && [ "$GITHUB_REF" = refs/heads/main ]; then
+            echo "tier=code" >> "$GITHUB_OUTPUT"
+            echo "Tier code: a push to main always runs the full gate"
+          else
+            tier=$(pnpm -s check:tier)
+            echo "tier=$tier" >> "$GITHUB_OUTPUT"
+            echo "Tier $tier"
+          fi
+
+      - if: steps.tier.outputs.tier != 'docs'
+        run: pnpm --filter @vida/web exec playwright install --with-deps chromium
 
       # The same command as the pre-push hook: guardrail scan, format, toolkit checks, then lint typecheck test e2e.
-      - run: pnpm check
+      - if: steps.tier.outputs.tier != 'docs'
+        run: pnpm check
         env:
           TURBO_TELEMETRY_DISABLED: 1
+
+      # Docs tier: guardrail scan, format, one-way-door, rules, and no new check:docs findings.
+      - if: steps.tier.outputs.tier == 'docs'
+        run: pnpm check:fast
