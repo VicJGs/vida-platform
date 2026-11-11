@@ -4181,6 +4181,19 @@
       "path": "docs/modules/sessions/intent.md"
     },
     {
+      "id": "INTENT-skills",
+      "kind": "intent",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of skills: 29 rows, 0 tested, 0 partly tested, 29 intent only.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 140,
+      "path": "docs/modules/skills/intent.md"
+    },
+    {
       "id": "INTENT-tasks",
       "kind": "intent",
       "module": "tasks",
@@ -8239,6 +8252,383 @@
       ],
       "tokens": 76,
       "path": "docs/modules/knowledge/intent/RV-9.md"
+    },
+    {
+      "id": "SK-1",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A skill is a goal-driven capability in exactly one life domain (health, career, finance, relationships, personal growth, spiritual, recreation, environment), with why it matters and the mastery and date it targets.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/skills/intent/SK-1.md"
+    },
+    {
+      "id": "SK-10",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Target mastery is a Purposes target, the pursuable that carries the measurement kind and binding mode; Purposes reads a skill's mastery live through Skills and keeps no copy.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/skills/intent/SK-10.md"
+    },
+    {
+      "id": "SK-11",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Evidence (a project, a recording, a certificate) proves mastery through pages, attachments and project activities, and a dev-log's key insights become Knowledge objects, created through Knowledge's service, in the user's principles store.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/skills/intent/SK-11.md"
+    },
+    {
+      "id": "SK-12",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills' names and free text (a skill's name, description and why it matters, a level's criteria, indicators, challenges and key skills, an activity's instructions, prerequisites and success criteria, a dev-log's reflections and insights, a definition's name, templates and provenance, the measurement config) are encrypted client-side; enums, dates, ratings and counters stay plaintext.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 133,
+      "path": "docs/modules/skills/intent/SK-12.md"
+    },
+    {
+      "id": "SK-13",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills composes Sessions, Knowledge, Projects, Purposes, Spaces and Health's adaptation engine and adds only the capability spine, the Composer and the graph, never parallel machinery.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/skills/intent/SK-13.md"
+    },
+    {
+      "id": "SK-14",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The skill library import is a device-mediated public-reference whole-set fetch under the external-in grant, add-only, revocable and normalized per source, and the server never proxies it; a model draft is a scoped generate on the device or in the cloud as egress, never an agent, imported content carries its provenance into any prompt, and generated rows carry the ai source.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 134,
+      "path": "docs/modules/skills/intent/SK-14.md"
+    },
+    {
+      "id": "SK-15",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills' entity types (skill, level, activity, dev-log, dependency, definition) register in the open taggable-type registry, so tags, notes and links reach them, and entity links replace the retired course-and-book resource junction; Skills owns no tag table.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/skills/intent/SK-15.md"
+    },
+    {
+      "id": "SK-16",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A dev-log is the reflection on a practice session (how it felt, what worked, what to improve, the next plan, key insights) through the adaptation engine Skills shares with Health, so a skill can run experiments on the user's own learning; it reads the session's date and length instead of storing them.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 120,
+      "path": "docs/modules/skills/intent/SK-16.md"
+    },
+    {
+      "id": "SK-17",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills builds on other modules' entities instead of copying them; practice is a session of the practice sub_type, an assessment is a task of a Skills type, a study activity is a Knowledge study session and a project activity a Projects project, each anchored to its skill and level and tracked Skills' way with what the base lacks, and habits, routines and the other modules attach and link to Skills entities.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 199,
+      "path": "docs/modules/skills/intent/SK-17.md"
+    },
+    {
+      "id": "SK-18",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user prepares inside Skills following its hierarchy; preparation (the practice cadence, reminders, and sessions scheduled automatically before a level's target or the target mastery date) is set on a skill and passed down to its levels, activities and the sessions, tasks, projects and reviews they create, and any entity below can override it; Sessions generates the sessions as planned blocks next to the other modules' entities.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 227,
+      "path": "docs/modules/skills/intent/SK-18.md"
+    },
+    {
+      "id": "SK-19",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills runs no due lane of its own; its due items ride their base entities, so practice is due as a planned session, an assessment as a task and decay maintenance as a review on Knowledge's lane, and they reach Today, the Calendar and reminders like any session, task or review.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 167,
+      "path": "docs/modules/skills/intent/SK-19.md"
+    },
+    {
+      "id": "SK-2",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each skill defines its own ladder as data, ordered levels with completion criteria and success indicators, never one universal scale; ladder templates (belts, ranks, milestones, language levels) seed a ladder.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/skills/intent/SK-2.md"
+    },
+    {
+      "id": "SK-20",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills ships the practice sub_type fully configured and registers it with Sessions; every practice is a session the user can name and type, attached to its activity, so the agenda and a routine step drive it.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/skills/intent/SK-20.md"
+    },
+    {
+      "id": "SK-21",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills exposes its skills, levels and activities and their events (a level reached, a practice done or missed, a skill at risk of decay) and measures (level, progress, mastery, practice consistency) as measurement sources and rule subjects that Purposes and Gamification read live; nothing copies Skills' data.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/skills/intent/SK-21.md"
+    },
+    {
+      "id": "SK-22",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A level-up, a mastery reached and a practice streak emit the grant-currency feeder that Gamification applies; Skills emits the signal and never writes points.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/skills/intent/SK-22.md"
+    },
+    {
+      "id": "SK-23",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills contributes its day to the journal (practice done, levels reached, skills at risk), read live through its contribution.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/skills/intent/SK-23.md"
+    },
+    {
+      "id": "SK-24",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills has its own journal blocks and capability blocks, the life skill tree over the graph among them; each reads Skills live and writes only through Skills' service, separate from its journal contribution.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/skills/intent/SK-24.md"
+    },
+    {
+      "id": "SK-25",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills serves a read provider for its entity types, so links, views, the graph and search resolve a skill, level, activity, dev-log or definition through Skills.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/skills/intent/SK-25.md"
+    },
+    {
+      "id": "SK-26",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When the root composes Skills, Skills registers its practice sub_type and task types, its measurement sources, its journal contribution and its read provider; nothing is wired centrally.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/skills/intent/SK-26.md"
+    },
+    {
+      "id": "SK-27",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The global skill library and its graph, the locale variants of its definitions, ladder templates, activity templates and curated resources ship as opt-in default datasets the user accepts or declines, refreshed as a whole set and read from a local copy; the pattern is built even when declined.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/skills/intent/SK-27.md"
+    },
+    {
+      "id": "SK-28",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The data model's record shows the Skills tables migration 021 built (seven tables, no foreign keys, the practice extension excluded from the entity types and without deleted_at, the resource junction retired, the older stored mastery default resolved out).",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/skills/intent/SK-28.md"
+    },
+    {
+      "id": "SK-29",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Skills' surfaces show every capability's terminal states (a skill planning, active, maintaining or completed, a Composer setup quick, advanced or incomplete, a fill by hand, drafting, failed or importing, a level upcoming, active or complete, a practice planned, in progress, complete or skipped, mastery with too little data, derived or overridden, a graph with no edges, a recommended path or a synergy, a decay flag none, at risk or dismissed).",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 147,
+      "path": "docs/modules/skills/intent/SK-29.md"
+    },
+    {
+      "id": "SK-3",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A skill's definition, ladder and activities fill by hand, by an opt-in model call or by import from the curated skill library; definitions vary by locale (language, region, culture) and dedupe by name and locale, a miss falls back to manual, a model draft or a community template import, and Vida never submits to a community, the user's generic template export being the only bridge.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 144,
+      "path": "docs/modules/skills/intent/SK-3.md"
+    },
+    {
+      "id": "SK-4",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Mastery derives on read from gates, activities, assessments, linked Knowledge mastery and practice consistency, and a manual override is flagged; an ability that can't be measured digitally is qualitative, self-rated or evidence-based, and Vida never fakes a number.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/skills/intent/SK-4.md"
+    },
+    {
+      "id": "SK-5",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Skill Composer defines each skill, what it is, which modules it works with, what's tracked and how progress and mastery are measured (a measurement kind with derived-pull binding, referenced and never stored as a pursuable column), in a quick mode from a template or an advanced custom mode.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/skills/intent/SK-5.md"
+    },
+    {
+      "id": "SK-6",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An activity's type sends its work to the owning module and anchors the entity there to its level; practice is a session, study a Knowledge study session on the skill's compound set, a project a Projects project, an assessment a task of a Skills type linked to Knowledge, and a review the review engine; Skills orchestrates like Routines.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 139,
+      "path": "docs/modules/skills/intent/SK-6.md"
+    },
+    {
+      "id": "SK-7",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A practice action is a session of the practice sub_type with Skills' one-to-one extension, the base session owning time and lifecycle, and practice time derives from the sessions.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/skills/intent/SK-7.md"
+    },
+    {
+      "id": "SK-8",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The skill graph links skills by requires, unlocks and synergy edges, in a global canonical graph with shared foundational skills and the user's personal instance; it recommends a path and detects synergies between goals, and the global graph grows by model drafts, curated additions, the user and community imports.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 121,
+      "path": "docs/modules/skills/intent/SK-8.md"
+    },
+    {
+      "id": "SK-9",
+      "kind": "intent-row",
+      "module": "skills",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An unpracticed skill decays through the review engine's curve, and its maintenance due item and reminder are advisory, configurable per skill and never nagging.",
+      "anchors": [
+        "docs/modules/skills/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/skills/intent/SK-9.md"
     },
     {
       "id": "SS-1",
