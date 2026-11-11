@@ -16,6 +16,8 @@
     "format": "prettier --write \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "format:check": "prettier --check \"**/*.{ts,tsx,js,jsx,json,md}\"",
     "check": "node .claude/hooks/guardrail.mjs --scan && pnpm format:check && pnpm check:one-way-door && pnpm check:types-derived && pnpm check:boundaries && pnpm check:rules && turbo run lint typecheck test e2e --continue",
+    "check:fast": "node .claude/hooks/guardrail.mjs --scan && pnpm format:check && pnpm check:one-way-door && pnpm check:rules && pnpm check:docs --base origin/main",
+    "check:tier": "node tools/checks/core/changed.mjs --base origin/main",
     "preview:tokens": "node tools/scripts/render-token-preview.mjs",
     "storybook": "pnpm --filter @vida/ui storybook",
     "clean": "turbo run clean && rm -rf node_modules",

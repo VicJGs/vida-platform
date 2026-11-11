@@ -1,0 +1,48 @@
+#!/bin/sh
+# Blocks a push unless its tier of local checks passes, the same tiers as CI.
+#   docs: every change since the merge base with origin/main is on the docs allow-list
+#         ("checks".docsTier, tools/checks/core/changed.mjs) → pnpm check:fast
+#   code: anything else → the full pnpm check. Also for a push to main, a pushed commit that
+#         is not HEAD, a branch without the check:tier script, or a failed fetch.
+# Install: cp tools/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
+# Shared by every worktree; runs in the worktree being pushed from.
+# Skip when every pushed ref is a deletion (local sha all zeros): nothing new to check.
+only_deletes=1
+tier=docs
+why=""
+head=$(git rev-parse HEAD)
+while read -r _ local_sha remote_ref _; do
+  case "$local_sha" in *[!0]*) only_deletes=0 ;; *) continue ;; esac
+  if [ "$remote_ref" = refs/heads/main ]; then
+    tier=code; why="a push to main runs the full gate"
+  elif [ "$local_sha" != "$head" ] && [ "$tier" = docs ]; then
+    tier=code; why="the pushed commit is not HEAD of this worktree"
+  fi
+done
+[ "$only_deletes" -eq 1 ] && exit 0
+export NVM_DIR="$HOME/.nvm"
+. "$NVM_DIR/nvm.sh" --no-use
+nvm use >/dev/null || { echo "pre-push: nvm could not select the .nvmrc Node"; exit 1; }
+if [ "$tier" = docs ]; then
+  if ! grep -q '"check:tier"' package.json; then
+    tier=code; why="this branch has no check:tier script"
+  elif ! git fetch -q origin main; then
+    tier=code; why="git fetch origin main failed"
+  else
+    reasons=$(mktemp)
+    tier=$(pnpm -s check:tier 2>"$reasons")
+    why=$(cat "$reasons"); rm -f "$reasons"
+    if [ "$tier" = docs ]; then why="every change since origin/main is on the docs allow-list"; else tier=code; fi
+  fi
+fi
+echo "pre-push: tier $tier, $why"
+if [ "$tier" = docs ]; then
+  pnpm check:fast || { echo "Checks failed (tier docs): push blocked"; exit 1; }
+  exit 0
+fi
+# Playwright's bundled Chromium doesn't support macOS 12; reuse a local Chromium browser.
+: "${PW_EXECUTABLE_PATH:=/Applications/Brave Browser.app/Contents/MacOS/Brave Browser}"
+export PW_EXECUTABLE_PATH
+# pnpm check = format:check, then lint typecheck test e2e (--continue: one failure never hides later results).
+# --concurrency=1 is appended to turbo: on this 2-core / 8 GB machine, parallel suites time out (editor, vault).
+pnpm check --concurrency=1 || { echo "Checks failed (tier code): push blocked"; exit 1; }
