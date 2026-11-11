@@ -1102,6 +1102,175 @@
       "path": "docs/modules/gamification/intent/ECO-9.md"
     },
     {
+      "id": "FC-1",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Flashcards owns only the card content entity and its interaction; scheduling, curves, the review log, grouping and mastery belong to the generic engine.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/knowledge/intent/FC-1.md"
+    },
+    {
+      "id": "FC-10",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Flashcards is the framework's reference implementation, not its seam; it implements the study-method service anatomy and adds no roles or integration points of its own.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/knowledge/intent/FC-10.md"
+    },
+    {
+      "id": "FC-11",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A drill earns and signals like any review; every recorded review, whichever study method records it, takes one path and fans out the same events.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/knowledge/intent/FC-11.md"
+    },
+    {
+      "id": "FC-12",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each card type (basic, reversed, cloze, image occlusion) validates its own content at author time with a typed error, declares how it renders, and declares how a review is scored.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/knowledge/intent/FC-12.md"
+    },
+    {
+      "id": "FC-13",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Flashcards' surfaces (the card view, the drill, browse and manage, stats) show empty, loading, error and populated states, and an empty queue says all caught up.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/knowledge/intent/FC-13.md"
+    },
+    {
+      "id": "FC-2",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A card is a reviewable scheduled by Knowledge's engine; its due state and curve live in the binding and the review state, never on the card, and the user binds a curve with `SM-2` as the swappable default.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/knowledge/intent/FC-2.md"
+    },
+    {
+      "id": "FC-3",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The old deck table, the scheduling columns on cards and the card-review table are retired; grouping is a Knowledge object, caps sit on the binding, the resource is a link, and reviews are generic review events.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/knowledge/intent/FC-3.md"
+    },
+    {
+      "id": "FC-4",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A deck is whichever entity below a topic the user designates, never a fixed entity.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 60,
+      "path": "docs/modules/knowledge/intent/FC-4.md"
+    },
+    {
+      "id": "FC-5",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A drill runs as a review session, and its outcomes are recorded as generic review events, one per card reviewed.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/knowledge/intent/FC-5.md"
+    },
+    {
+      "id": "FC-6",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On review Flashcards emits outcomes as review events and Knowledge derives mastery; Flashcards never computes mastery or writes a schedule, even to recover from an engine gap.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/knowledge/intent/FC-6.md"
+    },
+    {
+      "id": "FC-7",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gathering is first-class; cards can be generated from definition objects, Book quotes and notes, and the source is kept as a link, so a later source delete leaves the card and its link intact.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/knowledge/intent/FC-7.md"
+    },
+    {
+      "id": "FC-8",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every card is taggable through the shared tag primitive, links to notes and pages, and carries media attachments.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/knowledge/intent/FC-8.md"
+    },
+    {
+      "id": "FC-9",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The due queue is read from Knowledge's provider; Flashcards exposes no queue of its own and owns no daily caps, which belong to the binding.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/knowledge/intent/FC-9.md"
+    },
+    {
       "id": "FL-1",
       "kind": "intent-row",
       "module": "finance",
@@ -2485,6 +2654,19 @@
       "path": "docs/modules/journals/intent.md"
     },
     {
+      "id": "INTENT-knowledge",
+      "kind": "intent",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of knowledge: 57 rows, 4 tested, 3 partly tested, 50 intent only.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 198,
+      "path": "docs/modules/knowledge/intent.md"
+    },
+    {
       "id": "INTENT-notes",
       "kind": "intent",
       "module": "notes",
@@ -2872,6 +3054,403 @@
       ],
       "tokens": 85,
       "path": "docs/modules/journals/intent/JR-9.md"
+    },
+    {
+      "id": "KN-1",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge content is encrypted (an object's title, description and key concepts, a reference's title, source and link, a compound set's spec, a lab entry's hypothesis and conclusion, a card's front, back, hint and explanation); kinds, realms, enums, dates, counters, mastery numbers and sort orders stay plaintext.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 123,
+      "path": "docs/modules/knowledge/intent/KN-1.md"
+    },
+    {
+      "id": "KN-10",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge mastery is an Education measurement source; Knowledge exposes a subject's mastery compounded from object mastery, assessment results and pace against the syllabus, Education owns the program rollup, and Knowledge never writes Education's measurement.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/knowledge/intent/KN-10.md"
+    },
+    {
+      "id": "KN-11",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A compound set (one consumer module's partition with the user's rules, methods and parameters) is built in a builder, and a default set ships so no user is forced to personalize; a model may help build one only by opt-in and consent.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 120,
+      "path": "docs/modules/knowledge/intent/KN-11.md"
+    },
+    {
+      "id": "KN-12",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Nothing publishes from within Vida and there is no community surface; a setup is reproduced by following its steps, never shared as an object.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/knowledge/intent/KN-12.md"
+    },
+    {
+      "id": "KN-13",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Knowledge Lab turns a hypothesis and live data from the user's own modules into a conclusion that can be promoted into a catalog object, and a lab entry is a link target, so a research deliverable can point at it.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/knowledge/intent/KN-13.md"
+    },
+    {
+      "id": "KN-14",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "References are first-class (a title, a source, a link and a type, scoped to an object), replacing the old array of links.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/knowledge/intent/KN-14.md"
+    },
+    {
+      "id": "KN-15",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge emits after the write, failure-isolated and dormant without a handler; a recorded review emits award_xp and emit_measurement_signal once per review event, a review with a quality also emits mastery changed, and an object created or a lab concluded reaches the journal by pull only.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/knowledge-s8-events.test.ts"
+      ],
+      "tokens": 143,
+      "path": "docs/modules/knowledge/intent/KN-15.md"
+    },
+    {
+      "id": "KN-16",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge's journal contribution answers a date with the objects added and the reviews recorded that day, empty on an idle day, and is registered through registerKnowledgeJournal.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/knowledge-s8-events.test.ts"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/knowledge/intent/KN-16.md"
+    },
+    {
+      "id": "KN-17",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge has its own blocks (capability entries with an inline target), such as what's due to study today with a start action, the day's reviews and mastery by area; each reads Knowledge live and writes only through its service, separate from its journal contribution.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 115,
+      "path": "docs/modules/knowledge/intent/KN-17.md"
+    },
+    {
+      "id": "KN-18",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge serves a read provider for knowledge objects, containers and cards in the shared view registry, so views, sessions and blocks that target them resolve instead of degrading.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/knowledge/intent/KN-18.md"
+    },
+    {
+      "id": "KN-19",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge registers a due lane that serves the objects due for review on the Sessions due agenda, each keyed by its subject (knowledge_object and the object id), so the Calendar, the journal and Notifications read them and the study push toggle gates a reminder.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/knowledge/intent/KN-19.md"
+    },
+    {
+      "id": "KN-2",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A knowledge object is never the same row as an Education planning topic; the two are separate entities, linked, and deleting the Education topic never deletes the acquired knowledge.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/knowledge/intent/KN-2.md"
+    },
+    {
+      "id": "KN-20",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the app the composition root builds the capability registry, the review engine, Knowledge (with spaces, backlinks, notes and the effects rail and its shared registry) and Flashcards (with sessions and the session registry), and registers Knowledge's journal contribution, due lane and read provider and Flashcards' method and sub_type; Knowledge owns no effect handler.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 145,
+      "path": "docs/modules/knowledge/intent/KN-20.md"
+    },
+    {
+      "id": "KN-21",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge serves its measures as measurement sources per entity (mastery per object, the reviews recorded, the due backlog), so Purposes' bindings, the user's own measures and Gamification's rules can read them, including no study by a deadline or in a period.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 146,
+      "path": "docs/modules/knowledge/intent/KN-21.md"
+    },
+    {
+      "id": "KN-22",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every study is a session; studying an object, a drill included, runs through Sessions, the user can name it and choose its type (study or review by default), it attaches to what it covers, and each outcome records a review on that session.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 132,
+      "path": "docs/modules/knowledge/intent/KN-22.md"
+    },
+    {
+      "id": "KN-23",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge ships opt-in datasets the user accepts or declines (curve and method presets, starter kind trees, each consumer's default compound set, curated reference objects and starter decks), refreshed as a whole set and read from a local copy, filling objects and cards in one step; hand authoring always stays.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 159,
+      "path": "docs/modules/knowledge/intent/KN-23.md"
+    },
+    {
+      "id": "KN-24",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge is searchable through a full-text index over object and note text, and until the index exists the search answers search-unavailable, never an empty list.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/knowledge/intent/KN-24.md"
+    },
+    {
+      "id": "KN-25",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Objects can be auto-populated from a syllabus, a table of contents or a schedule, opt-in and on the device, and a refused or unavailable source is reported, never a silent no-op.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/knowledge/intent/KN-25.md"
+    },
+    {
+      "id": "KN-26",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A model may suggest a compound set only on the user's request and consent; Knowledge never applies a suggestion itself or holds a model key, and an unavailable or denied model reads as unavailable.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/knowledge/intent/KN-26.md"
+    },
+    {
+      "id": "KN-27",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge's surfaces (the all-knowledge page, per-object pages and the graph) ship a working default (a default kind tree and one starter container), show empty, loading, error and populated states, and regroup containers per view.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/knowledge/intent/KN-27.md"
+    },
+    {
+      "id": "KN-28",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A topic links to its assessments once Education has them, instead of carrying an exam flag.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/knowledge/intent/KN-28.md"
+    },
+    {
+      "id": "KN-29",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge raises typed errors only, a failed write reverts, a broken kind or parent reference is rejected at write, and a mismatch across modules is flagged, never guessed.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/knowledge/intent/KN-29.md"
+    },
+    {
+      "id": "KN-3",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Knowledge lives on the Subject, Unit, Topic spine, and below a topic the user grows their own hierarchy of objects through parent_object_id; every object has a kind from a user-extensible registry, with topic, concept and definition shipped as editable, removable defaults.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/service.test.ts"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/knowledge/intent/KN-3.md"
+    },
+    {
+      "id": "KN-30",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user sees their progress per area and per Vida module; an area's progress reads its member subjects' mastery live, never a stored copy.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/knowledge/intent/KN-30.md"
+    },
+    {
+      "id": "KN-4",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every kind declares a learning realm (understand, memorize or the user's own), and the realm picks the default study method, memorize toward drills and understand toward elaboration, always overridable by the user.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/knowledge/intent/KN-4.md"
+    },
+    {
+      "id": "KN-5",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A knowledge note is a pages row with a knowledge entity type and a personalizable render, never a knowledge_notes table and never an inline column.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/service.test.ts"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/knowledge/intent/KN-5.md"
+    },
+    {
+      "id": "KN-6",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Objects reach courses, books, skills, languages, finance and health through entity links, many per object, never a resource_type check.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/knowledge/intent/KN-6.md"
+    },
+    {
+      "id": "KN-7",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Containers organize as Module, Area and Subject with many-to-many membership at every step through scoped tags, never one parent chain, and an area can serve several Vida modules.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/service.test.ts"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/knowledge/intent/KN-7.md"
+    },
+    {
+      "id": "KN-8",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Study methods (flashcards, Feynman, self-test and more) and review curves are user-selectable and mixable per area, subject, unit, topic or kind, and `SM-2` is one preset in the scheduling family, never the model.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/knowledge/intent/KN-8.md"
+    },
+    {
+      "id": "KN-9",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Mastery is derived at the leaf from whichever active methods report under the object's chosen curve and rolls up kind, topic, unit and subject; the user tunes the curve, never the number.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/knowledge-s8-events.test.ts",
+        "packages/core/src/services/knowledge/__tests__/service.test.ts"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/knowledge/intent/KN-9.md"
     },
     {
       "id": "MS-1",
@@ -6067,6 +6646,189 @@
       ],
       "tokens": 73,
       "path": "docs/modules/routines/intent/RT-9.md"
+    },
+    {
+      "id": "RV-1",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Study methods are the study_method partition of the one capability registry, never a parallel store.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/knowledge/intent/RV-1.md"
+    },
+    {
+      "id": "RV-10",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Curves schedule as designed; the shipped `SM-2` preset and the decay, review and test curves set each next interval from the review's quality and history under the user's parameters, never a fixed one-day fallback.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/knowledge/intent/RV-10.md"
+    },
+    {
+      "id": "RV-11",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When a kind has no default method, its learning realm picks one from the methods that declare that realm, memorize toward drills and understand toward elaboration.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/knowledge/intent/RV-11.md"
+    },
+    {
+      "id": "RV-12",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each object takes the nearest binding above it on the spine, mixable per level, so a bound topic or kind schedules the objects under it; the due queue reports objects, never the bound level itself, and honors each binding's daily cap.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/knowledge/intent/RV-12.md"
+    },
+    {
+      "id": "RV-13",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Leaf mastery derives from every active method's review events under the object's bound curve (weighting and decay), not only the latest quality.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/knowledge/intent/RV-13.md"
+    },
+    {
+      "id": "RV-14",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The review engine schedules reviewables only; Journals' look-back, Purposes' target and purpose reviews and Check-ins' review check-ins are separate things, never engine reviews.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/knowledge/intent/RV-14.md"
+    },
+    {
+      "id": "RV-2",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A study method declares an empty privilege envelope (no render targets, effects, bindings or terminal states), and its roles and configuration ride its config schema.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/knowledge/intent/RV-2.md"
+    },
+    {
+      "id": "RV-3",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Review curves are user-defined and personalizable, and `SM-2` is one preset among them.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 58,
+      "path": "docs/modules/knowledge/intent/RV-3.md"
+    },
+    {
+      "id": "RV-4",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A binding ties a method and an optional curve to any spine level (area, subject, unit, topic or kind); its method and curve references aren't checked, so a method not yet registered can be bound.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/knowledge/intent/RV-4.md"
+    },
+    {
+      "id": "RV-5",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The default method resolves from the kind's own default and otherwise none; the engine never invents a method id.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/knowledge/intent/RV-5.md"
+    },
+    {
+      "id": "RV-6",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Curves and bindings soft-delete and every read filters deleted rows, and removing a missing curve or binding is a typed error.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/knowledge/intent/RV-6.md"
+    },
+    {
+      "id": "RV-7",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Recording a review appends an immutable review event and never writes mastery.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/knowledge/intent/RV-7.md"
+    },
+    {
+      "id": "RV-8",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine is the due-queue provider; a bound target is due once its interval has passed since its last review, and a bound target never reviewed is due now.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/knowledge/intent/RV-8.md"
+    },
+    {
+      "id": "RV-9",
+      "kind": "intent-row",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Leaf mastery is derived on read, 0 to 100, or null when nothing measured it; a quality of 0 reads 0, and the engine never reads a stored mastery.",
+      "anchors": [
+        "docs/modules/knowledge/intent.yaml",
+        "packages/core/src/services/knowledge/__tests__/knowledge-s8-events.test.ts"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/knowledge/intent/RV-9.md"
     },
     {
       "id": "SS-1",

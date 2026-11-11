@@ -1,0 +1,309 @@
+# Knowledge intent ledger: every intended, deferred or TBD Knowledge rule, keyed by its docs/features/knowledge
+# ID (KN) or its docs/features/knowledge/flashcards ID (FC; Flashcards is a study-method service inside Knowledge),
+# plus the review engine Knowledge owns (LIF-426 SB-Q9: review engine → Knowledge, its own prefix RV). work = the
+# issue that builds the rest. check:rules derives each row's state. Proof cites the BR-KN-Sn-n rules in
+# docs/modules/knowledge/current-business-rules.md. The engine has no numbered rule source of its own, so RV-1…RV-6
+# are BR-KN-S3-1…S3-6 and RV-7…RV-9 are BR-KN-S4-1…S4-3 (Victor, 2026-11-10); BR-KN-S4-4 and S4-5 stay Knowledge's.
+# Test names carry KN-3, 5, 7 and 9 (KN-11 sits in a comment) and four proof IDs (BR-KN-S4-3, S8-1, S8-2, S8-6); the
+# other built rows read intent only. FC-05 and FC-08 in test names are the S7 leg codes (FC-01…FC-12), zero-padded,
+# so they match no FC row; the bare sliced BR-S1-2…BR-S5-5 in test names are other modules' IDs to the check, and
+# capability BR-6 and spaces BR-14 are bare (LIF-349 run 25 findings). docs/infrastructure/database-layer states
+# unsliced BR-KN-1…BR-KN-7, so KN-1…KN-7 would match inside one in a scoped test name; none names one today (latent).
+# Measurement: mastery normalizes and rolls up through the engine, nothing hand-rolled, and stays in Knowledge.
+# Datasets: KN-23. Sessions: a flashcards drill is a review session; every other study is KN-22.
+
+# Invariants (docs/features/knowledge/business-rules.md)
+# KN-1's [E] set is marked in the schema and dormant (encryptedFields: [] until M3, LIF-67). The schema also marks
+# a curve's name and params [E], while the conventions call curve params plaintext. Rows sync last-writer-wins; a
+# note's content follows the pages path.
+- id: KN-1
+  says: Knowledge content is encrypted (an object's title, description and key concepts, a reference's title, source and link, a compound set's spec, a lab entry's hypothesis and conclusion, a card's front, back, hint and explanation); kinds, realms, enums, dates, counters, mastery numbers and sort orders stay plaintext.
+  uses: [encryption]
+  proof: [BR-KN-S1-8]
+  work: LIF-67
+# KN-2's link through the Education compound set is unbuilt; Education reads mastery with its own subject id
+# (KN-10, LIF-545).
+- id: KN-2
+  says: A knowledge object is never the same row as an Education planning topic; the two are separate entities, linked, and deleting the Education topic never deletes the acquired knowledge.
+  uses: [learning]
+  proof: [BR-KN-S1-5]
+# KN-3's kind registry stays flat (no parent kind), which settles the docs' open modeling choice.
+- id: KN-3
+  says: Knowledge lives on the Subject, Unit, Topic spine, and below a topic the user grows their own hierarchy of objects through parent_object_id; every object has a kind from a user-extensible registry, with topic, concept and definition shipped as editable, removable defaults.
+  proof: [BR-KN-S1-1, BR-KN-S1-2, BR-KN-S1-3, BR-KN-S1-6]
+# KN-4's realm is declared and seeded; the realm-driven default method is RV-11.
+- id: KN-4
+  says: Every kind declares a learning realm (understand, memorize or the user's own), and the realm picks the default study method, memorize toward drills and understand toward elaboration, always overridable by the user.
+  uses: [RV-5, RV-11]
+  proof: [BR-KN-S1-2, BR-KN-S3-5]
+  work: LIF-542
+# KN-5's note title and personalizable render are the views' (KN-27).
+- id: KN-5
+  says: A knowledge note is a pages row with a knowledge entity type and a personalizable render, never a knowledge_notes table and never an inline column.
+  uses: [notes]
+  proof: [BR-KN-S6-1]
+# KN-6 covers the Books links: chapters and quotes stay Books', referenced through links (BK-29).
+- id: KN-6
+  says: Objects reach courses, books, skills, languages, finance and health through entity links, many per object, never a resource_type check.
+  uses: [spaces, books]
+  proof: [BR-KN-S2-4, BR-KN-S2-5]
+- id: KN-7
+  says: Containers organize as Module, Area and Subject with many-to-many membership at every step through scoped tags, never one parent chain, and an area can serve several Vida modules.
+  uses: [spaces]
+  proof: [BR-KN-S2-1, BR-KN-S2-2, BR-KN-S2-8b]
+# KN-8's methods, curves and polymorphic bindings are built (RV-1, RV-3, RV-4). Binding resolution down the spine,
+# mixing per level and the `SM-2` preset are RV-10 and RV-12. Feynman and self-test are named methods, unbuilt.
+- id: KN-8
+  says: Study methods (flashcards, Feynman, self-test and more) and review curves are user-selectable and mixable per area, subject, unit, topic or kind, and `SM-2` is one preset in the scheduling family, never the model.
+  uses: [RV-1, RV-3, RV-4, RV-10, RV-12, capabilities]
+  proof: [BR-KN-S3-1, BR-KN-S3-3, BR-KN-S3-4]
+  work: LIF-542
+# KN-9's derive and rollup are built; deriving under the object's curve from every method that reports is RV-13.
+- id: KN-9
+  says: Mastery is derived at the leaf from whichever active methods report under the object's chosen curve and rolls up kind, topic, unit and subject; the user tunes the curve, never the number.
+  uses: [measurement, RV-9, RV-13]
+  proof: [BR-KN-S1-4, BR-KN-S4-3, BR-KN-S4-4, BR-KN-S4-5]
+  work: LIF-542
+# KN-10's assessment results and pace against the syllabus wait on Education's assessments and syllabus calendar
+# (the learning run). Education passes its own subject id to the source (flag LIF-545).
+- id: KN-10
+  says: Knowledge mastery is an Education measurement source; Knowledge exposes a subject's mastery compounded from object mastery, assessment results and pace against the syllabus, Education owns the program rollup, and Knowledge never writes Education's measurement.
+  uses: [learning, measurement]
+  proof: [BR-KN-S5-1, BR-KN-S5-2, BR-KN-S5-3, BR-KN-S5-4, BR-KN-S5-5]
+  work: LIF-545
+# KN-11's default set ships with a null spec; its contents are KN-23's open question.
+- id: KN-11
+  says: A compound set (one consumer module's partition with the user's rules, methods and parameters) is built in a builder, and a default set ships so no user is forced to personalize; a model may help build one only by opt-in and consent.
+  uses: [learning, skills, finance, health]
+  proof: [BR-KN-S6-2, BR-KN-S6-3, BR-KN-S6-5]
+  work: LIF-543
+- id: KN-12
+  says: Nothing publishes from within Vida and there is no community surface; a setup is reproduced by following its steps, never shared as an object.
+
+# Invariants (docs/features/knowledge/flashcards/business-rules.md)
+- id: FC-1
+  says: Flashcards owns only the card content entity and its interaction; scheduling, curves, the review log, grouping and mastery belong to the generic engine.
+  uses: [RV-4, RV-7, RV-9]
+  proof: [BR-KN-S7-1]
+# FC-2's `SM-2` default preset isn't seeded (RV-10). A card reviews a knowledge object, and the binding lives on the
+# object, since a binding has no card level.
+- id: FC-2
+  says: A card is a reviewable scheduled by Knowledge's engine; its due state and curve live in the binding and the review state, never on the card, and the user binds a curve with `SM-2` as the swappable default.
+  uses: [RV-4, RV-10]
+  proof: [BR-KN-S7-3, BR-KN-S7-4]
+  work: LIF-542
+# FC-3: migration 022 creates no deck or card-review table and no scheduling columns on flashcards (database-layer
+# BR-KN-7 states the same).
+- id: FC-3
+  says: The old deck table, the scheduling columns on cards and the card-review table are retired; grouping is a Knowledge object, caps sit on the binding, the resource is a link, and reviews are generic review events.
+  proof: [BR-KN-S7-1]
+# FC-4: there is no deck entity; the user's object hierarchy groups cards, and a card links to the object it reviews.
+- id: FC-4
+  says: A deck is whichever entity below a topic the user designates, never a fixed entity.
+  uses: [KN-3]
+  proof: [BR-KN-S1-3]
+# FC-5's drill session has no name, the user can't type it, and the review sub_type has two owners (LIF-515).
+- id: FC-5
+  says: A drill runs as a review session, and its outcomes are recorded as generic review events, one per card reviewed.
+  uses: [sessions, SS-1, RV-7]
+  proof: [BR-KN-S7-5]
+  work: LIF-541
+# FC-6: a failed emit surfaces ReviewEmitFailed; the durable retry is the sync queue's, left to the sync run
+# (ADR-003). The drill's emit goes straight to the engine, so it fans out nothing (FC-11).
+- id: FC-6
+  says: On review Flashcards emits outcomes as review events and Knowledge derives mastery; Flashcards never computes mastery or writes a schedule, even to recover from an engine gap.
+  uses: [RV-7, RV-9]
+  proof: [BR-KN-S7-5, BR-KN-S7-6]
+# FC-7's caller supplies the content; reading the source the user picks (a Book quote, a note) is LIF-363.
+- id: FC-7
+  says: Gathering is first-class; cards can be generated from definition objects, Book quotes and notes, and the source is kept as a link, so a later source delete leaves the card and its link intact.
+  uses: [books, notes, spaces]
+  proof: [BR-KN-S7-8]
+  work: LIF-363
+# FC-8's media is a list of references, neither attachments nor encrypted (LIF-67).
+- id: FC-8
+  says: Every card is taggable through the shared tag primitive, links to notes and pages, and carries media attachments.
+  uses: [spaces, notes, encryption]
+  proof: [BR-KN-S7-8]
+# FC-9's daily caps on the binding are stored and never read, and a card whose topic or kind is bound reads unbound
+# (RV-12).
+- id: FC-9
+  says: The due queue is read from Knowledge's provider; Flashcards exposes no queue of its own and owns no daily caps, which belong to the binding.
+  uses: [RV-8, RV-12]
+  proof: [BR-KN-S7-7]
+  work: LIF-542
+- id: FC-10
+  says: Flashcards is the framework's reference implementation, not its seam; it implements the study-method service anatomy and adds no roles or integration points of its own.
+  proof: [BR-KN-S7-1, BR-KN-S7-4]
+
+# The review engine (foundation/review; ADR-005, BR-KN-S3 and S4). RV-1…RV-9 = BR-KN-S3-1…S3-6, S4-1…S4-3.
+- id: RV-1
+  says: Study methods are the study_method partition of the one capability registry, never a parallel store.
+  uses: [capabilities]
+  proof: [BR-KN-S3-1]
+- id: RV-2
+  says: A study method declares an empty privilege envelope (no render targets, effects, bindings or terminal states), and its roles and configuration ride its config schema.
+  uses: [capabilities]
+  proof: [BR-KN-S3-2]
+- id: RV-3
+  says: Review curves are user-defined and personalizable, and `SM-2` is one preset among them.
+  proof: [BR-KN-S3-3]
+- id: RV-4
+  says: A binding ties a method and an optional curve to any spine level (area, subject, unit, topic or kind); its method and curve references aren't checked, so a method not yet registered can be bound.
+  proof: [BR-KN-S3-4]
+- id: RV-5
+  says: The default method resolves from the kind's own default and otherwise none; the engine never invents a method id.
+  proof: [BR-KN-S3-5]
+- id: RV-6
+  says: Curves and bindings soft-delete and every read filters deleted rows, and removing a missing curve or binding is a typed error.
+  proof: [BR-KN-S3-6]
+- id: RV-7
+  says: Recording a review appends an immutable review event and never writes mastery.
+  proof: [BR-KN-S4-1]
+# RV-8's level filter and window are built; a never-reviewed bound target is due now. Bindings resolving down the
+# spine and the curve-accurate interval are RV-12 and RV-10.
+- id: RV-8
+  says: The engine is the due-queue provider; a bound target is due once its interval has passed since its last review, and a bound target never reviewed is due now.
+  proof: [BR-KN-S4-2]
+- id: RV-9
+  says: Leaf mastery is derived on read, 0 to 100, or null when nothing measured it; a quality of 0 reads 0, and the engine never reads a stored mastery.
+  uses: [measurement]
+  proof: [BR-KN-S4-3]
+# Proposed IDs, no ID in the engine's rules today (approve in the PR)
+- id: RV-10
+  says: Curves schedule as designed; the shipped `SM-2` preset and the decay, review and test curves set each next interval from the review's quality and history under the user's parameters, never a fixed one-day fallback.
+  uses: [RV-3, KN-8, FC-2]
+  work: LIF-542
+- id: RV-11
+  says: When a kind has no default method, its learning realm picks one from the methods that declare that realm, memorize toward drills and understand toward elaboration.
+  uses: [RV-5, KN-4]
+  work: LIF-542
+- id: RV-12
+  says: Each object takes the nearest binding above it on the spine, mixable per level, so a bound topic or kind schedules the objects under it; the due queue reports objects, never the bound level itself, and honors each binding's daily cap.
+  uses: [RV-4, RV-8, KN-8, FC-9]
+  work: LIF-542
+- id: RV-13
+  says: Leaf mastery derives from every active method's review events under the object's bound curve (weighting and decay), not only the latest quality.
+  uses: [RV-9, KN-9, measurement]
+  work: LIF-542
+# RV-14 holds today (no Journals, Purposes or Check-ins code calls the engine); the overlap of those reviews is the
+# design pass on LIF-509 with LIF-488 (SB-Q4, SB-F1).
+- id: RV-14
+  says: The review engine schedules reviewables only; Journals' look-back, Purposes' target and purpose reviews and Check-ins' review check-ins are separate things, never engine reviews.
+  uses: [journals, JR-8, purposes, PG-12, check-ins, CK-6]
+  work: LIF-509
+
+# Proposed IDs, no ID in docs/features/knowledge today (approve in the PR)
+# KN-13: knowledge_lab_entry is left out of the entity-type registry, so Projects' PJ-22 can't link one, and
+# lab.concluded pushes nothing.
+- id: KN-13
+  says: The Knowledge Lab turns a hypothesis and live data from the user's own modules into a conclusion that can be promoted into a catalog object, and a lab entry is a link target, so a research deliverable can point at it.
+  uses: [projects, PJ-22, spaces]
+  proof: [BR-KN-S6-4]
+  work: LIF-539
+- id: KN-14
+  says: References are first-class (a title, a source, a link and a type, scoped to an object), replacing the old array of links.
+  proof: [BR-KN-S2-3]
+# KN-15's emits carry no payload; Gamification's award_xp handler (GM-21, LIF-524) and the signal handler (MS-5,
+# LIF-113) are unbuilt, so both are dormant. A drill fans out nothing (FC-11).
+- id: KN-15
+  says: Knowledge emits after the write, failure-isolated and dormant without a handler; a recorded review emits award_xp and emit_measurement_signal once per review event, a review with a quality also emits mastery changed, and an object created or a lab concluded reaches the journal by pull only.
+  uses: [effects, gamification, GM-21, GM-22, MS-5]
+  proof: [BR-KN-S8-1, BR-KN-S8-2, BR-KN-S8-3, BR-KN-S8-4, BR-KN-S8-5]
+# KN-16 counts the day's objects and reviews on the `UTC` day (the LIF-489 question).
+- id: KN-16
+  says: Knowledge's journal contribution answers a date with the objects added and the reviews recorded that day, empty on an idle day, and is registered through registerKnowledgeJournal.
+  uses: [journals, JR-11]
+  proof: [BR-KN-S8-6]
+  work: LIF-112
+- id: KN-17
+  says: Knowledge has its own blocks (capability entries with an inline target), such as what's due to study today with a start action, the day's reviews and mastery by area; each reads Knowledge live and writes only through its service, separate from its journal contribution.
+  uses: [capabilities, journals, JR-12, JR-20, notes, editor]
+  work: LIF-539
+- id: KN-18
+  says: Knowledge serves a read provider for knowledge objects, containers and cards in the shared view registry, so views, sessions and blocks that target them resolve instead of degrading.
+  uses: [views]
+  work: LIF-539
+# KN-19: Notifications maps knowledge_object to push_study already; due rows carry the source module instead
+# (LIF-479). The localhost product delivers a reminder locally (DLV-12).
+- id: KN-19
+  says: Knowledge registers a due lane that serves the objects due for review on the Sessions due agenda, each keyed by its subject (knowledge_object and the object id), so the Calendar, the journal and Notifications read them and the study push toggle gates a reminder.
+  uses: [sessions, SS-7, RV-8, RV-12, notifications, NF-2, preferences, PR-11]
+  work: LIF-539
+- id: KN-20
+  says: In the app the composition root builds the capability registry, the review engine, Knowledge (with spaces, backlinks, notes and the effects rail and its shared registry) and Flashcards (with sessions and the session registry), and registers Knowledge's journal contribution, due lane and read provider and Flashcards' method and sub_type; Knowledge owns no effect handler.
+  uses: [effects, capabilities, sessions, views, journals, KN-16, KN-18, KN-19]
+  work: LIF-450
+# KN-21 is reads only: other modules read Knowledge's measures, and Knowledge copies nothing (the run-22 model).
+- id: KN-21
+  says: Knowledge serves its measures as measurement sources per entity (mastery per object, the reviews recorded, the due backlog), so Purposes' bindings, the user's own measures and Gamification's rules can read them, including no study by a deadline or in a period.
+  uses: [measurement, MS-9, MS-15, purposes, PG-6, gamification, GM-36]
+  open: Which measures Knowledge advertises, and whether no study is a measure or an absence rule Gamification evaluates.
+  work: LIF-540
+- id: KN-22
+  says: Every study is a session; studying an object, a drill included, runs through Sessions, the user can name it and choose its type (study or review by default), it attaches to what it covers, and each outcome records a review on that session.
+  uses: [sessions, SS-1, SS-2, FC-5]
+  open: Who owns the review sub_type (Purposes and Flashcards both register it, LIF-515), and where the session name lives.
+  work: LIF-541
+- id: KN-23
+  says: Knowledge ships opt-in datasets the user accepts or declines (curve and method presets, starter kind trees, each consumer's default compound set, curated reference objects and starter decks), refreshed as a whole set and read from a local copy, filling objects and cards in one step; hand authoring always stays.
+  uses: [integrations, RV-10, RV-11, KN-11]
+  open: Which sets ship first, their source and licence, and whether a default compound set's contents are a dataset or a design decision per consumer.
+  work: LIF-543
+# KN-24's search is a loud seam today; full-text search over knowledge is LIF-70's.
+- id: KN-24
+  says: Knowledge is searchable through a full-text index over object and note text, and until the index exists the search answers search-unavailable, never an empty list.
+  uses: [search]
+  proof: [BR-KN-S6-6]
+  work: LIF-70
+# KN-25's source parsers (a syllabus, a table of contents, a schedule) are the Integrations run's (ADR-014
+# ingestion); the ingestion guard is built and deny-safe.
+- id: KN-25
+  says: Objects can be auto-populated from a syllabus, a table of contents or a schedule, opt-in and on the device, and a refused or unavailable source is reported, never a silent no-op.
+  uses: [integrations]
+  proof: [BR-KN-S6-7]
+# KN-26: the model-call runtime is LIF-145 (the AI project).
+- id: KN-26
+  says: A model may suggest a compound set only on the user's request and consent; Knowledge never applies a suggestion itself or holds a model key, and an unavailable or denied model reads as unavailable.
+  uses: [ai]
+  proof: [BR-KN-S6-5]
+  work: LIF-145
+- id: KN-27
+  says: Knowledge's surfaces (the all-knowledge page, per-object pages and the graph) ship a working default (a default kind tree and one starter container), show empty, loading, error and populated states, and regroup containers per view.
+  uses: [views, KN-7]
+  work: LIF-188
+# KN-28: the boolean is_exam_topic is still a column; the assessment link waits on Education's assessments (the
+# learning run).
+- id: KN-28
+  says: A topic links to its assessments once Education has them, instead of carrying an exam flag.
+  uses: [learning]
+- id: KN-29
+  says: Knowledge raises typed errors only, a failed write reverts, a broken kind or parent reference is rejected at write, and a mismatch across modules is flagged, never guessed.
+  proof: [BR-KN-S1-7, BR-KN-S5-3]
+- id: KN-30
+  says: The user sees their progress per area and per Vida module; an area's progress reads its member subjects' mastery live, never a stored copy.
+  uses: [KN-7, KN-9, measurement]
+  work: LIF-540
+
+# Proposed IDs, no ID in docs/features/knowledge/flashcards today (approve in the PR)
+- id: FC-11
+  says: A drill earns and signals like any review; every recorded review, whichever study method records it, takes one path and fans out the same events.
+  uses: [KN-15, RV-7, gamification, GM-21]
+  work: LIF-541
+- id: FC-12
+  says: Each card type (basic, reversed, cloze, image occlusion) validates its own content at author time with a typed error, declares how it renders, and declares how a review is scored.
+  work: LIF-544
+- id: FC-13
+  says: Flashcards' surfaces (the card view, the drill, browse and manage, stats) show empty, loading, error and populated states, and an empty queue says all caught up.
+  uses: [views]
+  work: LIF-188
+
+# Consumers with no row here. Built and in their own ledgers: the Sessions agenda and signal rows that name
+# Knowledge (SS-1, SS-7, SS-10), the journal registry (JR-11), Books' links (BK-29), the reward and signal rows that
+# list Knowledge (GM-21, GM-22, GM-36) and the Notifications push toggle map (`knowledge_object` → push_study).
+# Built with no ledger yet: Education's mastery read through getMasterySource (BR-LE-S10-3, the learning run; flag
+# LIF-545). In their own ledgers, not built: Projects' research deliverable linked to a lab entry (PJ-22, needs
+# KN-13), the review sub_type's single owner (PG-32, LIF-515), Purposes' review substrate question (PG-12, answered by
+# RV-14). Designed only: Health's training technique link (`knowledge_object_id`, the health run), the compound sets
+# for Skills, Languages, Finance and Health (KN-11, those runs), Flashcards from Book quotes (FC-7, LIF-363). Every
+# Knowledge entity is a potential Gamification rule subject (GM-36); no module is ruled out.
