@@ -8337,11 +8337,11 @@
       "module": "skills",
       "status": "active",
       "supersedes": [],
-      "summary": "A skill incorporates any entity in any module as a component (habits, exercises and workouts, meals, Finance items, purposes, projects, books to read, programs and courses to take, Knowledge, sessions, tasks), many per skill, through entity links and never limited by a resource type; every Skills entity (`skill`, `skill_level`, `skill_activity`, `skill_dev_log`, `skill_dependency`, `skill_definition`) is in turn a target of tags, notes, pages and links, a practice being reached through its base session, and Skills owns no tag or link table.",
+      "summary": "A skill incorporates any entity in any module as a component (habits, exercises and workouts, meals, Finance items, purposes, projects, books to read, programs and courses to take, Knowledge, sessions, tasks), many per skill, through entity links and never limited by a resource type; every Skills entity (`skill`, `skill_level`, `skill_activity`, `skill_dev_log`, `skill_dependency`) is in turn a target of tags, notes, pages and links, a practice being reached through its base session, and Skills owns no tag or link table.",
       "anchors": [
         "docs/modules/skills/intent.yaml"
       ],
-      "tokens": 209,
+      "tokens": 204,
       "path": "docs/modules/skills/intent/SK-15.md"
     },
     {
@@ -8441,11 +8441,11 @@
       "module": "skills",
       "status": "active",
       "supersedes": [],
-      "summary": "A level-up, a mastery reached and a practice streak emit the grant-currency feeder that Gamification applies; Skills emits the signal and never writes points.",
+      "summary": "A level-up, a mastery reached and a practice streak emit `award_xp` with no payload, and Gamification's handler applies the amount; Skills emits the signal and never writes points.",
       "anchors": [
         "docs/modules/skills/intent.yaml"
       ],
-      "tokens": 82,
+      "tokens": 88,
       "path": "docs/modules/skills/intent/SK-22.md"
     },
     {
@@ -8571,11 +8571,11 @@
       "module": "skills",
       "status": "active",
       "supersedes": [],
-      "summary": "Each stage of a syllabus has Skills' own deliverables, shaped like Projects', a required output that holds its own tasks and measures, where only what's nested in a deliverable counts toward it, and deliverables track the skill's progress.",
+      "summary": "Each stage of a syllabus has Skills' own deliverables, shaped like Projects', a required output that holds its own tasks and measures, where only what's nested in a deliverable counts toward it, and deliverables track the skill's progress; an assessment, a task of a Skills type (SK-17), can be one of a deliverable's tasks.",
       "anchors": [
         "docs/modules/skills/intent.yaml"
       ],
-      "tokens": 135,
+      "tokens": 158,
       "path": "docs/modules/skills/intent/SK-31.md"
     },
     {

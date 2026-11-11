@@ -114,9 +114,10 @@
 # Proposed (unnumbered items and the method's items; Victor approves in the PR)
 # SK-15 (Victor, 2026-11-11): a skill incorporates any entity. The registry half is built (BR-SK-5: skill,
 # skill_level, skill_activity, skill_dev_log, skill_dependency, skill_definition in ENTITY_TYPES; skill_action is
-# excluded, its rows tag the base session); the outbound half is not.
+# excluded, its rows tag the base session); the outbound half is not. skill_definition is left out of the row: it
+# follows SK-3's open line (LIF-562).
 - id: SK-15
-  says: A skill incorporates any entity in any module as a component (habits, exercises and workouts, meals, Finance items, purposes, projects, books to read, programs and courses to take, Knowledge, sessions, tasks), many per skill, through entity links and never limited by a resource type; every Skills entity (`skill`, `skill_level`, `skill_activity`, `skill_dev_log`, `skill_dependency`, `skill_definition`) is in turn a target of tags, notes, pages and links, a practice being reached through its base session, and Skills owns no tag or link table.
+  says: A skill incorporates any entity in any module as a component (habits, exercises and workouts, meals, Finance items, purposes, projects, books to read, programs and courses to take, Knowledge, sessions, tasks), many per skill, through entity links and never limited by a resource type; every Skills entity (`skill`, `skill_level`, `skill_activity`, `skill_dev_log`, `skill_dependency`) is in turn a target of tags, notes, pages and links, a practice being reached through its base session, and Skills owns no tag or link table.
   uses: [spaces, notes, habits, health, finance, purposes, projects, books, learning, knowledge, sessions, tasks, KN-6, BK-29, HC-9, SK-5]
   proof: [BR-SK-5]
   work: LIF-562
@@ -152,9 +153,10 @@
   says: Skills exposes its skills, levels, deliverables and activities and their events (a level reached, a deliverable done, a practice done or missed, a skill at risk of decay) and measures (level, progress, mastery, practice consistency) as measurement sources and rule subjects that Purposes and Gamification read live; nothing copies Skills' data.
   uses: [measurement, MS-9, purposes, gamification, GM-36, SK-31]
   work: LIF-140
-# SK-22: split from SK-10. The feeder carries no payload (the LIF-511 decision).
+# SK-22: split from SK-10. award_xp is the points case of the grant-currency feeder (E2), with no payload (the
+# LIF-511 decision).
 - id: SK-22
-  says: A level-up, a mastery reached and a practice streak emit the grant-currency feeder that Gamification applies; Skills emits the signal and never writes points.
+  says: A level-up, a mastery reached and a practice streak emit `award_xp` with no payload, and Gamification's handler applies the amount; Skills emits the signal and never writes points.
   uses: [gamification, effects, GM-21, SK-21]
   work: LIF-140
 - id: SK-23
@@ -195,8 +197,8 @@
   open: Which levels sit under a stage (units, modules, topics), and whether the parent_skill_id grouping is a level above the skill.
   work: LIF-562
 - id: SK-31
-  says: Each stage of a syllabus has Skills' own deliverables, shaped like Projects', a required output that holds its own tasks and measures, where only what's nested in a deliverable counts toward it, and deliverables track the skill's progress.
-  uses: [projects, PJ-13, PJ-14, PJ-34, PJ-35, measurement, SK-4, SK-30]
+  says: Each stage of a syllabus has Skills' own deliverables, shaped like Projects', a required output that holds its own tasks and measures, where only what's nested in a deliverable counts toward it, and deliverables track the skill's progress; an assessment, a task of a Skills type (SK-17), can be one of a deliverable's tasks.
+  uses: [projects, PJ-13, PJ-14, PJ-34, PJ-35, measurement, SK-4, SK-17, SK-30]
   open: Whether a stage needs at least one deliverable at create, as a Projects milestone does (PJ-35).
   work: LIF-562
 
