@@ -4,14 +4,14 @@ kind: intent-row
 module: integrations
 status: active
 supersedes: []
-summary: "A connection's config syncs to the user's other devices and its secrets don't, so the user reconnects once per device; with a self-hosted server the secrets sync too."
+summary: "A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device."
 anchors: [docs/modules/integrations/intent.yaml]
-tokens: 78
+tokens: 81
 generated: true
 ---
 # ITG-15 (intent only)
 
-A connection's config syncs to the user's other devices and its secrets don't, so the user reconnects once per device; with a self-hosted server the secrets sync too.
+A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.
 
 - Uses: sync
 - Work: LIF-578

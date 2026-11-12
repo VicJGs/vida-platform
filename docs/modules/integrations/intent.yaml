@@ -99,9 +99,10 @@
   says: Before encryption lands, a secret lives only in the system keychain, held by Integrations, on a venue that reaches it (the desktop app); the web product holds no secret, and the database never stores one.
   uses: [ai]
   work: LIF-148
-# ITG-15: IN-Q9 (2026-11-07).
+# ITG-15: IN-Q9 (2026-11-07); wording confirmed by Victor 2026-11-12 (the localhost product has no server, so nothing
+# syncs without one; secrets stay per device).
 - id: ITG-15
-  says: A connection's config syncs to the user's other devices and its secrets don't, so the user reconnects once per device; with a self-hosted server the secrets sync too.
+  says: A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.
   uses: [sync]
   work: LIF-578
 # ITG-16: FU-5 and IN-Q6 (2026-11-06). Every module's dataset row reads this; "bundled with the app" is tentative.
