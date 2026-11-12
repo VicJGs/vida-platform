@@ -1182,19 +1182,6 @@
       "path": "docs/modules/calendar/intent/CL-18.md"
     },
     {
-      "id": "CL-19",
-      "kind": "intent-row",
-      "module": "calendar",
-      "status": "active",
-      "supersedes": [],
-      "summary": "The Calendar's own strings sit in one map per file, ready for the Portuguese pass.",
-      "anchors": [
-        "docs/modules/calendar/intent.yaml"
-      ],
-      "tokens": 53,
-      "path": "docs/modules/calendar/intent/CL-19.md"
-    },
-    {
       "id": "CL-2",
       "kind": "intent-row",
       "module": "calendar",
@@ -4515,11 +4502,11 @@
       "module": "calendar",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of calendar: 22 rows, 1 tested, 1 partly tested, 20 intent only.",
+      "summary": "Intended rules of calendar: 21 rows, 1 tested, 1 partly tested, 19 intent only.",
       "anchors": [
         "docs/modules/calendar/intent.yaml"
       ],
-      "tokens": 194,
+      "tokens": 192,
       "path": "docs/modules/calendar/intent.md"
     },
     {

@@ -118,10 +118,9 @@
   says: Every day the Calendar shows is a day in the user's timezone, and it reads the user's time format and week start from Preferences, with one 12-hour time shape across every range.
   uses: [preferences]
   work: LIF-439
-# BR-CAL-S7-10, R14.
-- id: CL-19
-  says: The Calendar's own strings sit in one map per file, ready for the Portuguese pass.
-  work: LIF-572
+# CL-19 is retired, never reused (Victor 2026-11-12): the Portuguese pass is one item, the language feature of
+# Vida (LIF-438), done later, once the full OS is complete; it is not a Calendar row. The Calendar's strings stay in
+# one map per file for it (BR-CAL-S7-10, R14).
 
 # Across modules.
 # Victor 2026-11-11. Relationships G1 (events occur and pass, never completed); LIF-491 project events; HC-20.
