@@ -42,7 +42,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -137,6 +137,10 @@
         "packages/ui/src/components/living-view.test.tsx",
         "packages/ui/src/components/calendar-motion.test.tsx",
         "packages/ui/src/internal/week-layout.test.ts"
+      ],
+      "integrations": [
+        "packages/core/src/foundation/ingestion",
+        "packages/core/src/foundation/egress"
       ]
     },
     "intentFeatures": {

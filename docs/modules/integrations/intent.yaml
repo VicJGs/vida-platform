@@ -1,0 +1,250 @@
+# Integrations intent ledger: every intended, deferred or TBD rule of Integrations, an OS feature (Victor 2026-11-04,
+# LIF-426) that owns the ingestion and egress substrates (LIF-426 SB-Q9: ingestion + egress → Integrations). work =
+# the issue that builds the rest. check:rules derives each row's state.
+# Prefixes (Victor, 2026-11-12): ITG for Integrations' own rows, where ITG-1…ITG-11 are ADR-014's temporary codes
+# X1…X11 (LIF-462) and ITG-12… are proposed; IN for the ingestion substrate, where IN-1…IN-13 are
+# docs/core/ingestion's rules IN-1…IN-13; EG for the egress substrate, where EG-1…EG-10 are docs/core/egress's rules
+# EG-1…EG-10. ITG, IN and EG match nothing in Vida's code; IN-n and EG-n appear only in those two rule files, archived
+# notes and an archived ar-2 plan (PLAN §2 IN-1…3), none of them a test.
+# The model (Victor, 2026-11-06/07 gap sheet and the P-LIF-26 comments, settled before the rows): Integrations is the
+# mediator, the one module every outside datum, every credentialed fetch and every custodied credential passes
+# through, on the user's device and never through a server; the localhost web product has no server at all. It has
+# three layers by who owns the connector: native (curated), datasets (ADR-014's public-reference layer, now small
+# defaults shipped as importable files in one bulk format the user can fill or replace) and user-built (the Settings
+# section). Egress is its own, strictest guard. The model call is AI's (ADR-015). Connections are approved by the user,
+# and Vida answers only for leaks from its own security. Modules own their data; Integrations owns how outside data
+# becomes their rows.
+# Build order (Victor, IN-Q5b and IN-Q11, a plan, not a rule): Settings → Training → Knowledge → Nutrition →
+# Relationships → Projects → Skills → Sessions/Calendar → Learning/Education → Books → Health core → Finance. Provider
+# choice is LIF-100.
+# Sources: ADR-014, docs/core/ingestion and docs/core/egress (current-*), the gap sheet answers (IN-Q1…IN-Q12, FU-5,
+# FU-6, S1…S4), the P-LIF-26 comments, ADR-019 §3.3a, LIF-431, 143, 144, 146, 147, 148 and 100; read with Victor's OK
+# at this run: ADR-010 §3.5, ADR-015's egress lines, the archived xs-ingestion and xs-egress-guard tasks (U-1…U-4) and
+# the integration lines of the July intakes (grep only).
+# Built (the code is the truth): foundation/ingestion (LIF-172, ee557040) and foundation/egress (LIF-171, 305d29f4),
+# 42 + 14 live-store tests. Their M1 ports are in memory or deny-safe, and composition-root.ts builds neither; Books,
+# Finance, Knowledge and AI take the guards by injection. No store, mediator, drop inbox or screen exists.
+# Proof: the rules are labelled IN-n and EG-n, not BR-…, so check:rules knows none of them, and the tests name the
+# archived XCU-nn legs and IR-n codes, never a row ID. Every built row keeps a work link to LIF-577 (name the tests by
+# row ID) until a test reads it tested. No test was renamed. Integrations has no features folder (LIF-426), so the
+# archive guard applies from the start.
+# Consumers (each in its owner's ledger): FN-9, FN-18, FL-5, FL-12, FL-15, HC-2, HC-10, HC-17, HC-22, HN-15, HT-9,
+# BK-9, BK-14, ED-5, ED-6, ED-36, CL-21, RL-11, PJ-11, SK-14, KN-25, TMP-8, CB-12, CB-18, PR-12, and every dataset row
+# (BK-34, HC-33, HN-17, HT-15, ED-30, SK-27, KN-23, CK-22, GM-35, TMP-7, LG-8), which wait on LIF-579.
+
+# ADR-014's clauses, X1…X11 (the temporary codes, LIF-462).
+# ITG-1 is IN-1; the guard checks it before the grant.
+- id: ITG-1
+  says: Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows; no server fetches for the user or sees a plaintext import, and a fetch that could only work through a server reading plaintext is refused, never downgraded.
+  uses: [IN-1]
+  work: LIF-577
+- id: ITG-2
+  says: Integrations has three layers by who owns the connector (native curated connectors, datasets and the user's own connectors), each disclosed at its consent gate with who sees the data and what leaks to whom; the layer follows the owner, not the fetch mechanism, and a source can move between layers over time.
+  uses: [IN-5]
+  work: LIF-577
+# X3's "bulk-pulled from a Vida mirror" is the later server product; today a dataset is an importable file (ITG-16).
+- id: ITG-3
+  says: A dataset is taken whole, never the user's subset, and queried from a local copy, so its source never learns which item the user cared about.
+  uses: [IN-6]
+  work: LIF-579
+- id: ITG-4
+  says: Egress is its own, strictest guard; data leaves the vault only with per-target consent, the union of consents when a sensitive read meets an outside grant, an audit of what left and when, and never automatically.
+  uses: [EG-1, EG-2, EG-3, EG-5]
+  work: LIF-577
+# Re-consent on scope change is the capability enforcer's envelope-hash drift check (Spaces CB rows).
+- id: ITG-5
+  says: An integration is a grant on the capability envelope; external_in_ok is per source and external_out_ok per target, with the layer and the data scope, and a grant is revocable, fails closed and is asked again when its scope changes.
+  uses: [capabilities, IN-2, EG-2]
+  work: LIF-577
+- id: ITG-6
+  says: A fetch is itself an outbound request, so a capability holding a sensitive read and any outside grant takes the union of consents, and its fetch's address and parameters are treated as egress.
+  uses: [IN-3, EG-4]
+  work: LIF-577
+- id: ITG-7
+  says: The mediator holds every credential and makes the call; a capability asks to fetch from a source and gets only the result, never the token.
+  uses: [IN-10, ai]
+  work: LIF-148
+# ITG-8's durable staging is LIF-578; the review screen is Preferences' S3 (PR-22).
+- id: ITG-8
+  says: An import that merges into existing data stages its rows, auto-matches them by date and amount within a tolerance and commits only what the user confirms, failing loud per row; a feed that only adds skips staging, dedups by its natural key and marks a duplicate ignored, never deleting it.
+  uses: [IN-8, IN-9, finance, learning, relationships, preferences, PR-22]
+  work: LIF-578
+- id: ITG-9
+  says: Revoking a grant stops every future fetch and fails closed; rows already ingested stay the user's like any row entered by hand.
+  uses: [IN-11]
+  work: LIF-577
+- id: ITG-10
+  says: Each source has a stable integration identity and a normalization contract (field shape, units, timestamps, dedup key) that every layer emits to, so a user's connector upgrades to a native one as a connector migration, not a data migration.
+  uses: [IN-12, EG-10]
+  work: LIF-578
+- id: ITG-11
+  says: The model call belongs to Vida's assistant (ADR-015); Integrations moves the data and takes its consent, and a pipeline that does both (a photo to text) takes Integrations' consent for the movement and the assistant's rules for the recognition.
+  uses: [ai]
+  work: LIF-145
+
+# Proposed IDs, no ID in ADR-014 today (approve in the PR)
+# ITG-12: IN-Q1 and the P-LIF-26 comment of 2026-11-06; ADR-014 §3.9 (modules own their data). No live doc defined the
+# mediator; IN-10 and BR-AI-6/12 only name it. The composition and the live guard are LIF-148's.
+- id: ITG-12
+  says: Integrations is the mediator; every credentialed fetch, every custodied credential (connection keys and model keys) and every outside reach passes through it, and modules declare their sources and own their rows, while Integrations owns only how outside data becomes those rows.
+  uses: [ai, IN-10]
+  work: LIF-148
+# ITG-13: F-check 6 and IN-Q8 (2026-11-06/07); LIF-143's aggregator decision. Written into the docs by LIF-582.
+- id: ITG-13
+  says: A connection works the way any developer's does (OAuth sign-in, cross-origin requests, service keys), approved by the user at its consent gate; Vida answers for leaks from its own security only, never for what a connection the user approved does, and a third-party aggregator is allowed as such a connection.
+  uses: [finance, FN-9]
+  work: LIF-582
+# ITG-14: ADR-019 §3.3a (IN-Q4, FU-6, EN-Q7). The keychain adapter is the mediator's (LIF-148).
+- id: ITG-14
+  says: Before encryption lands, a secret lives only in the system keychain, held by Integrations, on a venue that reaches it (the desktop app); the web product holds no secret, and the database never stores one.
+  uses: [ai]
+  work: LIF-148
+# ITG-15: IN-Q9 (2026-11-07); wording confirmed by Victor 2026-11-12 (the localhost product has no server, so nothing
+# syncs without one; secrets stay per device).
+- id: ITG-15
+  says: A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.
+  uses: [sync]
+  work: LIF-578
+# ITG-16: FU-5 and IN-Q6 (2026-11-06). Every module's dataset row reads this; "bundled with the app" is tentative.
+- id: ITG-16
+  says: A dataset is a set of data inside Vida; small curated defaults ship with Vida as importable files in one bulk format the user accepts or declines, and the user fills, extends or replaces any of them by import or by their own automation, owning its accuracy and locale; data comes in in bulk, never one row at a time.
+  uses: [health, books, knowledge, skills, learning, check-ins, gamification, spaces, finance]
+  work: LIF-579
+- id: ITG-17
+  says: A shipped dataset carries its source, version and integrity signature and is verified before use; an unverified one fails closed.
+  uses: [IN-7, finance, FL-5]
+  open: Whether a dataset the user supplies is verified too or only carries its provenance.
+  work: LIF-579
+# ITG-18: IN-Q12 and the P-LIF-26 comments of 2026-11-06/07.
+- id: ITG-18
+  says: The user's own automations (scripts, scheduled jobs) feed Vida while the app is closed through a drop file the web app picks up the next time it opens, in the dataset bulk format, and through a local endpoint that writes directly on the desktop app; both pass through the guard.
+  uses: [ITG-16]
+  work: LIF-580
+# ITG-19: IN-Q3 (2026-11-06).
+- id: ITG-19
+  says: A live source (a calendar feed, a wearable) refreshes on the web while the app is open and in the background only on a native venue, and the user may set up their own fetching through Integrations.
+  uses: [learning, ED-6, health, HC-22]
+  work: LIF-580
+# ITG-20: Victor 2026-11-12 (decided later). LIF-147's Education comment: a browser on localhost can't read most feed
+# URLs cross-origin.
+- id: ITG-20
+  says: On the localhost web product, which runs on the user's machine with no server, an outside source the browser can't read cross-origin is reached in a way the user approves, never through a Vida server.
+  open: How (only cross-origin-friendly sources plus file import and the drop file, a local helper the user runs, or waiting for the desktop app).
+  work: LIF-580
+# ITG-21: gap sheet S1 (kept, Integrations'); the archived XCU-03u leg.
+- id: ITG-21
+  says: Turning on an integration shows a consent gate with its layer, who sees the data and what leaves the device, asks for the grant and says the manual path keeps working if the user declines; an egress grant that joins a sensitive read is shown as one channel, conspicuously.
+  uses: [IN-5, EG-3]
+  work: LIF-581
+# ITG-22: gap sheet S4 (Integrations') and Victor 2026-11-12 (Integrations owns it, Settings hosts it); PR-12
+# reworded to match. The archived XCU-16u leg.
+- id: ITG-22
+  says: Integrations owns the Integrations section that Settings hosts, where the user lists, adds and removes their own webhooks and service connectors with Vida cookbooks for common platforms; each connector is a sandboxed capability under the guard and its credential stays with the mediator.
+  uses: [preferences, PR-12, capabilities, CB-12]
+  work: LIF-431
+# ITG-23: ADR-014 §3.6, EX-1 (no code of its own); IN-2 is its grant half.
+- id: ITG-23
+  says: Every integration is off by default and opt-in, the manual core works fully without any of them, and no integration is ever a precondition of a core capability.
+  uses: [IN-2]
+  work: LIF-577
+# ITG-24: ADR-014 §3.2 Layer 1 and §5 (DECISION owed); the archived U-1. Which platforms first is provider selection.
+- id: ITG-24
+  says: Native connectors are a curated set Vida maintains per area, connecting the device straight to platforms the user already uses.
+  open: How a platform qualifies for a native connector (trust bar, security review, deprecation).
+  work: LIF-100
+# ITG-25: IN-Q7 (2026-11-07); ADR-014 §5 owes them to ADR-002 §5.20; the archived U-4 and the egress task's U-1/U-2.
+- id: ITG-25
+  says: Integrations designs its stores and formats (import_staging, connection_config, the integration registry, the egress audit and per-target consent stores, the dataset format and the drop inbox); staging, connection and audit rows are field-encrypted once encryption lands, and the audit is append-only.
+  uses: [IN-13, EG-6, EG-9]
+  work: LIF-578
+# ITG-26: ADR-014 §3.2 (PC-4) and §6d; the archived U-3.
+- id: ITG-26
+  says: Connectors shared between users stay behind the deferred community gate; community capability blocks and templates come in only as imports through Integrations and run untrusted.
+  uses: [spaces, CB-18, TMP-8]
+  work: LIF-409
+# ITG-27: ADR-014 §3.2's residual and §6a; FN-8 keeps FX device-side or manual.
+- id: ITG-27
+  says: A live price fetched per holding tells the price source what the user holds, so it is disclosed as a leak until a whole-index pull, an oblivious relay or a private lookup closes it.
+  uses: [finance]
+  work: LIF-143
+
+# The ingestion substrate: docs/core/ingestion's rules, IN-1…IN-13 one to one.
+- id: IN-1
+  says: A fetch that could only work by the server reading plaintext is denied before the grant is checked, never silently downgraded; the server is never a fetch proxy.
+  work: LIF-577
+- id: IN-2
+  says: external_in_ok is needed first and never enough alone; an integration without the grant is off by default, and the grant's existence is the opt-in.
+  work: LIF-577
+- id: IN-3
+  says: An ingestion whose data scope names a sensitive module routes its outbound fetch through the egress guard, while a fetch with no sensitive read is governed by the grant alone and never over-gated.
+  work: LIF-577
+- id: IN-4
+  says: A fetch with a sensitive read needs proof the user started it; without it the egress leg denies.
+  work: LIF-577
+- id: IN-5
+  says: Each connector is classed native, public-reference or user-managed by its owner, and its disclosure returns ADR-014's leak matrix as written; an unknown layer fails loud.
+  work: LIF-577
+- id: IN-6
+  says: A refresh of a subset of a public dataset is refused; the whole set is fetched and queried from a local copy.
+  work: LIF-577
+# IN-7's verifier fails closed at M1 (returns false); the real verifier is LIF-579.
+- id: IN-7
+  says: A bundled or mirrored dataset is verified for provenance, signature and version before use, and an unsigned or tampered one is denied.
+  work: LIF-579
+# IN-8's staging is in memory at M1; the durable import_staging is LIF-578.
+- id: IN-8
+  says: Auto-match uses a date and amount tolerance and never touches a parse-error row, and commit takes only confirmed rows without errors, skipping rows already committed through the idempotent write rail.
+  work: LIF-578
+- id: IN-9
+  says: An add-only feed marks a duplicate of the same feed and uid ignored and keeps the row.
+  work: LIF-577
+# IN-10: no mediator exists at M1 (mediator_unavailable); ITG-12 makes Integrations the mediator.
+- id: IN-10
+  says: A fetch through the mediator asserts the guard first and then lets the mediator inject the credential, so the capability never receives one.
+  work: LIF-148
+- id: IN-11
+  says: Revoking an integration retires its grant and fails closed afterwards; it reaches only the grant, never a data row, so ingested rows stay.
+  work: LIF-577
+# IN-12's registry is in memory at M1; the durable registry is LIF-578.
+- id: IN-12
+  says: The registry keys each source on a stable integration identity and normalization contract, a native adapter upgrades it keeping both, and a user's connector must leave its credential with the mediator.
+  work: LIF-578
+- id: IN-13
+  says: The guard and engines hold no credential, make no network call and keep no store until real reach lands, and the staging and connection rows are field-encrypted when stored.
+  work: LIF-578
+
+# The egress substrate: docs/core/egress's rules, EG-1…EG-10 one to one.
+- id: EG-1
+  says: Every missing or negative input denies egress (no user initiation, an unresolved target, external_out off, a missing sensitive consent, no per-target consent); only an explicit match permits.
+  work: LIF-577
+- id: EG-2
+  says: external_out_ok never permits alone; per-target consent, the union and never-auto-transmit still gate on top, and a blanket allow-external never satisfies egress.
+  work: LIF-577
+- id: EG-3
+  says: A slice that reads a sensitive module egresses only when both its sensitive consent and the external_out grant pass.
+  work: LIF-577
+- id: EG-4
+  says: A fetch goes through the same egress gate, its address and parameters becoming the audited slice; a fetch with no sensitive read is governed by the grant alone.
+  work: LIF-577
+- id: EG-5
+  says: Every egress needs proof the user started it; one composed by an agent or by code denies, and each hop to a cloud model meets the gate again.
+  uses: [ai]
+  work: LIF-577
+# EG-6's audit port is a no-op at M1; the append-only store is LIF-578, the screen Preferences' S2 (PR-21).
+- id: EG-6
+  says: The audit record names the target, a summary of the slice, the sensitive tags and the time, never the payload, and is field-encrypted and append-only when stored.
+  uses: [preferences, PR-21]
+  work: LIF-578
+- id: EG-7
+  says: Checking an egress is pure and records nothing, and asserting one records it exactly once when permitted.
+  work: LIF-577
+- id: EG-8
+  says: A capability the enforcer can't resolve is a programming error that propagates, not a policy denial, and a denial names the capability.
+  work: LIF-577
+# EG-9's consent port denies at M1; the per-target consent store is LIF-578.
+- id: EG-9
+  says: The guard decides and builds the record but holds no token and makes no provider call, and until real reach its consent default denies and its audit sink does nothing.
+  work: LIF-578
+- id: EG-10
+  says: An egress target keys on the stable integration identity, not a raw address, so upgrading a user's connector to a native one keeps its grants and audit.
+  work: LIF-577

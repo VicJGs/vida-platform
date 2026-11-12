@@ -41,11 +41,12 @@
 - id: PR-11
   says: Notification channels are in_app, push and email, never sms; the per-module push toggles ride the push channel.
   uses: [notifications]
+# PR-12 reworded in LIF-349 run 31 (Victor, 2026-11-12): the gap sheet gives S4 to Integrations (ITG-22), and Settings
+# hosts it. The tables and the integration-identity anchor moved to ITG-25 (LIF-578).
 - id: PR-12
-  says: Preferences owns the user-managed integration surface (webhooks, external APIs, cookbooks); fetch, egress and connection_config custody stay with the ADR-014 guard, never a preferences column.
-  uses: [integrations, capabilities]
+  says: Settings hosts the Integrations section that Integrations owns (ITG-22); Preferences stores no connector, credential or connection_config, and fetch, egress and custody stay with the Integrations guard.
+  uses: [integrations, ITG-22]
   work: LIF-431
-  open: The integration tables and the integration-identity anchor (ADR-002 §5.20).
 # Proposed IDs, no ID in docs/features today (approve in the PR)
 - id: PR-13
   says: Quiet hours are applied when Notifications registers a scheduled alert, and changing a quiet-hours preference reschedules the affected reminders (N7).
@@ -78,3 +79,12 @@
   says: The page transition is a preference (page-turn, cross-fade, slide or none) stored as a dashboard_layout sub-key with no schema change, and it reads none while reduce motion is on.
   uses: [shell]
   work: LIF-437
+# Proposed in LIF-349 run 31 (Integrations): the gap sheet's S2 and S3 are Preferences' (Victor, 2026-11-06).
+- id: PR-21
+  says: Preferences has the egress audit trail screen, listing everything that left the vault (target, time, the slice summary and the consent that allowed it, cloud model calls included), read from Integrations' append-only audit and never copied.
+  uses: [integrations, EG-6, ai]
+  work: LIF-583
+- id: PR-22
+  says: Preferences has the import review screen, where staged rows show as new, matched or conflicting with the user's own data and the user accepts, merges or rejects each before anything is written, through Integrations' staging.
+  uses: [integrations, ITG-8, finance, FN-18, relationships, RL-11]
+  work: LIF-583

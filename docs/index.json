@@ -2113,6 +2113,136 @@
       "path": "docs/modules/learning/intent/ED-9.md"
     },
     {
+      "id": "EG-1",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every missing or negative input denies egress (no user initiation, an unresolved target, external_out off, a missing sensitive consent, no per-target consent); only an explicit match permits.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/integrations/intent/EG-1.md"
+    },
+    {
+      "id": "EG-10",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An egress target keys on the stable integration identity, not a raw address, so upgrading a user's connector to a native one keeps its grants and audit.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/integrations/intent/EG-10.md"
+    },
+    {
+      "id": "EG-2",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "external_out_ok never permits alone; per-target consent, the union and never-auto-transmit still gate on top, and a blanket allow-external never satisfies egress.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/integrations/intent/EG-2.md"
+    },
+    {
+      "id": "EG-3",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A slice that reads a sensitive module egresses only when both its sensitive consent and the external_out grant pass.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/integrations/intent/EG-3.md"
+    },
+    {
+      "id": "EG-4",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fetch goes through the same egress gate, its address and parameters becoming the audited slice; a fetch with no sensitive read is governed by the grant alone.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/integrations/intent/EG-4.md"
+    },
+    {
+      "id": "EG-5",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every egress needs proof the user started it; one composed by an agent or by code denies, and each hop to a cloud model meets the gate again.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/integrations/intent/EG-5.md"
+    },
+    {
+      "id": "EG-6",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The audit record names the target, a summary of the slice, the sensitive tags and the time, never the payload, and is field-encrypted and append-only when stored.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/integrations/intent/EG-6.md"
+    },
+    {
+      "id": "EG-7",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Checking an egress is pure and records nothing, and asserting one records it exactly once when permitted.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/integrations/intent/EG-7.md"
+    },
+    {
+      "id": "EG-8",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A capability the enforcer can't resolve is a programming error that propagates, not a policy denial, and a denial names the capability.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/integrations/intent/EG-8.md"
+    },
+    {
+      "id": "EG-9",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The guard decides and builds the record but holds no token and makes no provider call, and until real reach its consent default denies and its audit sink does nothing.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/integrations/intent/EG-9.md"
+    },
+    {
       "id": "FC-1",
       "kind": "intent-row",
       "module": "knowledge",
@@ -4484,6 +4614,175 @@
       "path": "docs/modules/health/intent/HT-9.md"
     },
     {
+      "id": "IN-1",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fetch that could only work by the server reading plaintext is denied before the grant is checked, never silently downgraded; the server is never a fetch proxy.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/integrations/intent/IN-1.md"
+    },
+    {
+      "id": "IN-10",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fetch through the mediator asserts the guard first and then lets the mediator inject the credential, so the capability never receives one.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/integrations/intent/IN-10.md"
+    },
+    {
+      "id": "IN-11",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Revoking an integration retires its grant and fails closed afterwards; it reaches only the grant, never a data row, so ingested rows stay.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/integrations/intent/IN-11.md"
+    },
+    {
+      "id": "IN-12",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The registry keys each source on a stable integration identity and normalization contract, a native adapter upgrades it keeping both, and a user's connector must leave its credential with the mediator.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/integrations/intent/IN-12.md"
+    },
+    {
+      "id": "IN-13",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The guard and engines hold no credential, make no network call and keep no store until real reach lands, and the staging and connection rows are field-encrypted when stored.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/integrations/intent/IN-13.md"
+    },
+    {
+      "id": "IN-2",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "external_in_ok is needed first and never enough alone; an integration without the grant is off by default, and the grant's existence is the opt-in.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/integrations/intent/IN-2.md"
+    },
+    {
+      "id": "IN-3",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An ingestion whose data scope names a sensitive module routes its outbound fetch through the egress guard, while a fetch with no sensitive read is governed by the grant alone and never over-gated.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/integrations/intent/IN-3.md"
+    },
+    {
+      "id": "IN-4",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fetch with a sensitive read needs proof the user started it; without it the egress leg denies.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/integrations/intent/IN-4.md"
+    },
+    {
+      "id": "IN-5",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each connector is classed native, public-reference or user-managed by its owner, and its disclosure returns ADR-014's leak matrix as written; an unknown layer fails loud.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/integrations/intent/IN-5.md"
+    },
+    {
+      "id": "IN-6",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A refresh of a subset of a public dataset is refused; the whole set is fetched and queried from a local copy.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 60,
+      "path": "docs/modules/integrations/intent/IN-6.md"
+    },
+    {
+      "id": "IN-7",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A bundled or mirrored dataset is verified for provenance, signature and version before use, and an unsigned or tampered one is denied.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/integrations/intent/IN-7.md"
+    },
+    {
+      "id": "IN-8",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Auto-match uses a date and amount tolerance and never touches a parse-error row, and commit takes only confirmed rows without errors, skipping rows already committed through the idempotent write rail.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/integrations/intent/IN-8.md"
+    },
+    {
+      "id": "IN-9",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An add-only feed marks a duplicate of the same feed and uid ignored and keeps the row.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/integrations/intent/IN-9.md"
+    },
+    {
       "id": "INTENT-books",
       "kind": "intent",
       "module": "books",
@@ -4575,6 +4874,19 @@
       "path": "docs/modules/health/intent.md"
     },
     {
+      "id": "INTENT-integrations",
+      "kind": "intent",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of integrations: 50 rows, 0 tested, 0 partly tested, 50 intent only.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 187,
+      "path": "docs/modules/integrations/intent.md"
+    },
+    {
       "id": "INTENT-journals",
       "kind": "intent",
       "module": "journals",
@@ -4645,11 +4957,11 @@
       "module": "preferences",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of preferences: 20 rows, 2 tested, 0 partly tested, 18 intent only.",
+      "summary": "Intended rules of preferences: 22 rows, 2 tested, 0 partly tested, 20 intent only.",
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 134,
+      "tokens": 138,
       "path": "docs/modules/preferences/intent.md"
     },
     {
@@ -4755,6 +5067,357 @@
       ],
       "tokens": 133,
       "path": "docs/modules/tasks/intent.md"
+    },
+    {
+      "id": "ITG-1",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows; no server fetches for the user or sees a plaintext import, and a fetch that could only work through a server reading plaintext is refused, never downgraded.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 111,
+      "path": "docs/modules/integrations/intent/ITG-1.md"
+    },
+    {
+      "id": "ITG-10",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each source has a stable integration identity and a normalization contract (field shape, units, timestamps, dedup key) that every layer emits to, so a user's connector upgrades to a native one as a connector migration, not a data migration.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/integrations/intent/ITG-10.md"
+    },
+    {
+      "id": "ITG-11",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The model call belongs to Vida's assistant (ADR-015); Integrations moves the data and takes its consent, and a pipeline that does both (a photo to text) takes Integrations' consent for the movement and the assistant's rules for the recognition.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/integrations/intent/ITG-11.md"
+    },
+    {
+      "id": "ITG-12",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Integrations is the mediator; every credentialed fetch, every custodied credential (connection keys and model keys) and every outside reach passes through it, and modules declare their sources and own their rows, while Integrations owns only how outside data becomes those rows.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 108,
+      "path": "docs/modules/integrations/intent/ITG-12.md"
+    },
+    {
+      "id": "ITG-13",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A connection works the way any developer's does (OAuth sign-in, cross-origin requests, service keys), approved by the user at its consent gate; Vida answers for leaks from its own security only, never for what a connection the user approved does, and a third-party aggregator is allowed as such a connection.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 116,
+      "path": "docs/modules/integrations/intent/ITG-13.md"
+    },
+    {
+      "id": "ITG-14",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Before encryption lands, a secret lives only in the system keychain, held by Integrations, on a venue that reaches it (the desktop app); the web product holds no secret, and the database never stores one.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/integrations/intent/ITG-14.md"
+    },
+    {
+      "id": "ITG-15",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/integrations/intent/ITG-15.md"
+    },
+    {
+      "id": "ITG-16",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A dataset is a set of data inside Vida; small curated defaults ship with Vida as importable files in one bulk format the user accepts or declines, and the user fills, extends or replaces any of them by import or by their own automation, owning its accuracy and locale; data comes in in bulk, never one row at a time.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 136,
+      "path": "docs/modules/integrations/intent/ITG-16.md"
+    },
+    {
+      "id": "ITG-17",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A shipped dataset carries its source, version and integrity signature and is verified before use; an unverified one fails closed.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/integrations/intent/ITG-17.md"
+    },
+    {
+      "id": "ITG-18",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user's own automations (scripts, scheduled jobs) feed Vida while the app is closed through a drop file the web app picks up the next time it opens, in the dataset bulk format, and through a local endpoint that writes directly on the desktop app; both pass through the guard.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 107,
+      "path": "docs/modules/integrations/intent/ITG-18.md"
+    },
+    {
+      "id": "ITG-19",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A live source (a calendar feed, a wearable) refreshes on the web while the app is open and in the background only on a native venue, and the user may set up their own fetching through Integrations.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/integrations/intent/ITG-19.md"
+    },
+    {
+      "id": "ITG-2",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Integrations has three layers by who owns the connector (native curated connectors, datasets and the user's own connectors), each disclosed at its consent gate with who sees the data and what leaks to whom; the layer follows the owner, not the fetch mechanism, and a source can move between layers over time.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/integrations/intent/ITG-2.md"
+    },
+    {
+      "id": "ITG-20",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On the localhost web product, which runs on the user's machine with no server, an outside source the browser can't read cross-origin is reached in a way the user approves, never through a Vida server.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 120,
+      "path": "docs/modules/integrations/intent/ITG-20.md"
+    },
+    {
+      "id": "ITG-21",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Turning on an integration shows a consent gate with its layer, who sees the data and what leaves the device, asks for the grant and says the manual path keeps working if the user declines; an egress grant that joins a sensitive read is shown as one channel, conspicuously.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/integrations/intent/ITG-21.md"
+    },
+    {
+      "id": "ITG-22",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Integrations owns the Integrations section that Settings hosts, where the user lists, adds and removes their own webhooks and service connectors with Vida cookbooks for common platforms; each connector is a sandboxed capability under the guard and its credential stays with the mediator.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/integrations/intent/ITG-22.md"
+    },
+    {
+      "id": "ITG-23",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every integration is off by default and opt-in, the manual core works fully without any of them, and no integration is ever a precondition of a core capability.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/integrations/intent/ITG-23.md"
+    },
+    {
+      "id": "ITG-24",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Native connectors are a curated set Vida maintains per area, connecting the device straight to platforms the user already uses.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/integrations/intent/ITG-24.md"
+    },
+    {
+      "id": "ITG-25",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Integrations designs its stores and formats (import_staging, connection_config, the integration registry, the egress audit and per-target consent stores, the dataset format and the drop inbox); staging, connection and audit rows are field-encrypted once encryption lands, and the audit is append-only.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 115,
+      "path": "docs/modules/integrations/intent/ITG-25.md"
+    },
+    {
+      "id": "ITG-26",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Connectors shared between users stay behind the deferred community gate; community capability blocks and templates come in only as imports through Integrations and run untrusted.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/integrations/intent/ITG-26.md"
+    },
+    {
+      "id": "ITG-27",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A live price fetched per holding tells the price source what the user holds, so it is disclosed as a leak until a whole-index pull, an oblivious relay or a private lookup closes it.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/integrations/intent/ITG-27.md"
+    },
+    {
+      "id": "ITG-3",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A dataset is taken whole, never the user's subset, and queried from a local copy, so its source never learns which item the user cared about.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/integrations/intent/ITG-3.md"
+    },
+    {
+      "id": "ITG-4",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Egress is its own, strictest guard; data leaves the vault only with per-target consent, the union of consents when a sensitive read meets an outside grant, an audit of what left and when, and never automatically.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/integrations/intent/ITG-4.md"
+    },
+    {
+      "id": "ITG-5",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An integration is a grant on the capability envelope; external_in_ok is per source and external_out_ok per target, with the layer and the data scope, and a grant is revocable, fails closed and is asked again when its scope changes.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/integrations/intent/ITG-5.md"
+    },
+    {
+      "id": "ITG-6",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fetch is itself an outbound request, so a capability holding a sensitive read and any outside grant takes the union of consents, and its fetch's address and parameters are treated as egress.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/integrations/intent/ITG-6.md"
+    },
+    {
+      "id": "ITG-7",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The mediator holds every credential and makes the call; a capability asks to fetch from a source and gets only the result, never the token.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/integrations/intent/ITG-7.md"
+    },
+    {
+      "id": "ITG-8",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An import that merges into existing data stages its rows, auto-matches them by date and amount within a tolerance and commits only what the user confirms, failing loud per row; a feed that only adds skips staging, dedups by its natural key and marks a duplicate ignored, never deleting it.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 124,
+      "path": "docs/modules/integrations/intent/ITG-8.md"
+    },
+    {
+      "id": "ITG-9",
+      "kind": "intent-row",
+      "module": "integrations",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Revoking a grant stops every future fetch and fails closed; rows already ingested stay the user's like any row entered by hand.",
+      "anchors": [
+        "docs/modules/integrations/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/integrations/intent/ITG-9.md"
     },
     {
       "id": "JR-1",
@@ -7661,11 +8324,11 @@
       "module": "preferences",
       "status": "active",
       "supersedes": [],
-      "summary": "Preferences owns the user-managed integration surface (webhooks, external APIs, cookbooks); fetch, egress and connection_config custody stay with the ADR-014 guard, never a preferences column.",
+      "summary": "Settings hosts the Integrations section that Integrations owns (ITG-22); Preferences stores no connector, credential or connection_config, and fetch, egress and custody stay with the Integrations guard.",
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 111,
+      "tokens": 91,
       "path": "docs/modules/preferences/intent/PR-12.md"
     },
     {
@@ -7786,6 +8449,32 @@
       ],
       "tokens": 81,
       "path": "docs/modules/preferences/intent/PR-20.md"
+    },
+    {
+      "id": "PR-21",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences has the egress audit trail screen, listing everything that left the vault (target, time, the slice summary and the consent that allowed it, cloud model calls included), read from Integrations' append-only audit and never copied.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/preferences/intent/PR-21.md"
+    },
+    {
+      "id": "PR-22",
+      "kind": "intent-row",
+      "module": "preferences",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Preferences has the import review screen, where staged rows show as new, matched or conflicting with the user's own data and the user accepts, merges or rejects each before anything is written, through Integrations' staging.",
+      "anchors": [
+        "docs/modules/preferences/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/preferences/intent/PR-22.md"
     },
     {
       "id": "PR-3",
