@@ -23,6 +23,8 @@
 # CL IDs. No test names a CL ID, and CL matches nowhere in Vida, inside another ID included. No test was renamed.
 # Calendar has no features folder (LIF-426), so the archive guard applies from the start.
 
+# Proposed IDs, every row: the Calendar has no features folder and no intent ID today (approve in the PR)
+
 # The feature and its invariant.
 - id: CL-1
   says: The Global Calendar is a Vida feature of its own with its own page, owned by no module; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.
