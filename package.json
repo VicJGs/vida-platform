@@ -42,7 +42,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -128,6 +128,15 @@
         "packages/core/src/foundation/views",
         "packages/core/src/foundation/templates",
         "packages/core/src/foundation/capability"
+      ],
+      "calendar": [
+        "apps/web/src/app/calendar",
+        "packages/ui/src/components/agenda-view.test.tsx",
+        "packages/ui/src/components/week-view.test.tsx",
+        "packages/ui/src/components/year-view.test.tsx",
+        "packages/ui/src/components/living-view.test.tsx",
+        "packages/ui/src/components/calendar-motion.test.tsx",
+        "packages/ui/src/internal/week-layout.test.ts"
       ]
     },
     "intentFeatures": {

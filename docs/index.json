@@ -1051,6 +1051,294 @@
       "path": "docs/modules/check-ins/intent/CK-9.md"
     },
     {
+      "id": "CL-1",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Global Calendar is a Vida feature of its own with its own page, owned by no module; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/calendar/intent/CL-1.md"
+    },
+    {
+      "id": "CL-10",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Living draws each active habit as a thread across the week, kept, missed, today, future or a rest day that is never a miss, with its current streak beside it.",
+      "anchors": [
+        "apps/web/src/app/calendar/calendar-derive.test.ts",
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/calendar/intent/CL-10.md"
+    },
+    {
+      "id": "CL-11",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Living shows the week's hours by the purpose each block serves, in the purpose's colour, and flags a purpose with none; a purpose with no measure reads unmeasured, never a made-up number.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/calendar/intent/CL-11.md"
+    },
+    {
+      "id": "CL-12",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Living offers today's open time, the free availability windows from now to the end of the day after the day's exceptions, as an offer to slot deep work, study or a habit.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/calendar/intent/CL-12.md"
+    },
+    {
+      "id": "CL-13",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Living flags a slipping task (overdue, or scheduled after its due date) in today's column, and shows how many times a must-do was pushed once Tasks keeps its reschedule history.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/calendar/intent/CL-13.md"
+    },
+    {
+      "id": "CL-14",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A future day in Living shows the user's intention for it, read from their check-ins.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 58,
+      "path": "docs/modules/calendar/intent/CL-14.md"
+    },
+    {
+      "id": "CL-15",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Calendar reads every module's due work through the Sessions due agenda, one call per visible span, and never names a module; a task sits on its due and scheduled dates, another module's item on its deadline date, and review due work arrives through its owner's lane, never a direct review read.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/calendar/intent/CL-15.md"
+    },
+    {
+      "id": "CL-16",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each lane shows its own loading, empty, error and success, one lane failing greys only that lane, nothing is ever made up, and a module's failed due lane reads unavailable right now, never as nothing due.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/calendar/intent/CL-16.md"
+    },
+    {
+      "id": "CL-17",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sessions' placed blocks render as the plan beside the deadlines, timed in Week and Day and in Agenda, and past focus shows on each past day; nothing writes planned blocks yet.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/calendar/intent/CL-17.md"
+    },
+    {
+      "id": "CL-18",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every day the Calendar shows is a day in the user's timezone, and it reads the user's time format and week start from Preferences, with one 12-hour time shape across every range.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/calendar/intent/CL-18.md"
+    },
+    {
+      "id": "CL-19",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Calendar's own strings sit in one map per file, ready for the Portuguese pass.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 53,
+      "path": "docs/modules/calendar/intent/CL-19.md"
+    },
+    {
+      "id": "CL-2",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every range renders and never writes; a check, a move or slotting open time is an intent the owning module's capability carries out, and with no capability composed the control is absent, never a dead one.",
+      "anchors": [
+        "apps/web/src/app/calendar/calendar-readonly.test.ts",
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/calendar/intent/CL-2.md"
+    },
+    {
+      "id": "CL-20",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Events stay each module's own (Relationships events, project events, Health's scheduled items); when two modules hold the same event they are connected by a link, never copied or given one owner, and the Calendar reads each through its owner and shows the connection.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 137,
+      "path": "docs/modules/calendar/intent/CL-20.md"
+    },
+    {
+      "id": "CL-21",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Outside calendars (a class schedule feed, external appointments) arrive through Integrations into the module that owns them and render on the Calendar like any lane, and the Calendar can be exported as a feed; on the localhost product there is no server, so a fetch runs on the device.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/calendar/intent/CL-21.md"
+    },
+    {
+      "id": "CL-22",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Calendar keeps its own page and lens rather than being a saved view; the calendar layout of saved views is separate, and ADR-007 §3.5 and its review trigger are amended to say so, including whether provider fan-out holds its interaction budget.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/calendar/intent/CL-22.md"
+    },
+    {
+      "id": "CL-3",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "From the Calendar the user ticks a habit, slots open time, reserves a slot for an activity and moves a placed block, each through the owning module's capability composed into the Calendar (Habits, Sessions availability and planned blocks, Routines slot presets); the Calendar owns no slot or reservation record.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 125,
+      "path": "docs/modules/calendar/intent/CL-3.md"
+    },
+    {
+      "id": "CL-4",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A range switcher (a toolbar of the six ranges that condenses to a menu below tablet width) with previous, today and next sits in the page frame, which owns the period title once; the range swap fades and Today pulses the today mark, both instant under reduced motion; the active range and focused date are page state, never stored.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 115,
+      "path": "docs/modules/calendar/intent/CL-4.md"
+    },
+    {
+      "id": "CL-5",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Month reuses the shared month grid without its own header, shows the period's due items as chips with today marked and named, and a dense day unfurls in place, one day at a time, collapsing on Escape, a second press or a month change.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/calendar/intent/CL-5.md"
+    },
+    {
+      "id": "CL-6",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Agenda lists the focused week's days in provider order, grouping only today by daypart (morning before noon, afternoon to 18:00, evening after, an untimed item in the morning); an item shows its time or All day, Must for an obligation task and no weight otherwise, a struck title when done, and habits by their time of day.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/calendar/intent/CL-6.md"
+    },
+    {
+      "id": "CL-7",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Week and Day are one time-column view (Day is one column) with an hour gutter, one all-day strip and timed blocks placed by hour in side-by-side lanes when they overlap; only items with a real clock time become blocks, so a task or a habit is never given a time.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/calendar/intent/CL-7.md"
+    },
+    {
+      "id": "CL-8",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Year shows twelve mini-months with a density dot per day (has items, or busy when Month would hide some), today ringed and the current month accented; a month's heading opens that month.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/calendar/intent/CL-8.md"
+    },
+    {
+      "id": "CL-9",
+      "kind": "intent-row",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Living shows the focused week by temporal asymmetry, a past day as record (the journal page's first paragraph, what was completed, the focus logged), today as live (its items, open time, slipping tasks and an uncompleted relationships item carried forward from earlier in the week) and a future day as intention and plan; each lane degrades alone.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 130,
+      "path": "docs/modules/calendar/intent/CL-9.md"
+    },
+    {
       "id": "DLV-1",
       "kind": "intent-row",
       "module": "notifications",
@@ -4220,6 +4508,19 @@
       ],
       "tokens": 141,
       "path": "docs/modules/books/intent.md"
+    },
+    {
+      "id": "INTENT-calendar",
+      "kind": "intent",
+      "module": "calendar",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of calendar: 22 rows, 1 tested, 1 partly tested, 20 intent only.",
+      "anchors": [
+        "docs/modules/calendar/intent.yaml"
+      ],
+      "tokens": 194,
+      "path": "docs/modules/calendar/intent.md"
     },
     {
       "id": "INTENT-check-ins",
