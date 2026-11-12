@@ -1,0 +1,141 @@
+# Calendar intent ledger: every intended, deferred or TBD rule of the Global Calendar, an OS feature with its own page
+# (Victor 2026-11-05, LIF-426), prefix CL (Victor 2026-11-07). work = the issue that builds the rest. check:rules
+# derives each row's state.
+# The model (Victor, 2026-11-11, before the rows were written): the Calendar is the book of the user's life read by
+# date, a read-only lens over every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living). It
+# renders and never writes; a check, a move, slotting open time or reserving a slot runs the owning module's
+# capability, composed in, and the Calendar owns no table. Sessions' Planner writes placed blocks, the Calendar reads
+# them (the July Sessions intake, resolved 07-10). Events stay each module's own, and the same event held by two
+# modules is connected by a link. The Calendar keeps its own page and lens; the calendar layout of saved views
+# (VW-3) is a separate thing that Spaces and modules use, so ADR-007 §3.5 is amended (LIF-400).
+# Sources: the Calendar code and tests, the Global Calendar lines in features/sessions-and-scheduling (identity
+# 46-47, contract 25/36/60/64), IA §5, ADR-007, LIF-203, 439, 454 and 147, the archived fe-calendar task (read with
+# Victor's OK at this run: the vision, envision, interpretation, slice-map, seam contract and the S2…S7 plans) and
+# the Calendar lines of the July intakes.
+# Built (the code is the truth): fe-calendar S1…S7 (LIF-203, a1148f93…cc0e350a), all six ranges live on real data in
+# apps/web/src/app/calendar over the @vida/ui AgendaView, WeekView, YearView, LivingView and the shared month grid;
+# the composition root builds sessions, habits, tasks, purposes, relationships and notes and registers three due
+# lanes (tasks, purposes, relationships). Nothing changed since S7 but comments and formatting.
+# Proof: the archived task states 74 BR-CAL-Sn-n rules, but check:rules reads no archive, and apps/web is outside
+# "src", so only three are known: BR-CAL-S5-15 (a comment in @vida/ui), BR-CAL-S6-7 (a comment plus an it() title in
+# calendar-derive.test.ts) and BR-CAL-S7-6 (a describe() title in calendar-readonly.test.ts). Every other built row
+# cites its BR-CAL rules in the comment above it and keeps a work link to the issue that names the tests with their
+# CL IDs. No test names a CL ID, and CL matches nowhere in Vida, inside another ID included. No test was renamed.
+# Calendar has no features folder (LIF-426), so the archive guard applies from the start.
+
+# Proposed IDs, every row: the Calendar has no features folder and no intent ID today (approve in the PR)
+
+# The feature and its invariant.
+- id: CL-1
+  says: The Global Calendar is a Vida feature of its own with its own page, owned by no module; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.
+  uses: [sessions, views]
+  work: LIF-467
+# BR-CAL-S7-6 (tested); BR-CAL-S2-6, S2-11, S3-14, S5-14; EC-12.
+- id: CL-2
+  says: Every range renders and never writes; a check, a move or slotting open time is an intent the owning module's capability carries out, and with no capability composed the control is absent, never a dead one.
+  proof: [BR-CAL-S7-6]
+# Books B9 and the July Sessions intake G7; Victor 2026-11-11 (reserving a slot runs the owning capability).
+- id: CL-3
+  says: From the Calendar the user ticks a habit, slots open time, reserves a slot for an activity and moves a placed block, each through the owning module's capability composed into the Calendar (Habits, Sessions availability and planned blocks, Routines slot presets); the Calendar owns no slot or reservation record.
+  uses: [habits, sessions, SS-9, SS-14, routines, books, BK-12]
+  work: LIF-573
+
+# The ranges. BR-CAL-S7-8 and S7-9 (motion and the unfurl), the S1 chrome fix, EC-1, EC-11, EC-13, EC-14.
+- id: CL-4
+  says: A range switcher (a toolbar of the six ranges that condenses to a menu below tablet width) with previous, today and next sits in the page frame, which owns the period title once; the range swap fades and Today pulses the today mark, both instant under reduced motion; the active range and focused date are page state, never stored.
+  work: LIF-572
+# BR-CAL-S7-9, G13, G14; the vision's dense-day option 1; EC-2, EC-F3.
+- id: CL-5
+  says: Month reuses the shared month grid without its own header, shows the period's due items as chips with today marked and named, and a dense day unfurls in place, one day at a time, collapsing on Escape, a second press or a month change.
+  uses: [views, VW-3]
+  work: LIF-572
+# BR-CAL-S2-1…S2-12, D1 and the S2 daypart bands, G8, G9; EC-3.
+- id: CL-6
+  says: Agenda lists the focused week's days in provider order, grouping only today by daypart (morning before noon, afternoon to 18:00, evening after, an untimed item in the morning); an item shows its time or All day, Must for an obligation task and no weight otherwise, a struck title when done, and habits by their time of day.
+  uses: [tasks, habits]
+  work: LIF-572
+# BR-CAL-S3-1…S3-15, D-S3-DEV-1, G6, R3; EC-4. The live timed half waits on planned blocks (CL-17).
+- id: CL-7
+  says: Week and Day are one time-column view (Day is one column) with an hour gutter, one all-day strip and timed blocks placed by hour in side-by-side lanes when they overlap; only items with a real clock time become blocks, so a task or a habit is never given a time.
+  work: LIF-572
+# BR-CAL-S4-1…S4-12, D-S4-DEV-1, D-S4-DEV-2, G10; EC-5.
+- id: CL-8
+  says: Year shows twelve mini-months with a density dot per day (has items, or busy when Month would hide some), today ringed and the current month accented; a month's heading opens that month.
+  work: LIF-572
+
+# The Living lens. BR-CAL-S5-1…S5-17, D-S7-DEV-4, G11, R1, R5, R12, R15; EC-6…EC-10, EC-F1, EC-F4.
+- id: CL-9
+  says: Living shows the focused week by temporal asymmetry, a past day as record (the journal page's first paragraph, what was completed, the focus logged), today as live (its items, open time, slipping tasks and an uncompleted relationships item carried forward from earlier in the week) and a future day as intention and plan; each lane degrades alone.
+  uses: [notes, tasks, sessions, relationships]
+  work: LIF-572
+# BR-CAL-S6-7 (tested), BR-CAL-S5-4, D-S6-DEV-3, R7; BR-HB-35 is the grid's rule (HB-28). The streak is the habit's
+# write-time cache, stale between writes (the G11 edge).
+- id: CL-10
+  says: Living draws each active habit as a thread across the week, kept, missed, today, future or a rest day that is never a miss, with its current streak beside it.
+  uses: [habits, HB-28]
+  proof: [BR-CAL-S6-7]
+  work: LIF-574
+# BR-CAL-S5-3, D-S6-DEV-1, D-S6-DEV-2, R6; EC-6. Purposes has no colour and no hours measure; the measure is a read
+# over sessions and time logs weighted by contributions (PG-10), never a copy.
+- id: CL-11
+  says: Living shows the week's hours by the purpose each block serves, in the purpose's colour, and flags a purpose with none; a purpose with no measure reads unmeasured, never a made-up number.
+  uses: [purposes, PG-25, measurement, sessions]
+  work: LIF-574
+# R4, G11; EC-9. Slotting it is CL-3.
+- id: CL-12
+  says: Living offers today's open time, the free availability windows from now to the end of the day after the day's exceptions, as an offer to slot deep work, study or a habit.
+  uses: [sessions, SS-9]
+  work: LIF-572
+# D5 and IR-3, R5; EC-10. The count of pushes needs a reschedule history Tasks doesn't keep.
+- id: CL-13
+  says: Living flags a slipping task (overdue, or scheduled after its due date) in today's column, and shows how many times a must-do was pushed once Tasks keeps its reschedule history.
+  uses: [tasks]
+  work: LIF-574
+# The S7 borrowed leg to LIF-179; check-ins carry top intentions and tomorrow's focus, and Check-ins isn't composed.
+- id: CL-14
+  says: A future day in Living shows the user's intention for it, read from their check-ins.
+  uses: [check-ins]
+  work: LIF-574
+
+# The data. BR-CAL-S7-1…S7-4, S7-7, D-S7-DEV-1, G1, G2, G5, G7, R2, R10. The lanes are each owner's rows: TK-18,
+# PG-25, RL-16, BK-23, CK-17, PJ-27, RT-13, KN-19 and FL-6 (three are registered today: tasks, purposes, relationships).
+- id: CL-15
+  says: The Calendar reads every module's due work through the Sessions due agenda, one call per visible span, and never names a module; a task sits on its due and scheduled dates, another module's item on its deadline date, and review due work arrives through its owner's lane, never a direct review read.
+  uses: [sessions, SS-7, tasks, purposes, relationships, books, check-ins, projects, routines, knowledge, finance]
+  work: LIF-572
+# BR-CAL-S7-3, BR-CAL-S5-10, G17; EC-11.
+- id: CL-16
+  says: Each lane shows its own loading, empty, error and success, one lane failing greys only that lane, nothing is ever made up, and a module's failed due lane reads unavailable right now, never as nothing due.
+  uses: [sessions, SS-13]
+  work: LIF-454
+# G6, R12, R16; the July Sessions intake (without the Planner the Calendar shows only deadlines, with it the plan).
+- id: CL-17
+  says: Sessions' placed blocks render as the plan beside the deadlines, timed in Week and Day and in Agenda, and past focus shows on each past day; nothing writes planned blocks yet.
+  uses: [sessions, SS-7, SS-14]
+  work: LIF-442
+# BR-CAL-S2-8, S3-16, S7-4, G7; the 12h shapes on LIF-439.
+- id: CL-18
+  says: Every day the Calendar shows is a day in the user's timezone, and it reads the user's time format and week start from Preferences, with one 12-hour time shape across every range.
+  uses: [preferences]
+  work: LIF-439
+# CL-19 is retired, never reused (Victor 2026-11-12): the Portuguese pass is one item, the language feature of
+# Vida (LIF-438), done later, once the full OS is complete; it is not a Calendar row. The Calendar's strings stay in
+# one map per file for it (BR-CAL-S7-10, R14).
+
+# Across modules.
+# Victor 2026-11-11. Relationships G1 (events occur and pass, never completed); LIF-491 project events; HC-20.
+- id: CL-20
+  says: Events stay each module's own (Relationships events, project events, Health's scheduled items); when two modules hold the same event they are connected by a link, never copied or given one owner, and the Calendar reads each through its owner and shows the connection.
+  uses: [relationships, RL-16, projects, health, HC-20, spaces, SPC-4]
+  open: Whether the Calendar shows connected events as one item or side by side.
+  work: LIF-575
+# LIF-147, the July Sessions and Books intakes (class feeds, external appointments). ED-6 owns the class feed.
+- id: CL-21
+  says: Outside calendars (a class schedule feed, external appointments) arrive through Integrations into the module that owns them and render on the Calendar like any lane, and the Calendar can be exported as a feed; on the localhost product there is no server, so a fetch runs on the device.
+  uses: [integrations, learning, ED-6]
+  work: LIF-147
+# Victor 2026-11-11; ADR-007 §3.5 and §6, LIF-400.
+- id: CL-22
+  says: The Calendar keeps its own page and lens rather than being a saved view; the calendar layout of saved views is separate, and ADR-007 §3.5 and its review trigger are amended to say so, including whether provider fan-out holds its interaction budget.
+  uses: [views, VW-3]
+  work: LIF-400
