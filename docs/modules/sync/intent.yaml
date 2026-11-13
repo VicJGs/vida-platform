@@ -156,10 +156,27 @@
   uses: [notifications, DLV-13]
   open: Where the server keeps its metadata and blobs when self-hosted (Cloudflare's database, key-value and blob stores on Workers, or a portable store).
   work: LIF-150
-# SV-17: Victor 2026-11-13 (this run), restating 2026-11-10 (the LIF-151 comment).
+# SV-17: Victor 2026-11-13 (this run), restating 2026-11-10 (the LIF-151 comment): the server is a handler the user
+# runs on their own VPS with their own domain; web, desktop and mobile all go through it.
 - id: SV-17
-  says: With the server product, the user's own server serves the web app, so the user opens Vida from their server; the localhost web product keeps its static build.
+  says: The server product is a handler the user runs on their own server (a virtual private server with their own domain), always on, which serves the web app and connects the desktop and mobile apps, so the user reaches Vida from anywhere through it; the localhost web product keeps its static build.
   work: LIF-154
+# SV-32: Victor 2026-11-13 (this run). The OS runs on the devices, never on the server: ADR-003 §5.1 (a room per user),
+# §9.3 (blob paths per user), §9.4 (every server row keyed by user_id), security-model Guarantee 4 (a vault key per
+# account).
+- id: SV-32
+  says: One server can hold several Vida accounts; each account's blobs, rooms and server records are its own and encrypted under its own vault key, so accounts never mix and the server reads none of them.
+  uses: [encryption]
+  work: LIF-150
+# SV-33: Victor 2026-11-13 (this run): the server stays blind and still runs integrations in the background, the
+# resource a computer lacks unless the user leaves it on or builds their own way (ITG-18, ITG-19). ITG-1 (no server
+# fetches for the user) and ITG-19 (background only on a native venue) predate this; their rewording is Integrations'
+# (LIF-580).
+- id: SV-33
+  says: With the server product, the user's integrations can run in the background on their always-on server while it stays blind, so fetching and refreshing go on with every device closed; on a computer alone they run only while the app is open, unless the user keeps it running or sets up their own way.
+  uses: [integrations, ITG-1, ITG-18, ITG-19]
+  open: How the server runs an integration in the background without ever seeing its plaintext.
+  work: LIF-580
 # SV-18: Victor 2026-11-13 (this run); ADR-003 §12.4 and §9.1 Billing apply to the hosted relay only.
 - id: SV-18
   says: The server is open source and self-hostable first; a relay Victor hosts later is an option, never required, and device limits and billing apply only to that hosted relay, never to a self-hosted server.

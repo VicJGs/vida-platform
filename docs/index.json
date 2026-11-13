@@ -5724,11 +5724,11 @@
       "module": "sync",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sync: 40 rows, 1 tested, 0 partly tested, 39 intent only.",
+      "summary": "Intended rules of sync: 42 rows, 1 tested, 0 partly tested, 41 intent only.",
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 163,
+      "tokens": 167,
       "path": "docs/modules/sync/intent.md"
     },
     {
@@ -11699,11 +11699,11 @@
       "module": "sync",
       "status": "active",
       "supersedes": [],
-      "summary": "With the server product, the user's own server serves the web app, so the user opens Vida from their server; the localhost web product keeps its static build.",
+      "summary": "The server product is a handler the user runs on their own server (a virtual private server with their own domain), always on, which serves the web app and connects the desktop and mobile apps, so the user reaches Vida from anywhere through it; the localhost web product keeps its static build.",
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 71,
+      "tokens": 105,
       "path": "docs/modules/sync/intent/SV-17.md"
     },
     {
@@ -11913,6 +11913,32 @@
       ],
       "tokens": 56,
       "path": "docs/modules/sync/intent/SV-31.md"
+    },
+    {
+      "id": "SV-32",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One server can hold several Vida accounts; each account's blobs, rooms and server records are its own and encrypted under its own vault key, so accounts never mix and the server reads none of them.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/sync/intent/SV-32.md"
+    },
+    {
+      "id": "SV-33",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "With the server product, the user's integrations can run in the background on their always-on server while it stays blind, so fetching and refreshing go on with every device closed; on a computer alone they run only while the app is open, unless the user keeps it running or sets up their own way.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 141,
+      "path": "docs/modules/sync/intent/SV-33.md"
     },
     {
       "id": "SV-4",
