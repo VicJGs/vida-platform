@@ -1891,11 +1891,11 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "The user picks a preset family (editorial, reader or quiet desk), each a palette and a font pair over the editorial base in light and dark, named scheme first.",
+      "summary": "The user picks one of three preset families (editorial, reader or quiet desk), each a palette and a font pair over the editorial base in light and dark, named scheme first, and the pipeline builds no other family.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 109,
+      "tokens": 85,
       "path": "docs/modules/shell/intent/DSG-13.md"
     },
     {
@@ -5685,11 +5685,11 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 52 rows, 0 tested, 0 partly tested, 52 intent only.",
+      "summary": "Intended rules of shell: 53 rows, 0 tested, 0 partly tested, 53 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 203,
+      "tokens": 205,
       "path": "docs/modules/shell/intent.md"
     },
     {
@@ -10356,11 +10356,11 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "The System panel lists the scope selector above the six surfaces, Trash and an account entry as one labeled list.",
+      "summary": "The System panel lists the scope selector above the six surfaces and Trash as one labeled list.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 61,
       "path": "docs/modules/shell/intent/SH-15.md"
     },
     {
@@ -10570,6 +10570,19 @@
       ],
       "tokens": 79,
       "path": "docs/modules/shell/intent/SH-3.md"
+    },
+    {
+      "id": "SH-30",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The System panel lists Account, which opens the user's account (their contact details, the password and authentication that unlock Vida, and the devices signed in to their own server).",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/shell/intent/SH-30.md"
     },
     {
       "id": "SH-4",
