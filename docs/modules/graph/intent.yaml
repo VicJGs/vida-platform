@@ -8,13 +8,17 @@
 # critique. Folder name `graph` (Victor, 2026-11-13); PG-18, SPC-4 and RL-15 already use it.
 # The model (Victor, 2026-11-13, settled before the rows):
 # - The OS graph's nodes are pages and every entity an entity link targets, contacts included; its edges are page
-#   links, entity links and Purposes contributions (XCU-BSE-23, PG business-rules:63, the PG_notes intake). Tags and
-#   Spaces cluster and filter the graph; they are not nodes.
+#   links, entity links and Purposes contributions (XCU-BSE-23, PG business-rules:63, the PG_notes intake), plus each
+#   module's own typed edges, which join through an edge provider the module registers (revised by Victor the same
+#   day, after approval): Relationships' network and reminder-group membership, Skills' requires, unlocks and synergy,
+#   measurement bindings, and parent-child hierarchies. Tags and Spaces cluster and filter the graph; they are not
+#   nodes.
 # - Graph + Backlinks owns the merged "what links here" OS-wide: one read and one shared panel that every entity's page
 #   mounts. Notes mounts it on the note Overview (NP-20, NP-26) and no longer owns the merge.
-# - Two kinds of module graph: Notes' Neural layout, the Views graph layout and Knowledge's graph are scoped slices of
-#   the OS graph; Relationships' network (RL-4, RL-15) and Skills' tree (SK-8) bring their own edges and reuse only the
-#   NeuralGraph component.
+# - One graph: Notes' Neural layout, the Views graph layout, Knowledge's graph, Relationships' network (RL-4, RL-15)
+#   and Skills' tree (SK-8) are all slices of the OS graph; a module's own edges keep their kind and their rules in it
+#   (the RL intake: Relationships "feeds … neural graph"; XCU-BSE-23's UNKNOWN: the platform-wide graph "must
+#   reconcile" the per-module shape). This replaces the first "two kinds" answer.
 # Out of this ledger: the FTS5 search engine (XCU-BSE-13…18) is LIF-70's, the export serializers (XCU-BSE-19…22) are
 # the Editor run's, and link writes are Spaces' (createLink, removeLink) and Notes' (page links).
 # Sources: docs/core/backlinks (current-spec, current-business-rules), LIF-114 and its G4 comment, LIF-467 and its
@@ -65,8 +69,8 @@
 # The OS graph. XCU-BSE-23, -24; notes NOT-49; the model above.
 # GR-1: the data prep is the 0-byte core/utils/graph-data.ts; services/search/CLAUDE.md calls it AR-8 increment #2.
 - id: GR-1
-  says: The global graph's nodes are pages and every entity an entity link targets, contacts included, and its edges are page links, entity links and Purposes contributions; it is derived on read from each owner's documented read (page links through Notes, entity links through the resolver, contributions through Purposes), never from another module's tables and never stored.
-  uses: [notes, spaces, purposes, PG-10, BL-7]
+  says: The global graph's nodes are pages, every entity an entity link targets (contacts included) and every entity a module's own edges connect, and its edges are page links, entity links, Purposes contributions and the modules' own typed edges (GR-13); it is derived on read through each owner's documented read or registered edge provider, never from another module's tables and never stored.
+  uses: [notes, spaces, purposes, PG-10, BL-7, GR-13]
   work: LIF-114
 - id: GR-2
   says: Tags and Spaces cluster and filter the global graph and are never nodes of it.
@@ -93,9 +97,10 @@
 - id: GR-6
   says: The NeuralGraph component renders given nodes and edges with Sigma on WebGL, mounting once per topology and tearing down on unmount; it lists every node as a keyboard-reachable button that fires the node click, falls back to that list with a message when WebGL is missing, colors nodes and edges from the active preset unless a node sets its own, takes consumer slots for its loading, empty and error states, and under reduced motion runs no layout iterations and moves the camera instantly.
   work: LIF-603
+# GR-7 reworded (Victor, 2026-11-13, after approval): the module graphs join the global graph instead of staying apart.
 - id: GR-7
-  says: Module graphs with their own edges, Relationships' network and Skills' tree, reuse the NeuralGraph component and never join the global graph's sources.
-  uses: [relationships, RL-4, RL-15, skills, SK-8, GR-6]
+  says: Relationships' network and Skills' tree are slices of the global graph over their own edge kinds, keeping their rules (membership edges only and never contact to contact; requires, unlocks and synergy with the recommended path and the detected synergies) and their own layout, drawn with the NeuralGraph component.
+  uses: [relationships, RL-4, RL-15, skills, SK-8, GR-1, GR-6]
   work: LIF-114
 # GR-8, GR-9: V7 §6 ("Deferred — likely HARD-3 / later"); fe-codec-canvas-graph BR-10 (homed to the first consumer).
 - id: GR-8
@@ -121,3 +126,9 @@
   says: A backlink row, a graph node and a link preview get the target's title and icon through its module's registered read provider and the snippet from the link's context; a target with no provider shows as unresolved, never invented.
   uses: [views, VW-4, GR-10]
   work: LIF-604
+# GR-13 (Victor, 2026-11-13): the pattern of the read providers (VW-4, SK-26) and the effect handlers (SB-Q2: each
+# module registers its own, no central list).
+- id: GR-13
+  says: A module that owns edges registers a graph edge provider when it is composed, declaring its edge kinds and rules, and the graph reads module edges only through providers; the first are Relationships' network and reminder-group membership, Skills' requires, unlocks and synergy, measurement bindings, and parent-child hierarchies (page parents, Knowledge containers, the Learning syllabus, project milestones); a failed provider leaves its edges out with a flag, never a crash.
+  uses: [views, VW-4, relationships, RL-4, skills, SK-8, purposes, MS-7, knowledge, learning, projects]
+  work: LIF-114

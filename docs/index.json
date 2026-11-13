@@ -4066,11 +4066,11 @@
       "module": "graph",
       "status": "active",
       "supersedes": [],
-      "summary": "The global graph's nodes are pages and every entity an entity link targets, contacts included, and its edges are page links, entity links and Purposes contributions; it is derived on read from each owner's documented read (page links through Notes, entity links through the resolver, contributions through Purposes), never from another module's tables and never stored.",
+      "summary": "The global graph's nodes are pages, every entity an entity link targets (contacts included) and every entity a module's own edges connect, and its edges are page links, entity links, Purposes contributions and the modules' own typed edges (GR-13); it is derived on read through each owner's documented read or registered edge provider, never from another module's tables and never stored.",
       "anchors": [
         "docs/modules/graph/intent.yaml"
       ],
-      "tokens": 135,
+      "tokens": 141,
       "path": "docs/modules/graph/intent/GR-1.md"
     },
     {
@@ -4111,6 +4111,19 @@
       ],
       "tokens": 96,
       "path": "docs/modules/graph/intent/GR-12.md"
+    },
+    {
+      "id": "GR-13",
+      "kind": "intent-row",
+      "module": "graph",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module that owns edges registers a graph edge provider when it is composed, declaring its edge kinds and rules, and the graph reads module edges only through providers; the first are Relationships' network and reminder-group membership, Skills' requires, unlocks and synergy, measurement bindings, and parent-child hierarchies (page parents, Knowledge containers, the Learning syllabus, project milestones); a failed provider leaves its edges out with a flag, never a crash.",
+      "anchors": [
+        "docs/modules/graph/intent.yaml"
+      ],
+      "tokens": 176,
+      "path": "docs/modules/graph/intent/GR-13.md"
     },
     {
       "id": "GR-2",
@@ -4183,11 +4196,11 @@
       "module": "graph",
       "status": "active",
       "supersedes": [],
-      "summary": "Module graphs with their own edges, Relationships' network and Skills' tree, reuse the NeuralGraph component and never join the global graph's sources.",
+      "summary": "Relationships' network and Skills' tree are slices of the global graph over their own edge kinds, keeping their rules (membership edges only and never contact to contact; requires, unlocks and synergy with the recommended path and the detected synergies) and their own layout, drawn with the NeuralGraph component.",
       "anchors": [
         "docs/modules/graph/intent.yaml"
       ],
-      "tokens": 83,
+      "tokens": 125,
       "path": "docs/modules/graph/intent/GR-7.md"
     },
     {
@@ -5752,11 +5765,11 @@
       "module": "graph",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of graph: 19 rows, 2 tested, 0 partly tested, 17 intent only.",
+      "summary": "Intended rules of graph: 20 rows, 2 tested, 0 partly tested, 18 intent only.",
       "anchors": [
         "docs/modules/graph/intent.yaml"
       ],
-      "tokens": 133,
+      "tokens": 134,
       "path": "docs/modules/graph/intent.md"
     },
     {
