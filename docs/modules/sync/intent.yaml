@@ -1,0 +1,254 @@
+# Sync & Venues intent ledger: every intended, deferred or TBD rule of Sync & Venues, the platform project that owns
+# the sync engine, the server, sign-in and the account, and the product shapes Vida runs as (P-LIF-28: sync engine,
+# server, auth, desktop, mobile, self-host, cloud). work = the issue that builds the rest. check:rules derives each
+# row's state.
+# Prefixes (Victor, 2026-11-13): SV for the module's own rows, every one proposed; SY for the sync engine, where
+# SY-1…SY-9 are docs/core/sync's rules SY-1…SY-9, one to one (the ITG + IN + EG pattern). SV had 0 matches in Vida on
+# 314dc6f4; SY-n appears only in the sync rule files, the sync scaffold and its test, and the archived ar-9 task.
+# Folder name `sync` (Victor, 2026-11-13); ITG-15 already uses it.
+# The model (Victor, 2026-11-06/10 and 2026-11-13, settled before the rows): Vida has three product shapes. The
+# localhost web product runs on the user's machine with all data local and no server; the server product is a server
+# the user hosts that serves the web app and relays the user's encrypted data between their own devices; the desktop
+# and mobile apps are the third. The server is open source and self-hostable first; a relay Victor hosts later is an
+# option on top, and device limits and billing apply only to it (LIF-155, LIF-461). ADR-003's protocol (per-row
+# encrypted blobs, field-level last-writer-wins under a hybrid logical clock, per-page Yjs, a zero-knowledge relay)
+# stands; its hosted-SaaS lines are rewritten under LIF-599. The account is the user's identity across their own
+# devices (LIF-597); the unlock rows that touch the vault go with the Encryption run.
+# Build order (ADR-019 M4, a plan, not a rule): sync → sign-in → desktop and mobile → self-host → the hosted relay.
+# Sources: ADR-003, docs/core/sync (current-spec, current-business-rules), docs/platform (a README and three 0-byte
+# stubs), ADR-017, LIF-597, LIF-361 and the gap sheet (FU-1, F-check 6); read with Victor's OK at this run: the venue,
+# stack and deferral lines of ADR-001, ADR-002 §3 and §5.0–5.1, ADR-013's device-registry amendment, ADR-019 M4 and
+# §3.4, the archived ar-9 task, LIF-64, 98, 150–155 and 359 with their comments, the sync and account lines of the July
+# intakes, platform-strategy.md and server-api.md (grep only). docs/infrastructure's server, sync and auth specs are
+# 0-byte stubs.
+# Built (the code is the truth): the sync scaffold ar-9 (LIF-80, 6440aab5) in packages/core/src/sync, whose three seams
+# throw SyncNotActivated; DB-6's co-transactional sync_queue producer (LIF-68, 7f90c9b9); the _sync_* columns per table
+# (schema/_shared.ts); the device id kept in app_state (1e4aa28a); the web store on OPFS; SRP's client half
+# (encryption/srp.ts). apps/server has only GET / and /health; its auth, sync and billing routes, apps/desktop's Rust
+# files and apps/mobile's db folder are empty.
+# Proof: scaffold.test.ts names SY-1 in a describe title, so SY-1 reads tested; the DB-6 tests and the web store tests
+# name no row ID, so those rows keep a work link to LIF-598. No test was renamed. Sync has no features folder, so the
+# archive guard applies from the start.
+# Consumers (each in its owner's ledger): every "succeeds locally first" row (TK-10, HB-12, RT-18, PR-9, PG-20, RL-12,
+# PJ-12, CK-12, GM-19, FN-12, BK-18, ED-16), the encryption-and-sync rows BK-1, CK-1, PG-1, ECO-6, SPC-7 and CB-13, NP-4 (Yjs), NP-16, PJ-8, ED-13, BK-18 and FC-8 (attachments, LIF-600),
+# NF-9 and NF-20 (rows converge across devices), DLV-12 and DLV-13 (per-shape delivery, the wake relay), ITG-14 and
+# ITG-15 (keychain per device, config through a sync server), SH-12 (per device, never synced), SH-30 (the Account
+# entry), PR-8 (Settings renders Account and Data/Sync), PR-19's open line (onboarding on a new device), BK-15 and the
+# Shell's native animation driver (the mobile app). FC-6 hands a failed review emit's durable retry to the sync queue,
+# but the queue retries only server pushes (SY-7), so that retry has no owner (LIF-602 item 3).
+
+# docs/core/sync's rules, SY-1…SY-9 (the ar-9 scaffold and its activation contract).
+# SY-1: the M1 invariant; activation (LIF-98) replaces it, once the server product and the encryption pass exist.
+- id: SY-1
+  says: Until sync is activated, the sync engine does no network I/O; its flush loop exists but every transport, push and pull step is inert, so nothing leaves the device.
+# SY-2: the producer is DB-6's (repository.ts enqueue); the engine's reads and status moves are activation.
+- id: SY-2
+  says: The engine only consumes the sync queue; the entity write and its queue row are written together by the repository, and the engine reads pending rows and, once activated, moves their status or removes them after the server acknowledges.
+  work: LIF-598
+- id: SY-3
+  says: A queued payload arrives already encrypted, and the engine treats it as an opaque blob it never decrypts, inspects or re-encrypts.
+  uses: [encryption]
+  work: LIF-98
+- id: SY-4
+  says: Pending queue rows drain first in, first out, by when they were queued.
+  work: LIF-98
+# SY-5: the UPSERT half is built (DB-6, LIF-598); the create-then-delete collapse is activation.
+- id: SY-5
+  says: Repeated edits of a row before a flush coalesce to its latest snapshot, and a create followed by a delete of the same row collapses to nothing before any push.
+  work: LIF-98
+# SY-6: ADR-003 §8.1 sets the row's _sync_status to synced on the server's acknowledgement; SY-6 bars only the reader.
+- id: SY-6
+  says: The queue's status (pending, in flight, failed) and a row's own sync status (pending, synced, conflict) are two separate states, and the queue reader moves only the queue's.
+  work: LIF-98
+- id: SY-7
+  says: A failed push retries with backoff from 1 to 30 seconds up to three times, then is marked failed and shown as changes that failed to sync with a manual retry; a client error is never retried, an authentication error stops all sync and asks the user to sign in again, and an encryption error stops only that blob.
+  work: LIF-98
+- id: SY-8
+  says: The field-level merge and the per-page Yjs merge are reserved seams with their final interfaces, and nothing merges until sync is activated.
+  work: LIF-98
+# SY-9 meets LIF-64: the clock's encoding is a schema and wire choice, so a wrong pick before activation forces a
+# migration (SV-10).
+- id: SY-9
+  says: Activating sync fills the reserved seams with no schema change and no change to any consumer.
+  work: LIF-98
+
+# Proposed IDs, every SV row: Sync & Venues has no intent ID today (approve in the PR)
+
+# The product shapes. Victor 2026-11-06/10 (FU-1, the LIF-151 comment) and 2026-11-13 (this run); ADR-017 (A)→(D).
+- id: SV-1
+  says: Vida runs as three product shapes, the localhost web product on the user's machine with all data local and no server, the server product the user hosts, and the desktop and mobile apps, and every rule that depends on where Vida runs names the shape it means.
+  work: LIF-599
+# SV-2: ADR-003 §2 (local-first, minimal server), ADR-001 principle 2.
+- id: SV-2
+  says: The device is the source of truth; every write succeeds locally first, sync is an eventual copy between the user's devices and never a dependency, and the server stores and relays but never merges.
+  work: LIF-98
+# SV-3: ADR-003 §2.3; SU-1 (no sharing).
+- id: SV-3
+  says: Sync copies one user's data across that user's own devices; there is no sharing between users, no presence and no shared cursors.
+  work: LIF-98
+# SV-4: ADR-003 §9.2, §14.1, §14.2; ZK-1. The blob key is the vault key (Encryption, LIF-67).
+- id: SV-4
+  says: The server is blind; it stores and relays only encrypted blobs and never decrypts, indexes, queries, links or merges them, and the plain header it reads (table, row, version, clock stamp, device, operation and the changed field names) is the disclosed limit of what it learns.
+  uses: [encryption]
+  work: LIF-150
+# SV-5: ADR-019 §3.4 (encryption gates any release beyond solo localhost) and §3 (ZK-1 holds through the blob layer,
+# which exists only with sync).
+- id: SV-5
+  says: Sync to a server turns on only after the encryption pass, so before it each device's data stays on that device.
+  uses: [encryption]
+  work: LIF-98
+
+# The sync units. ADR-003 §4, ADR-002 §3 and §5.
+- id: SV-6
+  says: Each row of a synced table is one sync unit, serialized whole, compressed and encrypted into one blob whose plain header carries each changed field's clock stamp, so a device can merge per field before it decrypts.
+  work: LIF-98
+# SV-7: ADR-003 §4.2, §6.2; NP-4 (Notes' content write path).
+- id: SV-7
+  says: A page's content syncs as its own Yjs document, the server keeping only the latest full snapshot, beside the page's metadata as a row blob; content merges without conflicts, and the page's stored content is a snapshot rebuilt after each merge.
+  uses: [notes, NP-4]
+  work: LIF-98
+# SV-8: ADR-003 §4.3, §7.3. On the device the stack settles it: the file is an encrypted BLOB column on its row
+# (ADR-002 §5.2 note_attachments, §5.4 project_documents, language_recordings; built in schema notes.ts, projects.ts,
+# learning.ts and the health photo blobs) inside the device's SQLite database (ADR-001: wa-sqlite on OPFS on the web).
+# That answers LIF-422's "DB blob vs OPFS". platform-strategy §7 and file-system.rs give the desktop file system for
+# attachments, which the BLOB columns don't reflect (LIF-602 item 12). Consumers NP-16, PJ-8, ED-13, BK-18, FC-8.
+- id: SV-8
+  says: On the device a file is stored encrypted on its own row in the device's database; across devices it syncs apart from the row queue, at most 25 megabytes, uploaded through a short-lived signed link while its metadata syncs last-writer-wins, downloaded only when opened and kept on the device, and deleted on the server 30 days after its row.
+  uses: [notes, NP-16, projects, PJ-8, learning, ED-13, books, BK-18, knowledge, FC-8]
+  open: Where a self-hosted server keeps files (R2 on Workers, or another store).
+  work: LIF-600
+# SV-9: ADR-003 §6.1, §6.3.
+- id: SV-9
+  says: Structured data merges per field, last writer wins by clock stamp with the higher device id breaking an exact tie; the id, sync id and creation time never merge, updated_at takes the merge's wall-clock time, and a delete is an ordinary field, so a delete and an edit resolve by their stamps.
+  work: LIF-98
+# SV-10: ADR-003 §6.1 "The clock" and "Storage representation"; ADR-017 §5 parks it with LIF-64; LIF-64's comment
+# (2026-11-04) calls it a likely one-way door. repository.ts stamps Date.now() as the interim v0.
+- id: SV-10
+  says: Every last-writer-wins stamp is a hybrid logical clock stamp, never a bare wall clock, so a device with a skewed clock corrects itself on its next merge.
+  open: The stamp's stored encoding (a sortable string, a big integer or two columns), which the wire header and the server's blob index share.
+  work: LIF-64
+# SV-11: ADR-002 §3, §5.0, §5.1; ADR-003 §17. _sync_* is built per table (_shared.ts); _sync_field_ts isn't.
+- id: SV-11
+  says: Every synced table carries the sync columns and a per-field stamp map; the sync queue, the search index and app_state stay on their device and never sync.
+  work: LIF-64
+# SV-12: ADR-004 §3.4 (S7), which no Sessions row carries; HC-36, SK-15 and every typed base entity rely on it.
+- id: SV-12
+  says: A base row and its extension row travel together; a device applies an extension only once its base is present, a base without its extension renders as a valid, tool-less entity, and the writer queues both at once.
+  uses: [sessions]
+  work: LIF-98
+
+# Triggers, transport and offline. ADR-003 §5, §7, §8, §18.
+- id: SV-13
+  says: Structured changes push two seconds after the last write, on reconnect, on a manual sync and every five minutes while open, pulling when a mobile app comes to the front; page content syncs every five seconds while edited, on leaving the page and on save; attachments upload when added.
+  work: LIF-98
+- id: SV-14
+  says: Changes move over one authenticated socket per user with a 30-second heartbeat and reconnect backoff up to 30 seconds, falling back to polling every 60 seconds while the socket is down.
+  open: The socket host, the compression, the change log's retention and the rate limits (ADR-003 §18).
+  work: LIF-150
+# SV-15: ADR-003 §8.1, §8.4.
+- id: SV-15
+  says: Offline, everything works but sync and uncached attachments; the queue survives restarts, and on reconnect the device pushes its queue in order, pulls what changed since its last sync, merges and records the new sync time on the device.
+  work: LIF-98
+
+# The server product. ADR-003 §9, §16; ADR-013's amendment; Victor 2026-11-13.
+- id: SV-16
+  says: The server signs the user in, stores each encrypted blob and page snapshot, relays a push to the user's other online devices, keeps an ordered change feed per user for pulls, serves attachments by signed link, keeps the device registry, sends the content-free wake signal and deletes soft-deleted blobs after 30 days.
+  uses: [notifications, DLV-13]
+  open: Where the server keeps its metadata and blobs when self-hosted (Cloudflare's database, key-value and blob stores on Workers, or a portable store).
+  work: LIF-150
+# SV-17: Victor 2026-11-13 (this run), restating 2026-11-10 (the LIF-151 comment): the server is a handler the user
+# runs on their own VPS with their own domain; web, desktop and mobile all go through it.
+- id: SV-17
+  says: The server product is a handler the user runs on their own server (a virtual private server with their own domain), always on, which serves the web app and connects the desktop and mobile apps, so the user reaches Vida from anywhere through it; the localhost web product keeps its static build.
+  work: LIF-154
+# SV-32: Victor 2026-11-13 (this run). The OS runs on the devices, never on the server: ADR-003 §5.1 (a room per user),
+# §9.3 (blob paths per user), §9.4 (every server row keyed by user_id), security-model Guarantee 4 (a vault key per
+# account).
+- id: SV-32
+  says: One server can hold several Vida accounts; each account's blobs, rooms and server records are its own and encrypted under its own vault key, so accounts never mix and the server reads none of them.
+  uses: [encryption]
+  work: LIF-150
+# SV-33: Victor 2026-11-13 (this run): the server stays blind and runs integrations in the background as a sealed
+# hand-off, on a server the user hosts only; the resource a computer lacks unless the user leaves it on or builds their
+# own way (ITG-18). Written the same day into ADR-014 §3.1a, IN-1, ITG-1, ITG-15 and ITG-19. Sealing needs an account
+# key pair, which the key chain doesn't have yet (key-management.ts has none, sharing.ts is empty): the Encryption run's.
+- id: SV-33
+  says: With the server product, the user's integrations run in the background on their own server as a sealed hand-off; the user grants that server a connection's credential, and it fetches, seals the result at once to the account's public key, keeps and logs no plaintext and holds no key that opens the vault, and the next device to open decrypts it and writes the rows; a relay Victor hosts never fetches, and on a computer alone integrations run only while the app is open unless the user keeps it running or sets up their own way.
+  uses: [integrations, ITG-1, ITG-15, ITG-18, ITG-19, encryption]
+  work: LIF-580
+# SV-18: Victor 2026-11-13 (this run); ADR-003 §12.4 and §9.1 Billing apply to the hosted relay only.
+- id: SV-18
+  says: The server is open source and self-hostable first; a relay Victor hosts later is an option, never required, and device limits and billing apply only to that hosted relay, never to a self-hosted server.
+  open: What the hosted relay charges for and its billing provider (LIF-461).
+  work: LIF-155
+
+# Devices and a new device. ADR-003 §11, §12; ADR-013's push columns. The device id is built (1e4aa28a).
+- id: SV-19
+  says: Each device generates its id once and keeps it on the device; its first sign-in registers it on the server with its name and platform, and the user lists, renames and sees when each device was last seen.
+  uses: [notifications, DLV-13]
+  work: LIF-598
+# SV-20: ADR-003 §12.3, §14.4; the re-key is LIF-359 (Encryption).
+- id: SV-20
+  says: Revoking a device closes its connection, tells the other devices and refuses its sign-in, without erasing the data already on it, and Vida points the user to changing the password, which re-keys the vault.
+  uses: [encryption]
+  work: LIF-150
+# SV-21: ADR-003 §11; PR-19's open line asks whether the synced onboarding flag suppresses a new device's first run.
+- id: SV-21
+  says: A new device signs in, unlocks the vault and pulls the profile, preferences and app configuration before it opens, then the last 30 days in the background by table priority with visible progress, then the rest in resumable batches of 100, leaving attachments until opened and rebuilding search at the end.
+  uses: [preferences, PR-19]
+  work: LIF-98
+# SV-22: ADR-003 §13, ADR-017 §4; PR-8 and the archived Preferences intake G1 give import/export to Data/Sync. Not
+# SH-29's per-entity export (LIF-404).
+- id: SV-22
+  says: The user exports all their data on the device, decrypted and with no server, as one file per table, pages as Markdown and attachments as their files in one archive, which is also the backup and the way into the encrypted app.
+  uses: [preferences, PR-8, editor]
+  work: LIF-601
+
+# The account. LIF-597 (Victor, 2026-11-13); the archived Preferences intake G1 (Auth/Account owns account actions).
+- id: SV-23
+  says: The account is the user's identity across their own devices, never an account with Vida as a company; it holds their contact details, the password and authentication that unlock Vida, and the devices signed in.
+  work: LIF-597
+- id: SV-24
+  says: With a server, signing in on a new device connects to the user's own server and brings their data in; without one, the account lives on the device, its details plus the password that unlocks the vault there.
+  work: LIF-597
+# SV-25: contact details in user_profile (LIF-432); the Account entry is SH-30; Settings renders, never stores (PR-8).
+- id: SV-25
+  says: The account's contact details are stored in the user's profile, Settings shows the account without owning its data, and the System panel's Account entry opens it.
+  uses: [preferences, PR-8, shell, SH-30]
+  work: LIF-597
+# SV-26: ADR-001 §Auth and §21; ADR-003 §9.1. The client half is built (encryption/srp.ts); the server half is LIF-361.
+- id: SV-26
+  says: Signing in to the server uses the secure remote password protocol, so the server keeps only a salt and a verifier and never sees a password or a key.
+  uses: [encryption]
+  open: The server's protocol library and where it stores verifiers (ADR-001 §21).
+  work: LIF-361
+# SV-27: the archived Preferences intake G1 (sign out, delete account → Auth/Account); what deletion removes and how
+# it's confirmed: Victor 2026-11-13 (this run). Password change and biometric unlock touch the vault, so they go with
+# the Encryption run (LIF-359). The backup offered is the whole-vault export (SV-22).
+- id: SV-27
+  says: The account lets the user sign out of a device and delete the account; deleting removes both the user's data on their server and the vault on the device, offers a backup first, and runs only after the user confirms and types a phrase that clearly states they want the account deleted.
+  uses: [SV-22]
+  work: LIF-597
+
+# The apps. ADR-001, ADR-017 (D), platform-strategy §4–§7; docs/platform's specs are empty.
+# SV-28: ITG-14 (the keychain) and DLV-12 (the native scheduler) live on the desktop venue.
+- id: SV-28
+  says: The desktop app runs the same web codebase with a native, encrypted SQLite store behind the shared database adapter, an addition rather than a rewrite, and adds a tray, global shortcuts, auto-update, file system access for attachments and export, and native notifications.
+  uses: [integrations, ITG-14, notifications, DLV-12]
+  work: LIF-152
+# SV-29: BK-15's mobile face and the Shell's native animation driver ride it; ADR-001 §21 and platform-strategy §5–§6
+# defer the store library, the bridge and the view-instance strategy.
+- id: SV-29
+  says: The mobile app shares the core and the interface, runs the editor, charts and graph inside web views with native chrome around them, and adds push, haptics, a share sheet, biometric unlock and background sync.
+  uses: [books, BK-15, shell, editor]
+  open: The encrypted SQLite library, the web-view bridge and whether each chart gets its own web view.
+  work: LIF-153
+# SV-30: ADR-017 (A), ADR-001 (no service worker; DLV-13's Web Push for the served web contradicts it, LIF-599).
+- id: SV-30
+  says: The localhost web product keeps its database in the browser's private file store with no server, so its data lives in that browser and the whole-vault export is its safety copy.
+  work: LIF-598
+
+# Replay. ADR-003 §14.3.
+- id: SV-31
+  says: A replayed blob is refused, by the server on a lower version and by the device on an older stamp.
+  work: LIF-150
