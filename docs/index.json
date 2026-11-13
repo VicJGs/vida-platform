@@ -5750,11 +5750,11 @@
       "module": "integrations",
       "status": "active",
       "supersedes": [],
-      "summary": "Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows; no server fetches for the user or sees a plaintext import, and a fetch that could only work through a server reading plaintext is refused, never downgraded.",
+      "summary": "Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows, or, with the server product, through the user's own server as a sealed hand-off; no server the user doesn't own fetches for the user, no server keeps or logs a plaintext import, and a fetch that could only work by a server reading the vault is refused, never downgraded.",
       "anchors": [
         "docs/modules/integrations/intent.yaml"
       ],
-      "tokens": 111,
+      "tokens": 143,
       "path": "docs/modules/integrations/intent/ITG-1.md"
     },
     {
@@ -5828,11 +5828,11 @@
       "module": "integrations",
       "status": "active",
       "supersedes": [],
-      "summary": "A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.",
+      "summary": "A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never sync between devices, so the user reconnects once per device; for background runs the user may separately grant their own server a connection's credential, and revoke it there.",
       "anchors": [
         "docs/modules/integrations/intent.yaml"
       ],
-      "tokens": 81,
+      "tokens": 116,
       "path": "docs/modules/integrations/intent/ITG-15.md"
     },
     {
@@ -5880,11 +5880,11 @@
       "module": "integrations",
       "status": "active",
       "supersedes": [],
-      "summary": "A live source (a calendar feed, a wearable) refreshes on the web while the app is open and in the background only on a native venue, and the user may set up their own fetching through Integrations.",
+      "summary": "A live source (a calendar feed, a wearable) refreshes on the web while the app is open, and in the background on a native venue or on the user's own server, and the user may set up their own fetching through Integrations.",
       "anchors": [
         "docs/modules/integrations/intent.yaml"
       ],
-      "tokens": 92,
+      "tokens": 102,
       "path": "docs/modules/integrations/intent/ITG-19.md"
     },
     {
@@ -11933,11 +11933,11 @@
       "module": "sync",
       "status": "active",
       "supersedes": [],
-      "summary": "With the server product, the user's integrations can run in the background on their always-on server while it stays blind, so fetching and refreshing go on with every device closed; on a computer alone they run only while the app is open, unless the user keeps it running or sets up their own way.",
+      "summary": "With the server product, the user's integrations run in the background on their own server as a sealed hand-off; the user grants that server a connection's credential, and it fetches, seals the result at once to the account's public key, keeps and logs no plaintext and holds no key that opens the vault, and the next device to open decrypts it and writes the rows; a relay Victor hosts never fetches, and on a computer alone integrations run only while the app is open unless the user keeps it running or sets up their own way.",
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 141,
+      "tokens": 179,
       "path": "docs/modules/sync/intent/SV-33.md"
     },
     {

@@ -6,7 +6,9 @@
 
 - **IN-1 (device-mediated; refuse, don't downgrade).** A fetch that could only work by the server reading
   plaintext denies `server_proxy_refused` — checked BEFORE the grant, never silently downgraded; our server is
-  never a fetch proxy. [ADR-014:40 §3.1] (IR-1)
+  never a fetch proxy. [ADR-014:40 §3.1] (IR-1) ⚠ INTENDED (ADR-014 §3.1a, Victor 2026-11-13): the one sanctioned
+  server fetch is the sealed hand-off on a server the user hosts (fetch, seal to the account's public key, keep and log
+  no plaintext, hold no vault key); a relay Victor hosts is still refused. Not built.
 - **IN-2 (boolean necessary, not sufficient; opt-in = the grant).** `external_in_ok=true` (decided by #31) is
   required first; a non-granted integration is off by default → `external_in_not_granted`. The grant's existence
   IS the opt-in state — there is no separate `not_opt_in` reason. [ADR-014:74 §3.6] (IR-9)

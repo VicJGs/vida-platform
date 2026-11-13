@@ -8,7 +8,8 @@
 # notes and an archived ar-2 plan (PLAN §2 IN-1…3), none of them a test.
 # The model (Victor, 2026-11-06/07 gap sheet and the P-LIF-26 comments, settled before the rows): Integrations is the
 # mediator, the one module every outside datum, every credentialed fetch and every custodied credential passes
-# through, on the user's device and never through a server; the localhost web product has no server at all. It has
+# through, on the user's device, or as a sealed hand-off on the user's own server (SV-33, Victor 2026-11-13), and never
+# through a server the user doesn't own; the localhost web product has no server at all. It has
 # three layers by who owns the connector: native (curated), datasets (ADR-014's public-reference layer, now small
 # defaults shipped as importable files in one bulk format the user can fill or replace) and user-built (the Settings
 # section). Egress is its own, strictest guard. The model call is AI's (ADR-015). Connections are approved by the user,
@@ -34,9 +35,11 @@
 
 # ADR-014's clauses, X1…X11 (the temporary codes, LIF-462).
 # ITG-1 is IN-1; the guard checks it before the grant.
+# ITG-1 reworded 2026-11-13 (LIF-349 run 34, Victor): the user's own server may fetch as a sealed hand-off (SV-33,
+# ADR-014 §3.1a).
 - id: ITG-1
-  says: Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows; no server fetches for the user or sees a plaintext import, and a fetch that could only work through a server reading plaintext is refused, never downgraded.
-  uses: [IN-1]
+  says: Every outside datum enters through the user's device, which fetches or reads it, parses, normalizes and encrypts it and writes the vault rows, or, with the server product, through the user's own server as a sealed hand-off; no server the user doesn't own fetches for the user, no server keeps or logs a plaintext import, and a fetch that could only work by a server reading the vault is refused, never downgraded.
+  uses: [IN-1, sync, SV-33]
   work: LIF-577
 - id: ITG-2
   says: Integrations has three layers by who owns the connector (native curated connectors, datasets and the user's own connectors), each disclosed at its consent gate with who sees the data and what leaks to whom; the layer follows the owner, not the fetch mechanism, and a source can move between layers over time.
@@ -101,9 +104,10 @@
   work: LIF-148
 # ITG-15: IN-Q9 (2026-11-07); wording confirmed by Victor 2026-11-12 (the localhost product has no server, so nothing
 # syncs without one; secrets stay per device).
+# ITG-15 extended 2026-11-13 (LIF-349 run 34): the credential grant to the user's own server (SV-33).
 - id: ITG-15
-  says: A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never do, so the user reconnects once per device.
-  uses: [sync]
+  says: A connection's config syncs to the user's other devices only through a sync server (a self-hosted one included), and its secrets never sync between devices, so the user reconnects once per device; for background runs the user may separately grant their own server a connection's credential, and revoke it there.
+  uses: [sync, SV-33]
   work: LIF-578
 # ITG-16: FU-5 and IN-Q6 (2026-11-06). Every module's dataset row reads this; "bundled with the app" is tentative.
 - id: ITG-16
@@ -120,10 +124,10 @@
   says: The user's own automations (scripts, scheduled jobs) feed Vida while the app is closed through a drop file the web app picks up the next time it opens, in the dataset bulk format, and through a local endpoint that writes directly on the desktop app; both pass through the guard.
   uses: [ITG-16]
   work: LIF-580
-# ITG-19: IN-Q3 (2026-11-06).
+# ITG-19: IN-Q3 (2026-11-06); the user's own server added 2026-11-13 (LIF-349 run 34, SV-33).
 - id: ITG-19
-  says: A live source (a calendar feed, a wearable) refreshes on the web while the app is open and in the background only on a native venue, and the user may set up their own fetching through Integrations.
-  uses: [learning, ED-6, health, HC-22]
+  says: A live source (a calendar feed, a wearable) refreshes on the web while the app is open, and in the background on a native venue or on the user's own server, and the user may set up their own fetching through Integrations.
+  uses: [learning, ED-6, health, HC-22, sync, SV-33]
   work: LIF-580
 # ITG-20: Victor 2026-11-12 (decided later). LIF-147's Education comment: a browser on localhost can't read most feed
 # URLs cross-origin.

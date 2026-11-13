@@ -168,14 +168,13 @@
   says: One server can hold several Vida accounts; each account's blobs, rooms and server records are its own and encrypted under its own vault key, so accounts never mix and the server reads none of them.
   uses: [encryption]
   work: LIF-150
-# SV-33: Victor 2026-11-13 (this run): the server stays blind and still runs integrations in the background, the
-# resource a computer lacks unless the user leaves it on or builds their own way (ITG-18, ITG-19). ITG-1 (no server
-# fetches for the user) and ITG-19 (background only on a native venue) predate this; their rewording is Integrations'
-# (LIF-580).
+# SV-33: Victor 2026-11-13 (this run): the server stays blind and runs integrations in the background as a sealed
+# hand-off, on a server the user hosts only; the resource a computer lacks unless the user leaves it on or builds their
+# own way (ITG-18). Written the same day into ADR-014 §3.1a, IN-1, ITG-1, ITG-15 and ITG-19. Sealing needs an account
+# key pair, which the key chain doesn't have yet (key-management.ts has none, sharing.ts is empty): the Encryption run's.
 - id: SV-33
-  says: With the server product, the user's integrations can run in the background on their always-on server while it stays blind, so fetching and refreshing go on with every device closed; on a computer alone they run only while the app is open, unless the user keeps it running or sets up their own way.
-  uses: [integrations, ITG-1, ITG-18, ITG-19]
-  open: How the server runs an integration in the background without ever seeing its plaintext.
+  says: With the server product, the user's integrations run in the background on their own server as a sealed hand-off; the user grants that server a connection's credential, and it fetches, seals the result at once to the account's public key, keeps and logs no plaintext and holds no key that opens the vault, and the next device to open decrypts it and writes the rows; a relay Victor hosts never fetches, and on a computer alone integrations run only while the app is open unless the user keeps it running or sets up their own way.
+  uses: [integrations, ITG-1, ITG-15, ITG-18, ITG-19, encryption]
   work: LIF-580
 # SV-18: Victor 2026-11-13 (this run); ADR-003 §12.4 and §9.1 Billing apply to the hosted relay only.
 - id: SV-18
