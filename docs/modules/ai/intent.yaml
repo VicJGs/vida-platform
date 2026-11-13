@@ -129,7 +129,7 @@
 # AX-17: AI-F1 and AI-OUT-6 (the sandbox is the AI project's); FU-3 (the grant engine stays shared, LIF-156 keeps the
 # user-code runner).
 - id: AX-17
-  says: The gateway is the sandbox the assistant's side owns; every outside agent's call is checked against that agent's grants, waits for approval, is logged and can be undone, and it shares the grant engine with user-written capabilities, which keep their own code runner (CB-11).
+  says: The gateway is the sandbox that Vida's assistant feature owns; every outside agent's call is checked against that agent's grants, waits for approval, is logged and can be undone, and it shares the grant engine with user-written capabilities, which keep their own code runner (CB-11).
   uses: [AX-4, capabilities, CB-8, CB-11]
   work: LIF-586
 # AX-18: AI-Q2 (one central registry, 2026-11-07), LIF-460 item 2 and AI-OUT-2 (specify first); Victor 2026-11-12: the
