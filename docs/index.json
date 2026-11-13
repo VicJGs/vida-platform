@@ -10317,11 +10317,11 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "The user's arrangement (each panel open or closed, docked or floating, and its edge) persists through the Preferences seam and is applied once on a cold start, never overwriting an arrangement already set.",
+      "summary": "The user's arrangement (each panel open or closed, docked or floating, and its edge) is kept per device as one stored value in the device's own app state, never synced, falls back to the default when missing or unreadable, and is applied once on a cold start, never overwriting an arrangement already set.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 163,
+      "tokens": 108,
       "path": "docs/modules/shell/intent/SH-12.md"
     },
     {

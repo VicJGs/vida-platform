@@ -75,12 +75,13 @@
 - id: SH-11
   says: The panel arrangement is ephemeral app state in the shell store, and the current breakpoint is read live from the media query, never stored.
   work: LIF-592
-# Envision L5, seam contract D, BR-S5-3; shell-prefs.ts is a stub returning the default.
+# Envision L5, seam contract D, BR-S5-3; shell-prefs.ts is a stub returning the default. Victor 2026-11-13: one
+# arrangement per device, never synced, so it lives in the device-local app_state (ADR-002 5.0, the first_run:completed
+# precedent) as one stored value, not in the synced nav_preferences; nav_preferences' dock_position, dock_size and
+# dock_auto_hide describe the dock the panels replaced and are retired (LIF-403).
 - id: SH-12
-  says: The user's arrangement (each panel open or closed, docked or floating, and its edge) persists through the Preferences seam and is applied once on a cold start, never overwriting an arrangement already set.
-  uses: [preferences, PR-18]
+  says: The user's arrangement (each panel open or closed, docked or floating, and its edge) is kept per device as one stored value in the device's own app state, never synced, falls back to the default when missing or unreadable, and is applied once on a cold start, never overwriting an arrangement already set.
   work: LIF-403
-  open: How the arrangement is stored. nav_preferences predates the panel model (dock_position bottom, left or right, dock_size, dock_auto_hide, show_labels, mobile_nav_items, haptic_feedback), so each field is kept, mapped or retired, and the arrangement needs new columns or one stored value.
 
 # Bar 1 and the System panel. fe-shell-scope #15, EC-1…EC-6 and the 2026-10-26 re-pin.
 - id: SH-13
