@@ -1,0 +1,249 @@
+# Shell intent ledger: every intended, deferred or TBD rule of the Shell, a platform feature (Victor 2026-11-06,
+# LIF-426) with its own ledger, plus the design system it renders with under its own prefix. work = the issue that
+# builds the rest. check:rules derives each row's state.
+# Prefixes (Victor, 2026-11-13): SH for the Shell's own rows and DSG for the design system (the token pipeline, the
+# preset themes, density and fonts, Storybook and the Figma file), the substrate pattern of MS in Purposes. UX, DS and
+# UI were out: UX-n, DS-n and UI-n match 956, 677 and 1,460 times in Vida (the archived unit names). SH and DSG had 0
+# matches on 14072b28, inside other IDs included. DSG-1…DSG-12 are the token pipeline's B1…B12 and DSG-13…DSG-18 its
+# B-codec and DS-4 rules, one to one; every other row is proposed.
+# The model (Victor, 2026-11-13, before the rows were written): the code and the fe-shell model are the intent. The
+# frame is two dock-or-float inspector panels (System, Modules) on any edge, content-fit, around a full-bleed content
+# region under a reserved top strip, with an overlay host above (fe-shell #14, envision M1–M7, 2026-10-10). Bar 1 (the
+# Spaces scope selector and the six global surfaces) lives in both the strip and the System panel (fe-shell-scope
+# #15). shell-layout.md's five-region frame (a left dock as drawer, rail and sidebar, a global bar and a Spaces bar,
+# UX-3) is superseded; the docs are rewritten under LIF-593.
+# Sources: docs/ui (the README, five empty stubs, token-pipeline current-spec and current-business-rules), the shell
+# layout (UX-3: shell-layout.md and its archived task), LIF-403 and LIF-404; read with Victor's OK at this run: the
+# archived fe-shell #14 delivery files (envision, interpretation, slice map, seam contract, the S3…S5 plans), the
+# archived fe-shell-scope #15 delivery files, the archived ui-4 task (index, baseline, S1…S5), the live
+# information-architecture.md and command-bar-and-search.md.
+# Built (the code is the truth): ux-3 (LIF-92, 85639c4d), ui-4 (LIF-89, 57aef4ff…2932edb7), fe-shell #14
+# (df0cf8ac…8a4e5a58), fe-shell-scope #15 (LIF-219, 88f80a2a…f8f9a44e), the content inset fix (815bd200), the HUD slot
+# (6ac01bd2) and preferences-rescope R4 and R5 (d3814827, a5edcba9) in apps/web/src/{shell,nav,command-bar}; the token
+# pipeline DS-1…DS-4 and fe-codec-theme S1…S3 in packages/ui. Mounted in routes.tsx: the strip with Bar 1 and the HUD,
+# the System panel body and the command bar. Not mounted: the module dock (the Modules panel shows a placeholder).
+# Proof: the tests name archived codes (EC-n, S2-BR-x, BR-S3-n, R5-BR-n, B1…B12, B-codec-n), never a BR rule in the form
+# check:rules reads nor a row ID, so every built row keeps a work link to LIF-592 (name the tests). No test was renamed.
+# Shell has no features folder (LIF-426), so the archive guard applies from the start.
+# Consumers (each in its owner's ledger): NP-27 (Trash in the System panel), PR-7, PR-18 and PR-20 (the flag, the dock's
+# preference reads, the page transition), SPC-12 (the scope list), GM-1 (the conditional entry), the Session HUD in the
+# strip's slot (Sessions, fe-session-hud, no row), Home at / (Journals), the Calendar page (CL-1) and the inbox (NF-21).
+
+# Proposed IDs, every SH row: the Shell has no intent ID today (approve in the PR)
+
+# The frame. fe-shell envision M1–M7, EC-1…EC-10; regions.ts, app-shell.tsx, shell-panel.tsx.
+- id: SH-1
+  says: The Shell is the persistent frame every surface renders in, a reserved top strip, two nav panels (System and Modules), the content region and an overlay host; it owns the frame and the slots, never what a panel or a surface shows.
+  work: LIF-592
+# M2, M3, EC-1…EC-3; BR-S3-n, BR-S4-1, BR-S4-2.
+- id: SH-2
+  says: Each panel opens from its toggle in the strip and is either docked, inline at its edge with the content beside it and no scrim or elevation, or floating, over the full-width content with a scrim and level-3 elevation, so the content never loses width.
+  work: LIF-592
+# M4, EC-4; BR-S5-1, BR-S5-2.
+- id: SH-3
+  says: Each panel moves to any of the four edges on its own, panels sharing an edge dock together as one cluster stacked along the cross axis, and the panel's header controls stay inside the panel.
+  work: LIF-592
+# M5, EC-5.
+- id: SH-4
+  says: A panel sizes to its content, vertical on the left and right edges and horizontal on the top and bottom, reaching the viewport edge only when its content needs it.
+  work: LIF-592
+# M6, EC-6; BR-S4-3…BR-S4-4d.
+- id: SH-5
+  says: A floating panel closes on Escape, a click on the scrim or its toggle; focus moves into it on open, stays trapped inside and returns to its toggle on close, and the content behind is inert while the strip stays live.
+  work: LIF-592
+# Envision L1.
+- id: SH-6
+  says: Both panels start closed, docked at the left, with the content full width.
+  work: LIF-592
+# M7, EC-7, EC-9; BR-S5-4.
+- id: SH-7
+  says: One responsive model serves every width with no automatic switch; the user's dock or float choice is the model, a floating panel becomes a near-full sheet on a phone, nothing overflows sideways, and the content insets below the reserved strip.
+  work: LIF-592
+# UX-3 sections 2 and 4, design.md X, IV and V; breakpoints.ts, 815bd200.
+- id: SH-8
+  says: The frame applies the standard and invents no value; breakpoints 375, 768, 1440 and 1920 mobile-first, content at most 1280 wide and centered, gutters 16, 24 and 32, a vertical inset of 24, 32 and 40, touch targets at least 44 square with 8 between, and every metric, layer and radius a design token.
+  work: LIF-592
+# UX-3 section 6, B12; shell-panel-styles.ts, R4 (d3814827).
+- id: SH-9
+  says: Shell motion animates transform and opacity only, rests visible if an animation never runs, and is instant when the system setting or the in-app reduce-motion preference is on.
+  work: LIF-592
+# EC-8, UX-3 section 8. The command bar renders centered at every width; the phone sheet is DEF-S3-a.
+- id: SH-10
+  says: The overlay host mounts the command bar and dialogs above the panels at the overlay and modal layers, centered from tablet width up and as a full-screen sheet on a phone.
+  work: LIF-594
+# UX-3 section 7, seam contract A; app-shell-ui-store.
+- id: SH-11
+  says: The panel arrangement is ephemeral app state in the shell store, and the current breakpoint is read live from the media query, never stored.
+  work: LIF-592
+# Envision L5, seam contract D, BR-S5-3; shell-prefs.ts is a stub returning the default. Victor 2026-11-13: one
+# arrangement per device, never synced, so it lives in the device-local app_state (ADR-002 5.0, the first_run:completed
+# precedent) as one stored value, not in the synced nav_preferences; nav_preferences' dock_position, dock_size and
+# dock_auto_hide describe the dock the panels replaced and are retired (LIF-403).
+- id: SH-12
+  says: The user's arrangement (each panel open or closed, docked or floating, and its edge) is kept per device as one stored value in the device's own app state, never synced, falls back to the default when missing or unreadable, and is applied once on a cold start, never overwriting an arrangement already set.
+  work: LIF-403
+
+# Bar 1 and the System panel. fe-shell-scope #15, EC-1…EC-6 and the 2026-10-26 re-pin.
+- id: SH-13
+  says: The strip carries the wordmark, the System and Modules toggles (icons only on a phone), Bar 1 and the session status slot; Bar 1 lives in both homes, condensed in the strip and expanded in the System panel.
+  uses: [sessions]
+  work: LIF-592
+# EC-3, EC-6.
+- id: SH-14
+  says: The six global surfaces (Home, Calendar, Search, Notifications, Settings, Graph) show in the strip as icons from tablet width up and behind a More menu on a phone whose first row is Search; Search is always the command bar, never a link, and the current surface is marked.
+  uses: [journals, calendar, notifications, preferences]
+  work: LIF-592
+# EC-4 and its re-pin.
+- id: SH-15
+  says: The System panel lists the scope selector above the six surfaces and Trash as one labeled list.
+  uses: [notes, NP-27]
+  work: LIF-421
+# EC-1, EC-2; scope-selector.tsx, scope-store.ts.
+- id: SH-16
+  says: The scope selector shows the active Space or All (no scope) and switches between them, and it degrades instead of failing; no Spaces gives a disabled All, loading a busy control, and an error a calm status with All kept.
+  uses: [spaces]
+  work: LIF-592
+# Seam contract E, N-a; stubSpacesScope returns no Spaces.
+- id: SH-17
+  says: The scope list reads Spaces' list of Spaces, a scope pointing at a deleted Space falls back to All, and the chosen scope narrows every view that reads it.
+  uses: [spaces, SPC-12, views]
+  work: LIF-220
+
+# The Modules panel and navigation. ui-4 S2, preferences-rescope R5 (D-R5-2).
+- id: SH-18
+  says: The Modules panel shows the module nav, the module map grouped with hidden modules left out, renamed labels used and emptied groups dropped, and reaching a module from it is proven end to end.
+  uses: [preferences, PR-7]
+  work: LIF-403
+# S2-BR-e, BR-4.
+- id: SH-19
+  says: Nav moves through the router without a reload, and a route not built yet shows the not-found page, never a blank or a crash.
+  work: LIF-592
+# S2-BR-b; feature-flags.ts fails closed until Preferences serves the flag.
+- id: SH-20
+  says: A conditional entry such as the System shows only while feature_gamification is on, read from Preferences, and stays hidden while the flag can't be read.
+  uses: [gamification, preferences, PR-7]
+  work: LIF-401
+# Victor 2026-10-21 (preferences-rescope R-T): the engine is the Shell's; LIF-403 comment, 2026-11-05.
+- id: SH-21
+  says: The content region plays the user's page transition on every route change and none while reduce motion is on.
+  uses: [preferences, PR-20]
+  work: LIF-403
+# BR-7 (built, the graph route is a lazy chunk); the framework chunk is about 154 KB against 80 KB.
+- id: SH-22
+  says: Heavy routes load lazily and the first load stays within the 80 kilobyte gzipped budget.
+  work: LIF-158
+
+# The command bar. command-bar-and-search.md, ui-4 S3, preferences-rescope R5.
+- id: SH-23
+  says: The command bar opens on Cmd or Ctrl and K from anywhere, lists commands while the query is empty and searches once it isn't, and moves with the arrows, runs on Enter and closes on Escape, with focus in on open and back to the trigger on close.
+  work: LIF-592
+- id: SH-24
+  says: Commands come from providers, never a fixed list; nav commands derive from the module map and follow the user's hidden and renamed modules, pinned commands rank first and then by frecency from the command history, each run is recorded after it runs, and Alt+P pins or unpins the active command with a spoken confirmation.
+  uses: [preferences]
+  work: LIF-592
+- id: SH-25
+  says: Each module contributes its own action commands to the command bar through the provider seam.
+  work: LIF-594
+- id: SH-26
+  says: The command bar opens and a command pins without a keyboard, from the Search control and a touch affordance.
+  work: LIF-594
+# The search-unavailable state is built; ranked, grouped results wait on the index.
+- id: SH-27
+  says: Search shows results grouped by entity type from the search index, and says loudly that search is unavailable while no index exists.
+  work: LIF-70
+- id: SH-28
+  says: Search results carry display data only and the command history keeps command names, never entity plaintext.
+  uses: [preferences]
+  work: LIF-70
+
+# Export. debt-plan shell-rescope row, BSE-19…22; notes/export-copy.ts.
+- id: SH-29
+  says: One export dialog exports an entity to Markdown, a printable document or Word from the editor's serializers, and Notes' copy download becomes part of it.
+  uses: [notes, editor]
+  work: LIF-404
+
+# The account entry. fe-shell-scope EC-4 (dropped at S2, no account surface existed); the account model, Victor
+# 2026-11-13: the user's identity across their own devices, owned by Sync & Venues, contact details in user_profile.
+- id: SH-30
+  says: The System panel lists Account, which opens the user's account (their contact details, the password and authentication that unlock Vida, and the devices signed in to their own server).
+  uses: [preferences, PR-8]
+  work: LIF-597
+
+# The design system. token-pipeline current-spec and current-business-rules; packages/ui/src/themes.
+# DSG-1…DSG-12 = B1…B12.
+- id: DSG-1
+  says: Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice.
+  work: LIF-592
+- id: DSG-2
+  says: Tokens are three layers that never skip one; primitives are literals, semantics reference primitives and components reference semantics, and a literal outside the primitives, a skipped layer, a dangling reference or an empty layer fails the build with its cause named.
+  work: LIF-592
+- id: DSG-3
+  says: Names follow each target's own scheme; a seed path a/b/c is the style variable --a-b-c, and theme tokens follow the theme library's flat categories.
+  work: LIF-592
+- id: DSG-4
+  says: The same seed always builds byte-identical outputs.
+  work: LIF-592
+- id: DSG-5
+  says: Every output is generated and marked as never hand-edited; the seed is the only editable input.
+  work: LIF-592
+- id: DSG-6
+  says: The scales are complete with no arbitrary values; brand and neutral ten-step ramps, success and danger signals, seven type sizes, the 4-point spacing set, radius from small to full and three shadows.
+  work: LIF-592
+- id: DSG-7
+  says: Dark is designed in parallel, never inverted; every semantic that differs in dark has its own dark entry, mapping one to one to design-tool modes.
+  work: LIF-592
+- id: DSG-8
+  says: Every spacing primitive sits on the 4-point grid, and an off-grid one fails the build.
+  work: LIF-592
+- id: DSG-9
+  says: Typography and shadow tokens skip the theme tokens and go to the style variables plus a typed export each.
+  work: LIF-592
+- id: DSG-10
+  says: Text on every surface meets the minimum text contrast in every preset and mode, checked in the build over the full matrix.
+  work: LIF-592
+- id: DSG-11
+  says: Motion tokens are four durations within the standard's bands and three easing curves plus linear, routed to the style variables and a typed motion export.
+  work: LIF-592
+- id: DSG-12
+  says: Every animation has a reduced-motion path that changes state instantly, and animates transform, opacity or clip-path only.
+  work: LIF-592
+# DSG-13…DSG-18 = B-codec-1, B-codec-2 with B-codec-5, B-codec-3, B-codec-4, B-codec-6, and DS-4 (B13, B14).
+# DSG-13: game is a module, not a theme (Victor 2026-10-21, appearance-pane.tsx), and the fourth family the pipeline
+# still builds is drift, retired (Victor 2026-11-13); its removal is LIF-595.
+- id: DSG-13
+  says: The user picks one of three preset families (editorial, reader or quiet desk), each a palette and a font pair over the editorial base in light and dark, named scheme first, and the pipeline builds no other family.
+  work: LIF-595
+- id: DSG-14
+  says: A preset's fonts switch through a style-variable seam set on the page root, instantly and with no transition.
+  work: LIF-592
+- id: DSG-15
+  says: The scheme is set on the page root and the preset on the body, so dialogs and menus rendered outside the app tree take the preset too.
+  work: LIF-592
+- id: DSG-16
+  says: Density (calm or dense) is one stylesheet toggled by an attribute, scaling the spacing band and the type together.
+  work: LIF-592
+- id: DSG-17
+  says: Components read preset colours through the semantic tokens, and only signal colours, which don't change per preset, stay on the base component themes.
+  work: LIF-592
+# The native animation driver is deferred with the mobile app (docs/platform, the Sync & Venues run).
+- id: DSG-18
+  says: The theme configuration composes only generated outputs, dark is a switchable theme set through the provider, and the web animates through style transitions fed by the motion tokens.
+  work: LIF-592
+# fe-codec-theme S2: four faces self-hosted, Spectral 400 preloaded (21.7 KB).
+- id: DSG-19
+  says: Fonts are self-hosted with only the default face preloaded, and the chrome fonts ship with the chrome role.
+  work: LIF-595
+- id: DSG-20
+  says: The token values are Vida's brand, replacing the placeholder palette, with the full contrast matrix re-run.
+  work: LIF-595
+- id: DSG-21
+  says: The token set covers what components need, component tokens, enter and exit transition presets, font weight and spacing keys and a scrim opacity token, so no component holds a raw value.
+  work: LIF-595
+# Victor 2026-11-03 (LIF-410).
+- id: DSG-22
+  says: Storybook is the design system, holding every component and full-interface surface as envisioned, not only what the first release needed.
+  work: LIF-410
+# Roadmap M4 P2-⑦, Victor 2026-08-03 (LIF-408).
+- id: DSG-23
+  says: A community-forkable design file mirrors the code-first design system, synced through the design tool's agent server and a scripter, never Tokens Studio.
+  work: LIF-408

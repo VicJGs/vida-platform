@@ -42,7 +42,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG|AX)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG|AX|SH|DSG)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -144,6 +144,13 @@
       ],
       "ai": [
         "packages/core/src/foundation/ai"
+      ],
+      "shell": [
+        "apps/web/src/shell",
+        "apps/web/src/nav",
+        "apps/web/src/command-bar",
+        "packages/ui/src/themes",
+        "packages/ui/src/theme-resolution.test.ts"
       ]
     },
     "intentFeatures": {
