@@ -206,11 +206,12 @@
   uses: [encryption]
   open: The server's protocol library and where it stores verifiers (ADR-001 §21).
   work: LIF-361
-# SV-27: the archived Preferences intake G1 (sign out, delete account → Auth/Account); password change and biometric
-# unlock touch the vault, so they go with the Encryption run (LIF-359).
+# SV-27: the archived Preferences intake G1 (sign out, delete account → Auth/Account); what deletion removes and how
+# it's confirmed: Victor 2026-11-13 (this run). Password change and biometric unlock touch the vault, so they go with
+# the Encryption run (LIF-359). The backup offered is the whole-vault export (SV-22).
 - id: SV-27
-  says: The account lets the user sign out of a device and delete the account.
-  open: What deleting the account removes (the server's blobs and device registry, this device's vault, or both).
+  says: The account lets the user sign out of a device and delete the account; deleting removes both the user's data on their server and the vault on the device, offers a backup first, and runs only after the user confirms and types a phrase that clearly states they want the account deleted.
+  uses: [SV-22]
   work: LIF-597
 
 # The apps. ADR-001, ADR-017 (D), platform-strategy §4–§7; docs/platform's specs are empty.

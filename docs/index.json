@@ -11842,11 +11842,11 @@
       "module": "sync",
       "status": "active",
       "supersedes": [],
-      "summary": "The account lets the user sign out of a device and delete the account.",
+      "summary": "The account lets the user sign out of a device and delete the account; deleting removes both the user's data on their server and the vault on the device, offers a backup first, and runs only after the user confirms and types a phrase that clearly states they want the account deleted.",
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 77,
+      "tokens": 106,
       "path": "docs/modules/sync/intent/SV-27.md"
     },
     {
