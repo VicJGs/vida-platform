@@ -2,6 +2,344 @@
   "generated": "node tools/checks/core/docs-index.mjs; do not edit",
   "units": [
     {
+      "id": "AX-1",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A model call runs in one of two modes the user picks per use, on the device (the user's own local model, nothing leaves the vault) or in the cloud with the user's own key (a scoped slice sent from the device straight to the provider); no server sees either, the device is preferred, and a call is never upgraded to the cloud silently.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/ai/intent/AX-1.md"
+    },
+    {
+      "id": "AX-10",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "There is no chat; the assistant has no conversation surface and keeps no conversation memory, asking and writing happen inside module screens, and acting happens through outside agents.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/ai/intent/AX-10.md"
+    },
+    {
+      "id": "AX-11",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module's ask and write help is a shipped, consent-gated capability block on its screens that runs the mode choice and the review of what is sent; a module's named pipeline (reading a page, extracting a syllabus, drafting, advising) stays a scoped one-shot model call, never an agent.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/ai/intent/AX-11.md"
+    },
+    {
+      "id": "AX-12",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The runtime answers the mediated ask by reaching the user's local model or, through Integrations' mediator, a cloud provider with the user's key; until it exists every call reads unavailable and every module's manual path keeps working.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/ai/intent/AX-12.md"
+    },
+    {
+      "id": "AX-13",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Until encryption lands, the web product runs the assistant only on the user's own local model; cloud mode with a key runs only on the desktop app, where the key lives in the system keychain.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/ai/intent/AX-13.md"
+    },
+    {
+      "id": "AX-14",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Local models are set up by the user, and Vida ships user documentation for it (the parameters, the specifications and where everything goes); which models and providers come first and how prompts and redaction are built are decided in the build.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/ai/intent/AX-14.md"
+    },
+    {
+      "id": "AX-15",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida runs no model of its own; it hosts none, ships no first-party assistant and offers no attested cloud mode.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/ai/intent/AX-15.md"
+    },
+    {
+      "id": "AX-16",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Agents are the user's own, created and run in third-party tools; Vida creates, hosts and runs no agent loop, and one or several outside agents read and write in Vida only through its gateway.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/ai/intent/AX-16.md"
+    },
+    {
+      "id": "AX-17",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The gateway is the sandbox that Vida's assistant feature owns; every outside agent's call is checked against that agent's grants, waits for approval, is logged and can be undone, and it shares the grant engine with user-written capabilities, which keep their own code runner (CB-11).",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/ai/intent/AX-17.md"
+    },
+    {
+      "id": "AX-18",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One central tool registry lists every tool an outside agent can be granted; a tool is a capability action a module offers, every module offers tools for asking, writing and acting, and a tool missing from the registry can't be granted.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/ai/intent/AX-18.md"
+    },
+    {
+      "id": "AX-19",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An outside agent asks for everything; each planned change waits in the approval prompt, where the user approves, edits or rejects it, unless the user set an auto-grant for a run, a session or a connection (local or by key).",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/ai/intent/AX-19.md"
+    },
+    {
+      "id": "AX-2",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An assistant connection is configured per provider (mode, provider, default scope and the requested no-train flag) and carries no key; the key is custodied by Integrations and never reaches a module, a capability or an agent.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/ai/intent/AX-2.md"
+    },
+    {
+      "id": "AX-20",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The activity log records every tool call an agent makes and its result, plus what was sent to a cloud model, and the user can undo one agent run as a single step.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/ai/intent/AX-20.md"
+    },
+    {
+      "id": "AX-21",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In the permissions editor the user sets each agent's envelope module by module and its limits per grant (allow, limit or enforce whatever they want); Vida ships no fixed budget, and the gateway enforces what the user set.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/ai/intent/AX-21.md"
+    },
+    {
+      "id": "AX-22",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Outside agents reach the gateway on every product shape in a way the user approves, never through a Vida server.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/ai/intent/AX-22.md"
+    },
+    {
+      "id": "AX-23",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each use asks where the call runs (on the device, nothing leaves, or the cloud with the named provider), and before a cloud call the user sees exactly what will be sent, can remove or redact parts, and nothing is sent until they confirm.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/ai/intent/AX-23.md"
+    },
+    {
+      "id": "AX-24",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The assistant has its own management page, apart from Integrations, listing the user's providers and local model with mode, default scope and the no-train request; a key is never shown.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/ai/intent/AX-24.md"
+    },
+    {
+      "id": "AX-25",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When a capability or an agent asks for permissions, a grant prompt shows what it may read, what it may do and whether anything may leave the device, and the grant can be revoked later.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/ai/intent/AX-25.md"
+    },
+    {
+      "id": "AX-26",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The assistant has three stores, the per-provider connections (no key), the cloud-call audit and the agent activity log; there is no conversation store, and the rows are field-encrypted once encryption lands.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 122,
+      "path": "docs/modules/ai/intent/AX-26.md"
+    },
+    {
+      "id": "AX-3",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A cloud model call is an egress through Integrations' egress guard (per-target consent, the union when a sensitive read joins, an audit and never automatic), and the assistant forwards only the slice its caller gives; redaction trims what is sent but never makes a call private about its own subject.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 128,
+      "path": "docs/modules/ai/intent/AX-3.md"
+    },
+    {
+      "id": "AX-4",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An agent's callable tools are exactly its granted envelope; a tool outside it fails closed, the agent holds no ambient authority, its writes go through the module's guarded write interface, and a model call it needs is the mediated ask, so it never holds a key.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/ai/intent/AX-4.md"
+    },
+    {
+      "id": "AX-5",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Prompt injection is bounded; content from an untrusted origin carries its provenance into the prompt (an unknown origin is untrusted), and an injected tool call still meets the tool gate and the egress gate, so it can't widen the scope or invent a target.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/ai/intent/AX-5.md"
+    },
+    {
+      "id": "AX-6",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A row a model wrote carries source ai, stamped by the owning module's own service, and is encrypted like any vault row once encryption lands; the assistant drafts and the user owns.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/ai/intent/AX-6.md"
+    },
+    {
+      "id": "AX-7",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Cloud mode's disclosure says plainly that the provider sees the chosen slice in plaintext, the user's address and key identity and a profile across calls, and that no-train is requested, never guaranteed.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/ai/intent/AX-7.md"
+    },
+    {
+      "id": "AX-8",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida answers only for leaks from its own security, never for what a provider the user chose does with what was sent; Vida documents and shows the safest ways to use its assistant (the local model, reviewing what is sent) and says plainly that nothing involving data can be guaranteed.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/ai/intent/AX-8.md"
+    },
+    {
+      "id": "AX-9",
+      "kind": "intent-row",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida's assistant is a helper across all of Vida, like Notion with Claude, never a feature of one module; every module gets it with three kinds of help, asking across the user's data, writing inside pages and acting through tools.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/ai/intent/AX-9.md"
+    },
+    {
       "id": "BK-1",
       "kind": "intent-row",
       "module": "books",
@@ -2495,11 +2833,11 @@
       "module": "finance",
       "status": "active",
       "supersedes": [],
-      "summary": "External and AI paths follow the ADR-014/015 grant and scope contract, with no AI4 agentic envelope and no new grant table.",
+      "summary": "External and model paths follow the ADR-014/015 grant and scope contract with no new grant table; Fiscal and Legal's advice is a scoped one-shot model call, never an agent, while Finance offers its tools to outside agents through the gateway like every module.",
       "anchors": [
         "docs/modules/finance/intent.yaml"
       ],
-      "tokens": 75,
+      "tokens": 116,
       "path": "docs/modules/finance/intent/FL-15.md"
     },
     {
@@ -4781,6 +5119,19 @@
       ],
       "tokens": 55,
       "path": "docs/modules/integrations/intent/IN-9.md"
+    },
+    {
+      "id": "INTENT-ai",
+      "kind": "intent",
+      "module": "ai",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of ai: 26 rows, 0 tested, 0 partly tested, 26 intent only.",
+      "anchors": [
+        "docs/modules/ai/intent.yaml"
+      ],
+      "tokens": 127,
+      "path": "docs/modules/ai/intent.md"
     },
     {
       "id": "INTENT-books",
@@ -7918,11 +8269,11 @@
       "module": "projects",
       "status": "active",
       "supersedes": [],
-      "summary": "An agent over the vault runs on-device or in the cloud as the user picks per use, acts only within its granted envelope through a mediated model call, marks what it writes with source ai, and never sends vault plaintext to the cloud without the user's opt-in.",
+      "summary": "An outside agent reads and acts on Projects only through Vida's gateway, within the grants the user set, and project documents are offered to it as readable context; what it writes carries source ai, and nothing leaves the vault without the user's consent.",
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 96,
+      "tokens": 104,
       "path": "docs/modules/projects/intent/PJ-16.md"
     },
     {

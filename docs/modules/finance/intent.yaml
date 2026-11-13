@@ -123,8 +123,11 @@
 - id: FL-14
   says: User fiscal-legal free text and amounts are [E]; rule-packs are public plaintext; codes, types, dates and FKs are structural.
   work: LIF-67
+# FL-15 reworded at the AI run (Victor, 2026-11-12): the advice stays a one-shot model call, and Finance offers tools to
+# outside agents through the gateway like every module (FU-4, INTENT-ai AX-11, AX-18).
 - id: FL-15
-  says: External and AI paths follow the ADR-014/015 grant and scope contract, with no AI4 agentic envelope and no new grant table.
+  says: External and model paths follow the ADR-014/015 grant and scope contract with no new grant table; Fiscal and Legal's advice is a scoped one-shot model call, never an agent, while Finance offers its tools to outside agents through the gateway like every module.
+  uses: [ai, AX-11, AX-18]
   proof: [BR-S7-4, BR-S8-1, BR-S8-4]
 # Proposed ID, no ID in docs/features today (approve in the PR)
 - id: FL-16
