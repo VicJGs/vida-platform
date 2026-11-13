@@ -1,0 +1,187 @@
+# AI intent ledger: every intended, deferred or TBD rule of AI, an OS feature (Victor 2026-11-06, LIF-426) that owns the
+# ai substrate (LIF-426 SB-Q9: ai → AI). It is not an integration: cloud model calls ride Integrations' egress guard
+# (ADR-014), and Integrations custodies every key (ITG-12, ITG-14). work = the issue that builds the rest. check:rules
+# derives each row's state.
+# Prefix (Victor, 2026-11-12): AX, where AX-1…AX-6 are ADR-015's temporary codes AI1…AI6 (LIF-462) and AX-7… are
+# proposed. AI itself was out: AI-n matches inside the live rule IDs BR-AI-n. AX had 0 matches in Vida. The built rules
+# are BR-AI-1…BR-AI-13 (docs/core/ai/current-business-rules.md), a form check:rules knows, so rows cite them as proof and
+# no substrate prefix is needed. BR-AI-13 (no schema at M1, ports deny-safe) is the M1 state AX-26 replaces.
+# The model (Victor, the 2026-11-06/07 gap sheet and the LIF-460 comments, settled before the rows on 2026-11-12):
+# Vida's assistant is a helper across all of Vida, like Notion with Claude, never a feature of one module. In-module
+# help (ask across the user's data, write inside pages) is a one-shot model call through the runtime (LIF-145), on the
+# user's own local model or a cloud provider with the user's own key, and there is no chat. Agents are the user's own,
+# created and run in third-party tools; Vida builds no agent runner but a gateway they call through (the central tool
+# registry, the grant check, approvals, the activity log and undo, the permissions editor), which is the sandbox the AI
+# project owns (AI-OUT-6, AI-F1). LIF-156 keeps the runner for user-written code; the grant engine is shared. Vida runs
+# no model of its own. Vida answers only for leaks from its own security.
+# Settled at this run (Victor, 2026-11-12): the AX prefix; the gateway's reach on the localhost web is an open row
+# (AX-22); until encryption lands the web product runs only the user's local model (AX-13, from ITG-14); a module's named
+# pipeline (OCR, extraction, drafts, advice) stays a scoped one-shot call while every module, Finance included, offers
+# tools to outside agents (FL-15 reworded); PJ-16 reworded to the gateway; the registry is specified by rule rows here
+# and its per-module tool lists by an issue; in-module help surfaces as shipped capability blocks (AX-11).
+# Sources: ADR-015, ADR-010's agent amendment, docs/core/ai (current-*), LIF-145, LIF-460 and its comments, the gap sheet
+# answers (AI-F1, AI-F2, AI-OUT-1…6, AI-Q2…Q9, FU-3, FU-4, FU-7, F-check, S5…S11) and the gap register (AI-1…AI-9); read
+# with Victor's OK at this run: the archived xs-ai task and its delivery files (interpretation U-1…U-4, seam contract,
+# slice map, service index), the archived fe-integrations-ai-surfaces and p3-4-integrations-ai-llm tasks, and the AI
+# lines of the July intakes (grep only).
+# Built (the code is the truth): foundation/ai (LIF-167, 9c694090), 32 tests (modes, service, agent, connections). Its
+# M1 ports are absent or in memory: every model call answers unavailable, nothing composes the tier in the app, and no
+# store, gateway or screen exists.
+# Proof: the tests name the archived XCU-nn legs and IR-n codes, never a BR-AI rule or a row ID, so every built row keeps
+# a work link to LIF-585 (name the tests) until a test reads it tested. No test was renamed. AI has no features folder
+# (LIF-426), so the archive guard applies from the start.
+# Consumers (each in its owner's ledger): BK-4, BK-10, BK-14, BK-15, FL-13, FL-15, HC-2, HC-4, HC-8, HC-10, HC-18, HN-6,
+# HN-9, HN-11, HN-15, HT-9, HT-13, KN-11, KN-26, ED-8, ED-36, SK-3, SK-14, PJ-16, PR-21, ITG-7, ITG-11, ITG-12, ITG-14 and
+# EG-5. Their model calls wait on the runtime (LIF-145); the tools they offer outside agents wait on LIF-587.
+
+# ADR-015's clauses, AI1…AI6 (the temporary codes, LIF-462).
+# AX-1: ADR-015 §3.1 and §3.2. "On-device / agentic" is drift: no agent loop runs in Vida (AI-F1); on the device means
+# the user's own local model (FU-7).
+- id: AX-1
+  says: A model call runs in one of two modes the user picks per use, on the device (the user's own local model, nothing leaves the vault) or in the cloud with the user's own key (a scoped slice sent from the device straight to the provider); no server sees either, the device is preferred, and a call is never upgraded to the cloud silently.
+  proof: [BR-AI-1, BR-AI-2, BR-AI-8, BR-AI-11]
+  work: LIF-585
+# AX-2: ADR-015 Amends (ADR-002) and §3.5. "An encrypted key at L2/L3" is drift: the key lives in the system keychain,
+# held by Integrations (ITG-12, ITG-14).
+- id: AX-2
+  says: An assistant connection is configured per provider (mode, provider, default scope and the requested no-train flag) and carries no key; the key is custodied by Integrations and never reaches a module, a capability or an agent.
+  uses: [integrations, ITG-12, ITG-14]
+  proof: [BR-AI-12]
+  work: LIF-585
+- id: AX-3
+  says: A cloud model call is an egress through Integrations' egress guard (per-target consent, the union when a sensitive read joins, an audit and never automatic), and the assistant forwards only the slice its caller gives; redaction trims what is sent but never makes a call private about its own subject.
+  uses: [integrations, EG-1, EG-2, EG-3, EG-5]
+  proof: [BR-AI-3, BR-AI-4]
+  work: LIF-585
+# AX-4: ADR-015 §3.4 and §3.4a, and ADR-010's agent amendment. "A sandboxed actor with a decision loop" running inside
+# Vida is drift (AI-F1); the rule holds for every outside agent's call through the gateway (AX-17).
+- id: AX-4
+  says: An agent's callable tools are exactly its granted envelope; a tool outside it fails closed, the agent holds no ambient authority, its writes go through the module's guarded write interface, and a model call it needs is the mediated ask, so it never holds a key.
+  uses: [capabilities, CB-4, CB-8, effects]
+  proof: [BR-AI-6, BR-AI-7]
+  work: LIF-585
+- id: AX-5
+  says: Prompt injection is bounded; content from an untrusted origin carries its provenance into the prompt (an unknown origin is untrusted), and an injected tool call still meets the tool gate and the egress gate, so it can't widen the scope or invent a target.
+  uses: [AX-4, EG-5]
+  proof: [BR-AI-9]
+  work: LIF-585
+- id: AX-6
+  says: A row a model wrote carries source ai, stamped by the owning module's own service, and is encrypted like any vault row once encryption lands; the assistant drafts and the user owns.
+  uses: [encryption]
+  proof: [BR-AI-10]
+  work: LIF-585
+
+# Proposed IDs, no ID in ADR-015 today (approve in the PR)
+# AX-7: ADR-015 §3.2 and §3.8.
+- id: AX-7
+  says: Cloud mode's disclosure says plainly that the provider sees the chosen slice in plaintext, the user's address and key identity and a profile across calls, and that no-train is requested, never guaranteed.
+  uses: [integrations]
+  proof: [BR-AI-5]
+  work: LIF-585
+# AX-8: FU-4 (2026-11-06) and F-check 6; the same boundary as ITG-13.
+- id: AX-8
+  says: Vida answers only for leaks from its own security, never for what a provider the user chose does with what was sent; Vida documents and shows the safest ways to use its assistant (the local model, reviewing what is sent) and says plainly that nothing involving data can be guaranteed.
+  uses: [integrations, ITG-13]
+  work: LIF-589
+# AX-9: LIF-460 item 1, F-check 1 and FU-4 ("All of them"); gap register AI-1.
+- id: AX-9
+  says: Vida's assistant is a helper across all of Vida, like Notion with Claude, never a feature of one module; every module gets it with three kinds of help, asking across the user's data, writing inside pages and acting through tools.
+  uses: [notes, journals, tasks, habits, routines, relationships, check-ins, calendar, gamification, purposes, spaces, projects, finance, health, books, knowledge, learning, skills, sessions]
+  work: LIF-587
+# AX-10: AI-Q9 and AI-F2 (2026-11-07).
+- id: AX-10
+  says: There is no chat; the assistant has no conversation surface and keeps no conversation memory, asking and writing happen inside module screens, and acting happens through outside agents.
+  uses: [AX-9, AX-16]
+  work: LIF-588
+# AX-11: Victor 2026-11-12; the archived fe-integrations-ai-surfaces task ("AI faces land as consent-gated capability
+# blocks within modules"). BK-14, ED-36, SK-14 and FL-15 keep their pipelines one-shot.
+- id: AX-11
+  says: A module's ask and write help is a shipped, consent-gated capability block on its screens that runs the mode choice and the review of what is sent; a module's named pipeline (reading a page, extracting a syllabus, drafting, advising) stays a scoped one-shot model call, never an agent.
+  uses: [spaces, CB-1, CB-2, CB-7, books, BK-14, learning, ED-36, skills, SK-14, finance, FL-15]
+  work: LIF-588
+# AX-12: FU-7 (2026-11-07) and AI-OUT-5; ADR-015 §5 SERVICE. The runtime is LIF-145.
+- id: AX-12
+  says: The runtime answers the mediated ask by reaching the user's local model or, through Integrations' mediator, a cloud provider with the user's key; until it exists every call reads unavailable and every module's manual path keeps working.
+  uses: [integrations, ITG-12, knowledge, KN-26]
+  work: LIF-145
+# AX-13: Victor 2026-11-12, following ITG-14 (the web product holds no secret before encryption).
+- id: AX-13
+  says: Until encryption lands, the web product runs the assistant only on the user's own local model; cloud mode with a key runs only on the desktop app, where the key lives in the system keychain.
+  uses: [integrations, ITG-14]
+  work: LIF-145
+# AX-14: LIF-460 item 4 and AI-OUT-1; ADR-015 §3.8 and the archived U-1 keep the choices build-phase.
+- id: AX-14
+  says: Local models are set up by the user, and Vida ships user documentation for it (the parameters, the specifications and where everything goes); which models and providers come first and how prompts and redaction are built are decided in the build.
+  uses: [AX-1]
+  work: LIF-589
+# AX-15: LIF-460 item 5 and AI-OUT-4 ("a clear drift"). ADR-015 §3.5's "native later" and §6 (a) and (d) are drift;
+# the archived U-4.
+- id: AX-15
+  says: Vida runs no model of its own; it hosts none, ships no first-party assistant and offers no attested cloud mode.
+  work: LIF-590
+
+# The gateway outside agents call through (AI-F1, 2026-11-07).
+# AX-16: AI-Q8 and AI-F1; FU-3's runner was replaced by AI-F1.
+- id: AX-16
+  says: Agents are the user's own, created and run in third-party tools; Vida creates, hosts and runs no agent loop, and one or several outside agents read and write in Vida only through its gateway.
+  uses: [AX-17]
+  work: LIF-586
+# AX-17: AI-F1 and AI-OUT-6 (the sandbox is the AI project's); FU-3 (the grant engine stays shared, LIF-156 keeps the
+# user-code runner).
+- id: AX-17
+  says: The gateway is the sandbox the assistant's side owns; every outside agent's call is checked against that agent's grants, waits for approval, is logged and can be undone, and it shares the grant engine with user-written capabilities, which keep their own code runner (CB-11).
+  uses: [AX-4, capabilities, CB-8, CB-11]
+  work: LIF-586
+# AX-18: AI-Q2 (one central registry, 2026-11-07), LIF-460 item 2 and AI-OUT-2 (specify first); Victor 2026-11-12: the
+# per-module tool lists are specified by the registry issue, not as rows here.
+- id: AX-18
+  says: One central tool registry lists every tool an outside agent can be granted; a tool is a capability action a module offers, every module offers tools for asking, writing and acting, and a tool missing from the registry can't be granted.
+  uses: [AX-9, capabilities]
+  open: The default envelope a newly connected agent starts with.
+  work: LIF-587
+# AX-19: AI-Q3 (2026-11-07); gap sheet S9 (kept, the AI project's).
+- id: AX-19
+  says: An outside agent asks for everything; each planned change waits in the approval prompt, where the user approves, edits or rejects it, unless the user set an auto-grant for a run, a session or a connection (local or by key).
+  uses: [AX-17]
+  work: LIF-586
+# AX-20: AI-Q4 and AI-Q5 (2026-11-07); gap sheet S10.
+- id: AX-20
+  says: The activity log records every tool call an agent makes and its result, plus what was sent to a cloud model, and the user can undo one agent run as a single step.
+  uses: [AX-17, integrations, EG-6]
+  open: What bounds one run of an outside agent (a session the agent opens and closes, a run key it sends, or the connection going idle).
+  work: LIF-586
+# AX-21: AI-Q6 (2026-11-07); gap sheet S11.
+- id: AX-21
+  says: In the permissions editor the user sets each agent's envelope module by module and its limits per grant (allow, limit or enforce whatever they want); Vida ships no fixed budget, and the gateway enforces what the user set.
+  uses: [AX-17, AX-18]
+  work: LIF-586
+# AX-22: Victor 2026-11-12 (decided later), the same shape as ITG-20; ITG-18 settled the drop file and the local
+# endpoint for automations.
+- id: AX-22
+  says: Outside agents reach the gateway on every product shape in a way the user approves, never through a Vida server.
+  uses: [integrations, ITG-18, ITG-20]
+  open: How on the localhost web product, which has no server and no process while the tab is closed (a local endpoint on the desktop app only, the drop file applied on open, or something else).
+  work: LIF-586
+
+# The screens (gap sheet S5…S8, kept as described, the AI project's; the archived XCU-18u, 19u and 25u legs).
+- id: AX-23
+  says: Each use asks where the call runs (on the device, nothing leaves, or the cloud with the named provider), and before a cloud call the user sees exactly what will be sent, can remove or redact parts, and nothing is sent until they confirm.
+  uses: [AX-1, AX-3, integrations, EG-5]
+  work: LIF-588
+# AX-24: S7; ADR-015 §3.5 (a dedicated page, apart from integrations).
+- id: AX-24
+  says: The assistant has its own management page, apart from Integrations, listing the user's providers and local model with mode, default scope and the no-train request; a key is never shown.
+  uses: [AX-2, integrations, ITG-22]
+  work: LIF-588
+- id: AX-25
+  says: When a capability or an agent asks for permissions, a grant prompt shows what it may read, what it may do and whether anything may leave the device, and the grant can be revoked later.
+  uses: [capabilities, CB-8, CB-14]
+  work: LIF-588
+
+# The stores (AI-F2: three tables, 2026-11-07). LIF-145 owns them (its 2026-11-06 comment); ADR-002 §5.20 owes the
+# columns (the archived U-3). ITG-25 gives Integrations the egress audit store.
+- id: AX-26
+  says: The assistant has three stores, the per-provider connections (no key), the cloud-call audit and the agent activity log; there is no conversation store, and the rows are field-encrypted once encryption lands.
+  uses: [AX-2, AX-20, integrations, ITG-25, EG-6]
+  open: Whether the cloud-call audit is its own table or the model-target rows of Integrations' egress audit.
+  work: LIF-145

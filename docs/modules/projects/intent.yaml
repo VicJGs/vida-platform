@@ -72,11 +72,12 @@
   says: Project time also counts sessions attached to the project, one of its milestones or one of its deliverables, derived on read from the session log and counted once per session; a time log on a project target still writes nothing.
   uses: [sessions, SS-12]
   work: LIF-456
-# PJ-16 is deferred to the AI run (LIF-349 checklist line "AI (ADR-015, docs/core/ai; LIF-460)"). Other
-# modules' docs (Fiscal-legal, Nutrition) name Projects' agent as the agentic-actor contract.
+# PJ-16 reworded at the AI run (Victor, 2026-11-12): agents live outside Vida and act through the gateway (AI-F1,
+# INTENT-ai AX-16, AX-17); the intake's G6 wants project documents usable as assistant context.
 - id: PJ-16
-  says: An agent over the vault runs on-device or in the cloud as the user picks per use, acts only within its granted envelope through a mediated model call, marks what it writes with source ai, and never sends vault plaintext to the cloud without the user's opt-in.
-  uses: [ai]
+  says: An outside agent reads and acts on Projects only through Vida's gateway, within the grants the user set, and project documents are offered to it as readable context; what it writes carries source ai, and nothing leaves the vault without the user's consent.
+  uses: [ai, AX-16, AX-17, AX-6]
+  work: LIF-586
 - id: PJ-17
   says: Listing projects filters by status and scope and hides soft-deleted rows; archived is a status filter (completed or cancelled), not a separate state.
   proof: [BR-PJ-S1-6, BR-PJ-S1-7]
