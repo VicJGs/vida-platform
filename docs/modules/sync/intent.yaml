@@ -107,11 +107,15 @@
   says: A page's content syncs as its own Yjs document, the server keeping only the latest full snapshot, beside the page's metadata as a row blob; content merges without conflicts, and the page's stored content is a snapshot rebuilt after each merge.
   uses: [notes, NP-4]
   work: LIF-98
-# SV-8: ADR-003 §4.3, §7.3; LIF-422's open line. Consumers NP-16, PJ-8, ED-13, BK-18, FC-8.
+# SV-8: ADR-003 §4.3, §7.3. On the device the stack settles it: the file is an encrypted BLOB column on its row
+# (ADR-002 §5.2 note_attachments, §5.4 project_documents, language_recordings; built in schema notes.ts, projects.ts,
+# learning.ts and the health photo blobs) inside the device's SQLite database (ADR-001: wa-sqlite on OPFS on the web).
+# That answers LIF-422's "DB blob vs OPFS". platform-strategy §7 and file-system.rs give the desktop file system for
+# attachments, which the BLOB columns don't reflect (LIF-602 item 12). Consumers NP-16, PJ-8, ED-13, BK-18, FC-8.
 - id: SV-8
-  says: Attachments travel apart from the row queue, at most 25 megabytes each, encrypted on the device and uploaded through a short-lived signed link, with their metadata row syncing last-writer-wins, downloaded only when opened and kept on the device, and deleted on the server 30 days after their row.
+  says: On the device a file is stored encrypted on its own row in the device's database; across devices it syncs apart from the row queue, at most 25 megabytes, uploaded through a short-lived signed link while its metadata syncs last-writer-wins, downloaded only when opened and kept on the device, and deleted on the server 30 days after its row.
   uses: [notes, NP-16, projects, PJ-8, learning, ED-13, books, BK-18, knowledge, FC-8]
-  open: Where a file lives on the localhost web product (a database blob or a browser file store) and on a self-hosted server.
+  open: Where a self-hosted server keeps files (R2 on Workers, or another store).
   work: LIF-600
 # SV-9: ADR-003 §6.1, §6.3.
 - id: SV-9
