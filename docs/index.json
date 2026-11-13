@@ -5719,6 +5719,19 @@
       "path": "docs/modules/spaces/intent.md"
     },
     {
+      "id": "INTENT-sync",
+      "kind": "intent",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of sync: 40 rows, 1 tested, 0 partly tested, 39 intent only.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 163,
+      "path": "docs/modules/sync/intent.md"
+    },
+    {
       "id": "INTENT-tasks",
       "kind": "intent",
       "module": "tasks",
@@ -11575,6 +11588,527 @@
       ],
       "tokens": 103,
       "path": "docs/modules/sessions/intent/SS-9.md"
+    },
+    {
+      "id": "SV-1",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida runs as three product shapes, the localhost web product on the user's machine with all data local and no server, the server product the user hosts, and the desktop and mobile apps, and every rule that depends on where Vida runs names the shape it means.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/sync/intent/SV-1.md"
+    },
+    {
+      "id": "SV-10",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every last-writer-wins stamp is a hybrid logical clock stamp, never a bare wall clock, so a device with a skewed clock corrects itself on its next merge.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/sync/intent/SV-10.md"
+    },
+    {
+      "id": "SV-11",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every synced table carries the sync columns and a per-field stamp map; the sync queue, the search index and app_state stay on their device and never sync.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/sync/intent/SV-11.md"
+    },
+    {
+      "id": "SV-12",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A base row and its extension row travel together; a device applies an extension only once its base is present, a base without its extension renders as a valid, tool-less entity, and the writer queues both at once.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/sync/intent/SV-12.md"
+    },
+    {
+      "id": "SV-13",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Structured changes push two seconds after the last write, on reconnect, on a manual sync and every five minutes while open, pulling when a mobile app comes to the front; page content syncs every five seconds while edited, on leaving the page and on save; attachments upload when added.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/sync/intent/SV-13.md"
+    },
+    {
+      "id": "SV-14",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Changes move over one authenticated socket per user with a 30-second heartbeat and reconnect backoff up to 30 seconds, falling back to polling every 60 seconds while the socket is down.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/sync/intent/SV-14.md"
+    },
+    {
+      "id": "SV-15",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Offline, everything works but sync and uncached attachments; the queue survives restarts, and on reconnect the device pushes its queue in order, pulls what changed since its last sync, merges and records the new sync time on the device.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/sync/intent/SV-15.md"
+    },
+    {
+      "id": "SV-16",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The server signs the user in, stores each encrypted blob and page snapshot, relays a push to the user's other online devices, keeps an ordered change feed per user for pulls, serves attachments by signed link, keeps the device registry, sends the content-free wake signal and deletes soft-deleted blobs after 30 days.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 157,
+      "path": "docs/modules/sync/intent/SV-16.md"
+    },
+    {
+      "id": "SV-17",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "With the server product, the user's own server serves the web app, so the user opens Vida from their server; the localhost web product keeps its static build.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/sync/intent/SV-17.md"
+    },
+    {
+      "id": "SV-18",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The server is open source and self-hostable first; a relay Victor hosts later is an option, never required, and device limits and billing apply only to that hosted relay, never to a self-hosted server.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/sync/intent/SV-18.md"
+    },
+    {
+      "id": "SV-19",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each device generates its id once and keeps it on the device; its first sign-in registers it on the server with its name and platform, and the user lists, renames and sees when each device was last seen.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/sync/intent/SV-19.md"
+    },
+    {
+      "id": "SV-2",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The device is the source of truth; every write succeeds locally first, sync is an eventual copy between the user's devices and never a dependency, and the server stores and relays but never merges.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/sync/intent/SV-2.md"
+    },
+    {
+      "id": "SV-20",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Revoking a device closes its connection, tells the other devices and refuses its sign-in, without erasing the data already on it, and Vida points the user to changing the password, which re-keys the vault.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/sync/intent/SV-20.md"
+    },
+    {
+      "id": "SV-21",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A new device signs in, unlocks the vault and pulls the profile, preferences and app configuration before it opens, then the last 30 days in the background by table priority with visible progress, then the rest in resumable batches of 100, leaving attachments until opened and rebuilding search at the end.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 114,
+      "path": "docs/modules/sync/intent/SV-21.md"
+    },
+    {
+      "id": "SV-22",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user exports all their data on the device, decrypted and with no server, as one file per table, pages as Markdown and attachments as their files in one archive, which is also the backup and the way into the encrypted app.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/sync/intent/SV-22.md"
+    },
+    {
+      "id": "SV-23",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The account is the user's identity across their own devices, never an account with Vida as a company; it holds their contact details, the password and authentication that unlock Vida, and the devices signed in.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/sync/intent/SV-23.md"
+    },
+    {
+      "id": "SV-24",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "With a server, signing in on a new device connects to the user's own server and brings their data in; without one, the account lives on the device, its details plus the password that unlocks the vault there.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/sync/intent/SV-24.md"
+    },
+    {
+      "id": "SV-25",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The account's contact details are stored in the user's profile, Settings shows the account without owning its data, and the System panel's Account entry opens it.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/sync/intent/SV-25.md"
+    },
+    {
+      "id": "SV-26",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Signing in to the server uses the secure remote password protocol, so the server keeps only a salt and a verifier and never sees a password or a key.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/sync/intent/SV-26.md"
+    },
+    {
+      "id": "SV-27",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The account lets the user sign out of a device and delete the account.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/sync/intent/SV-27.md"
+    },
+    {
+      "id": "SV-28",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The desktop app runs the same web codebase with a native, encrypted SQLite store behind the shared database adapter, an addition rather than a rewrite, and adds a tray, global shortcuts, auto-update, file system access for attachments and export, and native notifications.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 112,
+      "path": "docs/modules/sync/intent/SV-28.md"
+    },
+    {
+      "id": "SV-29",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The mobile app shares the core and the interface, runs the editor, charts and graph inside web views with native chrome around them, and adds push, haptics, a share sheet, biometric unlock and background sync.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/sync/intent/SV-29.md"
+    },
+    {
+      "id": "SV-3",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sync copies one user's data across that user's own devices; there is no sharing between users, no presence and no shared cursors.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/sync/intent/SV-3.md"
+    },
+    {
+      "id": "SV-30",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The localhost web product keeps its database in the browser's private file store with no server, so its data lives in that browser and the whole-vault export is its safety copy.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/sync/intent/SV-30.md"
+    },
+    {
+      "id": "SV-31",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A replayed blob is refused, by the server on a lower version and by the device on an older stamp.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/sync/intent/SV-31.md"
+    },
+    {
+      "id": "SV-4",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The server is blind; it stores and relays only encrypted blobs and never decrypts, indexes, queries, links or merges them, and the plain header it reads (table, row, version, clock stamp, device, operation and the changed field names) is the disclosed limit of what it learns.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/sync/intent/SV-4.md"
+    },
+    {
+      "id": "SV-5",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sync to a server turns on only after the encryption pass, so before it each device's data stays on that device.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/sync/intent/SV-5.md"
+    },
+    {
+      "id": "SV-6",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each row of a synced table is one sync unit, serialized whole, compressed and encrypted into one blob whose plain header carries each changed field's clock stamp, so a device can merge per field before it decrypts.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/sync/intent/SV-6.md"
+    },
+    {
+      "id": "SV-7",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A page's content syncs as its own Yjs document, the server keeping only the latest full snapshot, beside the page's metadata as a row blob; content merges without conflicts, and the page's stored content is a snapshot rebuilt after each merge.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/sync/intent/SV-7.md"
+    },
+    {
+      "id": "SV-8",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Attachments travel apart from the row queue, at most 25 megabytes each, encrypted on the device and uploaded through a short-lived signed link, with their metadata row syncing last-writer-wins, downloaded only when opened and kept on the device, and deleted on the server 30 days after their row.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 158,
+      "path": "docs/modules/sync/intent/SV-8.md"
+    },
+    {
+      "id": "SV-9",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Structured data merges per field, last writer wins by clock stamp with the higher device id breaking an exact tie; the id, sync id and creation time never merge, updated_at takes the merge's wall-clock time, and a delete is an ordinary field, so a delete and an edit resolve by their stamps.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/sync/intent/SV-9.md"
+    },
+    {
+      "id": "SY-1",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Until sync is activated, the sync engine does no network I/O; its flush loop exists but every transport, push and pull step is inert, so nothing leaves the device.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml",
+        "packages/core/src/sync/__tests__/scaffold.test.ts"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/sync/intent/SY-1.md"
+    },
+    {
+      "id": "SY-2",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The engine only consumes the sync queue; the entity write and its queue row are written together by the repository, and the engine reads pending rows and, once activated, moves their status or removes them after the server acknowledges.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/sync/intent/SY-2.md"
+    },
+    {
+      "id": "SY-3",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A queued payload arrives already encrypted, and the engine treats it as an opaque blob it never decrypts, inspects or re-encrypts.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/sync/intent/SY-3.md"
+    },
+    {
+      "id": "SY-4",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Pending queue rows drain first in, first out, by when they were queued.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 49,
+      "path": "docs/modules/sync/intent/SY-4.md"
+    },
+    {
+      "id": "SY-5",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Repeated edits of a row before a flush coalesce to its latest snapshot, and a create followed by a delete of the same row collapses to nothing before any push.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 71,
+      "path": "docs/modules/sync/intent/SY-5.md"
+    },
+    {
+      "id": "SY-6",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The queue's status (pending, in flight, failed) and a row's own sync status (pending, synced, conflict) are two separate states, and the queue reader moves only the queue's.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/sync/intent/SY-6.md"
+    },
+    {
+      "id": "SY-7",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A failed push retries with backoff from 1 to 30 seconds up to three times, then is marked failed and shown as changes that failed to sync with a manual retry; a client error is never retried, an authentication error stops all sync and asks the user to sign in again, and an encryption error stops only that blob.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/sync/intent/SY-7.md"
+    },
+    {
+      "id": "SY-8",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The field-level merge and the per-page Yjs merge are reserved seams with their final interfaces, and nothing merges until sync is activated.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/sync/intent/SY-8.md"
+    },
+    {
+      "id": "SY-9",
+      "kind": "intent-row",
+      "module": "sync",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Activating sync fills the reserved seams with no schema change and no change to any consumer.",
+      "anchors": [
+        "docs/modules/sync/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/sync/intent/SY-9.md"
     },
     {
       "id": "TK-1",
