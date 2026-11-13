@@ -1,0 +1,123 @@
+# Graph + Backlinks intent ledger: every intended, deferred or TBD rule of Graph + Backlinks, the connective entity
+# that owns the backlink resolver, the merged "what links here", the OS link graph and its /graph surface, and the
+# NeuralGraph component (Connective Layer; QD-1, Victor 2026-11-07). work = the issue that builds the rest.
+# check:rules derives each row's state.
+# Prefixes (Victor, 2026-11-13): GR for the entity's own rows, every one proposed; BL for the backlink resolver, where
+# BL-1…BL-7 are docs/core/backlinks' rules BL-1…BL-7, one to one (the SY, IN and EG pattern). GR had 0 matches in Vida
+# on 65ca3aa9; BL-n appears only in the backlinks rule files, the resolver test, archived notes and an archived ds-1
+# critique. Folder name `graph` (Victor, 2026-11-13); PG-18, SPC-4 and RL-15 already use it.
+# The model (Victor, 2026-11-13, settled before the rows):
+# - The OS graph's nodes are pages and every entity an entity link targets, contacts included; its edges are page
+#   links, entity links and Purposes contributions (XCU-BSE-23, PG business-rules:63, the PG_notes intake). Tags and
+#   Spaces cluster and filter the graph; they are not nodes.
+# - Graph + Backlinks owns the merged "what links here" OS-wide: one read and one shared panel that every entity's page
+#   mounts. Notes mounts it on the note Overview (NP-20, NP-26) and no longer owns the merge.
+# - Two kinds of module graph: Notes' Neural layout, the Views graph layout and Knowledge's graph are scoped slices of
+#   the OS graph; Relationships' network (RL-4, RL-15) and Skills' tree (SK-8) bring their own edges and reuse only the
+#   NeuralGraph component.
+# Out of this ledger: the FTS5 search engine (XCU-BSE-13…18) is LIF-70's, the export serializers (XCU-BSE-19…22) are
+# the Editor run's, and link writes are Spaces' (createLink, removeLink) and Notes' (page links).
+# Sources: docs/core/backlinks (current-spec, current-business-rules), LIF-114 and its G4 comment, LIF-467 and its
+# comments, LIF-426's QD-1 row; read with Victor's OK at this run: the archived backend-intent part
+# xcut-backlinks-search-export (XCU-BSE-01…27), the archived xs-backlinks-search-export and fe-codec-canvas-graph tasks
+# and specs, the ui-2 V7 neural-graph spec, ui-4 S5 (the /graph route), golive-replan debt-plan §2 (HARD-3), the graph
+# and backlink lines of the July intakes (grep) and the gap sheet (QD-1).
+# Built (the code is the truth): the backlink resolver (AR-8 #1, services/search/backlink-resolver.ts, LIF-168), wired
+# in apps/web's composition root; the NeuralGraph component in @vida/ui (ui-2 V7, fe-codec-canvas-graph LIF-205,
+# preferences-rescope R4); the lazy /graph route, which renders the empty state (ui-4 S5); Notes' merged backlinks
+# (BR-S4-4, BR-SUR-7) and its BacklinksPanel, whose useBacklinks is an M1 stub returning empty. The graph's data prep
+# was never built: core/utils/graph-data.ts is a 0-byte file from the initial commit.
+# Proof: backlink-resolver.test.ts names BL-1 and BL-7 in its R7 conformance describe, so both read tested; its other
+# describes and neural-graph.test.tsx name no row ID, so those rows keep a work link to LIF-603. No test was renamed.
+# Graph has no features folder, so the archive guard applies from the start.
+# Consumers (each in its owner's ledger): NP-14 (the /backlink inline block), NP-15 (the link preview's hover mount,
+# LIF-423), NP-20 and NP-26 (the note Overview), CK-6 (reviews backlink what they covered), PG-10 and PG-18
+# (contributions and links in the graph), SPC-4 and VW-4 (the graph layout, read providers), KN-6 and Knowledge's graph
+# surface, RL-4 and RL-15 (the network view), SK-8 (the skill graph), SH's Graph surface, SV's mobile web views (SV-29)
+# and the Encryption pass for BL-6 (LIF-67).
+
+# docs/core/backlinks' rules, BL-1…BL-7 (the AR-8 backlink resolver).
+- id: BL-1
+  says: The backlink resolver never writes entity links and exposes no write path; creating and removing a link is the Spaces service's.
+  uses: [spaces]
+- id: BL-2
+  says: Every resolver read leaves out soft-deleted links, so a removed link disappears from every read and a revived link reappears.
+  work: LIF-603
+- id: BL-3
+  says: The resolver gates no read on the taggable-type registry; an unknown or unregistered entity type yields an empty list, never an error.
+  work: LIF-603
+- id: BL-4
+  says: Backlinks match on both the entity type and the entity id, so a link to one entity never surfaces for another entity of the same type or an entity of another type with the same id.
+  work: LIF-603
+- id: BL-5
+  says: At most one live link exists per page and target entity, so resolving one link returns exactly one row or none.
+  work: LIF-603
+# BL-6: the read path already matches the Spaces repository's encryption config; the [E] activation is the M3 pass.
+- id: BL-6
+  says: A link's context snippet is encrypted client-side; until the encryption pass it runs as an empty pass-through, and the read path decrypts it once encryption activates with no change to the resolver.
+  uses: [encryption, SPC-7]
+  work: LIF-67
+- id: BL-7
+  says: The resolver is the documented read through which every module asks what links to an entity and what a page links to; no module reads the entity links table directly or keeps a cross-module copy, and an unknown source yields an empty list, never an invented value.
+
+# Proposed IDs, every GR row: Graph + Backlinks has no intent ID today (approve in the PR)
+
+# The OS graph. XCU-BSE-23, -24; notes NOT-49; the model above.
+# GR-1: the data prep is the 0-byte core/utils/graph-data.ts; services/search/CLAUDE.md calls it AR-8 increment #2.
+- id: GR-1
+  says: The global graph's nodes are pages and every entity an entity link targets, contacts included, and its edges are page links, entity links and Purposes contributions; it is derived on read from each owner's documented read (page links through Notes, entity links through the resolver, contributions through Purposes), never from another module's tables and never stored.
+  uses: [notes, spaces, purposes, PG-10, BL-7]
+  work: LIF-114
+- id: GR-2
+  says: Tags and Spaces cluster and filter the global graph and are never nodes of it.
+  uses: [spaces]
+  work: LIF-605
+- id: GR-3
+  says: The Graph surface (/graph) renders the whole global graph with building, empty, error and populated states; a failed or missing source degrades with a flag and never crashes, and while the data prep is unbuilt the surface shows the honest empty state.
+  uses: [shell, GR-1]
+  work: LIF-114
+# GR-4: structure-data:46 ("neural the link graph"); notes G3 (Note → List · Gallery · Neural); KN K7 neural-graph
+# inclusion (INTENDED-IMMATURE); ADR-007's graph layout.
+- id: GR-4
+  says: The Notes collection's Neural layout, the Views graph layout and Knowledge's graph are scoped slices of the global graph, filtered by page type, view or module; a slice with no links shows the empty state.
+  uses: [notes, views, knowledge, GR-1]
+  work: LIF-114
+
+# The component. ui-2 V7 NG-1…NG-8; fe-codec-canvas-graph BR-7…BR-12; preferences-rescope R4-BR-8; ui-4 S5 BR-7.
+# GR-5: ADR-001:125 and platform-strategy:224 (10K+ nodes over years of use); V7 NG-8 validates a few hundred nodes
+# with a synchronous layout; the LIF-114 G4 debt (the 10K-node ceiling).
+- id: GR-5
+  says: The graph stays responsive at ten thousand nodes and more, laying out off the main thread, and stays out of the initial bundle as a lazily loaded chunk under its budget.
+  uses: [GR-6]
+  work: LIF-114
+- id: GR-6
+  says: The NeuralGraph component renders given nodes and edges with Sigma on WebGL, mounting once per topology and tearing down on unmount; it lists every node as a keyboard-reachable button that fires the node click, falls back to that list with a message when WebGL is missing, colors nodes and edges from the active preset unless a node sets its own, takes consumer slots for its loading, empty and error states, and under reduced motion runs no layout iterations and moves the camera instantly.
+  work: LIF-603
+- id: GR-7
+  says: Module graphs with their own edges, Relationships' network and Skills' tree, reuse the NeuralGraph component and never join the global graph's sources.
+  uses: [relationships, RL-4, RL-15, skills, SK-8, GR-6]
+  work: LIF-114
+# GR-8, GR-9: V7 §6 ("Deferred — likely HARD-3 / later"); fe-codec-canvas-graph BR-10 (homed to the first consumer).
+- id: GR-8
+  says: The graph highlights a hovered node's neighbors, offers zoom and reset controls, clusters and filters by Space or tag, labels edges, searches and focuses a node, and moves the keyboard between neighbors.
+  uses: [GR-2, GR-6]
+  work: LIF-605
+- id: GR-9
+  says: Switching the theme preset recolors the graph at once, without waiting for a topology change.
+  uses: [GR-6]
+  work: LIF-605
+
+# What links here (Victor, 2026-11-13: OS-wide, owned here). XCU-BSE-11, -12; the BSE UNKNOWN on the merge's home;
+# notes G6 and EC-6; BR-S4-4 and BR-SUR-7 (built in Notes).
+- id: GR-10
+  says: One read beside the resolver returns every page link and entity link into an entity, merged into one item per source with its occurrence count, first non-empty snippet and newest date, grouped by source module and newest first; page links come through Notes' service, and an unresolved source is left out, never invented.
+  uses: [notes, BL-7]
+  work: LIF-604
+- id: GR-11
+  says: Every entity's standalone page mounts one shared what-links-here panel over that read, showing querying, an honest "nothing links here yet", a typed error, or the merged links grouped by source module.
+  uses: [GR-10]
+  work: LIF-604
+- id: GR-12
+  says: A backlink row, a graph node and a link preview get the target's title and icon through its module's registered read provider and the snippet from the link's context; a target with no provider shows as unresolved, never invented.
+  uses: [views, VW-4, GR-10]
+  work: LIF-604

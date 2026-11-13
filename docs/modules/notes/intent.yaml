@@ -101,9 +101,11 @@
   uses: [search]
   proof: [BR-SUR-9]
   work: LIF-70
+# NP-26 reworded by LIF-349 run 35 (Victor, 2026-11-13): the merged what-links-here and the OS graph are Graph +
+# Backlinks' (GR-10, GR-11, GR-4); the built merge stays tested here until LIF-604 moves it.
 - id: NP-26
-  says: Backlinks merge page links and entity links grouped by source module, and the neural graph renders the link graph, honestly empty while its data prep is deferred.
-  uses: [spaces]
+  says: The note Overview mounts the global what-links-here panel, and the Notes collection's Neural layout renders the note slice of the global link graph, honestly empty while its data prep is unbuilt.
+  uses: [spaces, graph, GR-4, GR-11]
   proof: [BR-S4-4, BR-SUR-7]
   work: LIF-114
 # Proposed by LIF-349 run 7 from the notes-rescope slice-map R5 and R7 (approve in the PR)
