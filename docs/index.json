@@ -1834,6 +1834,305 @@
       "path": "docs/modules/notifications/intent/DLV-9.md"
     },
     {
+      "id": "DSG-1",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/shell/intent/DSG-1.md"
+    },
+    {
+      "id": "DSG-10",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Text on every surface meets the minimum text contrast in every preset and mode, checked in the build over the full matrix.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/shell/intent/DSG-10.md"
+    },
+    {
+      "id": "DSG-11",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Motion tokens are four durations within the standard's bands and three easing curves plus linear, routed to the style variables and a typed motion export.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/shell/intent/DSG-11.md"
+    },
+    {
+      "id": "DSG-12",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every animation has a reduced-motion path that changes state instantly, and animates transform, opacity or clip-path only.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 62,
+      "path": "docs/modules/shell/intent/DSG-12.md"
+    },
+    {
+      "id": "DSG-13",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user picks a preset family (editorial, reader or quiet desk), each a palette and a font pair over the editorial base in light and dark, named scheme first.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/shell/intent/DSG-13.md"
+    },
+    {
+      "id": "DSG-14",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A preset's fonts switch through a style-variable seam set on the page root, instantly and with no transition.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/shell/intent/DSG-14.md"
+    },
+    {
+      "id": "DSG-15",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The scheme is set on the page root and the preset on the body, so dialogs and menus rendered outside the app tree take the preset too.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/shell/intent/DSG-15.md"
+    },
+    {
+      "id": "DSG-16",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Density (calm or dense) is one stylesheet toggled by an attribute, scaling the spacing band and the type together.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 60,
+      "path": "docs/modules/shell/intent/DSG-16.md"
+    },
+    {
+      "id": "DSG-17",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Components read preset colours through the semantic tokens, and only signal colours, which don't change per preset, stay on the base component themes.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/shell/intent/DSG-17.md"
+    },
+    {
+      "id": "DSG-18",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The theme configuration composes only generated outputs, dark is a switchable theme set through the provider, and the web animates through style transitions fed by the motion tokens.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/shell/intent/DSG-18.md"
+    },
+    {
+      "id": "DSG-19",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Fonts are self-hosted with only the default face preloaded, and the chrome fonts ship with the chrome role.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/shell/intent/DSG-19.md"
+    },
+    {
+      "id": "DSG-2",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Tokens are three layers that never skip one; primitives are literals, semantics reference primitives and components reference semantics, and a literal outside the primitives, a skipped layer, a dangling reference or an empty layer fails the build with its cause named.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/shell/intent/DSG-2.md"
+    },
+    {
+      "id": "DSG-20",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The token values are Vida's brand, replacing the placeholder palette, with the full contrast matrix re-run.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/shell/intent/DSG-20.md"
+    },
+    {
+      "id": "DSG-21",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The token set covers what components need, component tokens, enter and exit transition presets, font weight and spacing keys and a scrim opacity token, so no component holds a raw value.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/shell/intent/DSG-21.md"
+    },
+    {
+      "id": "DSG-22",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Storybook is the design system, holding every component and full-interface surface as envisioned, not only what the first release needed.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/shell/intent/DSG-22.md"
+    },
+    {
+      "id": "DSG-23",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A community-forkable design file mirrors the code-first design system, synced through the design tool's agent server and a scripter, never Tokens Studio.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 70,
+      "path": "docs/modules/shell/intent/DSG-23.md"
+    },
+    {
+      "id": "DSG-3",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Names follow each target's own scheme; a seed path a/b/c is the style variable --a-b-c, and theme tokens follow the theme library's flat categories.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 69,
+      "path": "docs/modules/shell/intent/DSG-3.md"
+    },
+    {
+      "id": "DSG-4",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The same seed always builds byte-identical outputs.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 44,
+      "path": "docs/modules/shell/intent/DSG-4.md"
+    },
+    {
+      "id": "DSG-5",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every output is generated and marked as never hand-edited; the seed is the only editable input.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/shell/intent/DSG-5.md"
+    },
+    {
+      "id": "DSG-6",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The scales are complete with no arbitrary values; brand and neutral ten-step ramps, success and danger signals, seven type sizes, the 4-point spacing set, radius from small to full and three shadows.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/shell/intent/DSG-6.md"
+    },
+    {
+      "id": "DSG-7",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Dark is designed in parallel, never inverted; every semantic that differs in dark has its own dark entry, mapping one to one to design-tool modes.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/shell/intent/DSG-7.md"
+    },
+    {
+      "id": "DSG-8",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every spacing primitive sits on the 4-point grid, and an off-grid one fails the build.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 53,
+      "path": "docs/modules/shell/intent/DSG-8.md"
+    },
+    {
+      "id": "DSG-9",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Typography and shadow tokens skip the theme tokens and go to the style variables plus a typed export each.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 58,
+      "path": "docs/modules/shell/intent/DSG-9.md"
+    },
+    {
       "id": "ECO-1",
       "kind": "intent-row",
       "module": "gamification",
@@ -5379,6 +5678,19 @@
       ],
       "tokens": 180,
       "path": "docs/modules/sessions/intent.md"
+    },
+    {
+      "id": "INTENT-shell",
+      "kind": "intent",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of shell: 52 rows, 0 tested, 0 partly tested, 52 intent only.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 203,
+      "path": "docs/modules/shell/intent.md"
     },
     {
       "id": "INTENT-skills",
@@ -9959,6 +10271,383 @@
       ],
       "tokens": 76,
       "path": "docs/modules/knowledge/intent/RV-9.md"
+    },
+    {
+      "id": "SH-1",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Shell is the persistent frame every surface renders in, a reserved top strip, two nav panels (System and Modules), the content region and an overlay host; it owns the frame and the slots, never what a panel or a surface shows.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/shell/intent/SH-1.md"
+    },
+    {
+      "id": "SH-10",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The overlay host mounts the command bar and dialogs above the panels at the overlay and modal layers, centered from tablet width up and as a full-screen sheet on a phone.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/shell/intent/SH-10.md"
+    },
+    {
+      "id": "SH-11",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The panel arrangement is ephemeral app state in the shell store, and the current breakpoint is read live from the media query, never stored.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/shell/intent/SH-11.md"
+    },
+    {
+      "id": "SH-12",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user's arrangement (each panel open or closed, docked or floating, and its edge) persists through the Preferences seam and is applied once on a cold start, never overwriting an arrangement already set.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 163,
+      "path": "docs/modules/shell/intent/SH-12.md"
+    },
+    {
+      "id": "SH-13",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The strip carries the wordmark, the System and Modules toggles (icons only on a phone), Bar 1 and the session status slot; Bar 1 lives in both homes, condensed in the strip and expanded in the System panel.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/shell/intent/SH-13.md"
+    },
+    {
+      "id": "SH-14",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The six global surfaces (Home, Calendar, Search, Notifications, Settings, Graph) show in the strip as icons from tablet width up and behind a More menu on a phone whose first row is Search; Search is always the command bar, never a link, and the current surface is marked.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 113,
+      "path": "docs/modules/shell/intent/SH-14.md"
+    },
+    {
+      "id": "SH-15",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The System panel lists the scope selector above the six surfaces, Trash and an account entry as one labeled list.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/shell/intent/SH-15.md"
+    },
+    {
+      "id": "SH-16",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The scope selector shows the active Space or All (no scope) and switches between them, and it degrades instead of failing; no Spaces gives a disabled All, loading a busy control, and an error a calm status with All kept.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/shell/intent/SH-16.md"
+    },
+    {
+      "id": "SH-17",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The scope list reads Spaces' list of Spaces, a scope pointing at a deleted Space falls back to All, and the chosen scope narrows every view that reads it.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/shell/intent/SH-17.md"
+    },
+    {
+      "id": "SH-18",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Modules panel shows the module nav, the module map grouped with hidden modules left out, renamed labels used and emptied groups dropped, and reaching a module from it is proven end to end.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/shell/intent/SH-18.md"
+    },
+    {
+      "id": "SH-19",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Nav moves through the router without a reload, and a route not built yet shows the not-found page, never a blank or a crash.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/shell/intent/SH-19.md"
+    },
+    {
+      "id": "SH-2",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each panel opens from its toggle in the strip and is either docked, inline at its edge with the content beside it and no scrim or elevation, or floating, over the full-width content with a scrim and level-3 elevation, so the content never loses width.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/shell/intent/SH-2.md"
+    },
+    {
+      "id": "SH-20",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A conditional entry such as the System shows only while feature_gamification is on, read from Preferences, and stays hidden while the flag can't be read.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/shell/intent/SH-20.md"
+    },
+    {
+      "id": "SH-21",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The content region plays the user's page transition on every route change and none while reduce motion is on.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 66,
+      "path": "docs/modules/shell/intent/SH-21.md"
+    },
+    {
+      "id": "SH-22",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Heavy routes load lazily and the first load stays within the 80 kilobyte gzipped budget.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/shell/intent/SH-22.md"
+    },
+    {
+      "id": "SH-23",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The command bar opens on Cmd or Ctrl and K from anywhere, lists commands while the query is empty and searches once it isn't, and moves with the arrows, runs on Enter and closes on Escape, with focus in on open and back to the trigger on close.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 93,
+      "path": "docs/modules/shell/intent/SH-23.md"
+    },
+    {
+      "id": "SH-24",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Commands come from providers, never a fixed list; nav commands derive from the module map and follow the user's hidden and renamed modules, pinned commands rank first and then by frecency from the command history, each run is recorded after it runs, and Alt+P pins or unpins the active command with a spoken confirmation.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/shell/intent/SH-24.md"
+    },
+    {
+      "id": "SH-25",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each module contributes its own action commands to the command bar through the provider seam.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 55,
+      "path": "docs/modules/shell/intent/SH-25.md"
+    },
+    {
+      "id": "SH-26",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The command bar opens and a command pins without a keyboard, from the Search control and a touch affordance.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 59,
+      "path": "docs/modules/shell/intent/SH-26.md"
+    },
+    {
+      "id": "SH-27",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Search shows results grouped by entity type from the search index, and says loudly that search is unavailable while no index exists.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 64,
+      "path": "docs/modules/shell/intent/SH-27.md"
+    },
+    {
+      "id": "SH-28",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Search results carry display data only and the command history keeps command names, never entity plaintext.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 63,
+      "path": "docs/modules/shell/intent/SH-28.md"
+    },
+    {
+      "id": "SH-29",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One export dialog exports an entity to Markdown, a printable document or Word from the editor's serializers, and Notes' copy download becomes part of it.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/shell/intent/SH-29.md"
+    },
+    {
+      "id": "SH-3",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each panel moves to any of the four edges on its own, panels sharing an edge dock together as one cluster stacked along the cross axis, and the panel's header controls stay inside the panel.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 79,
+      "path": "docs/modules/shell/intent/SH-3.md"
+    },
+    {
+      "id": "SH-4",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A panel sizes to its content, vertical on the left and right edges and horizontal on the top and bottom, reaching the viewport edge only when its content needs it.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/shell/intent/SH-4.md"
+    },
+    {
+      "id": "SH-5",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A floating panel closes on Escape, a click on the scrim or its toggle; focus moves into it on open, stays trapped inside and returns to its toggle on close, and the content behind is inert while the strip stays live.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/shell/intent/SH-5.md"
+    },
+    {
+      "id": "SH-6",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Both panels start closed, docked at the left, with the content full width.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 50,
+      "path": "docs/modules/shell/intent/SH-6.md"
+    },
+    {
+      "id": "SH-7",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One responsive model serves every width with no automatic switch; the user's dock or float choice is the model, a floating panel becomes a near-full sheet on a phone, nothing overflows sideways, and the content insets below the reserved strip.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 92,
+      "path": "docs/modules/shell/intent/SH-7.md"
+    },
+    {
+      "id": "SH-8",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The frame applies the standard and invents no value; breakpoints 375, 768, 1440 and 1920 mobile-first, content at most 1280 wide and centered, gutters 16, 24 and 32, a vertical inset of 24, 32 and 40, touch targets at least 44 square with 8 between, and every metric, layer and radius a design token.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/shell/intent/SH-8.md"
+    },
+    {
+      "id": "SH-9",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Shell motion animates transform and opacity only, rests visible if an animation never runs, and is instant when the system setting or the in-app reduce-motion preference is on.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/shell/intent/SH-9.md"
     },
     {
       "id": "SK-1",
