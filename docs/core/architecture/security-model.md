@@ -67,6 +67,8 @@ The vault key is derived as: `Vault Key = BLAKE2b-256(Master Key, Account Key)`,
 
 **Adversary scenario:** An attacker obtains the user's password (phishing, shoulder surfing). Without the account key, they cannot derive the vault key and cannot decrypt any data — not even via the sync server.
 
+**Limit (2026-11-13, EN-22):** a set-up device keeps the account key. On the desktop and mobile apps it sits in the OS keychain; on the localhost web product it sits in the browser's private storage, so someone who copies that browser profile needs only the password. Vida tells the user so.
+
 ### Guarantee 5: No API call returns decrypted user data
 
 The sync server API has no endpoint that returns plaintext user content. All `/api/sync/pull` responses contain encrypted blobs. The server has no decryption capability in its codebase.
@@ -175,7 +177,7 @@ Master Password (user-chosen)
     v
 Master Key (32 bytes)
     │                          Account Key (32 bytes random)
-    │                          (generated once, shown to user as recovery key)
+    │                          (generated once, shown to the user once; not a recovery key)
     │                          (format: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXX")
     │                          │
     │  BLAKE2b-256(masterKey, accountKey)
@@ -183,9 +185,10 @@ Master Key (32 bytes)
     v                          v
 Vault Key (32 bytes)  <────────┘
     │
-    ├──> SQLCipher key (derived from vault key for L1)
+    ├──> SQLCipher key (derived from vault key for L1, own domain label)
     ├──> Field encryption key (vault key used directly for L2)
-    └──> Sync blob encryption key (vault key used directly for L3)
+    ├──> Sync blob encryption key (vault key used directly for L3)
+    └──> Wraps the account's private key (own domain label; the key pair is random, INTENT-encryption EN-26)
 ```
 
 ### Key Properties
@@ -194,7 +197,7 @@ Vault Key (32 bytes)  <────────┘
 | ------------------- | -------- | ------------------------------------------------------------------------------------------ | ----------------------------------------------------- |
 | **Master Password** | Variable | User's memory only                                                                         | User-chosen                                           |
 | **Salt**            | 16 bytes | Stored on server alongside SRP verifier                                                    | `generateSalt()` — random                             |
-| **Account Key**     | 32 bytes | Shown once at registration as recovery key. User stores it offline.                        | `generateAccountKey()` — random                       |
+| **Account Key**     | 32 bytes | Shown once at registration; not a recovery key. Kept on each set-up device (EN-22).        | `generateAccountKey()` — random                       |
 | **Master Key**      | 32 bytes | **Never persisted.** Derived in memory, used to compute vault key, then immediately wiped. | `deriveMasterKey(password, salt)` — Argon2id          |
 | **Vault Key**       | 32 bytes | Cached in memory while vault is unlocked. Wiped on lock.                                   | `deriveVaultKey(masterKey, accountKey)` — BLAKE2b-256 |
 
@@ -225,7 +228,7 @@ Vault Key (32 bytes)  <────────┘
    d. deriveVaultKey(masterKey, accountKey) → vaultKey
    e. zeroKey(masterKey) — wipe master key from memory
    f. Return { salt, accountKey, vaultKey }
-3. Client shows account key to user ONCE as recovery key
+3. Client shows account key to user ONCE (not a recovery key: a forgotten password can't be recovered, EN-24)
    Format: "XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXXX-XXXX"
 4. Client creates SRP registration (salt + verifier sent to server)
 5. Server stores: { email, salt, srp_verifier } — nothing else
@@ -234,8 +237,12 @@ Vault Key (32 bytes)  <────────┘
 
 ### Login (Existing Device)
 
+Amended 2026-11-13 (LIF-349 run 38, Victor): after the first sign-in, a device keeps the account key (the OS keychain
+on desktop and mobile, the browser's private storage on the localhost web product), so a daily unlock asks only for the
+password; desktop and mobile may also unlock by biometrics (INTENT-encryption EN-22, EN-23). A new device asks for both.
+
 ```
-1. User enters master password + account key
+1. User enters master password (the device supplies the account key it keeps)
 2. Client calls unlock(password, accountKey, salt):
    a. deriveMasterKey(password, salt) → masterKey
    b. deriveVaultKey(masterKey, accountKey) → vaultKey
