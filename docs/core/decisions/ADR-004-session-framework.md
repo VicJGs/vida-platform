@@ -7,7 +7,7 @@
 **Tags:** architecture · data model · API
 **Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner. **+ (F1/D1, 2026-07-16)** adds the local-only `applied_effects` dedup ledger + `effect_event_id` columns (owed-tables ledger).
 **Inherits:** ADR-001 (SQLite/libsodium) · ADR-003 (LWW sync) · the surfaced extension-model principle (guarded opt-in integrations).
-**Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
+**Amended:** 2026-11-13 (LIF-521, Victor 2026-11-09) — `contribute_purpose_metric` retired from §3.2.2 and the §3.2.5 taxonomy: Purposes reads each related entity through its service and computes the day's progress, nothing is pushed to it (PG-37, EF-5). **Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
 
 ---
 
@@ -68,7 +68,7 @@ _type-level_ ("this type is always attached to a habit") and _instance-level_ ("
 > **Codes (temporary):** **S4** (§3.2.2) the effects catalogue
 
 **§3.2.2 Effects (penetration)** — a declared, catalogued set of writes the framework fires on lifecycle events:
-`complete_habit_occurrence · log_time(task|project) · emit_measurement_signal · contribute_purpose_metric ·
+`complete_habit_occurrence · log_time(task|project) · emit_measurement_signal ·
 award_xp · surface_journal · surface_calendar · attach_pomodoro`. Effects go through each target module's
 documented write API — **never a direct table write** (that API is specified in **§3.2.5**).
 
@@ -91,12 +91,12 @@ ADR-010 inherit it **by reference** rather than re-asserting it. Constitution: *
 
 _Effect taxonomy — not every effect writes; the machinery applies per class:_
 
-| Class              | Effect types                                                                      | Idempotency                                                                                                                                                  |
-| ------------------ | --------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Keyed write**    | `complete_habit_occurrence · contribute_purpose_metric · emit_measurement_signal` | deterministic `effect_event_id` + ledger (replay) + a UNIQUE **domain** key **and** a UNIQUE `effect_event_id` on the output row (cross-device)              |
-| **Additive write** | `award_xp · log_time`                                                             | deterministic `effect_event_id` + ledger (replay) + UNIQUE `effect_event_id` on the output row — its **only** convergence key (no domain natural key exists) |
-| **Projection**     | `surface_journal · surface_calendar`                                              | **writes no row** — Journal/Calendar are _pull-aggregated at render_; idempotent **by construction**; no id, no ledger                                       |
-| **Intra-realm**    | `attach_pomodoro`                                                                 | same handler path — **no direct-write exemption for same-owner**; deterministic id from the timer/session                                                    |
+| Class              | Effect types                                          | Idempotency                                                                                                                                                  |
+| ------------------ | ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Keyed write**    | `complete_habit_occurrence · emit_measurement_signal` | deterministic `effect_event_id` + ledger (replay) + a UNIQUE **domain** key **and** a UNIQUE `effect_event_id` on the output row (cross-device)              |
+| **Additive write** | `award_xp · log_time`                                 | deterministic `effect_event_id` + ledger (replay) + UNIQUE `effect_event_id` on the output row — its **only** convergence key (no domain natural key exists) |
+| **Projection**     | `surface_journal · surface_calendar`                  | **writes no row** — Journal/Calendar are _pull-aggregated at render_; idempotent **by construction**; no id, no ledger                                       |
+| **Intra-realm**    | `attach_pomodoro`                                     | same handler path — **no direct-write exemption for same-owner**; deterministic id from the timer/session                                                    |
 
 **A — The write-API contract ("documented write API" made concrete).**
 

@@ -3,7 +3,8 @@
 # the focus sub-type's runtime, a feature inside Sessions). proof = the built rules in
 # docs/features/sessions-and-scheduling/current-business-rules.md; work = the issue that builds the rest.
 # check:rules derives each row's state. The sessions-rescope X1–X7 harvest run (LIF-349 run 11)
-# linked the rows it left open to LIF-447…LIF-453.
+# linked the rows it left open to LIF-447…LIF-453. The effect rail (docs/core/effects, ADR-004 §3.2.5)
+# writes its rows here as EF (the substrate pattern; LIF-349 run 37), at the end of the file.
 
 # Invariants: the Session framework (docs/features/sessions-and-scheduling/business-rules.md)
 - id: SS-1
@@ -169,3 +170,116 @@
   says: Completing focus closes its session through the one firing path, and cancelling it closes the session as skipped with no effects; a focus run's state changes only through startFocus, pauseFocus, completeFocus and cancelFocus.
   proof: [BR-21, BR-23]
   work: LIF-448
+
+# The effect rail (docs/core/effects; ADR-004 §3.2.5 owns the contract, INT-2). EF rows (LIF-349 run 37, prefix
+# on LIF-426). EF-1…EF-9 mirror docs/core/effects BR-1…BR-8 and its handler tx contract. They cite no proof:
+# the rail's tests name bare BR-n, which collide with the Sessions rules' own BR-n inside intentTests.sessions,
+# and foundation/effects is outside that path (run 10). LIF-613 names the tests with their EF IDs and adds the path.
+# EF-1: BR-1, applied_effects composite primary key with the in-transaction check-and-insert (ADR-004 §3.2.5-B2).
+- id: EF-1
+  says: An effect applies at most once per effect_event_id, effect type and target; a second identical event applies nothing, fires no handler and returns applied false.
+  work: LIF-613
+# EF-2: BR-2 (ADR-004 §3.2.5-B1). The id is the canonical string today; the derive() hash is a build-phase,
+# representation-only compaction (ADR-011 §3.8), and ADR-004 picks none. Its pick before sync is EF-19.
+- id: EF-2
+  says: The effect_event_id is derived from the event's stable identity (subject natural key, transition, effect type), so the same outcome gets the same id on any device and on every retry; it is never random.
+  work: LIF-613
+# EF-3: BR-3 (ADR-004 §3.2.5-A2, A4; framework R2). Fails closed: NoEffectHandler before any write.
+- id: EF-3
+  says: Every non-projection effect is applied only through the handler registered for its type; an effect with no handler fails closed with NoEffectHandler and writes nothing, never a silent drop or a direct table write.
+  work: LIF-613
+# EF-4: BR-4 (ADR-004 §3.2.5-A2).
+- id: EF-4
+  says: The registry binds each effect type to exactly one handler, and registering a second one throws DuplicateEffectHandler instead of overriding it.
+  work: LIF-613
+# EF-5: BR-5 (ADR-004 §3.2.5 taxonomy; ADR-012 adds grant_currency, lock_currency, move_money and
+# surface_notification as additive). contribute_purpose_metric is retired by Victor's 2026-11-09 decision
+# (LIF-521, PG-37): it is still in the enum, the CHECK and the class map on main, and ADR-004 is amended here.
+- id: EF-5
+  says: Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time; the catalogue is ADR-004's base types plus ADR-012's four economy and notification types, without contribute_purpose_metric.
+  work: LIF-521
+# EF-6: BR-6 (ADR-004 §3.2.5 taxonomy, projection).
+- id: EF-6
+  says: A projection effect (surface_journal, surface_calendar) writes no ledger row and invokes no handler, because Journal and Calendar aggregate at render; it never carries a persisted side effect, and a write-shaped consequence is surface_notification.
+  uses: [journals, calendar]
+  work: LIF-613
+# EF-7: BR-7 (ADR-004 §3.2.5-B4; ADR-002 §5.20).
+- id: EF-7
+  says: The applied_effects ledger is device-local; it carries no sync columns and never enters the sync queue, so it guards replay on one device and cross-device convergence rides the output rows (EF-12).
+  uses: [sync]
+  work: LIF-613
+# EF-8: the handler tx contract. The tx-scoped write path it once owed to DB-6 is built: the Repository's
+# createInTx (b52d7b46) encrypts and enqueues inside the caller's transaction, and every built handler uses it.
+- id: EF-8
+  says: A handler receives the rail's active transaction and co-writes through it, never opening its own; a handler throw rolls back both its write and the ledger row.
+  work: LIF-613
+# EF-9: BR-8 (ADR-004 §3.2.5-A3, §3.2.4; XCU-22). Built as a pure seam; no handler calls it yet (EF-11).
+- id: EF-9
+  says: The fire-time consent gate rejects a non-projection effect aimed at a sensitive module (Finance, Health) that the caller's consented set lacks, with EffectConsentMissing and no write; the caller supplies the consented set and the module class, never inferred, and producers never call it.
+  uses: [finance, health]
+  work: LIF-613
+# Proposed IDs (LIF-349 run 37; approve in the PR)
+# EF-10: ADR-004 §3.2.5-A1, A3. Built in the economy and move_money handlers (a parse, then a typed error).
+# The Tasks log_time handler returns silently on a payload-less event after the rail wrote its ledger row
+# (LIF-448 makes it throw); the Notifications handler skips a bad payload (LIF-536).
+- id: EF-10
+  says: A module's registered effect handlers are its documented write interface for effects; each validates the caller's scope, the consent envelope and the payload before any write, and a failure is a typed rejection with no partial write, never a silent skip.
+  uses: [finance, gamification, notifications, tasks]
+  work: LIF-448
+# EF-11: ADR-004 §3.2.4 and §3.2.5-A3 with BR-8's Deferred list (the gate's invocation, consent-threading).
+# On main nothing calls assertEffectPermitted, and EffectEvent carries no consent.
+- id: EF-11
+  says: The Finance and Health handlers call the consent gate before any write, with the producer's consented set carried to them (a session's sensitive_optins, a user capability's grant); an unconsented sensitive effect is rejected with no write.
+  uses: [finance, health, spaces]
+  work: LIF-614
+  open: Where the consent rides (an event field or the dispatch context), and whether a shipped producer passes a full set or skips the gate.
+# EF-12: ADR-004 §3.2.5-B1, B3 and its owed schema (ADR-002 §5.20). Built on consequence_ledger and
+# notifications; missing on transactions (move_money) and task_time_logs (log_time), flag LIF-615.
+- id: EF-12
+  says: Every write effect's output row carries its effect_event_id under a unique constraint (a keyed effect also keeps its domain key), so two devices applying the same event converge to one row.
+  uses: [gamification, notifications, finance, tasks, habits, purposes]
+  work: LIF-615
+# EF-13: ADR-004 §3.2.5-B3. ADR-003's conflict handling owns the merge; the critique gate's F10 tracks it for build.
+- id: EF-13
+  says: When two devices' output rows collide on the same effect_event_id at sync, the sync layer merges them into one outcome instead of failing; the rail supplies the key, never the merge.
+  uses: [sync]
+  work: LIF-98
+# EF-14: the F1/D1 guarded-write spec's BR-5 (ratified 2026-07-16), not carried into ADR-004's text.
+- id: EF-14
+  says: Effects are applied only by the device that originates the lifecycle event; a device that receives a synced output row never fires its effects again.
+  uses: [sync]
+  work: LIF-98
+# EF-15: ADR-004 §3.2.5-C (D1-c, INT-2). Enforcement differs by trust tier: user code has no ambient database
+# access (CB-10), shipped code is held by structure, review and the CI guard (LIF-362, moved to Sessions).
+- id: EF-15
+  says: The write contract binds every effect producer alike (session effects, shipped capabilities, user capabilities, agents); shipped code is held to it by a build-time guard that fails when a module writes another module's tables directly.
+  uses: [spaces, ai]
+  work: LIF-362
+# EF-16: SB-Q2 (Victor, 2026-11-07): each module registers its own handlers when composed (HC-32, GM-21,
+# ED-32, GR-13). On main the root builds the rail over an empty registry and registers no handler.
+- id: EF-16
+  says: The composition root builds one effect rail and one registry shared by every producer, and each effect-receiving module registers its own handlers into it when the root composes it.
+  work: LIF-450
+# EF-17: ADR-004 §3.2.5 taxonomy, intra-realm. The attach_pomodoro handler is LIF-448's.
+- id: EF-17
+  says: The intra-realm attach_pomodoro effect rides the same handler path as every other write effect, with no direct-write exemption for being owned by Sessions, and its id derives from the session and its run.
+  uses: [notes]
+  work: LIF-448
+# EF-18: ADR-004 §3.2.5-B2, B4 and the effect-rail build (#32, IR-1). Built: applyEffect opens one
+# transaction per effect, and the lifecycle fire loop and the economy's dispatchConsequence run with no outer one.
+- id: EF-18
+  says: A fan-out of several effects is replay-safe, not all-or-none; each effect owns its transaction and ledger row, and a failure part-way is recovered by replaying the event, never by rolling back the effects already applied.
+  work: LIF-613
+# EF-19: the derive() hash (ADR-011 §3.8, build-phase; ADR-004 §3.2.5 "does not pick the derive() hash").
+# The id rides synced output rows (EF-12), so its form is fixed before sync activates.
+- id: EF-19
+  says: Before sync activates, the effect_event_id's final form is chosen (a hash of the canonical string); it changes only the representation, never which events share an id.
+  uses: [sync]
+  work: LIF-98
+  open: Which hash, and whether rows written in the canonical form are rewritten or kept.
+
+# Consumers with no EF row (each in its own ledger): the handlers (GM-21 award_xp, ECO-6…8 grant and lock,
+# FN-16 move_money, NF-16 and NF-22 surface_notification, HB-29 complete_habit_occurrence, MS-5 the signal),
+# the emitters (TK-16, HB-16, RT-23, KN-15, PJ-23, BK-33, PG-28, SK-22, CK-24, RL-23, ED-28), the producers'
+# guarded-write rows (CB-4, CB-10, AX-4, PG-7), and the Sessions engine's side (SS-6, SS-19, SS-20, SS-21, PD-12).
+# ADR-004 §6 trigger (b): a catalogue that outgrows the fixed enum reopens the decision as a plugin registry.

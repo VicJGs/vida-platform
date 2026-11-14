@@ -3257,6 +3257,253 @@
       "path": "docs/modules/editor/intent/EDT-9.md"
     },
     {
+      "id": "EF-1",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An effect applies at most once per effect_event_id, effect type and target; a second identical event applies nothing, fires no handler and returns applied false.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/sessions/intent/EF-1.md"
+    },
+    {
+      "id": "EF-10",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module's registered effect handlers are its documented write interface for effects; each validates the caller's scope, the consent envelope and the payload before any write, and a failure is a typed rejection with no partial write, never a silent skip.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 109,
+      "path": "docs/modules/sessions/intent/EF-10.md"
+    },
+    {
+      "id": "EF-11",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Finance and Health handlers call the consent gate before any write, with the producer's consented set carried to them (a session's sensitive_optins, a user capability's grant); an unconsented sensitive effect is rejected with no write.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 136,
+      "path": "docs/modules/sessions/intent/EF-11.md"
+    },
+    {
+      "id": "EF-12",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every write effect's output row carries its effect_event_id under a unique constraint (a keyed effect also keeps its domain key), so two devices applying the same event converge to one row.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/sessions/intent/EF-12.md"
+    },
+    {
+      "id": "EF-13",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When two devices' output rows collide on the same effect_event_id at sync, the sync layer merges them into one outcome instead of failing; the rail supplies the key, never the merge.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/sessions/intent/EF-13.md"
+    },
+    {
+      "id": "EF-14",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Effects are applied only by the device that originates the lifecycle event; a device that receives a synced output row never fires its effects again.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 73,
+      "path": "docs/modules/sessions/intent/EF-14.md"
+    },
+    {
+      "id": "EF-15",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The write contract binds every effect producer alike (session effects, shipped capabilities, user capabilities, agents); shipped code is held to it by a build-time guard that fails when a module writes another module's tables directly.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/sessions/intent/EF-15.md"
+    },
+    {
+      "id": "EF-16",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The composition root builds one effect rail and one registry shared by every producer, and each effect-receiving module registers its own handlers into it when the root composes it.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 78,
+      "path": "docs/modules/sessions/intent/EF-16.md"
+    },
+    {
+      "id": "EF-17",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The intra-realm attach_pomodoro effect rides the same handler path as every other write effect, with no direct-write exemption for being owned by Sessions, and its id derives from the session and its run.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/sessions/intent/EF-17.md"
+    },
+    {
+      "id": "EF-18",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A fan-out of several effects is replay-safe, not all-or-none; each effect owns its transaction and ledger row, and a failure part-way is recovered by replaying the event, never by rolling back the effects already applied.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/sessions/intent/EF-18.md"
+    },
+    {
+      "id": "EF-19",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Before sync activates, the effect_event_id's final form is chosen (a hash of the canonical string); it changes only the representation, never which events share an id.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/sessions/intent/EF-19.md"
+    },
+    {
+      "id": "EF-2",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The effect_event_id is derived from the event's stable identity (subject natural key, transition, effect type), so the same outcome gets the same id on any device and on every retry; it is never random.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/sessions/intent/EF-2.md"
+    },
+    {
+      "id": "EF-3",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every non-projection effect is applied only through the handler registered for its type; an effect with no handler fails closed with NoEffectHandler and writes nothing, never a silent drop or a direct table write.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/sessions/intent/EF-3.md"
+    },
+    {
+      "id": "EF-4",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The registry binds each effect type to exactly one handler, and registering a second one throws DuplicateEffectHandler instead of overriding it.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/sessions/intent/EF-4.md"
+    },
+    {
+      "id": "EF-5",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time; the catalogue is ADR-004's base types plus ADR-012's four economy and notification types, without contribute_purpose_metric.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/sessions/intent/EF-5.md"
+    },
+    {
+      "id": "EF-6",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A projection effect (surface_journal, surface_calendar) writes no ledger row and invokes no handler, because Journal and Calendar aggregate at render; it never carries a persisted side effect, and a write-shaped consequence is surface_notification.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/sessions/intent/EF-6.md"
+    },
+    {
+      "id": "EF-7",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The applied_effects ledger is device-local; it carries no sync columns and never enters the sync queue, so it guards replay on one device and cross-device convergence rides the output rows (EF-12).",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/sessions/intent/EF-7.md"
+    },
+    {
+      "id": "EF-8",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A handler receives the rail's active transaction and co-writes through it, never opening its own; a handler throw rolls back both its write and the ledger row.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 72,
+      "path": "docs/modules/sessions/intent/EF-8.md"
+    },
+    {
+      "id": "EF-9",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The fire-time consent gate rejects a non-projection effect aimed at a sensitive module (Finance, Health) that the caller's consented set lacks, with EffectConsentMissing and no write; the caller supplies the consented set and the module class, never inferred, and producers never call it.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 110,
+      "path": "docs/modules/sessions/intent/EF-9.md"
+    },
+    {
       "id": "EG-1",
       "kind": "intent-row",
       "module": "integrations",
@@ -6374,11 +6621,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sessions: 40 rows, 3 tested, 5 partly tested, 32 intent only.",
+      "summary": "Intended rules of sessions: 59 rows, 3 tested, 5 partly tested, 51 intent only.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 180,
+      "tokens": 211,
       "path": "docs/modules/sessions/intent.md"
     },
     {

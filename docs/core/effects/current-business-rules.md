@@ -2,7 +2,7 @@
 
 > Durable invariants for the effect rail (AR-7 Increment 1).
 > Owning spec: ADR-004 §3.2.5 + F1.
-> Kept current with `packages/core/src/foundation/effects/`.
+> Kept current with `packages/core/src/foundation/effects/`. Intent: the EF rows in `INTENT-sessions`.
 
 - **BR-1 — Exactly-once (R1).** An effect is applied at most once per `(effect_event_id, effect_type,
 target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-transaction check-and-insert.
@@ -25,8 +25,8 @@ target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-tr
   device-local dedup ledger like `sync_queue`. [ADR-002 §5.20:3763]
 - **Handler tx contract.** A handler receives the active transaction and co-writes through it (F1 §3B "same
   transaction") — a handler throw rolls back both its write and the ledger row. Handlers must never open their own
-  `db.transaction` (nested BEGIN fails). _Owed to DB-6:_ a `tx`-scoped Repository write path for the first
-  encrypting handler (no handler exists yet — empty seam).
+  `db.transaction` (nested BEGIN fails). Handlers write through the Repository's `createInTx(tx, …)`, which
+  encrypts and enqueues inside the rail's transaction.
 
 - **BR-8 — Fire-time sensitive-consent gate (XCU-22, #32).** `assertEffectPermitted(ctx, effectType, moduleClass?)`
   (`gate.ts`) throws `EffectConsentMissing` iff a non-projection effect targets a sensitive module
@@ -37,6 +37,6 @@ target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-tr
 
 ## Deferred (not in this increment)
 
-Per-module handlers + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-\* tracks, SES-13); `effect_event_id`
+The handlers not yet built (economy, `move_money`, `surface_notification` and the Tasks `log_time` are) + the actual invocation of the BR-8 gate + consent-threading (→ the receiving MOD-\* tracks, SES-13); `effect_event_id`
 columns on consumer output rows; cross-device convergence merge (AR-9/M4); the `derive()` hash.
 **No longer deferred:** session-lifecycle→fire wiring is BUILT (#32, `foundation/sessions/lifecycle.ts`).

@@ -83,7 +83,7 @@ anatomy; it **instantiates** it as `kind=study_method` (§3.3a shows every ADR-0
    bindings via §3.2.4; no double-count via the deterministic-`effect_event_id` mechanism; consent for sensitive
    modules = the extension-model principle). When the outcome is a
    _timed/measurable_ one (a logged workout, a focus interval, a practice rep), the capability **drives a Session**,
-   and that **Session** owns the catalogued Effects (`award_xp · log_time · contribute_purpose_metric ·
+   and that **Session** owns the catalogued Effects (`award_xp · log_time · emit_measurement_signal ·
 surface_journal · …`, ADR-004 §3.2.2). A pure-render capability (a chart, a graph) emits nothing. A capability
    never invents its own effect channel.
 6. **Universal properties** — a capability instance is a first-class citizen: taggable, note-linkable, attachable
