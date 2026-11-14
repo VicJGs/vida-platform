@@ -1,0 +1,158 @@
+# Editor intent ledger: every intended, deferred or TBD rule of @vida/editor, the platform's TipTap block editor:
+# the editing surface, its toolbar and slash menu, the inline render surface of the capability registry (ADR-008
+# §3.4) and the Markdown, PDF and Word serializers. work = the issue that builds the rest. check:rules derives each
+# row's state.
+# Prefix and folder (Victor, 2026-11-13): EDT, folder `editor`. ED is Learning's; EDT had 0 matches in Vida on
+# c36f9902. Ten rows in other ledgers already said `uses: [editor]`. Linear project: Editor (P-LIF-54, created this run).
+# Decisions (Victor, 2026-11-13, before the rows):
+# - LIF-383: the five Notion features the archived E3/E4 specs left out come in (selection menu, drag handles, toggle
+#   block, table controls, image insert), with link insert beside image (EDT-18…22). The fe-notes north star is Notion
+#   (LIF-354).
+# - /summary is retired (EDT-15): the journal is each module's own blocks (JR-12, NP-13), which settles LIF-489 item
+#   10. NP-14 is reworded in this PR.
+# - /class-notes is not an editor block. The notes intake's G1 listed it among the 12 platform blocks, and the
+#   INTEGRATION_BLOCK_TYPE enum shipped 11 without it; class notes are rethought to match Learning's hierarchy
+#   (Learning's ledger, ED-37 and the syllabus).
+# - LIF-381: a link click places the cursor in an editable page and opens the link in a read-only one (EDT-17).
+# Sources: docs/editor (README, current-spec, current-business-rules, extension-catalog, block-registry,
+# slash-menu-spec, serialization-spec; editor-architecture.md is 0 bytes), LIF-88, LIF-354 with LIF-381, 382 and 383,
+# LIF-423; read with Victor's OK at this run: the archived ui-3-vida-editor task (_index and E1…E8), the archived
+# backend-intent part xcut-backlinks-search-export XCU-BSE-19…22 (export; handed over by the graph ledger and LIF-606
+# item 5), the July intakes' editor lines (grep) and the gap sheet (SB-Q5: Notes runs inline blocks, Spaces runs
+# blocks on surfaces), the archived notes-and-pages interpretation and reconciliation (C-1…C-27) and fe-codec-canvas-
+# editor #7.
+# Built (the code is the truth): ui-3 E1…E8 (LIF-88, @vida/editor 0.8.0), fe-codec-canvas-editor #7 S1 (chrome, dark
+# text), notes-rescope R0 (the content check, LIF-245), and LIF-354 (block renderers, ranked slash results, sticky
+# toolbar, Insert's module blocks, the callout trio). XCU-BSE-19…21 are E6…E8; XCU-BSE-22, the export dialog, is SH-29
+# (LIF-404).
+# Proof: the editor tests name BR-E1…E8 IDs, so rows proven only by those read tested. BR-R0-3, BR-E8-image and
+# BR-E8-nested don't match checks.ruleId, and the LIF-354, a11y and chrome tests name no row; those rows keep a work
+# link to LIF-607. No test was renamed. The editor has no features folder, so the archive guard applies from the start.
+# Consumers (each in its owner's ledger): NP-4 (the per-page Yjs merge), NP-10, NP-14 and NP-15 (inline blocks, the
+# [[ candidates), JR-12 and JR-20 (module blocks), TK-26, GM-31, KN-17, NF-18, HC-26 and ED-27 (each module's own
+# blocks), BK-7 (the quote embed) and BK-15, CB-5 (the inline palette), PJ-7 (vision and mission pages), SH-29 (the
+# export dialog), SV-22 (the vault export's Markdown pages) and SV-29 (the mobile web views).
+
+# Built: the editing surface.
+- id: EDT-1
+  says: The editor is presentational; it emits the document as a TipTap document through onChange and persists nothing; the host writes it to the page, the editor never imports the core or the app, and its document types come from @vida/types.
+  uses: [notes]
+  proof: [BR-E1-2]
+- id: EDT-2
+  says: The editor is uncontrolled; the initial document seeds it once, a host reset goes through the handle and is silent (never echoed to onChange), and the only non-edit emit is one idempotent echo at mount.
+  proof: [BR-E1-1]
+- id: EDT-3
+  says: A document the schema rejects opens read-only with the toolbar hidden and never emits, so the stored body is never overwritten; the host is told once and owns the notice, and a reset with an invalid document throws and leaves the editor intact.
+  uses: [notes]
+  work: LIF-607
+- id: EDT-4
+  says: The standard blocks are the full standard block set (paragraph, headings, bulleted, numbered and task lists, quote, code block, divider, image, table and a callout of info, success or danger), each registered once.
+  proof: [BR-E2-2, BR-E2-9]
+- id: EDT-5
+  says: The formatting toolbar sits inside the editor and stays in view on a long page; it reflects the active marks and block, disables any control that can't run, offers the module blocks and callout variants under Insert after the selected block, and is hidden when the editor is read-only.
+  proof: [BR-E3-2, BR-E3-5, BR-E3-6]
+  work: LIF-607
+- id: EDT-6
+  says: Typing / opens a block menu at the caret while focus stays in the editor; results rank shortcut, title and keyword matches first and keep one header per category, the selection scrolls into view, and / stays literal inside a code block.
+  proof: [BR-E4-3, BR-E4-7]
+  work: LIF-607
+- id: EDT-7
+  says: A module renders its own live body for its block inside the editor through renderers the host passes; a block without one shows an honest placeholder (available when its module ships) and never crashes.
+  uses: [notes, capabilities]
+  proof: [BR-E5-1, BR-E5-3]
+  work: LIF-607
+- id: EDT-8
+  says: An inline block's configuration lives in its node attributes per its config schema and round-trips losslessly for the declared schema; each block is identified by its block type when read back.
+  uses: [capabilities]
+  proof: [BR-E5-2, BR-E5-5]
+
+# Built: the serializers (XCU-BSE-19…21).
+- id: EDT-9
+  says: Markdown export and import round-trip losslessly from the document (document to Markdown to the same document); export writes one canonical spelling, callouts and inline blocks travel in carriers that keep their configuration, frontmatter is optional, and import degrades on anything else, never throwing.
+  proof: [BR-5, BR-E6-6, BR-E6-9]
+- id: EDT-10
+  says: The printable export renders every block and mark faithfully on web and desktop, prints inline blocks as their placeholder card and frontmatter as a header, and degrades on an unknown node instead of throwing; it is emit-only.
+  proof: [BR-E7-5, BR-E7-6, BR-E7-9]
+- id: EDT-11
+  says: The Word export renders every block and mark faithfully, keeps nested blocks inside quotes, callouts and table cells, prints an image as a labeled text placeholder until attachments resolve, and degrades instead of throwing; it is emit-only.
+  proof: [BR-E8-7, BR-E8-9]
+  work: LIF-607
+
+# Built: accessibility and chrome.
+- id: EDT-12
+  says: The editing area is a named multi-line textbox with a visible keyboard focus ring; while the block menu is open it becomes a combobox whose active option is announced, the toolbar is one tab stop with arrow-key movement, and focus returns to the editor after every command.
+  work: LIF-607
+- id: EDT-13
+  says: The editor draws its frame from the design system's base tokens, either framed or bare for a host that supplies the page surface, and its text reads in both light and dark themes.
+  uses: [shell]
+  work: LIF-607
+
+# Proposed: the block set (ADR-008 §3.4; NP-14; JR-12).
+- id: EDT-14
+  says: The inline block set comes from the capability registry; every registered capability with an inline target becomes a block in the slash menu and Insert, offered by the page's Spaces plus the editor base, and its owning module authors its configuration schema; the closed list of eleven types is an interim source.
+  uses: [capabilities, notes, NP-14, spaces, CB-5, journals, JR-12]
+  work: LIF-423
+- id: EDT-15
+  says: There is no /summary block; it leaves the slash menu and Insert, and a saved page that holds one still opens, showing it as a retired block.
+  uses: [journals, JR-12, NP-13]
+  work: LIF-609
+
+# Proposed: links ([[ candidates are NP-15; reconciliation C-1…C-3, C-16; LIF-381).
+- id: EDT-16
+  says: Typing [[ opens a second suggestion menu whose page and entity candidates the host supplies; the pick inserts an inline link token that targets a page or an entity and that every serializer carries (Markdown as [[Title]] with its target).
+  uses: [notes, NP-15, graph]
+  work: LIF-423
+- id: EDT-17
+  says: In an editable page a link click places the cursor, and a modifier click or the link preview opens it; in a read-only page a click opens it.
+  work: LIF-381
+
+# Proposed: the Notion editing set (LIF-383; Victor 2026-11-13).
+- id: EDT-18
+  says: Selecting text shows a selection menu with the marks, turn-into and link.
+  work: LIF-383
+- id: EDT-19
+  says: Each block has a drag handle to move it and open its block actions.
+  work: LIF-383
+- id: EDT-20
+  says: A toggle block hides and shows its child blocks, and every serializer carries it.
+  work: LIF-383
+- id: EDT-21
+  says: A table has controls to add, remove and reorder rows and columns and to toggle the header row.
+  work: LIF-383
+- id: EDT-22
+  says: The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data, and links, through a link entry field.
+  uses: [notes, sync, SV-8]
+  work: LIF-383
+- id: EDT-23
+  says: Exported Word and printable documents embed attachment images instead of a text placeholder.
+  uses: [sync, SV-8]
+  work: LIF-600
+
+# Proposed: the quote embed (BK-7's editor half; the Books intake B11).
+- id: EDT-24
+  says: Any page embeds a stored quote as a block that references the quote, never a copy, renders it live, offers only quotes Books allows (the per-book toggle over the global one) and shows an honest state for a deleted or blocked quote.
+  uses: [books, BK-7, preferences]
+  work: LIF-610
+
+# Proposed: venues and sync (BR-2; ADR-001 §101; ADR-003).
+- id: EDT-25
+  says: When sync activates, the editor binds each page's Yjs document, which becomes the source of truth with the stored document a derived snapshot; until then the content source stays swappable without a rewrite.
+  uses: [sync, notes, NP-4]
+  work: LIF-98
+- id: EDT-26
+  says: The mobile app runs the editor inside a web view and makes the printable export with the platform's print engine.
+  uses: [sync, SV-29]
+  work: LIF-153
+
+# Proposed: deferred polish (ui-3 deferrals).
+- id: EDT-27
+  says: Code blocks highlight syntax by language with token colors in both themes, and block rows in the slash menu and Insert show their icons.
+  work: LIF-611
+- id: EDT-28
+  says: The printable and Word exports use the brand fonts and palette from the design tokens instead of built-in fonts and neutral colors.
+  uses: [shell]
+  work: LIF-595
+- id: EDT-29
+  says: The toolbar's pressed state comes from a toggle state on the design system's button.
+  uses: [shell]
+  work: LIF-410
