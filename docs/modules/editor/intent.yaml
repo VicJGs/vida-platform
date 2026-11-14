@@ -6,7 +6,7 @@
 # c36f9902. Ten rows in other ledgers already said `uses: [editor]`. Linear project: Editor (P-LIF-54, created this run).
 # Decisions (Victor, 2026-11-13, before the rows):
 # - LIF-383: the five Notion features the archived E3/E4 specs left out come in (selection menu, drag handles, toggle
-#   block, table controls, image insert), with link insert beside image (EDT-18…22). The fe-notes north star is Notion
+#   block, table controls, image insert), with link insert beside image (EDT-18…22, EDT-30). The fe-notes north star is Notion
 #   (LIF-354).
 # - /summary is retired (EDT-15): the journal is each module's own blocks (JR-12, NP-13), which settles LIF-489 item
 #   10. NP-14 is reworded in this PR.
@@ -120,8 +120,11 @@
   says: A table has controls to add, remove and reorder rows and columns and to toggle the header row.
   work: LIF-383
 - id: EDT-22
-  says: The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data, and links, through a link entry field.
+  says: The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data.
   uses: [notes, sync, SV-8]
+  work: LIF-383
+- id: EDT-30
+  says: The toolbar, the slash menu and the selection menu insert and edit links through a link entry field.
   work: LIF-383
 - id: EDT-23
   says: Exported Word and printable documents embed attachment images instead of a text placeholder.
@@ -146,7 +149,10 @@
 
 # Proposed: deferred polish (ui-3 deferrals).
 - id: EDT-27
-  says: Code blocks highlight syntax by language with token colors in both themes, and block rows in the slash menu and Insert show their icons.
+  says: Code blocks highlight syntax by language with token colors in both themes.
+  work: LIF-611
+- id: EDT-31
+  says: Block rows in the slash menu and Insert show their icons.
   work: LIF-611
 - id: EDT-28
   says: The printable and Word exports use the brand fonts and palette from the design tokens instead of built-in fonts and neutral colors.

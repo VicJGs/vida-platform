@@ -3034,11 +3034,11 @@
       "module": "editor",
       "status": "active",
       "supersedes": [],
-      "summary": "The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data, and links, through a link entry field.",
+      "summary": "The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data.",
       "anchors": [
         "docs/modules/editor/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 74,
       "path": "docs/modules/editor/intent/EDT-22.md"
     },
     {
@@ -3099,11 +3099,11 @@
       "module": "editor",
       "status": "active",
       "supersedes": [],
-      "summary": "Code blocks highlight syntax by language with token colors in both themes, and block rows in the slash menu and Insert show their icons.",
+      "summary": "Code blocks highlight syntax by language with token colors in both themes.",
       "anchors": [
         "docs/modules/editor/intent.yaml"
       ],
-      "tokens": 66,
+      "tokens": 51,
       "path": "docs/modules/editor/intent/EDT-27.md"
     },
     {
@@ -3144,6 +3144,32 @@
       ],
       "tokens": 96,
       "path": "docs/modules/editor/intent/EDT-3.md"
+    },
+    {
+      "id": "EDT-30",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The toolbar, the slash menu and the selection menu insert and edit links through a link entry field.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/editor/intent/EDT-30.md"
+    },
+    {
+      "id": "EDT-31",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Block rows in the slash menu and Insert show their icons.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 46,
+      "path": "docs/modules/editor/intent/EDT-31.md"
     },
     {
       "id": "EDT-4",
@@ -6127,11 +6153,11 @@
       "module": "editor",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of editor: 29 rows, 6 tested, 4 partly tested, 19 intent only.",
+      "summary": "Intended rules of editor: 31 rows, 6 tested, 4 partly tested, 21 intent only.",
       "anchors": [
         "docs/modules/editor/intent.yaml"
       ],
-      "tokens": 135,
+      "tokens": 139,
       "path": "docs/modules/editor/intent.md"
     },
     {

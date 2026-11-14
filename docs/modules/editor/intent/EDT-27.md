@@ -4,14 +4,14 @@ kind: intent-row
 module: editor
 status: active
 supersedes: []
-summary: "Code blocks highlight syntax by language with token colors in both themes, and block rows in the slash menu and Insert show their icons."
+summary: "Code blocks highlight syntax by language with token colors in both themes."
 anchors: [docs/modules/editor/intent.yaml]
-tokens: 66
+tokens: 51
 generated: true
 ---
 # EDT-27 (intent only)
 
-Code blocks highlight syntax by language with token colors in both themes, and block rows in the slash menu and Insert show their icons.
+Code blocks highlight syntax by language with token colors in both themes.
 
 - Work: LIF-611
 
