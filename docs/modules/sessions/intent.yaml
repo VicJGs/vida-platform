@@ -263,7 +263,7 @@
 # EF-17: ADR-004 §3.2.5 taxonomy, intra-realm. The attach_pomodoro handler is LIF-448's.
 - id: EF-17
   says: The intra-realm attach_pomodoro effect rides the same handler path as every other write effect, with no direct-write exemption for being owned by Sessions, and its id derives from the session and its run.
-  uses: [notes]
+  uses: [tasks]
   work: LIF-448
 # EF-18: ADR-004 §3.2.5-B2, B4 and the effect-rail build (#32, IR-1). Built: applyEffect opens one
 # transaction per effect, and the lifecycle fire loop and the economy's dispatchConsequence run with no outer one.
