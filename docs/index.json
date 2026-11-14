@@ -2843,6 +2843,420 @@
       "path": "docs/modules/learning/intent/ED-9.md"
     },
     {
+      "id": "EDT-1",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The editor is presentational; it emits the document as a TipTap document through onChange and persists nothing; the host writes it to the page, the editor never imports the core or the app, and its document types come from @vida/types.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/editor.test.tsx"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/editor/intent/EDT-1.md"
+    },
+    {
+      "id": "EDT-10",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The printable export renders every block and mark faithfully on web and desktop, prints inline blocks as their placeholder card and frontmatter as a header, and degrades on an unknown node instead of throwing; it is emit-only.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/serializers/to-pdf.test.tsx"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/editor/intent/EDT-10.md"
+    },
+    {
+      "id": "EDT-11",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The Word export renders every block and mark faithfully, keeps nested blocks inside quotes, callouts and table cells, prints an image as a labeled text placeholder until attachments resolve, and degrades instead of throwing; it is emit-only.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/serializers/to-docx.test.ts"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/editor/intent/EDT-11.md"
+    },
+    {
+      "id": "EDT-12",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The editing area is a named multi-line textbox with a visible keyboard focus ring; while the block menu is open it becomes a combobox whose active option is announced, the toolbar is one tab stop with arrow-key movement, and focus returns to the editor after every command.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/editor/intent/EDT-12.md"
+    },
+    {
+      "id": "EDT-13",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The editor draws its frame from the design system's base tokens, either framed or bare for a host that supplies the page surface, and its text reads in both light and dark themes.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/editor/intent/EDT-13.md"
+    },
+    {
+      "id": "EDT-14",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The inline block set comes from the capability registry; every registered capability with an inline target becomes a block in the slash menu and Insert, offered by the page's Spaces plus the editor base, and its owning module authors its configuration schema; the closed list of eleven types is an interim source.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 127,
+      "path": "docs/modules/editor/intent/EDT-14.md"
+    },
+    {
+      "id": "EDT-15",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "There is no /summary block; it leaves the slash menu and Insert, and a saved page that holds one still opens, showing it as a retired block.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/editor/intent/EDT-15.md"
+    },
+    {
+      "id": "EDT-16",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Typing [[ opens a second suggestion menu whose page and entity candidates the host supplies; the pick inserts an inline link token that targets a page or an entity and that every serializer carries (Markdown as [[Title]] with its target).",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 99,
+      "path": "docs/modules/editor/intent/EDT-16.md"
+    },
+    {
+      "id": "EDT-17",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "In an editable page a link click places the cursor, and a modifier click or the link preview opens it; in a read-only page a click opens it.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 67,
+      "path": "docs/modules/editor/intent/EDT-17.md"
+    },
+    {
+      "id": "EDT-18",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Selecting text shows a selection menu with the marks, turn-into and link.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 50,
+      "path": "docs/modules/editor/intent/EDT-18.md"
+    },
+    {
+      "id": "EDT-19",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each block has a drag handle to move it and open its block actions.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 49,
+      "path": "docs/modules/editor/intent/EDT-19.md"
+    },
+    {
+      "id": "EDT-2",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The editor is uncontrolled; the initial document seeds it once, a host reset goes through the handle and is silent (never echoed to onChange), and the only non-edit emit is one idempotent echo at mount.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/editor.test.tsx"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/editor/intent/EDT-2.md"
+    },
+    {
+      "id": "EDT-20",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A toggle block hides and shows its child blocks, and every serializer carries it.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 52,
+      "path": "docs/modules/editor/intent/EDT-20.md"
+    },
+    {
+      "id": "EDT-21",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A table has controls to add, remove and reorder rows and columns and to toggle the header row.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 56,
+      "path": "docs/modules/editor/intent/EDT-21.md"
+    },
+    {
+      "id": "EDT-22",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The toolbar, the slash menu and the selection menu insert images, which upload through the encrypted attachment pipeline, never as inline data.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/editor/intent/EDT-22.md"
+    },
+    {
+      "id": "EDT-23",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Exported Word and printable documents embed attachment images instead of a text placeholder.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 60,
+      "path": "docs/modules/editor/intent/EDT-23.md"
+    },
+    {
+      "id": "EDT-24",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Any page embeds a stored quote as a block that references the quote, never a copy, renders it live, offers only quotes Books allows (the per-book toggle over the global one) and shows an honest state for a deleted or blocked quote.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 98,
+      "path": "docs/modules/editor/intent/EDT-24.md"
+    },
+    {
+      "id": "EDT-25",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "When sync activates, the editor binds each page's Yjs document, which becomes the source of truth with the stored document a derived snapshot; until then the content source stays swappable without a rewrite.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/editor/intent/EDT-25.md"
+    },
+    {
+      "id": "EDT-26",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The mobile app runs the editor inside a web view and makes the printable export with the platform's print engine.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 65,
+      "path": "docs/modules/editor/intent/EDT-26.md"
+    },
+    {
+      "id": "EDT-27",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Code blocks highlight syntax by language with token colors in both themes.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 51,
+      "path": "docs/modules/editor/intent/EDT-27.md"
+    },
+    {
+      "id": "EDT-28",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The printable and Word exports use the brand fonts and palette from the design tokens instead of built-in fonts and neutral colors.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 68,
+      "path": "docs/modules/editor/intent/EDT-28.md"
+    },
+    {
+      "id": "EDT-29",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The toolbar's pressed state comes from a toggle state on the design system's button.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/editor/intent/EDT-29.md"
+    },
+    {
+      "id": "EDT-3",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A document the schema rejects opens read-only with the toolbar hidden and never emits, so the stored body is never overwritten; the host is told once and owns the notice, and a reset with an invalid document throws and leaves the editor intact.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/editor/intent/EDT-3.md"
+    },
+    {
+      "id": "EDT-30",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The toolbar, the slash menu and the selection menu insert and edit links through a link entry field.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 57,
+      "path": "docs/modules/editor/intent/EDT-30.md"
+    },
+    {
+      "id": "EDT-31",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Block rows in the slash menu and Insert show their icons.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 46,
+      "path": "docs/modules/editor/intent/EDT-31.md"
+    },
+    {
+      "id": "EDT-4",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The standard blocks are the full standard block set (paragraph, headings, bulleted, numbered and task lists, quote, code block, divider, image, table and a callout of info, success or danger), each registered once.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/extensions/standard-blocks.test.tsx"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/editor/intent/EDT-4.md"
+    },
+    {
+      "id": "EDT-5",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The formatting toolbar sits inside the editor and stays in view on a long page; it reflects the active marks and block, disables any control that can't run, offers the module blocks and callout variants under Insert after the selected block, and is hidden when the editor is read-only.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/toolbar.test.tsx"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/editor/intent/EDT-5.md"
+    },
+    {
+      "id": "EDT-6",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Typing / opens a block menu at the caret while focus stays in the editor; results rank shortcut, title and keyword matches first and keep one header per category, the selection scrolls into view, and / stays literal inside a code block.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/slash-commands.test.ts"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/editor/intent/EDT-6.md"
+    },
+    {
+      "id": "EDT-7",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module renders its own live body for its block inside the editor through renderers the host passes; a block without one shows an honest placeholder (available when its module ships) and never crashes.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/extensions/integration-blocks.test.tsx"
+      ],
+      "tokens": 101,
+      "path": "docs/modules/editor/intent/EDT-7.md"
+    },
+    {
+      "id": "EDT-8",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An inline block's configuration lives in its node attributes per its config schema and round-trips losslessly for the declared schema; each block is identified by its block type when read back.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/extensions/integration-blocks.test.tsx",
+        "packages/editor/src/slash-commands.test.ts"
+      ],
+      "tokens": 91,
+      "path": "docs/modules/editor/intent/EDT-8.md"
+    },
+    {
+      "id": "EDT-9",
+      "kind": "intent-row",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Markdown export and import round-trip losslessly from the document (document to Markdown to the same document); export writes one canonical spelling, callouts and inline blocks travel in carriers that keep their configuration, frontmatter is optional, and import degrades on anything else, never throwing.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml",
+        "packages/editor/src/serializers/serializers.test.ts"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/editor/intent/EDT-9.md"
+    },
+    {
       "id": "EG-1",
       "kind": "intent-row",
       "module": "integrations",
@@ -5734,6 +6148,19 @@
       "path": "docs/modules/check-ins/intent.md"
     },
     {
+      "id": "INTENT-editor",
+      "kind": "intent",
+      "module": "editor",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of editor: 31 rows, 6 tested, 4 partly tested, 21 intent only.",
+      "anchors": [
+        "docs/modules/editor/intent.yaml"
+      ],
+      "tokens": 139,
+      "path": "docs/modules/editor/intent.md"
+    },
+    {
       "id": "INTENT-finance",
       "kind": "intent",
       "module": "finance",
@@ -7748,11 +8175,11 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Inline blocks are ADR-008 capability-registry entries; the palette offers the page's Spaces' capabilities plus the editor base, /summary, /entity-link and /backlink get bodies, and the rest stay honest placeholders.",
+      "summary": "Inline blocks are ADR-008 capability-registry entries; the palette offers the page's Spaces' capabilities plus the editor base, /entity-link and /backlink get bodies, the rest stay honest placeholders, and there is no /summary block (EDT-15).",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 116,
+      "tokens": 129,
       "path": "docs/modules/notes/intent/NP-14.md"
     },
     {
