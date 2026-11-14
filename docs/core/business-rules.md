@@ -13,9 +13,9 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
 - **ZK-2** — The server never receives the user's password or any key. Auth is SRP: the server stores only a
   salt + verifier and proves password knowledge without transmission. `[FACT: ADR-001 §Auth; packages/core/src/encryption/srp.ts]`
 - **ZK-3** — Key hierarchy: Master Key = Argon2id(password, salt); Vault Key = BLAKE2b-256(key=Master Key, message=Account Key);
-  the Vault Key encrypts/decrypts all field-level data (XChaCha20-Poly1305). The Account Key is the user's recovery
-  key, shown once. `[FACT: packages/core/src/encryption/vault.ts L9,L85-95 — sodium.crypto_generichash(); authoritative (enforced reality)]`
-  ⚠ **Unresolved drift (needs ADR amendment):** the code uses **BLAKE2b-256** and is authoritative, but **both ADR-001 §Key Model (L74,L76) and CLAUDE.md still say HKDF**. This is two top-tier sources in conflict, not mere doc-lag — `vault.ts` L82 states the switch was deliberate ("replaces HKDF — BLAKE2b is libsodium-native"). ADR-001 + CLAUDE.md must be amended to record the BLAKE2b decision. `[[authoritative-docs]]`
+  the Vault Key encrypts/decrypts all field-level data (XChaCha20-Poly1305). The Account Key is shown once and is
+  required with the password; it is not a recovery key, and a forgotten password can't be recovered (INTENT-encryption
+  EN-4, EN-24). `[FACT: packages/core/src/encryption/vault.ts — sodium.crypto_generichash(); ADR-001 §6 (amended 2026-07-16)]`
 
 ## Local-First (LF)
 
@@ -38,8 +38,10 @@ these and must comply. Each rule is a FACT cited to its source; nothing here is 
 
 - **EN-1** — Three-layer encryption: **L1** SQLCipher (full DB at rest), **L2** field-level libsodium (fields
   marked `-- [E]` / `@encrypted`), **L3** sync blob (entire row encrypted for transit/server). `[FACT: ADR-002 §4]`
-- **EN-2** — A field is encrypted iff it is marked `[E]` in the schema / `@encrypted` in `@vida/types`. ~150 of
-  ~520 fields (29%). Encryption status is defined once, in the schema, and honored everywhere. `[FACT: ADR-002 §4.3]`
+- **EN-2** — A field is encrypted iff it is marked `[E]` in the schema / `@encrypted` in `@vida/types`. Encryption
+  status is defined once, in the schema, and honored everywhere. `[FACT: ADR-002 §4.3]`
+- EN-1 and EN-2 are rows EN-1 and EN-2 of `INTENT-encryption` (`docs/modules/encryption/intent.yaml`), which holds the
+  rest of the encryption rules.
 
 ## Data Conventions (DATA) — structural invariants
 
@@ -141,3 +143,4 @@ Projects 2026-06-29 surfaced this as the governing principle; ADR-010 §3; task-
 | 2026-07-16 | documentation-blueprint · ADR revise (F5/D6)     | **Resolved the 2026-06-13 HKDF flag** — ADR-001 §6 + `CLAUDE.md` amended to `BLAKE2b-256` (keyed), matching the authoritative code (`vault.ts`, tested). Doc-vs-code drift closed; the code was always right.                                                                                                                                                               |
 | 2026-07-16 | documentation-blueprint · ADR revise (F1/D1)     | Added **INT-2** — the cross-module **write-discipline** invariant (single write path + deterministic-`effect_event_id` idempotency; binds shipped + user code). Grounds the guarded-write/no-double-count mechanism that ADR-004/008/010 previously delegated in a loop; mechanism owned by **ADR-004 §3.2.5**. **PC-3 reframed as INT-2's untrusted-code specialization.** |
 | 2026-07-16 | documentation-blueprint · ADR revise (F2/D2)     | Added **PC-2a** — reconciles the O1 seam: **one composability registry** (ADR-008); ADR-005's `study_methods` is a `kind=study_method` **specialization**, not a parallel registry (Knowledge owns the review engine, the foundation owns the registry). ADR-008 §3.1/§3.3a (anatomy crosswalk) + ADR-005 amended-by.                                                       |
+| 2026-11-13 | LIF-349 run 38 (Encryption)                      | ZK-3: the account key is not a recovery key and a forgotten password can't be recovered (Victor, EN-4, EN-24); the stale HKDF drift note dropped (resolved 2026-07-16). EN-2: the v1 field counts dropped (security-model §8 no longer asserts them). EN-1/EN-2 map to `INTENT-encryption`.                                                                                 |

@@ -3647,6 +3647,409 @@
       "path": "docs/modules/integrations/intent/EG-9.md"
     },
     {
+      "id": "EN-1",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Three layers encrypt the vault; the whole database file at rest (SQLCipher), each field marked encrypted inside the database (field-level), and each row as one opaque blob in transit and on the server (the sync blob).",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 87,
+      "path": "docs/modules/encryption/intent/EN-1.md"
+    },
+    {
+      "id": "EN-10",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The boundary map, every table's encrypted columns, is generated from the schema marks and is the one place module docs point to; a module doc never restates the list or calls its data encrypted before the encryption pass.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/encryption/intent/EN-10.md"
+    },
+    {
+      "id": "EN-11",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "No code filters, sorts, groups or aggregates on an encrypted column in a database query; equality goes through the blind index, text search through the search index and sums through in-memory decryption, and a static check enforces this while the app still runs unencrypted.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 105,
+      "path": "docs/modules/encryption/intent/EN-11.md"
+    },
+    {
+      "id": "EN-12",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An equality lookup on an encrypted column uses a blind index, a keyed BLAKE2b of the plaintext kept in a plaintext side column under its own key, and supports equality only, never range or prefix.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 82,
+      "path": "docs/modules/encryption/intent/EN-12.md"
+    },
+    {
+      "id": "EN-13",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Search over encrypted text uses standalone search tables fed decrypted plaintext, built in a store that doesn't persist when the vault unlocks and torn down when it locks, with temporary storage kept in memory.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 85,
+      "path": "docs/modules/encryption/intent/EN-13.md"
+    },
+    {
+      "id": "EN-14",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A sensitive number (every Finance amount, balance, price and rate, and a dream's estimated cost) stays encrypted and is summed only after the rows are loaded and decrypted in memory; a number that isn't sensitive (streaks, counts, progress, measured values) stays plaintext and aggregates in the database query.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 119,
+      "path": "docs/modules/encryption/intent/EN-14.md"
+    },
+    {
+      "id": "EN-15",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The whole database file is encrypted with SQLCipher under a key taken from the vault key (256,000 key-derivation iterations, a SHA-512 page check, 4-kilobyte pages, no plaintext header); the database opens only after the vault unlocks, and a wrong key fails to open it instead of reading it.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/encryption/intent/EN-15.md"
+    },
+    {
+      "id": "EN-16",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On the localhost web product the database is a custom wa-sqlite build with SQLCipher bundled, on the browser's private file store.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/encryption/intent/EN-16.md"
+    },
+    {
+      "id": "EN-17",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The desktop app and the mobile app encrypt their database with native SQLCipher under the same key rules.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/encryption/intent/EN-17.md"
+    },
+    {
+      "id": "EN-18",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Everything that leaves the device is encrypted on it under the vault key with a fresh random nonce; a row is serialized whole, compressed and sealed as one blob behind its plain routing header, page updates and attachment files and thumbnails are sealed the same way, and the receiving device decrypts and re-encrypts its encrypted fields before writing them.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 143,
+      "path": "docs/modules/encryption/intent/EN-18.md"
+    },
+    {
+      "id": "EN-19",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The vault moves from locked through unlocking to unlocked, then opens the database and rebuilds search; while it is locked every database read and write is refused with a locked error, search waits for its rebuild, and listeners hear each change.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/encryption/intent/EN-19.md"
+    },
+    {
+      "id": "EN-2",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A field is encrypted if and only if the schema marks it encrypted; that mark is defined once and honored everywhere.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/encryption/intent/EN-2.md"
+    },
+    {
+      "id": "EN-20",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The vault locks itself after an idle period the user sets (15 minutes by default) that the user's activity resets, and the user can lock it by hand; locking wipes the vault key.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 77,
+      "path": "docs/modules/encryption/intent/EN-20.md"
+    },
+    {
+      "id": "EN-21",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Creating the account makes the salt, the account key and the vault key, wipes the master key and shows the account key once; the salt is kept with the account on the device and, with a server, also beside the sign-in verifier.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 96,
+      "path": "docs/modules/encryption/intent/EN-21.md"
+    },
+    {
+      "id": "EN-22",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "After the first sign-in on a device, that device keeps the account key, in the system keychain on the desktop and mobile apps and in the browser's private storage on the localhost web product, so a daily unlock asks only for the password; a new device asks for both, and Vida tells the user that on the web a copied browser profile then needs only the password.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 123,
+      "path": "docs/modules/encryption/intent/EN-22.md"
+    },
+    {
+      "id": "EN-23",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On the desktop and mobile apps the user may turn on biometric unlock, which opens the vault from an entry in the system keychain that only the biometric prompt releases; the password always works too.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 83,
+      "path": "docs/modules/encryption/intent/EN-23.md"
+    },
+    {
+      "id": "EN-24",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A forgotten password can't be recovered, because no one else holds a key to the vault; Vida says so plainly when the account is created and points to the whole-vault export as the user's safety copy.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/encryption/intent/EN-24.md"
+    },
+    {
+      "id": "EN-25",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Changing the password makes a new vault key, then re-encrypts every encrypted field, re-keys the database, re-wraps the account's private key, re-uploads every blob and, with a server, sends the new salt and verifier; a crash partway leaves the data readable.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/encryption/intent/EN-25.md"
+    },
+    {
+      "id": "EN-26",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The account has a key pair made at random when the account is created; its private key is encrypted under the vault key and syncs like a row, its public key is plain and held by the user's server, anything sealed to it opens only on a device with the vault unlocked, and a new pair is made only to lock out a lost device.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 122,
+      "path": "docs/modules/encryption/intent/EN-26.md"
+    },
+    {
+      "id": "EN-27",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The secure remote password client registers with a random salt and verifier and signs in by proof, never sending the password, and rejects a server whose own proof fails.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/encryption/intent/EN-27.md"
+    },
+    {
+      "id": "EN-28",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "From the encryption pass on, a connection's credential and a model key are stored encrypted in their config rows and opened only by the mediator; before it they live only in the system keychain.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/encryption/intent/EN-28.md"
+    },
+    {
+      "id": "EN-29",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Data written before the encryption pass enters the encrypted app through the whole-vault export and an import, so no plaintext row stays behind.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/encryption/intent/EN-29.md"
+    },
+    {
+      "id": "EN-3",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The master key is derived from the password with Argon2id and a random 16-byte salt at interactive limits, held in memory only while the vault key is derived, then wiped; it is never stored.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 80,
+      "path": "docs/modules/encryption/intent/EN-3.md"
+    },
+    {
+      "id": "EN-30",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Before Vida reaches any user other than its builder, the encryption pass covers all data, manual and imported, and every integration is re-verified against the live boundary.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 76,
+      "path": "docs/modules/encryption/intent/EN-30.md"
+    },
+    {
+      "id": "EN-31",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida tells the user plainly what encryption doesn't protect; malware on the device, an account key they share, a device left unlocked, and the metadata a server sees (counts, times, devices).",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 81,
+      "path": "docs/modules/encryption/intent/EN-31.md"
+    },
+    {
+      "id": "EN-4",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The account key is 256 random bits made once when the account is created and shown to the user once in a grouped, readable format; the vault key needs it together with the password, and it is the account key, not a recovery key.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 90,
+      "path": "docs/modules/encryption/intent/EN-4.md"
+    },
+    {
+      "id": "EN-5",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The vault key is a keyed BLAKE2b-256 of the account key under the master key; it lives in memory only while the vault is unlocked and is wiped when the vault locks.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/encryption/intent/EN-5.md"
+    },
+    {
+      "id": "EN-6",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The field and sync-blob layers use the vault key directly, and every other key taken from it (the database key, the blind-index key, the key-pair wrap) uses its own domain-separation label, so no two purposes share a key.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 88,
+      "path": "docs/modules/encryption/intent/EN-6.md"
+    },
+    {
+      "id": "EN-7",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An encrypted field is sealed with XChaCha20-Poly1305 under the vault key with a fresh random 24-byte nonce on every write and stored as one text value of nonce and ciphertext; it decrypts to the same value and type it was written with, and a wrong key or tampered value fails to decrypt.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/encryption/intent/EN-7.md"
+    },
+    {
+      "id": "EN-8",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The repository is the one boundary where encrypted fields are encrypted before a write and decrypted after a read, so the app handles plaintext only in memory and the database holds only ciphertext for those fields.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/encryption/intent/EN-8.md"
+    },
+    {
+      "id": "EN-9",
+      "kind": "intent-row",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A repository takes its encrypted fields from its table's schema marks, never from a list written at the call site.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 61,
+      "path": "docs/modules/encryption/intent/EN-9.md"
+    },
+    {
       "id": "FC-1",
       "kind": "intent-row",
       "module": "knowledge",
@@ -6419,6 +6822,19 @@
       ],
       "tokens": 139,
       "path": "docs/modules/editor/intent.md"
+    },
+    {
+      "id": "INTENT-encryption",
+      "kind": "intent",
+      "module": "encryption",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of encryption: 31 rows, 0 tested, 0 partly tested, 31 intent only.",
+      "anchors": [
+        "docs/modules/encryption/intent.yaml"
+      ],
+      "tokens": 139,
+      "path": "docs/modules/encryption/intent.md"
     },
     {
       "id": "INTENT-finance",

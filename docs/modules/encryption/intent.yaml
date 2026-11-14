@@ -1,0 +1,197 @@
+# Encryption intent ledger: every intended, deferred or TBD rule of Encryption, the platform project that owns the
+# key chain, the three encryption layers, the encrypted-field boundary, unlocking the vault and the M3 encryption pass
+# (P-LIF-27). work = the issue that builds the rest. check:rules derives each row's state.
+# Prefix (Victor, 2026-11-13): EN. EN-1 and EN-2 are the constitution's EN-1 and EN-2 (docs/core/business-rules.md),
+# one to one (the SY pattern); the module's own rows start at EN-3. EN had no ledger row in Vida on 26455caa; EN-1/EN-2
+# are cited by ADR-006, ADR-007, ADR-014 and the egress and capability rules, and the gap register's EN-1…EN-7 were gap
+# IDs only (the artifact and Linear comments). Folder name `encryption`: 35 rows in other ledgers already use it.
+# The model (Victor, 2026-11-13, settled before the rows):
+# - The account key pair is random and wrapped by the vault key (EN-26, LIF-620): SV-33, EF-20 and ADR-014 §3.1a seal
+#   to it.
+# - A set-up device remembers the account key, so a daily unlock is the password only: the OS keychain on desktop and
+#   mobile, the browser's private storage on the localhost web product, where the account key stops being a second
+#   factor on that browser (EN-22); biometric unlock on desktop and mobile (EN-23).
+# - A forgotten password can't be recovered, and Vida says so; the account key is not a recovery key (EN-24).
+# - The schema's @encrypted marks are the one list of what gets encrypted (EN-9, EN-10; gap sheet EN-Q6).
+# - The web's at-rest layer is the stack's SQLCipher WASM build (gap sheet EN-Q4; EN-16).
+# Build order (ADR-019 M3, a plan, not a rule): the crypto core and vault init (LIF-74, LIF-160) → the boundary map and
+# the repositories' [E] sets (LIF-67) → SQLCipher on every shape (LIF-621, LIF-152, LIF-153) → unlock (LIF-101) → the
+# release gate (LIF-149). ADR-017 deferred encryption; ADR-019 §3.3a keeps secrets in the OS keychain until M3.
+# Sources: security-model.md, ADR-002 §4 (with §5.19, which §4.2 cites), ADR-003 (§4, §11–§14, §18), the Encryption
+# project (LIF-67, 74, 99, 101, 149, 160, 359) and the gap sheet (EN-Q1…EN-Q8); read with Victor's OK at this run:
+# ADR-001 §5, §6, §21, ADR-017, ADR-019, ADR-014 §3.1a and §3.4, ADR-015's key lines, the encryption code and
+# repository.ts, the archived ar-3, core-vault-init, db-5, db-8, db-8b, ux-5b and m3-pass tasks, platform-strategy.md's
+# web row, the July intakes' encryption lines (grep), LIF-361, 364, 464, 465, 466, 597, 618 with the scope comments on
+# LIF-67, and the rows in other ledgers that use encryption.
+# Built (the code is the truth): the crypto primitives since the initial commit (bc83a841) in
+# packages/core/src/encryption: vault.ts (Argon2id, the BLAKE2b vault-key hash, field and byte sealing with
+# XChaCha20-Poly1305, the account key format), key-management.ts (the in-memory vault, its states, auto-lock timers, key-rotation prep) and srp.ts (the SRP
+# client); the repository seam encryptRow/decryptRow (repository.ts), pass-through because every repository passes
+# encryptedFields: []; the SQLCipher PRAGMA seam (adapter.ts configureSqlCipher, verifySqlCipherKey), unused because the
+# worker opens plain; 337 [E] marks in packages/core/src/db/schema. sharing.ts is 0 bytes. markDbUnlocked,
+# markFtsReady, prepareKeyRotation and the auto-lock timers have no caller outside the package.
+# Proof: vault.test.ts and srp.test.ts name no row ID, so the built rows keep a work link to LIF-619. No test was
+# renamed. Encryption has no features folder, so the archive guard applies from the start.
+# Consumers (each in its owner's ledger): the per-module [E] sets with work LIF-67 (TK-1, HB-1, RT-1, JR-15, PJ-1,
+# PJ-8, RL-1, BK-1, CK-1, PG-1, GM-18, NF-11, KN-1, FC-8, HC-10, HC-17, ED-1, SK-12, SPC-7, VW-5, CB-12, BL-6, FN-1,
+# NP-1's notes), the sync rows SY-3, SV-4, SV-5, SV-20, SV-21, SV-26, SV-32, SV-33, the hand-off EF-20, AX-6 (AI rows
+# encrypt), ITG-14 (secrets before M3), RL-7 and NF-6 (the device composes after decrypting). The per-column questions
+# the module runs left on LIF-67 (for example HC-17's medical kinds, dreams.estimated_cost as INTEGER cents, curve
+# params, action_url, subject_documents.encrypted_blob) are LIF-67's to settle with the boundary map.
+
+# The constitution's encryption rules, EN-1 and EN-2 (docs/core/business-rules.md).
+# EN-1: ADR-002 §4.1, security-model §4. All three layers stay built (ADR-019 "Constitution EN-1 unaffected").
+- id: EN-1
+  says: Three layers encrypt the vault; the whole database file at rest (SQLCipher), each field marked encrypted inside the database (field-level), and each row as one opaque blob in transit and on the server (the sync blob).
+  work: LIF-149
+# EN-2: ADR-002 §4.2–4.3. The v1 field counts are dropped from the constitution in this PR (security-model §8 no longer
+# asserts them). EN-9 and EN-10 say how "defined once, honored everywhere" holds.
+- id: EN-2
+  says: A field is encrypted if and only if the schema marks it encrypted; that mark is defined once and honored everywhere.
+  work: LIF-67
+
+# The key chain. security-model §5–§6, ADR-001 §6, constitution ZK-3; built in vault.ts.
+- id: EN-3
+  says: The master key is derived from the password with Argon2id and a random 16-byte salt at interactive limits, held in memory only while the vault key is derived, then wiped; it is never stored.
+  work: LIF-619
+# EN-4: Victor 2026-11-13 (this run): no recovery, so the account key isn't called a recovery key (EN-24).
+- id: EN-4
+  says: The account key is 256 random bits made once when the account is created and shown to the user once in a grouped, readable format; the vault key needs it together with the password, and it is the account key, not a recovery key.
+  work: LIF-619
+# EN-5: ADR-001 §6 (amended 2026-07-16 to keyed BLAKE2b). EN-23's biometric entry is the only place a key outlives an
+# unlock outside memory.
+- id: EN-5
+  says: The vault key is a keyed BLAKE2b-256 of the account key under the master key; it lives in memory only while the vault is unlocked and is wiped when the vault locks.
+  work: LIF-619
+# EN-6: ADR-001 §6's forward-flag ("if a future feature derives additional sub-keys … add per-purpose domain
+# separation then"); the SQLCipher key (EN-15), the blind-index key (EN-12) and the key-pair wrap (EN-26) trigger it.
+# security-model §8 already assumes a domain-separated blind-index key.
+- id: EN-6
+  says: The field and sync-blob layers use the vault key directly, and every other key taken from it (the database key, the blind-index key, the key-pair wrap) uses its own domain-separation label, so no two purposes share a key.
+  work: LIF-74
+
+# The field layer and its boundary. ADR-002 §4.2, security-model §4 and §8; built in vault.ts and repository.ts.
+# EN-7: the type loss and the silent fallback in decryptRow are LIF-622 (a defect flag, dormant).
+- id: EN-7
+  says: An encrypted field is sealed with XChaCha20-Poly1305 under the vault key with a fresh random 24-byte nonce on every write and stored as one text value of nonce and ciphertext; it decrypts to the same value and type it was written with, and a wrong key or tampered value fails to decrypt.
+  work: LIF-622
+- id: EN-8
+  says: The repository is the one boundary where encrypted fields are encrypted before a write and decrypted after a read, so the app handles plaintext only in memory and the database holds only ciphertext for those fields.
+  work: LIF-67
+# EN-9: Victor 2026-11-13 (this run); constitution EN-2. Today each call site passes its own list (all empty).
+- id: EN-9
+  says: A repository takes its encrypted fields from its table's schema marks, never from a list written at the call site.
+  work: LIF-67
+# EN-10: gap sheet EN-Q6 ("one list of what gets encrypted": yes); Victor 2026-11-13 (this run) made the schema marks
+# that list. Module docs today say "encrypted at rest" in the present tense while M1 data is plaintext.
+- id: EN-10
+  says: The boundary map, every table's encrypted columns, is generated from the schema marks and is the one place module docs point to; a module doc never restates the list or calls its data encrypted before the encryption pass.
+  work: LIF-67
+# EN-11: ADR-002 §4.2 ("never SQL over ciphertext"); gap sheet EN-Q2 (the check now, while the app runs unencrypted).
+# Known finding: notes/service.ts runs a LIKE on pages.title (LIF-464).
+- id: EN-11
+  says: No code filters, sorts, groups or aggregates on an encrypted column in a database query; equality goes through the blind index, text search through the search index and sums through in-memory decryption, and a static check enforces this while the app still runs unencrypted.
+  uses: [notes]
+  work: LIF-465
+# EN-12: ADR-002 §4.2, security-model §8 (F7/D7), the archived db-8b task.
+- id: EN-12
+  says: An equality lookup on an encrypted column uses a blind index, a keyed BLAKE2b of the plaintext kept in a plaintext side column under its own key, and supports equality only, never range or prefix.
+  work: LIF-99
+# EN-13: ADR-002 §5.19 (FTS-2), security-model §6 (rebuild after unlock), the archived db-8 task.
+- id: EN-13
+  says: Search over encrypted text uses standalone search tables fed decrypted plaintext, built in a store that doesn't persist when the vault unlocks and torn down when it locks, with temporary storage kept in memory.
+  work: LIF-70
+# EN-14: ADR-002 §4.2 (the numeric-aggregates rule, F7/D7). Today SQL sums would hide the gap while encryption is off.
+- id: EN-14
+  says: A sensitive number (every Finance amount, balance, price and rate, and a dream's estimated cost) stays encrypted and is summed only after the rows are loaded and decrypted in memory; a number that isn't sensitive (streaks, counts, progress, measured values) stays plaintext and aggregates in the database query.
+  uses: [finance, FN-1, purposes]
+  work: LIF-364
+
+# The database layer. ADR-001 §5, ADR-002 §4.1, security-model §4; the PRAGMA seam is built (adapter.ts).
+- id: EN-15
+  says: The whole database file is encrypted with SQLCipher under a key taken from the vault key (256,000 key-derivation iterations, a SHA-512 page check, 4-kilobyte pages, no plaintext header); the database opens only after the vault unlocks, and a wrong key fails to open it instead of reading it.
+  work: LIF-160
+# EN-16: ADR-001 §5; gap sheet EN-Q4 (yes, as the stack decides). The app imports stock wa-sqlite (web-adapter.ts:11).
+- id: EN-16
+  says: On the localhost web product the database is a custom wa-sqlite build with SQLCipher bundled, on the browser's private file store.
+  open: The SQLCipher WebAssembly build pipeline (ADR-001 §21).
+  work: LIF-621
+# EN-17: ADR-001 §5 and §21. apps/desktop's Rust files and apps/mobile's db folder are empty (run 34).
+- id: EN-17
+  says: The desktop app and the mobile app encrypt their database with native SQLCipher under the same key rules.
+  open: The mobile library, an expo-sqlite custom build or react-native-quick-sqlite (ADR-001 §21).
+  work: LIF-152
+
+# What leaves the device. ADR-002 §4.5, ADR-003 §4.1–§4.3, security-model Guarantee 7.
+# EN-18: SY-3 says the queue's payload arrives already encrypted; this row is how. LZ4 vs zstd is ADR-003 §18's.
+- id: EN-18
+  says: Everything that leaves the device is encrypted on it under the vault key with a fresh random nonce; a row is serialized whole, compressed and sealed as one blob behind its plain routing header, page updates and attachment files and thumbnails are sealed the same way, and the receiving device decrypts and re-encrypts its encrypted fields before writing them.
+  open: The blob compression, LZ4 or zstd (ADR-003 §18).
+  uses: [sync, SY-3, SV-4]
+  work: LIF-98
+
+# Unlocking the vault. security-model §6, key-management.ts (built, no caller outside the package).
+- id: EN-19
+  says: The vault moves from locked through unlocking to unlocked, then opens the database and rebuilds search; while it is locked every database read and write is refused with a locked error, search waits for its rebuild, and listeners hear each change.
+  work: LIF-160
+- id: EN-20
+  says: The vault locks itself after an idle period the user sets (15 minutes by default) that the user's activity resets, and the user can lock it by hand; locking wipes the vault key.
+  work: LIF-101
+# EN-21: security-model §6 (account creation). Without a server the salt can't live beside an SRP verifier, so it
+# stays with the account on the device (SV-24).
+- id: EN-21
+  says: Creating the account makes the salt, the account key and the vault key, wipes the master key and shows the account key once; the salt is kept with the account on the device and, with a server, also beside the sign-in verifier.
+  uses: [sync, SV-24, SV-26]
+  work: LIF-101
+# EN-22: Victor 2026-11-13 (this run), replacing security-model §6's "password + account key" on every login.
+- id: EN-22
+  says: After the first sign-in on a device, that device keeps the account key, in the system keychain on the desktop and mobile apps and in the browser's private storage on the localhost web product, so a daily unlock asks only for the password; a new device asks for both, and Vida tells the user that on the web a copied browser profile then needs only the password.
+  work: LIF-101
+# EN-23: Victor 2026-11-13 (this run); the v1 settings carried biometric unlock (Preferences intake G1, routed here by
+# LIF-597's comment).
+- id: EN-23
+  says: On the desktop and mobile apps the user may turn on biometric unlock, which opens the vault from an entry in the system keychain that only the biometric prompt releases; the password always works too.
+  work: LIF-101
+# EN-24: Victor 2026-11-13 (this run). The docs called the account key the "recovery key" (security-model §5–§6,
+# ADR-001 §6, ZK-3); reworded in this PR.
+- id: EN-24
+  says: A forgotten password can't be recovered, because no one else holds a key to the vault; Vida says so plainly when the account is created and points to the whole-vault export as the user's safety copy.
+  uses: [sync, SV-22]
+  work: LIF-101
+# EN-25: ADR-003 §12.3, §14.4; LIF-359 (from the critique gate's F14). prepareKeyRotation/commitKeyRotation derive the
+# new chain only.
+- id: EN-25
+  says: Changing the password makes a new vault key, then re-encrypts every encrypted field, re-keys the database, re-wraps the account's private key, re-uploads every blob and, with a server, sends the new salt and verifier; a crash partway leaves the data readable.
+  uses: [sync, SV-20]
+  work: LIF-359
+# EN-26: Victor 2026-11-13 (this run). Needed by SV-33, EF-20 and ADR-014 §3.1a.
+- id: EN-26
+  says: The account has a key pair made at random when the account is created; its private key is encrypted under the vault key and syncs like a row, its public key is plain and held by the user's server, anything sealed to it opens only on a device with the vault unlocked, and a new pair is made only to lock out a lost device.
+  uses: [sync, SV-33, sessions, EF-20]
+  work: LIF-620
+
+# Sign-in's client half. security-model §7; built in srp.ts. The server half is SV-26 (LIF-361).
+- id: EN-27
+  says: The secure remote password client registers with a random salt and verifier and signs in by proof, never sending the password, and rejects a server whose own proof fails.
+  uses: [sync, SV-26]
+  work: LIF-619
+
+# Secrets and the encryption pass. ADR-014 §3.4, ADR-015 (ai_connections), ADR-019 §3.3a, §3.4, ADR-017 §4.
+- id: EN-28
+  says: From the encryption pass on, a connection's credential and a model key are stored encrypted in their config rows and opened only by the mediator; before it they live only in the system keychain.
+  uses: [integrations, ITG-14, ai]
+  work: LIF-578
+# EN-29: ADR-017 §4 ("the export … doubles as backup and the future import-into-encrypted-app path"); SV-22.
+- id: EN-29
+  says: Data written before the encryption pass enters the encrypted app through the whole-vault export and an import, so no plaintext row stays behind.
+  uses: [sync, SV-22]
+  work: LIF-601
+# EN-30: ADR-019 §3.4, the archived m3-pass task.
+- id: EN-30
+  says: Before Vida reaches any user other than its builder, the encryption pass covers all data, manual and imported, and every integration is re-verified against the live boundary.
+  work: LIF-149
+# EN-31: security-model §3 "What we explicitly do not defend against"; gap sheet F-check 6 (Vida answers for leaks
+# from its own security, not for what the user lets in).
+- id: EN-31
+  says: Vida tells the user plainly what encryption doesn't protect; malware on the device, an account key they share, a device left unlocked, and the metadata a server sees (counts, times, devices).
+  work: LIF-101
