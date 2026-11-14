@@ -9,8 +9,9 @@ target_ref)`, enforced by the `applied_effects` composite PRIMARY KEY + an in-tr
   A second identical event returns `{applied:false}` and fires no handler. [ADR-004 §3.2.5-B; F1 §3B; framework §2 R1]
 - **BR-2 — Deterministic identity.** `effect_event_id = derive(subject_natural_key ‖ transition ‖ effect_type)`,
   a **canonical string** (`a|b|c`). Same inputs → same id on any device. The `|` separator is safe because inputs
-  are UUIDv7 ids / `YYYY-MM-DD` dates. The `derive()` **hash is build-phase** (ADR-011 §3.8) — a later
-  representation-only compaction, not a contract change.
+  are UUIDv7 ids / `YYYY-MM-DD` dates. The `derive()` **hash is build-phase** (ADR-011 §3.8): it changes
+  only the representation, but the id is stored under UNIQUE on synced output rows, so its final form is a one-way-door
+  decision (LIF-617, `event-id.ts` in `checks.oneWayDoor`), recorded in ADR-004 §3.2.5 before any synced row stores it.
 - **BR-3 — Single guarded write path (R2).** Every non-projection effect is applied through its registered
   handler; `applyEffect` throws `NoEffectHandler` (no write) when none is registered. No direct table writes. [framework §2 R2; ADR-004 §3.2.5-A]
 - **BR-4 — One handler per effect-type.** The registry binds each `EFFECT_TYPE` to exactly one handler;

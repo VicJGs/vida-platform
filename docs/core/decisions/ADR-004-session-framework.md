@@ -7,7 +7,7 @@
 **Tags:** architecture · data model · API
 **Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner. **+ (F1/D1, 2026-07-16)** adds the local-only `applied_effects` dedup ledger + `effect_event_id` columns (owed-tables ledger).
 **Inherits:** ADR-001 (SQLite/libsodium) · ADR-003 (LWW sync) · the surfaced extension-model principle (guarded opt-in integrations).
-**Amended:** 2026-11-13 (LIF-521, Victor 2026-11-09) — `contribute_purpose_metric` retired from §3.2.2 and the §3.2.5 taxonomy: Purposes reads each related entity through its service and computes the day's progress, nothing is pushed to it (PG-37, EF-5). **Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
+**Amended:** 2026-11-13 (LIF-349 run 37, Victor) — **§3.2.5-B5** origin and the server product (EF-14, EF-20), the §3.2.4 consent modes (EF-11), and the `effect_event_id` form made a one-way-door decision (LIF-617). **Amended:** 2026-11-13 (LIF-521, Victor 2026-11-09) — `contribute_purpose_metric` retired from §3.2.2 and the §3.2.5 taxonomy: Purposes reads each related entity through its service and computes the day's progress, nothing is pushed to it (PG-37, EF-5). **Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
 
 ---
 
@@ -81,7 +81,10 @@ records attendance; workout → writes training volume).
 **§3.2.4 Permissions / constraints** — the guardrail: effects are scoped to attachments; **no double-count**
 (one XP / one habit-occurrence per event — the _mechanism_ is **§3.2.5**); user-created types get a **strict
 subset** of shipped-type capabilities; effects on sensitive modules (Finance/Health) require explicit opt-in
-consent. This is the guarded opt-in extension-model principle applied inside the module.
+consent. This is the guarded opt-in extension-model principle applied inside the module. The consent is set per
+sensitive effect in one of two modes: **override** applies it under the user's standing consent, and **ask** prompts
+the user every time its conditions are met; an asked effect writes nothing, and has no ledger row, until the user
+says yes, then applies through replay (B2), and a no records it as declined, never applied (EF-11).
 
 > **Codes (temporary):** **S6** (§3.2.5) guarded write + idempotency for every effect producer · **R1** (§3.2.5) idempotency rail: deterministic `effect_event_id`, `applied_effects`, UNIQUE on output rows (shared rail) · **R2** (§3.2.5) guarded write (INT-2): write another module only through its documented write API (shared rail)
 
@@ -129,6 +132,19 @@ target_ref)`; the handler **checks-and-inserts in the same transaction as the wr
 4. The `applied_effects` ledger is **device-local** (not synced, like `sync_queue`): it defends _replay_; _cross-device_
    convergence rides the synced output rows' UNIQUE `effect_event_id`, not a synced ledger.
 
+5. **Origin, and the server product** (EF-14, EF-20). Effects are applied by the device that **originates** the
+   lifecycle event; a device that receives an already-written synced output row **never fires its effects again**.
+   The user's own server (the server product) is blind: it holds no key that opens the vault and never applies,
+   opens or merges an effect. Two cases ride it:
+   - **Server-run background work** (ADR-014 §3.1a): the server only fetches and seals; the device that opens the
+     sealed result and writes the rows is the origin and fires their effects.
+   - **Sealed effect hand-off:** an effect whose target is bound to another of the user's devices (a native
+     integration, the desktop app's local endpoint) is sealed to the account's public key with its
+     `effect_event_id` and relayed by the server; the first device able to apply it does, once per that id (B2
+     locally, B3 across devices). With no server it waits on the origin device and travels with sync. A missing
+     handler is never a hand-off: it still fails closed (A2). Sealing needs the account key pair (the encryption
+     pass).
+
 **C — No trust exemption.** The contract (A+B) binds **all** effect producers — session Effects, shipped capabilities
 (ADR-008), user-authored capabilities (ADR-010) — **identically**. Only _enforcement_ differs by trust tier: user code
 **physically cannot** bypass (the ADR-010 sandbox gives no ambient DB access — its only channel is the mediated API →
@@ -140,7 +156,8 @@ writes another module's tables directly. There is **no honor-system tier** for t
 `applied_effects` (local-only); a deterministic `effect_event_id` on effect-triggering rows; a UNIQUE `effect_event_id`
 on each effect **output** row; domain natural keys where they exist.
 
-**What §3.2.5 does NOT do:** it does not pick the `derive()` hash, the CI-guard implementation, or the sync
+**What §3.2.5 does NOT do:** it does not yet pick the `derive()` hash — the id's final form is a one-way-door
+decision (LIF-617), recorded here before any output row stores it under UNIQUE or sync activates — the CI-guard implementation, or the sync
 collision-merge algorithm (build-phase / F10) — it locks the **contract + invariants**, not the runtime.
 
 **3.3 Shipped types are fully configured.** Every _identified_ sub-type ships with all 4 dimensions authored

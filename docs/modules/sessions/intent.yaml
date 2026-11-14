@@ -196,7 +196,7 @@
 # surface_notification as additive). contribute_purpose_metric is retired by Victor's 2026-11-09 decision
 # (LIF-521, PG-37): it is still in the enum, the CHECK and the class map on main, and ADR-004 is amended here.
 - id: EF-5
-  says: Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time; the catalogue is ADR-004's base types plus ADR-012's four economy and notification types, without contribute_purpose_metric.
+  says: Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time, and the catalogue is ADR-004's base types plus ADR-012's four economy and notification types. contribute_purpose_metric is retired, because no module pushes progress into Purposes, which reads each related entity through that entity's service and computes the day's progress (PG-37); the type leaves the enum, the database check and the class map, and its emits go from Tasks, Habits and Routines.
   work: LIF-521
 # EF-6: BR-6 (ADR-004 §3.2.5 taxonomy, projection).
 - id: EF-6
@@ -226,13 +226,14 @@
   says: A module's registered effect handlers are its documented write interface for effects; each validates the caller's scope, the consent envelope and the payload before any write, and a failure is a typed rejection with no partial write, never a silent skip.
   uses: [finance, gamification, notifications, tasks]
   work: LIF-448
-# EF-11: ADR-004 §3.2.4 and §3.2.5-A3 with BR-8's Deferred list (the gate's invocation, consent-threading).
-# On main nothing calls assertEffectPermitted, and EffectEvent carries no consent.
+# EF-11: ADR-004 §3.2.4 (amended this run) and §3.2.5-A3, with BR-8's Deferred list (the gate's invocation,
+# consent-threading). The two modes: Victor 2026-11-13. On main nothing calls assertEffectPermitted, and
+# EffectEvent carries no consent.
 - id: EF-11
-  says: The Finance and Health handlers call the consent gate before any write, with the producer's consented set carried to them (a session's sensitive_optins, a user capability's grant); an unconsented sensitive effect is rejected with no write.
+  says: A sensitive effect (Finance, Health) has a consent mode, override applying it under the user's standing consent and ask prompting the user every time its conditions are met; an asked effect writes nothing and has no ledger row until the user says yes, then applies through replay, and a no records it as declined, never applied. The Finance and Health handlers call the consent gate before any write, with the producer's consent carried to them.
   uses: [finance, health, spaces]
   work: LIF-614
-  open: Where the consent rides (an event field or the dispatch context), and whether a shipped producer passes a full set or skips the gate.
+  open: Where the consent and its mode ride (an event field or the dispatch context), where an asked effect waits and a decline is recorded, and which surface asks.
 # EF-12: ADR-004 §3.2.5-B1, B3 and its owed schema (ADR-002 §5.20). Built on consequence_ledger and
 # notifications; missing on transactions (move_money) and task_time_logs (log_time), flag LIF-615.
 - id: EF-12
@@ -244,10 +245,11 @@
   says: When two devices' output rows collide on the same effect_event_id at sync, the sync layer merges them into one outcome instead of failing; the rail supplies the key, never the merge.
   uses: [sync]
   work: LIF-98
-# EF-14: the F1/D1 guarded-write spec's BR-5 (ratified 2026-07-16), not carried into ADR-004's text.
+# EF-14: the F1/D1 guarded-write spec's BR-5 (ratified 2026-07-16), now ADR-004 §3.2.5-B5 with the server
+# product's cases (Victor 2026-11-13; SV-17, SV-32, SV-33, ADR-014 §3.1a). The hand-off is EF-20.
 - id: EF-14
-  says: Effects are applied only by the device that originates the lifecycle event; a device that receives a synced output row never fires its effects again.
-  uses: [sync]
+  says: Effects are applied by the device that originates the lifecycle event, and a device that receives a synced output row never fires its effects again; for the server's background work the device that opens the sealed result and writes the rows is the origin, and the server never applies, opens or merges an effect.
+  uses: [sync, integrations]
   work: LIF-98
 # EF-15: ADR-004 §3.2.5-C (D1-c, INT-2). Enforcement differs by trust tier: user code has no ambient database
 # access (CB-10), shipped code is held by structure, review and the CI guard (LIF-362, moved to Sessions).
@@ -270,13 +272,19 @@
 - id: EF-18
   says: A fan-out of several effects is replay-safe, not all-or-none; each effect owns its transaction and ledger row, and a failure part-way is recovered by replaying the event, never by rolling back the effects already applied.
   work: LIF-613
-# EF-19: the derive() hash (ADR-011 §3.8, build-phase; ADR-004 §3.2.5 "does not pick the derive() hash").
-# The id rides synced output rows (EF-12), so its form is fixed before sync activates.
+# EF-19: the derive() hash (ADR-011 §3.8, build-phase; ADR-004 §3.2.5 "does not yet pick"). Victor 2026-11-13: an
+# architecture question that drifts if mishandled, so it is one decision (LIF-617, blocking LIF-615 and LIF-98), and
+# foundation/effects/event-id.ts is in checks.oneWayDoor.
 - id: EF-19
-  says: Before sync activates, the effect_event_id's final form is chosen (a hash of the canonical string); it changes only the representation, never which events share an id.
+  says: The effect_event_id's final form is one architecture decision, recorded in ADR-004 §3.2.5 before any output row stores it under a unique constraint or sync activates; the derivation is a one-way door, and it changes only the representation, never which events share an id.
   uses: [sync]
-  work: LIF-98
-  open: Which hash, and whether rows written in the canonical form are rewritten or kept.
+  work: LIF-617
+  open: Which form (the canonical string kept, a fixed-length hash of it, a name-based identifier), and whether rows already stored are rewritten.
+# EF-20: ADR-004 §3.2.5-B5 (Victor 2026-11-13): effects work on the user's other devices through their own server.
+- id: EF-20
+  says: An effect whose target is bound to another of the user's devices is sealed to the account's public key with its effect_event_id and relayed by the user's server, and the first device able to apply it does, once per that id; with no server it waits on the origin device and travels with sync, and a missing handler is never a hand-off.
+  uses: [sync, integrations, encryption]
+  work: LIF-618
 
 # Consumers with no EF row (each in its own ledger): the handlers (GM-21 award_xp, ECO-6…8 grant and lock,
 # FN-16 move_money, NF-16 and NF-22 surface_notification, HB-29 complete_habit_occurrence, MS-5 the signal),

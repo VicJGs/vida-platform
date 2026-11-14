@@ -220,7 +220,8 @@
       "packages/core/src/db/schema/",
       "packages/core/src/db/migrations/",
       "packages/core/src/encryption/",
-      "packages/core/src/sync/"
+      "packages/core/src/sync/",
+      "packages/core/src/foundation/effects/event-id.ts"
     ],
     "archiveAllow": [
       {

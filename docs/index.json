@@ -3288,11 +3288,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "The Finance and Health handlers call the consent gate before any write, with the producer's consented set carried to them (a session's sensitive_optins, a user capability's grant); an unconsented sensitive effect is rejected with no write.",
+      "summary": "A sensitive effect (Finance, Health) has a consent mode, override applying it under the user's standing consent and ask prompting the user every time its conditions are met; an asked effect writes nothing and has no ledger row until the user says yes, then applies through replay, and a no records it as declined, never applied. The Finance and Health handlers call the consent gate before any write, with the producer's consent carried to them.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 136,
+      "tokens": 193,
       "path": "docs/modules/sessions/intent/EF-11.md"
     },
     {
@@ -3327,11 +3327,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Effects are applied only by the device that originates the lifecycle event; a device that receives a synced output row never fires its effects again.",
+      "summary": "Effects are applied by the device that originates the lifecycle event, and a device that receives a synced output row never fires its effects again; for the server's background work the device that opens the sealed result and writes the rows is the origin, and the server never applies, opens or merges an effect.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 73,
+      "tokens": 117,
       "path": "docs/modules/sessions/intent/EF-14.md"
     },
     {
@@ -3392,11 +3392,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Before sync activates, the effect_event_id's final form is chosen (a hash of the canonical string); it changes only the representation, never which events share an id.",
+      "summary": "The effect_event_id's final form is one architecture decision, recorded in ADR-004 §3.2.5 before any output row stores it under a unique constraint or sync activates; the derivation is a one-way door, and it changes only the representation, never which events share an id.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 100,
+      "tokens": 140,
       "path": "docs/modules/sessions/intent/EF-19.md"
     },
     {
@@ -3411,6 +3411,19 @@
       ],
       "tokens": 83,
       "path": "docs/modules/sessions/intent/EF-2.md"
+    },
+    {
+      "id": "EF-20",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "An effect whose target is bound to another of the user's devices is sealed to the account's public key with its effect_event_id and relayed by the user's server, and the first device able to apply it does, once per that id; with no server it waits on the origin device and travels with sync, and a missing handler is never a hand-off.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/sessions/intent/EF-20.md"
     },
     {
       "id": "EF-3",
@@ -3444,11 +3457,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time; the catalogue is ADR-004's base types plus ADR-012's four economy and notification types, without contribute_purpose_metric.",
+      "summary": "Every effect type in the catalogue has exactly one class (keyed, additive, projection or intra-realm), enforced at compile time, and the catalogue is ADR-004's base types plus ADR-012's four economy and notification types. contribute_purpose_metric is retired, because no module pushes progress into Purposes, which reads each related entity through that entity's service and computes the day's progress (PG-37); the type leaves the enum, the database check and the class map, and its emits go from Tasks, Habits and Routines.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 95,
+      "tokens": 164,
       "path": "docs/modules/sessions/intent/EF-5.md"
     },
     {
@@ -6621,11 +6634,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sessions: 59 rows, 3 tested, 5 partly tested, 51 intent only.",
+      "summary": "Intended rules of sessions: 60 rows, 3 tested, 5 partly tested, 52 intent only.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 211,
+      "tokens": 213,
       "path": "docs/modules/sessions/intent.md"
     },
     {
