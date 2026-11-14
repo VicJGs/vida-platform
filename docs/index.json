@@ -3652,7 +3652,7 @@
       "module": "encryption",
       "status": "active",
       "supersedes": [],
-      "summary": "Three layers encrypt the vault; the whole database file at rest (SQLCipher), each field marked encrypted inside the database (field-level), and each row as one opaque blob in transit and on the server (the sync blob).",
+      "summary": "Three layers encrypt the vault: the whole database file at rest (SQLCipher), each field marked encrypted inside the database (field-level), and each row as one opaque blob in transit and on the server (the sync blob).",
       "anchors": [
         "docs/modules/encryption/intent.yaml"
       ],
@@ -3704,11 +3704,11 @@
       "module": "encryption",
       "status": "active",
       "supersedes": [],
-      "summary": "Search over encrypted text uses standalone search tables fed decrypted plaintext, built in a store that doesn't persist when the vault unlocks and torn down when it locks, with temporary storage kept in memory.",
+      "summary": "Search over encrypted text uses standalone search tables fed decrypted plaintext, built when the vault unlocks, in a store that doesn't persist, and torn down when it locks, with temporary storage kept in memory.",
       "anchors": [
         "docs/modules/encryption/intent.yaml"
       ],
-      "tokens": 85,
+      "tokens": 86,
       "path": "docs/modules/encryption/intent/EN-13.md"
     },
     {
@@ -3964,7 +3964,7 @@
       "module": "encryption",
       "status": "active",
       "supersedes": [],
-      "summary": "Vida tells the user plainly what encryption doesn't protect; malware on the device, an account key they share, a device left unlocked, and the metadata a server sees (counts, times, devices).",
+      "summary": "Vida tells the user plainly what encryption doesn't protect: malware on the device, an account key they share, a device left unlocked, and the metadata a server sees (counts, times, devices).",
       "anchors": [
         "docs/modules/encryption/intent.yaml"
       ],
