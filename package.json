@@ -42,7 +42,7 @@
   },
   "checks": {
     "ruleId": "BR-(?:[A-Z]+-)?(?:[SE]\\d+-)?\\d+[a-z]?",
-    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG|AX|SH|DSG|SV|SY|GR|BL|EDT)-\\d+",
+    "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG|AX|SH|DSG|SV|SY|GR|BL|EDT|EF)-\\d+",
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
@@ -220,7 +220,8 @@
       "packages/core/src/db/schema/",
       "packages/core/src/db/migrations/",
       "packages/core/src/encryption/",
-      "packages/core/src/sync/"
+      "packages/core/src/sync/",
+      "packages/core/src/foundation/effects/event-id.ts"
     ],
     "archiveAllow": [
       {
