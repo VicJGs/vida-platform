@@ -22,5 +22,6 @@ order; `CreateViewInput.grouping` accepts `null`], M1.0 empty-[E] pass-through) 
 ships EMPTY) + `ViewEngine.resolve` (V3 cross-type resolution: ungrouped bucket, never-drop; V5 terminal states).
 Real read-providers register per-module at their build — **first registrant: tasks** (`services/tasks`
 `registerTasksReadProvider`, S8; its tests drive `resolve` end-to-end incl. nested-tag membership). Nav placement /
-pin / order of views = Preferences (ADR-007 §3.5), never a `views` column. Deferred: predicate-DSL grammar
-(incl. a multi-tag intersection combinator) + per-layout visual specs (build-time).
+pin / order of views = Preferences (ADR-007 §3.5), never a `views` column. Decided, not built: the filter
+grammar with tags any/all/none, provider capabilities, layout roles, grouping/sort shapes (ADR-007 §3.6–§3.9, LIF-358 +
+LIF-399). Per-layout visual specs stay build-time.

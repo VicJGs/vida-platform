@@ -7,6 +7,7 @@
 **Tags:** architecture · data model · extensibility · personalization
 **Builds on:** [ADR-006](ADR-006-spaces-foundation-universal-tags.md) (a view filters on `entity_tags`; a Space-owned view points at `spaces`) · Journals J2 provider registry + Sessions `dueIn()` (the per-module read-API pattern a cross-module view reuses) · INT-1 (no direct cross-module table reads)
 **Amends:** ADR-002 — adds the `views` table; retires the INTENDED `task_views` (Tasks) and the per-module "custom views" store (Preferences), generalized into this one primitive.
+**Amended:** 2026-11-15 (LIF-358, LIF-399, LIF-400; Victor) — the views pass this ADR deferred. Added **§3.6** (the filter grammar, with tags as the shared vocabulary every provider honours), **§3.7** (provider capabilities: the fields, operators and roles each provider advertises), **§3.8** (per-layout field roles), **§3.9** (grouping and sort shapes, the tasks 12→7 mapping and the calendar ranges, Living as lanes) and **§3.10** (the Global Calendar is a page of saved views: §3.5 stands). §6 records the fired trigger and the open budget question. The stored filter, grouping and sort shapes are a one-way door: existing rows are read through the compatibility rules in §3.6 and §3.9.
 
 ---
 
@@ -106,9 +107,131 @@ intake SP9-CONFIRMED; SP3]`
 success**; empty and provider-error are first-class rendered states, specified at the contract level, not here.
 
 **What this decision does NOT do:** it does not design each layout's visual/interaction spec (build-time views
-pass, per the standing "per-module VIEWS review" flag); it does not define the predicate DSL's full grammar (a
-build-time detail); it does not build the provider registry (it _reuses_ Journals'/Sessions' pattern — wiring is
-per-module at build).
+pass, per the standing "per-module VIEWS review" flag); it does not build the provider registry (it _reuses_
+Journals'/Sessions' pattern — wiring is per-module at build). _The predicate grammar, deferred here in July, is
+decided in §3.6 (amended 2026-11-15)._
+
+> **Amended 2026-11-15 (LIF-358, LIF-399, LIF-400).** §3.6–§3.10 below are the views pass that §3.3 and C8 left
+> open. They decide shapes only; the build is LIF-358 (grammar + capabilities), LIF-399 (roles, grouping, mapping),
+> LIF-567 (defaults + surface) and LIF-624 (the Calendar page on saved views).
+
+**3.6 The filter grammar (VW-8).** A view's `filter` JSON has these keys (`lanes` is §3.9's Living):
+
+```text
+filter = { entity_types: string[], tags?: TagClause, where?: Clause[], exclude_unsupported?: boolean, lanes?: viewId[] }
+
+TagClause  = { any?: tagId[], all?: tagId[], none?: tagId[] }
+Clause     = Comparison | { any: Clause[] } | { not: Clause }
+Comparison = { field: string, op: Op, value?: Value }
+Op         = eq · ne · in · lt · lte · gt · gte · between · exists · contains
+Value      = a literal · a list (in, between) · a relative date { rel: 'today', days?: number }
+```
+
+1. **Tags are the shared vocabulary (Victor, 2026-11-15).** Every module gets views and tags so nothing is left
+   behind, and tags are what let one view understand every module's data. So every provider applies `tags` the same
+   way, and it is not an optional capability: membership always includes nested tags (ADR-006); `any` is a union,
+   `all` an intersection (the multi-tag combinator C8 deferred), `none` an exclusion; the three combine with AND.
+2. **`where` is a list of conjuncts** (AND). A conjunct is one comparison or an `any`/`not` group. `field` is either
+   a provider field (`status`, `priority`) or a shared role written with `@` (`@date`, `@title`, §3.8), so a date
+   range written once narrows every dated type (the §3.3.4 example).
+3. **Relative dates** make time-based views durable: "Today" stores `{ field: '@date', op: 'lte', value: { rel:
+'today' } }`, resolved at read time in the user's timezone. Today a preset must store a per-day literal
+   (`due_before`), which goes stale overnight.
+4. **Compatibility.** A stored `tags: string[]` reads as `{ any: [...] }`. A stored `predicates: { k: v }` reads as
+   one `eq` conjunct per key on the provider's field `k`, except the keys a provider declares as legacy aliases (Tasks:
+   `due_before` → `{ field: 'due_date', op: 'lt' }`). LIF-358 rewrites the shipped presets and migrates stored rows to
+   the new keys; the read path keeps the compatibility rules so no saved view stops filtering.
+5. Field names, operators and roles are references, not secrets. Comparison values the user typed are user content
+   and encrypt per EN-2, as §3.3 already says for predicate values (VW-5).
+
+**3.7 Provider capabilities (VW-8).** A `ReadProvider` advertises what it understands next to `list()`:
+
+```text
+capabilities = { fields: { [name]: { type, ops: Op[] } }, roles: { [role]: fieldName }, aliases?: { [legacyKey]: Comparison } }
+```
+
+The engine reads the capabilities before it fans out. For each selected type:
+
+1. A conjunct whose fields and operators the provider supports is applied by that provider.
+2. A conjunct it can't apply is **ignored for that type** (the §3.3.4 default) and named in `ResolvedView.degraded`
+   (for example `status ignored for event`), so the user sees why a type is unfiltered. Ignoring works per conjunct:
+   an `any` or `not` group is applied whole or ignored whole, never half-evaluated.
+3. With `exclude_unsupported: true` (the §3.3.4 opt-in), a type that would ignore any conjunct contributes no rows,
+   and `degraded` says so.
+4. `tags` is never ignored: a provider must implement it to register.
+
+The engine fans out to providers concurrently, not one by one: a view is as slow as its slowest provider, not
+their sum (§5).
+
+**3.8 Layout field roles (VW-9).** A layout needs **roles**, not module fields; each provider maps its own fields
+onto the roles in `capabilities.roles` (Tasks: `@date` → `due_date`, falling back to `scheduled_date`). The roles are
+`@title`, `@date` (a calendar day), `@start` and `@end` (clock times), `@cover` (an image), `@parent` (hierarchy) and
+`@links` (connections between entities).
+
+| Layout   | Needs                       | Uses when present                         |
+| -------- | --------------------------- | ----------------------------------------- |
+| list     | `@title`                    | `@date`, `@parent` (indent)               |
+| table    | `@title`                    | any advertised field as a column          |
+| board    | `@title` + a grouping field | `@cover`                                  |
+| gallery  | `@title`                    | `@cover` (a title card without one)       |
+| calendar | `@date` or `@start`         | `@end`; `@start`/`@end` make timed blocks |
+| graph    | `@title` + `@links`         | `@cover`                                  |
+| timeline | `@date` or `@start`         | `@end` (a span, not a point)              |
+
+A type that lacks a layout's needed roles is left out of that layout with a `degraded` note, never a crash; when no
+selected type has them, the layout is unavailable in the switcher. The renderers already take these as accessors
+(`getDate`, `getKey`, `getWeight`), so a role is the accessor's source.
+
+**3.9 Grouping and sort, the tasks mapping and the calendar ranges (VW-9).** `grouping` and `sort` grow from one
+field to the shapes the twelve task layouts and the six calendar ranges need:
+
+```text
+grouping = { field?: name|@role, cross_field?: name|@role, nest?: boolean, span?: 'day'|'week'|'month'|'year' }
+sort     = { keys: [{ field: name|@role, dir: 'asc'|'desc' }], limit?: number }
+```
+
+`field` groups (board columns, list sections); `cross_field` adds the second axis (board rows); `nest` groups by
+`@parent` (a tree); `span` is the period a dated layout shows around the focused day, and the focused day itself is
+navigation, never stored. A stored `{ field }` keeps its meaning.
+
+**The twelve task layouts on the seven (TK-20).** No task layout needs an eighth layout, so `views.layout` keeps its
+seven values:
+
+| Task layout         | View                                                             |
+| ------------------- | ---------------------------------------------------------------- |
+| List                | list                                                             |
+| Grouped             | list + `grouping.field`                                          |
+| Board / Kanban      | board + `field: status`                                          |
+| Calendar            | calendar + `span: month`                                         |
+| Today / Agenda      | list + `where @date lte today` + open                            |
+| Table               | table                                                            |
+| Timeline / Gantt    | timeline (`@start`/`@end`)                                       |
+| Tree / Outline      | list + `nest: true`                                              |
+| Matrix / Eisenhower | board + `field: priority` + `cross_field` on an urgency field    |
+| Swimlanes           | board + `field: status` + `cross_field` (project, assignee …)    |
+| Focus / Now         | list + open + `sort` by priority then due + `limit` (one or few) |
+| Gallery / Cards     | gallery                                                          |
+
+Matrix needs Tasks to advertise a derived urgency field (due within a window); that is LIF-399's build detail.
+
+**The six calendar ranges.** Year, Month, Week and Day are the `calendar` layout with `span` set; Week and Day draw
+`@start`/`@end` items as timed blocks and `@date`-only items in the all-day strip. Agenda is a list over `@date`
+with `span: week`, grouped by day.
+
+**Living is lanes, not an eighth layout.** Living (the week read as record, live and intention, with habit threads,
+purpose hours, open time and slipping tasks) is a `calendar` view with `span: week` whose `filter.lanes` lists other
+saved views, each resolved on its own and drawn as one lane of the week. Each lane (habit threads, the week's hours
+by purpose, today's open time, slipping tasks, the past day's record, a future day's intention) is a saved view of
+its own, so it can be cloned, edited, and used in a Space or another view: that's what makes calendar views volatile
+(Victor, 2026-11-15). Past, today and future are the renderer's temporal state, as the timeline already draws them.
+A lane is a reference: cloning a Living view copies the lane list, not the lane views.
+
+**3.10 The Global Calendar is a page of saved views: §3.5 stands (LIF-400).** The Calendar keeps its own page in nav
+(CL-1), and every range on it is a saved view: a `views` row resolved through the engine and the providers, tags
+included, with its six ranges shipped as default views (VW-7). A run-30 ledger line (2026-11-11, CL-22) said the
+Calendar is a lens of its own rather than a saved view; Victor withdrew it on 2026-11-15 as drift. The built page
+still reads ten hard-coded lanes from five services and keeps its range as UI state; rebuilding it on saved views is
+LIF-624, and one calendar renderer then serves the page, Spaces and other views.
 
 ## 4. Options Considered
 
@@ -155,3 +278,9 @@ per-module at build).
 Reconsider when the **Global Calendar** or the **first vision-board Gallery** is built — the first real cross-module
 view and the first imagery-first layout. If fan-out-over-providers cannot meet the interaction budget for a
 many-type view, revisit whether a bounded read-model (still provider-fed, INT-1-safe) is needed for that case.
+
+**Fired 2026-11-15 (LIF-400).** The Global Calendar is built (LIF-203). The review kept §3.5 (§3.10) and decided the
+views pass (§3.6–§3.9). One question stays open, and LIF-400 answers it with a measurement: does concurrent fan-out
+hold an interaction budget for a many-type view? No budget is written down anywhere in Vida yet, so LIF-400 sets one
+and measures the Living default view (every lane) on a seeded vault. If it fails, the answer is a bounded read model,
+still provider-fed (INT-1), for that case only. The vision-board Gallery trigger still stands.
