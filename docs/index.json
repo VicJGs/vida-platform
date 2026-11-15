@@ -1487,11 +1487,11 @@
       "module": "calendar",
       "status": "active",
       "supersedes": [],
-      "summary": "The Global Calendar is a Vida feature of its own with its own page, owned by no module; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.",
+      "summary": "The Global Calendar is a Vida feature of its own with its own page, owned by no module, whose ranges are saved views; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.",
       "anchors": [
         "docs/modules/calendar/intent.yaml"
       ],
-      "tokens": 105,
+      "tokens": 112,
       "path": "docs/modules/calendar/intent/CL-1.md"
     },
     {
@@ -1658,11 +1658,11 @@
       "module": "calendar",
       "status": "active",
       "supersedes": [],
-      "summary": "The Calendar keeps its own page and lens rather than being a saved view; the calendar layout of saved views is separate, and ADR-007 §3.5 and its review trigger are amended to say so, including whether provider fan-out holds its interaction budget.",
+      "summary": "Every Calendar range is a saved view resolved through the views engine, the providers and tags, shipped as a default view the user can edit, clone and use in a Space or another view; Living is a week of lanes, each lane a saved view of its own.",
       "anchors": [
         "docs/modules/calendar/intent.yaml"
       ],
-      "tokens": 99,
+      "tokens": 101,
       "path": "docs/modules/calendar/intent/CL-22.md"
     },
     {
@@ -14074,11 +14074,11 @@
       "module": "spaces",
       "status": "active",
       "supersedes": [],
-      "summary": "A view's predicates follow one grammar (including a multi-tag intersection), each provider advertises the predicates it supports, and a predicate a provider doesn't support is ignored for that type, never silently dropping it, unless the view opts to exclude it.",
+      "summary": "A view's filter follows one grammar (ADR-007 §3.6) whose tags every provider applies the same way (nested, any, all, none), each provider advertises the fields, operators and roles it supports (§3.7), and a condition a provider can't apply is ignored for that type and named in degraded, never dropping the type, unless the view opts to exclude it.",
       "anchors": [
         "docs/modules/spaces/intent.yaml"
       ],
-      "tokens": 97,
+      "tokens": 119,
       "path": "docs/modules/spaces/intent/VW-8.md"
     },
     {
@@ -14087,11 +14087,11 @@
       "module": "spaces",
       "status": "active",
       "supersedes": [],
-      "summary": "Each layout declares the entity fields it needs, and the task layouts map onto the seven layouts as layout, filter and grouping configs.",
+      "summary": "Each layout declares the roles it needs and a type without them degrades (ADR-007 §3.8), and the twelve task layouts and the six calendar ranges map onto the seven layouts as layout, filter, grouping and sort configs, Living as lanes of saved views (§3.9).",
       "anchors": [
         "docs/modules/spaces/intent.yaml"
       ],
-      "tokens": 71,
+      "tokens": 101,
       "path": "docs/modules/spaces/intent/VW-9.md"
     }
   ]

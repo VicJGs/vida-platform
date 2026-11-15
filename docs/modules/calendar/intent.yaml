@@ -6,8 +6,8 @@
 # renders and never writes; a check, a move, slotting open time or reserving a slot runs the owning module's
 # capability, composed in, and the Calendar owns no table. Sessions' Planner writes placed blocks, the Calendar reads
 # them (the July Sessions intake, resolved 07-10). Events stay each module's own, and the same event held by two
-# modules is connected by a link. The Calendar keeps its own page and lens; the calendar layout of saved views
-# (VW-3) is a separate thing that Spaces and modules use, so ADR-007 §3.5 is amended (LIF-400).
+# modules is connected by a link. The Calendar keeps its own page, and every range on it is a saved view (ADR-007
+# §3.5 stands, §3.10; Victor 2026-11-15 withdrew the run-30 "own lens" line as drift, LIF-400). Rebuild: LIF-624.
 # Sources: the Calendar code and tests, the Global Calendar lines in features/sessions-and-scheduling (identity
 # 46-47, contract 25/36/60/64), IA §5, ADR-007, LIF-203, 439, 454 and 147, the archived fe-calendar task (read with
 # Victor's OK at this run: the vision, envision, interpretation, slice-map, seam contract and the S2…S7 plans) and
@@ -27,7 +27,7 @@
 
 # The feature and its invariant.
 - id: CL-1
-  says: The Global Calendar is a Vida feature of its own with its own page, owned by no module; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.
+  says: The Global Calendar is a Vida feature of its own with its own page, owned by no module, whose ranges are saved views; it is the book of the user's life read by date, showing every module's dated items in six ranges (Year, Month, Week, Day, Agenda, Living), and it owns no table and stores no copy.
   uses: [sessions, views]
   work: LIF-467
 # BR-CAL-S7-6 (tested); BR-CAL-S2-6, S2-11, S3-14, S5-14; EC-12.
@@ -134,8 +134,8 @@
   says: Outside calendars (a class schedule feed, external appointments) arrive through Integrations into the module that owns them and render on the Calendar like any lane, and the Calendar can be exported as a feed; on the localhost product there is no server, so a fetch runs on the device.
   uses: [integrations, learning, ED-6]
   work: LIF-147
-# Victor 2026-11-11; ADR-007 §3.5 and §6, LIF-400.
+# Victor 2026-11-15 (LIF-400): reworded from the run-30 line (2026-11-11), withdrawn as drift. ADR-007 §3.9, §3.10.
 - id: CL-22
-  says: The Calendar keeps its own page and lens rather than being a saved view; the calendar layout of saved views is separate, and ADR-007 §3.5 and its review trigger are amended to say so, including whether provider fan-out holds its interaction budget.
-  uses: [views, VW-3]
-  work: LIF-400
+  says: Every Calendar range is a saved view resolved through the views engine, the providers and tags, shipped as a default view the user can edit, clone and use in a Space or another view; Living is a week of lanes, each lane a saved view of its own.
+  uses: [views, VW-7, VW-8, VW-9]
+  work: LIF-624
