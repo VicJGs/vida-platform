@@ -6,12 +6,12 @@ status: active
 supersedes: []
 summary: "Intended rules of gamification: 46 rows, 2 tested, 0 partly tested, 44 intent only."
 anchors: [docs/modules/gamification/intent.yaml]
-tokens: 177
+tokens: 185
 generated: true
 ---
 # Intended rules: gamification
 
-Generated from `docs/modules/gamification/intent.yaml`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under `packages/core/src/services/gamification`, `packages/core/src/foundation/economy` is named with its row key, or with each of its proof rules.
+Generated from `docs/modules/gamification/intent.yaml`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under `packages/core/src/services/gamification`, `packages/core/src/foundation/economy`, `apps/web/src/gamification` is named with its row key, or with each of its proof rules.
 
 - Tested: GM-2, GM-14
 - Partly tested: none

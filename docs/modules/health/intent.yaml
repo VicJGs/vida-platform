@@ -317,12 +317,13 @@
   says: The Health module toggle and the dietary defaults are Preferences keys that Health reads.
   uses: [preferences]
   work: LIF-126
-# HC-36 (Victor, 2026-11-11): the anchor for HC-20, HC-27, HN-2 and HT-14. Tasks has only the standard or obligation
-# kind today (TK-21), and user-defined types wait for the Spaces run (RT-31).
+# HC-36 (Victor, 2026-11-11): the anchor for HC-20, HC-27, HN-2 and HT-14. The Spaces run settled the model: Tasks
+# owns a type registry beside the kind (TK-27, LIF-566), and Spaces owns the grouping (SPC-10, LIF-564). Neither is
+# built; Tasks has only the standard or obligation kind today.
 - id: HC-36
   says: Health builds on other modules' entities instead of copying them; a workout is a session of a Health type, an exam occurrence and a planned meal are tasks of a Health type, each tracked Health's way with the fields and features the base entity lacks, and habits, routines and the other modules attach and link to Health entities (a supplement or medication habit, a routine's exercise step) as they do to any entity.
-  uses: [sessions, SS-1, SS-5, tasks, TK-21, habits, routines, RT-3, spaces, RT-31]
-  open: Task, session and habit types don't exist as user or module types yet; the Spaces run settles them first (RT-31), then this row and LIF-551 are revisited.
+  uses: [sessions, SS-1, SS-5, tasks, TK-27, habits, routines, RT-3, spaces, SPC-10, RT-31]
+  open: Task, session and habit types are designed (TK-27, SPC-10) and not built, so an exam, a meal and a workout can't be typed yet; LIF-551 lands after the type registries.
   work: LIF-551
 
 # Proposed IDs, no ID in docs/features/health/nutrition today (approve in the PR)
@@ -358,6 +359,6 @@
 # Designed only: Notifications' Health reminders, deload alerts and safety flags (HC-15, HC-27, HT-6), Skills' role and
 # cooking bindings (HC-9, HN-14, the skills run), Knowledge's technique links (exercises.knowledge_object_id,
 # physical_roles.knowledge_subject_id) and protocol kind (HC-12), Finance's costs (HN-7), wearables (HC-22, LIF-144).
-# The README's Duties and Obligations stub has no module in LIF-426; its assigned exams and meals are typed tasks
-# (obligations when they recur, HC-36), and its workouts are typed sessions. Every Health entity is a
+# The README's Duties and Obligations stub is Tasks' types (TK-27; Victor, 2026-11-11, on the Spaces run): its
+# assigned exams and meals are typed tasks (obligations when they recur, HC-36), and its workouts are typed sessions. Every Health entity is a
 # potential Gamification rule subject (GM-36, HC-28); no module is ruled out.

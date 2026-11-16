@@ -6105,7 +6105,7 @@
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 197,
+      "tokens": 202,
       "path": "docs/modules/health/intent/HC-36.md"
     },
     {
@@ -6885,7 +6885,7 @@
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 177,
+      "tokens": 185,
       "path": "docs/modules/gamification/intent.md"
     },
     {
@@ -7002,7 +7002,7 @@
       "anchors": [
         "docs/modules/notifications/intent.yaml"
       ],
-      "tokens": 163,
+      "tokens": 171,
       "path": "docs/modules/notifications/intent.md"
     },
     {
