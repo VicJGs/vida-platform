@@ -97,6 +97,11 @@
   says: Sessions ships the study sub_type, fully configured in all four dimensions, as the scheduling engine's own generated sessions; focus and study are the shipped roster.
   proof: [BR-15]
   work: LIF-442
+# SS-23: proposed (LIF-489 item 4, 2026-11-16). PD-17's surface_journal is a projection, so something has to pull it.
+- id: SS-23
+  says: Sessions' journal contribution answers a date with the sessions completed that day, so the daily focus feed that surface_journal projects into (PD-17) has a provider to read, empty on an idle day; it is registered into the journal registry through a Sessions journal registration helper, which does not exist yet.
+  uses: [journals, JR-11, PD-17]
+  work: LIF-112
 
 # Invariants: Pomodoro, placement and ownership (docs/features/pomodoro/business-rules.md)
 - id: PD-1

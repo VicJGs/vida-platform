@@ -4560,6 +4560,19 @@
       "path": "docs/modules/finance/intent/FN-18.md"
     },
     {
+      "id": "FN-19",
+      "kind": "intent-row",
+      "module": "finance",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finance's journal contribution answers a date with that day's transactions and a net worth snapshot with its partial flag, empty when there is no finance data, and answers an agenda range with the upcoming liability and income installments from their next payment dates; it is registered into the journal registry through registerFinanceJournal.",
+      "anchors": [
+        "docs/modules/finance/intent.yaml"
+      ],
+      "tokens": 120,
+      "path": "docs/modules/finance/intent/FN-19.md"
+    },
+    {
       "id": "FN-2",
       "kind": "intent-row",
       "module": "finance",
@@ -5609,6 +5622,19 @@
       ],
       "tokens": 67,
       "path": "docs/modules/habits/intent/HB-3.md"
+    },
+    {
+      "id": "HB-30",
+      "kind": "intent-row",
+      "module": "habits",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Habits has its own block, the habits block, an inline capability entry; it lists the habits due on a date, optionally filtered by time of day, reads Habits live, and logs or undoes a completion only through the Habits service; on a journal page it shows that day's habits through the Habits journal contribution.",
+      "anchors": [
+        "docs/modules/habits/intent.yaml"
+      ],
+      "tokens": 161,
+      "path": "docs/modules/habits/intent/HB-30.md"
     },
     {
       "id": "HB-4",
@@ -6781,7 +6807,7 @@
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 141,
+      "tokens": 147,
       "path": "docs/modules/books/intent.md"
     },
     {
@@ -6842,11 +6868,11 @@
       "module": "finance",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of finance: 34 rows, 3 tested, 4 partly tested, 27 intent only.",
+      "summary": "Intended rules of finance: 35 rows, 3 tested, 4 partly tested, 28 intent only.",
       "anchors": [
         "docs/modules/finance/intent.yaml"
       ],
-      "tokens": 139,
+      "tokens": 140,
       "path": "docs/modules/finance/intent.md"
     },
     {
@@ -6881,11 +6907,11 @@
       "module": "habits",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of habits: 29 rows, 7 tested, 2 partly tested, 20 intent only.",
+      "summary": "Intended rules of habits: 30 rows, 7 tested, 2 partly tested, 21 intent only.",
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 131,
+      "tokens": 133,
       "path": "docs/modules/habits/intent.md"
     },
     {
@@ -7037,11 +7063,11 @@
       "module": "routines",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of routines: 33 rows, 6 tested, 6 partly tested, 21 intent only.",
+      "summary": "Intended rules of routines: 34 rows, 6 tested, 6 partly tested, 22 intent only.",
       "anchors": [
         "docs/modules/routines/intent.yaml"
       ],
-      "tokens": 140,
+      "tokens": 142,
       "path": "docs/modules/routines/intent.md"
     },
     {
@@ -7050,11 +7076,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sessions: 60 rows, 3 tested, 5 partly tested, 52 intent only.",
+      "summary": "Intended rules of sessions: 61 rows, 3 tested, 5 partly tested, 53 intent only.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 213,
+      "tokens": 215,
       "path": "docs/modules/sessions/intent.md"
     },
     {
@@ -10067,7 +10093,7 @@
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 91,
+      "tokens": 97,
       "path": "docs/modules/projects/intent/PJ-22.md"
     },
     {
@@ -10984,7 +11010,7 @@
       "anchors": [
         "docs/modules/relationships/intent.yaml"
       ],
-      "tokens": 156,
+      "tokens": 160,
       "path": "docs/modules/relationships/intent/RL-5.md"
     },
     {
@@ -11397,6 +11423,19 @@
       ],
       "tokens": 70,
       "path": "docs/modules/routines/intent/RT-33.md"
+    },
+    {
+      "id": "RT-34",
+      "kind": "intent-row",
+      "module": "routines",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Routines has its own blocks (capability entries with an inline target), such as today's routines with their steps to tick or skip; each reads Routines live and writes only through the Routines service, so the journal and any page can show and work on routines; on a journal page they show that day's routines through the Routines journal contribution.",
+      "anchors": [
+        "docs/modules/routines/intent.yaml"
+      ],
+      "tokens": 135,
+      "path": "docs/modules/routines/intent/RT-34.md"
     },
     {
       "id": "RT-4",
@@ -12870,6 +12909,19 @@
       ],
       "tokens": 80,
       "path": "docs/modules/sessions/intent/SS-22.md"
+    },
+    {
+      "id": "SS-23",
+      "kind": "intent-row",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sessions' journal contribution answers a date with the sessions completed that day, so the daily focus feed that surface_journal projects into (PD-17) has a provider to read, empty on an idle day; it is registered into the journal registry through a Sessions journal registration helper, which does not exist yet.",
+      "anchors": [
+        "docs/modules/sessions/intent.yaml"
+      ],
+      "tokens": 118,
+      "path": "docs/modules/sessions/intent/SS-23.md"
     },
     {
       "id": "SS-3",

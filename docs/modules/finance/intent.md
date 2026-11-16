@@ -4,9 +4,9 @@ kind: intent
 module: finance
 status: active
 supersedes: []
-summary: "Intended rules of finance: 34 rows, 3 tested, 4 partly tested, 27 intent only."
+summary: "Intended rules of finance: 35 rows, 3 tested, 4 partly tested, 28 intent only."
 anchors: [docs/modules/finance/intent.yaml]
-tokens: 139
+tokens: 140
 generated: true
 ---
 # Intended rules: finance
@@ -15,4 +15,4 @@ Generated from `docs/modules/finance/intent.yaml`; edit the ledger, never this u
 
 - Tested: FN-3, FN-4, FL-3
 - Partly tested: FN-7, FN-9, FN-10, FN-16
-- Intent only: FN-1, FN-2, FN-5, FN-6, FN-8, FN-11, FN-12, FN-13, FN-14, FN-15, FN-17, FN-18, FL-1, FL-2, FL-4, FL-5, FL-6, FL-7, FL-8, FL-9, FL-10, FL-11, FL-12, FL-13, FL-14, FL-15, FL-16
+- Intent only: FN-1, FN-2, FN-5, FN-6, FN-8, FN-11, FN-12, FN-13, FN-14, FN-15, FN-17, FN-18, FN-19, FL-1, FL-2, FL-4, FL-5, FL-6, FL-7, FL-8, FL-9, FL-10, FL-11, FL-12, FL-13, FL-14, FL-15, FL-16

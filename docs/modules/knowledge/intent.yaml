@@ -210,7 +210,7 @@
   says: Knowledge emits after the write, failure-isolated and dormant without a handler; a recorded review emits award_xp and emit_measurement_signal once per review event, a review with a quality also emits mastery changed, and an object created or a lab concluded reaches the journal by pull only.
   uses: [effects, gamification, GM-21, GM-22, MS-5]
   proof: [BR-KN-S8-1, BR-KN-S8-2, BR-KN-S8-3, BR-KN-S8-4, BR-KN-S8-5]
-# KN-16 counts the day's objects and reviews on the `UTC` day (the LIF-489 question).
+# KN-16 counts the day's objects and reviews on the `UTC` day, not the user's day (G7); the fix is LIF-628.
 - id: KN-16
   says: Knowledge's journal contribution answers a date with the objects added and the reviews recorded that day, empty on an idle day, and is registered through registerKnowledgeJournal.
   uses: [journals, JR-11]

@@ -145,3 +145,9 @@
 - id: RT-33
   says: A driven entity that is missing, terminal or not drivable gives the step a typed error before any routine write; the step stays open and is never marked done silently.
   # proof checks.ruleId can't read yet: BR-RT-S3d-1, BR-RT-S3d-2
+# RT-34 follows the block model (JR-12, JR-20; LIF-493 item 5, 2026-11-16), like TK-26. The editor has no
+# Routines block yet.
+- id: RT-34
+  says: Routines has its own blocks (capability entries with an inline target), such as today's routines with their steps to tick or skip; each reads Routines live and writes only through the Routines service, so the journal and any page can show and work on routines; on a journal page they show that day's routines through the Routines journal contribution.
+  uses: [capabilities, notes, journals, JR-12, JR-20, RT-24]
+  work: LIF-197

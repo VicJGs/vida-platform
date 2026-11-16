@@ -20,11 +20,12 @@
   proof: [BR-RL-S5-2, BR-RL-S5-3]
 # RL-5 is built with the build-phase call the docs allowed: the closeness weight derives from relationship_type
 # plus is_favorite, closeness_tier stays display-only, and the energy fields are not an input. Network health's
-# mean score is the measurement engine's equal-weight rollup in effect; whether it should call rollup is a
-# question in the run-19 findings issue. Health is never a measurement source.
+# mean score is the measurement engine's equal-weight rollup written by hand; it calls rollup instead (Victor,
+# 2026-11-16, LIF-499 item 2), work on LIF-496. Calling rollup doesn't make health a measurement source.
 - id: RL-5
   says: Relationship health is derived on read and never stored; it comes from the time since the last interaction against the cadence and the recent sentiment, weighted by closeness (inner tiers penalize neglect more), banded Healthy, At-risk or Overdue, new for a contact with no interactions, and a network's health aggregates its members. It is a derived analytic, never an ADR-011 pursuable or a measurement source.
   proof: [BR-RL-S6-1, BR-RL-S6-2, BR-RL-S6-3, BR-RL-S6-4]
+  work: LIF-496
 - id: RL-6
   says: Three reminder mechanisms each produce notifications through the Sessions due agenda; the stay-in-touch cadence gives an overdue-to-reach-out nudge, an explicit contact reminder fires one-off or recurring, and a reminder group nudges for its members; Notifications dispatches and Relationships only produces.
   uses: [notifications, sessions, SS-7]

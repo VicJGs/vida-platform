@@ -96,11 +96,12 @@
   says: A project page is a hub; it shows the project's habits, the purposes it contributes to, its dreams, accounts, contacts, events and check-in reviews, each read through its owning module's service.
   uses: [habits, HB-21, purposes, finance, relationships, calendar, check-ins]
   work: LIF-194
-# PJ-22 is deferred to the Knowledge run (LIF-349 checklist line "knowledge + review engine"): a lab entry isn't
-# a registered entity type, so a deliverable can't link one yet.
+# PJ-22 waits on the lab entry as a link target (KN-13, LIF-539): a lab entry isn't a registered entity type,
+# so a deliverable can't link one yet.
 - id: PJ-22
   says: A research or investigation is an artifact deliverable (milestone kind, manual binding) linked to a Knowledge Lab entry; Projects tracks the deliverable, Knowledge holds the exploration, and there is no investigations table.
-  uses: [knowledge, spaces]
+  uses: [knowledge, spaces, KN-13]
+  work: LIF-539
 - id: PJ-23
   says: Completing a project or a milestone emits emit_measurement_signal only, once, after the write, failure-isolated and dormant without a handler; Projects grants no points itself, and Gamification's rule turns the signal into points.
   uses: [effects, gamification]

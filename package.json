@@ -90,7 +90,8 @@
         "packages/core/src/services/relationships"
       ],
       "books": [
-        "packages/core/src/services/books"
+        "packages/core/src/services/books",
+        "apps/web/src/reader"
       ],
       "check-ins": [
         "packages/core/src/services/checkins"
