@@ -70,6 +70,10 @@
 - id: FN-18
   says: Finance has an import and reconcile wizard screen and a bank or broker connection screen.
   work: LIF-143
+# FN-19: proposed, no ID in docs/features (LIF-489 item 3, 2026-11-16; the Finance run predates the consumer step).
+- id: FN-19
+  says: Finance's journal contribution answers a date with that day's transactions and a net worth snapshot with its partial flag, empty when there is no finance data, and answers an agenda range with the upcoming liability and income installments from their next payment dates; it is registered into the journal registry through registerFinanceJournal.
+  uses: [journals, JR-11]
 
 # Fiscal-legal (docs/features/finance/fiscal-legal/business-rules.md)
 - id: FL-1

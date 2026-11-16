@@ -6,12 +6,12 @@ status: active
 supersedes: []
 summary: "Intended rules of books: 35 rows, 4 tested, 2 partly tested, 29 intent only."
 anchors: [docs/modules/books/intent.yaml]
-tokens: 141
+tokens: 147
 generated: true
 ---
 # Intended rules: books
 
-Generated from `docs/modules/books/intent.yaml`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under `packages/core/src/services/books` is named with its row key, or with each of its proof rules.
+Generated from `docs/modules/books/intent.yaml`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under `packages/core/src/services/books`, `apps/web/src/reader` is named with its row key, or with each of its proof rules.
 
 - Tested: BK-2, BK-6, BK-12, BK-17
 - Partly tested: BK-4, BK-5

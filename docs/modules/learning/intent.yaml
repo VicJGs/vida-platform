@@ -163,7 +163,8 @@
   proof: [BR-LE-S10-3]
   work: LIF-545
 # ED-26/27: the block model (JR-12, JR-20). The contribution is built (S10) and unregistered (the root composes no
-# Education). Its journal.ts still frames it as /summary (the LIF-489 item 10 pattern); the digest reads the UTC day.
+# Education). Its journal.ts still frames it as /summary (the LIF-489 item 10 pattern); the digest reads the UTC day
+# (the user's day is G7; the fix is LIF-628).
 - id: ED-26
   says: Education's journal contribution reports the day's class sessions and due assessments, live and read on demand, and the journal registers it once the root composes Education.
   uses: [journals, JR-11, JR-12]

@@ -117,3 +117,10 @@
   says: Habits handles complete_habit_occurrence, the effect a session or a consequence fires to complete a habit occurrence; the handler logs it through the Habits completion path as one keyed write per habit and date, so the streak and the habit's own effects move once, and a missing habit or a date beyond the backfill window fails loudly; a habit's own completion never fires it.
   uses: [effects, sessions, gamification]
   work: LIF-481
+# HB-30 follows the block model (JR-12, JR-20; LIF-493 item 5, 2026-11-16), like TK-26. The editor registers
+# habitsBlock as a placeholder with its attributes and no body.
+- id: HB-30
+  says: Habits has its own block, the habits block, an inline capability entry; it lists the habits due on a date, optionally filtered by time of day, reads Habits live, and logs or undoes a completion only through the Habits service; on a journal page it shows that day's habits through the Habits journal contribution.
+  uses: [capabilities, notes, journals, JR-12, JR-20, HB-22]
+  open: The block is an editor placeholder (date and time-of-day attributes, no body), and an editor renderer, not a capability-registry entry.
+  work: LIF-182
