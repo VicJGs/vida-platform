@@ -12,8 +12,8 @@
 
 # Invariants (docs/features/notifications/business-rules.md)
 # NF-1 also covers "not a scheduler, not the Global Calendar": Sessions schedules, the Calendar aggregates,
-# Notifications fires. Whether a Gamification rule can take a notification as its subject (GM-36), when nothing may
-# depend on Notifications, is asked on LIF-538.
+# Notifications fires. A notification is never a Gamification rule subject (Victor, 2026-11-16, LIF-538 item 7): a
+# rule about an ignored reminder subjects the base entity's deadline instead (GM-36), so Notifications stays optional.
 - id: NF-1
   says: Notifications reads every module through seams and writes only its own rows; nothing in Vida depends on it, so it can be switched off and no core function breaks.
   proof: [BR-NT-S1-1, BR-NT-S3-4]

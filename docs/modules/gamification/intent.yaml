@@ -209,7 +209,9 @@
 
 # GM-36 is the System's personalization (Victor, 2026-11-09): the default feeders, emitters and rules are examples.
 # On main a rule's condition is an event-type string or one measure key against a threshold: it can't name an
-# entity, filter on its attributes, or check that something didn't happen.
+# entity, filter on its attributes, or check that something didn't happen. A notification is the one thing that
+# isn't a subject (Victor, 2026-11-16, LIF-538 item 7): penalizing an ignored reminder subjects the reminded entity's
+# deadline, so nothing depends on Notifications (NF-1).
 - id: GM-36
   says: Any entity in Vida can be a rule's subject; the user picks an entity type or one entity from any module (a task, a homework, a grade, a book's pages, a study session, a habit) and rewards or penalizes what they choose, an event that happened, a measure crossing a threshold, or something that didn't happen by a deadline or within a period; the shipped feeders and rules are defaults and examples, never the limit.
   uses: [measurement, MS-6, MS-9, MS-5, effects, capabilities, tasks, habits, routines, projects, books, learning, knowledge, check-ins, finance, health, relationships, purposes, sessions]

@@ -102,11 +102,13 @@
       ],
       "gamification": [
         "packages/core/src/services/gamification",
-        "packages/core/src/foundation/economy"
+        "packages/core/src/foundation/economy",
+        "apps/web/src/gamification"
       ],
       "notifications": [
         "packages/core/src/services/notifications",
-        "packages/core/src/foundation/notifications"
+        "packages/core/src/foundation/notifications",
+        "apps/web/src/notifications"
       ],
       "knowledge": [
         "packages/core/src/services/knowledge",
