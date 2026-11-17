@@ -4,9 +4,9 @@ kind: intent
 module: onboarding
 status: active
 supersedes: []
-summary: "Intended rules of onboarding: 20 rows, 0 tested, 0 partly tested, 20 intent only."
+summary: "Intended rules of onboarding: 21 rows, 0 tested, 0 partly tested, 21 intent only."
 anchors: [docs/modules/onboarding/intent.yaml]
-tokens: 125
+tokens: 127
 generated: true
 ---
 # Intended rules: onboarding
@@ -15,4 +15,4 @@ Generated from `docs/modules/onboarding/intent.yaml`; edit the ledger, never thi
 
 - Tested: none
 - Partly tested: none
-- Intent only: OB-1, OB-2, OB-3, OB-4, OB-5, OB-6, OB-7, OB-8, OB-9, OB-10, OB-11, OB-12, OB-13, OB-14, OB-15, OB-16, OB-17, OB-18, OB-19, OB-20
+- Intent only: OB-1, OB-2, OB-3, OB-4, OB-5, OB-6, OB-7, OB-8, OB-9, OB-10, OB-11, OB-12, OB-13, OB-14, OB-15, OB-16, OB-17, OB-18, OB-19, OB-21, OB-20

@@ -7011,11 +7011,11 @@
       "module": "onboarding",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of onboarding: 20 rows, 0 tested, 0 partly tested, 20 intent only.",
+      "summary": "Intended rules of onboarding: 21 rows, 0 tested, 0 partly tested, 21 intent only.",
       "anchors": [
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 125,
+      "tokens": 127,
       "path": "docs/modules/onboarding/intent.md"
     },
     {
@@ -9315,11 +9315,11 @@
       "module": "onboarding",
       "status": "active",
       "supersedes": [],
-      "summary": "A module offers its setup only while it has never had an entity, so a module that ever held one, even one since deleted, never offers it again, and the offer is skippable and never a wall.",
+      "summary": "A module's empty state offers its setup only while the module has never had an entity, kept as a per-module flag Preferences sets when the module saves its first entity and never clears, so a module that ever held one, even one since deleted or purged, never offers it there again; the offer is skippable and never a wall.",
       "anchors": [
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 121,
+      "tokens": 120,
       "path": "docs/modules/onboarding/intent/OB-18.md"
     },
     {
@@ -9328,11 +9328,11 @@
       "module": "onboarding",
       "status": "active",
       "supersedes": [],
-      "summary": "Setup is reachable from two distinct paths registered in the reachability registry, the post-first-run invitation for the global flow and a module's empty state for that module's setup.",
+      "summary": "Setup is reachable from distinct paths registered in the reachability registry, the post-first-run invitation for the global flow, and a module's empty state and its on-demand entry for that module's setup.",
       "anchors": [
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 79,
+      "tokens": 84,
       "path": "docs/modules/onboarding/intent/OB-19.md"
     },
     {
@@ -9360,6 +9360,19 @@
       ],
       "tokens": 100,
       "path": "docs/modules/onboarding/intent/OB-20.md"
+    },
+    {
+      "id": "OB-21",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user can open any module's own setup as a guide whenever they want, whatever the module holds and whether or not its flag is set; it changes nothing until the user continues a step.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 89,
+      "path": "docs/modules/onboarding/intent/OB-21.md"
     },
     {
       "id": "OB-3",

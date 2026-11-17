@@ -100,13 +100,19 @@
   says: Each module may register its own setup steps, such as a chart template, a setup step or an opt-in dataset or starter template, and its empty state opens that module's setup; the global guided setup stays persona, modules and theme.
   uses: [spaces, TMP-7, integrations, ITG-16]
   work: LIF-637
+# Victor 2026-11-16 (after the first push): the per-module flag, so a purge can't bring the offer back.
 - id: OB-18
-  says: A module offers its setup only while it has never had an entity, so a module that ever held one, even one since deleted, never offers it again, and the offer is skippable and never a wall.
+  says: A module's empty state offers its setup only while the module has never had an entity, kept as a per-module flag Preferences sets when the module saves its first entity and never clears, so a module that ever held one, even one since deleted or purged, never offers it there again; the offer is skippable and never a wall.
+  uses: [preferences, PR-10]
   work: LIF-637
-  open: Where "ever had an entity" is kept, a per-module flag Preferences writes under onboarding_* or derived from each module's own rows, deleted ones included.
 - id: OB-19
-  says: Setup is reachable from two distinct paths registered in the reachability registry, the post-first-run invitation for the global flow and a module's empty state for that module's setup.
+  says: Setup is reachable from distinct paths registered in the reachability registry, the post-first-run invitation for the global flow, and a module's empty state and its on-demand entry for that module's setup.
   work: LIF-637
+# Victor 2026-11-16 (after the first push).
+- id: OB-21
+  says: The user can open any module's own setup as a guide whenever they want, whatever the module holds and whether or not its flag is set; it changes nothing until the user continues a step.
+  work: LIF-637
+  open: Where the on-demand entry lives.
 
 # The two signals. first-run.ts and onboarding.md section 3; Victor 2026-11-16.
 - id: OB-20
