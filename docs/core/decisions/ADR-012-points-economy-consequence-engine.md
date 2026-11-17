@@ -5,6 +5,7 @@
 **Decision Makers:** Victor J.
 **Context:** Vida Platform — surfaced by the **Gamification ("the System")** capstone (exec #9, the behavioral incentive/consequence plane, partner to Purposes' meaning plane).
 **Tags:** architecture · data model · cross-cutting · API · behavioral-economics
+**Amended:** 2026-11-17 (LIF-644, Victor) — a possible-duplicate flag on two lookalike transfers from different devices (SV-36, ADR-003 §6.4) asks the user and merges nothing; it never makes amount, box or day unique, so the `move_money` line below stands.
 **Amends:**
 
 - **ADR-002 (Data Model)** — adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped, ± earn/lock/spend/distribute); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠** until an account/identity model exists); makes `achievements.condition` a **measurable predicate** over the ADR-011 seam + event stream; **(§3.11 amendment 2026-09-14)** adds `user_preferences.xp_difficulty_weighting` (plaintext global toggle, Preferences-owned) + a `weight_by` field in the shipped-default `rules.consequences` descriptor. DDL tracked in ADR-002 **§5.20** (owed-tables ledger), no DDL into its body per D5.

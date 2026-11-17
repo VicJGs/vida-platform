@@ -7,7 +7,7 @@
 **Tags:** architecture · data model · API
 **Amends:** ADR-002 (Data Model) — adds the `sessions` spine + per-sub-type extension tables + `planned_blocks` + Integration-Contract tables; supersedes the flat Learning-only `study_sessions` and the §5.11 mirror planner. **+ (F1/D1, 2026-07-16)** adds the local-only `applied_effects` dedup ledger + `effect_event_id` columns (owed-tables ledger).
 **Inherits:** ADR-001 (SQLite/libsodium) · ADR-003 (LWW sync) · the surfaced extension-model principle (guarded opt-in integrations).
-**Amended:** 2026-11-13 (LIF-349 run 37, Victor) — **§3.2.5-B5** origin and the server product (EF-14, EF-20), the §3.2.4 consent modes (EF-11), and the `effect_event_id` form made a one-way-door decision (LIF-617). **Amended:** 2026-11-13 (LIF-521, Victor 2026-11-09) — `contribute_purpose_metric` retired from §3.2.2 and the §3.2.5 taxonomy: Purposes reads each related entity through its service and computes the day's progress, nothing is pushed to it (PG-37, EF-5). **Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
+**Amended:** 2026-11-17 (LIF-644, Victor) — **§3.2.5-B3**: a cross-device collision on a money or time-log output row is held for the user's review in the Sync & Activity Log instead of merging on its own (ADR-003 §6.4, SV-35, EF-13). **Amended:** 2026-11-13 (LIF-349 run 37, Victor) — **§3.2.5-B5** origin and the server product (EF-14, EF-20), the §3.2.4 consent modes (EF-11), and the `effect_event_id` form made a one-way-door decision (LIF-617). **Amended:** 2026-11-13 (LIF-521, Victor 2026-11-09) — `contribute_purpose_metric` retired from §3.2.2 and the §3.2.5 taxonomy: Purposes reads each related entity through its service and computes the day's progress, nothing is pushed to it (PG-37, EF-5). **Amended:** 2026-07-16 (F1/D1) — added **§3.2.5** (the write-API contract + idempotency mechanism), making this ADR the **owner** of the guarded-write + no-double-count discipline that ADR-008/010 previously delegated in a loop. Constitution anchor: **INT-2**. Mechanism per the critique gate, F1/D1: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).
 
 ---
 
@@ -129,6 +129,8 @@ target_ref)`; the handler **checks-and-inserts in the same transaction as the wr
    layer** (ADR-003 conflict handling); §3.2.5 supplies the deterministic key + UNIQUE requirement that make
    convergence _possible_. **Honest bound: same-device double-count is closed here; cross-device convergence is
    enforced by sync — not claimed as a free guarantee.**
+   Which copy counts, and the review of a collision on a money or time-log row (`move_money`, `log_time`), are the
+   sync layer's too (ADR-003 §6.4, SV-35; Victor 2026-11-17): the earlier stamp counts, the other waits for the user.
 4. The `applied_effects` ledger is **device-local** (not synced, like `sync_queue`): it defends _replay_; _cross-device_
    convergence rides the synced output rows' UNIQUE `effect_event_id`, not a synced ledger.
 

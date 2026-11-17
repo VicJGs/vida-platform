@@ -245,10 +245,11 @@
   says: Every write effect's output row carries its effect_event_id under a unique constraint (a keyed effect also keeps its domain key), so two devices applying the same event converge to one row.
   uses: [gamification, notifications, finance, tasks, habits, purposes]
   work: LIF-615
-# EF-13: ADR-004 §3.2.5-B3. ADR-003's conflict handling owns the merge; the critique gate's F10 tracks it for build.
+# EF-13: ADR-004 §3.2.5-B3. ADR-003's conflict handling owns the merge (§6.3, §6.4); the critique gate's F10 tracks it
+# for build. Which copy counts, and the money and time-log review: SV-35 (Victor 2026-11-17, LIF-644).
 - id: EF-13
-  says: When two devices' output rows collide on the same effect_event_id at sync, the sync layer merges them into one outcome instead of failing; the rail supplies the key, never the merge.
-  uses: [sync]
+  says: When two devices' output rows collide on the same effect_event_id at sync, the sync layer resolves them into one outcome instead of failing, merging on its own or holding one copy for the user's review as SV-35 says; the rail supplies the key, never the merge.
+  uses: [sync, SV-35]
   work: LIF-98
 # EF-14: the F1/D1 guarded-write spec's BR-5 (ratified 2026-07-16), now ADR-004 §3.2.5-B5 with the server
 # product's cases (Victor 2026-11-13; SV-17, SV-32, SV-33, ADR-014 §3.1a). The hand-off is EF-20.

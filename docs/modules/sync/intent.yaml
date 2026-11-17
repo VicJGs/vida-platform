@@ -252,3 +252,35 @@
 - id: SV-31
   says: A replayed blob is refused, by the server on a lower version and by the device on an older stamp.
   work: LIF-150
+
+# Duplicates two devices made, decided by the user. Victor 2026-11-17 (LIF-644): the user approves duplicated actions
+# done on different devices, in the Sync & Activity Log (LIF-221, fe-sync-log, the goto-sync-log capability), with
+# four calls: both kinds, lookalikes only flagged; money and time logs ask, the rest merges; while waiting the same
+# action counts once and lookalikes both count; a hidden log still notifies. Two kinds: the same action applied on two
+# devices (one effect_event_id, EF-2, EF-12, EF-13) and two separate entries that look alike (different ids, which
+# sync can't see as one; ADR-012 keeps same-amount transfers legitimately distinct). ADR-003 §6.3 had no case for two
+# rows sharing one effect_event_id; §6.4 records this rule. Proposed IDs (approve in the PR).
+# SV-34: the page is hideable (settings-model.ts 'sync' key, nav-prefs.ts), so a waiting review can't live only there.
+- id: SV-34
+  says: The Sync & Activity Log shows each device's changes, the sync status and every duplicate sync found, and it is where the user decides a duplicate that waits for review; the user can hide the page, but a duplicate waiting for review still reaches them through a notification.
+  uses: [preferences, notifications]
+  work: LIF-221
+# SV-35: EF-13 hands the merge here. Money is move_money's transactions rows, time logs are log_time's task_time_logs
+# rows, which get the key under LIF-615. The earlier stamp and the device-id tie follow SV-9.
+- id: SV-35
+  says: When two devices applied the same action, so their output rows share one effect_event_id, the copy with the earlier clock stamp counts, the higher device id breaking an exact tie; on a money or time-log row the other copy is held, counts toward nothing and waits in the Sync & Activity Log until the user keeps the counted copy or switches to the held one, and every other effect merges on its own and leaves a line in the log.
+  uses: [sessions, EF-13, finance, tasks, SV-34]
+  work: LIF-642
+# SV-36: ADR-012 §3.1 move_money: two same-amount transfers are legitimately distinct, so the flag never makes amount,
+# account or day unique. Removing one reverses its effects through compensating rows (Gamification's append-only
+# ledger); deleting a completion keeps its XP today, a gap this must not inherit.
+- id: SV-36
+  says: After a sync, two separate money or time-log entries from different devices that look alike, by a rule their own module defines, are flagged in the Sync & Activity Log as a possible duplicate; both count until the user keeps both or removes one, nothing merges without the user, and removing one reverses what it set off through compensating rows.
+  uses: [finance, tasks, gamification, SV-34]
+  open: Each module's lookalike rule (Finance for transactions, Tasks for time logs) and how far back after a sync it looks.
+  work: LIF-643
+# SV-37: the review record is synced, like NF-9's read state, unlike applied_effects (EF-7).
+- id: SV-37
+  says: A duplicate's review and the user's decision are synced records, so deciding on one device clears the review on the others, and a duplicate both devices found is one review, never two.
+  uses: [SV-35, SV-36]
+  work: LIF-642
