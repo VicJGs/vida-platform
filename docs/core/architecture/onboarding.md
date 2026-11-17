@@ -121,8 +121,8 @@ claim; `m3?` = the encryption-backed claim, gated behind an encryption-active si
   are a persona step (OB-13, LIF-638), modules (OB-14) and theme (OB-15). The picks are written by Preferences
   (PR-19, LIF-436).
 - **A module's own setup** (LIF-637) is offered from that module's empty state only while the module has never had
-  an entity, kept as a per-module flag in Preferences (OB-17, OB-18), and the user can open it as a guide on demand at
-  any time (OB-21). The invitation, the empty states and the on-demand entry are the reach paths (OB-19).
+  an entity, kept as a per-module flag in Preferences (OB-17, OB-18), and the user can open it as a guide at any time
+  from a question-mark button in the module's menu (OB-21). The invitation, the empty states and the on-demand entry are the reach paths (OB-19).
 
 ---
 

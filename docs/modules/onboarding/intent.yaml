@@ -110,9 +110,9 @@
   work: LIF-637
 # Victor 2026-11-16 (after the first push).
 - id: OB-21
-  says: The user can open any module's own setup as a guide whenever they want, whatever the module holds and whether or not its flag is set; it changes nothing until the user continues a step.
+  says: The user can open any module's own setup as a guide whenever they want, from a question-mark button in that module's menu, whatever the module holds and whether or not its flag is set; the button is named as that module's guide for assistive technology and meets the touch-target minimum, and the guide changes nothing until the user continues a step.
+  uses: [shell, SH-8]
   work: LIF-637
-  open: Where the on-demand entry lives.
 
 # The two signals. first-run.ts and onboarding.md section 3; Victor 2026-11-16.
 - id: OB-20
