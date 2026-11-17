@@ -6,6 +6,11 @@ experience-track front door (UX-5, LIF-94) — it builds on the IA (UX-1), shell
 
 **Audience:** Developers and agents building the app-shell / boot path. Read after `information-architecture.md`.
 
+> **Rules live in `INTENT-onboarding`** (`docs/modules/onboarding/intent.yaml`, rows OB-1…OB-20; LIF-634, Victor
+> 2026-11-16). Onboarding is an OS feature no module owns: a device's first run (this doc), the global guided setup
+> and each module's own setup (§7). Where this doc and a row differ, the row wins. Since this doc was written the
+> screens and the boot branch shipped (UI-4 S4) and guided setup shipped (fe-onboarding, LIF-216).
+
 **Governs:** The onboarding flow model + the first-run boundary contract. The code artifact is
 `apps/web/src/onboarding/{steps,first-run}.ts` (central data/logic; **not chrome**). Rendering the screens and
 wiring the boot branch are owned by **UI-4**; the vault-unlock/lock UX is **UX-5b (M3)**.
@@ -67,8 +72,9 @@ its M1.0 copy is confirmation-shaped. `complete` is terminal; no deferred step m
   migrates the DB, so `exists()` is already `true` while the marker is unset — they disagree by design. Keying the
   branch on `exists()` would make onboarding never show.
 - **Distinct from the synced user flag.** `first_run:completed` (device-local, never synced) is deliberately distinct
-  from the synced `UserProfile.onboarding_completed` (a cross-device _user_ flag; its table lands with the
-  user_profile module, M1.1+). Reconciling the two is a UX-5b/M1.1 concern.
+  from the synced `onboarding_completed` (a cross-device _user_ flag that Preferences writes, PR-10 and PR-19).
+  Reconciled (Victor 2026-11-16): the synced flag suppresses the guided-setup invitation on a new device, never the
+  device's own first run, and neither signal is derived from the other (OB-11, OB-20).
 
 ---
 
@@ -100,10 +106,23 @@ claim; `m3?` = the encryption-backed claim, gated behind an encryption-active si
 ## 6. Consumption
 
 - **UI-4** (app shell) renders the four onboarding screens, wires the `App.tsx` first-run branch (`FIRST_RUN_BRANCH`),
-  and performs the completion write. It reads `ONBOARDING_STEPS` for order + copy and `isFirstRun` for the gate.
-- **UX-5b (M3)** adds the real vault-key creation + passphrase capture (`deferredImpl` seams), the unlock/lock-on-launch
-  UX, and flips the encryption-active signal that reveals the `m3` copy.
-- **AR-3 (M3)** provides the crypto/vault lifecycle the `vault` step and UX-5b depend on.
+  and performs the completion write. It reads `ONBOARDING_STEPS` for order + copy and `isFirstRun` for the gate. Built
+  (`cc39abb4`).
+- **The encryption pass (LIF-101)** turns the first run into where the account begins: a device with no account creates
+  one, and a new device signs in and pulls the profile and preferences before the app opens (OB-8; EN-21, EN-22,
+  SV-21). It also flips the encryption-active signal that reveals the `m3` copy (OB-7).
+
+---
+
+## 7. Guided setup and each module's setup
+
+- **Guided setup** (fe-onboarding, built) is optional and skippable: offered once, as an invitation right after a
+  device's first run, and opened as an overlay over the app, never a route or a second gate (OB-10, OB-12). Its steps
+  are a persona step (OB-13, LIF-638), modules (OB-14) and theme (OB-15). The picks are written by Preferences
+  (PR-19, LIF-436).
+- **A module's own setup** (LIF-637) is offered from that module's empty state only while the module has never had
+  an entity, kept as a per-module flag in Preferences (OB-17, OB-18), and the user can open it as a guide at any time
+  from a question-mark button in the module's menu (OB-21). The invitation, the empty states and the on-demand entry are the reach paths (OB-19).
 
 ---
 

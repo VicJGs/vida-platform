@@ -4782,7 +4782,7 @@
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 83,
+      "tokens": 88,
       "path": "docs/modules/gamification/intent/GM-16.md"
     },
     {
@@ -7006,6 +7006,19 @@
       "path": "docs/modules/notifications/intent.md"
     },
     {
+      "id": "INTENT-onboarding",
+      "kind": "intent",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Intended rules of onboarding: 21 rows, 0 tested, 0 partly tested, 21 intent only.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 127,
+      "path": "docs/modules/onboarding/intent.md"
+    },
+    {
       "id": "INTENT-preferences",
       "kind": "intent",
       "module": "preferences",
@@ -9180,6 +9193,279 @@
       "path": "docs/modules/notes/intent/NP-9.md"
     },
     {
+      "id": "OB-1",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Onboarding is a Vida feature owned by no module, made of a device's first run, the global guided setup and each module's own setup; it stores only the device's first-run marker, and every pick it collects is written by its owner.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/onboarding/intent/OB-1.md"
+    },
+    {
+      "id": "OB-10",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Guided setup is optional; it is offered once, as an invitation right after a device's first run completes, never as a second mandatory gate, and it opens as an overlay over the still-mounted app, never a route; Skip for now closes the invitation.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 94,
+      "path": "docs/modules/onboarding/intent/OB-10.md"
+    },
+    {
+      "id": "OB-11",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The invitation is not offered on a device whose account already finished guided setup, because the synced onboarding_completed, pulled before the app opens, suppresses it; the device's own first run still runs.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 95,
+      "path": "docs/modules/onboarding/intent/OB-11.md"
+    },
+    {
+      "id": "OB-12",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Guided setup is framed by a rail of its steps, at the left from tablet width and a top strip below it, with the current step marked; every step can be skipped, a persistent Skip setup ends the flow from anywhere into the app, and the last step confirms honestly and hands off with Enter Vida.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/onboarding/intent/OB-12.md"
+    },
+    {
+      "id": "OB-13",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A first, skippable step asks the user's persona and focus, written through Preferences; the module step then pre-selects the modules it suggests and the last step offers the Spaces templates that fit.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/onboarding/intent/OB-13.md"
+    },
+    {
+      "id": "OB-14",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The module step offers the modules the dock shows, grouped as the dock groups them and following the user's hidden and renamed modules through the dock's own filter, never a fork, with each shown module on by default; it chooses visibility, not nav placement.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 106,
+      "path": "docs/modules/onboarding/intent/OB-14.md"
+    },
+    {
+      "id": "OB-15",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The theme step offers the three preset families as swatches coloured from each preset's real tokens, never hardcoded, and choosing one previews it across the app as a layer over the saved theme, which every exit without a commit restores.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 103,
+      "path": "docs/modules/onboarding/intent/OB-15.md"
+    },
+    {
+      "id": "OB-16",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Finishing or skipping all of guided setup finalizes once, guarded against a double press, and a failed finalize shows the retryable Could not finish setup; what it commits and when onboarding_completed is set are Preferences' rule.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 97,
+      "path": "docs/modules/onboarding/intent/OB-16.md"
+    },
+    {
+      "id": "OB-17",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each module may register its own setup steps, such as a chart template, a setup step or an opt-in dataset or starter template, and its empty state opens that module's setup; the global guided setup stays persona, modules and theme.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 102,
+      "path": "docs/modules/onboarding/intent/OB-17.md"
+    },
+    {
+      "id": "OB-18",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A module's empty state offers its setup only while the module has never had an entity, kept as a per-module flag Preferences sets when the module saves its first entity and never clears, so a module that ever held one, even one since deleted or purged, never offers it there again; the offer is skippable and never a wall.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 120,
+      "path": "docs/modules/onboarding/intent/OB-18.md"
+    },
+    {
+      "id": "OB-19",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Setup is reachable from distinct paths registered in the reachability registry, the post-first-run invitation for the global flow, and a module's empty state and its on-demand entry for that module's setup.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/onboarding/intent/OB-19.md"
+    },
+    {
+      "id": "OB-2",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A device's first run is a full-viewport boot step shown before the app chrome mounts and until that device completes it; it is never a route, a nav entry or an overlay.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 75,
+      "path": "docs/modules/onboarding/intent/OB-2.md"
+    },
+    {
+      "id": "OB-20",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The device's first-run marker and the synced onboarding_completed stay separate; the marker records that this device finished its first run and the flag that the user finished guided setup on any device, and neither is derived from the other.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 100,
+      "path": "docs/modules/onboarding/intent/OB-20.md"
+    },
+    {
+      "id": "OB-21",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The user can open any module's own setup as a guide whenever they want, from a question-mark button in that module's menu, whatever the module holds and whether or not its flag is set; the button is named as that module's guide for assistive technology and meets the touch-target minimum, and the guide changes nothing until the user continues a step.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 126,
+      "path": "docs/modules/onboarding/intent/OB-21.md"
+    },
+    {
+      "id": "OB-3",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The first run keys only on the device-local marker first_run:completed in app state, never on whether the database exists, which a first launch creates before the marker is read; the marker is never synced.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/onboarding/intent/OB-3.md"
+    },
+    {
+      "id": "OB-4",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Boot resolves the first run in three states, holding the loading surface until the marker is read so the app never flashes before it, and a failed read shows the first run rather than stranding on loading.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 84,
+      "path": "docs/modules/onboarding/intent/OB-4.md"
+    },
+    {
+      "id": "OB-5",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Completing the first run writes the marker under the app-wide write lock and only then opens the app at Home; the write is idempotent, and a failed one shows a retryable error and keeps the device in its first run.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 86,
+      "path": "docs/modules/onboarding/intent/OB-5.md"
+    },
+    {
+      "id": "OB-6",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Until encryption lands the first run is four steps (welcome, privacy, a vault step that only confirms the local vault is ready, with no input and no key, and ready), each moved on by its primary action, with focus on the step heading, no Escape, and motion in opacity and transform only, instant under reduced motion.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 117,
+      "path": "docs/modules/onboarding/intent/OB-6.md"
+    },
+    {
+      "id": "OB-7",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Onboarding copy claims only what is true when it ships, local-first while encryption is off and never encrypted at rest or zero-knowledge, and the encryption claim appears only once encryption is active on the device; guided-setup copy passes the voice lint.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 104,
+      "path": "docs/modules/onboarding/intent/OB-7.md"
+    },
+    {
+      "id": "OB-8",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Once encryption lands the first run is where the account begins; a device with no account creates one (the account key shown once, the no-recovery warning, what encryption doesn't protect), and a new device of an existing account signs in with the password and account key and pulls the profile and preferences before the app opens.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 132,
+      "path": "docs/modules/onboarding/intent/OB-8.md"
+    },
+    {
+      "id": "OB-9",
+      "kind": "intent-row",
+      "module": "onboarding",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Both the first run and guided setup offer Back on every step but the first, announce \"Step N of M\" to assistive technology, and keep step text to a readable measure.",
+      "anchors": [
+        "docs/modules/onboarding/intent.yaml"
+      ],
+      "tokens": 74,
+      "path": "docs/modules/onboarding/intent/OB-9.md"
+    },
+    {
       "id": "PD-1",
       "kind": "intent-row",
       "module": "sessions",
@@ -10501,7 +10787,7 @@
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 148,
+      "tokens": 115,
       "path": "docs/modules/preferences/intent/PR-19.md"
     },
     {
