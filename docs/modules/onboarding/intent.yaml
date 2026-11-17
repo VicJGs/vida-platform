@@ -1,0 +1,115 @@
+# Onboarding intent ledger: every intended, deferred or TBD rule of onboarding, an OS feature that no module owns
+# (Victor 2026-11-16, LIF-634), prefix OB (Victor 2026-11-16). work = the issue that builds the rest. check:rules derives
+# each row's state.
+# The model (Victor, 2026-11-16, before the rows were written): onboarding is the first run of a device plus the setup
+# offers. The first run is a boot step, once per device, keyed on a device-local marker; once encryption lands it is
+# where the account is created or a new device signs in. Guided setup is one global flow (persona, modules, theme),
+# offered once after a device's first run, skippable, and not offered when the synced onboarding_completed says the
+# user already finished it on another device. Each module may also have its own setup, offered from its empty state
+# only while it has never had an entity (the July finance intake's G_meta: "per-module onboarding + one global
+# onboarding"). Onboarding stores only the device marker: Preferences writes the picks and onboarding_* (PR-10, PR-19),
+# Encryption and Sync & Venues own the account and the vault (EN-21, EN-22, SV-21, SV-24).
+# Sources: docs/core/architecture/onboarding.md, the archived ux-5-onboarding and fe-onboarding specs, the UI-4 S4
+# spec, the archived ux-5-vault-unlock-onboarding task and apps/web/src/onboarding; read with Victor's OK at this run:
+# App.tsx, every ledger row naming onboarding (PR-10, PR-19, GM-12, GM-16, SV-21), security-model section 6, EN-20 to
+# EN-26 and EN-31, the SV account rows, the dock in shell/module-dock.tsx, the July intakes' onboarding lines (finance
+# G_meta and G11, gamification GG9, bucket-list's setup step), the gap sheet (no onboarding answer) and LIF-101, 432,
+# 436 and 597.
+# Built (the code is the truth): the UX-5 model (07059d12), the UI-4 S4 screens and boot branch (cc39abb4),
+# fe-onboarding S1 to S4 (9c7d2180 to a57523f1) and the preferences-rescope R3 preview layer (600edbc0). Both guided-setup
+# commits are no-op stubs (LIF-436), and the module picker no longer mirrors the dock, which since R5 applies the
+# user's hidden and renamed modules (LIF-436).
+# Proof: the archived S4-BR and EC rules are archive-only, so the built rows name their tests by row ID (LIF-635). No
+# test names an OB ID, and OB matches no other ID in Vida. No test was renamed. Onboarding has no features folder, so
+# the archive guard applies from the start.
+# Consumers (each in its owner's ledger): PR-10 and PR-19 (the onboarding_* writer and the commit), GM-12 and GM-16
+# (persona and module guidance), SV-21 (a new device pulls preferences before it opens).
+
+# Proposed IDs, every row: onboarding has no features folder and no intent ID today (approve in the PR)
+
+# The feature.
+- id: OB-1
+  says: Onboarding is a Vida feature owned by no module, made of a device's first run, the global guided setup and each module's own setup; it stores only the device's first-run marker, and every pick it collects is written by its owner.
+  uses: [preferences, PR-10, PR-19, encryption, sync]
+  work: LIF-637
+
+# The first run. onboarding.md sections 2 to 4; the S4 spec's S4-BR-b, c, d, f and h.
+- id: OB-2
+  says: A device's first run is a full-viewport boot step shown before the app chrome mounts and until that device completes it; it is never a route, a nav entry or an overlay.
+  work: LIF-635
+- id: OB-3
+  says: The first run keys only on the device-local marker first_run:completed in app state, never on whether the database exists, which a first launch creates before the marker is read; the marker is never synced.
+  work: LIF-635
+- id: OB-4
+  says: Boot resolves the first run in three states, holding the loading surface until the marker is read so the app never flashes before it, and a failed read shows the first run rather than stranding on loading.
+  work: LIF-635
+- id: OB-5
+  says: Completing the first run writes the marker under the app-wide write lock and only then opens the app at Home; the write is idempotent, and a failed one shows a retryable error and keeps the device in its first run.
+  work: LIF-635
+# B12 and SH-9 for motion; the vault step stays in the sequence so its index is stable when encryption lands.
+- id: OB-6
+  says: Until encryption lands the first run is four steps (welcome, privacy, a vault step that only confirms the local vault is ready, with no input and no key, and ready), each moved on by its primary action, with focus on the step heading, no Escape, and motion in opacity and transform only, instant under reduced motion.
+  uses: [shell, SH-9]
+  work: LIF-635
+# onboarding.md section 5 (BR-4); the m3 copy is rendered nowhere today.
+- id: OB-7
+  says: Onboarding copy claims only what is true when it ships, local-first while encryption is off and never encrypted at rest or zero-knowledge, and the encryption claim appears only once encryption is active on the device; guided-setup copy passes the voice lint.
+  uses: [encryption, EN-31]
+  work: LIF-101
+# security-model section 6 as amended in run 38; the vault step's deferred implementation (UX-5b).
+- id: OB-8
+  says: Once encryption lands the first run is where the account begins; a device with no account creates one (the account key shown once, the no-recovery warning, what encryption doesn't protect), and a new device of an existing account signs in with the password and account key and pulls the profile and preferences before the app opens.
+  uses: [encryption, EN-21, EN-22, EN-24, EN-31, sync, SV-21, SV-24]
+  work: LIF-101
+# DEF-S4-a, never filed until this run; Victor 2026-11-16.
+- id: OB-9
+  says: Both the first run and guided setup offer Back on every step but the first, announce "Step N of M" to assistive technology, and keep step text to a readable measure.
+  work: LIF-636
+
+# Guided setup, the global flow. fe-onboarding EC-1 to EC-10, IR2 and IR4; Victor 2026-11-16.
+- id: OB-10
+  says: Guided setup is optional; it is offered once, as an invitation right after a device's first run completes, never as a second mandatory gate, and it opens as an overlay over the still-mounted app, never a route; Skip for now closes the invitation.
+  work: LIF-635
+- id: OB-11
+  says: The invitation is not offered on a device whose account already finished guided setup, because the synced onboarding_completed, pulled before the app opens, suppresses it; the device's own first run still runs.
+  uses: [preferences, PR-19, sync, SV-21]
+  work: LIF-639
+- id: OB-12
+  says: Guided setup is framed by a rail of its steps, at the left from tablet width and a top strip below it, with the current step marked; every step can be skipped, a persistent Skip setup ends the flow from anywhere into the app, and the last step confirms honestly and hands off with Enter Vida.
+  work: LIF-635
+# The July gamification intake GG9; GM-16.
+- id: OB-13
+  says: A first, skippable step asks the user's persona and focus, written through Preferences; the module step then pre-selects the modules it suggests and the last step offers the Spaces templates that fit.
+  uses: [preferences, PR-10, spaces, TMP-1, TMP-7, gamification, GM-16]
+  work: LIF-638
+- id: OB-14
+  says: The module step offers the modules the dock shows, grouped as the dock groups them and following the user's hidden and renamed modules through the dock's own filter, never a fork, with each shown module on by default; it chooses visibility, not nav placement.
+  uses: [shell, preferences, PR-7]
+  work: LIF-436
+- id: OB-15
+  says: The theme step offers the three preset families as swatches coloured from each preset's real tokens, never hardcoded, and choosing one previews it across the app as a layer over the saved theme, which every exit without a commit restores.
+  uses: [shell, DSG-13, preferences, PR-5]
+  work: LIF-436
+- id: OB-16
+  says: Finishing or skipping all of guided setup finalizes once, guarded against a double press, and a failed finalize shows the retryable Could not finish setup; what it commits and when onboarding_completed is set are Preferences' rule.
+  uses: [preferences, PR-19]
+  work: LIF-436
+
+# A module's own setup. The July finance intake G_meta and G11, the bucket-list intake's setup step; Victor 2026-11-16.
+- id: OB-17
+  says: Each module may register its own setup steps, such as a chart template, a setup step or an opt-in dataset or starter template, and its empty state opens that module's setup; the global guided setup stays persona, modules and theme.
+  uses: [spaces, TMP-7, integrations, ITG-16]
+  work: LIF-637
+- id: OB-18
+  says: A module offers its setup only while it has never had an entity, so a module that ever held one, even one since deleted, never offers it again, and the offer is skippable and never a wall.
+  work: LIF-637
+  open: Where "ever had an entity" is kept, a per-module flag Preferences writes under onboarding_* or derived from each module's own rows, deleted ones included.
+- id: OB-19
+  says: Setup is reachable from two distinct paths registered in the reachability registry, the post-first-run invitation for the global flow and a module's empty state for that module's setup.
+  work: LIF-637
+
+# The two signals. first-run.ts and onboarding.md section 3; Victor 2026-11-16.
+- id: OB-20
+  says: The device's first-run marker and the synced onboarding_completed stay separate; the marker records that this device finished its first run and the flag that the user finished guided setup on any device, and neither is derived from the other.
+  uses: [preferences, PR-10]
+  work: LIF-639

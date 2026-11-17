@@ -70,11 +70,12 @@
   work: LIF-433
   open: The vocabulary of font_size and notification_frequency.
 # Proposed IDs from preferences-rescope R7 and R-T (LIF-349 run 9; approve in the PR)
+# PR-19's open line (a new device's first run) answered by Victor 2026-11-16 (LIF-634): the synced flag suppresses the
+# guided-setup invitation, never the device's first run (OB-11, OB-20, LIF-639).
 - id: PR-19
   says: Onboarding commits only the steps the user continued, as one write through the preferences seam (module visibility seeded from the current visibility, the theme on the shared Settings path, the three non-game presets), and sets onboarding_completed on complete or skip-all, never on Skip for now.
-  uses: [onboarding]
+  uses: [onboarding, OB-11, OB-16]
   work: LIF-436
-  open: Whether the synced onboarding_completed suppresses a new device's first run, which today keys only on the device-local first_run marker.
 - id: PR-20
   says: The page transition is a preference (page-turn, cross-fade, slide or none) stored as a dashboard_layout sub-key with no schema change, and it reads none while reduce motion is on.
   uses: [shell]

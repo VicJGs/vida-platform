@@ -110,7 +110,7 @@
 # GM-16's persona read has no port: usePersona returns the neutral register though Settings persists persona.
 - id: GM-16
   says: Persona weighting, module guidance and template suggestions belong to Preferences, Onboarding and Spaces templates; the System at most reads persona to frame its rewards.
-  uses: [preferences, spaces]
+  uses: [preferences, spaces, onboarding, OB-13]
   work: LIF-401
 # GM-17's challenge view is the Spaces run's (LIF-349 checklist line "Spaces"); Gamification serves its rules to it
 # (GM-32). SB-Q3 wants quests in M1.
