@@ -13,7 +13,7 @@ generated: true
 
 A module renders its own live body for its block inside the editor through renderers the host passes; a block without one shows an honest placeholder (available when its module ships) and never crashes.
 
-- Proof: BR-E5-1 (tested), BR-E5-3 (tested)
+- Proof: BR-E5-1 (tested), BR-E5-3 (no test)
 - Uses: notes, capabilities
 - Work: LIF-607
 

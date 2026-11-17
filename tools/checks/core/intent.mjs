@@ -9,6 +9,10 @@
 //
 // Proof is scoped: a row counts only tests under its module's paths, "checks".intentTests
 // (module → path prefixes; default <src>/<module>), since rule IDs can repeat across modules.
+// Only an it() or test() title proves anything; a describe() title names a suite, and no
+// single test in it asserts the IDs it carries. Rule IDs are read in the forms
+// "checks".ruleId allows (lib.mjs ruleIds()); an intent ID is read only outside them, so
+// the test name BR-BK-2 names no BK-2.
 //
 // A row: `id` (matches "checks".intentId) · `says` (one line) · `open` (an unresolved
 // question; needs `work`) · `uses` (modules or substrates it connects to) · `proof` (built rule IDs,
@@ -18,7 +22,7 @@
 // most partly tested, since part of what it says is not built yet.
 import { readdirSync } from "node:fs";
 import { join } from "node:path";
-import { CODE_FILE, TEST_FILE, exists, read, root, walk } from "./lib.mjs";
+import { CODE_FILE, TEST_FILE, exists, read, root, ruleIds, walk } from "./lib.mjs";
 import { tokens, unquote } from "./units.mjs";
 
 export const FIELDS = ["id", "says", "open", "uses", "proof", "work"];
@@ -76,9 +80,12 @@ export function parseLedger(text) {
 // Where each rule ID is stated (docs, or comments in non-test code under src), and the test
 // files whose test names carry each rule ID (tests) or intent ID (named), repo-wide. The
 // ledgers and their generated units link rules but do not state them, so they are skipped.
+// Also each test name with a token written like a rule ID in no allowed form (odd), and
+// each rule ID in a "checks".ruleUnqualified form a test name carries (unqualified).
 export function ruleMap(cfg, skip = () => false) {
-  const id = new RegExp(`\\b${cfg.ruleId}\\b`, "g");
-  const intentId = new RegExp(`\\b${cfg.intentId}\\b`, "g");
+  const rules = ruleIds(cfg);
+  const intentId = new RegExp(`(?<![A-Z]-)\\b(?:${cfg.intentId})\\b`, "g");
+  const unqualified = cfg.ruleUnqualified ? new RegExp(`^(?:${cfg.ruleUnqualified})$`) : null;
   const repo = walk(".").map((f) => f.slice(2)).filter((f) => !f.startsWith(".claude/worktrees/") && !skip(f));
   const under = (dir) => (f) => dir === "." || f.startsWith(`${dir}/`);
   const stated = new Map();
@@ -87,24 +94,29 @@ export function ruleMap(cfg, skip = () => false) {
     const scope = under(cfg.docs)(path) ? text
       : CODE_FILE.test(path) ? (text.match(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g) ?? []).join("\n")
       : "";
-    for (const [rule] of scope.matchAll(id)) stated.has(rule) || stated.set(rule, path);
+    for (const rule of rules.scan(scope).ids) stated.has(rule) || stated.set(rule, path);
   }
-  // Test names: the title string of it(), test() or describe(), modifiers included.
+  // Test names: the title string of it() or test(), modifiers included; never describe().
   const tests = new Map();
   const named = new Map();
+  const odd = [];
+  const bare = [];
   const note = (m, key, path) => m.set(key, (m.get(key) ?? new Set()).add(path));
-  const title = /\b(?:it|test|describe)(?:\.\w+)*\(\s*(["'`])((?:(?!\1)[^\\]|\\.)*)\1/g;
+  const title = /\b(?:it|test)(?:\.\w+)*\(\s*(["'`])((?:(?!\1)[^\\]|\\.)*)\1/g;
   for (const path of repo.filter((p) => TEST_FILE.test(p) && CODE_FILE.test(p))) {
     for (const [, , name] of read(path).matchAll(title)) {
-      for (const [rule] of name.matchAll(id)) note(tests, rule, path);
-      for (const [row] of name.matchAll(intentId)) note(named, row, path);
+      const { ids, odd: off } = rules.scan(name);
+      for (const rule of ids) note(tests, rule, path);
+      for (const token of off) odd.push({ path, name, token });
+      for (const rule of new Set(ids)) if (unqualified?.test(rule)) bare.push({ path, name, rule });
+      for (const [row] of rules.strip(name).matchAll(intentId)) note(named, row, path);
     }
   }
-  return { stated, tests, named };
+  return { stated, tests, named, odd, bare };
 }
 
 // A module's test paths: "checks".intentTests[module], default <src>/<module>.
-const testPaths = (cfg, module) => [cfg.intentTests?.[module] ?? `${cfg.src}/${module}`].flat().map((p) => p.replace(/\/$/, ""));
+export const testPaths = (cfg, module) => [cfg.intentTests?.[module] ?? `${cfg.src}/${module}`].flat().map((p) => p.replace(/\/$/, ""));
 
 // The ruleMap() result cut down to the test files under the ledger module's test paths.
 export function scope(cfg, ledger, { tests, named }) {
@@ -129,7 +141,7 @@ export function state(row, { tests, named }) {
 // ledgers. A proof ID is known when stated or tested anywhere; only its state is scoped.
 export function problems(cfg, all, { stated, tests }) {
   const intentId = whole(cfg.intentId);
-  const ruleId = whole(cfg.ruleId);
+  const { whole: ruleId, shown } = ruleIds(cfg);
   const seen = new Map();
   const out = [];
   for (const l of all) {
@@ -150,12 +162,27 @@ export function problems(cfg, all, { stated, tests }) {
       if (typeof fields.work === "string" && fields.work && !WORK.test(fields.work)) out.push(`${at}: work ${fields.work} is not an issue key like LIF-12`);
       for (const key of LISTS) if (key in fields && !Array.isArray(fields[key])) out.push(`${at}: ${key} must be a list`);
       for (const p of Array.isArray(fields.proof) ? fields.proof : []) {
-        if (!ruleId.test(p)) out.push(`${at}: proof ${p} does not match "checks".ruleId ${cfg.ruleId}`);
+        if (!ruleId.test(p)) out.push(`${at}: proof ${p} does not match "checks".ruleId ${shown}`);
         else if (!stated.has(p) && !tests.has(p)) out.push(`${at}: proof ${p} is no known rule (stated nowhere, no test named with it)`);
       }
     }
   }
   return out;
+}
+
+// Rule forms in test names. A token written like a rule ID ("checks".ruleLike) in no form
+// "checks".ruleId allows counts for nothing, so it fails. A rule ID in a
+// "checks".ruleUnqualified form (one ID repo-wide, like BR-3) in a test under a ledger
+// module's test paths can anchor another module's rule; it is noted until it is renamed.
+export function forms(cfg, all, { odd, bare }) {
+  const { shown } = ruleIds(cfg);
+  const findings = odd.map(({ path, name, token }) => `${path}: test "${name}" carries ${token}, which is in no rule form "checks".ruleId allows (${shown}); write it in an allowed form, or add its form`);
+  const owner = (path) => all.find((l) => testPaths(cfg, l.module).some((p) => p === "." || path === p || path.startsWith(`${p}/`)))?.module;
+  const notes = bare.flatMap(({ path, name, rule }) => {
+    const module = owner(path);
+    return module ? [`unqualified ${rule} in ${module} test ${path} › ${name}; qualify it with the module`] : [];
+  });
+  return { findings, notes };
 }
 
 // The generated units of one ledger, as path → text: one per row with a valid, first-used

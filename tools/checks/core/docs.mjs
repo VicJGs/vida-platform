@@ -11,7 +11,7 @@ import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
-import { config, exists, read, report, root, walk } from "./lib.mjs";
+import { config, exists, read, report, root, ruleIds, walk } from "./lib.mjs";
 import { ABSTRACT_MAX, BODY_MAX, REQUIRED, buildIndex, linksOf, serialize, tokens, unquote, units as load } from "./units.mjs";
 import { generate, guard, ledgers, ruleMap, skipped } from "./intent.mjs";
 
@@ -27,14 +27,14 @@ function glossaryTerms(path) {
   return terms;
 }
 
-// All-caps codes in prose: code, links and IDs (a "checks".ruleId match, which may carry
-// a letter suffix like BR-KN-S2-8b, or anything ending in -<digits>) removed.
-function codes(body, ruleId) {
-  const prose = body
+// All-caps codes in prose: code, links and IDs (anything written like a rule ID, in any
+// "checks".ruleId form, which may carry a letter suffix like BR-KN-S2-8b, or anything
+// ending in -<digits>) removed.
+function codes(body, rules) {
+  const prose = rules.strip(body
     .replace(/```[\s\S]*?```/g, "")
     .replace(/`[^`]*`/g, "")
-    .replace(/\]\([^)]*\)/g, "]")
-    .replace(ruleId, "")
+    .replace(/\]\([^)]*\)/g, "]"))
     .replace(/\b[A-Z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*-\d+\b/g, "");
   return [...new Set(prose.match(/\b[A-Z][A-Z0-9]*[A-Z](?:-[A-Z0-9]+)*\b/g) ?? [])];
 }
@@ -42,7 +42,7 @@ function codes(body, ruleId) {
 const cfg = config();
 const units = load(cfg);
 const glossary = glossaryTerms(cfg.glossary);
-const ruleId = new RegExp(`\\b(?:${cfg.ruleId})\\b`, "g");
+const rules = ruleIds(cfg);
 const findings = [];
 const ids = new Map();
 if (!units.length) findings.push(`check:docs: no doc units under ${cfg.docs}/; set "checks".docs`);
@@ -76,7 +76,7 @@ for (const u of units) {
     if (FORBIDDEN_HEADING.test(line)) findings.push(`${u.path}:${u.bodyLine + i}: rule 7, "${line.trim()}": status, steps and history live in Linear and git`);
   });
 
-  const unknown = codes(u.body, ruleId).filter((c) => !glossary?.has(c));
+  const unknown = codes(u.body, rules).filter((c) => !glossary?.has(c));
   if (unknown.length) findings.push(`${u.path}: rule 9, ${unknown.join(", ")} not in ${cfg.glossary}`);
 }
 
