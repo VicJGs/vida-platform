@@ -44,25 +44,46 @@ export function ledgers(cfg) {
 }
 
 // The ledger is a top-level list of rows: `- key: value`, then `  key: value`; lists inline
-// (`[a, b]`) or as `    - item` lines. Anything else is a problem, reported with its line.
+// (`[a, b]`), as `    - item` lines, or as the `[` … `]` block Prettier wraps a long inline
+// list into, one item per line. Anything else is a problem, reported with its line. So is a
+// plain value holding `: `: the parser could read it, but YAML reads a nested mapping, and
+// Prettier refuses the file.
 export function parseLedger(text) {
   const rows = [];
   const problems = [];
   let row = null;
   let list = null;
+  let flow = null; // the open `[` … `]` block of `list`: its text so far
+  let flowLine = 0;
+  const items = (inner) => inner.split(",").map((s) => unquote(s.trim())).filter(Boolean);
+  const close = () => {
+    if (!flow.includes("]")) return;
+    row.fields[list] = items(flow.slice(0, flow.indexOf("]")));
+    flow = null;
+    list = null;
+  };
   const set = (key, value, line) => {
     if (key in row.fields) { problems.push({ line, problem: `${key} given twice` }); return null; }
     if (value === "") { row.fields[key] = []; return key; }
-    row.fields[key] = /^\[.*\]$/.test(value)
-      ? value.slice(1, -1).split(",").map((s) => unquote(s.trim())).filter(Boolean)
-      : unquote(value);
+    if (/^\[.*\]$/.test(value)) { row.fields[key] = items(value.slice(1, -1)); return null; }
+    if (!/^["']/.test(value) && /:(\s|$)/.test(value)) {
+      problems.push({ line, problem: `${key} holds an unquoted ": ", which YAML reads as a nested mapping; quote the value` });
+    }
+    row.fields[key] = unquote(value);
     return null;
   };
   text.replace(/\r\n/g, "\n").split("\n").forEach((raw, i) => {
     const line = i + 1;
     if (!raw.trim() || /^\s*#/.test(raw)) return;
     let m;
-    if ((m = raw.match(/^- +([\w-]+):\s*(.*)$/))) {
+    if (flow !== null) {
+      flow += ` ${raw.trim()}`;
+      close();
+    } else if (row && list && !row.fields[list].length && (m = raw.match(/^ {4,}\[(.*)$/))) {
+      flow = m[1];
+      flowLine = line;
+      close();
+    } else if ((m = raw.match(/^- +([\w-]+):\s*(.*)$/))) {
       row = { line, fields: {} };
       rows.push(row);
       list = set(m[1], m[2].trim(), line);
@@ -74,6 +95,7 @@ export function parseLedger(text) {
       problems.push({ line, problem: "not a row line (- key: value, then two-space key: value)" });
     }
   });
+  if (flow !== null) problems.push({ line: flowLine, problem: `${list} opens a [ list that never closes with ]` });
   return { rows, problems };
 }
 
@@ -218,8 +240,11 @@ export function generate(cfg, ledger, found) {
   }
   const map = [
     `# Intended rules: ${ledger.module}`, "",
-    `Generated from \`${ledger.path}\`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under ${scoped.paths.map((p) => `\`${p}\``).join(", ")} is named with its row key, or with each of its proof rules.`, "",
+    // The abstract (check:docs rule 3) names the path count, so it stays one size however
+    // many paths a module has; the paths follow the states.
+    `Generated from \`${ledger.path}\`; edit the ledger, never this unit. Each row is its own unit, fetched by its row key. A row is tested when a test under the module's ${scoped.paths.length === 1 ? "test path" : `${scoped.paths.length} test paths`} (listed below) is named with its row key, or with each of its proof rules.`, "",
     ...Object.entries(by).map(([s, ids]) => `- ${s[0].toUpperCase()}${s.slice(1)}: ${ids.join(", ") || "none"}`), "",
+    `Test paths: ${scoped.paths.map((p) => `\`${p}\``).join(", ")}`, "",
   ].join("\n");
   const summary = `Intended rules of ${ledger.module}: ${rows.length} rows, ${by.tested.length} tested, ${by["partly tested"].length} partly tested, ${by["intent only"].length} intent only.`;
   out.set(ledger.unit, unit({ id: `INTENT-${ledger.module}`, kind: "intent", module: ledger.module, summary, anchors: [ledger.path] }, map));
