@@ -174,7 +174,7 @@ describe('mod-notifications S1 — inbox reads + lifecycle', () => {
     h = await setup()
   })
 
-  it('list returns seeded rows newest-first (BR-NT-S1)', async () => {
+  it('list returns seeded rows newest-first (BR-NT-S1-8)', async () => {
     await h.seed({ title: 'old', created_at: 1000 })
     await h.seed({ title: 'new', created_at: 3000 })
     await h.seed({ title: 'mid', created_at: 2000 })
