@@ -98,7 +98,7 @@ describe('App shell — whole-shell integration (S5)', () => {
     )
   })
 
-  it('the /graph route is lazy-split and degrades to the empty graph (BR-7 + BR-4-S5)', async () => {
+  it('the /graph route is lazy-split and degrades to the empty graph (BR-7)', async () => {
     render(<App />)
     await waitFor(() => expect(shellChrome()).not.toBeNull())
 
