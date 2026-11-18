@@ -6804,7 +6804,7 @@
       "anchors": [
         "docs/modules/calendar/intent.yaml"
       ],
-      "tokens": 206,
+      "tokens": 244,
       "path": "docs/modules/calendar/intent.md"
     },
     {
@@ -7090,7 +7090,7 @@
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 219,
+      "tokens": 265,
       "path": "docs/modules/shell/intent.md"
     },
     {

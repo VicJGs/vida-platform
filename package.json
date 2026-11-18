@@ -148,7 +148,10 @@
         "packages/ui/src/components/year-view.test.tsx",
         "packages/ui/src/components/living-view.test.tsx",
         "packages/ui/src/components/calendar-motion.test.tsx",
-        "packages/ui/src/internal/week-layout.test.ts"
+        "packages/ui/src/internal/week-layout.test.ts",
+        "packages/ui/src/components/calendar-view.test.tsx",
+        "packages/ui/src/internal/year-layout.test.ts",
+        "packages/ui/src/internal/living-format.test.ts"
       ],
       "integrations": [
         "packages/core/src/foundation/ingestion",
@@ -162,7 +165,11 @@
         "apps/web/src/nav",
         "apps/web/src/command-bar",
         "packages/ui/src/themes",
-        "packages/ui/src/theme-resolution.test.ts"
+        "packages/ui/src/theme-resolution.test.ts",
+        "packages/ui/src/provider.test.tsx",
+        "packages/ui/src/tamagui.config.test.ts",
+        "packages/ui/src/hooks/use-reduced-motion.test.tsx",
+        "packages/ui/src/internal/reduced-motion-css.test.ts"
       ],
       "sync": [
         "packages/core/src/sync",
