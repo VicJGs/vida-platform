@@ -386,10 +386,9 @@
       "supersedes": [],
       "summary": "Books owns reading plans; the study planner and every other consumer reads plans, deadlines and sessions and never writes them, and the Calendar reconciles while Books handles only its own end.",
       "anchors": [
-        "docs/modules/books/intent.yaml",
-        "packages/core/src/services/books/__tests__/service.test.ts"
+        "docs/modules/books/intent.yaml"
       ],
-      "tokens": 101,
+      "tokens": 96,
       "path": "docs/modules/books/intent/BK-12.md"
     },
     {
@@ -492,10 +491,9 @@
       "supersedes": [],
       "summary": "A book is the work and exists without any copy; it has zero or more per-format assets, each with its own native position (a page, an e-book location or an audio timestamp), and a physical or braille asset holds a position the user enters.",
       "anchors": [
-        "docs/modules/books/intent.yaml",
-        "packages/core/src/services/books/__tests__/service.test.ts"
+        "docs/modules/books/intent.yaml"
       ],
-      "tokens": 110,
+      "tokens": 105,
       "path": "docs/modules/books/intent/BK-2.md"
     },
     {
@@ -727,10 +725,9 @@
       "supersedes": [],
       "summary": "Positions map between formats automatically, from a transcription and table-of-contents anchors near the stopped point, never by manual calibration; while the mapping is pending, failed or absent, the user sees the native position and an explicit \"not synced yet\" state, and a mapped position is never guessed.",
       "anchors": [
-        "docs/modules/books/intent.yaml",
-        "packages/core/src/services/books/__tests__/service.test.ts"
+        "docs/modules/books/intent.yaml"
       ],
-      "tokens": 125,
+      "tokens": 119,
       "path": "docs/modules/books/intent/BK-4.md"
     },
     {
@@ -970,10 +967,9 @@
       "supersedes": [],
       "summary": "A grant is never permanent; revoking it syncs and the capability stops on its next call.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+        "docs/modules/spaces/intent.yaml"
       ],
-      "tokens": 55,
+      "tokens": 56,
       "path": "docs/modules/spaces/intent/CB-14.md"
     },
     {
@@ -1094,8 +1090,7 @@
       "summary": "Every capability declares loading, empty, error and success for each render target it supports.",
       "anchors": [
         "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
-        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts"
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
       ],
       "tokens": 56,
       "path": "docs/modules/spaces/intent/CB-6.md"
@@ -1136,10 +1131,9 @@
       "supersedes": [],
       "summary": "A capability whose declared envelope changes fails closed until the user grants it again, so privilege never grows silently.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+        "docs/modules/spaces/intent.yaml"
       ],
-      "tokens": 63,
+      "tokens": 65,
       "path": "docs/modules/spaces/intent/CB-9.md"
     },
     {
@@ -2376,10 +2370,9 @@
       "supersedes": [],
       "summary": "Subject and program progress lives in an Education-only measure, its kind and binding mode on the Projects axes but separate storage, a nullable override that derives on read (a subject from its grade, a program by rolling up its subjects), and unmeasured reads null, never zero.",
       "anchors": [
-        "docs/modules/learning/intent.yaml",
-        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+        "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 168,
+      "tokens": 161,
       "path": "docs/modules/learning/intent/ED-10.md"
     },
     {
@@ -2390,10 +2383,9 @@
       "supersedes": [],
       "summary": "A curriculum is user-shaped and forkable; a fork deep-copies the live terms and subjects into a new tree with a lineage pointer, remaps their refs and resets progress, never writes the base, and deleting a fork leaves the base.",
       "anchors": [
-        "docs/modules/learning/intent.yaml",
-        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+        "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 145,
+      "tokens": 140,
       "path": "docs/modules/learning/intent/ED-11.md"
     },
     {
@@ -2795,10 +2787,9 @@
       "supersedes": [],
       "summary": "A calendar feed fetches on the device every sync interval as a user-added source under its external grant; events dedup by feed and uid and are ignored rather than deleted, unmatched events wait for a manual match, a failed fetch is kept in last error and never leaves a silently stale schedule, revoking a feed stops future fetches and keeps synced events, and the server never sees feed plaintext.",
       "anchors": [
-        "docs/modules/learning/intent.yaml",
-        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+        "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 220,
+      "tokens": 214,
       "path": "docs/modules/learning/intent/ED-6.md"
     },
     {
@@ -2809,10 +2800,9 @@
       "supersedes": [],
       "summary": "A grading system (per institution, program or subject override) defines weighted components and a scale; a subject's grade and any term or curriculum average derive from assessments through the nearest system, components that don't sum to 100% are flagged and never normalized, and a partial result is flagged, never hand-set or fabricated.",
       "anchors": [
-        "docs/modules/learning/intent.yaml",
-        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+        "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 170,
+      "tokens": 164,
       "path": "docs/modules/learning/intent/ED-7.md"
     },
     {
@@ -2823,10 +2813,9 @@
       "supersedes": [],
       "summary": "An assessment (exam, quiz, test, presentation or work) sits in the Learning hierarchy where the syllabus and the program's setup place it, under its subject and the module or topic it covers, never free of its parent; it carries its date, weight or points, modality and score, recording a result writes the score only and the grade re-derives, and rows auto-recorded from extraction carry source ai.",
       "anchors": [
-        "docs/modules/learning/intent.yaml",
-        "packages/core/src/services/learning-education/__tests__/service.test.ts"
+        "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 166,
+      "tokens": 160,
       "path": "docs/modules/learning/intent/ED-8.md"
     },
     {
@@ -2867,7 +2856,7 @@
         "docs/modules/editor/intent.yaml",
         "packages/editor/src/serializers/to-pdf.test.tsx"
       ],
-      "tokens": 99,
+      "tokens": 101,
       "path": "docs/modules/editor/intent/EDT-10.md"
     },
     {
@@ -2878,8 +2867,7 @@
       "supersedes": [],
       "summary": "The Word export renders every block and mark faithfully, keeps nested blocks inside quotes, callouts and table cells, prints an image as a labeled text placeholder until attachments resolve, and degrades instead of throwing; it is emit-only.",
       "anchors": [
-        "docs/modules/editor/intent.yaml",
-        "packages/editor/src/serializers/to-docx.test.ts"
+        "docs/modules/editor/intent.yaml"
       ],
       "tokens": 104,
       "path": "docs/modules/editor/intent/EDT-11.md"
@@ -3193,8 +3181,7 @@
       "supersedes": [],
       "summary": "The formatting toolbar sits inside the editor and stays in view on a long page; it reflects the active marks and block, disables any control that can't run, offers the module blocks and callout variants under Insert after the selected block, and is hidden when the editor is read-only.",
       "anchors": [
-        "docs/modules/editor/intent.yaml",
-        "packages/editor/src/toolbar.test.tsx"
+        "docs/modules/editor/intent.yaml"
       ],
       "tokens": 119,
       "path": "docs/modules/editor/intent/EDT-5.md"
@@ -3207,8 +3194,7 @@
       "supersedes": [],
       "summary": "Typing / opens a block menu at the caret while focus stays in the editor; results rank shortcut, title and keyword matches first and keep one header per category, the selection scrolls into view, and / stays literal inside a code block.",
       "anchors": [
-        "docs/modules/editor/intent.yaml",
-        "packages/editor/src/slash-commands.test.ts"
+        "docs/modules/editor/intent.yaml"
       ],
       "tokens": 102,
       "path": "docs/modules/editor/intent/EDT-6.md"
@@ -3236,10 +3222,9 @@
       "summary": "An inline block's configuration lives in its node attributes per its config schema and round-trips losslessly for the declared schema; each block is identified by its block type when read back.",
       "anchors": [
         "docs/modules/editor/intent.yaml",
-        "packages/editor/src/extensions/integration-blocks.test.tsx",
         "packages/editor/src/slash-commands.test.ts"
       ],
-      "tokens": 91,
+      "tokens": 93,
       "path": "docs/modules/editor/intent/EDT-8.md"
     },
     {
@@ -3250,10 +3235,9 @@
       "supersedes": [],
       "summary": "Markdown export and import round-trip losslessly from the document (document to Markdown to the same document); export writes one canonical spelling, callouts and inline blocks travel in carriers that keep their configuration, frontmatter is optional, and import degrades on anything else, never throwing.",
       "anchors": [
-        "docs/modules/editor/intent.yaml",
-        "packages/editor/src/serializers/serializers.test.ts"
+        "docs/modules/editor/intent.yaml"
       ],
-      "tokens": 118,
+      "tokens": 120,
       "path": "docs/modules/editor/intent/EDT-9.md"
     },
     {
@@ -6803,7 +6787,7 @@
       "module": "books",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of books: 35 rows, 4 tested, 2 partly tested, 29 intent only.",
+      "summary": "Intended rules of books: 35 rows, 2 tested, 1 partly tested, 32 intent only.",
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
@@ -6842,7 +6826,7 @@
       "module": "editor",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of editor: 31 rows, 6 tested, 4 partly tested, 21 intent only.",
+      "summary": "Intended rules of editor: 31 rows, 3 tested, 3 partly tested, 25 intent only.",
       "anchors": [
         "docs/modules/editor/intent.yaml"
       ],
@@ -6972,11 +6956,11 @@
       "module": "learning",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of learning: 37 rows, 2 tested, 4 partly tested, 31 intent only.",
+      "summary": "Intended rules of learning: 37 rows, 1 tested, 0 partly tested, 36 intent only.",
       "anchors": [
         "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 149,
+      "tokens": 151,
       "path": "docs/modules/learning/intent.md"
     },
     {
@@ -6985,7 +6969,7 @@
       "module": "notes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of notes: 28 rows, 6 tested, 2 partly tested, 20 intent only.",
+      "summary": "Intended rules of notes: 28 rows, 6 tested, 3 partly tested, 19 intent only.",
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
@@ -7050,7 +7034,7 @@
       "module": "purposes",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of purposes: 52 rows, 5 tested, 0 partly tested, 47 intent only.",
+      "summary": "Intended rules of purposes: 52 rows, 4 tested, 0 partly tested, 48 intent only.",
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
@@ -7128,7 +7112,7 @@
       "module": "spaces",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of spaces: 60 rows, 11 tested, 8 partly tested, 41 intent only.",
+      "summary": "Intended rules of spaces: 60 rows, 9 tested, 7 partly tested, 44 intent only.",
       "anchors": [
         "docs/modules/spaces/intent.yaml"
       ],
@@ -7141,11 +7125,11 @@
       "module": "sync",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sync: 46 rows, 1 tested, 0 partly tested, 45 intent only.",
+      "summary": "Intended rules of sync: 46 rows, 0 tested, 0 partly tested, 46 intent only.",
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 174,
+      "tokens": 175,
       "path": "docs/modules/sync/intent.md"
     },
     {
@@ -7154,7 +7138,7 @@
       "module": "tasks",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of tasks: 27 rows, 4 tested, 1 partly tested, 22 intent only.",
+      "summary": "Intended rules of tasks: 27 rows, 2 tested, 1 partly tested, 24 intent only.",
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
@@ -7640,8 +7624,7 @@
       "summary": "The journal of the day renders its terminal states, loading, first day with each module block's own nothing-yet, a failed contribution degrading only its block, and populated; it is never blank.",
       "anchors": [
         "docs/modules/journals/intent.yaml",
-        "packages/core/src/services/journals/__tests__/dashboard.test.ts",
-        "packages/core/src/services/journals/__tests__/registry.test.ts"
+        "packages/core/src/services/journals/__tests__/dashboard.test.ts"
       ],
       "tokens": 97,
       "path": "docs/modules/journals/intent/JR-18.md"
@@ -9063,7 +9046,6 @@
       "supersedes": [],
       "summary": "The note Overview mounts the global what-links-here panel, and the Notes collection's Neural layout renders the note slice of the global link graph, honestly empty while its data prep is unbuilt.",
       "anchors": [
-        "apps/web/src/notes/backlinks.test.ts",
         "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
@@ -9117,7 +9099,8 @@
       "supersedes": [],
       "summary": "Editor content has its own write path (writePageContent), never the LWW metadata patch, and merges as a per-page Yjs CRDT at sync (M4).",
       "anchors": [
-        "docs/modules/notes/intent.yaml"
+        "docs/modules/notes/intent.yaml",
+        "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
       "tokens": 75,
       "path": "docs/modules/notes/intent/NP-4.md"
@@ -9158,11 +9141,10 @@
       "supersedes": [],
       "summary": "Wiki-links resolve by page id, never by text or slug; the [[ picker binds a concrete target_page_id, so links survive renames and title clashes.",
       "anchors": [
-        "apps/web/src/notes/wikilink.test.ts",
         "docs/modules/notes/intent.yaml",
         "packages/core/src/services/notes/__tests__/notes-service.test.ts"
       ],
-      "tokens": 74,
+      "tokens": 69,
       "path": "docs/modules/notes/intent/NP-7.md"
     },
     {
@@ -9842,10 +9824,9 @@
       "supersedes": [],
       "summary": "Deleting a purpose clears its targets' purpose (they survive standalone) and a value clears its purposes' value; contributions, reviews and metric values go with their owner, and soft delete hides while keeping history.",
       "anchors": [
-        "docs/modules/purposes/intent.yaml",
-        "packages/core/src/services/purposes/__tests__/service.test.ts"
+        "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 106,
+      "tokens": 102,
       "path": "docs/modules/purposes/intent/PG-19.md"
     },
     {
@@ -12789,8 +12770,7 @@
       "supersedes": [],
       "summary": "A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
+        "docs/modules/spaces/intent.yaml"
       ],
       "tokens": 114,
       "path": "docs/modules/spaces/intent/SPC-1.md"
@@ -12926,8 +12906,7 @@
       "summary": "Tags (grouping) and links (typed reference) stay two tables drawing on the one registry, and Vida resolves an entity's associations into one unified space or two separate ones on the user's choice, a real behavioral resolution over untouched storage.",
       "anchors": [
         "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
-        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts"
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
       ],
       "tokens": 114,
       "path": "docs/modules/spaces/intent/SPC-4.md"
@@ -13794,10 +13773,9 @@
       "supersedes": [],
       "summary": "Until sync is activated, the sync engine does no network I/O; its flush loop exists but every transport, push and pull step is inert, so nothing leaves the device.",
       "anchors": [
-        "docs/modules/sync/intent.yaml",
-        "packages/core/src/sync/__tests__/scaffold.test.ts"
+        "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 74,
+      "tokens": 68,
       "path": "docs/modules/sync/intent/SY-1.md"
     },
     {
@@ -14055,10 +14033,9 @@
       "supersedes": [],
       "summary": "A task sets at most one of project_id, milestone_id, course_id and contact_id, and a milestone implies its project; two parent FKs are a typed MultipleParentError, and a task with none is a first-class standalone task.",
       "anchors": [
-        "docs/modules/tasks/intent.yaml",
-        "packages/core/src/services/tasks/__tests__/service.test.ts"
+        "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 94,
+      "tokens": 89,
       "path": "docs/modules/tasks/intent/TK-2.md"
     },
     {
@@ -14187,10 +14164,9 @@
       "supersedes": [],
       "summary": "Deleting a task deletes its sub-tasks and its task_time_logs.",
       "anchors": [
-        "docs/modules/tasks/intent.yaml",
-        "packages/core/src/services/tasks/__tests__/service.test.ts"
+        "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 55,
+      "tokens": 50,
       "path": "docs/modules/tasks/intent/TK-4.md"
     },
     {

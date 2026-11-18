@@ -9,7 +9,9 @@ export const DEFAULTS = {
   glossary: "docs/glossary.yaml",
   index: "docs/index.json",
   adrDirs: ["docs/decisions", ".adr"],
-  ruleId: "RULE-[A-Z]+-\\d+",
+  ruleId: "RULE-[A-Z]+-\\d+", // the allowed rule forms: one regex, or a list with one regex per form
+  ruleLike: null, // anything written like a rule ID (regex); one in no allowed form fails check:rules. Default: the forms
+  ruleUnqualified: null, // rule forms that are one ID repo-wide (regex); check:rules notes them in a module's test names
   rulesBaseline: "tools/checks/rules-baseline.txt",
   intentId: "[A-Z]+-\\d+",
   intentLedger: "docs/modules/<module>/intent.yaml",
@@ -38,6 +40,34 @@ export function walk(dir) {
     const rel = `${dir}/${name}`;
     return statSync(join(root, rel)).isDirectory() ? walk(rel) : [rel];
   });
+}
+
+// Rule IDs in text. "checks".ruleId lists the allowed forms (one regex or several);
+// "checks".ruleLike finds anything written like a rule ID, prefix and all (R4-BR-1,
+// BR-4-S5), so a token in no allowed form is reported, never read as the allowed ID
+// inside it. A token touching a letter, digit, _ or a further -segment is not cut short.
+// N/M names both IDs: BR-S2-1/5 is BR-S2-1 and BR-S2-5.
+export function ruleIds(cfg) {
+  const forms = [cfg.ruleId].flat();
+  const allowed = forms.map((f) => `(?:${f})`).join("|");
+  const whole = new RegExp(`^(?:${allowed})$`);
+  const token = new RegExp(`(?<![\\w-])(?:${cfg.ruleLike ?? allowed})(?:/\\d+[a-z]?)*(?![\\w]|-\\w)`, "g");
+  const expand = (t) => {
+    const [base, ...more] = t.split("/");
+    return [base, ...more.map((n) => (/\d+[a-z]?$/.test(base) ? base.replace(/\d+[a-z]?$/, n) : `${base}/${n}`))];
+  };
+  // Every token in the text: its IDs in an allowed form (ids) and the tokens in none (odd).
+  const scan = (text) => {
+    const ids = [];
+    const odd = [];
+    for (const [t] of text.matchAll(token)) {
+      const each = expand(t);
+      if (each.every((id) => whole.test(id))) ids.push(...each);
+      else odd.push(t);
+    }
+    return { ids, odd };
+  };
+  return { forms, whole, scan, strip: (text) => text.replace(token, " "), shown: forms.join(" | ") };
 }
 
 export const read = (rel) => readFileSync(join(root, rel), "utf8");

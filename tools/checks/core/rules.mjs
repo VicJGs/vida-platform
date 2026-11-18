@@ -1,5 +1,8 @@
 // check:rules — every rule ID found in the docs or in a code comment has a test whose
-// name carries that ID. The ID format is package.json "checks".ruleId (a regex).
+// name (an it() or test() title) carries that ID. The ID forms are package.json
+// "checks".ruleId (a regex, or a list of one per form); a token written like a rule ID
+// ("checks".ruleLike) in a test name in no allowed form fails, so a new form never counts
+// for nothing, and a "checks".ruleUnqualified ID in a module's test names is noted.
 // IDs listed in the "checks".rulesBaseline file are known to lack a test; the list only
 // shrinks: a listed ID that gains a test fails until its line is removed.
 // `--write-baseline` writes the current untested IDs to that file, once, on adoption.
@@ -9,12 +12,13 @@
 import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { config, exists, read, report, root } from "./lib.mjs";
-import { ledgers, problems, ruleMap, scope, skipped, state } from "./intent.mjs";
+import { forms, ledgers, problems, ruleMap, scope, skipped, state } from "./intent.mjs";
 
 const cfg = config();
 const intent = ledgers(cfg);
 const map = ruleMap(cfg, skipped(intent));
 const { stated, tests } = map;
+const form = forms(cfg, intent, map);
 
 const untested = [...stated].filter(([rule]) => !tests.has(rule));
 if (process.argv.includes("--write-baseline")) {
@@ -32,15 +36,17 @@ const findings = [
   ...untested.filter(([rule]) => !baseline.has(rule)).map(([rule, where]) => `${rule} (stated in ${where}) has no test named with it`),
   ...[...baseline].filter(([rule]) => tests.has(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
   ...problems(cfg, intent, map),
+  ...form.findings,
 ];
-if (!stated.size) findings.push(`check:rules: no rule ID matching ${cfg.ruleId} stated in ${cfg.docs}/ or code comments; set "checks".ruleId`);
+if (!stated.size) findings.push(`check:rules: no rule ID matching ${[cfg.ruleId].flat().join(" | ")} stated in ${cfg.docs}/ or code comments; set "checks".ruleId`);
 const baselined = untested.filter(([rule]) => baseline.has(rule)).length;
 
 const rows = intent.flatMap((l) => {
   const scoped = scope(cfg, l, map);
   return l.rows.filter((r) => typeof r.fields.id === "string").map((r) => ({ l, r, s: state(r, scoped) }));
 });
-const notes = rows.map(({ l, r, s }) => `INTENT-${l.module} ${r.fields.id}: ${s}`);
+const notes = [...rows.map(({ l, r, s }) => `INTENT-${l.module} ${r.fields.id}: ${s}`), ...form.notes];
 const count = (s) => rows.filter((x) => x.s === s).length;
 const intentPart = intent.length ? `; ${rows.length} intent rows: ${count("tested")} tested, ${count("partly tested")} partly tested, ${count("intent only")} intent only` : "";
-report(`check:rules (${stated.size} rule IDs, ${tests.size} tested, ${baselined} baselined${intentPart})`, findings, notes);
+const bareTotal = form.notes.length ? `; ${form.notes.length} unqualified rule IDs in module tests` : "";
+report(`check:rules (${stated.size} rule IDs, ${tests.size} tested, ${baselined} baselined${intentPart}${bareTotal})`, findings, notes);

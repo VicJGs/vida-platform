@@ -22,7 +22,7 @@ const ALLOW: Record<keyof CalendarServices, ReadonlySet<string>> = {
 const WRITE = /^\s*(insert|update|delete|replace)\b/i
 
 describe('the calendar data plane is read-only (BR-CAL-S7-6 · EC-12)', () => {
-  it('every range × period: no write SQL on any driver method, no non-allowlisted service call', async () => {
+  it('every range × period: no write SQL on any driver method, no non-allowlisted service call (BR-CAL-S7-6)', async () => {
     let armed = false
     const writes: string[] = []
     const driver = createBetterSqlite3Driver(new Database(':memory:'), (sql) => {

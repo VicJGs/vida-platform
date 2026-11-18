@@ -5,15 +5,15 @@ module: spaces
 status: active
 supersedes: []
 summary: "A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove."
-anchors: [docs/modules/spaces/intent.yaml, packages/core/src/foundation/spaces/__tests__/spaces.test.ts]
+anchors: [docs/modules/spaces/intent.yaml]
 tokens: 114
 generated: true
 ---
-# SPC-1 (partly tested)
+# SPC-1 (intent only)
 
 A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.
 
-- Proof: BR-1 (no test), BR-14 (tested), BR-15 (tested)
+- Proof: BR-1 (no test), BR-14 (no test), BR-15 (no test)
 - Uses: notes
 - Work: LIF-570
 
