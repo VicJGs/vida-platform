@@ -6778,7 +6778,7 @@
       "anchors": [
         "docs/modules/ai/intent.yaml"
       ],
-      "tokens": 127,
+      "tokens": 139,
       "path": "docs/modules/ai/intent.md"
     },
     {
@@ -6791,7 +6791,7 @@
       "anchors": [
         "docs/modules/books/intent.yaml"
       ],
-      "tokens": 147,
+      "tokens": 160,
       "path": "docs/modules/books/intent.md"
     },
     {
@@ -6804,7 +6804,7 @@
       "anchors": [
         "docs/modules/calendar/intent.yaml"
       ],
-      "tokens": 192,
+      "tokens": 206,
       "path": "docs/modules/calendar/intent.md"
     },
     {
@@ -6817,7 +6817,7 @@
       "anchors": [
         "docs/modules/check-ins/intent.yaml"
       ],
-      "tokens": 130,
+      "tokens": 142,
       "path": "docs/modules/check-ins/intent.md"
     },
     {
@@ -6830,7 +6830,7 @@
       "anchors": [
         "docs/modules/editor/intent.yaml"
       ],
-      "tokens": 139,
+      "tokens": 152,
       "path": "docs/modules/editor/intent.md"
     },
     {
@@ -6843,7 +6843,7 @@
       "anchors": [
         "docs/modules/encryption/intent.yaml"
       ],
-      "tokens": 139,
+      "tokens": 151,
       "path": "docs/modules/encryption/intent.md"
     },
     {
@@ -6856,7 +6856,7 @@
       "anchors": [
         "docs/modules/finance/intent.yaml"
       ],
-      "tokens": 140,
+      "tokens": 153,
       "path": "docs/modules/finance/intent.md"
     },
     {
@@ -6869,7 +6869,7 @@
       "anchors": [
         "docs/modules/gamification/intent.yaml"
       ],
-      "tokens": 185,
+      "tokens": 198,
       "path": "docs/modules/gamification/intent.md"
     },
     {
@@ -6882,7 +6882,7 @@
       "anchors": [
         "docs/modules/graph/intent.yaml"
       ],
-      "tokens": 134,
+      "tokens": 148,
       "path": "docs/modules/graph/intent.md"
     },
     {
@@ -6895,7 +6895,7 @@
       "anchors": [
         "docs/modules/habits/intent.yaml"
       ],
-      "tokens": 133,
+      "tokens": 146,
       "path": "docs/modules/habits/intent.md"
     },
     {
@@ -6908,7 +6908,7 @@
       "anchors": [
         "docs/modules/health/intent.yaml"
       ],
-      "tokens": 241,
+      "tokens": 254,
       "path": "docs/modules/health/intent.md"
     },
     {
@@ -6921,7 +6921,7 @@
       "anchors": [
         "docs/modules/integrations/intent.yaml"
       ],
-      "tokens": 187,
+      "tokens": 201,
       "path": "docs/modules/integrations/intent.md"
     },
     {
@@ -6934,7 +6934,7 @@
       "anchors": [
         "docs/modules/journals/intent.yaml"
       ],
-      "tokens": 196,
+      "tokens": 209,
       "path": "docs/modules/journals/intent.md"
     },
     {
@@ -6947,7 +6947,7 @@
       "anchors": [
         "docs/modules/knowledge/intent.yaml"
       ],
-      "tokens": 198,
+      "tokens": 212,
       "path": "docs/modules/knowledge/intent.md"
     },
     {
@@ -6960,7 +6960,7 @@
       "anchors": [
         "docs/modules/learning/intent.yaml"
       ],
-      "tokens": 151,
+      "tokens": 164,
       "path": "docs/modules/learning/intent.md"
     },
     {
@@ -6973,7 +6973,7 @@
       "anchors": [
         "docs/modules/notes/intent.yaml"
       ],
-      "tokens": 134,
+      "tokens": 148,
       "path": "docs/modules/notes/intent.md"
     },
     {
@@ -6986,7 +6986,7 @@
       "anchors": [
         "docs/modules/notifications/intent.yaml"
       ],
-      "tokens": 171,
+      "tokens": 184,
       "path": "docs/modules/notifications/intent.md"
     },
     {
@@ -6999,7 +6999,7 @@
       "anchors": [
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 127,
+      "tokens": 141,
       "path": "docs/modules/onboarding/intent.md"
     },
     {
@@ -7012,7 +7012,7 @@
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 138,
+      "tokens": 151,
       "path": "docs/modules/preferences/intent.md"
     },
     {
@@ -7025,7 +7025,7 @@
       "anchors": [
         "docs/modules/projects/intent.yaml"
       ],
-      "tokens": 143,
+      "tokens": 156,
       "path": "docs/modules/projects/intent.md"
     },
     {
@@ -7038,7 +7038,7 @@
       "anchors": [
         "docs/modules/purposes/intent.yaml"
       ],
-      "tokens": 183,
+      "tokens": 197,
       "path": "docs/modules/purposes/intent.md"
     },
     {
@@ -7051,7 +7051,7 @@
       "anchors": [
         "docs/modules/relationships/intent.yaml"
       ],
-      "tokens": 143,
+      "tokens": 156,
       "path": "docs/modules/relationships/intent.md"
     },
     {
@@ -7064,7 +7064,7 @@
       "anchors": [
         "docs/modules/routines/intent.yaml"
       ],
-      "tokens": 142,
+      "tokens": 154,
       "path": "docs/modules/routines/intent.md"
     },
     {
@@ -7077,7 +7077,7 @@
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 215,
+      "tokens": 228,
       "path": "docs/modules/sessions/intent.md"
     },
     {
@@ -7090,7 +7090,7 @@
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 205,
+      "tokens": 219,
       "path": "docs/modules/shell/intent.md"
     },
     {
@@ -7103,7 +7103,7 @@
       "anchors": [
         "docs/modules/skills/intent.yaml"
       ],
-      "tokens": 143,
+      "tokens": 156,
       "path": "docs/modules/skills/intent.md"
     },
     {
@@ -7116,7 +7116,7 @@
       "anchors": [
         "docs/modules/spaces/intent.yaml"
       ],
-      "tokens": 214,
+      "tokens": 228,
       "path": "docs/modules/spaces/intent.md"
     },
     {
@@ -7129,7 +7129,7 @@
       "anchors": [
         "docs/modules/sync/intent.yaml"
       ],
-      "tokens": 175,
+      "tokens": 189,
       "path": "docs/modules/sync/intent.md"
     },
     {
@@ -7142,7 +7142,7 @@
       "anchors": [
         "docs/modules/tasks/intent.yaml"
       ],
-      "tokens": 133,
+      "tokens": 146,
       "path": "docs/modules/tasks/intent.md"
     },
     {
