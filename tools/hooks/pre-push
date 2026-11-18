@@ -1,9 +1,15 @@
 #!/bin/sh
-# Blocks a push unless its tier of local checks passes, the same tiers as CI.
-#   docs: every change since the merge base with origin/main is on the docs allow-list
-#         ("checks".docsTier, tools/checks/core/changed.mjs) → pnpm check:fast
-#   code: anything else → the full pnpm check. Also for a push to main, a pushed commit that
-#         is not HEAD, a branch without the check:tier script, or a failed fetch.
+# Blocks a push unless its tier of local checks passes, the same tiers as CI. The tier is
+# the first whose allow-lists cover every change since the merge base with origin/main
+# (tools/checks/core/changed.mjs):
+#   docs:     "checks".docsTier → pnpm check:fast
+#   checks:   + the gate's own files ("checks".checksTier) → pnpm check:checks, every wired
+#             toolkit check, no package tasks: no test can fail on a change to a check
+#   affected: + workspace packages ("checks".affectedTier) → pnpm check:affected, the
+#             checks, then lint typecheck test e2e for the changed packages and their
+#             dependents only (turbo --affected)
+#   code:     anything else → the full pnpm check. Also for a push to main, a pushed commit
+#             that is not HEAD, a branch without the check:tier script, or a failed fetch.
 # Install: cp tools/hooks/pre-push "$(git rev-parse --git-common-dir)/hooks/pre-push"
 # Shared by every worktree; runs in the worktree being pushed from.
 # Skip when every pushed ref is a deletion (local sha all zeros): nothing new to check.
@@ -32,7 +38,12 @@ if [ "$tier" = docs ]; then
     reasons=$(mktemp)
     tier=$(pnpm -s check:tier 2>"$reasons")
     why=$(cat "$reasons"); rm -f "$reasons"
-    if [ "$tier" = docs ]; then why="every change since origin/main is on the docs allow-list"; else tier=code; fi
+    case "$tier" in
+      docs) why="every change since origin/main is on the docs allow-list" ;;
+      checks) why="every change since origin/main is docs or the gate's own files" ;;
+      affected) why="every change since origin/main is docs, checks or inside a workspace package" ;;
+      *) tier=code ;;
+    esac
   fi
 fi
 echo "pre-push: tier $tier, $why"
@@ -40,9 +51,17 @@ if [ "$tier" = docs ]; then
   pnpm check:fast || { echo "Checks failed (tier docs): push blocked"; exit 1; }
   exit 0
 fi
+if [ "$tier" = checks ]; then
+  pnpm check:checks || { echo "Checks failed (tier checks): push blocked"; exit 1; }
+  exit 0
+fi
 # Playwright's bundled Chromium doesn't support macOS 12; reuse a local Chromium browser.
 : "${PW_EXECUTABLE_PATH:=/Applications/Brave Browser.app/Contents/MacOS/Brave Browser}"
 export PW_EXECUTABLE_PATH
 # pnpm check = format:check, then lint typecheck test e2e (--continue: one failure never hides later results).
 # --concurrency=1 is appended to turbo: on this 2-core / 8 GB machine, parallel suites time out (editor, vault).
+if [ "$tier" = affected ]; then
+  pnpm check:affected --concurrency=1 || { echo "Checks failed (tier affected): push blocked"; exit 1; }
+  exit 0
+fi
 pnpm check --concurrency=1 || { echo "Checks failed (tier code): push blocked"; exit 1; }
