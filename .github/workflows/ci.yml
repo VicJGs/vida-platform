@@ -36,9 +36,11 @@ jobs:
           name: doc-inventory
           path: inventory.csv
 
-      # Two tiers, as in the pre-push hook. A branch or PR whose every change is on the docs
-      # allow-list ("checks".docsTier) runs check:fast; anything else runs the full gate, and a
-      # push to main always does (the post-merge safety net).
+      # The pre-push hook's tiers (tools/checks/core/changed.mjs): docs → check:fast; checks
+      # (docs + the gate's own files) → check:checks; affected (+ workspace packages) →
+      # check:affected, the package tasks of the changed packages and their dependents only;
+      # anything else → the full gate. A push to main always runs the full gate (the
+      # post-merge safety net).
       - name: Tier
         id: tier
         run: |
@@ -51,14 +53,25 @@ jobs:
             echo "Tier $tier"
           fi
 
-      - if: steps.tier.outputs.tier != 'docs'
+      - if: steps.tier.outputs.tier == 'code' || steps.tier.outputs.tier == 'affected'
         run: pnpm --filter @vida/web exec playwright install --with-deps chromium
 
       # The same command as the pre-push hook: guardrail scan, format, toolkit checks, then lint typecheck test e2e.
-      - if: steps.tier.outputs.tier != 'docs'
+      - if: steps.tier.outputs.tier != 'docs' && steps.tier.outputs.tier != 'checks' && steps.tier.outputs.tier != 'affected'
         run: pnpm check
         env:
           TURBO_TELEMETRY_DISABLED: 1
+
+      # Affected tier: the toolkit checks, then lint typecheck test e2e for the changed
+      # packages and their dependents (turbo --affected against origin/main).
+      - if: steps.tier.outputs.tier == 'affected'
+        run: pnpm check:affected
+        env:
+          TURBO_TELEMETRY_DISABLED: 1
+
+      # Checks tier: every wired toolkit check, no package tasks.
+      - if: steps.tier.outputs.tier == 'checks'
+        run: pnpm check:checks
 
       # Docs tier: guardrail scan, format, one-way-door, rules, and no new check:docs findings.
       - if: steps.tier.outputs.tier == 'docs'
