@@ -60,6 +60,7 @@ function createBetterSqlite3Driver(db: Database.Database): SqliteDriver {
 interface Harness {
   svc: PreferencesService
   db: DrizzleDb
+  raw: Database.Database
 }
 
 async function setup(): Promise<Harness> {
@@ -69,7 +70,7 @@ async function setup(): Promise<Harness> {
   await migrate(driver)
   const db = createDrizzleProxy(driver)
   const svc = createPreferencesService({ db, deviceId: 'test-device' })
-  return { svc, db }
+  return { svc, db, raw: bsql }
 }
 
 describe('mod-preferences Slice 1 — user_preferences service', () => {
@@ -79,7 +80,7 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   // AC1 — read-or-DEFAULT, no persist (PR-2 / N-3 / B1)
-  it('returns full DEFAULTS on an empty store and creates no row', async () => {
+  it('BR-PREF-2 returns full DEFAULTS on an empty store and creates no row', async () => {
     const prefs = await h.svc.getMergedPreferences()
     expect(prefs).toEqual(USER_PREFERENCES_DEFAULTS)
     const repo = createRepository(h.db, userPreferences, { deviceId: 'test-device', encryptedFields: [] })
@@ -102,7 +103,7 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   // AC3 — second write updates the SAME row + bumps _sync_version (PR-3 / BR-P4)
-  it('updates the same singleton row on a second write', async () => {
+  it('BR-PREF-3 updates the same singleton row on a second write', async () => {
     await h.svc.updatePreferences({ theme: 'dark' })
     await h.svc.updatePreferences({ week_starts_on: 0 })
     const repo = createRepository(h.db, userPreferences, { deviceId: 'test-device', encryptedFields: [] })
@@ -122,6 +123,17 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
     expect(merged.active_modules).toEqual(['tasks', 'habits'])
   })
 
+  // E9 config is stored as plaintext: the raw column holds the value itself, not ciphertext (PR-1)
+  it('BR-PREF-1 E9 fields are stored as plaintext', async () => {
+    await h.svc.updatePreferences({ persona: 'student', active_modules: ['tasks', 'habits'] })
+    const row = h.raw.prepare('SELECT persona, active_modules FROM user_preferences').get() as {
+      persona: string
+      active_modules: string
+    }
+    expect(row.persona).toBe('student')
+    expect(JSON.parse(row.active_modules)).toEqual(['tasks', 'habits'])
+  })
+
   // AC5 — module visibility JSON boundary (PR-7)
   it('sets and reads module visibility distinctly from feature_gamification', async () => {
     await h.svc.setModuleVisibility('habits', false)
@@ -137,7 +149,7 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   // AC7 — malformed JSON degrades to default (IR-e)
-  it('degrades malformed JSON to default without throwing', async () => {
+  it('BR-PREF-7 degrades malformed JSON to default without throwing', async () => {
     await h.svc.updatePreferences({ theme: 'dark' }) // create the row
     const repo = createRepository(h.db, userPreferences, { deviceId: 'test-device', encryptedFields: [] })
     const row = (await repo.findAll())[0]
@@ -148,7 +160,7 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   // AC8 — co-transactional sync_queue enqueue (PR-9)
-  it('enqueues a sync_queue row per write', async () => {
+  it('BR-PREF-8 enqueues a sync_queue row per write', async () => {
     await h.svc.updatePreferences({ theme: 'dark' })
     const q = await createRepository(h.db, syncQueue, { deviceId: 'test-device', encryptedFields: [] }).findAll()
     expect(q.length).toBeGreaterThanOrEqual(1)
@@ -156,9 +168,17 @@ describe('mod-preferences Slice 1 — user_preferences service', () => {
   })
 
   // AC9 — invalid patch rejected (BR-P2)
-  it('rejects an out-of-enum patch value', async () => {
+  it('BR-PREF-4 rejects an out-of-set theme, time_format or persona', async () => {
     // @ts-expect-error — deliberately invalid enum value to prove Zod rejects at runtime
     await expect(h.svc.updatePreferences({ theme: 'neon' })).rejects.toThrow(/Invalid preferences patch/)
+    // @ts-expect-error — deliberately invalid enum value
+    await expect(h.svc.updatePreferences({ time_format: '36h' })).rejects.toThrow(/Invalid preferences patch/)
+    // @ts-expect-error — deliberately invalid enum value
+    await expect(h.svc.updatePreferences({ persona: 'wizard' })).rejects.toThrow(/Invalid preferences patch/)
+    // nothing reached the store
+    expect(
+      await createRepository(h.db, userPreferences, { deviceId: 'test-device', encryptedFields: [] }).findAll(),
+    ).toHaveLength(0)
   })
 })
 
@@ -169,7 +189,7 @@ describe('mod-preferences Slice 2 — nav_preferences service', () => {
   })
 
   // AC1 — read-or-DEFAULT, no persist (PR-2 / N-3)
-  it('returns full nav DEFAULTS on an empty store and creates no row', async () => {
+  it('BR-PREF-2 returns full nav DEFAULTS on an empty store and creates no row', async () => {
     expect(await h.svc.getNavPreferences()).toEqual(NAV_PREFERENCES_DEFAULTS)
     const repo = createRepository(h.db, navPreferences, { deviceId: 'test-device', encryptedFields: [] })
     expect(await repo.findAll()).toHaveLength(0)
@@ -184,7 +204,7 @@ describe('mod-preferences Slice 2 — nav_preferences service', () => {
   })
 
   // AC3 — second write updates the SAME row + bumps _sync_version (PR-3 / BR-P4)
-  it('updates the same nav singleton on a second write', async () => {
+  it('BR-PREF-3 updates the same nav singleton on a second write', async () => {
     await h.svc.updateNavPreferences({ dock_position: 'left' })
     await h.svc.updateNavPreferences({ dock_size: 'large' })
     const repo = createRepository(h.db, navPreferences, { deviceId: 'test-device', encryptedFields: [] })
@@ -203,7 +223,9 @@ describe('mod-preferences Slice 2 — nav_preferences service', () => {
   })
 
   // AC5 — invalid enum rejected (BR-P2)
-  it('rejects an out-of-enum dock_size', async () => {
+  it('BR-PREF-4 rejects an out-of-set dock_position or dock_size', async () => {
+    // @ts-expect-error — deliberately invalid enum value
+    await expect(h.svc.updateNavPreferences({ dock_position: 'top' })).rejects.toThrow(/Invalid nav preferences patch/)
     // @ts-expect-error — deliberately invalid enum value
     await expect(h.svc.updateNavPreferences({ dock_size: 'huge' })).rejects.toThrow(/Invalid nav preferences patch/)
   })
@@ -217,7 +239,7 @@ describe('mod-preferences Slice 2 — nav_preferences service', () => {
   })
 
   // AC7 — co-transactional sync_queue enqueue (PR-9)
-  it('enqueues a nav_preferences sync_queue row per write', async () => {
+  it('BR-PREF-8 enqueues a nav_preferences sync_queue row per write', async () => {
     await h.svc.updateNavPreferences({ dock_position: 'right' })
     const q = await createRepository(h.db, syncQueue, { deviceId: 'test-device', encryptedFields: [] }).findAll()
     expect(q.some((r) => r.table_name === 'nav_preferences')).toBe(true)
@@ -249,7 +271,7 @@ describe('mod-preferences Slice 3 — command_bar_history service', () => {
   })
 
   // AC2 — re-record upserts by key (no dup, use_count++) — PR-6/BR-P3
-  it('upserts by command_key on re-record (increments use_count, no duplicate)', async () => {
+  it('BR-PREF-10 upserts by command_key on re-record (increments use_count, no duplicate)', async () => {
     await h.svc.recordCommand('open.tasks', 'Open Tasks')
     await h.svc.recordCommand('open.tasks', 'Open Tasks')
     const rows = await cmdRepo().findAll()
@@ -259,7 +281,7 @@ describe('mod-preferences Slice 3 — command_bar_history service', () => {
   })
 
   // AC3 — pinned sorts above a higher-use unpinned command (PR-6)
-  it('orders pinned-first regardless of frecency', async () => {
+  it('BR-PREF-10 orders pinned-first regardless of frecency', async () => {
     await h.svc.recordCommand('a', 'A')
     await h.svc.recordCommand('a', 'A') // use_count 2
     await h.svc.recordCommand('b', 'B') // use_count 1
@@ -269,7 +291,7 @@ describe('mod-preferences Slice 3 — command_bar_history service', () => {
   })
 
   // AC4 — unpinned ordering is frecency (use_count desc)
-  it('orders unpinned commands by frecency', async () => {
+  it('BR-PREF-10 orders unpinned commands by frecency', async () => {
     await h.svc.recordCommand('low', 'Low')
     await h.svc.recordCommand('high', 'High')
     await h.svc.recordCommand('high', 'High') // use_count 2
