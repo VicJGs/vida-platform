@@ -21,6 +21,8 @@ export const DEFAULTS = {
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
   docsTier: ["docs/**", "**/*.md", ".claude/**/*.md", "package.json"], // changed.mjs; package.json = a "checks"-only change
+  checksTier: ["tools/checks/**"], // changed.mjs: the gate's own files
+  affectedTier: ["apps/*/**", "packages/*/**"], // changed.mjs: workspace packages, run as affected
 };
 
 export const root = process.cwd();

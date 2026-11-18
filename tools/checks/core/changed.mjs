@@ -1,9 +1,16 @@
-// changed — classifies the branch for the gate: prints `docs` when every path changed
-// since its merge base with the base ref matches the docs allow-list ("checks".docsTier),
-// else `code`. A `package.json` entry matches the root package.json only when its change
-// sits inside "checks" and leaves "checks".docsTier alone, so a branch cannot widen its
-// own tier. Anything else is `code`: hooks, the gate itself (tools/checks/**), unknown
-// paths, and an empty or unreadable diff. Renames count both paths.
+// changed — classifies the branch for the gate by the paths changed since its merge base
+// with the base ref, printing the first tier whose allow-lists cover every path:
+//   docs      "checks".docsTier                          → the fast checks
+//   checks    + "checks".checksTier (the gate's own files) → the fast checks; no test can
+//             fail on a change to a check, and the checks themselves still run
+//   affected  + "checks".affectedTier (workspace packages) → the fast checks, then the
+//             package tasks of the changed packages and their dependents
+//   code      anything else → the full gate: hooks, root configs and the lockfile (a
+//             task runner may not count them as any package's input), unknown paths, and
+//             an empty or unreadable diff.
+// A `package.json` entry matches the root package.json only when its change sits inside
+// "checks" and leaves the three tier lists alone, so a branch cannot widen its own tier.
+// Renames count both paths.
 // Usage: node changed.mjs [--base <ref>]   (default origin/main, else main)
 import { spawnSync } from "node:child_process";
 import { isDeepStrictEqual } from "node:util";
@@ -33,7 +40,7 @@ const pkgAt = (rev) => {
 };
 const outsideChecks = (pkg) => {
   const { checks, ...rest } = pkg;
-  return { rest, docsTier: checks?.docsTier };
+  return { rest, docsTier: checks?.docsTier, checksTier: checks?.checksTier, affectedTier: checks?.affectedTier };
 };
 const checksOnly = (from, to) => {
   const [a, b] = [pkgAt(from), pkgAt(to)];
@@ -49,11 +56,21 @@ if (diff.status !== 0) code(`git diff failed: ${diff.stderr.trim()}`);
 const paths = diff.stdout.split(/\r?\n/).filter(Boolean);
 if (!paths.length) code(`nothing changed since ${base}`);
 
-const tier = [cfg.docsTier].flat();
-const globs = tier.filter((p) => p !== "package.json").map(glob);
-const isDocs = (path) => path === "package.json"
-  ? tier.includes("package.json") && checksOnly(from, "HEAD")
-  : globs.some((g) => g.test(path));
-const outside = paths.filter((p) => !isDocs(p));
-if (outside.length) code(`${outside.length} of ${paths.length} paths outside "checks".docsTier: ${outside.slice(0, 5).join(", ")}`);
-console.log("docs");
+const covers = (list) => {
+  const tier = [list ?? []].flat();
+  const globs = tier.filter((p) => p !== "package.json").map(glob);
+  return (path) => path === "package.json"
+    ? tier.includes("package.json") && checksOnly(from, "HEAD")
+    : globs.some((g) => g.test(path));
+};
+const tiers = [["docs", cfg.docsTier], ["checks", cfg.checksTier], ["affected", cfg.affectedTier]];
+const lists = [];
+for (const [name, list] of tiers) {
+  lists.push(covers(list));
+  if (paths.every((p) => lists.some((inTier) => inTier(p)))) {
+    console.log(name);
+    process.exit(0);
+  }
+}
+const outside = paths.filter((p) => !lists.some((inTier) => inTier(p)));
+code(`${outside.length} of ${paths.length} paths outside "checks".docsTier, checksTier and affectedTier: ${outside.slice(0, 5).join(", ")}`);
