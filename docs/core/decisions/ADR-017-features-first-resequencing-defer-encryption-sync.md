@@ -9,7 +9,7 @@
 
 - **ADR-016 (Storage rebuild from zero)** — parks its _immediacy_, not its substance. The from-zero `schema/` rebuild still happens, but authored **per feature as the feature is built**, not as a complete-schema-first campaign ahead of the product. DB-2's HLC-representation decision (F6/D4-d) **defers with the sync engine** (it is only needed when sync flushes).
 - **ADR-001 (Tech Stack)** — formalizes the order implied by ADR-001 §282 (SQLCipher-WASM pipeline already deferred to "Phase 1.3"): the app is built and used **before** encryption-at-rest is wired.
-- **The build roadmap** (`docs/roadmap.md`) — Phase 1.0's internal ordering is replaced by the features-first path below; the _deliverables_ are unchanged.
+- **The build roadmap** — Phase 1.0's internal ordering is replaced by the features-first path below; the _deliverables_ are unchanged.
   **Does NOT amend:** ADR-002 (data model), ADR-003 (sync protocol), or the zero-knowledge/local-first thesis. The encryption (L1 SQLCipher + L2 libsodium), sync (HLC-LWW + Yjs + blob relay), and SRP auth layers are **deferred, not dropped** — their seams already exist in code and are exercised in the intended order.
 
 ---
