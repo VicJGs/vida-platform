@@ -16,13 +16,8 @@ afterEach(() => cleanup())
 describe('modules (roster projection)', () => {
   it('mirrors the visible dock set — grouped, declaration order, gamification excluded', () => {
     const groups = getDockModuleGroups()
-    expect(groups.map((g) => g.group)).toEqual([
-      'integration',
-      'productivity',
-      'knowledge',
-      'personal-growth',
-      'life-management',
-    ])
+    // Only modules with a built route are in MODULE_MAP (the rest wait in PENDING_MODULES, LIF-351).
+    expect(groups.map((g) => g.group)).toEqual(['integration', 'productivity'])
     // platform-services (only the flag-gated gamification in the dock) drops in M1.0 — no empty heading.
     expect(groups.map((g) => g.group)).not.toContain('platform-services')
     const keys = groups.flatMap((g) => g.modules.map((m) => m.key))

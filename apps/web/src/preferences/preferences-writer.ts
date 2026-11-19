@@ -24,6 +24,7 @@ import {
 } from '@vida/core'
 import type { MergedNavPreferences, MergedPreferences } from '@vida/types'
 import { MODULE_MAP } from '../nav/module-map'
+import { PENDING_MODULES } from '../nav/pending-modules'
 import { MANAGED_SURFACE_KEYS } from '../nav/nav-prefs'
 import { TransactionLockTimeoutError } from '../db/write-lock'
 import {
@@ -59,9 +60,10 @@ function classify(e: unknown): PreferencesWriteError {
 }
 
 /** Keys the nav show/hide map may carry (BR-PREF-6 membership, ② side): dock modules + the managed surfaces. The write
- *  side accepts every dock key (D13b); the READ side (`nav/nav-prefs` `isHideableModule`) is what keeps Settings/Home. */
+ *  side accepts every dock key (D13b), pending ones included so a stored choice survives until the module's route ships
+ *  (LIF-351); the READ side (`nav/nav-prefs` `isHideableModule`) is what keeps Settings/Home. */
 export const VISIBILITY_KEYS: ReadonlySet<string> = new Set([
-  ...MODULE_MAP.filter((m) => m.placement === 'dock').map((m) => m.key),
+  ...[...MODULE_MAP, ...PENDING_MODULES].filter((m) => m.placement === 'dock').map((m) => m.key),
   ...MANAGED_SURFACE_KEYS,
 ])
 

@@ -156,26 +156,26 @@ describe('CommandBar', () => {
     await waitFor(() => expect(screen.getByRole('option', { name: 'Tasks' })).not.toBeNull())
     act(() => {
       void preferencesWriter.setModuleVisibilityMap({ tasks: false })
-      void preferencesWriter.patchModuleNames({ habits: 'Rituals' })
+      void preferencesWriter.patchModuleNames({ notes: 'Pages' })
     })
     await waitFor(() => expect(screen.queryByRole('option', { name: 'Tasks' })).toBeNull())
-    expect(screen.getByRole('option', { name: 'Rituals' })).not.toBeNull()
+    expect(screen.getByRole('option', { name: 'Pages' })).not.toBeNull()
     expect(screen.getByRole('option', { name: 'Settings' })).not.toBeNull() // EC-8
   })
 
   it('ranks by history: a pinned command leads, then the most used', async () => {
     testPreferences.state.history = [
       {
-        command_key: 'nav:/projects',
-        command_label: 'Projects',
+        command_key: 'nav:/tasks',
+        command_label: 'Tasks',
         command_category: 'navigation',
         use_count: 3,
         last_used_at: Date.now(),
         is_pinned: false,
       },
       {
-        command_key: 'nav:/finance',
-        command_label: 'Finance',
+        command_key: 'nav:/graph',
+        command_label: 'Graph',
         command_category: 'navigation',
         use_count: 0,
         last_used_at: null,
@@ -184,16 +184,14 @@ describe('CommandBar', () => {
     ]
     openBar()
     renderBar()
-    await waitFor(() =>
-      expect(optionNames().slice(0, 2)).toEqual(['Finance' + SETTINGS_COPY.cmdPinnedSuffix, 'Projects']),
-    )
+    await waitFor(() => expect(optionNames().slice(0, 2)).toEqual(['Graph' + SETTINGS_COPY.cmdPinnedSuffix, 'Tasks']))
   })
 
   it('a history read failure leaves the list unranked and shows no error (business-rules.md:34)', async () => {
     testPreferences.state.history = [
       {
-        command_key: 'nav:/projects',
-        command_label: 'Projects',
+        command_key: 'nav:/tasks',
+        command_label: 'Tasks',
         command_category: 'navigation',
         use_count: 3,
         last_used_at: Date.now(),
@@ -266,14 +264,14 @@ describe('CommandBar', () => {
   it('pinning a never-run command makes it lead; the highlight stays on it (by id)', async () => {
     openBar()
     renderBar()
-    await waitFor(() => expect(optionNames()).toContain('Finance'))
-    arrowTo('Finance')
+    await waitFor(() => expect(optionNames()).toContain('Graph'))
+    arrowTo('Graph')
     const before = activeId()
     pinKey()
-    await waitFor(() => expect(optionNames()[0]).toBe('Finance' + SETTINGS_COPY.cmdPinnedSuffix))
+    await waitFor(() => expect(optionNames()[0]).toBe('Graph' + SETTINGS_COPY.cmdPinnedSuffix))
     expect(activeId()).toBe(before)
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Enter' })
-    expect(navigateSpy).toHaveBeenCalledWith('/finance')
+    expect(navigateSpy).toHaveBeenCalledWith('/graph')
   })
 
   it('two quick Alt+P presses pin then unpin (the pending overlay, not the stale cache)', async () => {

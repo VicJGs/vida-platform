@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GLOBAL_SURFACES, MODULE_MAP, type ModuleNavEntry } from './module-map'
+import { PENDING_MODULES } from './pending-modules'
 import {
   ALWAYS_REACHABLE_KEYS,
   MANAGED_SURFACE_KEYS,
@@ -13,23 +14,9 @@ import { VISIBILITY_KEYS } from '../preferences/preferences-writer'
 
 // preferences-rescope R5 (PLAN-R5 R5-BR-2/3/4) — the ONE nav filter both readers (dock + ⌘K) use.
 
-const DOCK_KEYS = [
-  'notes',
-  'tasks',
-  'habits',
-  'projects',
-  'routines',
-  'learning',
-  'books',
-  'knowledge',
-  'skills',
-  'sessions',
-  'purposes',
-  'health',
-  'finance',
-  'relationships',
-  'gamification',
-]
+// Dock modules with a built route; the rest wait in PENDING_MODULES (LIF-351).
+const DOCK_KEYS = ['notes', 'tasks', 'gamification']
+const PENDING_DOCK_KEYS = PENDING_MODULES.filter((e) => e.placement === 'dock').map((e) => e.key)
 
 const prefs = (visibility: Record<string, boolean> = {}, names: Record<string, string> = {}): NavPrefs => ({
   visibility,
@@ -57,36 +44,35 @@ describe('applyNavPrefs', () => {
   })
 
   it('omits a hidden dock module; absent or true = shown', () => {
-    const out = applyNavPrefs(MODULE_MAP, prefs({ tasks: false, habits: true }))
+    const out = applyNavPrefs(MODULE_MAP, prefs({ tasks: false, notes: true }))
     expect(byKey(out, 'tasks')).toBeUndefined()
-    expect(byKey(out, 'habits')).toBeDefined()
     expect(byKey(out, 'notes')).toBeDefined()
+    expect(byKey(out, 'journals')).toBeDefined()
   })
 
   it('relabels a renamed dock module, keeping its key (identity) and everything else', () => {
-    const out = applyNavPrefs(MODULE_MAP, prefs({}, { habits: 'Rituals' }))
-    const habits = byKey(out, 'habits')!
-    expect(habits.label).toBe('Rituals')
-    expect(habits.routePath).toBe('/habits')
-    expect(byKey(MODULE_MAP, 'habits')!.label).toBe('Habits') // input untouched
+    const out = applyNavPrefs(MODULE_MAP, prefs({}, { notes: 'Pages' }))
+    const notes = byKey(out, 'notes')!
+    expect(notes.label).toBe('Pages')
+    expect(notes.routePath).toBe('/notes')
+    expect(byKey(MODULE_MAP, 'notes')!.label).toBe('Notes') // input untouched
   })
 
   it('ignores a blank name', () => {
-    const out = applyNavPrefs(MODULE_MAP, prefs({}, { habits: '   ' }))
-    expect(byKey(out, 'habits')!.label).toBe('Habits')
+    const out = applyNavPrefs(MODULE_MAP, prefs({}, { notes: '   ' }))
+    expect(byKey(out, 'notes')!.label).toBe('Notes')
   })
 
-  it('never touches Settings/Home/global or secondary entries, whatever the maps say (EC-8 read side)', () => {
+  it('never touches Settings/Home or other global entries, whatever the maps say (EC-8 read side)', () => {
     const forged = prefs(
-      { preferences: false, journals: false, notifications: false, checkins: false },
-      { preferences: 'Hidden', journals: 'Nope', checkins: 'X' },
+      { preferences: false, journals: false, notifications: false },
+      { preferences: 'Hidden', journals: 'Nope' },
     )
     vi.spyOn(console, 'warn').mockImplementation(() => {})
     const out = applyNavPrefs(MODULE_MAP, forged)
     expect(byKey(out, 'preferences')!.label).toBe('Settings')
     expect(byKey(out, 'journals')!.label).toBe('Home')
     expect(byKey(out, 'notifications')).toBeDefined()
-    expect(byKey(out, 'checkins')!.label).toBe('Check-ins')
   })
 
   it('works over any entry list shaped like a nav entry (global surfaces pass through)', () => {
@@ -119,6 +105,6 @@ describe('the one definition (settings + writer derive from nav)', () => {
   })
 
   it('the writer accepts exactly the dock keys + the managed surfaces (unchanged membership, D13b)', () => {
-    expect([...VISIBILITY_KEYS].sort()).toEqual([...DOCK_KEYS, 'features', 'sync'].sort())
+    expect([...VISIBILITY_KEYS].sort()).toEqual([...DOCK_KEYS, ...PENDING_DOCK_KEYS, 'features', 'sync'].sort())
   })
 })

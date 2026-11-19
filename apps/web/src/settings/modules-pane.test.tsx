@@ -42,7 +42,7 @@ const renderUI = (ui: React.ReactNode) =>
     </PrefsWrapper>,
   )
 const tasks = HIDEABLE_MODULES.find((m) => m.key === 'tasks')!
-const habits = HIDEABLE_MODULES.find((m) => m.key === 'habits')!
+const notes = HIDEABLE_MODULES.find((m) => m.key === 'notes')!
 
 describe('ModulesPane (fe-settings S5 — EC-4/EC-8/EC-12; persisted since preferences-rescope R5)', () => {
   it('renders a show/hide Switch for each hideable module (default visible)', async () => {
@@ -69,9 +69,9 @@ describe('ModulesPane (fe-settings S5 — EC-4/EC-8/EC-12; persisted since prefe
     await seed()
     renderUI(<ModulesPane />)
     fireEvent.click(screen.getByLabelText(`Show ${tasks.label} in the nav`))
-    fireEvent.click(screen.getByLabelText(`Show ${habits.label} in the nav`))
+    fireEvent.click(screen.getByLabelText(`Show ${notes.label} in the nav`))
     await preferencesWriter.flushAll()
-    expect(testPreferences.state.user?.module_visibility).toEqual({ tasks: false, habits: false })
+    expect(testPreferences.state.user?.module_visibility).toEqual({ tasks: false, notes: false })
     expect(testPreferences.state.user?.dashboard_layout).toMatchObject({ theme: 'reader' })
   })
 
@@ -118,15 +118,15 @@ describe('ModulesPane (fe-settings S5 — EC-4/EC-8/EC-12; persisted since prefe
   })
 
   it('a renamed module speaks ONE name on every row control (rename · switch · save · cancel)', async () => {
-    await seed({}, { habits: 'Rituals' })
+    await seed({}, { notes: 'Pages' })
     renderUI(<ModulesPane />)
-    expect(screen.getByText('Rituals')).not.toBeNull()
-    expect(screen.getByLabelText('Show Rituals in the nav')).not.toBeNull()
-    fireEvent.click(screen.getByLabelText('Rename Rituals'))
-    expect(screen.getByLabelText('Rename Rituals')).not.toBeNull() // the Input
-    expect(screen.getByLabelText('Save name for Rituals')).not.toBeNull()
-    expect(screen.getByLabelText('Cancel renaming Rituals')).not.toBeNull()
-    expect(screen.queryByLabelText(/Habits/)).toBeNull()
+    expect(screen.getByText('Pages')).not.toBeNull()
+    expect(screen.getByLabelText('Show Pages in the nav')).not.toBeNull()
+    fireEvent.click(screen.getByLabelText('Rename Pages'))
+    expect(screen.getByLabelText('Rename Pages')).not.toBeNull() // the Input
+    expect(screen.getByLabelText('Save name for Pages')).not.toBeNull()
+    expect(screen.getByLabelText('Cancel renaming Pages')).not.toBeNull()
+    expect(screen.queryByLabelText(/Notes/)).toBeNull()
   })
 
   it('Surfaces (Feature Atlas + Sync log) persist to module_visibility.features / .sync', async () => {

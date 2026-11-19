@@ -63,6 +63,8 @@ export const NAV_AXES = {
 // NOT dock modules: Spaces = the second nav axis (NAV_AXES.spacesBar); Sessions = a dock surface (agenda) + owns
 // the global /calendar; Points Economy surfaces as Gamification (conditional dock). Measurability, Saved Views,
 // Review Engine, Capability Registry, and Ingestion & AI have NO nav presence — they power modules, not navigation.
+// Only modules whose route is registered in routes.tsx are listed here (check:no-stub-nav, LIF-351); a dock module
+// whose route is not built yet waits in PENDING_MODULES (pending-modules.ts).
 export const MODULE_MAP: readonly ModuleNavEntry[] = [
   // — Integration —
   {
@@ -97,38 +99,6 @@ export const MODULE_MAP: readonly ModuleNavEntry[] = [
     hasStandalonePages: true,
     hasMultiModeTopView: true,
   },
-  {
-    key: 'habits',
-    label: 'Habits',
-    group: 'productivity',
-    placement: 'dock',
-    routePath: '/habits',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'projects',
-    label: 'Projects',
-    group: 'productivity',
-    placement: 'dock',
-    routePath: '/projects',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  // Routines = its own orchestration COCKPIT (active counterpart to the Calendar); launches Sessions sub-types but is
-  // "Not a session engine" — a dock item, not inside Sessions. [routines/identity.md:5-8,45]
-  {
-    key: 'routines',
-    label: 'Routines',
-    group: 'productivity',
-    placement: 'dock',
-    routePath: '/routines',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: false,
-  },
   // Pomodoro = Focus Mode inside the Sessions realm; explicitly "not a standalone module / not a sub-context". [pomodoro/identity.md:6,41]
   {
     key: 'pomodoro',
@@ -142,56 +112,6 @@ export const MODULE_MAP: readonly ModuleNavEntry[] = [
   },
 
   // — Knowledge —
-  {
-    key: 'learning',
-    label: 'Learning',
-    group: 'knowledge',
-    placement: 'dock',
-    routePath: '/learning',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'books',
-    label: 'Books',
-    group: 'knowledge',
-    placement: 'dock',
-    routePath: '/books',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'knowledge',
-    label: 'Knowledge',
-    group: 'knowledge',
-    placement: 'dock',
-    routePath: '/knowledge',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'skills',
-    label: 'Skills',
-    group: 'knowledge',
-    placement: 'dock',
-    routePath: '/skills',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'sessions',
-    label: 'Sessions',
-    group: 'knowledge',
-    placement: 'dock',
-    routePath: '/sessions',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
   // Flashcards = a study-method service inside Knowledge; explicitly "not its own module". [flashcards/identity.md:3,38]
   {
     key: 'flashcards',
@@ -204,60 +124,7 @@ export const MODULE_MAP: readonly ModuleNavEntry[] = [
     hasMultiModeTopView: false,
   },
 
-  // — Personal Growth —
-  {
-    key: 'purposes',
-    label: 'Purposes',
-    group: 'personal-growth',
-    placement: 'dock',
-    routePath: '/purposes',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'health',
-    label: 'Health',
-    group: 'personal-growth',
-    placement: 'dock',
-    routePath: '/health',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  // Check-ins = SECONDARY: the daily entry is surfaced within the Journal flow, plus a reachable standalone page. [check-ins/identity.md:25]
-  {
-    key: 'checkins',
-    label: 'Check-ins',
-    group: 'personal-growth',
-    placement: 'secondary',
-    routePath: '/checkins',
-    homeOwner: 'home',
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-
-  // — Life Management —
-  {
-    key: 'finance',
-    label: 'Finance',
-    group: 'life-management',
-    placement: 'dock',
-    routePath: '/finance',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
-  {
-    key: 'relationships',
-    label: 'Relationships',
-    group: 'life-management',
-    placement: 'dock',
-    routePath: '/people',
-    homeOwner: null,
-    hasStandalonePages: true,
-    hasMultiModeTopView: true,
-  },
+  // (Personal Growth and Life Management have no built route yet: see pending-modules.ts.)
 
   // — Platform Services —
   // Gamification = CONDITIONAL dock: opt-in; the System dashboard shows only when the flag is on. [gamification/identity.md:8,43]

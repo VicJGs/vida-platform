@@ -10,6 +10,7 @@ export const DEFAULTS = {
   routes: "src/routes.tsx",
   entityFlags: "src/entity-flags.ts",
   navigation: "src/navigation.ts",
+  navPath: "path",
   schema: "src/db/schema",
   boundaries: [{ name: "ui-not-db", from: "^src/(pages|components|ui|routes)", to: "^src/db/" }],
 };

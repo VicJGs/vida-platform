@@ -4,12 +4,12 @@ import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import type { CommandProvider } from './types'
 
 describe('createCommandRegistry', () => {
-  it('merges commands from multiple providers (21 nav + 1 shell action)', () => {
+  it('merges commands from multiple providers (8 nav + 1 shell action)', () => {
     const registry = createCommandRegistry()
     registry.register(navProvider)
     registry.register(shellActionsProvider)
     const commands = registry.collect()
-    expect(commands).toHaveLength(22)
+    expect(commands).toHaveLength(9)
     expect(commands.some((c) => c.id === 'action:toggle-sidebar')).toBe(true)
   })
 
