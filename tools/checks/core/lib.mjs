@@ -13,6 +13,7 @@ export const DEFAULTS = {
   ruleLike: null, // anything written like a rule ID (regex); one in no allowed form fails check:rules. Default: the forms
   ruleUnqualified: null, // rule forms that are one ID repo-wide (regex); check:rules notes them in a module's test names
   rulesBaseline: "tools/checks/rules-baseline.txt",
+  budgetBaseline: "tools/checks/budget-baseline.txt",
   intentId: "[A-Z]+-\\d+",
   intentLedger: "docs/modules/<module>/intent.yaml",
   intentTests: {}, // module → test path prefixes; an unlisted module uses <src>/<module>
