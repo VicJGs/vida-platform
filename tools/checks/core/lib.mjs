@@ -22,6 +22,7 @@ export const DEFAULTS = {
   intentFeatures: {}, // module → folders under features; an unlisted module uses <module>
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],
   oneWayDoorLabel: "one-way-door",
+  rungs: ["Live", "Connected", "Integrated", "Encrypted", "Everywhere"], // plan-module --check: a slice's milestone is one of these
   docsTier: ["docs/**", "**/*.md", ".claude/**/*.md", "package.json"], // changed.mjs; package.json = a "checks"-only change
   checksTier: ["tools/checks/**"], // changed.mjs: the gate's own files
   affectedTier: ["apps/*/**", "packages/*/**"], // changed.mjs: workspace packages, run as affected
