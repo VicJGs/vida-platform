@@ -3,7 +3,7 @@
 **Status:** Accepted
 **Date:** 2026-07-22
 **Decision Makers:** Victor J.
-**Context:** Vida Platform — the build-phase schema session that ADR-002 §5.20 (D5-a) deferred. The v1 `packages/core/src/db/schema.ts` is the pre-consolidation schema and is **~60% misaligned** with the documented v2 target; DB-1 (LIF-61) shipped the primitives; this ADR governs the from-zero rebuild campaign (DB-2…DB-11 + the per-table gates). Basis: `docs/infrastructure/database-schema-reconciliation.md` + `docs/infrastructure/storage-rebuild-strategy.md`.
+**Context:** Vida Platform — the build-phase schema session that ADR-002 §5.20 (D5-a) deferred. The v1 `packages/core/src/db/schema.ts` is the pre-consolidation schema and is **~60% misaligned** with the documented v2 target; DB-1 (LIF-61) shipped the primitives; this ADR governs the from-zero rebuild campaign (DB-2…DB-11 + the per-table gates). Basis: the schema reconciliation + the storage-rebuild strategy.
 **Tags:** architecture · database · schema · migrations · process · foundation
 **Realizes:** **ADR-002 §5.20** — this is the deferred consolidation session; §5/§7/§8 are rewritten from the authored schema at DB-11.
 **Amends:**
@@ -19,12 +19,12 @@ The implemented storage schema is v1 and cannot be incrementally patched into th
 
 - **Rebuild from zero into a fresh `packages/core/src/db/schema/` directory**, authored **from the documentation** (the 24 `structure-data.md` docs + ADR-002 §5.20). The v1 monolith `schema.ts` stays **reference-only** and is deleted at parity.
 - **DDL is hand-written SQL migrations** (ADR-002 §5 model) applied by the existing custom runner (`migrations/*` + `runner.ts`); **Zod** validators (DB-9) are the runtime enforcement. **Drizzle objects are the query-only type mirror** — DDL is _not_ generated from them (no `drizzle-kit`). Enum enforcement = SQL-migration `CHECK` + Zod + the Drizzle `enumText` union.
-- **Every table clears its own Per-Step Build Gate** — its own forward spec, critique, approvals, verification — governed by a **master plan** (`docs/infrastructure/storage-build-plan.md`): the table ledger, phase sequence, and per-table-spec template.
+- **Every table clears its own Per-Step Build Gate** — its own forward spec, critique, approvals, verification — governed by a **master plan** (the storage build plan): the table ledger, phase sequence, and per-table-spec template.
 
 ## 2. Context — what triggered this
 
 - **ADR-002 §5.20 deferred it explicitly:** the consolidated re-write is "deferred to its own build-phase schema session (which also writes the Drizzle schema in `packages/core`)." `[FACT: ADR-002 §5.20]`
-- **The reconciliation quantified the gap** (2026-07-20): current 80 tables vs a documented target of ~130-150 — carry-forward ~40 · retire ~22 · missing ~90-110 · divergent ~9, plus 5 systemic gaps. `[FACT: database-schema-reconciliation.md §A-E]`
+- **The reconciliation quantified the gap** (2026-07-20): current 80 tables vs a documented target of ~130-150 — carry-forward ~40 · retire ~22 · missing ~90-110 · divergent ~9, plus 5 systemic gaps. `[FACT: schema reconciliation §A-E]`
 - **DB-1 established the substrate** (2026-07-22, commit b234e85): `schema/` directory + primitives; additive; the monolith kept its import path. During DB-1's review the DDL-generation question surfaced — a Drizzle `check()` helper emits nothing because this repo hand-writes SQL DDL. `[FACT: DB-1 IMPLEMENTATION-PLAN §XXVIII]`
 - **Greenfield → structural decision, not a migration:** no released app, no vault, `DB-10 · Seed` still planned.
 
