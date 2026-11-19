@@ -4,12 +4,12 @@
 **Date:** 2026-07-25
 **Decision Makers:** Victor J.
 **Amended:** 2026-11-07 (LIF-349 gap register EN-5; Victor) — added **§3.3a** (secrets before M3 live only in the OS keychain, never in the database), so the M2-before-M3 order keeps ADR-014/015's credential-custody rule true. Sequencing and architecture are unchanged.
-**Context:** Vida Platform — Part 3 of the foundation-realignment campaign (the build-roadmap resequence). ADR-017 established features-first (encryption/sync/auth deferred to a hardening pass) but left the _order_ of external integrations vs the hardening pass, and the internal-vs-external integration boundary, unspecified. This ADR fixes the milestone spine that `docs/roadmap.md` is rewritten to.
+**Context:** Vida Platform — Part 3 of the foundation-realignment campaign (the build-roadmap resequence). ADR-017 established features-first (encryption/sync/auth deferred to a hardening pass) but left the _order_ of external integrations vs the hardening pass, and the internal-vs-external integration boundary, unspecified. This ADR fixes the milestone spine that the build roadmap is rewritten to.
 **Tags:** architecture · process · foundation · sequencing · delivery · roadmap
 **Amends (sequencing only — no architecture is changed):**
 
 - **ADR-017 (features-first)** — refines its hardening order: **external integrations (with their ADR-014/015 security boundary) come _before_ encryption-at-rest** (for solo-localhost), and the **internal integration layer is part of the first Real-Product cut** (M1), not deferred. This refines ADR-017's stated hardening sequence on its own authority; it relocates _timing_ within ADR-017's already-accepted deferral, not the architecture.
-- **`docs/roadmap.md`** — Phase-1.0's substrate-first internal ordering is replaced by the M1→M4 spine below (deliverables unchanged; re-homed per the Part-3 PLAN §2.1 ledger).
+- **The build roadmap** — Phase-1.0's substrate-first internal ordering is replaced by the M1→M4 spine below (deliverables unchanged; re-homed per the Part-3 PLAN §2.1 ledger).
   **Does NOT amend:** ADR-014 / ADR-015 (the zero-knowledge ingestion + AI model is unchanged — only _when_ it is built), ADR-002 (the three-layer encryption model + `[E]` boundary are unchanged), ADR-016 (per-feature schema), ADR-018 (the `foundation/`+`services/` homes). **Constitution EN-1 unaffected:** the L1+L2+L3 layers are still all built — encryption is deferred-not-dropped (ADR-017), and this ADR moves only _when_ L1/L2 land within that accepted window; ZK-1 (server-blindness, an L3/sync property) is never relaxed.
   **Inherits:** the No-Guessing Principle; ADR-017's "the feature-phase build is the real product."
 
