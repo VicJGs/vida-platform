@@ -2,7 +2,10 @@
 // name (an it() or test() title) carries that ID. The ID forms are package.json
 // "checks".ruleId (a regex, or a list of one per form); a token written like a rule ID
 // ("checks".ruleLike) in a test name in no allowed form fails, so a new form never counts
-// for nothing, and a "checks".ruleUnqualified ID in a module's test names is noted.
+// for nothing, and a "checks".ruleUnqualified ID in a module's test names is noted. Such
+// an ID (BR-5, BR-S4-1) repeats across modules, so a test named with it can't be tied to
+// the rule stated: like a describe() title, it proves nothing here, and the ID counts as
+// untested until it is qualified with its module. Ledger rows scope proof by module.
 // IDs listed in the "checks".rulesBaseline file are known to lack a test; the list only
 // shrinks: a listed ID that gains a test fails until its line is removed.
 // `--write-baseline` writes the current untested IDs to that file, once, on adoption.
@@ -20,7 +23,9 @@ const map = ruleMap(cfg, skipped(intent));
 const { stated, tests } = map;
 const form = forms(cfg, intent, map);
 
-const untested = [...stated].filter(([rule]) => !tests.has(rule));
+const unqualified = cfg.ruleUnqualified ? new RegExp(`^(?:${cfg.ruleUnqualified})$`) : null;
+const proven = (rule) => tests.has(rule) && !unqualified?.test(rule);
+const untested = [...stated].filter(([rule]) => !proven(rule));
 if (process.argv.includes("--write-baseline")) {
   mkdirSync(dirname(join(root, cfg.rulesBaseline)), { recursive: true });
   writeFileSync(join(root, cfg.rulesBaseline), untested.map(([rule]) => `${rule}\n`).sort().join(""));
@@ -34,7 +39,7 @@ if (exists(cfg.rulesBaseline)) {
 
 const findings = [
   ...untested.filter(([rule]) => !baseline.has(rule)).map(([rule, where]) => `${rule} (stated in ${where}) has no test named with it`),
-  ...[...baseline].filter(([rule]) => tests.has(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
+  ...[...baseline].filter(([rule]) => proven(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
   ...problems(cfg, intent, map),
   ...form.findings,
 ];
@@ -49,4 +54,5 @@ const notes = [...rows.map(({ l, r, s }) => `INTENT-${l.module} ${r.fields.id}: 
 const count = (s) => rows.filter((x) => x.s === s).length;
 const intentPart = intent.length ? `; ${rows.length} intent rows: ${count("tested")} tested, ${count("partly tested")} partly tested, ${count("intent only")} intent only` : "";
 const bareTotal = form.notes.length ? `; ${form.notes.length} unqualified rule IDs in module tests` : "";
-report(`check:rules (${stated.size} rule IDs, ${tests.size} tested, ${baselined} baselined${intentPart}${bareTotal})`, findings, notes);
+const tested = [...tests.keys()].filter(proven).length;
+report(`check:rules (${stated.size} rule IDs, ${tested} tested, ${baselined} baselined${intentPart}${bareTotal})`, findings, notes);
