@@ -16,6 +16,7 @@ export const DEFAULTS = {
   intentId: "[A-Z]+-\\d+",
   intentLedger: "docs/modules/<module>/intent.yaml",
   intentTests: {}, // module → test path prefixes; an unlisted module uses <src>/<module>
+  intentSubstrates: [], // names a ledger row may list in `uses` besides rows and modules with a ledger
   features: "docs/features",
   intentFeatures: {}, // module → folders under features; an unlisted module uses <module>
   oneWayDoor: ["schema/", "migrations/", "encryption/", "sync/"],

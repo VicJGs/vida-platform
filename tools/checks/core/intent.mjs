@@ -15,7 +15,7 @@
 // the test name BR-BK-2 names no BK-2.
 //
 // A row: `id` (matches "checks".intentId) · `says` (one line) · `open` (an unresolved
-// question; needs `work`) · `uses` (modules or substrates it connects to) · `proof` (built rule IDs,
+// question; needs `work`) · `uses` (rows, modules or substrates it connects to) · `proof` (built rule IDs,
 // matching "checks".ruleId) · `work` (a Linear issue, e.g. LIF-12). There is no status
 // field: a row is tested when a test is named with its own ID, or when every proof ID has a
 // test named with it, counting only tests under the module's paths. A row with `work` is at
@@ -159,12 +159,17 @@ export function state(row, { tests, named }) {
   return !proof.length || !done ? "intent only" : done === proof.length ? tested : "partly tested";
 }
 
-// Malformed rows, unknown proof IDs, IDs used twice and missing test paths, across all
-// ledgers. A proof ID is known when stated or tested anywhere; only its state is scoped.
+// Malformed rows, unknown proof IDs, IDs used twice, unknown `uses` entries and missing test
+// paths, across all ledgers. A proof ID is known when stated or tested anywhere; only its
+// state is scoped. A `uses` entry that matches "checks".intentId must name a row in some
+// ledger; any other must be a module with a ledger or a "checks".intentSubstrates name, so
+// a module cited before its ledger exists, or a typo, fails rather than reads as a substrate.
 export function problems(cfg, all, { stated, tests }) {
   const intentId = whole(cfg.intentId);
   const { whole: ruleId, shown } = ruleIds(cfg);
   const seen = new Map();
+  const rowIds = new Set(all.flatMap((l) => l.rows.map((r) => r.fields.id)));
+  const known = new Set([...all.map((l) => l.module), ...(cfg.intentSubstrates ?? [])]);
   const out = [];
   for (const l of all) {
     for (const p of l.problems) out.push(`${l.path}:${p.line}: ${p.problem}`);
@@ -183,6 +188,10 @@ export function problems(cfg, all, { stated, tests }) {
       if (fields.open && !fields.work) out.push(`${at}: open needs a work link, the issue that settles it`);
       if (typeof fields.work === "string" && fields.work && !WORK.test(fields.work)) out.push(`${at}: work ${fields.work} is not an issue key like LIF-12`);
       for (const key of LISTS) if (key in fields && !Array.isArray(fields[key])) out.push(`${at}: ${key} must be a list`);
+      for (const u of Array.isArray(fields.uses) ? fields.uses : []) {
+        if (intentId.test(u)) { if (!rowIds.has(u)) out.push(`${at}: uses ${u}, which names no row in any ledger`); }
+        else if (!known.has(u)) out.push(`${at}: uses ${u}, which is no module with a ledger and no substrate in "checks".intentSubstrates`);
+      }
       for (const p of Array.isArray(fields.proof) ? fields.proof : []) {
         if (!ruleId.test(p)) out.push(`${at}: proof ${p} does not match "checks".ruleId ${shown}`);
         else if (!stated.has(p) && !tests.has(p)) out.push(`${at}: proof ${p} is no known rule (stated nowhere, no test named with it)`);

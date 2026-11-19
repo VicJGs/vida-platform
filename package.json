@@ -54,6 +54,17 @@
     "ruleLike": "(?:[A-Za-z0-9]+-)*BR(?:-[A-Za-z0-9]+)+",
     "ruleUnqualified": "BR-(?:S\\d+-)?\\d+[a-z]?",
     "intentId": "(?:HC|PG|GM|RT|BK|FN|ED|NF|HN|FL|SK|HT|HB|SS|RL|PR|PJ|PD|NP|KN|CK|TK|JR|FC|MS|ECO|DLV|RV|SPC|VW|TMP|CB|LG|CL|ITG|IN|EG|AX|SH|DSG|SV|SY|GR|BL|EDT|EF|EN|OB)-\\d+",
+    "intentSubstrates": [
+      "account",
+      "capabilities",
+      "effects",
+      "languages",
+      "measurement",
+      "search",
+      "templates",
+      "ui",
+      "views"
+    ],
     "intentTests": {
       "finance": [
         "packages/core/src/services/finance"
