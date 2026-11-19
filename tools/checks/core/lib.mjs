@@ -1,6 +1,6 @@
 // Shared helpers for the check scripts. A repo copies this folder to tools/checks/
 // and runs each script from its root; paths come from package.json "checks".
-import { existsSync, readdirSync, readFileSync, statSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync, statSync, writeSync } from "node:fs";
 import { join, relative } from "node:path";
 
 export const DEFAULTS = {
@@ -79,10 +79,25 @@ export const rel = (abs) => relative(root, abs).replaceAll("\\", "/");
 export const TEST_FILE = /(^|\/)(e2e|__tests__)\/|\.(test|spec)\.[cm]?[jt]sx?$/;
 export const CODE_FILE = /\.[cm]?[jt]sx?$/;
 
-// Prints one line per finding and exits 1 if there are any.
+// Prints one line per finding and exits 1 if there are any. Callers rely on it never
+// returning, so it exits; and since process.exit() drops stdout writes still queued for a
+// pipe, it writes everything synchronously first (a full pipe raises EAGAIN: wait, retry;
+// a reader that closed early, as `| head` does, raises EPIPE: stop, nobody is reading).
 export function report(name, findings, notes = []) {
-  for (const n of notes) console.log(`note ${n}`);
-  for (const f of findings) console.log(`FAIL ${f}`);
-  console.log(`${findings.length ? "FAIL" : "ok  "} ${name} (${findings.length} findings)`);
+  const lines = [...notes.map((n) => `note ${n}`), ...findings.map((f) => `FAIL ${f}`),
+    `${findings.length ? "FAIL" : "ok  "} ${name} (${findings.length} findings)`];
+  writeAll(`${lines.join("\n")}\n`);
   process.exit(findings.length ? 1 : 0);
+}
+
+const pause = new Int32Array(new SharedArrayBuffer(4));
+function writeAll(text) {
+  const buf = Buffer.from(text);
+  for (let at = 0; at < buf.length;) {
+    try { at += writeSync(1, buf, at); } catch (e) {
+      if (e.code === "EPIPE") return;
+      if (e.code !== "EAGAIN") throw e;
+      Atomics.wait(pause, 0, 0, 5);
+    }
+  }
 }
