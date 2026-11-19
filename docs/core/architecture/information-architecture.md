@@ -141,7 +141,8 @@ code-splitting and a < 80 KB initial bundle; search/route params are Zod-validat
 
 - **Home** is `/` (the Journal dashboard). `[UX-6]`
 - **Top-level routes** are the `routePath` of each dock/global/secondary entry in `module-map.ts` (routes are
-  UX-facing and may differ from the module `key` — e.g. `relationships` → `/people`).
+  UX-facing and may differ from the module `key` — e.g. `preferences` → `/settings`, `relationships` → `/people`).
+  An entry whose route is not built yet waits in `nav/pending-modules.ts` and is not shown in navigation (LIF-351).
 - **Per-module routes** are NOT registered by UX-1. Each module registers its own routes in its M1.1+ wave, following
   the pattern `lazy(() => import('./app/<module>'))` into the central tree. `[routes.tsx:9; web-client-runtime:88-89]`
 

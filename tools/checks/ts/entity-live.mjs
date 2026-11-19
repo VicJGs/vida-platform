@@ -1,7 +1,7 @@
 // check:entity-live — every service the composition root returns from getServices()
 // is live: a route tagged with its entity, a use<Entity> hook imported by a route
 // component, and an e2e spec tagged @entity:<key>. Entities in the flags file's
-// notLive list are exempt; check:no-stub-nav keeps them out of navigation.
+// notLive list are exempt until their module's live close.
 import { config, exists, read, report, resolveImport, stringArray, taggedRoutes, topLevelKeys, walk } from "./lib.mjs";
 
 const cfg = config();

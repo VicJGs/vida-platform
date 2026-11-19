@@ -109,6 +109,10 @@ New home **`apps/web/src/nav/`** (ADR-018 §3.6 layer-doc'd) — the canonical n
 - `module-map.ts` exports `ModuleGroup`, `NavPlacement`, `ModuleNavEntry`, `NAV_AXES`, `MODULE_MAP` (23 modules
   placed — every system-overview §2 module + the substrate-derived ones + dissolved Spaces entries), `GLOBAL_SURFACES`
   (6 global-bar surfaces). Read by the nav chrome (UI-4) + M1.1+ route wiring; **does not touch `routes.tsx`**.
+- Since LIF-351 (2026-11-18), `MODULE_MAP` lists only modules whose `routePath` is registered in `routes.tsx` (10 entries,
+  8 nav links with the global surfaces); the 13 dock modules without a built route wait in `PENDING_MODULES`
+  (`nav/pending-modules.ts`), which no nav surface reads. `pnpm check:no-stub-nav` fails on a nav link to an
+  unregistered route.
 - The IA design doc is `docs/core/architecture/information-architecture.md` (the co-primary dual-axis nav model).
   `[FACT: apps/web/src/nav/*; typecheck 10/10, lint 0-err]`
 

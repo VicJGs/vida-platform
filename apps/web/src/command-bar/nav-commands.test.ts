@@ -4,9 +4,10 @@ import { deriveNavCommands } from './nav-commands'
 describe('deriveNavCommands', () => {
   const commands = deriveNavCommands()
 
-  it('derives exactly 21 nav commands (19 module routes + /calendar + /graph; 3 overlaps deduped)', () => {
-    // MODULE_MAP non-null routePaths = 19; GLOBAL_SURFACES add /calendar + /graph; /·/notifications·/settings dedupe.
-    expect(commands).toHaveLength(21)
+  it('derives exactly 8 nav commands (6 module routes + /calendar + /graph; 3 overlaps deduped)', () => {
+    // MODULE_MAP non-null routePaths = 6 (modules without a built route wait in PENDING_MODULES, LIF-351);
+    // GLOBAL_SURFACES add /calendar + /graph; /·/notifications·/settings dedupe.
+    expect(commands).toHaveLength(8)
   })
 
   it('includes the GLOBAL-only routes /calendar and /graph', () => {
@@ -26,8 +27,8 @@ describe('deriveNavCommands', () => {
     expect(commands.every((c) => c.id.startsWith('nav:/'))).toBe(true) // no nav:null
   })
 
-  it('uses the UX-facing routePath, not "/"+key (relationships -> /people)', () => {
-    expect(commands.find((c) => c.label === 'Relationships')?.id).toBe('nav:/people')
+  it('uses the UX-facing routePath, not "/"+key (preferences -> /settings)', () => {
+    expect(commands.find((c) => c.label === 'Settings')?.id).toBe('nav:/settings')
   })
 
   it('preserves visibleWhen on conditional commands (gamification)', () => {
@@ -49,7 +50,7 @@ describe('deriveNavCommands', () => {
 describe('deriveNavCommands with nav prefs', () => {
   const prefs = {
     visibility: { tasks: false, preferences: false, journals: false },
-    names: { habits: 'Rituals', preferences: 'Nope' },
+    names: { notes: 'Pages', preferences: 'Nope' },
   }
 
   it('omits a hidden module and relabels a renamed one; the id (history key) is unchanged', () => {
@@ -57,8 +58,8 @@ describe('deriveNavCommands with nav prefs', () => {
     const commands = deriveNavCommands(undefined, undefined, prefs)
     const ids = commands.map((c) => c.id)
     expect(ids).not.toContain('nav:/tasks')
-    expect(commands.find((c) => c.id === 'nav:/habits')?.label).toBe('Rituals')
-    expect(commands).toHaveLength(20)
+    expect(commands.find((c) => c.id === 'nav:/notes')?.label).toBe('Pages')
+    expect(commands).toHaveLength(7)
     warn.mockRestore()
   })
 
@@ -70,7 +71,7 @@ describe('deriveNavCommands with nav prefs', () => {
     warn.mockRestore()
   })
 
-  it('no prefs → today’s 21', () => {
-    expect(deriveNavCommands(undefined, undefined, undefined)).toHaveLength(21)
+  it('no prefs → today’s 8', () => {
+    expect(deriveNavCommands(undefined, undefined, undefined)).toHaveLength(8)
   })
 })

@@ -166,6 +166,9 @@ db/web-adapter.ts ensureModule(); worker.test.ts]`
 - **[FACT] BR-NAV-2 — the canonical nav/module map is CENTRAL DATA** at `apps/web/src/nav/module-map.ts`, READ by
   the nav chrome (UI-4) + M1.1+ route wiring. It does **not** import/mutate `routes.tsx` and registers no routes —
   honoring AR-4's single-central-`routes.tsx`, no-self-registration-seam decision. `[FACT: nav/module-map.ts]`
+  It lists only modules whose route is registered; a module whose route is not built yet waits in `PENDING_MODULES`
+  (`nav/pending-modules.ts`) and returns when its route ships, so no nav item opens the not-found page.
+  `pnpm check:no-stub-nav` enforces it (LIF-351). `[FACT: nav/pending-modules.ts; package.json checks.navPath]`
 - **[FACT] BR-NAV-3 — every module carries a `placement`** ∈ {dock · global · secondary · non-nav · spaces-only},
   anchored in its `docs/features/<module>/identity.md`; conditional-dock items carry `visibleWhen` (a feature flag,
   e.g. Gamification's `feature_gamification`). `routePath` is UX-facing and MAY differ from `key`. `[FACT: nav/module-map.ts]`

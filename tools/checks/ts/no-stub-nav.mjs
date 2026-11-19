@@ -1,21 +1,19 @@
-// check:no-stub-nav — routes of entities the flags file marks notLive stay out of
-// navigation: the navigation file names neither their path nor their entity.
-import { config, exists, read, report, stringArray, taggedRoutes } from "./lib.mjs";
+// check:no-stub-nav — navigation links only routes that exist: every route path the
+// navigation file names (as `<navPath>: "/..."`; "checks".navPath, default path) is a path
+// the routes file registers. A dead link renders the not-found page, a stub shown as a feature.
+import { config, exists, read, report } from "./lib.mjs";
 
 const cfg = config();
-const notLive = exists(cfg.entityFlags) ? stringArray(read(cfg.entityFlags), "notLive") : [];
-const routes = exists(cfg.routes) ? taggedRoutes(read(cfg.routes)) : [];
-const nav = exists(cfg.navigation) ? read(cfg.navigation) : "";
-const quoted = (s) => new RegExp(`["'\`]${s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}["'\`]`);
+const missing = [["routes", cfg.routes], ["navigation", cfg.navigation]]
+  .filter(([, path]) => !exists(path))
+  .map(([key, path]) => `check:no-stub-nav: ${path} does not exist; set "checks".${key}`);
+if (missing.length) report("check:no-stub-nav", missing);
 
-const findings = [];
-for (const [key, path] of [["entityFlags", cfg.entityFlags], ["navigation", cfg.navigation]]) {
-  if (!exists(path)) findings.push(`check:no-stub-nav: ${path} does not exist; set "checks".${key}`);
+const paths = (src, key) => [...src.matchAll(new RegExp(`\\b${key}:\\s*["'\`](/[^"'\`]*)["'\`]`, "g"))].map(([, p]) => p);
+const registered = new Set(paths(read(cfg.routes), "path"));
+const linked = [...new Set(paths(read(cfg.navigation), cfg.navPath))];
+if (!linked.length) {
+  report("check:no-stub-nav", [`check:no-stub-nav: ${cfg.navigation} names no route path as ${cfg.navPath}: "/..."; set "checks".navPath`]);
 }
-for (const entity of notLive) {
-  if (new RegExp(`\\bentity:\\s*["']${entity}["']`).test(nav)) findings.push(`${cfg.navigation} links not-live entity ${entity}`);
-  for (const r of routes.filter((x) => x.entity === entity && x.path)) {
-    if (quoted(r.path).test(nav)) findings.push(`${cfg.navigation} links ${r.path}, a route of not-live entity ${entity}`);
-  }
-}
-report(`check:no-stub-nav (${notLive.length} not-live entities)`, findings);
+const findings = linked.filter((p) => !registered.has(p)).map((p) => `${cfg.navigation} links ${p}, which ${cfg.routes} does not register`);
+report(`check:no-stub-nav (${linked.length} nav links, ${linked.length - findings.length} registered)`, findings);

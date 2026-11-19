@@ -20,7 +20,7 @@ The Linear issue (team LIF); a decision that outlives the issue becomes an ADR i
 
 ## 5. Plan
 
-The Linear issue is the plan: scope, acceptance and status live there. Never write plan files. Register a service in apps/web/src/db/composition-root.ts only in the entity's closing slice; `pnpm check:entity-live` then fails until it has a route, a hook and an e2e spec.
+The Linear issue is the plan: scope, acceptance and status live there. Never write plan files. Register a service in apps/web/src/db/composition-root.ts only in the entity's closing slice; `pnpm check:entity-live` then fails until it has a route, a hook and an e2e spec, unless `apps/web/src/entity-flags.ts` lists it in `notLive`; the entity's live close removes that line.
 
 ## 6. Landmines
 

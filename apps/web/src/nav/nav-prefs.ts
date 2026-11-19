@@ -6,6 +6,7 @@
 // escape hatch, read side (a synced `false` can't hide the way back). Hidden ≠ disabled: the route still opens (PR-7).
 // The hideable rule lives HERE (settings + the writer derive from it), so `nav/` never imports `settings/`.
 import { MODULE_MAP, type NavPlacement } from './module-map'
+import { PENDING_MODULES } from './pending-modules'
 
 /** Settings (`preferences`) + Home (`journals`) — never hideable (EC-8, business-rules.md:27). */
 export const ALWAYS_REACHABLE_KEYS: ReadonlySet<string> = new Set(['preferences', 'journals'])
@@ -53,7 +54,11 @@ let validKeys: ReadonlySet<string> | null = null
 
 function warnInvalidNavKeys(prefs: NavPrefs): void {
   if (process.env.NODE_ENV === 'production') return
-  validKeys ??= new Set([...MODULE_MAP.filter(isHideableModule).map((e) => e.key), ...MANAGED_SURFACE_KEYS])
+  // A pending module's key stays valid: its stored choice applies again when its route ships (LIF-351).
+  validKeys ??= new Set([
+    ...[...MODULE_MAP, ...PENDING_MODULES].filter(isHideableModule).map((e) => e.key),
+    ...MANAGED_SURFACE_KEYS,
+  ])
   for (const key of [...Object.keys(prefs.visibility), ...Object.keys(prefs.names)]) {
     if (validKeys.has(key) || warned.has(key)) continue
     warned.add(key)

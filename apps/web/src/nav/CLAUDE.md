@@ -8,6 +8,9 @@ The **canonical nav / module map** — central DATA describing what modules exis
 and how it is reached. Consumed by the nav chrome (UI-4) and by each module's route wiring when it lands (M1.1+).
 
 - `module-map.ts` — `ModuleGroup`, `NavPlacement`, `ModuleNavEntry`, `NAV_AXES`, `MODULE_MAP`, `GLOBAL_SURFACES`.
+  `MODULE_MAP` lists only modules whose `routePath` is registered in `routes.tsx` (`pnpm check:no-stub-nav`).
+- `pending-modules.ts` (LIF-351) — `PENDING_MODULES`: dock modules whose route is not built yet. No nav surface reads
+  it; an entry moves back into `MODULE_MAP` when its route ships. The nav-prefs key sets still accept its keys.
 - `nav-prefs.ts` (preferences-rescope R5) — the user's module prefs, nav side: `ALWAYS_REACHABLE_KEYS` (Settings/Home) ·
   `isHideableModule` (dock ∖ always-reachable — THE hideable rule; settings-model + the preferences writer derive from it)
   · `MANAGED_SURFACE_KEYS` (`features`/`sync`) · `applyNavPrefs(entries, prefs?)` — the ONE pure filter both nav readers

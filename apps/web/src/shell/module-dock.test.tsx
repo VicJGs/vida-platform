@@ -83,23 +83,23 @@ describe('ModuleDock', () => {
   }
 
   it('omits a hidden module and shows a renamed one under its custom name (sidebar)', async () => {
-    seedPrefs({ tasks: false }, { habits: 'Rituals' })
+    seedPrefs({ tasks: false }, { notes: 'Pages' })
     const { getByRole, queryByRole } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
       prefs: true,
     })
-    await waitFor(() => expect(getByRole('link', { name: 'Rituals' })).not.toBeNull())
+    await waitFor(() => expect(getByRole('link', { name: 'Pages' })).not.toBeNull())
     expect(queryByRole('link', { name: 'Tasks' })).toBeNull()
-    expect(queryByRole('link', { name: 'Habits' })).toBeNull()
+    expect(queryByRole('link', { name: 'Notes' })).toBeNull()
   })
 
   it('the rail (icon-only) announces the custom name', async () => {
-    seedPrefs({}, { habits: 'Rituals' })
+    seedPrefs({}, { notes: 'Pages' })
     const { getByRole } = await renderInShell(<ModuleDock dock="rail" bp="tablet" />, '/', { prefs: true })
-    await waitFor(() => expect(getByRole('link', { name: 'Rituals' })).not.toBeNull())
+    await waitFor(() => expect(getByRole('link', { name: 'Pages' })).not.toBeNull())
   })
 
   it('hiding every module of a group drops its heading', async () => {
-    seedPrefs({ tasks: false, habits: false, projects: false, routines: false })
+    seedPrefs({ tasks: false })
     const { queryByText, getByText } = await renderInShell(<ModuleDock dock="sidebar" bp="desktop" />, '/', {
       prefs: true,
     })
