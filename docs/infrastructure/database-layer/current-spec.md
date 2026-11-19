@@ -1,8 +1,8 @@
 # Database Layer — Current Spec (durable · §XXIX promotion target)
 
 > **Context:** `@vida/core` → `packages/core/src/db/`. **Seeded from documentation** (2026-07-21). Companion:
-> `current-business-rules.md`. Baseline finding: `../database-schema-reconciliation.md`. Strategy:
-> `../storage-rebuild-strategy.md`. **No-Guessing:** `[FACT: src]` / `[INTENT]` (documented direction, not yet built).
+> `current-business-rules.md`. Baseline finding and strategy:
+> ADR-016. **No-Guessing:** `[FACT: src]` / `[INTENT]` (documented direction, not yet built).
 
 ## What the DB layer is
 A platform-agnostic, local-first SQLite layer: the schema (Drizzle ORM), a generic encrypting repository, a
@@ -27,8 +27,8 @@ packages/core/src/db/
 - `schema.ts` = the **v1** monolith, 80 tables, imported by `index.ts:59` (`export * as schema`) and `adapter.ts:16`.
   `[FACT: schema.ts; index.ts:59; adapter.ts:16]`
 - It is ~60% misaligned with the v2 target (retire ~22 · missing ~90-110 · divergent ~9 · carry-forward ~40) and
-  carries 5 systemic gaps. `[FACT: ../database-schema-reconciliation.md]`
-- The v2 rebuild is authored from-zero into `schema/`, per-table-gated. `[FACT: ../storage-rebuild-strategy.md]`
+  carries 5 systemic gaps. `[FACT: ADR-016]`
+- The v2 rebuild is authored from-zero into `schema/`, per-table-gated. `[FACT: ADR-016]`
 
 ## Status (2026-07-21)
 `schema/_shared.ts` · `_registry.ts` · `index.ts` **implemented + verified** — `tsc --noEmit` green on `@vida/core`,

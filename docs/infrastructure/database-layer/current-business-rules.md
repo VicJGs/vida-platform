@@ -1,8 +1,7 @@
 # Database Layer — Current Business Rules (durable · §XXIX promotion target)
 
 > **Context:** `@vida/core` → `packages/core/src/db/`. **Seeded from documentation** (v1 code is being rebuilt
-> from zero, so the docs are the anchor — per Victor 2026-07-21). Sources: ADR-001/002/003, `docs/core/conventions.md`,
-> `docs/infrastructure/database-schema-reconciliation.md`, `storage-rebuild-strategy.md`.
+> from zero, so the docs are the anchor — per Victor 2026-07-21). Sources: ADR-001/002/003/016, `docs/core/conventions.md`.
 > **No-Guessing:** each rule `[FACT: src]` or `[INTENT]` (documented, owed).
 
 ## Invariants every syncable table upholds
