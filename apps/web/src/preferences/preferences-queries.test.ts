@@ -68,7 +68,7 @@ describe('commandHistoryQuery', () => {
     })
   })
 
-  it('reads the service rows mapped to the palette contract (is_pinned → 0|1)', async () => {
+  it('PR-16 the palette reads its commands from command_bar_history (is_pinned → 0|1)', async () => {
     testPreferences.state.history = [
       {
         command_key: 'nav:/tasks',
