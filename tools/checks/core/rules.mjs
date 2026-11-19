@@ -7,7 +7,8 @@
 // the rule stated: like a describe() title, it proves nothing here, and the ID counts as
 // untested until it is qualified with its module. Ledger rows scope proof by module.
 // IDs listed in the "checks".rulesBaseline file are known to lack a test; the list only
-// shrinks: a listed ID that gains a test fails until its line is removed.
+// shrinks: a listed ID that gains a test fails until its line is removed, and so does one
+// stated nowhere any more, since its line would exempt the ID if it came back.
 // `--write-baseline` writes the current untested IDs to that file, once, on adoption.
 // It also reads the intent ledgers (intent.mjs): each row is reported as tested, partly
 // tested or intent only, counting only tests under the module's "checks".intentTests paths,
@@ -40,6 +41,7 @@ if (exists(cfg.rulesBaseline)) {
 const findings = [
   ...untested.filter(([rule]) => !baseline.has(rule)).map(([rule, where]) => `${rule} (stated in ${where}) has no test named with it`),
   ...[...baseline].filter(([rule]) => proven(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} has a test now; remove this line`),
+  ...[...baseline].filter(([rule]) => !stated.has(rule)).map(([rule, line]) => `${cfg.rulesBaseline}:${line}: ${rule} is stated nowhere; remove this line`),
   ...problems(cfg, intent, map),
   ...form.findings,
 ];
