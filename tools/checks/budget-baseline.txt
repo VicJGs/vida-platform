@@ -1,0 +1,14 @@
+apps/web/e2e/CLAUDE.md 1286
+apps/web/src/db/CLAUDE.md 1257
+apps/web/src/gamification/CLAUDE.md 2270
+apps/web/src/home/CLAUDE.md 1648
+apps/web/src/onboarding/CLAUDE.md 2373
+apps/web/src/preferences/CLAUDE.md 1642
+apps/web/src/reader/CLAUDE.md 1013
+apps/web/src/seams/CLAUDE.md 1659
+apps/web/src/session-hud/CLAUDE.md 1016
+apps/web/src/settings/CLAUDE.md 2543
+apps/web/src/shell/CLAUDE.md 5038
+packages/editor/src/CLAUDE.md 6820
+packages/ui/src/CLAUDE.md 22394
+packages/ui/src/themes/CLAUDE.md 1286
