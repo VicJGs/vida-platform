@@ -80,12 +80,15 @@ describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
     expect(getByLabelText('In-app notifications')).not.toBeNull()
   })
 
-  it('S6/EC-9 — Data + Account render calm delegated placeholders', () => {
+  it('PR-8 Account and Data render delegated placeholders and store nothing', async () => {
     const { getByText, getAllByText } = renderUI(<SettingsSurface />)
     fireEvent.click(getByText('Data'))
     expect(getByText(/part of Data & Sync/)).not.toBeNull()
     fireEvent.click(getAllByText('Account')[0]!)
     expect(getByText(/managed separately/)).not.toBeNull()
+    await preferencesWriter.flushAll()
+    expect(testPreferences.state.creates).toEqual({ user: 0, nav: 0 })
+    expect(testPreferences.state.updates).toEqual({ user: 0, nav: 0 })
   })
 
   it('EC-6 — a matching query replaces the pane with grouped results (category eyebrow)', () => {
@@ -97,7 +100,7 @@ describe('SettingsSurface (fe-settings S3 — EC-1/EC-7/EC-8)', () => {
     expect(results.getByRole('list', { name: 'Appearance' })).not.toBeNull()
   })
 
-  it('EC-6 — a non-matching query shows the calm no-match status', () => {
+  it('PR-16 a non-matching query shows the calm no-match status', () => {
     const { getByLabelText, getByRole } = renderUI(<SettingsSurface />)
     fireEvent.change(getByLabelText('Search settings'), { target: { value: 'xyzzy' } })
     const status = within(getByRole('status'))

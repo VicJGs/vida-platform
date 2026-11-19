@@ -31,7 +31,7 @@ describe('theme-store (derived cache)', () => {
     expect(sel()).toEqual(THEME_DEFAULT)
   })
 
-  it('follows a seeded row (dark + dense + quietDesk) before any render', async () => {
+  it('PR-5 the theme store is a derived cache of the stored row: it follows a seeded row (dark + dense + quietDesk) before any render', async () => {
     testPreferences.state.user = {
       ...USER_PREFERENCES_DEFAULTS,
       theme: 'dark',

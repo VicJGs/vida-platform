@@ -77,7 +77,8 @@
       "preferences": [
         "packages/core/src/services/preferences",
         "apps/web/src/preferences",
-        "apps/web/src/settings"
+        "apps/web/src/settings",
+        "apps/web/src/stores/theme-store.test.ts"
       ],
       "sessions": [
         "packages/core/src/services/sessions",
