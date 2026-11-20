@@ -11,12 +11,11 @@ import { ThemePickerView } from './theme-picker'
 
 afterEach(() => cleanup())
 
-// mirrors theme-picker.tsx PRESET_LABELS — `game` added when fe-gamification G0 extended THEME_PRESETS.
+// mirrors theme-picker.tsx PRESET_LABELS.
 const PRESET_LABEL: Record<string, string> = {
   editorial: 'Editorial',
   reader: 'Reader',
   quietDesk: 'Quiet Desk',
-  game: 'Game',
 }
 
 describe('useThemeSelection (preview + persist seam)', () => {

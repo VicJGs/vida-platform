@@ -5,7 +5,7 @@ module: preferences
 status: active
 supersedes: []
 summary: "Saving is debounced 500 ms and optimistic with no Save button; a failed save reverts the value and shows one typed toast, never a silent drop."
-anchors: [apps/web/src/settings/settings-surface.test.tsx, docs/modules/preferences/intent.yaml]
+anchors: [apps/web/src/settings/settings-surface.test.tsx, apps/web/src/stores/theme-store.test.ts, docs/modules/preferences/intent.yaml]
 tokens: 71
 generated: true
 ---

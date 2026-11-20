@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
-import { cleanup, render, renderHook, waitFor } from '@testing-library/react'
-import { THEME_DEFAULT, UIProvider, type ThemeSelection } from '@vida/ui'
+import { cleanup, render, renderHook } from '@testing-library/react'
+import { UIProvider } from '@vida/ui'
 import { useAchievements } from './use-achievements'
 import { AchievementsMode } from './achievements-mode'
 
@@ -13,8 +13,7 @@ afterEach(() => {
   cleanup()
   setSearch('')
 })
-const renderUI = (ui: React.ReactNode, selection?: ThemeSelection) =>
-  render(<UIProvider selection={selection}>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
 
 describe('useAchievements (data seam)', () => {
   it('honest M1 default = empty (nothing seeded until app init)', () => {
@@ -45,7 +44,7 @@ describe('useAchievements (data seam)', () => {
 })
 
 describe('AchievementsMode (EC-6)', () => {
-  it('calm default = list: category groups + earned/locked + a progress bar for locked-with-progress', () => {
+  it('default = list: category groups + earned/locked + a progress bar for locked-with-progress', () => {
     setSearch('?sample')
     const { getByText, getAllByText, getByRole } = renderUI(<AchievementsMode />)
     expect(getByText('Habits')).not.toBeNull() // category eyebrow
@@ -54,13 +53,5 @@ describe('AchievementsMode (EC-6)', () => {
     expect(getByText('Locked')).not.toBeNull() // locked, no progress (saver)
     // locked-with-progress → a HonestProgress bar (role=progressbar)
     expect(getByRole('progressbar', { name: '7 / 30' })).not.toBeNull()
-  })
-
-  it('EC-6 — the game preset defaults to the trophy wall (gallery of Lucide Medal tiles)', async () => {
-    // "calm = list · game = trophy wall" = preset-keyed default (the S1 ring idiom). Drive it via UIProvider.
-    setSearch('?sample')
-    const { container } = renderUI(<AchievementsMode />, { ...THEME_DEFAULT, preset: 'game' })
-    // once the provider's t_game lands + useActivePreset re-reads → the gallery renders medal tiles
-    await waitFor(() => expect(container.querySelector('svg.lucide-medal')).not.toBeNull())
   })
 })

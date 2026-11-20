@@ -17,11 +17,9 @@
 import { getVariableValue } from '@tamagui/core'
 import {
   dark,
-  dark_game,
   dark_quietDesk,
   dark_reader,
   light,
-  light_game,
   light_quietDesk,
   light_reader,
   resolveTheme,
@@ -50,8 +48,6 @@ const THEMES = {
   dark_reader,
   light_quietDesk,
   dark_quietDesk,
-  light_game,
-  dark_game,
 } satisfies Record<ThemeName, { colorSurfacePrimary: unknown; colorTextPrimary: unknown }>
 
 function hex(v: unknown): string {

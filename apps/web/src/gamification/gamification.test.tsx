@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, describe, expect, it } from 'vitest'
-import { cleanup, fireEvent, render, waitFor } from '@testing-library/react'
-import { THEME_DEFAULT, UIProvider, type ThemeSelection } from '@vida/ui'
+import { cleanup, fireEvent, render } from '@testing-library/react'
+import { UIProvider } from '@vida/ui'
 import { rewardCopy } from './reward-copy'
 import { toRegister } from './use-persona'
 import { useGamification } from './use-gamification'
@@ -13,8 +13,7 @@ afterEach(() => {
   document.body.className = ''
 })
 
-const renderUI = (ui: React.ReactNode, selection?: ThemeSelection) =>
-  render(<UIProvider selection={selection}>{ui}</UIProvider>)
+const renderUI = (ui: React.ReactNode) => render(<UIProvider>{ui}</UIProvider>)
 
 describe('reward-copy (EC-10 — copy only, documented pairs)', () => {
   it('neutral keeps Rules/Reward; game swaps the documented pair (Quests/Loot)', () => {
@@ -48,22 +47,14 @@ describe('useGamification (data seam — honest default)', () => {
   })
 })
 
-describe('XpHero (EC-4 — register-keyed progress, honest)', () => {
+describe('XpHero (EC-4 — honest progress)', () => {
   const level = { info: { level: 3, title: 'Novice' }, total: 520, nextLevelAt: 900, fraction: 0.4 }
 
-  it('calm preset ⇒ an honest HonestProgress bar (role=progressbar) with the XP-to-next label', () => {
+  it('an honest HonestProgress bar (role=progressbar) with the XP-to-next label', () => {
     const { getByRole } = renderUI(<XpHero level={level} />)
     const bar = getByRole('progressbar')
     expect(bar).not.toBeNull()
     expect(bar.getAttribute('aria-valuenow')).toBe('40')
-  })
-
-  it('game preset ⇒ a ring + an SR caption carrying the progress (ring is decorative)', async () => {
-    // drive the preset through the real lever — UIProvider applies `t_game` to <body>, which useActivePreset reads
-    const { container, getByText } = renderUI(<XpHero level={level} />, { ...THEME_DEFAULT, preset: 'game' })
-    // the ring is an aria-hidden <svg>; it appears once the provider's class lands + the observer re-reads
-    await waitFor(() => expect(container.querySelector('svg[aria-hidden]')).not.toBeNull())
-    expect(getByText('380 XP to level 4')).not.toBeNull()
   })
 })
 

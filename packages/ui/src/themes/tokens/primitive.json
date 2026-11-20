@@ -293,92 +293,6 @@
         "value": "#DC2626",
         "type": "color"
       }
-    },
-    "game": {
-      "neutral": {
-        "50": {
-          "value": "#F8F8FC",
-          "type": "color"
-        },
-        "100": {
-          "value": "#F1F1F8",
-          "type": "color"
-        },
-        "200": {
-          "value": "#E3E3EF",
-          "type": "color"
-        },
-        "300": {
-          "value": "#CBCBDC",
-          "type": "color"
-        },
-        "400": {
-          "value": "#9A9AB0",
-          "type": "color"
-        },
-        "500": {
-          "value": "#6B6B84",
-          "type": "color"
-        },
-        "600": {
-          "value": "#4A4A63",
-          "type": "color"
-        },
-        "700": {
-          "value": "#343450",
-          "type": "color"
-        },
-        "800": {
-          "value": "#22223A",
-          "type": "color"
-        },
-        "900": {
-          "value": "#15152A",
-          "type": "color"
-        }
-      },
-      "accent": {
-        "50": {
-          "value": "#F5F3FF",
-          "type": "color"
-        },
-        "100": {
-          "value": "#EDE9FE",
-          "type": "color"
-        },
-        "200": {
-          "value": "#DDD6FE",
-          "type": "color"
-        },
-        "300": {
-          "value": "#C4B5FD",
-          "type": "color"
-        },
-        "400": {
-          "value": "#A78BFA",
-          "type": "color"
-        },
-        "500": {
-          "value": "#7C3AED",
-          "type": "color"
-        },
-        "600": {
-          "value": "#6D28D9",
-          "type": "color"
-        },
-        "700": {
-          "value": "#5B21B6",
-          "type": "color"
-        },
-        "800": {
-          "value": "#4C1D95",
-          "type": "color"
-        },
-        "900": {
-          "value": "#2E1065",
-          "type": "color"
-        }
-      }
     }
   },
   "space": {
@@ -571,20 +485,6 @@
       },
       "chrome": {
         "value": "'IBM Plex Sans', system-ui, sans-serif",
-        "type": "fontFamily"
-      }
-    },
-    "game": {
-      "display": {
-        "value": "'Inter', system-ui, sans-serif",
-        "type": "fontFamily"
-      },
-      "body": {
-        "value": "'Inter', system-ui, sans-serif",
-        "type": "fontFamily"
-      },
-      "chrome": {
-        "value": "'Inter', system-ui, sans-serif",
         "type": "fontFamily"
       }
     }
