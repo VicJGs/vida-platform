@@ -16,30 +16,30 @@ beforeEach(() => {
 })
 
 describe('readFirstRunComplete', () => {
-  it('SELECTs the marker with the reserved key', async () => {
+  it('OB-3 SELECTs the marker with the reserved key', async () => {
     h.query.mockResolvedValueOnce([{ value: FIRST_RUN_COMPLETE_VALUE }])
     await readFirstRunComplete()
     expect(h.query).toHaveBeenCalledWith('SELECT value FROM app_state WHERE key = ?', [FIRST_RUN_COMPLETE_KEY])
   })
 
-  it('is true only for the completion value', async () => {
+  it('OB-3 is true only for the completion value', async () => {
     h.query.mockResolvedValueOnce([{ value: FIRST_RUN_COMPLETE_VALUE }])
     expect(await readFirstRunComplete()).toBe(true)
   })
 
-  it('is false when the marker row is absent (fresh device)', async () => {
+  it('OB-3 is false when the marker row is absent (fresh device)', async () => {
     h.query.mockResolvedValueOnce([])
     expect(await readFirstRunComplete()).toBe(false)
   })
 
-  it('is false for a non-completion value', async () => {
+  it('OB-3 is false for a non-completion value', async () => {
     h.query.mockResolvedValueOnce([{ value: '0' }])
     expect(await readFirstRunComplete()).toBe(false)
   })
 })
 
 describe('writeFirstRunComplete', () => {
-  it('upserts the completion marker (INSERT OR REPLACE — idempotent)', async () => {
+  it('OB-5 upserts the completion marker (INSERT OR REPLACE — idempotent)', async () => {
     h.run.mockResolvedValueOnce(undefined)
     await writeFirstRunComplete()
     expect(h.run).toHaveBeenCalledWith('INSERT OR REPLACE INTO app_state (key, value) VALUES (?, ?)', [
@@ -48,7 +48,7 @@ describe('writeFirstRunComplete', () => {
     ])
   })
 
-  it('waits for an in-flight exclusive write before writing the marker (BR-RT-LOCK, R1-BR-5)', async () => {
+  it('OB-5 waits for an in-flight exclusive write before writing the marker (BR-RT-LOCK, R1-BR-5)', async () => {
     h.run.mockResolvedValue(undefined)
     let release!: () => void
     let acquired!: () => void

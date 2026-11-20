@@ -57,7 +57,7 @@ afterEach(() => {
 })
 
 describe('App first-run branch', () => {
-  it('shows onboarding (not the app chrome) on first launch', async () => {
+  it('OB-2 shows onboarding (not the app chrome) on first launch', async () => {
     h.read.mockResolvedValue(false)
     render(<App />)
     await waitFor(() => expect(screen.getByRole('heading', { level: 1 })).toBeTruthy())
@@ -65,7 +65,7 @@ describe('App first-run branch', () => {
     expect(shellChrome()).toBeNull() // the dock/shell never mounts during onboarding (S4-BR-h)
   })
 
-  it('goes straight to the app (shell + index route) on a returning launch', async () => {
+  it('OB-2 goes straight to the app (shell + index route) on a returning launch', async () => {
     h.read.mockResolvedValue(true)
     render(<App />)
     await waitFor(() => expect(shellChrome()).not.toBeNull())
@@ -73,7 +73,7 @@ describe('App first-run branch', () => {
     expect(screen.queryByRole('button', { name: 'Get started' })).toBeNull()
   })
 
-  it('never flashes the app chrome before onboarding resolves (no-flash)', async () => {
+  it('OB-4 never flashes the app chrome before onboarding resolves (no-flash)', async () => {
     let resolveRead: (v: boolean) => void = () => {}
     h.read.mockReturnValue(
       new Promise<boolean>((r) => {
@@ -104,7 +104,7 @@ describe('App first-run branch', () => {
 
   // fe-onboarding S4 — reach path (a): completing onboarding offers the guided-setup invitation OVER the app (opt-in,
   // never a wall). The app (shell) mounts behind it; the invitation is a fixed overlay, not a replacement.
-  it('writes the completion marker, mounts the app, and offers the guided-setup invitation', async () => {
+  it('OB-10 writes the completion marker, mounts the app, and offers the guided-setup invitation', async () => {
     h.read.mockResolvedValue(false)
     h.write.mockResolvedValue(undefined)
     render(<App />)
@@ -113,7 +113,7 @@ describe('App first-run branch', () => {
     await waitFor(() => expect(invitationHeading()).not.toBeNull()) // the opt-in invitation is offered
   })
 
-  it('skipping the invitation returns to the app (never a wall)', async () => {
+  it('OB-10 skipping the invitation returns to the app (never a wall)', async () => {
     h.read.mockResolvedValue(false)
     h.write.mockResolvedValue(undefined)
     render(<App />)

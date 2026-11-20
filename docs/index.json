@@ -6998,11 +6998,11 @@
       "module": "onboarding",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of onboarding: 21 rows, 0 tested, 0 partly tested, 21 intent only.",
+      "summary": "Intended rules of onboarding: 21 rows, 7 tested, 0 partly tested, 14 intent only.",
       "anchors": [
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 141,
+      "tokens": 139,
       "path": "docs/modules/onboarding/intent.md"
     },
     {
@@ -9198,9 +9198,11 @@
       "supersedes": [],
       "summary": "Guided setup is optional; it is offered once, as an invitation right after a device's first run completes, never as a second mandatory gate, and it opens as an overlay over the still-mounted app, never a route; Skip for now closes the invitation.",
       "anchors": [
+        "apps/web/src/App.test.tsx",
+        "apps/web/src/onboarding/guided-setup-s4.test.tsx",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 94,
+      "tokens": 97,
       "path": "docs/modules/onboarding/intent/OB-10.md"
     },
     {
@@ -9224,9 +9226,10 @@
       "supersedes": [],
       "summary": "Guided setup is framed by a rail of its steps, at the left from tablet width and a top strip below it, with the current step marked; every step can be skipped, a persistent Skip setup ends the flow from anywhere into the app, and the last step confirms honestly and hands off with Enter Vida.",
       "anchors": [
+        "apps/web/src/onboarding/guided-setup.test.tsx",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 106,
+      "tokens": 109,
       "path": "docs/modules/onboarding/intent/OB-12.md"
     },
     {
@@ -9328,9 +9331,10 @@
       "supersedes": [],
       "summary": "A device's first run is a full-viewport boot step shown before the app chrome mounts and until that device completes it; it is never a route, a nav entry or an overlay.",
       "anchors": [
+        "apps/web/src/App.test.tsx",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 75,
+      "tokens": 77,
       "path": "docs/modules/onboarding/intent/OB-2.md"
     },
     {
@@ -9367,9 +9371,11 @@
       "supersedes": [],
       "summary": "The first run keys only on the device-local marker first_run:completed in app state, never on whether the database exists, which a first launch creates before the marker is read; the marker is never synced.",
       "anchors": [
+        "apps/web/src/onboarding/first-run-repo.test.ts",
+        "apps/web/src/onboarding/first-run.test.ts",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 87,
       "path": "docs/modules/onboarding/intent/OB-3.md"
     },
     {
@@ -9380,9 +9386,11 @@
       "supersedes": [],
       "summary": "Boot resolves the first run in three states, holding the loading surface until the marker is read so the app never flashes before it, and a failed read shows the first run rather than stranding on loading.",
       "anchors": [
+        "apps/web/src/App.test.tsx",
+        "apps/web/src/onboarding/use-first-run.test.ts",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 84,
+      "tokens": 86,
       "path": "docs/modules/onboarding/intent/OB-4.md"
     },
     {
@@ -9393,9 +9401,12 @@
       "supersedes": [],
       "summary": "Completing the first run writes the marker under the app-wide write lock and only then opens the app at Home; the write is idempotent, and a failed one shows a retryable error and keeps the device in its first run.",
       "anchors": [
+        "apps/web/src/onboarding/first-run-repo.test.ts",
+        "apps/web/src/onboarding/onboarding.test.tsx",
+        "apps/web/src/onboarding/use-first-run.test.ts",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 86,
+      "tokens": 89,
       "path": "docs/modules/onboarding/intent/OB-5.md"
     },
     {
@@ -9406,9 +9417,11 @@
       "supersedes": [],
       "summary": "Until encryption lands the first run is four steps (welcome, privacy, a vault step that only confirms the local vault is ready, with no input and no key, and ready), each moved on by its primary action, with focus on the step heading, no Escape, and motion in opacity and transform only, instant under reduced motion.",
       "anchors": [
+        "apps/web/src/onboarding/onboarding.test.tsx",
+        "apps/web/src/onboarding/steps.test.ts",
         "docs/modules/onboarding/intent.yaml"
       ],
-      "tokens": 117,
+      "tokens": 119,
       "path": "docs/modules/onboarding/intent/OB-6.md"
     },
     {

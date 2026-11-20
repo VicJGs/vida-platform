@@ -24,13 +24,13 @@ const heading = () => screen.getByRole('heading', { level: 1 })
 const clickPrimary = (name: string | RegExp) => fireEvent.click(screen.getByRole('button', { name }))
 
 describe('Onboarding', () => {
-  it('renders the first step and focuses its heading', () => {
+  it('OB-6 renders the first step and focuses its heading', () => {
     renderOnboarding()
     expect(heading().textContent).toBe(ONBOARDING_STEPS[0]!.copy.m1)
     expect(document.activeElement).toBe(heading())
   })
 
-  it('advances through all four steps in order, focusing each heading', () => {
+  it('OB-6 the first run is four steps moved on by their primary action', () => {
     renderOnboarding()
     // welcome → privacy
     clickPrimary('Get started')
@@ -44,7 +44,7 @@ describe('Onboarding', () => {
     expect(heading().textContent).toBe(ONBOARDING_STEPS[3]!.copy.m1)
   })
 
-  it('the vault step is confirmation-only — no input, no crypto prompt (BR-6)', () => {
+  it('OB-6 the vault step is confirmation-only — no input, no crypto prompt', () => {
     renderOnboarding()
     clickPrimary('Get started') // → privacy
     clickPrimary('Continue') // → vault
@@ -70,14 +70,14 @@ describe('Onboarding', () => {
     expect(onComplete).toHaveBeenCalledTimes(1)
   })
 
-  it('does not advance or dismiss on Escape (boot gate, not an overlay)', () => {
+  it('OB-6 does not advance or dismiss on Escape (boot gate, not an overlay)', () => {
     renderOnboarding()
     fireEvent.keyDown(document, { key: 'Escape' })
     fireEvent.keyDown(heading(), { key: 'Escape' })
     expect(heading().textContent).toBe(ONBOARDING_STEPS[0]!.copy.m1)
   })
 
-  it('surfaces a retryable alert and re-enables the button when completion fails', async () => {
+  it('OB-5 surfaces a retryable alert and re-enables the button when completion fails', async () => {
     const onComplete = vi.fn().mockRejectedValueOnce(new Error('write failed'))
     renderOnboarding(onComplete)
     clickPrimary('Get started')

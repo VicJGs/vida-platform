@@ -59,7 +59,7 @@ describe('useGuidedSetup (state machine)', () => {
     await waitFor(() => expect(onComplete).toHaveBeenCalledTimes(1))
   })
 
-  it('skipAll finalizes from any step (never-a-wall)', async () => {
+  it('OB-12 skipAll finalizes from any step (never-a-wall)', async () => {
     const onComplete = vi.fn().mockResolvedValue(undefined)
     const { result } = setup(onComplete)
     act(() => result.current.skipAll())
@@ -76,7 +76,7 @@ describe('useGuidedSetup (state machine)', () => {
 })
 
 describe('StepRail', () => {
-  it('renders a marker per step and marks the current with aria-current', () => {
+  it('OB-12 renders a marker per step and marks the current with aria-current', () => {
     render(
       <UIProvider>
         <StepRail steps={GUIDED_SETUP_STEPS.map((s) => ({ id: s.id, railLabel: s.railLabel }))} currentIndex={1} />
@@ -99,7 +99,7 @@ describe('GuidedSetup (frame)', () => {
       </UIProvider>,
     )
 
-  it('renders the rail, the first step heading (focused), and a persistent Skip setup escape', () => {
+  it('OB-12 renders the rail, the first step heading (focused), and a persistent Skip setup escape', () => {
     renderFrame()
     expect(heading().textContent).toBe(GUIDED_SETUP_STEPS[0]!.title)
     expect(document.activeElement).toBe(heading())
@@ -107,7 +107,7 @@ describe('GuidedSetup (frame)', () => {
     expect(screen.getByRole('list', { name: /setup progress/i })).toBeTruthy()
   })
 
-  it('advances to the complete step which offers Enter Vida and hides skip', () => {
+  it('OB-12 advances to the complete step which offers Enter Vida and hides skip', () => {
     renderFrame()
     clickBtn(/continue/i) // modules → theme
     clickBtn(/continue/i) // theme → done
@@ -116,7 +116,7 @@ describe('GuidedSetup (frame)', () => {
     expect(screen.queryByRole('button', { name: /skip setup/i })).toBeNull()
   })
 
-  it('Enter Vida calls onComplete', async () => {
+  it('OB-12 Enter Vida calls onComplete', async () => {
     const onComplete = vi.fn().mockResolvedValue(undefined)
     renderFrame(onComplete)
     clickBtn(/continue/i)
