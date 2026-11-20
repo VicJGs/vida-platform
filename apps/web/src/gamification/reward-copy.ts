@@ -2,8 +2,8 @@
 // reward-copy — the System's register COPY (fe-gamification ② · S1 · EC-10 / GM-16).
 //
 // The System reads `persona` (deny-safe, via use-persona) for REWARD FRAMING ONLY — the
-// manhwa-"System" tone in COPY, NEVER theming (theming = the global `game` preset, picked in
-// Preferences/Onboarding; GM-16 forbids the System owning framing). This is the whole, bounded
+// manhwa-"System" tone in COPY, NEVER theming (there is no `game` theme — LIF-679; GM-16 forbids the
+// System owning framing). This is the whole, bounded
 // effect of persona on the surface: a few nouns swap.
 //
 // Grounded strictly in the envision EC-10 pairs — "Quests/Treasure/Loot ↔ Rules/Boxes/Reward".

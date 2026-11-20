@@ -2,8 +2,8 @@
 // AchievementsMode — the Achievements mode (fe-gamification ② · S3 · EC-6).
 //
 // ALL achievements by category × tier, earned + locked + progress, over the mandated `CollectionView` — the
-// first genuine 2-layout mode: **calm = list · game = trophy wall** (gallery). The default layout is PRESET-keyed
-// (game → gallery, else list — the S1 ring idiom), and the CollectionView switcher lets the user override.
+// first genuine 2-layout mode: list (the default) · trophy wall (gallery), switched through the CollectionView
+// switcher. The game-preset default is retired with the `game` theme family (LIF-679).
 //
 // Tier is conveyed by a LABEL (the reliable non-color signal) + a brand-accent Lucide `Medal` ring (earned) /
 // muted (locked) — NO bronze/silver/gold palette (none exists; inventing one violates EC-11 token-purity — a
@@ -15,7 +15,6 @@ import { Text, View } from '@tamagui/core'
 import { CollectionView, GalleryView, HonestProgress, ListView, type ViewLayout, type ViewState } from '@vida/ui'
 import { Medal } from 'lucide-react'
 import { collapseToTerminal } from '../state-conventions/interaction-state'
-import { useActivePreset } from './use-active-preset'
 import { useAchievements, type AchievementRow } from './use-achievements'
 
 const LAYOUTS: readonly ViewLayout[] = ['list', 'gallery']
@@ -117,10 +116,7 @@ function AchievementListRow({ row }: { row: AchievementRow }) {
 
 export function AchievementsMode() {
   const data = useAchievements()
-  const preset = useActivePreset()
-  // Default layout follows the active preset (game → trophy wall); the switcher override wins once set (S1 idiom).
-  const [override, setOverride] = useState<ViewLayout | null>(null)
-  const layout: ViewLayout = override ?? (preset === 'game' ? 'gallery' : 'list')
+  const [layout, setLayout] = useState<ViewLayout>('list')
 
   const renderView = (l: ViewLayout, state: ViewState) =>
     l === 'gallery' ? (
@@ -148,7 +144,7 @@ export function AchievementsMode() {
       count={data.total}
       layout={layout}
       layouts={LAYOUTS}
-      onLayoutChange={setOverride}
+      onLayoutChange={setLayout}
       state={collapseToTerminal(data.state)}
       renderView={renderView}
       aria-label="Achievements"

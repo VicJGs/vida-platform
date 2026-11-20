@@ -3,7 +3,7 @@
 // The standalone-typecheck acceptance (tokens.ts/themes.ts compile without tamagui.config.ts) is covered
 // by `pnpm --filter @vida/ui typecheck` in CI, not here.
 import { describe, it, expect, beforeAll } from 'vitest'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, join } from 'node:path'
 // @ts-expect-error — .mjs build script has no type declarations; this is a test-only import.
@@ -291,19 +291,20 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
   const subs = () => allExports().filter((n) => /_[A-Z]/.test(n))
   const grab = (name: string) => themes.match(new RegExp(`export const ${name} = (\\{.*?\\})\\n`, 's'))?.[1] ?? ''
 
-  it('emits exactly 8 scheme-first base themes', () => {
+  it('DSG-13 the pipeline builds only the three preset families', () => {
+    // editorial (bare), reader, quiet desk × light/dark — and nothing else (the game family is retired, LIF-679).
     expect(new Set(bases())).toEqual(
-      new Set([
-        'light',
-        'dark',
-        'light_reader',
-        'dark_reader',
-        'light_quietDesk',
-        'dark_quietDesk',
-        'light_game',
-        'dark_game',
-      ]),
+      new Set(['light', 'dark', 'light_reader', 'dark_reader', 'light_quietDesk', 'dark_quietDesk']),
     )
+    // The seed carries exactly the two overlays per non-default family (plus editorial's dark delta) — no orphan family.
+    const overlays = readdirSync(join(HERE, 'tokens')).filter((f) => /^semantic\..+\.json$/.test(f))
+    expect(overlays.sort()).toEqual([
+      'semantic.dark.json',
+      'semantic.quietDesk.dark.json',
+      'semantic.quietDesk.json',
+      'semantic.reader.dark.json',
+      'semantic.reader.json',
+    ])
   })
 
   it("Tamagui scheme law — every theme name's first _-segment is light or dark", () => {
@@ -390,7 +391,8 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     }
   })
 
-  it('B10 — AA contrast floor on EVERY rendered text pair × preset × MODE (≥ 4.5)', () => {
+  it('DSG-10 every preset and mode meets text contrast', () => {
+    // B10 — the AA floor (≥ 4.5) on EVERY rendered text pair × preset × mode.
     // The real semantic→primitive resolution per mode (from semantic*.json overlays + component.json button tokens).
     // Covers light AND dark (the dark pairs are where the warm reader/quietDesk surfaces are the tight constraint).
     const { byPath } = validate() as { byPath: Map<string, { value: string }> }
@@ -418,7 +420,7 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
       ['btnSecondary text.primary/surf.sec', 'P.neutral.900', 'P.neutral.100', 'P.neutral.50', 'P.neutral.800'],
     ] as const
     const sub = (s: string, p: string) => (s === 'white' ? 'white' : `color.${s.replace('P.', p + '.')}`)
-    for (const preset of ['editorial', 'reader', 'quietDesk', 'game']) {
+    for (const preset of ['editorial', 'reader', 'quietDesk']) {
       for (const [label, lf, lb, df, db] of pairs) {
         const light = ratio(sub(lf, preset), sub(lb, preset))
         const dark = ratio(sub(df, preset), sub(db, preset))

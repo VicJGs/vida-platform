@@ -13,16 +13,12 @@ LIF-181.
   `?sample` = a populated System for the Visual Gate; `?force=loading|error` reaches the two terminal states the
   honest seam can't. Live swap = React Query over `svc.getProfile/getLevel/getBalances/listCurrencies/getUserAchievements`
   (documented in-file) — one binding change at the first composition root.
-- **`use-active-preset.ts`** — reads the globally-active preset from the provider-applied `t_<preset>` `<body>`
-  class (the authoritative signal; no global preset STORE yet — the Zustand switcher is deferred to Settings), live
-  via a `MutationObserver`. The System **reads** the preset, never sets it (GM-16).
 - **`use-persona.ts`** — the deny-safe Preferences `persona` read → reward REGISTER. Absent ⇒ `neutral` (M1 has no
   live persona; the setter is `fe-settings` LIF-193). `?persona=game|neutral` DEV gate override.
 - **`reward-copy.ts`** — the register COPY map (EC-10). ONLY the documented pairs (Rules↔Quests, Reward↔Loot);
   copy only, never theming (GM-16). No invented terms (No-Guessing).
-- **`xp-hero.tsx`** — the level + XP-to-next hero (EC-4). Bar (`HonestProgress`) under the calm presets, SVG **ring**
-  under the `game` preset (keyed to `useActivePreset`). Ring colors via `useVidaTheme().get('web')` (the pomodoro-ring
-  SVG pattern; a `$token` attr renders colorless); ring is `aria-hidden`, the caption carries the progress for SR.
+- **`xp-hero.tsx`** — the level + XP-to-next hero (EC-4). An honest bar (`HonestProgress`) under every preset; the
+  game-preset ring retired with the `game` theme family (LIF-679 — `game` is a module, not a theme).
 - **`gamification-overview.tsx`** — the Overview mode over `@vida/ui` `DashboardView` (the home-dashboard precedent):
   Level · Currencies (balances) · Recent achievements. Each block threads its OWN state (BR-2); block-empties are
   honest teaching lines, **NO action buttons** (each mode's working entry points arrive with its slice).
@@ -38,8 +34,8 @@ LIF-181.
   M1); review → optimistic-local `createRule`. Data stubbed (IR-G1). **NB:** the Flow passes NO `FlowSessionView`
   affordance handlers (it owns its own Back/Next/Create) — which required the `@vida/ui` render-when-handler fix.
 - **`use-achievements.ts` + `achievements-mode.tsx`** (S3 · EC-6) — the Achievements mode, the FIRST genuine
-  2-layout `CollectionView`: **calm = list · game = trophy wall**, the default PRESET-keyed (game→gallery, else list —
-  the S1 ring idiom via `useActivePreset`) + the switcher lets the user override. Data = `listAchievements`×
+  2-layout `CollectionView`: list (the default) · trophy wall (gallery), switched by the user through the
+  `CollectionView` switcher (the game-preset default retired with the `game` family, LIF-679). Data = `listAchievements`×
   `getUserAchievements` join (honest M1 default EMPTY — nothing seeded yet); progress-toward-locked NORMALIZED
   {current,target}, deny-safe (the raw Record + condition target is a later backend slice). Tier = a LABEL +
   a ringed **Lucide Medal** (brand accent earned / muted locked); NO bronze/silver/gold palette (EC-11 token-purity;
@@ -71,21 +67,9 @@ LIF-181.
   panel mounts.
 - **An unpopulated mode = the 8-state `EmptyState`, with no dead affordances.** A mode's working entry point
   (`+ New currency`, `+ New rule`) ships with that mode's slice; S1 never renders a button that no-ops.
-- **The ring is delivered IN this issue, not deferred.** EC-4's game-preset ring is S1 scope (all 5 slices ship in
-  LIF-181; G0 built the preset). It reads the active preset — reading ≠ owning theming (GM-16).
 - **No business logic / no level math (IR-G3).** The XP-to-next band (`nextLevelAt`/`fraction`) is the CURVE's
   (`requiredXpForLevel`), carried as seam DATA — the UI renders it, never computes it. No stored balances.
 - **persona touches ONLY copy (EC-10 / GM-16).** The whole effect of persona is a few noun swaps in `reward-copy.ts`.
-
-## G0-consequence changes outside this dir (keep green)
-
-G0 added `game` to `@vida/ui` `ThemePreset`/`THEME_PRESETS`. Once apps/web resolves the branch's `@vida/ui`, every
-`Record<ThemePreset, …>` must include `game`:
-
-- `packages/ui/src/provider.tsx` — `PRESET_CLASSES` gained `'game'` (it was omitted in G0 → `t_game` stuck stale on
-  `<body>` after switching away, which the XP-ring preset read would mis-report).
-- `apps/web/src/onboarding/theme-picker.tsx` + `theme-picker.test.tsx` — the `game` label (the picker iterates
-  `THEME_PRESETS`; game is meant to be pickable here per GM-16).
 
 ## Verify
 

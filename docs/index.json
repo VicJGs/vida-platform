@@ -1941,9 +1941,10 @@
       "supersedes": [],
       "summary": "Text on every surface meets the minimum text contrast in every preset and mode, checked in the build over the full matrix.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 62,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/DSG-10.md"
     },
     {
@@ -1980,9 +1981,11 @@
       "supersedes": [],
       "summary": "The user picks one of three preset families (editorial, reader or quiet desk), each a palette and a font pair over the editorial base in light and dark, named scheme first, and the pipeline builds no other family.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/theme-resolution.test.ts",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 85,
+      "tokens": 94,
       "path": "docs/modules/shell/intent/DSG-13.md"
     },
     {
@@ -7008,11 +7011,11 @@
       "module": "preferences",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of preferences: 22 rows, 2 tested, 0 partly tested, 20 intent only.",
+      "summary": "Intended rules of preferences: 22 rows, 11 tested, 1 partly tested, 10 intent only.",
       "anchors": [
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 151,
+      "tokens": 160,
       "path": "docs/modules/preferences/intent.md"
     },
     {
@@ -7086,11 +7089,11 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 53 rows, 0 tested, 0 partly tested, 53 intent only.",
+      "summary": "Intended rules of shell: 53 rows, 0 tested, 2 partly tested, 51 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 265,
+      "tokens": 264,
       "path": "docs/modules/shell/intent.md"
     },
     {
@@ -10634,9 +10637,10 @@
       "supersedes": [],
       "summary": "Preferences are plaintext config, never field-encrypted [E]; the repository registers an empty [E] set.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 62,
+      "tokens": 60,
       "path": "docs/modules/preferences/intent/PR-1.md"
     },
     {
@@ -10647,7 +10651,8 @@
       "supersedes": [],
       "summary": "Preferences is the single writer of persona, motivation_style, active_modules and onboarding_* (E9 split off user_profile); personal data and focus_areas stay in user_profile, and no field has two writers.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
       "tokens": 122,
       "path": "docs/modules/preferences/intent/PR-10.md"
@@ -10699,9 +10704,10 @@
       "supersedes": [],
       "summary": "Enum preferences reject out-of-set values before persistence (theme, time_format, persona, dock_position, dock_size) through a schema constraint and a typed Zod error.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 78,
+      "tokens": 77,
       "path": "docs/modules/preferences/intent/PR-14.md"
     },
     {
@@ -10727,9 +10733,11 @@
       "supersedes": [],
       "summary": "The Settings screen is tabbed and searchable over one settings index, with a calm no-match state, and the Cmd+K palette is a global overlay backed by command_bar_history.",
       "anchors": [
+        "apps/web/src/preferences/preferences-queries.test.ts",
+        "apps/web/src/settings/settings-surface.test.tsx",
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 71,
+      "tokens": 78,
       "path": "docs/modules/preferences/intent/PR-16.md"
     },
     {
@@ -10779,9 +10787,10 @@
       "supersedes": [],
       "summary": "A preference read is never undefined; the stored row, or its absence, is overlaid on the one defaults object, and a malformed map or list field degrades to its default.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 83,
+      "tokens": 82,
       "path": "docs/modules/preferences/intent/PR-2.md"
     },
     {
@@ -10831,9 +10840,10 @@
       "supersedes": [],
       "summary": "user_preferences and nav_preferences are one row per vault, created on the first write.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 58,
+      "tokens": 56,
       "path": "docs/modules/preferences/intent/PR-3.md"
     },
     {
@@ -10845,6 +10855,7 @@
       "summary": "Saving is debounced 500 ms and optimistic with no Save button; a failed save reverts the value and shows one typed toast, never a silent drop.",
       "anchors": [
         "apps/web/src/settings/settings-surface.test.tsx",
+        "apps/web/src/stores/theme-store.test.ts",
         "docs/modules/preferences/intent.yaml"
       ],
       "tokens": 71,
@@ -10858,9 +10869,10 @@
       "supersedes": [],
       "summary": "Theme applies app-wide at once; the theme store is a derived cache of the stored row, never a second source.",
       "anchors": [
+        "apps/web/src/stores/theme-store.test.ts",
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 56,
+      "tokens": 62,
       "path": "docs/modules/preferences/intent/PR-5.md"
     },
     {
@@ -10871,9 +10883,10 @@
       "supersedes": [],
       "summary": "command_key is unique and recording it again increments use_count; the palette ranks pinned first, then by frecency.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 65,
+      "tokens": 64,
       "path": "docs/modules/preferences/intent/PR-6.md"
     },
     {
@@ -10897,9 +10910,10 @@
       "supersedes": [],
       "summary": "Settings renders Account/Security and data import/export sections but never stores their data; Auth/Account and Data/Sync own them.",
       "anchors": [
+        "apps/web/src/settings/settings-surface.test.tsx",
         "docs/modules/preferences/intent.yaml"
       ],
-      "tokens": 67,
+      "tokens": 74,
       "path": "docs/modules/preferences/intent/PR-8.md"
     },
     {
@@ -10910,9 +10924,10 @@
       "supersedes": [],
       "summary": "Every preference write succeeds locally first with a co-transactional sync_queue row, and config reconciles Last-Writer-Wins.",
       "anchors": [
-        "docs/modules/preferences/intent.yaml"
+        "docs/modules/preferences/intent.yaml",
+        "packages/core/src/services/preferences/__tests__/preferences-service.test.ts"
       ],
-      "tokens": 71,
+      "tokens": 69,
       "path": "docs/modules/preferences/intent/PR-9.md"
     },
     {
