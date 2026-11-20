@@ -16,7 +16,7 @@ afterEach(() => {
 })
 
 describe('useGuidedSetupStore (launch phase)', () => {
-  it('transitions none → invited → running → none', () => {
+  it('OB-10 transitions none → invited → running → none', () => {
     const { result } = renderHook(() => useGuidedSetupStore())
     expect(result.current.phase).toBe('none')
     act(() => result.current.invite())
@@ -38,7 +38,7 @@ describe('guided-setup reach (EC-1, ≥2-path floor)', () => {
 })
 
 describe('reach surfaces', () => {
-  it('GuidedSetupInvitation: opt-in start + a never-a-wall skip, copy-honest', () => {
+  it('OB-10 GuidedSetupInvitation: opt-in start + a never-a-wall skip, copy-honest', () => {
     const onStart = vi.fn()
     const onSkip = vi.fn()
     render(

@@ -18,31 +18,31 @@ afterEach(() => {
 })
 
 describe('useFirstRun', () => {
-  it('stays resolving and never reads while dbReady is false', () => {
+  it('OB-4 stays resolving and never reads while dbReady is false', () => {
     const { result } = renderHook(({ ready }) => useFirstRun(ready), { initialProps: { ready: false } })
     expect(result.current.status).toBe('resolving')
     expect(h.read).not.toHaveBeenCalled()
   })
 
-  it('resolves to ready when the marker is complete', async () => {
+  it('OB-4 resolves to ready when the marker is complete', async () => {
     h.read.mockResolvedValue(true)
     const { result } = renderHook(() => useFirstRun(true))
     await waitFor(() => expect(result.current.status).toBe('ready'))
   })
 
-  it('resolves to onboarding when the marker is absent', async () => {
+  it('OB-4 resolves to onboarding when the marker is absent', async () => {
     h.read.mockResolvedValue(false)
     const { result } = renderHook(() => useFirstRun(true))
     await waitFor(() => expect(result.current.status).toBe('onboarding'))
   })
 
-  it('resolves to onboarding (never strands) when the read rejects', async () => {
+  it('OB-4 resolves to onboarding (never strands) when the read rejects', async () => {
     h.read.mockRejectedValue(new Error('db read failed'))
     const { result } = renderHook(() => useFirstRun(true))
     await waitFor(() => expect(result.current.status).toBe('onboarding'))
   })
 
-  it('markComplete writes THEN flips to ready', async () => {
+  it('OB-5 markComplete writes THEN flips to ready', async () => {
     h.read.mockResolvedValue(false)
     h.write.mockResolvedValue(undefined)
     const { result } = renderHook(() => useFirstRun(true))
@@ -54,7 +54,7 @@ describe('useFirstRun', () => {
     expect(result.current.status).toBe('ready')
   })
 
-  it('leaves status unchanged and rejects when the write fails', async () => {
+  it('OB-5 leaves status unchanged and rejects when the write fails', async () => {
     h.read.mockResolvedValue(false)
     h.write.mockRejectedValue(new Error('write failed'))
     const { result } = renderHook(() => useFirstRun(true))
