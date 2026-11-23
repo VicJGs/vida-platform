@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { View } from '@tamagui/core'
-import { ToastProvider, toast, type ToastIntent } from './toast'
+import { ToastProvider, toast, type ToastIntent, type ToastProviderProps } from './toast'
 import { Button } from './button'
 
 // UI-1 · Toast stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
@@ -21,39 +21,59 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
-// Playground — fire a toast per intent; watch it slide in, auto-dismiss at 5s (hover to pause).
-export const Playground: Story = {
-  render: (args) => (
+// Playground — set the toast in the controls, then press the button (toast is imperative; nothing shows until fired).
+// `limit` and `placement` configure the provider; the rest is what the next toast carries.
+type PlaygroundArgs = ToastProviderProps & {
+  title: string
+  description: string
+  intent: ToastIntent
+  duration: number
+  withAction: boolean
+}
+
+export const Playground: StoryObj<PlaygroundArgs> = {
+  args: {
+    limit: 3,
+    placement: 'bottom',
+    title: 'Saved',
+    description: 'Your changes were saved.',
+    intent: 'info',
+    duration: 5000,
+    withAction: false,
+  },
+  argTypes: {
+    limit: { control: { type: 'number', min: 1, max: 6 } },
+    placement: { control: 'inline-radio', options: ['top', 'bottom'] },
+    title: { control: 'text' },
+    description: { control: 'text' },
+    intent: { control: 'inline-radio', options: ['info', 'success', 'danger'] },
+    duration: { control: { type: 'number', min: 0, step: 1000 }, description: 'ms before auto-dismiss; 0 = sticky' },
+    withAction: { control: 'boolean', name: 'action' },
+  },
+  render: ({ limit, placement, title, description, intent, duration, withAction }) => (
     <View height={420} gap={12} alignItems="flex-start">
-      <View flexDirection="row" gap={12} flexWrap="wrap">
-        <Button
-          intent="secondary"
-          onPress={() => toast({ title: 'Saved', description: 'Your changes were saved.', intent: 'info' })}
-        >
-          Info
-        </Button>
-        <Button
-          intent="secondary"
-          onPress={() => toast({ title: 'Uploaded', description: 'File uploaded successfully.', intent: 'success' })}
-        >
-          Success
-        </Button>
-        <Button
-          intent="secondary"
-          onPress={() =>
-            toast({ title: 'Upload failed', description: 'Check your connection and retry.', intent: 'danger' })
-          }
-        >
-          Danger
-        </Button>
-      </View>
-      <ToastProvider {...args} />
+      <Button
+        intent="secondary"
+        onPress={() =>
+          toast({
+            title,
+            description: description || undefined,
+            intent,
+            duration,
+            action: withAction ? { label: 'Undo', onPress: () => {} } : undefined,
+          })
+        }
+      >
+        Show toast
+      </Button>
+      <ToastProvider limit={limit} placement={placement} />
     </View>
   ),
 }
 
 // Intents — one of each, so all three accents are visible at once (info in the polite region, danger in assertive).
 export const Intents: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const fire = () => {
       ;(['info', 'success', 'danger'] as ToastIntent[]).forEach((intent) =>
@@ -73,6 +93,7 @@ export const Intents: Story = {
 
 // With action — a single optional action; pressing it fires onPress and does NOT dismiss the toast (F2).
 export const WithAction: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View height={360} gap={12} alignItems="flex-start">
       <Button
@@ -97,6 +118,7 @@ export const WithAction: Story = {
 // Loading — consumer-composed (no `loading` prop, DEF-U10-b): a sticky toast (duration:0) with a spinner in the
 // description; the consumer dismisses it via the returned id when the async work resolves.
 export const Loading: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const fire = () => {
       const id = toast({
@@ -137,6 +159,7 @@ export const Loading: Story = {
 
 // Cap / stacking — fire a burst; the region caps at `limit` (2 here), evicting the oldest as new ones arrive.
 export const CapAndStacking: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     let n = 0
     return (
@@ -152,6 +175,7 @@ export const CapAndStacking: Story = {
 
 // Top placement — the stack anchors to the top edge; toasts slide down from above.
 export const TopPlacement: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View height={420} gap={12} alignItems="flex-start">
       <Button intent="secondary" onPress={() => toast({ title: 'From the top', intent: 'info' })}>

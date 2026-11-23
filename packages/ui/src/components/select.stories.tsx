@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { Text, View } from '@tamagui/core'
 import { Select } from './select'
+import { controlKey, useWriteBack } from '../../.storybook/controls'
 
 // UI-1 · Select stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both
 // modes. Open the panel (click / Enter / ↓) to review: active highlight (hover or ↑/↓), the selected check, disabled
@@ -45,7 +46,25 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 )
 
 // Default — driven by controls. Uncontrolled so selecting updates the value.
-export const Playground: Story = {}
+// `value` and `defaultValue` pick from the options; `(none)` leaves the select empty or uncontrolled.
+const FRUIT_VALUE = {
+  control: { type: 'select' as const },
+  options: ['(none)', ...FRUITS.map((f) => f.value)],
+  mapping: { '(none)': undefined },
+}
+
+export const Playground: Story = {
+  argTypes: { value: FRUIT_VALUE, defaultValue: FRUIT_VALUE },
+  // Remount when a default prop changes (it only applies on mount) or a controlled prop is set or cleared.
+  render: function Render(args) {
+    const onValueChange = useWriteBack('value', args.value)
+    return (
+      <View width={240}>
+        <Select key={controlKey(args.defaultValue, args.value === undefined)} {...args} onValueChange={onValueChange} />
+      </View>
+    )
+  },
+}
 
 // empty (placeholder) vs selected — the two resting states.
 export const ValueStates: Story = {
@@ -62,6 +81,7 @@ export const ValueStates: Story = {
 }
 
 export const Sizes: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={20} width={220}>
       {(['sm', 'md', 'lg'] as const).map((size) => (
@@ -76,6 +96,7 @@ export const Sizes: Story = {
 }
 
 export const States: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={20}>
       <Row label="invalid (danger border)">
@@ -108,6 +129,7 @@ export const States: Story = {
 
 // Controlled — proves onValueChange round-trips (parent owns state).
 export const Controlled: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const Demo = () => {
       const [v, setV] = useState<string | undefined>(undefined)
@@ -132,6 +154,7 @@ export const Controlled: Story = {
 
 // A long list — panel gets maxHeight + scroll; active option scrolls into view on ↑/↓.
 export const LongList: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const many = Array.from({ length: 40 }, (_, i) => ({ value: `opt-${i}`, label: `Option ${i + 1}` }))
     return (

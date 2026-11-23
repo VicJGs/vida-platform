@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
+import { useArgs } from 'storybook/preview-api'
 import { Text, View } from '@tamagui/core'
 import { Dialog, type DialogProps } from './dialog'
 import { Button } from './button'
 import { Input } from './input'
+import { slot, texts } from '../../.storybook/controls'
 
 // UI-1 · Dialog stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
@@ -50,8 +52,51 @@ const meta = {
 export default meta
 type Story = StoryObj<typeof meta>
 
+// Playground — every control is live. `open` and the dialog stay in sync: the button, Esc and the backdrop write it back.
+export const Playground: Story = {
+  args: { title: 'short', description: 'short', footer: 'cancel and save', children: 'input' },
+  argTypes: {
+    open: { control: 'boolean' },
+    onOpenChange: { control: false },
+    title: slot(texts('Rename workspace')),
+    description: slot(texts('Give this workspace a clear, memorable name')),
+    footer: slot({
+      'cancel and save': (
+        <>
+          <Button intent="secondary">Cancel</Button>
+          <Button intent="primary">Save</Button>
+        </>
+      ),
+      'one action': <Button intent="primary">Done</Button>,
+      none: null,
+    }),
+    children: slot({
+      input: <Input placeholder="Workspace name" defaultValue="Vida" />,
+      text: <Text color="$colorTextPrimary">Dialog body content.</Text>,
+      long: (
+        <Text color="$colorTextPrimary">
+          {'A long body that has to scroll inside the panel while the header and footer stay put. '.repeat(30)}
+        </Text>
+      ),
+      none: null,
+    }),
+  },
+  render: function Render(args) {
+    const [, updateArgs] = useArgs()
+    return (
+      <>
+        <Button intent="primary" onClick={() => updateArgs({ open: true })}>
+          Open dialog
+        </Button>
+        <Dialog {...args} onOpenChange={(open) => updateArgs({ open })} />
+      </>
+    )
+  },
+}
+
 // Default — description + footer actions, dismissible (Esc + backdrop close).
 export const Default: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <DialogDemo
       title="Rename workspace"
@@ -70,6 +115,7 @@ export const Default: Story = {
 
 // Sizes — sm / md / lg maxWidth (DEF-U8-e provisional).
 export const Sizes: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View flexDirection="row" gap={16}>
       {(['sm', 'md', 'lg'] as const).map((size) => (
@@ -90,6 +136,7 @@ export const Sizes: Story = {
 
 // Destructive confirm — dismissible={false}: Esc + backdrop are inert, only the footer actions resolve it.
 export const NonDismissible: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <DialogDemo
       triggerLabel="Delete account"
@@ -110,6 +157,7 @@ export const NonDismissible: Story = {
 
 // Loading — consumer-composed skeleton + aria-busy (no `loading` prop, DEF-U8-b, the Card/Tabs precedent).
 export const Loading: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <DialogDemo
       title="Loading report"
@@ -131,6 +179,7 @@ export const Loading: Story = {
 
 // Empty — consumer-composed empty state in the body.
 export const Empty: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <DialogDemo title="No items" description="You haven't added anything yet.">
       <View alignItems="center" paddingVertical={24} gap={8}>
@@ -143,6 +192,7 @@ export const Empty: Story = {
 
 // Long content — the body scrolls within the panel; header + footer stay put; panel clamps to the viewport.
 export const LongContent: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <DialogDemo
       title="Terms of service"

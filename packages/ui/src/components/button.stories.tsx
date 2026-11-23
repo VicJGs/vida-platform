@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { View } from '@tamagui/core'
+import { ICONS, slot, texts } from '../../.storybook/controls'
 import { Button } from './button'
 
 // UI-1 · Button stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review
@@ -40,7 +41,17 @@ const Dot = () => (
   </svg>
 )
 
-export const Playground: Story = {}
+// Every control is live here. `children: none` with an icon makes an icon-only button, named by `aria-label`.
+export const Playground: Story = {
+  args: { children: 'short', leading: 'none', trailing: 'none', 'aria-label': 'Button' },
+  argTypes: { children: slot(texts('Button')), leading: slot(ICONS), trailing: slot(ICONS) },
+  // The canvas column stretches its children, which would hide what `fullWidth` does.
+  render: (args) => (
+    <View alignItems="flex-start">
+      <Button {...args} />
+    </View>
+  ),
+}
 
 export const Intents: Story = {
   render: (args) => (
@@ -117,6 +128,7 @@ export const FullWidth: Story = {
 
 // Intents × resting states — the at-a-glance matrix for the Visual Gate (review in both themes).
 export const Matrix: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const intents = ['primary', 'secondary', 'ghost', 'danger'] as const
     return (

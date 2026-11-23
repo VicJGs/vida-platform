@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
 import { Tabs } from './tabs'
+import { controlKey, useWriteBack } from '../../.storybook/controls'
 
 // UI-1 · Tabs stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
@@ -47,30 +48,37 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 // Playground — drive orientation/size from the controls; arrow/click to watch the indicator slide + resize.
+// `value` and `defaultValue` pick a tab; `(none)` leaves them unset.
+const TAB_VALUE = {
+  control: { type: 'select' as const },
+  options: ['(none)', ...ITEMS.map((i) => i.value)],
+  mapping: { '(none)': undefined },
+}
+
+// `items` is editable JSON (value, label, disabled); each item gets a generated panel, so `children` has no control.
 export const Playground: Story = {
-  args: { orientation: 'horizontal', size: 'md' },
-  render: (args) => (
-    <View width={520}>
-      <Tabs {...args} items={ITEMS} defaultValue="overview">
-        <Tabs.Panel value="overview">
-          <Body>Overview — the whole picture at a glance.</Body>
-        </Tabs.Panel>
-        <Tabs.Panel value="analytics">
-          <Body>Analytics — charts and trends over time.</Body>
-        </Tabs.Panel>
-        <Tabs.Panel value="reports">
-          <Body>Reports — export and share.</Body>
-        </Tabs.Panel>
-        <Tabs.Panel value="settings">
-          <Body>Settings — configure the workspace.</Body>
-        </Tabs.Panel>
-      </Tabs>
-    </View>
-  ),
+  args: { orientation: 'horizontal', size: 'md', defaultValue: 'overview' },
+  argTypes: { value: TAB_VALUE, defaultValue: TAB_VALUE, children: { control: false } },
+  render: function Render(args) {
+    const onValueChange = useWriteBack('value', args.value)
+    return (
+      <View width={520}>
+        {/* Remount when `defaultValue` changes (it only applies on mount) or `value` is set or cleared. */}
+        <Tabs key={controlKey(args.defaultValue, args.value === undefined)} {...args} onValueChange={onValueChange}>
+          {args.items.map((item) => (
+            <Tabs.Panel key={item.value} value={item.value}>
+              <Body>{item.label} panel.</Body>
+            </Tabs.Panel>
+          ))}
+        </Tabs>
+      </View>
+    )
+  },
 }
 
 // States — the indicator under the active tab, muted vs active labels, a disabled tab (arrows skip it).
 export const States: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="default · active (indicator) · disabled (muted, skipped by ←/→) — arrow between to see the slide">
       <View width={520}>
@@ -103,6 +111,7 @@ export const States: Story = {
 
 // Sizes — padding + label scale.
 export const Sizes: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={32}>
       {(['sm', 'md', 'lg'] as const).map((s) => (
@@ -124,6 +133,7 @@ export const Sizes: Story = {
 
 // Vertical — arrow keys become ↑/↓, indicator + baseline on the inline-start edge.
 export const Vertical: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="orientation: vertical — ↑/↓ move; indicator on the left edge">
       <View width={520}>
@@ -141,6 +151,7 @@ export const Vertical: Story = {
 
 // Controlled — external state; onValueChange drives the parent.
 export const Controlled: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const [tab, setTab] = useState('analytics')
     return (
@@ -162,6 +173,7 @@ export const Controlled: Story = {
 // Loading — consumer-composed: a skeleton as the panel's children + aria-busy passthrough (DEF-U6-c). Static bars
 // (no shimmer — B12 / reduced-motion safe).
 export const LoadingPanel: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="loading — consumer skeleton in a panel + aria-busy (DEF-U6-c)">
       <View width={520}>

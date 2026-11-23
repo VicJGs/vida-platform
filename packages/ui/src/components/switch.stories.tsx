@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
+import { controlKey, slot, texts, useWriteBack } from '../../.storybook/controls'
 import { Switch } from './switch'
 
 // UI-1 · Switch stories — the component Visual Gate surface (fe-settings S1, EC-3). Toggle the toolbar Theme
@@ -35,10 +36,23 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 export const Playground: Story = {
-  args: { label: 'Reduce motion', size: 'md' },
+  args: { label: 'short', size: 'md' },
+  argTypes: { label: slot(texts('Reduce motion')) },
+  // Remount when a default prop changes (it only applies on mount) or a controlled prop is set or cleared.
+  render: function Render(args) {
+    const onCheckedChange = useWriteBack('checked', args.checked)
+    return (
+      <Switch
+        key={controlKey(args.defaultChecked, args.checked === undefined)}
+        {...args}
+        onCheckedChange={onCheckedChange}
+      />
+    )
+  },
 }
 
 export const States: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={8}>
       <Row label="off / on">

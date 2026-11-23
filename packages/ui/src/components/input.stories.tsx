@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
+import { controlKey, ICONS, slot, useWriteBack } from '../../.storybook/controls'
 import { Input } from './input'
 
 // UI-1 · Input stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both
@@ -56,7 +57,15 @@ const Spinner = () => (
   </svg>
 )
 
-export const Playground: Story = {}
+export const Playground: Story = {
+  args: { leading: 'none', trailing: 'none' },
+  argTypes: { leading: slot(ICONS), trailing: slot(ICONS) },
+  // Remount when a default prop changes (it only applies on mount) or a controlled prop is set or cleared.
+  render: function Render(args) {
+    const onChangeText = useWriteBack('value', args.value)
+    return <Input key={controlKey(args.defaultValue, args.value === undefined)} {...args} onChangeText={onChangeText} />
+  },
+}
 
 export const Sizes: Story = {
   render: (args) => (
@@ -110,6 +119,7 @@ export const Loading: Story = {
 
 // States matrix — the at-a-glance Visual Gate surface (review in both themes).
 export const Matrix: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Col>
       <Input aria-label="Default" placeholder="Default" />
