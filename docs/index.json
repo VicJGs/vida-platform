@@ -898,7 +898,8 @@
       "supersedes": [],
       "summary": "One open capability registry holds every capability definition, shipped ones registered in code and the user's persisted and synced; Knowledge's study methods are a kind of it, not a parallel registry.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml"
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
       ],
       "tokens": 94,
       "path": "docs/modules/spaces/intent/CB-1.md"
@@ -7115,7 +7116,7 @@
       "module": "spaces",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of spaces: 60 rows, 9 tested, 7 partly tested, 44 intent only.",
+      "summary": "Intended rules of spaces: 60 rows, 14 tested, 6 partly tested, 40 intent only.",
       "anchors": [
         "docs/modules/spaces/intent.yaml"
       ],
@@ -12798,9 +12799,10 @@
       "supersedes": [],
       "summary": "A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml"
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
       ],
-      "tokens": 114,
+      "tokens": 115,
       "path": "docs/modules/spaces/intent/SPC-1.md"
     },
     {
@@ -12934,9 +12936,10 @@
       "summary": "Tags (grouping) and links (typed reference) stay two tables drawing on the one registry, and Vida resolves an entity's associations into one unified space or two separate ones on the user's choice, a real behavioral resolution over untouched storage.",
       "anchors": [
         "docs/modules/spaces/intent.yaml",
-        "packages/core/src/foundation/capability/__tests__/capability.test.ts"
+        "packages/core/src/foundation/capability/__tests__/capability.test.ts",
+        "packages/core/src/foundation/spaces/__tests__/association-resolver.test.ts"
       ],
-      "tokens": 114,
+      "tokens": 115,
       "path": "docs/modules/spaces/intent/SPC-4.md"
     },
     {
@@ -14376,7 +14379,8 @@
       "supersedes": [],
       "summary": "A saved surface is a views row (filter × layout × grouping and sort), not a component; the view components are the renderers a view selects.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml"
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
       ],
       "tokens": 73,
       "path": "docs/modules/spaces/intent/VW-1.md"
@@ -14389,9 +14393,10 @@
       "supersedes": [],
       "summary": "A view is global (no Space) or owned by one Space, a Space may own many views and its default view names the one that opens first, and cloning a view makes an independent copy for a Space or the global set, with no back-link.",
       "anchors": [
-        "docs/modules/spaces/intent.yaml"
+        "docs/modules/spaces/intent.yaml",
+        "packages/core/src/foundation/spaces/__tests__/spaces.test.ts"
       ],
-      "tokens": 98,
+      "tokens": 99,
       "path": "docs/modules/spaces/intent/VW-2.md"
     },
     {

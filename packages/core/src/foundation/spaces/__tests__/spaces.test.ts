@@ -141,7 +141,7 @@ describe('AR-6 — SpacesService enqueue + BR-2', () => {
 })
 
 describe('AR-6 — junction idempotency (BR-14) + soft-delete (BR-15)', () => {
-  it('tagEntity twice is an idempotent no-op — no raw UNIQUE error, one live row', async () => {
+  it('SPC-1 one universal entity_tags primitive, idempotent by business key', async () => {
     const { svc, db, driver } = await setup()
     const tag = await svc.createTag({ name: 't' })
     const a = await svc.tagEntity(tag.id, 'space', 's1')
@@ -289,7 +289,7 @@ describe('XS-views — ViewsService.listViews (first-consumer-pull, mod-tasks S8
 })
 
 describe('XS-views — ViewsService.cloneView (XCU-05)', () => {
-  it('clone a global view into a Space → new id, space_id set, content copied verbatim (BR-clone-2/3)', async () => {
+  it('VW-1 a saved surface is a views row (BR-clone-2/3)', async () => {
     const { db, driver } = await setup()
     const svc = createViewsService(db, 'test-device')
     const source = await svc.createView({
@@ -312,7 +312,7 @@ describe('XS-views — ViewsService.cloneView (XCU-05)', () => {
     await driver.close()
   })
 
-  it('duplicate in the same Space (targetSpaceId = source.space_id) is independent (BR-clone-1)', async () => {
+  it('VW-2 a view is global or Space-owned, and a clone is independent (BR-clone-1)', async () => {
     const { db, driver } = await setup()
     const svc = createViewsService(db, 'test-device')
     const source = await svc.createView({ name: 'orig', layout: 'list', space_id: 'sp1' })
