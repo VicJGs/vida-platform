@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite'
 import { useState } from 'react'
 import { Text, View } from '@tamagui/core'
+import { controlKey, slot, texts, useWriteBack } from '../../.storybook/controls'
 import { Checkbox } from './checkbox'
 
 // UI-1 · Checkbox stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both
@@ -40,7 +41,21 @@ const Row = ({ label, children }: { label: string; children: React.ReactNode }) 
 )
 
 // Default — driven by controls (Storybook args). Uncontrolled so click toggles.
-export const Playground: Story = {}
+export const Playground: Story = {
+  args: { label: 'short' },
+  argTypes: { label: slot(texts('Accept terms')) },
+  // Remount when a default prop changes (it only applies on mount) or a controlled prop is set or cleared.
+  render: function Render(args) {
+    const onCheckedChange = useWriteBack('checked', args.checked)
+    return (
+      <Checkbox
+        key={controlKey(args.defaultChecked, args.checked === undefined)}
+        {...args}
+        onCheckedChange={onCheckedChange}
+      />
+    )
+  },
+}
 
 // The three value states side by side (the checkbox's defining axis).
 export const ValueStates: Story = {
@@ -57,6 +72,7 @@ export const ValueStates: Story = {
 
 // Sizes × value — measure box scaling (16/20/24 dp) and checkmark proportion.
 export const Sizes: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={20}>
       {(['sm', 'md', 'lg'] as const).map((size) => (
@@ -72,6 +88,7 @@ export const Sizes: Story = {
 
 // States — disabled (both values), invalid (danger border), required.
 export const States: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={20}>
       <Row label="disabled">
@@ -89,6 +106,7 @@ export const States: Story = {
 
 // No label → aria-label required. Focus ring must land on the box.
 export const NoLabel: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Row label="unlabeled (aria-label) — Tab to see the ring on the box">
       <Checkbox aria-label="Select row 1" defaultChecked={false} />
@@ -99,6 +117,7 @@ export const NoLabel: Story = {
 
 // Controlled — proves onCheckedChange round-trips (parent owns state).
 export const Controlled: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const ControlledDemo = () => {
       const [on, setOn] = useState(false)

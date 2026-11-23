@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
 import { Card } from './card'
 import { Button } from './button'
+import { slot } from '../../.storybook/controls'
 
 // UI-1 · Card stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both
 // modes. Card is a static container; its interactive states apply ONLY when `interactive`.
@@ -48,19 +49,47 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 // Playground — drive padding/interactive/disabled from the controls.
+// Every slot is a select of samples; `onPress` logs nothing, so `interactive` shows focus and hover only.
 export const Playground: Story = {
-  args: { interactive: false, padding: 'default' },
+  args: {
+    interactive: false,
+    padding: 'default',
+    header: 'title',
+    footer: 'meta',
+    actions: 'none',
+    metric: 'none',
+    children: 'short',
+  },
+  argTypes: {
+    header: slot({ title: <Title>Monthly report</Title>, none: null }),
+    footer: slot({
+      meta: <Body>Updated 2 hours ago</Body>,
+      button: <Button intent="ghost">View all</Button>,
+      none: null,
+    }),
+    actions: slot({ none: null, button: <Button intent="secondary">Edit</Button> }),
+    metric: slot({ none: null, percent: <Title>+12%</Title> }),
+    children: slot({
+      short: <Body>Revenue is up 12% versus last month across all tracked accounts.</Body>,
+      long: (
+        <Body>
+          Revenue is up 12% versus last month across all tracked accounts. Spending held steady in every category except
+          travel, which rose with the two conference trips in the second week. Savings goals are on track.
+        </Body>
+      ),
+      none: null,
+    }),
+  },
   render: (args) => (
     <View width={320}>
-      <Card {...args} header={<Title>Monthly report</Title>} footer={<Body>Updated 2 hours ago</Body>}>
-        <Body>Revenue is up 12% versus last month across all tracked accounts.</Body>
-      </Card>
+      <Card {...args} />
     </View>
   ),
 }
 
 // Full anatomy — header + actions (top-right) + body + footer.
 export const Anatomy: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="header · actions (top-right) · body · footer">
       <View width={360}>
@@ -82,6 +111,7 @@ export const Anatomy: Story = {
 
 // Interactive — hover (light: shadow raise / dark: border strengthen), focus (Tab in), press, disabled.
 export const Interactive: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="interactive — hover · Tab for focus ring · press · disabled">
       <View width={240}>
@@ -114,6 +144,7 @@ export const Interactive: Story = {
 
 // Padding scale.
 export const Padding: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="padding: compact · default · spacious">
       {(['compact', 'default', 'spacious'] as const).map((p) => (
@@ -129,6 +160,7 @@ export const Padding: Story = {
 
 // empty — the consumer renders their empty-state as children (Card owns no `empty` prop; §2.2).
 export const Empty: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="empty — consumer's empty-state in children">
       <View width={280}>
@@ -148,6 +180,7 @@ export const Empty: Story = {
 // loading — consumer composition (no `loading` prop; §VIII-vs-API gap = DEF-U5-f): a skeleton as children +
 // aria-busy passed through. Static bars (no shimmer — B12 / reduced-motion safe), reserving layout.
 export const Loading: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="loading — consumer-composed skeleton + aria-busy (DEF-U5-f)">
       <View width={280}>
@@ -215,6 +248,7 @@ const Ring = ({ value }: { value: number }) => (
 
 // Editorial composition — eyebrow + serif title (in header) · Ring metric (top-right) · headerDivider · tabular footer.
 export const EditorialComposition: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="editorial — eyebrow · serif title · ring metric · header divider · tabular meta">
       <View width={360}>
@@ -239,6 +273,7 @@ export const EditorialComposition: Story = {
 
 // Alive — the `status` signal set + the `metric` ring (the micro-dashboard). calm · warm · faded · neutral.
 export const Alive: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="alive — status: calm · warm · faded · neutral (+ ring metric)">
       <View width={240}>
@@ -268,6 +303,7 @@ export const Alive: Story = {
 // Repeated rows — the BR-C-11 landmark cell: N interactive cards each with header + footer. header/footer are plain
 // <div>s now, so there are NO duplicate banner/contentinfo landmarks (the exact P1-gate violation shape). axe must be 0.
 export const RepeatedRows: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View role="list" aria-label="Projects" width={420} gap={12}>
       {[

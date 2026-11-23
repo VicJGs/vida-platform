@@ -3,6 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite'
 import { Text, View } from '@tamagui/core'
 import { Menu, type MenuItem } from './menu'
 import { Button } from './button'
+import { controlKey, ICONS, slot, useWriteBack } from '../../.storybook/controls'
 
 // UI-1 · Menu stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
@@ -54,17 +55,30 @@ export default meta
 type Story = StoryObj<typeof meta>
 
 // Playground — open it, arrow through, watch the highlight follow roving focus; delete is red.
+// `items` is editable JSON (label, intent, disabled); `trigger` picks a sample.
 export const Playground: Story = {
-  args: { placement: 'bottom-start' },
-  render: (args) => (
-    <View height={320} paddingTop={24}>
-      <Menu {...args} />
-    </View>
-  ),
+  args: { placement: 'bottom-start', trigger: 'secondary' },
+  argTypes: {
+    trigger: slot({
+      secondary: <Button intent="secondary">Actions</Button>,
+      ghost: <Button intent="ghost">Actions</Button>,
+      'icon only': <Button intent="ghost" aria-label="More actions" leading={ICONS.plus} />,
+    }),
+  },
+  render: function Render(args) {
+    const onOpenChange = useWriteBack('open', args.open)
+    return (
+      <View height={320} paddingTop={24}>
+        {/* Remount when `defaultOpen` changes (it only applies on mount) or `open` is set or cleared. */}
+        <Menu key={controlKey(args.defaultOpen, args.open === undefined)} {...args} onOpenChange={onOpenChange} />
+      </View>
+    )
+  },
 }
 
 // States — default items, a disabled one (skipped by ↑/↓), and a danger item (red label).
 export const States: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="default · disabled (muted, skipped) · danger (red label) — open + arrow to see the roving highlight">
       <View height={320} paddingTop={8}>
@@ -85,6 +99,7 @@ export const States: Story = {
 
 // Leading icons — the `leading` slot.
 export const WithIcons: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="leading icon slot">
       <View height={320} paddingTop={8}>
@@ -112,6 +127,7 @@ export const WithIcons: Story = {
 // `top-*` open UPWARD. Triggers are centred vertically so both directions have room (near a viewport edge the panel
 // FLIPS to the side with space — that's by design, not a bug).
 export const Placements: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View height={520} justifyContent="center" paddingHorizontal={48}>
       <View flexDirection="row" flexWrap="wrap" gap={48}>
@@ -131,6 +147,7 @@ export const Placements: Story = {
 
 // Empty — no items → a muted, non-interactive "No actions" row.
 export const Empty: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label='empty — a muted "No actions" placeholder row (a real disabled menuitem, axe-clean)'>
       <View height={200} paddingTop={8}>
@@ -142,6 +159,7 @@ export const Empty: Story = {
 
 // Controlled — external open state; onOpenChange drives the parent.
 export const Controlled: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const [open, setOpen] = useState(false)
     return (

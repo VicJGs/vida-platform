@@ -4,6 +4,7 @@ import { Text, View } from '@tamagui/core'
 import { Popover } from './popover'
 import { Button } from './button'
 import { Input } from './input'
+import { controlKey, slot, useWriteBack } from '../../.storybook/controls'
 
 // UI-1 · Popover stories — the component Visual Gate surface. Toggle the toolbar Theme (light｜dark) to review both.
 //
@@ -70,17 +71,42 @@ type Story = StoryObj<typeof meta>
 
 // Playground — open it; the arrow points at the trigger; the panel enters with scale+fade from the anchor edge.
 export const Playground: Story = {
-  args: { placement: 'bottom' },
-  render: (args) => (
-    <View height={360} justifyContent="center" alignItems="center">
-      <Popover {...args} />
-    </View>
-  ),
+  args: { placement: 'bottom', trigger: 'button', children: 'text' },
+  argTypes: {
+    trigger: slot({
+      button: <Button intent="secondary">Open popover ▾</Button>,
+      ghost: <Button intent="ghost">Details</Button>,
+    }),
+    children: slot({
+      text: (
+        <View width={240} gap={8}>
+          <Text fontSize={14} fontWeight="600" color="$colorTextPrimary">
+            Popover title
+          </Text>
+          <Text fontSize={13} color="$colorTextMuted">
+            Non-modal content anchored to the trigger. The page behind stays interactive.
+          </Text>
+        </View>
+      ),
+      form: <FilterContent />,
+      short: <Text color="$colorTextPrimary">One line.</Text>,
+    }),
+  },
+  render: function Render(args) {
+    const onOpenChange = useWriteBack('open', args.open)
+    return (
+      <View height={360} justifyContent="center" alignItems="center">
+        {/* Remount when `defaultOpen` changes (it only applies on mount) or `open` is set or cleared. */}
+        <Popover key={controlKey(args.defaultOpen, args.open === undefined)} {...args} onOpenChange={onOpenChange} />
+      </View>
+    )
+  },
 }
 
 // Interactive content — a filter form INSIDE the popover. Focus enters the Search input; Tab through it; Tab past the
 // last control CLOSES the popover (non-modal, not trapped). The page behind stays live.
 export const InteractiveContent: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="non-modal · interactive — focus enters the Search field; Tab out of the panel closes it; the input below stays reachable">
       <View height={360} gap={16} alignItems="flex-start">
@@ -96,6 +122,7 @@ export const InteractiveContent: Story = {
 // Placements — all 8 anchors. left/right anchor to the SIDE (horizontal primary axis); each arrow points at its
 // trigger. Near a viewport edge the panel FLIPS to the side with space (by design).
 export const Placements: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View height={560} justifyContent="center" paddingHorizontal={64}>
       <View flexDirection="row" flexWrap="wrap" gap={56}>
@@ -117,6 +144,7 @@ export const Placements: Story = {
 
 // Loading — consumer-composed (no `loading` prop): a spinner/skeleton passed as children with aria-busy on it.
 export const Loading: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <Section label="loading — consumer-composed skeleton in children (no loading prop; DEF-U9-c)">
       <View height={300} alignItems="flex-start">
@@ -134,6 +162,7 @@ export const Loading: Story = {
 
 // Controlled — external open state; onOpenChange drives the parent.
 export const Controlled: Story = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => {
     const [open, setOpen] = useState(false)
     return (

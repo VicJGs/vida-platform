@@ -19,6 +19,7 @@ export const Saved: Story = { args: { state: 'saved' } }
 export const Errored: Story = { args: { state: 'error' } }
 
 export const Matrix: StoryObj = {
+  parameters: { controls: { disable: true } }, // a fixed showcase: it ignores args
   render: () => (
     <View gap={16} width={360}>
       <SyncStatus state="saved" />
