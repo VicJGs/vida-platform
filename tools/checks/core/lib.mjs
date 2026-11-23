@@ -26,6 +26,8 @@ export const DEFAULTS = {
   docsTier: ["docs/**", "**/*.md", ".claude/**/*.md", "package.json"], // changed.mjs; package.json = a "checks"-only change
   checksTier: ["tools/checks/**"], // changed.mjs: the gate's own files
   affectedTier: ["apps/*/**", "packages/*/**"], // changed.mjs: workspace packages, run as affected
+  visualPaths: ["src/**/*.tsx", "apps/*/src/**/*.tsx", "packages/ui/src/**"], // changed.mjs --visual: screens and components
+  visualIgnore: ["**/*.test.*", "**/*.spec.*", "**/*.stories.*", "**/__tests__/**", "**/e2e/**"], // changed.mjs --visual
 };
 
 export const root = process.cwd();
