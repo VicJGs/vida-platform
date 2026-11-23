@@ -77,7 +77,7 @@ async function setup(): Promise<{
 }
 
 describe('AssociationResolver — shape (unified vs separate)', () => {
-  it('separate returns two typed relations; unified returns one kind-tagged set', async () => {
+  it("SPC-4 tags and links resolve unified or separate on the user's choice", async () => {
     const { svc, resolver, driver } = await setup()
     const tag = await svc.createTag({ name: 'work' })
     await svc.tagEntity(tag.id, 'page', 'p1') // p1 carries #work

@@ -102,7 +102,7 @@ describe('migration 005 wiring', () => {
 })
 
 describe('CapabilityRegistry', () => {
-  it('registers a user def → persists + one sync_queue row; get resolves it', async () => {
+  it('CB-1 one open capability registry holds shipped and user definitions', async () => {
     const { db } = await harness()
     const reg = createCapabilityRegistry(db, 'device-1')
     await reg.register(validUserDef())

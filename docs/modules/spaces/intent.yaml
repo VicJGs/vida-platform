@@ -28,8 +28,9 @@
 # folders: spaces.test.ts names BR-2, 3, 5, 10, 11, 12 in it() titles and BR-2, 3, 14, 15 in describe() titles,
 # association-resolver.test.ts BR-2 and BR-4, and capability.test.ts BR-2…6. So a capability row citing BR-10 or
 # BR-14 reads tested from a Spaces test, and SPC-6 (BR-6) from a capability test. Those reads are ambiguous; the
-# enforcer tests name INV-n and IR-n, never a BR ID. No test names an SPC, VW, TMP, CB or LG ID, and none of the five
-# prefixes matches anywhere in Vida, inside another ID included. No test was renamed.
+# enforcer tests name INV-n and IR-n, never a BR ID. None of the five prefixes matches anywhere else in Vida, inside
+# another ID included. LIF-570 renamed one test each to carry SPC-1, SPC-4, VW-1, VW-2 and CB-1 by row key, so those
+# rows read tested without the bare BR proofs; no other test names an SPC, VW, TMP, CB or LG ID.
 # Spaces has no features folder (LIF-426), so the archive guard applies from the start: a built row whose proof has
 # no test keeps a work link.
 # ADR-006 §3.6 (per-instance facet-mode memory, notes-rescope R2) is built in apps/web/src/entity (app_state
@@ -41,7 +42,6 @@
   says: A tag attaches to any entity in Vida through one universal entity_tags primitive; there is no page-only tag path and no per-module tag table, and tagging and untagging are idempotent by business key, reviving a soft-deleted row and soft-deleting on remove.
   uses: [notes]
   proof: [BR-1, BR-14, BR-15]
-  work: LIF-570
 - id: SPC-2
   says: Taggable and linkable entity types come from one open registry; a module makes its entities taggable by registering a type, never by a schema edit, and an unregistered type is refused with a typed error.
   proof: [BR-2]
@@ -52,7 +52,6 @@
   says: Tags (grouping) and links (typed reference) stay two tables drawing on the one registry, and Vida resolves an entity's associations into one unified space or two separate ones on the user's choice, a real behavioral resolution over untouched storage.
   uses: [notes, graph]
   proof: [BR-4, BR-16, BR-17]
-  work: LIF-570
 - id: SPC-5
   says: A Space is a first-class spaces record (root tag, name, icon, default view, offered palette, parent Space), nav-addressable and nestable, not just a tag; its contents are everything carrying its root tag, and a nesting cycle is refused.
   proof: [BR-5]
@@ -117,11 +116,9 @@
 - id: VW-1
   says: A saved surface is a views row (filter × layout × grouping and sort), not a component; the view components are the renderers a view selects.
   proof: [BR-8]
-  work: LIF-570
 - id: VW-2
   says: A view is global (no Space) or owned by one Space, a Space may own many views and its default view names the one that opens first, and cloning a view makes an independent copy for a Space or the global set, with no back-link.
   proof: [BR-9, BR-18]
-  work: LIF-570
 - id: VW-3
   says: A view's layout is one of list, table, board, gallery, calendar, graph or timeline; filter, grouping and sort are stored as documents, a group-by field a row lacks goes to an ungrouped bucket, and a layout missing a field degrades, never crashes.
   proof: [BR-10]
@@ -194,7 +191,6 @@
   says: One open capability registry holds every capability definition, shipped ones registered in code and the user's persisted and synced; Knowledge's study methods are a kind of it, not a parallel registry.
   uses: [knowledge, RV-1]
   proof: [BR-1]
-  work: LIF-570
 - id: CB-2
   says: A capability declares its render targets (inline, standalone or both), and the user picks each placement among them.
   proof: [BR-2]
