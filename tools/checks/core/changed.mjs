@@ -11,7 +11,12 @@
 // A `package.json` entry matches the root package.json only when its change sits inside
 // "checks" and leaves the three tier lists alone, so a branch cannot widen its own tier.
 // Renames count both paths.
-// Usage: node changed.mjs [--base <ref>]   (default origin/main, else main)
+// --visual asks another question, whether the slice runs the visual gate: `visual` when a
+// changed path matches "checks".visualPaths and not "checks".visualIgnore (tests, stories),
+// else `none`. The changed paths go to stderr, so the gate knows which screens to shoot.
+// Like the tiers it fails safe: no base, an unreadable diff or a branch that edits either
+// list reports `visual`; an empty diff reports `none`.
+// Usage: node changed.mjs [--base <ref>] [--visual]   (default origin/main, else main)
 import { spawnSync } from "node:child_process";
 import { isDeepStrictEqual } from "node:util";
 import { config } from "./lib.mjs";
@@ -19,12 +24,13 @@ import { config } from "./lib.mjs";
 const cfg = config();
 const git = (...args) => spawnSync("git", args, { encoding: "utf8" });
 const arg = process.argv.indexOf("--base");
+const visual = process.argv.includes("--visual");
 const base = arg > 0 ? process.argv[arg + 1]
   : ["origin/main", "main"].find((ref) => git("rev-parse", "--verify", "-q", ref).status === 0);
 
 const code = (why) => {
   console.error(`changed: ${why}`);
-  console.log("code");
+  console.log(visual ? "visual" : "code");
   process.exit(0);
 };
 
@@ -54,7 +60,7 @@ const from = mergeBase.stdout.trim();
 const diff = git("diff", "--name-only", "--no-renames", from, "HEAD");
 if (diff.status !== 0) code(`git diff failed: ${diff.stderr.trim()}`);
 const paths = diff.stdout.split(/\r?\n/).filter(Boolean);
-if (!paths.length) code(`nothing changed since ${base}`);
+if (!paths.length && !visual) code(`nothing changed since ${base}`);
 
 const covers = (list) => {
   const tier = [list ?? []].flat();
@@ -63,6 +69,17 @@ const covers = (list) => {
     ? tier.includes("package.json") && checksOnly(from, "HEAD")
     : globs.some((g) => g.test(path));
 };
+if (visual) {
+  const lists = (pkg) => [pkg?.checks?.visualPaths, pkg?.checks?.visualIgnore];
+  if (!isDeepStrictEqual(lists(pkgAt(from)), lists(pkgAt("HEAD")))) code(`"checks".visualPaths or visualIgnore changed`);
+  const [shown, ignored] = [covers(cfg.visualPaths), covers(cfg.visualIgnore)];
+  const screens = paths.filter((p) => shown(p) && !ignored(p));
+  console.error(screens.length
+    ? `changed: ${screens.length} of ${paths.length} paths are visual: ${screens.join(", ")}`
+    : `changed: none of ${paths.length} paths match "checks".visualPaths outside visualIgnore`);
+  console.log(screens.length ? "visual" : "none");
+  process.exit(0);
+}
 const tiers = [["docs", cfg.docsTier], ["checks", cfg.checksTier], ["affected", cfg.affectedTier]];
 const lists = [];
 for (const [name, list] of tiers) {
