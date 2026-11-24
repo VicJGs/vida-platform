@@ -274,6 +274,25 @@
       "path": "docs/core/decisions/ADR-021-backend-service-tier-full-intent-first-horizontal.md"
     },
     {
+      "id": "ARCH-overview",
+      "kind": "architecture",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Vida is a TypeScript monorepo where each app is a thin shell over @vida/core; every write runs service → repository → encrypt seam → DatabaseAdapter → local SQLite, and encryption and sync are seams kept dormant until their milestone.",
+      "anchors": [
+        "packages/core/src/foundation/",
+        "packages/core/src/services/",
+        "packages/core/src/db/repository.ts",
+        "packages/core/src/db/adapter.ts",
+        "packages/core/src/sync/",
+        "apps/web/src/db/web-adapter.ts",
+        "apps/server/src/index.ts"
+      ],
+      "tokens": 998,
+      "path": "docs/core/architecture/overview.md"
+    },
+    {
       "id": "AX-1",
       "kind": "intent-row",
       "module": "ai",
