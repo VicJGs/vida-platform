@@ -18,21 +18,21 @@ import type { BindingMode, EffectType } from '@vida/types'
 import { createRepository, type CreateInput } from '../../db/repository'
 import { normalize, rollup } from '../../foundation/measurement'
 import { tasks, taskTimeLogs } from '../../db/schema/tasks'
-// S8 — the foundation `tags` row (live-tag guard + nested expansion) and the `entity_tags` junction (raw READ only;
-// writes go through SpacesService). Foundation schema, not another module's (C5/TK-9 gate).
-import { tags, entityTags } from '../../db/schema/foundation/spaces'
+// S8 — the foundation `entity_tags` junction (raw READ only; writes go through SpacesService). Foundation schema, not
+// another module's (C5/TK-9 gate).
+import { entityTags } from '../../db/schema/foundation/spaces'
 import type { DrizzleDb } from '../../db/adapter'
 import type { EffectHandler, EffectRegistry } from '../../foundation/effects'
 import { SessionTypeNotFound, type SessionRegistry, type SessionTypeDef } from '../../foundation/sessions'
 import { TagNotFound } from '../../foundation/spaces'
-import { ViewNotFound, type ReadProvider, type ViewFilter, type ViewProviderRegistry } from '../../foundation/views'
+// Single-line imports: the S8 (10) structural test reads import lines one by one.
+import { ViewNotFound, type StoredViewFilter } from '../../foundation/views'
 // S9 — the SS-7 due-work shapes (sessions-owned; type-only — no runtime edge, and sessions imports nothing from tasks).
 import type { DueItem, TimeRange } from '../sessions'
 import {
   CreateTaskSchema,
   UpdateTaskSchema,
   ListTasksFilterSchema,
-  ListTasksFilterFieldsSchema,
   AggGroupingSchema,
   SaveTaskViewSchema,
 } from '../../validators/task'
@@ -65,6 +65,10 @@ import {
 import type { TaskRow } from '../../db/schema/tasks'
 import type { SessionRow } from '../../db/schema/foundation/sessions'
 import type { ViewRow } from '../../db/schema/foundation/spaces'
+// S8 — the tasks ReadProvider and the day/status/tag-reader helpers it shares with this closure (LIF-703 split).
+import { TASK_ENTITY_TYPE, TERMINAL_STATUSES, createTagReaders, todayYmd, utcDay } from './read-provider'
+
+export { createTasksReadProvider, registerTasksReadProvider, utcDay } from './read-provider'
 
 /** The `'work'` session sub-type — the task-timer timed-run reference (G-S1). Spine-only (no 1:1 extension; C4 keeps
  *  `task_time_logs` as the ledger). `effects: []` — the timer does NOT auto-fire on completion; tasks fires `log_time`
@@ -174,30 +178,7 @@ function nextOccurrence(rule: string, fromYmd: string): string | null {
 
 const pad2 = (n: number): string => String(n).padStart(2, '0')
 
-/** Today as YYYY-MM-DD — the anchor fallback for a null `due_date` (BR-TK-S5-3). The UTC calendar day: the platform
- *  convention for "the day of a timestamp" (`utcDay` below — habits' `clock`, finance, books, check-ins, purposes,
- *  relationships; ADR-002:62 / `user_profile.timezone DEFAULT 'UTC'`). Re-pointed from a LOCAL day at S9 (§XXVIII):
- *  the S5 local choice was a review-time decision, not doc-grounded, and made tasks the only local-day helper in core. */
-function todayYmd(): string {
-  return utcDay(Date.now())
-}
-
-/** The shared `STATUS` enum's TERMINAL set (`@vida/types` common.ts:32) — the platform convention: projects:71 ·
- *  purposes:81 · sessions; projects intake G9 "archived = completed/cancelled". `on_hold` is NOT terminal (paused, still
- *  owed). "Open" work = status ∉ this set (the S9 lane + the `open` list filter). */
-const TERMINAL_STATUSES: ReadonlySet<string> = new Set(['completed', 'cancelled'])
-
 // ---- S9: day/window helpers (pure; exported for direct unit test) ---------------
-/** Unix ms → the UTC calendar day `YYYY-MM-DD` — the platform's shipped convention for "the date" of a timestamp
- *  (habits `clock`, finance, books, check-ins, purposes, relationships all derive a day as `toISOString().slice(0,10)`;
- *  `cross-module-integration.md:70` writes `date(started_at)` for the same). Timezone-INDEPENDENT by construction. When
- *  the designed `user_profile.timezone` (ADR-002:3381, unbuilt) lands, this is the one seam to re-point.
- *  Precondition: a finite ms (`toISOString` throws RangeError on NaN/±Infinity) — the only caller passes a stored
- *  `completed_at`, which is always a `Date.now()` stamp. */
-export function utcDay(ms: number): string {
-  return new Date(ms).toISOString().slice(0, 10)
-}
-
 /** `YYYY-MM-DD` → Unix ms at UTC midnight — the moment a calendar date occupies in a `TimeRange` (the purposes/
  *  relationships provider convention = the convention every `TimeRange` caller builds its bounds with). `null`/
  *  `undefined` ⇒ `undefined`; a malformed string ⇒ `NaN` (callers test with `inWindow`, which rejects NaN). */
@@ -698,7 +679,9 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
   async function saveView(input: SaveTaskViewInput): Promise<ViewRow> {
     const v = SaveTaskViewSchema.parse(input)
     if (!views) throw new TasksDepNotWiredError('views')
-    const filter: ViewFilter = { entity_types: [TASK_ENTITY_TYPE] }
+    // Writes the input's keys as given (`tags: string[]`, `predicates`); the provider reads them through the §3.6.4
+    // compatibility rules. service.test.ts S8 (4) pins this stored shape.
+    const filter: StoredViewFilter = { entity_types: [TASK_ENTITY_TYPE] }
     if (v.tags !== undefined) filter.tags = v.tags
     if (v.predicates !== undefined) filter.predicates = v.predicates
     if (v.id === undefined) {
@@ -838,24 +821,15 @@ export function createTasksService(deps: TasksServiceDeps): TasksService {
 }
 
 // ============================================================================
-// S8 — module-level helpers + the tasks ReadProvider (XCU-07/08) + the preset data (TAS-30)
+// S8 — module-level helpers + the preset data (TAS-30); the tasks ReadProvider lives in ./read-provider
 // ============================================================================
 
-const TASK_ENTITY_TYPE = 'task'
-
-/** Read-only readers over the foundation tag tables (M1.0 empty-[E] pass-through; `softDelete:true` so `findById`/
- *  `findAll` filter soft-deletes — `findWhere` does NOT). Shared by the service closure and the ReadProvider. */
-function createTagReaders(db: DrizzleDb, deviceId: string) {
-  const cfg = { deviceId, softDelete: true, encryptedFields: [] as string[] }
-  return { tagsRepo: createRepository(db, tags, cfg), entityTagRepo: createRepository(db, entityTags, cfg) }
-}
-
 /** Tolerant filter parse — the engine's own discipline (`engine.ts` parse()): malformed JSON ⇒ `{}`. */
-function parseFilter(json: string | null): ViewFilter {
+function parseFilter(json: string | null): StoredViewFilter {
   if (json == null) return {}
   try {
     const parsed: unknown = JSON.parse(json)
-    return typeof parsed === 'object' && parsed !== null ? (parsed as ViewFilter) : {}
+    return typeof parsed === 'object' && parsed !== null ? (parsed as StoredViewFilter) : {}
   } catch {
     return {}
   }
@@ -865,114 +839,6 @@ function parseFilter(json: string | null): ViewFilter {
 function isTaskView(row: ViewRow): boolean {
   const types = parseFilter(row.filter).entity_types
   return Array.isArray(types) && types.length === 1 && types[0] === TASK_ENTITY_TYPE
-}
-
-/** ADR-007:57 — `tags` means membership **incl. nested** (ADR-006: `#a ⊃ #a/b`, a Space's contents = everything
- *  carrying the root tag). Expands the requested ids to the LIVE ones among them ∪ all their LIVE descendants: one read
- *  of the live `tags` rows, then a worklist walk (stack) over `parent_tag_id` with a `seen` set (cycle-safe even
- *  though BR-3 forbids cycles on write). ONLY live nodes expand — a soft-deleted node, whether requested (a view saved
- *  on `#x` after `#x` was deleted) or intermediate, STOPS the walk and contributes nothing; an unknown id likewise
- *  matches nothing. (Spaces has no delete-reparent rule; `deleteTag` does not cascade the junction, so a dead tag's
- *  stale `entity_tags` rows must not resurrect membership — g2 F2.) */
-async function expandTagIds(
-  tagsRepo: ReturnType<typeof createTagReaders>['tagsRepo'],
-  ids: readonly string[],
-): Promise<Set<string>> {
-  const live = await tagsRepo.findAll()
-  const liveIds = new Set(live.map((t) => t.id))
-  const children = new Map<string, string[]>()
-  for (const t of live) {
-    if (t.parent_tag_id == null) continue
-    const bucket = children.get(t.parent_tag_id) ?? []
-    bucket.push(t.id)
-    children.set(t.parent_tag_id, bucket)
-  }
-  const seen = new Set<string>()
-  const worklist = ids.filter((id) => liveIds.has(id))
-  while (worklist.length > 0) {
-    const id = worklist.pop()
-    if (id === undefined) break
-    if (seen.has(id)) continue
-    seen.add(id)
-    for (const child of children.get(id) ?? []) worklist.push(child) // children of a live node are live by construction
-  }
-  return seen
-}
-
-/** The `ListTasksFilter` keys the provider honours from `filter.predicates` (XCU-13: apply what it understands, ignore
- *  the rest). A `const` tuple narrows `k` so `ListTasksFilterFieldsSchema.shape[k]` is typed per key. */
-const PROVIDER_KEYS = [
-  'status',
-  'priority',
-  'project_id',
-  'parent_task_id',
-  'completed',
-  'due_before',
-  'kind',
-  'open',
-] as const satisfies readonly (keyof ListTasksFilter)[]
-
-function isRecord(v: unknown): v is Record<string, unknown> {
-  return typeof v === 'object' && v !== null && !Array.isArray(v)
-}
-
-/**
- * Tasks as a `ReadProvider` (ADR-007 §3.4 / XCU-07/08) — the OTHER direction of the seam S7 consumed: saved views fan
- * out OVER tasks through this documented read API (INT-1, never a table read). Per ADR-007 §3.3.4 / XCU-13 the
- * provider applies the predicates it understands and IGNORES the rest; it never throws for a bad predicate (a bad
- * value drops that key). Rules:
- *   1. `predicates.id` (string) SHORT-CIRCUITS → `[getTask(id)]` (a sub-task IS returned by id; `tags`/grain skipped).
- *   2. known keys are picked + validated PER KEY; unknown keys ignored; invalid values dropped.
- *   3. grain = TOP-LEVEL tasks unless `parent_task_id` was given (BR-TK-S7-8).
- *   4. `tags` (array of strings only; anything else ignored) = membership incl. nested, UNION across the list.
- *   5. returns `TaskRow[]`, soft-deleted excluded (via `listTasks`).
- * Takes `db`/`deviceId` like `registerTasksTimer` — the membership read is a raw foundation-junction scan.
- */
-export function createTasksReadProvider(deps: { svc: TasksService; db: DrizzleDb; deviceId: string }): ReadProvider {
-  const { svc, db, deviceId } = deps
-  const { tagsRepo, entityTagRepo } = createTagReaders(db, deviceId)
-  return {
-    entityType: TASK_ENTITY_TYPE,
-    async list(filter) {
-      const predicates = isRecord(filter.predicates) ? filter.predicates : {}
-      if ('id' in predicates) {
-        // By-id short-circuit. A present-but-non-string id can match nothing — return nothing rather than fall through
-        // to "all top-level tasks" (g2 F4; XCU-13 "ignore" would be surprising for an identity predicate).
-        if (typeof predicates.id !== 'string') return []
-        const t = await svc.getTask(predicates.id)
-        return t ? [t] : []
-      }
-      const picked: Record<string, unknown> = {}
-      for (const k of PROVIDER_KEYS) {
-        if (!(k in predicates)) continue
-        const r = ListTasksFilterFieldsSchema.shape[k].safeParse(predicates[k])
-        if (r.success && r.data !== undefined) picked[k] = r.data
-      }
-      if (!('parent_task_id' in picked)) picked.parent_task_id = null // top-level grain (BR-TK-S7-8)
-      let rows = await svc.listTasks(picked as ListTasksFilter)
-      const tagIds = Array.isArray(filter.tags) ? filter.tags.filter((x): x is string => typeof x === 'string') : []
-      if (tagIds.length > 0) {
-        const expanded = await expandTagIds(tagsRepo, tagIds)
-        // One junction scan + a JS Set (the listTasks JS-filter precedent) — not inArray(), which hits SQLite's
-        // bound-variable cap on a wide hierarchy.
-        const members = await entityTagRepo.findWhere(
-          and(eq(entityTags.entity_type, TASK_ENTITY_TYPE), isNull(entityTags.deleted_at))!,
-        )
-        const taskIds = new Set(members.filter((m) => expanded.has(m.tag_id)).map((m) => m.entity_id))
-        rows = rows.filter((t) => taskIds.has(t.id))
-      }
-      return rows
-    },
-  }
-}
-
-/** Composition wiring (NOT a service method — the `registerTasksTimer` shape): register tasks into the SHARED
- *  `ViewProviderRegistry` keyed `'task'`; re-registration replaces (registry semantics). No composition root at M1. */
-export function registerTasksReadProvider(
-  providers: ViewProviderRegistry,
-  deps: { svc: TasksService; db: DrizzleDb; deviceId: string },
-): void {
-  providers.register(createTasksReadProvider(deps))
 }
 
 /**

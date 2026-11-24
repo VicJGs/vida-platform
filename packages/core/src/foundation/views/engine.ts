@@ -14,7 +14,7 @@
 // ============================================================================
 
 import { createViewProviderRegistry, type ViewProviderRegistry } from './provider-registry'
-import type { ViewFilter, ViewGrouping, ResolvedGroup, ResolvedView } from './types'
+import type { StoredViewFilter, ViewGrouping, ResolvedGroup, ResolvedView } from './types'
 import type { ViewRow } from '../../db/schema/foundation/spaces'
 
 const UNGROUPED = 'ungrouped'
@@ -35,9 +35,11 @@ function parse<T>(json: string | null | undefined, fallback: T): T {
 
 export function createViewEngine(registry: ViewProviderRegistry = createViewProviderRegistry()): ViewEngine {
   async function resolve(view: ViewRow): Promise<ResolvedView> {
-    const filter = parse<ViewFilter>(view.filter, {})
+    // The filter goes to each provider AS STORED: the provider reads it through `normalizeViewFilter` with its own
+    // legacy aliases (ADR-007 §3.6.4), which a pre-normalised grammar filter would no longer carry.
+    const filter = parse<StoredViewFilter>(view.filter, {})
     const grouping = parse<ViewGrouping>(view.grouping, {})
-    const entityTypes = filter.entity_types ?? []
+    const entityTypes = Array.isArray(filter.entity_types) ? filter.entity_types : []
 
     const rows: unknown[] = []
     const degraded: string[] = []

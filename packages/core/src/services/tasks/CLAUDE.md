@@ -28,8 +28,11 @@ obligation regen (RRULE via canonical `ical.js`) · S6 `getTaskProgress` (pursua
 top-level grain; per-group degradation) · S8 `tagTask`/`untagTask`/`getTaskTags` (via `spaces.tagEntity`, live-tag guard)
 · `getTaskNote` (`task_note` page via `ensureEntityNote`) · `saveView`/`listViews` (a task view = `views` row with
 `entity_types` EXACTLY `['task']`; REPLACE semantics) · `TASK_VIEW_PRESETS` + `kind` filter · `createTasksReadProvider`/
-`registerTasksReadProvider` (tasks AS a `ReadProvider`: by-id short-circuit, per-key validation, top-level grain,
-`tags` = membership incl. NESTED, union) · **S9 `getDayTasksSummary(date)` (the Journal `/summary` SET per the GOVERNING
+`registerTasksReadProvider` in `read-provider.ts` (tasks AS a `ReadProvider` over the ADR-007 §3.6 grammar, VW-8: by-id
+short-circuit; `tags` = a TagClause with nested membership, `any`/`all`/`none` ANDed; `where` conjuncts applied on
+`TASK_WHERE_FIELDS`, the rest ignored; a stored filter read through §3.6.4 `normalizeViewFilter` with the
+`due_before`→`due_date lt` alias; relative dates on the UTC day via `todayYmd`; top-level grain unless an applied
+conjunct references `parent_task_id` at any depth) · **S9 `getDayTasksSummary(date)` (the Journal `/summary` SET per the GOVERNING
 `docs/core/architecture/cross-module-integration.md` §2 row — every task due/scheduled/completed on the date, with
 title·status·priority + membership flags; the day of `completed_at` = the UTC calendar day via `utcDay`, the shipped (6-module, 7-site)
 platform convention) · `getDueReminders(range)` (the SS-7 due-bucket: OPEN tasks whose `due_date` OR `scheduled_date`

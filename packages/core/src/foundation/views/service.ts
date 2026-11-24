@@ -11,13 +11,14 @@ import type { DrizzleDb } from '../../db/adapter'
 import { createRepository } from '../../db/repository'
 import { views, type ViewRow } from '../../db/schema/foundation/spaces'
 import type { ViewLayout } from '@vida/types'
-import { ViewNotFound, type ViewFilter, type ViewGrouping } from './types'
+import { ViewNotFound, type StoredViewFilter, type ViewGrouping } from './types'
 
 export interface CreateViewInput {
   space_id?: string | null // NULL = global; set = Space-owned (V2)
   name: string
   layout: ViewLayout
-  filter?: ViewFilter
+  /** The §3.6 grammar (`ViewFilter`); pre-grammar keys are still accepted and read through the compatibility rules. */
+  filter?: StoredViewFilter
   /** `null` clears on update — `encodePatch`/`createView` already treat `== null` as a NULL write (S8 type-accuracy). */
   grouping?: ViewGrouping | null
   sort?: unknown

@@ -59,6 +59,31 @@ describe('isFilterActive', () => {
     expect(isFilterActive({ entity_types: ['task'] })).toBe(true)
     expect(isFilterActive({ predicates: { done: false } })).toBe(true)
   })
+
+  it('VW-8 counts a non-empty TagClause or where as active, an empty one as inactive', () => {
+    const CASES: { name: string; filter: Parameters<typeof isFilterActive>[0]; expect: boolean }[] = [
+      { name: 'non-empty TagClause (all)', filter: { entity_types: [], tags: { all: ['t'] } }, expect: true },
+      { name: 'non-empty TagClause (any)', filter: { entity_types: [], tags: { any: ['t'] } }, expect: true },
+      { name: 'non-empty TagClause (none)', filter: { entity_types: [], tags: { none: ['t'] } }, expect: true },
+      { name: 'empty TagClause', filter: { entity_types: [], tags: {} }, expect: false },
+      {
+        name: 'TagClause of empty lists',
+        filter: { entity_types: [], tags: { any: [], all: [], none: [] } },
+        expect: false,
+      },
+      {
+        name: 'non-empty where',
+        filter: { entity_types: [], where: [{ field: 'status', op: 'eq', value: 'in_progress' }] },
+        expect: true,
+      },
+      { name: 'empty where', filter: { entity_types: [], where: [] }, expect: false },
+      // legacy (pre-grammar) shapes still read
+      { name: 'legacy tags: []', filter: { tags: [] }, expect: false },
+      { name: 'legacy tags: [id]', filter: { tags: ['a'] }, expect: true },
+      { name: 'legacy predicates', filter: { predicates: { done: false } }, expect: true },
+    ]
+    for (const c of CASES) expect(isFilterActive(c.filter), c.name).toBe(c.expect)
+  })
 })
 
 describe('sortLabelOf', () => {
