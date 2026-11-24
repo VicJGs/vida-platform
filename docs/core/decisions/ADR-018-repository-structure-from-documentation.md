@@ -1,3 +1,17 @@
+---
+id: ADR-018
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: @vida/core is a foundation/ substrate tier plus a services/ per-module tier; the v1 schema monolith is quarantined reference-only and models/ dissolves into @vida/types.
+anchors:
+  - packages/core/src/foundation/
+  - packages/core/src/services/
+  - packages/core/src/db/_legacy/
+tokens: 2172
+---
+
 # ADR-018: The `@vida/core` structure is re-derived from the realigned documentation — a `foundation/` substrate tier + a kept `services/` per-module tier; the v1 `schema.ts` monolith and its migration are quarantined reference-only; `models/` is dissolved into `@vida/types`
 
 **Status:** Accepted

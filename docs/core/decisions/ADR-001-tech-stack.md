@@ -1,3 +1,15 @@
+---
+id: ADR-001
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: The canonical stack is TypeScript everywhere: React + Vite on web, Expo on mobile, Tauri on desktop, a shared packages/core, and a Hono zero-knowledge blob relay; no alternative without a new ADR.
+anchors:
+  - packages/core/src/encryption/vault.ts
+tokens: 7326
+---
+
 # ADR-001: Technology Stack
 
 **Status:** Accepted

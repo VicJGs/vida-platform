@@ -1,3 +1,14 @@
+---
+id: ADR-019
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: The whole OS ships manually operable and internally integrated first, then external integrations with their security boundary, then whole-OS encryption, then venues and multi-device.
+anchors: []
+tokens: 2276
+---
+
 # ADR-019: Build sequencing — the whole OS ships manually-operable and internally-integrated first, then external integrations (co-built with their security boundary), then the whole-OS encryption pass, then venues/multi-device; external integrations precede encryption-at-rest but are built against the encryption seam, and encryption gates any release beyond solo-localhost
 
 **Status:** Accepted

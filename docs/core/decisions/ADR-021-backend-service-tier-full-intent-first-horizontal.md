@@ -1,3 +1,14 @@
+---
+id: ADR-021
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: The backend service tier is delivered full-intent-first and horizontally, cross-cutting services first; the frontend runs its own track and the DB-4 schema is reconciled, not redone.
+anchors: []
+tokens: 1873
+---
+
 # ADR-021: The backend service tier is delivered full-intent-first and horizontally — all modules' service intent is intaken as one corpus, then decomposed into layered issues with cross-cutting services built first — reversing the per-module vertical ①/② slice for the backend; the frontend splits to its own track; the DB-4 schema is reconciled-and-targeted-fixed, not redone
 
 **Status:** Accepted

@@ -1,3 +1,15 @@
+---
+id: ADR-009
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Templates are portable seed bundles instantiated by fork: a deep copy with no live link to the template.
+anchors:
+  - packages/core/src/foundation/templates/
+tokens: 3256
+---
+
 # ADR-009: Templates are portable seed bundles instantiated by fork — a deep copy with no live link to the template
 
 **Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_

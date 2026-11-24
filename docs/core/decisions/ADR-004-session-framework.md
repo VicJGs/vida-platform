@@ -1,3 +1,16 @@
+---
+id: ADR-004
+kind: decision
+module: sessions
+status: active
+supersedes: []
+summary: Sessions are a table-per-type supertype governed by a four-dimension Integration Contract, and every cross-module write is a deterministic, idempotent effect.
+anchors:
+  - packages/core/src/foundation/sessions/
+  - packages/core/src/foundation/effects/
+tokens: 4555
+---
+
 # ADR-004: Model sessions as a table-per-type supertype governed by a 4-dimension Integration Contract
 
 **Status:** Accepted

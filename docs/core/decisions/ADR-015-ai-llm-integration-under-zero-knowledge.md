@@ -1,3 +1,15 @@
+---
+id: ADR-015
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: AI runs on-device or in the cloud through the user's own key as a consented plaintext dent to the provider, on a dedicated layer, with the server blind either way.
+anchors:
+  - packages/core/src/foundation/ai/
+tokens: 6068
+---
+
 # ADR-015: AI runs in two modes — on-device/agentic (nothing leaves the vault, the ZK-safe path) and cloud via the user's own key (an opt-in, consented plaintext dent to the model provider) — on a dedicated layer, with our server unconditionally blind either way
 
 **Status:** Accepted

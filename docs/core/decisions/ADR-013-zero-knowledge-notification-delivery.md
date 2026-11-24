@@ -1,3 +1,15 @@
+---
+id: ADR-013
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Notifications reach the user in three tiers (local-scheduled OS alerts, a content-free wake-signal, in-app always) and the server never sees their content.
+anchors:
+  - packages/core/src/foundation/notifications/
+tokens: 5851
+---
+
 # ADR-013: Deliver notifications under zero-knowledge via three tiers — local-scheduled OS alerts for time-based reminders, a content-free wake-signal for event-driven cross-device alerts, and in-app always — the server never sees notification content
 
 **Status:** Accepted

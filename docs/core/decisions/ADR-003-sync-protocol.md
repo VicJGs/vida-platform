@@ -1,3 +1,15 @@
+---
+id: ADR-003
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Each entity syncs as an individually encrypted blob through a zero-knowledge relay, with field-level LWW on a hybrid logical clock for structured data and per-page Yjs documents for editor content.
+anchors:
+  - packages/core/src/sync/
+tokens: 15181
+---
+
 # ADR-003: Sync Protocol Design
 
 **Status:** Accepted

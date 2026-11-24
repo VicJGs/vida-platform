@@ -1,3 +1,15 @@
+---
+id: ADR-011
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Every pursuable entity exposes a normalized progress through a declared measurement kind, fed by bindings on the existing effect rail.
+anchors:
+  - packages/core/src/foundation/measurement/
+tokens: 4412
+---
+
 # ADR-011: Model measurability as a universal contract — every pursuable entity exposes a normalized progress via a declared measurement kind, fed by bindings on the existing effect rail
 
 **Status:** Accepted

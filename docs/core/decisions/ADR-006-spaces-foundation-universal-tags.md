@@ -1,3 +1,15 @@
+---
+id: ADR-006
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Spaces are a foundation tier: universal tagging above every module, with a lightweight spaces entity.
+anchors:
+  - packages/core/src/foundation/spaces/
+tokens: 3971
+---
+
 # ADR-006: Establish Spaces as a foundation tier — universal tagging above every module, with a lightweight `spaces` entity
 
 **Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_

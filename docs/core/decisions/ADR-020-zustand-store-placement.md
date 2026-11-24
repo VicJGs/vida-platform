@@ -1,3 +1,15 @@
+---
+id: ADR-020
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Zustand stores live as per-app React hooks in the web app, not as vanilla stores in packages/core.
+anchors:
+  - apps/web/src/stores/
+tokens: 715
+---
+
 # ADR-020: Zustand store placement — per-app React hooks (web), not vanilla stores in `packages/core`
 
 **Status:** Accepted
