@@ -5,7 +5,9 @@
 // prove them, so they stay with the reviewer.
 // Usage: node docs.mjs [--base <ref>]
 //   --base: fail only on findings absent at the merge base with <ref>, keyed by file and
-//   rule, so a repo with a backlog can gate on new findings. Without it, every finding fails.
+//   rule, so a repo with a backlog can gate on new findings. A doc that gained frontmatter
+//   since the base carries its body findings (rules 3, 7, 9) as old, never its frontmatter
+//   findings. Without it, every finding fails.
 import { spawnSync } from "node:child_process";
 import { mkdtempSync, readdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
@@ -201,8 +203,20 @@ if (baseArg > 0) {
     return m ? `${m[1]} ${m[2] ?? f.slice(m[0].length)}` : f;
   };
   // The last line is the summary, not a finding.
-  const old = new Set(run.stdout.trim().split(/\r?\n/).slice(0, -1).filter((l) => l.startsWith("FAIL ")).map((l) => key(l.slice(5))));
-  const fresh = findings.filter((f) => !old.has(key(f)));
+  const baseFindings = run.stdout.trim().split(/\r?\n/).slice(0, -1).filter((l) => l.startsWith("FAIL ")).map((l) => l.slice(5));
+  const old = new Set(baseFindings.map(key));
+  // A file with no frontmatter at the base was never checked past rule 2. Once fronted, its
+  // body findings (rule 3's budgets, rules 7 and 9) are backlog; its frontmatter findings
+  // are new, and a missing key must not hide behind the base's "no frontmatter" (also rule 2).
+  const fileOf = (f) => f.match(/^[^:\s]+/)?.[0];
+  const fronted = new Set(baseFindings.filter((f) => f.endsWith(": rule 2, no frontmatter")).map(fileOf));
+  const BODY = /^[^:\s]+(?::\d+)?: rule (?:3, (?:abstract|body) |7, |9, )/;
+  const isOld = (f) => {
+    if (!fronted.has(fileOf(f))) return old.has(key(f));
+    if (/: rule 2, frontmatter missing /.test(f)) return false;
+    return old.has(key(f)) || BODY.test(f);
+  };
+  const fresh = findings.filter((f) => !isOld(f));
   notes.push(`--base ${ref}: ${findings.length - fresh.length} findings also fail at ${sha.slice(0, 7)} (by file and rule); only new ones count`);
   report(`${name} new since ${ref}`, fresh, notes);
 }
