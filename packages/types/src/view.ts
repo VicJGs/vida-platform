@@ -16,3 +16,8 @@
  *  view *picks*; they are not the unit of "a view". */
 export const VIEW_LAYOUT = ['list', 'table', 'board', 'gallery', 'calendar', 'graph', 'timeline'] as const
 export type ViewLayout = (typeof VIEW_LAYOUT)[number]
+
+/** The comparison operators of the view filter grammar (ADR-007 §3.6, VW-8). A fixed vocabulary a `where`
+ *  comparison picks; it lives in the `filter` JSON TEXT, so there is no SQL CHECK — `@vida/core` reads the tuple. */
+export const VIEW_FILTER_OP = ['eq', 'ne', 'in', 'lt', 'lte', 'gt', 'gte', 'between', 'exists', 'contains'] as const
+export type ViewFilterOp = (typeof VIEW_FILTER_OP)[number]

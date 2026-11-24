@@ -15,7 +15,8 @@
 // built at the FIRST consumer — the `ProviderRead` type+convention precedent
 // (fe-codec-patterns S5). See ./CLAUDE.md.
 // ============================================================================
-import type { ResolvedView, ViewFilter, ViewsService } from '@vida/core'
+import { normalizeViewFilter, resolveTagClause } from '@vida/core'
+import type { ResolvedView, StoredViewFilter, ViewsService } from '@vida/core'
 import type { ViewLayout } from '@vida/types'
 import type { CollectionViewProps } from '@vida/ui'
 
@@ -27,18 +28,21 @@ export interface SavedViewLike {
   /** The layouts this module offers for this collection (a subset of the 7; order = switcher order). Tasks=12 → O3. */
   availableLayouts: readonly ViewLayout[]
   /** The persisted filter (JSON TEXT upstream) — used only to derive the `filterActive` badge here. */
-  filter?: ViewFilter | null
+  filter?: StoredViewFilter | null
   /** The resolved sort for the DISPLAY label (the engine resolves the actual order). */
   sort?: { field: string; dir: 'asc' | 'desc' } | null
 }
 
 /** Is any filter predicate applied? (drives the Filter badge; the filtering LOGIC is the engine's). */
-export function isFilterActive(filter?: ViewFilter | null): boolean {
+export function isFilterActive(filter?: StoredViewFilter | null): boolean {
   if (filter == null) return false
+  // ADR-007 §3.6.4 read (one home): a pre-grammar `tags: string[]` reads as `{ any }`, and each legacy `predicates` key
+  // as a `where` conjunct. A TagClause with no non-empty key resolves to null (no tag filter).
+  const read = normalizeViewFilter(filter)
   return (
-    (filter.tags?.length ?? 0) > 0 ||
+    resolveTagClause(read.tags, (ids) => new Set(ids)) !== null ||
     (filter.entity_types?.length ?? 0) > 0 ||
-    (filter.predicates != null && Object.keys(filter.predicates).length > 0)
+    (read.where?.length ?? 0) > 0
   )
 }
 

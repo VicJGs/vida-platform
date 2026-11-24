@@ -22,6 +22,10 @@ order; `CreateViewInput.grouping` accepts `null`], M1.0 empty-[E] pass-through) 
 ships EMPTY) + `ViewEngine.resolve` (V3 cross-type resolution: ungrouped bucket, never-drop; V5 terminal states).
 Real read-providers register per-module at their build — **first registrant: tasks** (`services/tasks`
 `registerTasksReadProvider`, S8; its tests drive `resolve` end-to-end incl. nested-tag membership). Nav placement /
-pin / order of views = Preferences (ADR-007 §3.5), never a `views` column. Decided, not built: the filter
-grammar with tags any/all/none, provider capabilities, layout roles, grouping/sort shapes (ADR-007 §3.6–§3.9, LIF-358 +
-LIF-399). Per-layout visual specs stay build-time.
+pin / order of views = Preferences (ADR-007 §3.5), never a `views` column. **The filter grammar is built (LIF-703, ADR-007 §3.6):**
+`ViewFilter` = the grammar (`TagClause`, `Clause`, `Comparison`, `Op` from `@vida/types` `VIEW_FILTER_OP`, `Value`);
+`StoredViewFilter` = what a row or `ReadProvider.list` may carry. `filter.ts` is the one home every provider uses:
+`normalizeViewFilter` (§3.6.4 compatibility read + provider aliases), `resolveTagClause`/`matchesTagClause` (nested
+any/all/none), `compileWhere` (unapplicable conjuncts ignored). The engine passes the filter as stored. Decided, not
+built: provider capabilities + naming ignored conjuncts in `degraded` + `exclude_unsupported` (§3.7, LIF-704), layout
+roles, grouping/sort shapes (§3.8–§3.9, LIF-399). Per-layout visual specs stay build-time.
