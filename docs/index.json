@@ -2,6 +2,278 @@
   "generated": "node tools/checks/core/docs-index.mjs; do not edit",
   "units": [
     {
+      "id": "ADR-001",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The canonical stack is TypeScript everywhere: React + Vite on web, Expo on mobile, Tauri on desktop, a shared packages/core, and a Hono zero-knowledge blob relay; no alternative without a new ADR.",
+      "anchors": [
+        "packages/core/src/encryption/vault.ts"
+      ],
+      "tokens": 7326,
+      "path": "docs/core/decisions/ADR-001-tech-stack.md"
+    },
+    {
+      "id": "ADR-002",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The schema is a single-user local SQLite database with UUIDv7 text keys, Unix-ms integer timestamps, sync metadata on every syncable table and a plaintext/encrypted classification per field.",
+      "anchors": [
+        "packages/core/src/db/schema/"
+      ],
+      "tokens": 55169,
+      "path": "docs/core/decisions/ADR-002-data-model.md"
+    },
+    {
+      "id": "ADR-003",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Each entity syncs as an individually encrypted blob through a zero-knowledge relay, with field-level LWW on a hybrid logical clock for structured data and per-page Yjs documents for editor content.",
+      "anchors": [
+        "packages/core/src/sync/"
+      ],
+      "tokens": 15181,
+      "path": "docs/core/decisions/ADR-003-sync-protocol.md"
+    },
+    {
+      "id": "ADR-004",
+      "kind": "decision",
+      "module": "sessions",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Sessions are a table-per-type supertype governed by a four-dimension Integration Contract, and every cross-module write is a deterministic, idempotent effect.",
+      "anchors": [
+        "packages/core/src/foundation/sessions/",
+        "packages/core/src/foundation/effects/"
+      ],
+      "tokens": 4555,
+      "path": "docs/core/decisions/ADR-004-session-framework.md"
+    },
+    {
+      "id": "ADR-005",
+      "kind": "decision",
+      "module": "knowledge",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Study methods are pluggable services on Knowledge's generic review engine, a kind of the one capability registry, not bespoke feature tables.",
+      "anchors": [
+        "packages/core/src/foundation/review/"
+      ],
+      "tokens": 2268,
+      "path": "docs/core/decisions/ADR-005-study-method-service-framework.md"
+    },
+    {
+      "id": "ADR-006",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Spaces are a foundation tier: universal tagging above every module, with a lightweight spaces entity.",
+      "anchors": [
+        "packages/core/src/foundation/spaces/"
+      ],
+      "tokens": 3971,
+      "path": "docs/core/decisions/ADR-006-spaces-foundation-universal-tags.md"
+    },
+    {
+      "id": "ADR-007",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "A saved view is one first-class primitive (filter × layout × grouping), Space-owned or global, over documented read APIs.",
+      "anchors": [
+        "packages/core/src/foundation/views/"
+      ],
+      "tokens": 5457,
+      "path": "docs/core/decisions/ADR-007-saved-views.md"
+    },
+    {
+      "id": "ADR-008",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "One open capability registry replaces the closed BlockType union; a capability declares its render targets and the user chooses its placement.",
+      "anchors": [
+        "packages/core/src/foundation/capability/"
+      ],
+      "tokens": 5244,
+      "path": "docs/core/decisions/ADR-008-capability-block-registry.md"
+    },
+    {
+      "id": "ADR-009",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Templates are portable seed bundles instantiated by fork: a deep copy with no live link to the template.",
+      "anchors": [
+        "packages/core/src/foundation/templates/"
+      ],
+      "tokens": 3256,
+      "path": "docs/core/decisions/ADR-009-templates-fork-on-instantiate.md"
+    },
+    {
+      "id": "ADR-010",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "User-authored capabilities run under a declare→grant→enforce permission envelope inside a sandbox with no ambient authority.",
+      "anchors": [
+        "packages/core/src/foundation/capability/"
+      ],
+      "tokens": 4391,
+      "path": "docs/core/decisions/ADR-010-capability-authoring-security.md"
+    },
+    {
+      "id": "ADR-011",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Every pursuable entity exposes a normalized progress through a declared measurement kind, fed by bindings on the existing effect rail.",
+      "anchors": [
+        "packages/core/src/foundation/measurement/"
+      ],
+      "tokens": 4412,
+      "path": "docs/core/decisions/ADR-011-universal-measurability-progress-propagation.md"
+    },
+    {
+      "id": "ADR-012",
+      "kind": "decision",
+      "module": "gamification",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Gamification is a multi-currency points economy driven by a rule→consequence engine on the existing binding, effect and capability rails, with no new engine.",
+      "anchors": [
+        "packages/core/src/foundation/economy/"
+      ],
+      "tokens": 8716,
+      "path": "docs/core/decisions/ADR-012-points-economy-consequence-engine.md"
+    },
+    {
+      "id": "ADR-013",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Notifications reach the user in three tiers (local-scheduled OS alerts, a content-free wake-signal, in-app always) and the server never sees their content.",
+      "anchors": [
+        "packages/core/src/foundation/notifications/"
+      ],
+      "tokens": 5851,
+      "path": "docs/core/decisions/ADR-013-zero-knowledge-notification-delivery.md"
+    },
+    {
+      "id": "ADR-014",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "External data enters and leaves the vault only through a device-mediated guard in three integration layers (native, public-reference, user-managed), with the server blind and every third-party leak disclosed.",
+      "anchors": [
+        "packages/core/src/foundation/ingestion/",
+        "packages/core/src/foundation/egress/"
+      ],
+      "tokens": 8318,
+      "path": "docs/core/decisions/ADR-014-external-data-ingestion-under-zero-knowledge.md"
+    },
+    {
+      "id": "ADR-015",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "AI runs on-device or in the cloud through the user's own key as a consented plaintext dent to the provider, on a dedicated layer, with the server blind either way.",
+      "anchors": [
+        "packages/core/src/foundation/ai/"
+      ],
+      "tokens": 6068,
+      "path": "docs/core/decisions/ADR-015-ai-llm-integration-under-zero-knowledge.md"
+    },
+    {
+      "id": "ADR-016",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The storage layer is rebuilt from zero per table from the documentation; DDL stays hand-written SQL migrations and Drizzle is a query-only type mirror.",
+      "anchors": [
+        "packages/core/src/db/schema/",
+        "packages/core/src/db/migrations/"
+      ],
+      "tokens": 1955,
+      "path": "docs/core/decisions/ADR-016-storage-layer-rebuild-from-zero.md"
+    },
+    {
+      "id": "ADR-017",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Phase 1.0 is built features-first on the local-first stack, with encryption, sync and auth deferred to a hardening pass, delivered as a web SPA and then Tauri desktop.",
+      "anchors": [],
+      "tokens": 2190,
+      "path": "docs/core/decisions/ADR-017-features-first-resequencing-defer-encryption-sync.md"
+    },
+    {
+      "id": "ADR-018",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "@vida/core is a foundation/ substrate tier plus a services/ per-module tier; the v1 schema monolith is quarantined reference-only and models/ dissolves into @vida/types.",
+      "anchors": [
+        "packages/core/src/foundation/",
+        "packages/core/src/services/",
+        "packages/core/src/db/_legacy/"
+      ],
+      "tokens": 2172,
+      "path": "docs/core/decisions/ADR-018-repository-structure-from-documentation.md"
+    },
+    {
+      "id": "ADR-019",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The whole OS ships manually operable and internally integrated first, then external integrations with their security boundary, then whole-OS encryption, then venues and multi-device.",
+      "anchors": [],
+      "tokens": 2276,
+      "path": "docs/core/decisions/ADR-019-build-sequencing-features-then-integrations-then-encryption.md"
+    },
+    {
+      "id": "ADR-020",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "Zustand stores live as per-app React hooks in the web app, not as vanilla stores in packages/core.",
+      "anchors": [
+        "apps/web/src/stores/"
+      ],
+      "tokens": 715,
+      "path": "docs/core/decisions/ADR-020-zustand-store-placement.md"
+    },
+    {
+      "id": "ADR-021",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "The backend service tier is delivered full-intent-first and horizontally, cross-cutting services first; the frontend runs its own track and the DB-4 schema is reconciled, not redone.",
+      "anchors": [],
+      "tokens": 1873,
+      "path": "docs/core/decisions/ADR-021-backend-service-tier-full-intent-first-horizontal.md"
+    },
+    {
       "id": "AX-1",
       "kind": "intent-row",
       "module": "ai",

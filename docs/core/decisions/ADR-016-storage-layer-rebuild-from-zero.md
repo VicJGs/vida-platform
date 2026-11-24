@@ -1,3 +1,16 @@
+---
+id: ADR-016
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: The storage layer is rebuilt from zero per table from the documentation; DDL stays hand-written SQL migrations and Drizzle is a query-only type mirror.
+anchors:
+  - packages/core/src/db/schema/
+  - packages/core/src/db/migrations/
+tokens: 1955
+---
+
 # ADR-016: The storage layer is rebuilt from zero — a fresh `schema/` directory authored per-table from the documentation; DDL stays hand-written SQL migrations (Drizzle is the query-only type mirror); every table clears its own build gate
 
 **Status:** Accepted

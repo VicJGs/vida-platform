@@ -1,3 +1,16 @@
+---
+id: ADR-014
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: External data enters and leaves the vault only through a device-mediated guard in three integration layers (native, public-reference, user-managed), with the server blind and every third-party leak disclosed.
+anchors:
+  - packages/core/src/foundation/ingestion/
+  - packages/core/src/foundation/egress/
+tokens: 8318
+---
+
 # ADR-014: External data enters and leaves the vault only through a device-mediated guard, organized as three integration layers — native (curated first-party) · public-reference (bundled/bulk, hides which item) · user-managed (self-service, honest-disclosed) — with our server unconditionally blind and every third-party leak disclosed, not pretended away
 
 **Status:** Accepted
