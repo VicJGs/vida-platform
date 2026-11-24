@@ -1,3 +1,15 @@
+---
+id: ADR-012
+kind: decision
+module: gamification
+status: active
+supersedes: []
+summary: Gamification is a multi-currency points economy driven by a rule→consequence engine on the existing binding, effect and capability rails, with no new engine.
+anchors:
+  - packages/core/src/foundation/economy/
+tokens: 8716
+---
+
 # ADR-012: Model gamification as a multi-currency points economy driven by a rule→consequence engine that rides the existing binding + effect + capability rails — no new engine
 
 **Status:** Accepted

@@ -1,3 +1,15 @@
+---
+id: ADR-008
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: One open capability registry replaces the closed BlockType union; a capability declares its render targets and the user chooses its placement.
+anchors:
+  - packages/core/src/foundation/capability/
+tokens: 5244
+---
+
 # ADR-008: Replace the closed BlockType union with one open capability registry; a capability declares its render targets, placement is the user's choice
 
 **Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_

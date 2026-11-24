@@ -1,3 +1,15 @@
+---
+id: ADR-002
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: The schema is a single-user local SQLite database with UUIDv7 text keys, Unix-ms integer timestamps, sync metadata on every syncable table and a plaintext/encrypted classification per field.
+anchors:
+  - packages/core/src/db/schema/
+tokens: 55169
+---
+
 # ADR-002: Data Model
 
 **Status:** Accepted

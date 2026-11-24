@@ -1,3 +1,14 @@
+---
+id: ADR-017
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: Phase 1.0 is built features-first on the local-first stack, with encryption, sync and auth deferred to a hardening pass, delivered as a web SPA and then Tauri desktop.
+anchors: []
+tokens: 2190
+---
+
 # ADR-017: Phase 1.0 is resequenced features-first — build the usable product on the established local-first stack with encryption, sync, and auth deferred to a later hardening pass; deliver via web SPA (A) then graduate to Tauri desktop (D)
 
 **Status:** Accepted

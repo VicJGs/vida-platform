@@ -1,3 +1,15 @@
+---
+id: ADR-010
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: User-authored capabilities run under a declare→grant→enforce permission envelope inside a sandbox with no ambient authority.
+anchors:
+  - packages/core/src/foundation/capability/
+tokens: 4391
+---
+
 # ADR-010: User-authored capabilities run under a declare→grant→enforce permission envelope inside a no-ambient-authority sandbox
 
 **Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_

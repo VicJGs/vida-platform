@@ -1,3 +1,15 @@
+---
+id: ADR-005
+kind: decision
+module: knowledge
+status: active
+supersedes: []
+summary: Study methods are pluggable services on Knowledge's generic review engine, a kind of the one capability registry, not bespoke feature tables.
+anchors:
+  - packages/core/src/foundation/review/
+tokens: 2268
+---
+
 # ADR-005: Model study methods as pluggable services on Knowledge's generic review engine, not as bespoke feature tables
 
 **Status:** Accepted

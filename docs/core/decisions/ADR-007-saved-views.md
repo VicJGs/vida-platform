@@ -1,3 +1,15 @@
+---
+id: ADR-007
+kind: decision
+module: platform
+status: active
+supersedes: []
+summary: A saved view is one first-class primitive (filter × layout × grouping), Space-owned or global, over documented read APIs.
+anchors:
+  - packages/core/src/foundation/views/
+tokens: 5457
+---
+
 # ADR-007: Model saved views as one first-class primitive (filter × layout × grouping), Space-owned or global, over documented read APIs
 
 **Status:** Accepted _(foundation gate PASS + Victor sign-off, 2026-07-15)_
