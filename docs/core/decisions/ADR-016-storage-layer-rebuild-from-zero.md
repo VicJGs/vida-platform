@@ -8,7 +8,7 @@ summary: The storage layer is rebuilt from zero per table from the documentation
 anchors:
   - packages/core/src/db/schema/
   - packages/core/src/db/migrations/
-tokens: 1955
+tokens: 2008
 ---
 
 # ADR-016: The storage layer is rebuilt from zero — a fresh `schema/` directory authored per-table from the documentation; DDL stays hand-written SQL migrations (Drizzle is the query-only type mirror); every table clears its own build gate
@@ -49,9 +49,9 @@ The implemented storage schema is v1 and cannot be incrementally patched into th
 
 **3.3 Enum enforcement is a three-part contract.** `enumText(col, VALUES)` (Drizzle TS union) + `CHECK (col IN (…))` authored in the SQL migration from the same `VALUES` const + the canonical **Zod** validator (DB-9). No Drizzle `check()` helper — it would emit nothing under 3.2. Polymorphic `entity_type` values derive from `_registry.ts` (`ENTITY_TYPES`), extended per domain; the migration's CHECK is sourced from that const.
 
-**3.4 Locked patterns (from DB-1, enforced for every table).** `baseColumns` (id UUIDv7 · created_at · updated_at · sync) · `syncColumns` (6; `_sync_field_ts` added by DB-2) · typed helpers (`uuidPk` · `timestampMs` · `money` · `calendarDate` · `boolInt` · `json<T>` · `enumText`). The five systemic gaps are fixed at the source: CHECKs in the migration; partial indexes with `WHERE`; `updated_at` via `baseColumns`; consolidation primitives per their owning issue.
+**3.4 Locked patterns (from DB-1, enforced for every table).** `baseColumns` (id UUIDv7 · created_at · updated_at · sync) · `syncColumns` (6; `_sync_field_ts` added by DB-2) · typed helpers (`uuidPk` · `timestampMs` · `money` · `calendarDate` · `boolInt` · `json<T>` · `enumText`). The five systemic gaps are fixed at the source: CHECKs in the migration; partial indexes with `WHERE`; `updated_at` via `baseColumns`; consolidation primitives per their owning issue. **No foreign keys** (amended by [ADR-022](ADR-022-no-sql-foreign-keys.md), 2026-11-25): a reference is a plain `TEXT` column; integrity lives in services and sync.
 
-**3.5 Per-table gating.** Each table = one Per-Step Build Gate (§XXVI): spec → critique → approve → author (Drizzle object + SQL migration) → verify → ledger row flips `verified`. A table is gated only after its FK parents are `authored` (the ledger enforces order). ⏳ shape-open tables (capability registry, `rules`, `planned_blocks`, session extensions, `store`) resolve their shape at their own gate.
+**3.5 Per-table gating.** Each table = one Per-Step Build Gate (§XXVI): spec → critique → approve → author (Drizzle object + SQL migration) → verify → ledger row flips `verified`. A table is gated only after its reference parents ([ADR-022](ADR-022-no-sql-foreign-keys.md)) are `authored` (the ledger enforces order). ⏳ shape-open tables (capability registry, `rules`, `planned_blocks`, session extensions, `store`) resolve their shape at their own gate.
 
 ## 4. Consequences
 
