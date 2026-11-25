@@ -4,12 +4,12 @@ How the Vida web app is organized for navigation: what surfaces exist, how they 
 between them. This is the **experience-track root** (UX-1, LIF-90) — UX-2 (command bar), UX-3 (shell layout), UX-4
 (state conventions), and UX-5 (onboarding) build on the structure defined here.
 
-**Audience:** All developers and agents building any web surface. Read after `system-overview.md`.
+**Audience:** All developers and agents building any web surface. Read after [`ARCH-overview`](overview.md).
 
 **Governs:** The navigation model + the canonical module→nav placement. The code artifact is
 `apps/web/src/nav/module-map.ts` (central data; not chrome). Rendering is owned by UI-4 (chrome) and UX-3 (layout).
 
-**Content Source:** `system-overview.md §2` (module inventory) · each module's `docs/features/<module>/identity.md`
+**Content Source:** the entity table in [LIF-426](https://linear.app/personal-victor-oliver/issue/LIF-426) (module inventory) · each module's `docs/features/<module>/identity.md`
 (view intent) · ADR-006/007 (Spaces/Views) · ADR-002 §3564 (`nav_preferences`) · Victor's nav-axis decision
 (2026-08-01).
 
@@ -64,7 +64,7 @@ Every module carries one placement (encoded in `module-map.ts`), anchored in its
 
 ## 3. The module dock (content axis)
 
-Grouped per `system-overview.md §2`. Every user-facing module is placed.
+Grouped per the LIF-426 entity table. Every user-facing module is placed.
 
 | Group                 | Modules (dock)                                   |
 | --------------------- | ------------------------------------------------ |
@@ -117,7 +117,7 @@ page. Not a primary dock item. `[check-ins/identity.md:25]`
   Reached from a Task or the Notes `/pomodoro` widget. `[pomodoro/identity.md:6,41]`
 - **Flashcards** → a study-method service inside Knowledge; explicitly "not its own module." `[flashcards/identity.md:3,38]`
 
-**Foundation substrates** (`system-overview.md §2` first table) are cross-cutting primitives, **not dock modules**:
+**Foundation substrates** (the `packages/core/src/foundation/` folders) are cross-cutting primitives, **not dock modules**:
 Spaces = the second nav axis; Sessions = a dock surface + owns `/calendar`; Points Economy surfaces as Gamification.
 Measurability, Saved Views, Review Engine, Capability Registry, and Ingestion & AI have no nav presence.
 
@@ -160,6 +160,6 @@ code-splitting and a < 80 KB initial bundle; search/route params are Zod-validat
 
 ## References
 
-- `system-overview.md §2` — the module inventory this IA organizes
+- [LIF-426](https://linear.app/personal-victor-oliver/issue/LIF-426) — the entity table this IA organizes
 - `apps/web/src/nav/module-map.ts` — the canonical nav/module map (code)
 - ADR-006 (Spaces & Tags), ADR-007 (Saved Views) — the substrate this IA amends (§1)

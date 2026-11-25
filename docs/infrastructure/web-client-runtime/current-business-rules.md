@@ -2,7 +2,7 @@
 
 > **Context:** `@vida/web` → `apps/web/src/`. Companion: `current-spec.md`. **Seeded from documentation**
 > (from-zero — no runtime code exists yet; the architecture docs are the anchor). Sources: ADR-001 §12/§21,
-> `docs/core/architecture/{data-flow.md §7, performance-strategy.md §5–6, platform-strategy.md §9, system-overview.md}`,
+> `docs/core/architecture/{data-flow.md §7, performance-strategy.md §5–6, platform-strategy.md §9}` and `ARCH-overview`,
 > `docs/core/business-rules.md` (constitution), engineering standards §XV–XVIII.
 > **No-Guessing:** each rule `[FACT: src]` (verified) · `[INTENT]` (documented, owed) · `[UNKNOWN]`.
 
@@ -54,7 +54,7 @@
 ## Provider hierarchy & standards inheritance
 
 11. **[INTENT] BR-RT-11 — providers mount in `App.tsx`** (the "provider hierarchy"): `QueryClientProvider` wraps
-    `RouterProvider`; `main.tsx` stays a bare root. `[platform-strategy.md:296; system-overview.md:269]`
+    `RouterProvider`; `main.tsx` stays a bare root. `[platform-strategy.md:296; ARCH-overview]`
     **As-built (preferences-rescope R2):** `UIProvider ⊃ QueryClientProvider ⊃ { PreferencesBridge · first-run
 Onboarding | RouterProvider · guided-setup overlay · ToastProvider }` — hoisted so onboarding writes reach the same
     cache Settings reads. `[FACT: App.tsx]`
