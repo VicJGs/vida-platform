@@ -15,7 +15,7 @@ import {
 } from './breakpoints'
 
 describe('breakpoints — design.md §X value fidelity', () => {
-  it('encodes the standard breakpoint thresholds (375-baseline / 768 / 1440 / 1920)', () => {
+  it('encodes the standard breakpoint thresholds (375-baseline / 768 / 1440 / 1920, SH-8)', () => {
     expect(BREAKPOINTS.mobile.minWidth).toBe(0) // baseline; 375 is the design/test reference
     expect(BREAKPOINTS.tablet.minWidth).toBe(768)
     expect(BREAKPOINTS.desktop.minWidth).toBe(1440)
@@ -30,7 +30,7 @@ describe('breakpoints — design.md §X value fidelity', () => {
     }
   })
 
-  it('pins the container / density / touch constants to the standard', () => {
+  it('pins the container / density / touch constants to the standard (SH-8)', () => {
     expect(PRIMARY_TEST_WIDTHS).toEqual([375, 768, 1440])
     expect(CONTENT_MAX_WIDTH).toBe(1280)
     expect(SIDE_PADDING).toEqual({ mobile: 16, tablet: 24, desktop: 32 })

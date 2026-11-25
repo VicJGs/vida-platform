@@ -46,12 +46,12 @@ describe('ShellPanel — docked (S3)', () => {
     expect(container.querySelector('#shell-panel-modules')).not.toBeNull()
   })
 
-  it('renders the body slot (content-fit, EC-5)', () => {
+  it('renders the body slot (content-fit, EC-5, SH-4)', () => {
     renderPanel()
     expect(screen.getByTestId('body')).not.toBeNull()
   })
 
-  it('shows the ▣ Dock | ⧉ Float control reflecting the mode (EC-1); both enabled from S4', () => {
+  it('shows the ▣ Dock | ⧉ Float control reflecting the mode (EC-1, SH-2); both enabled from S4', () => {
     renderPanel({ placement: dock({ mode: 'dock' }) })
     expect(screen.getByRole('button', { name: 'Dock' }).getAttribute('aria-pressed')).toBe('true')
     const float = screen.getByRole('button', { name: 'Float' })
@@ -60,7 +60,7 @@ describe('ShellPanel — docked (S3)', () => {
     expect((float as HTMLButtonElement).disabled).toBe(false)
   })
 
-  it('shows the four-edge picker with the active edge pressed (EC-4)', () => {
+  it('shows the four-edge picker with the active edge pressed (EC-4, SH-3)', () => {
     renderPanel({ placement: dock({ edge: 'top' }) })
     expect(screen.getByRole('button', { name: 'Dock top' }).getAttribute('aria-pressed')).toBe('true')
     expect(screen.getByRole('button', { name: 'Dock left' }).getAttribute('aria-pressed')).toBe('false')
@@ -132,14 +132,14 @@ describe('ShellPanel — floating (S4)', () => {
     expect(container.querySelector('[data-panel="modules"]')?.getAttribute('data-edge')).toBe('bottom')
   })
 
-  it('dismisses on Esc (EC-6)', () => {
+  it('dismisses on Esc (EC-6, SH-5)', () => {
     const onClose = vi.fn()
     renderFloat({ onClose })
     fireEvent.keyDown(screen.getByRole('dialog', { name: 'Modules' }), { key: 'Escape' })
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('dismisses on scrim click (EC-6)', () => {
+  it('dismisses on scrim click (EC-6, SH-5)', () => {
     const onClose = vi.fn()
     const { container } = renderFloat({ onClose })
     const scrim = container.querySelector('.vida-shell-scrim')
@@ -148,7 +148,7 @@ describe('ShellPanel — floating (S4)', () => {
     expect(onClose).toHaveBeenCalledTimes(1)
   })
 
-  it('moves focus into the panel on open — the first focusable (✕ close) is focused (EC-6)', () => {
+  it('moves focus into the panel on open — the first focusable (✕ close) is focused (EC-6, SH-5)', () => {
     renderFloat()
     // The first focusable inside the panel is the ✕ close (header row 1 leads the controls).
     expect(document.activeElement?.getAttribute('aria-label')).toBe('Close Modules panel')

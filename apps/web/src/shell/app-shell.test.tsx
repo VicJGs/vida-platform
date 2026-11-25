@@ -30,7 +30,7 @@ function renderShell(
 }
 
 describe('AppShell — CODEC frame (S2)', () => {
-  it('renders the frame regions + the content children', async () => {
+  it('renders the frame regions + the content children (SH-1)', async () => {
     const { container, getByTestId } = await renderShell('desktop')
     expect(container.querySelector('[data-region="topStrip"]')).not.toBeNull()
     expect(container.querySelector('[data-region="content"]')).not.toBeNull()
@@ -71,7 +71,7 @@ describe('AppShell — CODEC frame (S2)', () => {
     expect(screen.getByRole('button', { name: 'System' }).getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('reflects an externally-set placement (hydration seam — stubShellPrefs / setPlacement)', async () => {
+  it('reflects an externally-set placement from the shell store (hydration seam — stubShellPrefs / setPlacement, SH-11)', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, system: { ...DEFAULT_PLACEMENT.system, open: true } },
     })
@@ -94,7 +94,7 @@ describe('AppShell — CODEC frame (S2)', () => {
     expect(screen.getByTestId('overlay-content')).not.toBeNull()
   })
 
-  it('reserves a top strip that reflows shorter on mobile (EC-7)', async () => {
+  it('reserves a top strip that reflows shorter on mobile (EC-7, SH-7)', async () => {
     const mobile = await renderShell('mobile')
     expect(mobile.container.querySelector('[data-region="topStrip"]')?.getAttribute('data-top-inset')).toBe('52')
     cleanup()
@@ -116,7 +116,7 @@ describe('AppShell — CODEC frame (S2)', () => {
 })
 
 describe('AppShell — docked panel composition (S3)', () => {
-  it('mounts an open+docked panel beside the content, at its edge (EC-2)', async () => {
+  it('mounts an open+docked panel beside the content, at its edge (EC-2, SH-2)', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
     })
@@ -129,7 +129,7 @@ describe('AppShell — docked panel composition (S3)', () => {
     expect(screen.getByTestId('outlet')).not.toBeNull()
   })
 
-  it('renders a FLOATING panel as a modal drawer (S4) + widens the toggle disclosure', async () => {
+  it('renders a FLOATING panel as a modal drawer (S4, SH-2) + widens the toggle disclosure', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
     })
@@ -145,7 +145,7 @@ describe('AppShell — docked panel composition (S3)', () => {
     expect(modules.getAttribute('aria-controls')).toBe('shell-panel-modules')
   })
 
-  it('inerts the content/docked wrapper while a float drawer is open (G1 modal background)', async () => {
+  it('inerts the content/docked wrapper while a float drawer is open (G1 modal background, SH-5)', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, system: { mode: 'float', edge: 'right', open: true } },
     })
@@ -179,7 +179,7 @@ describe('AppShell — docked panel composition (S3)', () => {
     expect(modules.getAttribute('aria-haspopup')).toBe('dialog')
   })
 
-  it('returns focus to the bar toggle when the float drawer is dismissed (EC-6)', async () => {
+  it('returns focus to the bar toggle when the float drawer is dismissed (EC-6, SH-5)', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'float', edge: 'left', open: true } },
     })
@@ -191,7 +191,7 @@ describe('AppShell — docked panel composition (S3)', () => {
 })
 
 describe('AppShell — dock-together + persist seam (S5)', () => {
-  it('docks two panels at the SAME edge together as ONE cluster, content beside (EC-4)', async () => {
+  it('docks two panels at the SAME edge together as ONE cluster, content beside (EC-4, SH-3)', async () => {
     useAppShellUIStore.setState({
       placement: {
         system: { mode: 'dock', edge: 'left', open: true },
@@ -256,7 +256,7 @@ describe('AppShell — dock-together + persist seam (S5)', () => {
     expect(screen.getByRole('button', { name: 'Modules' }).getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('the edge picker is live — repositions the docked panel (EC-4, onSetEdge→setPanelEdge)', async () => {
+  it('the edge picker is live — repositions the docked panel (EC-4, SH-3, onSetEdge→setPanelEdge)', async () => {
     useAppShellUIStore.setState({
       placement: { ...DEFAULT_PLACEMENT, modules: { mode: 'dock', edge: 'left', open: true } },
     })

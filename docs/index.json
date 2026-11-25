@@ -7700,7 +7700,7 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 76 rows, 0 tested, 2 partly tested, 74 intent only.",
+      "summary": "Intended rules of shell: 76 rows, 0 tested, 13 partly tested, 63 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
@@ -12616,9 +12616,10 @@
       "supersedes": [],
       "summary": "The Shell is the persistent frame every surface renders in, a reserved top strip, two nav panels (System and Modules), the content region and an overlay host; it owns the frame and the slots, never what a panel or a surface shows.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 89,
+      "tokens": 97,
       "path": "docs/modules/shell/intent/SH-1.md"
     },
     {
@@ -12642,9 +12643,10 @@
       "supersedes": [],
       "summary": "The panel arrangement is ephemeral app state in the shell store, and the current breakpoint is read live from the media query, never stored.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 67,
+      "tokens": 75,
       "path": "docs/modules/shell/intent/SH-11.md"
     },
     {
@@ -12746,9 +12748,10 @@
       "supersedes": [],
       "summary": "Nav moves through the router without a reload, and a route not built yet shows the not-found page, never a blank or a crash.",
       "anchors": [
+        "apps/web/src/shell/nav-link.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 63,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/SH-19.md"
     },
     {
@@ -12759,9 +12762,12 @@
       "supersedes": [],
       "summary": "Each panel opens from its toggle in the strip and is either docked, inline at its edge with the content beside it and no scrim or elevation, or floating, over the full-width content with a scrim and level-3 elevation, so the content never loses width.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
+        "apps/web/src/shell/regions.test.ts",
+        "apps/web/src/shell/shell-panel.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 94,
+      "tokens": 102,
       "path": "docs/modules/shell/intent/SH-2.md"
     },
     {
@@ -12902,9 +12908,12 @@
       "supersedes": [],
       "summary": "Each panel moves to any of the four edges on its own, panels sharing an edge dock together as one cluster stacked along the cross axis, and the panel's header controls stay inside the panel.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
+        "apps/web/src/shell/regions.test.ts",
+        "apps/web/src/shell/shell-panel.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 79,
+      "tokens": 87,
       "path": "docs/modules/shell/intent/SH-3.md"
     },
     {
@@ -12928,9 +12937,11 @@
       "supersedes": [],
       "summary": "A panel sizes to its content, vertical on the left and right edges and horizontal on the top and bottom, reaching the viewport edge only when its content needs it.",
       "anchors": [
+        "apps/web/src/shell/regions.test.ts",
+        "apps/web/src/shell/shell-panel.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 72,
+      "tokens": 80,
       "path": "docs/modules/shell/intent/SH-4.md"
     },
     {
@@ -12941,9 +12952,11 @@
       "supersedes": [],
       "summary": "A floating panel closes on Escape, a click on the scrim or its toggle; focus moves into it on open, stays trapped inside and returns to its toggle on close, and the content behind is inert while the strip stays live.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
+        "apps/web/src/shell/shell-panel.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 85,
+      "tokens": 94,
       "path": "docs/modules/shell/intent/SH-5.md"
     },
     {
@@ -12954,9 +12967,10 @@
       "supersedes": [],
       "summary": "Both panels start closed, docked at the left, with the content full width.",
       "anchors": [
+        "apps/web/src/shell/regions.test.ts",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 50,
+      "tokens": 58,
       "path": "docs/modules/shell/intent/SH-6.md"
     },
     {
@@ -12967,9 +12981,11 @@
       "supersedes": [],
       "summary": "One responsive model serves every width with no automatic switch; the user's dock or float choice is the model, a floating panel becomes a near-full sheet on a phone, nothing overflows sideways, and the content insets below the reserved strip.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
+        "apps/web/src/shell/regions.test.ts",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 92,
+      "tokens": 100,
       "path": "docs/modules/shell/intent/SH-7.md"
     },
     {
@@ -12980,9 +12996,11 @@
       "supersedes": [],
       "summary": "The frame applies the standard and invents no value; breakpoints 375, 768, 1440 and 1920 mobile-first, content at most 1280 wide and centered, gutters 16, 24 and 32, a vertical inset of 24, 32 and 40, touch targets at least 44 square with 8 between, and every metric, layer and radius a design token.",
       "anchors": [
+        "apps/web/src/shell/breakpoints.test.ts",
+        "apps/web/src/shell/regions.test.ts",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 106,
+      "tokens": 115,
       "path": "docs/modules/shell/intent/SH-8.md"
     },
     {
@@ -12993,9 +13011,10 @@
       "supersedes": [],
       "summary": "Shell motion animates transform and opacity only, rests visible if an animation never runs, and is instant when the system setting or the in-app reduce-motion preference is on.",
       "anchors": [
+        "apps/web/src/shell/shell-panel-styles.test.ts",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 75,
+      "tokens": 84,
       "path": "docs/modules/shell/intent/SH-9.md"
     },
     {
