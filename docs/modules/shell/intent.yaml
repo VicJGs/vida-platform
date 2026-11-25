@@ -247,3 +247,76 @@
 - id: DSG-23
   says: A community-forkable design file mirrors the code-first design system, synced through the design tool's agent server and a scripter, never Tokens Studio.
   work: LIF-408
+# The component rules: the gap sheet (LIF-713) as Victor decided it, 2026-11-20…22, each row in his words (LIF-760).
+# DSG-24: Switch's knob and off state (LIF-758) are fixed with the same shared control outline.
+- id: DSG-24
+  says: Input, Select, Checkbox and Switch share one control-outline colour, so a field's outline reaches 3:1 against the page, and the invalid outline uses the darker red.
+  work: LIF-762
+- id: DSG-25
+  says: One Button for all of Vida has a pressed state that shows as a fill (a soft square behind the button) in every preset, never colour alone and without bold text, and filled danger meets the minimum text contrast.
+  work: LIF-763
+- id: DSG-26
+  says: Every toggle (the strip, the editor nav, the side page, the range switchers) uses Button's pressed state, replacing the hand-built aria-pressed copies.
+  work: LIF-764
+- id: DSG-27
+  says: A Menu or Select hangs from its trigger, attached with no gap under one shared outline while the trigger shows pressed, its highlighted item uses the pressed look, and danger items use a darker red as text that meets the minimum text contrast.
+  work: LIF-765
+- id: DSG-28
+  says: Past a threshold the user sets in Preferences, a long Menu or Select searches inside the box, filtering its attached list.
+  uses: [preferences]
+  work: LIF-766
+- id: DSG-29
+  says: Popover is the shared base for what floats over the page and belongs to one spot (the link preview, the selection menu), its arrow pointing at what it belongs to, with the shared outline and pressed look.
+  work: LIF-767
+- id: DSG-30
+  says: Page titles are edited in place like any row, Rename puts the caret in the title, and the icon and cover pickers open from what they change as Popovers, not Dialogs.
+  work: LIF-768
+- id: DSG-31
+  says: An entity page's Overview is part of its header, together with the title, first, always, or a separate tab the user chooses, and Related is one compact line.
+  work: LIF-769
+- id: DSG-32
+  says: A toast is quiet and rare (failures, and Undo after a reversible action), dismisses before its time by the close button, Esc or a sideways swipe or drag, its accent bar marks the kind, and its text never turns red.
+  work: LIF-770
+- id: DSG-33
+  says: Empty is sized to what's empty; a blank page is its first row with a placeholder, an empty block is one quiet line, and only an empty surface keeps the full panel.
+  work: LIF-771
+- id: DSG-34
+  says: Saved is quiet muted text, with no green dot and no filled pill, and Couldn't save gets a red dot, the real copy and a Retry.
+  work: LIF-772
+- id: DSG-35
+  says: A card's progress follows the entity's measurement kind; steps for a milestone, an amount for a quantitative one, a rate, the state with no bar for a qualitative one, and nothing when unmeasured.
+  uses: [measurement]
+  work: LIF-773
+- id: DSG-36
+  says: There is no canvas frame; the only focus is the user toggling the navs to see only the page at hand.
+  work: LIF-778
+- id: DSG-37
+  says: At block size Board's columns fit the block, down to a minimum and then scroll, and cards drag between columns in blocks on a page as well as on surfaces, writing through the owning module.
+  work: LIF-774
+- id: DSG-38
+  says: Gallery tiles share one width, only a deliberately featured tile larger, how much it shows is set while editing the block, and it shows as a grid, a feed or a strip.
+  work: LIF-775
+- id: DSG-39
+  says: Gallery, Board and Timeline items can be plain tiles or the card template, the same Card as everywhere, acted on in place.
+  work: LIF-779
+- id: DSG-40
+  says: Timeline lays out vertical or horizontal, chosen while editing the block.
+  work: LIF-776
+- id: DSG-41
+  says: Calendar, Agenda and Week chips can be dragged to another day inside a block, acting through their module.
+  work: LIF-777
+- id: DSG-42
+  says: A surface's switcher lists the user's saved views (each a layout plus filters) with + New view last, Search sits beside Filter and Sort, and switching fades the new view in.
+  work: LIF-780
+- id: DSG-43
+  says: A module page is its page and its Overview, in tabs by default or the Overview in the header, plus the views in their own tab, where the saved-views switcher sits and new views are created.
+  work: LIF-785
+- id: DSG-44
+  says: A dashboard is Cards side by side attached to a surface, never inserted between a page's rows, with no per-cell header, sizes S, M, L or Full, Edit to move and size them, and one column on a phone.
+  work: LIF-781
+- id: DSG-45
+  says: Multi-select is a combobox that types to search and picks several, each pick a removable chip.
+  work: LIF-782
+- id: DSG-46
+  says: A side sheet slides in from the right and closes back to the view, as the Global Calendar's day panel does.
+  work: LIF-783
