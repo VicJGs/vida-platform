@@ -72,21 +72,21 @@ describe('region visibility — Spaces bar hidden on mobile, reserved from table
 })
 
 describe('content — per-bp gutters, global 1280 cap', () => {
-  it('gutters resolve 16 / 24 / 32 (wide shares desktop)', () => {
+  it('gutters resolve 16 / 24 / 32 (wide shares desktop, SH-8)', () => {
     expect(contentGutterAt('mobile')).toBe(16)
     expect(contentGutterAt('tablet')).toBe(24)
     expect(contentGutterAt('desktop')).toBe(32)
     expect(contentGutterAt('wide')).toBe(32)
   })
 
-  it('vertical inset resolves 24 / 32 / 40 (wide shares desktop)', () => {
+  it('vertical inset resolves 24 / 32 / 40 (wide shares desktop, SH-8)', () => {
     expect(contentVInsetAt('mobile')).toBe(24)
     expect(contentVInsetAt('tablet')).toBe(32)
     expect(contentVInsetAt('desktop')).toBe(40)
     expect(contentVInsetAt('wide')).toBe(40)
   })
 
-  it('content max-width is the single global cap constant', () => {
+  it('content max-width is the single global cap constant (SH-8)', () => {
     expect(CONTENT_MAX_WIDTH).toBe(1280)
   })
 })
@@ -104,7 +104,7 @@ describe('LAYERING — token-name refs (typo-drift guard; invisible to typecheck
 
 // ── fe-shell (#14) · the dock⇄float panel placement model ──────────────────────────────────
 describe('panel placement model — dock⇄float × edge (envision M1–M7)', () => {
-  it('defaults both panels closed, docked left (M1/L1)', () => {
+  it('defaults both panels closed, docked left (M1/L1, SH-6)', () => {
     expect(DEFAULT_PLACEMENT.system).toEqual({ mode: 'dock', edge: 'left', open: false })
     expect(DEFAULT_PLACEMENT.modules).toEqual({ mode: 'dock', edge: 'left', open: false })
   })
@@ -113,25 +113,25 @@ describe('panel placement model — dock⇄float × edge (envision M1–M7)', ()
     expect(PANEL_IDS).toEqual(['system', 'modules'])
   })
 
-  it('axis is vertical on left/right, horizontal on top/bottom (content-fit, EC-5)', () => {
+  it('axis is vertical on left/right, horizontal on top/bottom (content-fit, EC-5, SH-4)', () => {
     expect(panelAxis('left')).toBe('vertical')
     expect(panelAxis('right')).toBe('vertical')
     expect(panelAxis('top')).toBe('horizontal')
     expect(panelAxis('bottom')).toBe('horizontal')
   })
 
-  it('isOverlay iff floating (EC-2 docked inline vs EC-3 floating overlay)', () => {
+  it('isOverlay iff floating (EC-2 docked inline vs EC-3 floating overlay, SH-2)', () => {
     expect(isOverlay({ mode: 'float', edge: 'left', open: true })).toBe(true)
     expect(isOverlay({ mode: 'dock', edge: 'left', open: true })).toBe(false)
   })
 
-  it('reserves a top strip per breakpoint, on the 4pt grid (EC-7)', () => {
+  it('reserves a top strip per breakpoint, on the 4pt grid (EC-7, SH-7)', () => {
     expect(reservedTopInset('mobile')).toBe(52)
     expect(reservedTopInset('desktop')).toBe(56)
     BREAKPOINT_ORDER.forEach((bp) => expect(reservedTopInset(bp) % 4).toBe(0))
   })
 
-  it('all four edges are representable (M4 — incl. bottom)', () => {
+  it('all four edges are representable (M4 — incl. bottom, SH-3)', () => {
     const edges: PanelEdge[] = ['left', 'right', 'top', 'bottom']
     edges.forEach((edge) => expect(panelAxis(edge)).toMatch(/vertical|horizontal/))
   })

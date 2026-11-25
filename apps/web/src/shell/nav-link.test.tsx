@@ -3,7 +3,14 @@
 // index (`/`) + notes (`/notes`) mirror the real registered routes so an unregistered target (`/tasks`) is exercised.
 import { afterEach, describe, expect, it } from 'vitest'
 import { cleanup, render } from '@testing-library/react'
-import { createMemoryHistory, createRootRoute, createRoute, createRouter, RouterProvider } from '@tanstack/react-router'
+import {
+  createMemoryHistory,
+  createRootRoute,
+  createRoute,
+  createRouter,
+  Outlet,
+  RouterProvider,
+} from '@tanstack/react-router'
 import { UIProvider } from '@vida/ui'
 import { StickyNote } from 'lucide-react'
 import { NavLink } from './nav-link'
@@ -13,7 +20,16 @@ import type { ReactNode } from 'react'
 afterEach(cleanup)
 
 async function renderAt(path: string, ui: ReactNode) {
-  const rootRoute = createRootRoute({ component: () => <>{ui}</> })
+  const rootRoute = createRootRoute({
+    component: () => (
+      <>
+        {ui}
+        <Outlet />
+      </>
+    ),
+    // Stands in for routes.tsx's NotFoundComponent, so an unregistered target's landing is observable.
+    notFoundComponent: () => <h1>404 — Not found</h1>,
+  })
   const indexRoute = createRoute({ getParentRoute: () => rootRoute, path: '/', component: () => null })
   const notesRoute = createRoute({ getParentRoute: () => rootRoute, path: '/notes', component: () => null })
   const router = createRouter({
@@ -49,9 +65,10 @@ describe('NavLink', () => {
     expect(getByRole('link', { name: 'Notes' }).getAttribute('aria-current')).toBeNull()
   })
 
-  it('navigates to an UNREGISTERED route without throwing (BR-4 degrade)', async () => {
-    const { getByRole } = await renderAt('/', <NavLink to="/tasks" label="Tasks" />)
-    // The link renders (SPA target); the router resolves NotFound only on activation.
+  it('SH-19 an unbuilt route shows the not-found page, never a blank or a crash', async () => {
+    // Landing on an unregistered route (a typed URL, a reload) resolves the root's not-found; the chrome stays mounted.
+    const { getByRole } = await renderAt('/tasks', <NavLink to="/tasks" label="Tasks" />)
+    expect(getByRole('heading', { name: '404 — Not found' })).not.toBeNull()
     expect(getByRole('link', { name: 'Tasks' })).not.toBeNull()
   })
 

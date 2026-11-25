@@ -17,11 +17,11 @@ describe('shell-panel-styles — reduced motion', () => {
   ensureShellPanelStyles()
   const css = document.querySelector('style[data-vida-shell-panel]')?.textContent ?? ''
 
-  it('keeps the OS media gate', () => {
+  it('keeps the OS media gate (SH-9)', () => {
     expect(css).toContain(`@media (prefers-reduced-motion: reduce){${SELECTORS.join(',')}{animation:none}}`)
   })
 
-  it('adds the [data-vida-motion="reduce"] twin — every selector, the same declarations (the literal UIProvider writes)', () => {
+  it('SH-9 adds the [data-vida-motion="reduce"] twin — every selector, the same declarations (the literal UIProvider writes)', () => {
     expect(css).toContain(`${SELECTORS.map((s) => `[data-vida-motion="reduce"] ${s}`).join(',')}{animation:none}`)
   })
 })
