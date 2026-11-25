@@ -4,7 +4,7 @@
 > **async/DB state** (React Query v5), **routing** (TanStack Router), **forms** (TanStack Form + Zod). Companion:
 > `current-business-rules.md`. **Seeded from documentation** (from-zero — no runtime code exists yet, so the
 > architecture docs are the anchor). Sources: ADR-001 §12/§21, `docs/core/architecture/{data-flow.md §7,
-performance-strategy.md §5–6, platform-strategy.md §9, system-overview.md}`.
+performance-strategy.md §5–6, platform-strategy.md §9}` and `ARCH-overview`.
 > **No-Guessing:** `[FACT: src]` (verified on disk) · `[INTENT]` (documented target, not yet built) · `[UNKNOWN]`.
 
 ## What the web client runtime is

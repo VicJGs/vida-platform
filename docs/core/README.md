@@ -9,7 +9,7 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 
 | Aspect                                | Where                                                                                                                    |                  Status                   |
 | ------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | :---------------------------------------: |
-| **Identity**                          | [`architecture/system-overview.md`](architecture/system-overview.md)                                                     |                    🔄                     |
+| **Identity**                          | [`ARCH-overview`](architecture/overview.md)                                                                              |                    🔄                     |
 | **Business Rules** (the constitution) | [`business-rules.md`](business-rules.md) — 18 invariants, every level inherits                                           |                ✅ verified                |
 | **Contract** (public surface)         | [`server-api.md`](server-api.md)                                                                                         | 🔄 scaffold — server routes unimplemented |
 | **Structure & Data**                  | [`decisions/`](decisions/) (ADRs) + [`architecture/module-dependency-graph.md`](architecture/module-dependency-graph.md) |                    🔄                     |
@@ -17,7 +17,7 @@ aspects** (master manifest: [`../README.md`](../README.md)).
 
 ## Architecture
 
-[`system-overview`](architecture/system-overview.md) · [`module-dependency-graph`](architecture/module-dependency-graph.md) · [`cross-module-integration`](architecture/cross-module-integration.md) · [`data-flow`](architecture/data-flow.md) · [`platform-strategy`](architecture/platform-strategy.md) · [`performance-strategy`](architecture/performance-strategy.md) · [`security-model`](architecture/security-model.md)
+[`ARCH-overview`](architecture/overview.md) · [`module-dependency-graph`](architecture/module-dependency-graph.md) · [`cross-module-integration`](architecture/cross-module-integration.md) · [`data-flow`](architecture/data-flow.md) · [`platform-strategy`](architecture/platform-strategy.md) · [`performance-strategy`](architecture/performance-strategy.md) · [`security-model`](architecture/security-model.md)
 
 ## Decisions (ADRs)
 
