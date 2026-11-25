@@ -5,6 +5,7 @@ import { cleanup, render } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { useReducedMotion } from './hooks/use-reduced-motion'
 import { UIProvider } from './provider'
+import { fonts } from './themes/fonts'
 import type { ThemeSelection } from './theme-resolution'
 
 const html = () => document.documentElement
@@ -21,6 +22,40 @@ beforeEach(() => {
 afterEach(cleanup)
 
 const READER_DENSE: ThemeSelection = { preset: 'reader', mode: 'light', density: 'dense' }
+
+describe('UIProvider — preset, scheme and density', () => {
+  it('DSG-14 a preset switches its fonts through the root font vars in the same commit, with no transition', () => {
+    const { rerender } = render(<UIProvider selection={{ ...READER_DENSE, preset: 'editorial' }} />)
+    expect(html().style.getPropertyValue('--vida-font-body')).toBe('')
+    rerender(<UIProvider selection={READER_DENSE} />)
+    expect(html().style.getPropertyValue('--vida-font-body')).toBe(fonts.fontFamily.readerBody)
+    expect(html().style.getPropertyValue('--vida-font-display')).toBe(fonts.fontFamily.readerDisplay)
+    rerender(<UIProvider selection={{ ...READER_DENSE, preset: 'quietDesk' }} />)
+    expect(html().style.getPropertyValue('--vida-font-body')).toBe(fonts.fontFamily.quietDeskBody)
+    expect(html().style.transition).toBe('')
+  })
+
+  it('DSG-15 the scheme sits on the page root and the preset on the body', () => {
+    const { rerender } = render(<UIProvider selection={{ ...READER_DENSE, mode: 'dark' }} />)
+    expect(html().classList.contains('t_dark')).toBe(true)
+    expect(document.body.classList.contains('t_reader')).toBe(true)
+    expect(html().classList.contains('t_reader')).toBe(false)
+    rerender(<UIProvider selection={{ ...READER_DENSE, preset: 'editorial', mode: 'dark' }} />)
+    expect(document.body.classList.contains('t_reader')).toBe(false)
+  })
+
+  it('DSG-16 density is one stylesheet toggled by a root attribute, scaling space and type together', () => {
+    const { rerender } = render(<UIProvider selection={READER_DENSE} />)
+    expect(html().getAttribute('data-vida-density')).toBe('dense')
+    rerender(<UIProvider selection={{ ...READER_DENSE, density: 'calm' }} />)
+    expect(html().getAttribute('data-vida-density')).toBe('calm')
+    const sheets = document.querySelectorAll('style#vida-density-scale')
+    expect(sheets).toHaveLength(1)
+    const css = sheets[0].textContent ?? ''
+    expect(css).toMatch(/\[data-vida-density="dense"\]\{[^}]*--t-space-/)
+    expect(css).toMatch(/\[data-vida-density="dense"\] \.font_body[^{]*\{[^}]*--f-size-/)
+  })
+})
 
 describe('UIProvider — reduce motion', () => {
   it('writes data-vida-motion="reduce" when on, "full" when off or absent', () => {

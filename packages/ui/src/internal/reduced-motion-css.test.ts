@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest'
 import { MOTION_ATTR, MOTION_FULL, MOTION_REDUCE, reducedMotionCss } from './reduced-motion-css'
 
 describe('reducedMotionCss', () => {
-  it('emits the OS @media rule AND the in-app attribute twin, with the same declarations', () => {
+  it('emits the OS @media rule AND the in-app attribute twin, with the same declarations (DSG-12)', () => {
     expect(reducedMotionCss(['.a'], 'animation:none')).toBe(
       '@media (prefers-reduced-motion: reduce){.a{animation:none}}' + '[data-vida-motion="reduce"] .a{animation:none}',
     )
@@ -34,7 +34,7 @@ describe('B12 gate guard', () => {
     (f) => /\.(ts|tsx)$/.test(f) && !/\.(test|stories)\./.test(f) && !ALLOW.has(f),
   )
 
-  it('scans the package sources', () => {
+  it('scans the package sources (B12, DSG-12)', () => {
     expect(files).toContain('internal/dialog-styles.ts')
   })
 

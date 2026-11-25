@@ -14,13 +14,13 @@ describe('DS-4 tamagui.config (runtime)', () => {
     expect(config).toBeDefined()
   })
 
-  it('B13/§1.1-D — font size resolves, incl. the `true` default (role-keyed createFont passthrough guard)', () => {
+  it('B13 / DSG-18 / §1.1-D — font size resolves, incl. the `true` default (role-keyed createFont passthrough guard)', () => {
     expect(val(c.fonts?.body?.size?.body)).toBe(16) // role key present
     expect(val(c.fonts?.body?.size?.true)).toBe(16) // unstyled <Text> default resolves — the trap typecheck misses
     expect(val(c.fonts?.display?.size?.true)).toBe(16) // both families share the scale
   })
 
-  it('B14 — dark is a parallel theme: resolves DIFFERENTLY from light at runtime', () => {
+  it('B14 / DSG-18 — dark is a parallel theme: resolves DIFFERENTLY from light at runtime', () => {
     const light = val(c.themes?.light?.colorSurfacePrimary)
     const dark = val(c.themes?.dark?.colorSurfacePrimary)
     expect(light).toBe('#FBFBFA') // editorial paper (default preset; fe-codec S1 repointed off the DS-2 placeholder)
@@ -36,13 +36,13 @@ describe('DS-4 tamagui.config (runtime)', () => {
     expect(Object.keys(c.themes).length).toBe(26) // 6 base + 20 editorial light_/dark_<Comp>; per-preset comp sub-themes retired (accent-inherit fix — preset color reaches components via direct semantics, not sub-themes)
   })
 
-  it('fe-codec S2 — font family is the CSS-var seam (editorial family as fallback; provider swaps per preset)', () => {
+  it('fe-codec S2 — font family is the CSS-var seam (editorial family as fallback; provider swaps per preset, DSG-14)', () => {
     // Tamagui bakes this into the static .font_body/.font_display class; S3 overrides --vida-font-* per preset.
     expect(c.fonts?.body?.family).toBe("var(--vida-font-body, 'Spectral', Georgia, serif)")
     expect(c.fonts?.display?.family).toBe("var(--vida-font-display, 'Spectral', Georgia, serif)")
   })
 
-  it('B15 — animations derive from motion.ts (duration + easing, losslessly, via the CSS driver)', () => {
+  it('B15 / DSG-18 — animations derive from motion.ts (duration + easing, losslessly, via the CSS driver)', () => {
     const a = c.animations?.animations ?? c.animations
     expect(a.fast).toBe(`${motion.easing.out} ${motion.duration.fast}ms`)
     expect(a.slow).toBe(`${motion.easing.out} ${motion.duration.slow}ms`)
