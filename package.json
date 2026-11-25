@@ -181,6 +181,7 @@
         "apps/web/src/command-bar",
         "packages/ui/src/themes",
         "packages/ui/src/theme-resolution.test.ts",
+        "packages/ui/src/components",
         "packages/ui/src/provider.test.tsx",
         "packages/ui/src/tamagui.config.test.ts",
         "packages/ui/src/hooks/use-reduced-motion.test.tsx",
