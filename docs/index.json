@@ -24,7 +24,7 @@
       "anchors": [
         "packages/core/src/db/schema/"
       ],
-      "tokens": 55169,
+      "tokens": 55298,
       "path": "docs/core/decisions/ADR-002-data-model.md"
     },
     {
@@ -209,7 +209,7 @@
         "packages/core/src/db/schema/",
         "packages/core/src/db/migrations/"
       ],
-      "tokens": 1955,
+      "tokens": 2008,
       "path": "docs/core/decisions/ADR-016-storage-layer-rebuild-from-zero.md"
     },
     {
@@ -272,6 +272,26 @@
       "anchors": [],
       "tokens": 1873,
       "path": "docs/core/decisions/ADR-021-backend-service-tier-full-intent-first-horizontal.md"
+    },
+    {
+      "id": "ADR-022",
+      "kind": "decision",
+      "module": "platform",
+      "status": "active",
+      "supersedes": [],
+      "summary": "No table in the local schema declares a foreign key; a reference is a plain TEXT column, and its integrity lives in services and sync.",
+      "anchors": [
+        "packages/core/src/db/schema/",
+        "packages/core/src/db/migrations/"
+      ],
+      "links": [
+        "ADR-002",
+        "ADR-003",
+        "ADR-004",
+        "ADR-016"
+      ],
+      "tokens": 916,
+      "path": "docs/core/decisions/ADR-022-no-sql-foreign-keys.md"
     },
     {
       "id": "ARCH-overview",

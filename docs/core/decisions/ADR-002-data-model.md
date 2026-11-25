@@ -7,7 +7,7 @@ supersedes: []
 summary: The schema is a single-user local SQLite database with UUIDv7 text keys, Unix-ms integer timestamps, sync metadata on every syncable table and a plaintext/encrypted classification per field.
 anchors:
   - packages/core/src/db/schema/
-tokens: 55169
+tokens: 55298
 ---
 
 # ADR-002: Data Model
@@ -32,6 +32,7 @@ tokens: 55169
 - [ADR-014](ADR-014-external-data-ingestion-under-zero-knowledge.md) (2026-07-19) — **External Data Ingestion under Zero-Knowledge**: adds `import_staging` (reconcile-on-import) + encrypted `connection_config` (live-connection creds) + an integration-identity anchor & per-source normalization contract; **supplies external-data semantics** to ADR-010's `capability_grants.external_in_ok`/`external_out_ok` (also amends **ADR-010**). Three integration layers (native · public-reference bundled/bulk · user-managed self-service); server unconditionally blind, third-party leaks disclosed; egress a separate stricter guard.
 - [ADR-013](ADR-013-zero-knowledge-notification-delivery.md) (2026-07-19) — **Zero-Knowledge Notification Delivery**: extends **ADR-003's §12 device registry** with `push_token` + `push_platform` columns (no new table); adds `notifications` **delivery-audit** columns. Three-tier delivery (in-app · native local-scheduled · content-free wake-signal); **also amends ADR-001** (resolves the Phase-6.7 push deferral) + **ADR-003** (wake-relay server responsibility).
 - [ADR-012](ADR-012-points-economy-consequence-engine.md) (2026-07-19) — **Points Economy & Consequence Engine** (Gamification "the System"): adds `currencies` (multi-currency spine) + `store` (Finance-owned nestable Storage layer) + a `rules` table (headless automation); **generalizes `xp_history` → `consequence_ledger`** (currency-scoped ± earn/lock/spend/distribute; drops `xp_amount`/`action_type`/`level_before`/`level_after`); **splits `user_profile`** by single-writer (System keeps per-currency total + level; `check_in_streak*` → Check-ins; persona/modules/onboarding → Preferences; **PII stays ⚠**); makes `achievements.condition` a measurable predicate (ADR-011 seam + event stream); `level` → derived (no table). **Also extends ADR-004 §3.2.2** with four Additive-class effects (`grant_currency` · `lock_currency` · `move_money` · `surface_notification`) and **ADR-011 §3.7** with consequence-edge cycle detection.
+- [ADR-022](ADR-022-no-sql-foreign-keys.md) (2026-11-25, LIF-357) — **no foreign keys**: every `REFERENCES` clause and `ON DELETE` action in §5 is superseded; a reference is a plain `TEXT` column, and integrity lives in services and sync.
 
 **⚠ Consolidation status (D5 — ratified 2026-07-17, F4-body: D5-a = TRACK).** The schema in the body below is the **pre-amendment v1** and is **stale** against the amendments above. Per D5-a the consolidated re-write is **deferred to its own build-phase schema session** (the true owed set is large — not "~15 tables" but the ADR revise-pass slice **plus** the documented target schema of 19 modules **plus** cross-cutting sync deltas — and much of it is build-phase-deferred in-source) — it is **not** silently pending. The complete, durable **owed-tables ledger** now lives in **§5.20 (Pending Consolidation)** below: Stream (i) (the ADR-004…012 + F1/F6/F7 slice) fully enumerated, Stream (ii) (the 19 `docs/features/*/structure-data.md` docs) named as the build-session input set. Read **§5.20** alongside the body so the divergence stays visible. _(The decision's audit record: [ADR provenance](https://linear.app/personal-victor-oliver/document/adr-provenance-9e1a9f70e298).)_
 
@@ -1280,6 +1281,8 @@ DELETE:
 ---
 
 ## 5. Complete Schema
+
+> **Superseded in part by [ADR-022](ADR-022-no-sql-foreign-keys.md):** the `REFERENCES` clauses and `ON DELETE` actions below are not built; every reference is a plain `TEXT` column, and the behaviour an `ON DELETE` action encodes becomes a service rule in the owning module.
 
 ### 5.0 App State (Device-Local, Not Synced)
 
