@@ -4,6 +4,9 @@
 import { describe, it, expect } from 'vitest'
 import { config } from './tamagui.config'
 import { motion } from './themes/motion'
+import { readFileSync } from 'node:fs'
+import * as themes from './themes/themes'
+import { tokens } from './themes/tokens'
 
 const c = config as any
 const val = (x: any) => (x && typeof x === 'object' && 'val' in x ? x.val : x)
@@ -40,6 +43,17 @@ describe('DS-4 tamagui.config (runtime)', () => {
     // Tamagui bakes this into the static .font_body/.font_display class; S3 overrides --vida-font-* per preset.
     expect(c.fonts?.body?.family).toBe("var(--vida-font-body, 'Spectral', Georgia, serif)")
     expect(c.fonts?.display?.family).toBe("var(--vida-font-display, 'Spectral', Georgia, serif)")
+  })
+
+  it('DSG-18 the config composes only the generated tokens and themes, and authors no value of its own', () => {
+    expect(Object.keys(c.themes).sort()).toEqual(Object.keys(themes).sort())
+    for (const cat of Object.keys(tokens) as (keyof typeof tokens)[]) {
+      expect(Object.keys(c.tokens[cat]).sort(), cat).toEqual(Object.keys(tokens[cat]).sort())
+      for (const k of Object.keys(tokens[cat]))
+        expect(val(c.tokens[cat][k]), `${cat}.${k}`).toBe(val((tokens[cat] as any)[k]))
+    }
+    const src = readFileSync(new URL('./tamagui.config.ts', import.meta.url), 'utf8').replace(/\/\/[^\n]*/g, '')
+    expect(src).not.toMatch(/#[0-9a-fA-F]{3,8}\b|rgba?\(|cubic-bezier\(|\d+ms\b/)
   })
 
   it('B15 / DSG-18 — animations derive from motion.ts (duration + easing, losslessly, via the CSS driver)', () => {

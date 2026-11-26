@@ -2243,7 +2243,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 73,
+      "tokens": 67,
       "path": "docs/modules/shell/intent/DSG-1.md"
     },
     {
@@ -2257,7 +2257,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 71,
+      "tokens": 65,
       "path": "docs/modules/shell/intent/DSG-10.md"
     },
     {
@@ -2271,7 +2271,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 79,
+      "tokens": 73,
       "path": "docs/modules/shell/intent/DSG-11.md"
     },
     {
@@ -2285,7 +2285,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/internal/reduced-motion-css.test.ts"
       ],
-      "tokens": 71,
+      "tokens": 65,
       "path": "docs/modules/shell/intent/DSG-12.md"
     },
     {
@@ -2315,7 +2315,7 @@
         "packages/ui/src/provider.test.tsx",
         "packages/ui/src/tamagui.config.test.ts"
       ],
-      "tokens": 68,
+      "tokens": 62,
       "path": "docs/modules/shell/intent/DSG-14.md"
     },
     {
@@ -2329,7 +2329,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/provider.test.tsx"
       ],
-      "tokens": 74,
+      "tokens": 68,
       "path": "docs/modules/shell/intent/DSG-15.md"
     },
     {
@@ -2343,7 +2343,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/provider.test.tsx"
       ],
-      "tokens": 69,
+      "tokens": 63,
       "path": "docs/modules/shell/intent/DSG-16.md"
     },
     {
@@ -2357,7 +2357,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 78,
+      "tokens": 72,
       "path": "docs/modules/shell/intent/DSG-17.md"
     },
     {
@@ -2371,7 +2371,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/tamagui.config.test.ts"
       ],
-      "tokens": 86,
+      "tokens": 80,
       "path": "docs/modules/shell/intent/DSG-18.md"
     },
     {
@@ -2398,7 +2398,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 107,
+      "tokens": 101,
       "path": "docs/modules/shell/intent/DSG-2.md"
     },
     {
@@ -2542,7 +2542,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 77,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/DSG-3.md"
     },
     {
@@ -2686,7 +2686,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 53,
+      "tokens": 47,
       "path": "docs/modules/shell/intent/DSG-4.md"
     },
     {
@@ -2781,6 +2781,19 @@
       "path": "docs/modules/shell/intent/DSG-46.md"
     },
     {
+      "id": "DSG-47",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On native, components animate through the reanimated driver fed by the same motion tokens.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/shell/intent/DSG-47.md"
+    },
+    {
       "id": "DSG-5",
       "kind": "intent-row",
       "module": "shell",
@@ -2791,7 +2804,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 64,
+      "tokens": 58,
       "path": "docs/modules/shell/intent/DSG-5.md"
     },
     {
@@ -2805,7 +2818,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 90,
+      "tokens": 84,
       "path": "docs/modules/shell/intent/DSG-6.md"
     },
     {
@@ -2819,7 +2832,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 77,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/DSG-7.md"
     },
     {
@@ -2833,7 +2846,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 62,
+      "tokens": 56,
       "path": "docs/modules/shell/intent/DSG-8.md"
     },
     {
@@ -2847,7 +2860,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 67,
+      "tokens": 61,
       "path": "docs/modules/shell/intent/DSG-9.md"
     },
     {
@@ -7717,7 +7730,7 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 76 rows, 0 tested, 29 partly tested, 47 intent only.",
+      "summary": "Intended rules of shell: 77 rows, 17 tested, 12 partly tested, 48 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
