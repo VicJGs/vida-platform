@@ -4,8 +4,9 @@ import { cleanup, render } from '@testing-library/react'
 import { composeStories } from '@storybook/react-vite'
 
 // sigma reads WebGL2RenderingContext on import, which jsdom lacks. NeuralGraph's own no-WebGL guard renders its data
-// fallback here, so the stub is never constructed.
-vi.mock('sigma', () => ({ default: vi.fn() }))
+// fallback here, so the stub is never constructed; each test asserts that.
+const { Sigma } = vi.hoisted(() => ({ Sigma: vi.fn(() => ({ on: vi.fn(), kill: vi.fn() })) }))
+vi.mock('sigma', () => ({ default: Sigma }))
 
 // DSG-22 (LIF-866): every story of every component renders, one test per stories file. Lives in src/ because vitest
 // skips dot folders; preview.tsx is applied once in .storybook/vitest.setup.ts, so each story gets the same
@@ -31,6 +32,7 @@ describe('Storybook stories', () => {
         expect(container.childElementCount, `${component} / ${name}`).toBeGreaterThan(0)
         cleanup()
       }
+      expect(Sigma).not.toHaveBeenCalled()
     })
   }
 })
