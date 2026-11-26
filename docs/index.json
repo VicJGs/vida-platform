@@ -2240,9 +2240,10 @@
       "supersedes": [],
       "summary": "Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 65,
+      "tokens": 67,
       "path": "docs/modules/shell/intent/DSG-1.md"
     },
     {
@@ -2256,7 +2257,7 @@
         "docs/modules/shell/intent.yaml",
         "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 71,
+      "tokens": 65,
       "path": "docs/modules/shell/intent/DSG-10.md"
     },
     {
@@ -2267,9 +2268,10 @@
       "supersedes": [],
       "summary": "Motion tokens are four durations within the standard's bands and three easing curves plus linear, routed to the style variables and a typed motion export.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 70,
+      "tokens": 73,
       "path": "docs/modules/shell/intent/DSG-11.md"
     },
     {
@@ -2280,9 +2282,10 @@
       "supersedes": [],
       "summary": "Every animation has a reduced-motion path that changes state instantly, and animates transform, opacity or clip-path only.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/internal/reduced-motion-css.test.ts"
       ],
-      "tokens": 62,
+      "tokens": 65,
       "path": "docs/modules/shell/intent/DSG-12.md"
     },
     {
@@ -2308,9 +2311,11 @@
       "supersedes": [],
       "summary": "A preset's fonts switch through a style-variable seam set on the page root, instantly and with no transition.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/provider.test.tsx",
+        "packages/ui/src/tamagui.config.test.ts"
       ],
-      "tokens": 59,
+      "tokens": 62,
       "path": "docs/modules/shell/intent/DSG-14.md"
     },
     {
@@ -2321,9 +2326,10 @@
       "supersedes": [],
       "summary": "The scheme is set on the page root and the preset on the body, so dialogs and menus rendered outside the app tree take the preset too.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/provider.test.tsx"
       ],
-      "tokens": 65,
+      "tokens": 68,
       "path": "docs/modules/shell/intent/DSG-15.md"
     },
     {
@@ -2334,9 +2340,10 @@
       "supersedes": [],
       "summary": "Density (calm or dense) is one stylesheet toggled by an attribute, scaling the spacing band and the type together.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/provider.test.tsx"
       ],
-      "tokens": 60,
+      "tokens": 63,
       "path": "docs/modules/shell/intent/DSG-16.md"
     },
     {
@@ -2347,9 +2354,10 @@
       "supersedes": [],
       "summary": "Components read preset colours through the semantic tokens, and only signal colours, which don't change per preset, stay on the base component themes.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 69,
+      "tokens": 72,
       "path": "docs/modules/shell/intent/DSG-17.md"
     },
     {
@@ -2360,9 +2368,10 @@
       "supersedes": [],
       "summary": "The theme configuration composes only generated outputs, dark is a switchable theme set through the provider, and the web animates through style transitions fed by the motion tokens.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/tamagui.config.test.ts"
       ],
-      "tokens": 77,
+      "tokens": 80,
       "path": "docs/modules/shell/intent/DSG-18.md"
     },
     {
@@ -2386,9 +2395,10 @@
       "supersedes": [],
       "summary": "Tokens are three layers that never skip one; primitives are literals, semantics reference primitives and components reference semantics, and a literal outside the primitives, a skipped layer, a dangling reference or an empty layer fails the build with its cause named.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 99,
+      "tokens": 101,
       "path": "docs/modules/shell/intent/DSG-2.md"
     },
     {
@@ -2529,9 +2539,10 @@
       "supersedes": [],
       "summary": "Names follow each target's own scheme; a seed path a/b/c is the style variable --a-b-c, and theme tokens follow the theme library's flat categories.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 69,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/DSG-3.md"
     },
     {
@@ -2672,9 +2683,10 @@
       "supersedes": [],
       "summary": "The same seed always builds byte-identical outputs.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 44,
+      "tokens": 47,
       "path": "docs/modules/shell/intent/DSG-4.md"
     },
     {
@@ -2769,6 +2781,19 @@
       "path": "docs/modules/shell/intent/DSG-46.md"
     },
     {
+      "id": "DSG-47",
+      "kind": "intent-row",
+      "module": "shell",
+      "status": "active",
+      "supersedes": [],
+      "summary": "On native, components animate through the reanimated driver fed by the same motion tokens.",
+      "anchors": [
+        "docs/modules/shell/intent.yaml"
+      ],
+      "tokens": 54,
+      "path": "docs/modules/shell/intent/DSG-47.md"
+    },
+    {
       "id": "DSG-5",
       "kind": "intent-row",
       "module": "shell",
@@ -2776,9 +2801,10 @@
       "supersedes": [],
       "summary": "Every output is generated and marked as never hand-edited; the seed is the only editable input.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 55,
+      "tokens": 58,
       "path": "docs/modules/shell/intent/DSG-5.md"
     },
     {
@@ -2789,9 +2815,10 @@
       "supersedes": [],
       "summary": "The scales are complete with no arbitrary values; brand and neutral ten-step ramps, success and danger signals, seven type sizes, the 4-point spacing set, radius from small to full and three shadows.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 81,
+      "tokens": 84,
       "path": "docs/modules/shell/intent/DSG-6.md"
     },
     {
@@ -2802,9 +2829,10 @@
       "supersedes": [],
       "summary": "Dark is designed in parallel, never inverted; every semantic that differs in dark has its own dark entry, mapping one to one to design-tool modes.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 68,
+      "tokens": 71,
       "path": "docs/modules/shell/intent/DSG-7.md"
     },
     {
@@ -2815,9 +2843,10 @@
       "supersedes": [],
       "summary": "Every spacing primitive sits on the 4-point grid, and an off-grid one fails the build.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 53,
+      "tokens": 56,
       "path": "docs/modules/shell/intent/DSG-8.md"
     },
     {
@@ -2828,9 +2857,10 @@
       "supersedes": [],
       "summary": "Typography and shadow tokens skip the theme tokens and go to the style variables plus a typed export each.",
       "anchors": [
-        "docs/modules/shell/intent.yaml"
+        "docs/modules/shell/intent.yaml",
+        "packages/ui/src/themes/build-tokens.test.ts"
       ],
-      "tokens": 58,
+      "tokens": 61,
       "path": "docs/modules/shell/intent/DSG-9.md"
     },
     {
@@ -7700,7 +7730,7 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 76 rows, 0 tested, 13 partly tested, 63 intent only.",
+      "summary": "Intended rules of shell: 77 rows, 17 tested, 12 partly tested, 48 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],

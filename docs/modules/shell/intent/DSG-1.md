@@ -5,14 +5,14 @@ module: shell
 status: active
 supersedes: []
 summary: "Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice."
-anchors: [docs/modules/shell/intent.yaml]
-tokens: 65
+anchors: [docs/modules/shell/intent.yaml, packages/ui/src/themes/build-tokens.test.ts]
+tokens: 67
 generated: true
 ---
-# DSG-1 (intent only)
+# DSG-1 (tested)
 
 Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice.
 
-- Work: LIF-592
+- Proof: DSG-1 (tested by name)
 
 Generated from `docs/modules/shell/intent.yaml`; edit the ledger, never this unit.

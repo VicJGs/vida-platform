@@ -23,7 +23,8 @@
 # pipeline DS-1…DS-4 and fe-codec-theme S1…S3 in packages/ui. Mounted in routes.tsx: the strip with Bar 1 and the HUD,
 # the System panel body and the command bar. Not mounted: the module dock (the Modules panel shows a placeholder).
 # Proof: the tests name archived codes (EC-n, S2-BR-x, BR-S3-n, R5-BR-n, B1…B12, B-codec-n), never a BR rule in the form
-# check:rules reads nor a row ID, so every built row keeps a work link to LIF-592 (name the tests). No test was renamed.
+# check:rules reads nor a row ID, so a built row keeps a work link to LIF-592 until its tests carry the row ID and prove
+# the whole row. LIF-676 named the SH tests; LIF-678 named and completed the DSG tests and dropped their links.
 # Shell has no features folder (LIF-426), so the archive guard applies from the start.
 # Consumers (each in its owner's ledger): NP-27 (Trash in the System panel), PR-7, PR-18 and PR-20 (the flag, the dock's
 # preference reads, the page transition), SPC-12 (the scope list), GM-1 (the conditional entry), the Session HUD in the
@@ -173,40 +174,28 @@
 # DSG-1…DSG-12 = B1…B12.
 - id: DSG-1
   says: Every emitted value (a style variable, a theme token, a theme key) traces to exactly one seed entry, and no value is authored twice.
-  work: LIF-592
 - id: DSG-2
   says: Tokens are three layers that never skip one; primitives are literals, semantics reference primitives and components reference semantics, and a literal outside the primitives, a skipped layer, a dangling reference or an empty layer fails the build with its cause named.
-  work: LIF-592
 - id: DSG-3
   says: Names follow each target's own scheme; a seed path a/b/c is the style variable --a-b-c, and theme tokens follow the theme library's flat categories.
-  work: LIF-592
 - id: DSG-4
   says: The same seed always builds byte-identical outputs.
-  work: LIF-592
 - id: DSG-5
   says: Every output is generated and marked as never hand-edited; the seed is the only editable input.
-  work: LIF-592
 - id: DSG-6
   says: The scales are complete with no arbitrary values; brand and neutral ten-step ramps, success and danger signals, seven type sizes, the 4-point spacing set, radius from small to full and three shadows.
-  work: LIF-592
 - id: DSG-7
   says: Dark is designed in parallel, never inverted; every semantic that differs in dark has its own dark entry, mapping one to one to design-tool modes.
-  work: LIF-592
 - id: DSG-8
   says: Every spacing primitive sits on the 4-point grid, and an off-grid one fails the build.
-  work: LIF-592
 - id: DSG-9
   says: Typography and shadow tokens skip the theme tokens and go to the style variables plus a typed export each.
-  work: LIF-592
 - id: DSG-10
   says: Text on every surface meets the minimum text contrast in every preset and mode, checked in the build over the full matrix.
-  work: LIF-592
 - id: DSG-11
   says: Motion tokens are four durations within the standard's bands and three easing curves plus linear, routed to the style variables and a typed motion export.
-  work: LIF-592
 - id: DSG-12
   says: Every animation has a reduced-motion path that changes state instantly, and animates transform, opacity or clip-path only.
-  work: LIF-592
 # DSG-13…DSG-18 = B-codec-1, B-codec-2 with B-codec-5, B-codec-3, B-codec-4, B-codec-6, and DS-4 (B13, B14).
 # DSG-13: game is a module, not a theme (Victor 2026-10-21, appearance-pane.tsx), and the fourth family the pipeline
 # still builds is drift, retired (Victor 2026-11-13); its removal is LIF-595.
@@ -215,20 +204,14 @@
   work: LIF-595
 - id: DSG-14
   says: A preset's fonts switch through a style-variable seam set on the page root, instantly and with no transition.
-  work: LIF-592
 - id: DSG-15
   says: The scheme is set on the page root and the preset on the body, so dialogs and menus rendered outside the app tree take the preset too.
-  work: LIF-592
 - id: DSG-16
   says: Density (calm or dense) is one stylesheet toggled by an attribute, scaling the spacing band and the type together.
-  work: LIF-592
 - id: DSG-17
   says: Components read preset colours through the semantic tokens, and only signal colours, which don't change per preset, stay on the base component themes.
-  work: LIF-592
-# The native animation driver is deferred with the mobile app (docs/platform, the Sync & Venues run).
 - id: DSG-18
   says: The theme configuration composes only generated outputs, dark is a switchable theme set through the provider, and the web animates through style transitions fed by the motion tokens.
-  work: LIF-592
 # fe-codec-theme S2: four faces self-hosted, Spectral 400 preloaded (21.7 KB).
 - id: DSG-19
   says: Fonts are self-hosted with only the default face preloaded, and the chrome fonts ship with the chrome role.
@@ -320,3 +303,7 @@
 - id: DSG-46
   says: A side sheet slides in from the right and closes back to the view, as the Global Calendar's day panel does.
   work: LIF-783
+# Split from DSG-18 (Victor 2026-11-26, LIF-678): the native driver is reanimated per ADR-001, wired with the mobile app.
+- id: DSG-47
+  says: On native, components animate through the reanimated driver fed by the same motion tokens.
+  work: LIF-153

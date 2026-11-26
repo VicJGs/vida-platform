@@ -20,68 +20,76 @@ const valid = () => ({
 })
 
 describe('checkLayers — three-layer indirection (B2, fail loud)', () => {
-  it('accepts a valid primitive → semantic → component seed', () => {
+  it('accepts a valid primitive → semantic → component seed (DSG-2)', () => {
     expect(() => checkLayers(valid())).not.toThrow()
   })
 
-  it('rejects a primitive holding a reference', () => {
+  it('rejects a primitive holding a reference (DSG-2)', () => {
     const s = valid()
     s.primitive.color.blue['500'].value = '{color.brand.primary}'
     expect(() => checkLayers(s)).toThrow(PipelineError)
   })
 
-  it('rejects a semantic holding a raw literal (no reference)', () => {
+  it('rejects a semantic holding a raw literal (no reference, DSG-2)', () => {
     const s = valid()
     s.semantic.color.brand.primary.value = '#000000'
     expect(() => checkLayers(s)).toThrow(/raw literal/)
   })
 
-  it('rejects a layer-skip (component → primitive)', () => {
+  it('rejects a layer-skip (component → primitive, DSG-2)', () => {
     const s = valid()
     s.component.button.bg.value = '{color.blue.500}' // skips the semantic layer
     expect(() => checkLayers(s)).toThrow(/layer-skip/)
   })
 
-  it('rejects a dangling reference', () => {
+  it('rejects a dangling reference (DSG-2)', () => {
     const s = valid()
     s.semantic.color.brand.primary.value = '{color.does.not.exist}'
     expect(() => checkLayers(s)).toThrow(/dangling/)
   })
 
-  it('rejects an empty layer', () => {
+  it('rejects an empty layer (DSG-2)', () => {
     const s = valid()
     s.component = {} as typeof s.component
     expect(() => checkLayers(s)).toThrow(/empty seed layer/)
   })
+
+  it('rejects a path authored in two layers (B1, DSG-1)', () => {
+    const s = valid() as any
+    s.semantic.color.blue = { '500': { value: '{color.brand.primary}', type: 'color' } }
+    expect(() => checkLayers(s)).toThrow(/duplicate token path/)
+  })
 })
 
 describe('build — outputs (B1/B3/B4)', () => {
-  let css1: string, tokens1: string, themes1: string
+  let css1: string, tokens1: string, themes1: string, fonts1: string
 
   beforeAll(async () => {
     await build()
     css1 = read('variables.css')
     tokens1 = read('tokens.ts')
     themes1 = read('themes.ts')
+    fonts1 = read('fonts.ts')
   })
 
   it('the real seed validates', () => {
     expect(() => validate()).not.toThrow()
   })
 
-  it('B4 — a second build is byte-identical', async () => {
+  it('B4 / DSG-4 — a second build is byte-identical', async () => {
     await build()
     expect(read('variables.css')).toBe(css1)
     expect(read('tokens.ts')).toBe(tokens1)
     expect(read('themes.ts')).toBe(themes1)
+    expect(read('fonts.ts')).toBe(fonts1)
   })
 
-  it('B3 — CSS var names follow design.md §XII (a/b/c → --a-b-c) and chain via var()', () => {
+  it('B3 / DSG-3 — CSS var names follow design.md §XII (a/b/c → --a-b-c) and chain via var()', () => {
     expect(css1).toMatch(/--color-surface-primary:\s*var\(--color-editorial-neutral-50\);/) // semantic → chains via var() (editorial default)
     expect(css1).toMatch(/--color-editorial-neutral-50:\s*#FBFBFA;/) // primitive → literal
   })
 
-  it('B1 — every emitted CSS custom property traces to a seed path', () => {
+  it('B1 / DSG-1 — every emitted CSS custom property traces to a seed path', () => {
     const { byPath } = validate()
     const seedVars = new Set([...byPath.keys()].map((p: string) => `--${p.split('.').join('-')}`))
     const emitted = [...css1.matchAll(/^\s*(--[\w-]+):/gm)].map((m) => m[1])
@@ -89,10 +97,28 @@ describe('build — outputs (B1/B3/B4)', () => {
     for (const v of emitted) expect(seedVars.has(v)).toBe(true)
   })
 
-  it('tokens.ts emits createTokens with all five Tamagui categories + a `true` default', () => {
+  it('B1 / DSG-1 — every theme token and theme key traces to a seed path', () => {
+    const { byPath } = validate() as { byPath: Map<string, unknown> }
+    const seed = [...byPath.keys()].map((p: string) => p.split('.'))
+    const camel = (segs: string[]) => segs.map((x, i) => (i ? x[0].toUpperCase() + x.slice(1) : x)).join('')
+    const tokenKeys = new Set(seed.map((segs) => `${segs[0]}.${camel(segs.slice(1))}`))
+    const themeKeys = new Set(seed.map(camel))
+    const compKeys = new Set(seed.map((segs) => camel(segs.slice(1))))
+    for (const [, cat, body] of tokens1.matchAll(/(\w+): \{([^{}]*)\}/g)) {
+      for (const [, k] of body.matchAll(/"(\w+)":/g))
+        if (k !== 'true') expect(tokenKeys.has(`${cat}.${k}`), `${cat}.${k}`).toBe(true)
+    }
+    for (const [, name, body] of themes1.matchAll(/^export const (\w+) = \{([^\n]*)\}/gm)) {
+      const keys = /_[A-Z]/.test(name) ? compKeys : themeKeys
+      for (const [, k] of body.matchAll(/"(\w+)":/g)) expect(keys.has(k), `${name}.${k}`).toBe(true)
+    }
+  })
+
+  it('tokens.ts emits createTokens with all five Tamagui categories, flat, + a `true` default (DSG-3)', () => {
     expect(tokens1).toContain('createTokens({')
     for (const cat of ['color', 'space', 'size', 'radius', 'zIndex']) {
       expect(tokens1).toMatch(new RegExp(`${cat}: \\{[^}]*true:`))
+      expect(tokens1).toMatch(new RegExp(`${cat}: \\{[^{}]*\\}`)) // flat: no nested group inside a category
     }
   })
 
@@ -118,10 +144,11 @@ describe('build — outputs (B1/B3/B4)', () => {
     expect(darkBase).not.toBe(lightBase.replace(/\blight\b/, 'dark'))
   })
 
-  it('all outputs carry the GENERATED banner (B5)', () => {
+  it('all outputs carry the GENERATED banner (B5, DSG-5)', () => {
     expect(css1).toMatch(/GENERATED by build-tokens\.mjs/)
     expect(tokens1).toMatch(/GENERATED by build-tokens\.mjs/)
     expect(themes1).toMatch(/GENERATED by build-tokens\.mjs/)
+    expect(fonts1).toMatch(/GENERATED by build-tokens\.mjs/)
   })
 })
 
@@ -133,7 +160,7 @@ describe('B8 — 4pt grid (space namespace only, fail loud)', () => {
     expect(() => checkLayers(s)).not.toThrow()
   })
 
-  it('rejects an off-grid space primitive (5 is not a multiple of 4)', () => {
+  it('rejects an off-grid space primitive (5 is not a multiple of 4, DSG-8)', () => {
     const s = valid()
     ;(s.primitive as any).space = { '5': { value: 5, type: 'dimension' } }
     expect(() => checkLayers(s)).toThrow(/off-grid spacing|4pt grid/)
@@ -156,7 +183,7 @@ describe('B7/B9 — real seed outputs', () => {
     fonts = read('fonts.ts')
   })
 
-  it('B7 — dark is a parallel design: differs from light on color semantics', () => {
+  it('B7 / DSG-7 — dark is a parallel design: differs from light on color semantics', () => {
     const light = themes.match(/export const light = (\{.*?\})\n/s)?.[1] ?? ''
     const dark = themes.match(/export const dark = (\{.*?\})\n/s)?.[1] ?? ''
     expect(light).not.toBe('')
@@ -165,24 +192,78 @@ describe('B7/B9 — real seed outputs', () => {
     expect(dark).toContain('"colorSurfacePrimary": tokens.color.editorialNeutral900') // ink
   })
 
-  it('B9 — aux (font*/shadow) are SKIPPED from tokens.ts createTokens', () => {
+  it('DSG-7 each family is a parallel light and dark: same keys, and every dark difference is an authored dark entry', () => {
+    const camel = (p: string) =>
+      p
+        .split('.')
+        .map((x, i) => (i ? x[0].toUpperCase() + x.slice(1) : x))
+        .join('')
+    const entries = (node: any, path: string[] = [], out: string[] = []): string[] => {
+      for (const [k, v] of Object.entries(node ?? {}))
+        if (v && typeof v === 'object' && 'value' in (v as object)) out.push(camel([...path, k].join('.')))
+        else if (v && typeof v === 'object') entries(v, [...path, k], out)
+      return out
+    }
+    const theme = (name: string) =>
+      Object.fromEntries(
+        [
+          ...(themes.match(new RegExp(`export const ${name} = \\{([^\\n]*)\\}`))?.[1] ?? '').matchAll(
+            /"(\w+)": ([\w.]+)/g,
+          ),
+        ].map((m) => [m[1], m[2]]),
+      )
+    for (const [lightName, darkName, overlay] of [
+      ['light', 'dark', 'semantic.dark.json'],
+      ['light_reader', 'dark_reader', 'semantic.reader.dark.json'],
+      ['light_quietDesk', 'dark_quietDesk', 'semantic.quietDesk.dark.json'],
+    ]) {
+      const light = theme(lightName)
+      const dark = theme(darkName)
+      const authored = new Set(entries(JSON.parse(read(`tokens/${overlay}`))))
+      expect(Object.keys(dark).sort()).toEqual(Object.keys(light).sort())
+      const differs = Object.keys(light).filter((k) => light[k] !== dark[k])
+      expect(differs.length).toBeGreaterThan(0)
+      for (const k of differs) expect(authored.has(k), `${darkName}.${k} differs with no dark entry`).toBe(true)
+    }
+  })
+
+  it('B9 / DSG-9 — aux (font*/shadow) are SKIPPED from tokens.ts createTokens', () => {
     expect(tokens).not.toMatch(/fontSize|fontFamily|fontWeight|lineHeight|letterSpacing|shadow/)
     for (const cat of ['color', 'space', 'size', 'radius', 'zIndex']) {
       expect(tokens).toMatch(new RegExp(`${cat}: \\{`))
     }
   })
 
-  it('B9 — aux ARE emitted to variables.css + fonts.ts', () => {
+  it('B9 / DSG-9 — aux ARE emitted to variables.css + fonts.ts', () => {
     expect(css).toMatch(/--fontSize-body:\s*16;/)
     expect(css).toMatch(/--shadow-resting:/)
     expect(fonts).toMatch(/fontSize: \{[^}]*"body": 16/)
     expect(fonts).toMatch(/fontFamily: \{/)
   })
 
-  it('B8 (live) — every space primitive in the real seed is a multiple of 4', () => {
+  it('B8 / DSG-8 (live) — every space primitive in the real seed is a multiple of 4', () => {
     const spaceVars = [...css.matchAll(/^\s*--space-(\d+):\s*(\d+);/gm)].map((m) => Number(m[2]))
     expect(spaceVars.length).toBeGreaterThan(0)
     for (const v of spaceVars) expect(v % 4).toBe(0)
+  })
+})
+
+describe('B6 — complete scales (real seed)', () => {
+  it('DSG-6 the seed carries every scale whole: ten-step ramps, signals, seven type sizes, the 4pt set, radius sm…full, three shadows', () => {
+    const { byPath } = validate() as { byPath: Map<string, unknown> }
+    const keys = (prefix: string) =>
+      [...byPath.keys()].filter((p) => p.startsWith(`${prefix}.`)).map((p) => p.slice(prefix.length + 1))
+    const ramp = ['50', '100', '200', '300', '400', '500', '600', '700', '800', '900']
+    for (const preset of ['editorial', 'reader', 'quietDesk']) {
+      expect(keys(`color.${preset}.neutral`).sort()).toEqual([...ramp].sort())
+      expect(keys(`color.${preset}.accent`).sort()).toEqual([...ramp].sort())
+    }
+    expect(keys('color.success').length).toBeGreaterThan(0)
+    expect(keys('color.danger').length).toBeGreaterThan(0)
+    expect(keys('fontSize')).toHaveLength(7)
+    expect(keys('space').map(Number)).toEqual(expect.arrayContaining([0, 4, 8, 12, 16, 24, 32]))
+    expect(keys('radius')).toEqual(expect.arrayContaining(['sm', 'full']))
+    expect(keys('shadow').sort()).toEqual(['overlay', 'raised', 'resting'])
   })
 })
 
@@ -198,12 +279,12 @@ describe('B11 — motion tokens (duration/easing) routed to CSS + motion.ts, ski
     motion = read('motion.ts')
   })
 
-  it('css-vars presence (positive) — variables.css emits the exact motion lines', () => {
+  it('css-vars presence (positive) — variables.css emits the exact motion lines (DSG-11)', () => {
     expect(css).toContain('--duration-fast: 150;')
     expect(css).toContain('--easing-out: cubic-bezier(0, 0, 0.3, 1);')
   })
 
-  it('B11 — motion is ABSENT from tokens.ts createTokens and themes.ts (not a Tamagui category)', () => {
+  it('B11 / DSG-11 — motion is ABSENT from tokens.ts createTokens and themes.ts (not a Tamagui category)', () => {
     expect(tokens).not.toMatch(/duration|easing/)
     expect(themes).not.toMatch(/duration|easing/)
   })
@@ -213,7 +294,7 @@ describe('B11 — motion tokens (duration/easing) routed to CSS + motion.ts, ski
     expect(fonts).toMatch(/fontFamily: \{/) // fonts.ts still carries typography
   })
 
-  it('motion.ts exports { duration, easing } as typed const data with every seed value', () => {
+  it('motion.ts exports { duration, easing } as typed const data with every seed value (DSG-11)', () => {
     expect(motion).toMatch(/export const motion = \{/)
     expect(motion).toMatch(/\} as const/)
     // durations = unitless numbers (ms; reconciliation → DS-4)
@@ -226,11 +307,30 @@ describe('B11 — motion tokens (duration/easing) routed to CSS + motion.ts, ski
     expect(motion).toMatch(/"linear": "linear"/)
   })
 
-  it('B5 — motion.ts carries the GENERATED banner', () => {
+  it('DSG-11 four durations, each instant or inside a standard band, and three easing curves plus linear', () => {
+    const durations = [...(motion.match(/duration: \{([^}]*)\}/)?.[1] ?? '').matchAll(/"(\w+)": (\d+)/g)].map((m) =>
+      Number(m[2]),
+    )
+    expect(durations).toHaveLength(4)
+    const bands = [
+      [150, 200],
+      [250, 300],
+      [350, 450],
+    ]
+    for (const d of durations) expect(d === 0 || bands.some(([lo, hi]) => d >= lo && d <= hi), `${d}ms`).toBe(true)
+    const easings = [...(motion.match(/easing: \{([^}]*)\}/)?.[1] ?? '').matchAll(/"(\w+)": "([^"]+)"/g)].map(
+      (m) => m[2],
+    )
+    expect(easings.filter((e) => e.startsWith('cubic-bezier('))).toHaveLength(3)
+    expect(easings.filter((e) => e === 'linear')).toHaveLength(1)
+    expect(easings).toHaveLength(4)
+  })
+
+  it('B5 / DSG-5 — motion.ts carries the GENERATED banner', () => {
     expect(motion).toMatch(/GENERATED by build-tokens\.mjs/)
   })
 
-  it('B4 — a second build leaves motion.ts byte-identical', async () => {
+  it('B4 / DSG-4 — a second build leaves motion.ts byte-identical', async () => {
     await build()
     expect(read('motion.ts')).toBe(motion)
   })
@@ -247,7 +347,7 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
     shadow = read('shadow.ts')
   })
 
-  it('B9 — shadow is STILL absent from tokens.ts/themes.ts createTokens (typed export does not re-add it)', () => {
+  it('B9 / DSG-9 — shadow is STILL absent from tokens.ts/themes.ts createTokens (typed export does not re-add it)', () => {
     expect(tokens).not.toMatch(/shadow/)
     expect(themes).not.toMatch(/shadow/)
   })
@@ -256,7 +356,7 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
     expect(motion).not.toMatch(/shadow|rgba/)
   })
 
-  it('shadow.ts exports a FLAT { resting, raised, overlay } const with the primitive box-shadow literals', () => {
+  it('shadow.ts exports a FLAT { resting, raised, overlay } const with the primitive box-shadow literals (DSG-9)', () => {
     expect(shadow).toMatch(/export const shadow = \{/)
     expect(shadow).toMatch(/\} as const/)
     // flattened (single namespace) — no nested `shadow:` key
@@ -268,11 +368,11 @@ describe('shadow tokens routed to CSS + shadow.ts, still skipped from tokens.ts/
     expect(shadow).toMatch(/"overlay": "0 12px 32px -4px rgba\(15,23,42,0\.18\)"/)
   })
 
-  it('B5 — shadow.ts carries the GENERATED banner', () => {
+  it('B5 / DSG-5 — shadow.ts carries the GENERATED banner', () => {
     expect(shadow).toMatch(/GENERATED by build-tokens\.mjs/)
   })
 
-  it('B4 — a second build leaves shadow.ts byte-identical', async () => {
+  it('B4 / DSG-4 — a second build leaves shadow.ts byte-identical', async () => {
     await build()
     expect(read('shadow.ts')).toBe(shadow)
   })
@@ -311,7 +411,7 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     for (const name of allExports()) expect(['light', 'dark']).toContain(name.split('_')[0])
   })
 
-  it('component sub-themes = editorial base only (10 comps × light/dark = 20); per-preset comps retired (accent-inherit fix)', () => {
+  it('component sub-themes = editorial base only (10 comps × light/dark = 20); per-preset comps retired (accent-inherit fix, B-codec-6, DSG-17)', () => {
     // The accent-inherit fix (STRUCTURAL §XXVIII): components read preset color via DIRECT semantic tokens (which inherit
     // the active preset at component scope), so the per-preset `<mode>_<preset>_<Comp>` set is no longer generated — only
     // the editorial base `light_/dark_<Comp>` remain as scoping scaffolding (+ preset-invariant signal keys).
@@ -338,6 +438,27 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     }
   })
 
+  it('DSG-17 components read only signal colours off the base component themes; everything else is a semantic token', () => {
+    const subs = [...themes.matchAll(/^export const ((?:light|dark)_[A-Z]\w*) = \{([^\n]*)\}/gm)].map(
+      ([, name, body]) => ({
+        name,
+        map: Object.fromEntries([...body.matchAll(/"(\w+)": ([\w.]+)/g)].map((m) => [m[1], m[2]])),
+      }),
+    )
+    const subKeys = new Set(subs.flatMap((s) => Object.keys(s.map)))
+    const src = join(HERE, '..', 'components')
+    const files = readdirSync(src).filter((f) => /\.tsx?$/.test(f) && !/\.(test|stories)\./.test(f))
+    const read$ = new Set<string>()
+    for (const f of files)
+      for (const [, k] of readFileSync(join(src, f), 'utf8')
+        .replace(/\/\/[^\n]*|\/\*[\s\S]*?\*\//g, '')
+        .matchAll(/['"]\$(\w+)['"]/g))
+        if (subKeys.has(k)) read$.add(k)
+    expect(read$.size).toBeGreaterThan(0)
+    for (const k of read$)
+      for (const s of subs) if (k in s.map) expect(s.map[k], `${s.name}.${k}`).toMatch(/^(light|dark)\.colorSignal/)
+  })
+
   it("each preset resolves to ITS OWN ramp (not the default's)", () => {
     expect(grab('light')).toContain('editorialNeutral50')
     expect(grab('light_reader')).toContain('readerNeutral50')
@@ -351,7 +472,7 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     expect(grab('dark_reader')).not.toContain('editorialNeutral')
   })
 
-  it('per-preset component sub-themes are NOT emitted (accent-inherit fix — they never resolved + are superseded by direct-semantic consumption)', () => {
+  it('per-preset component sub-themes are NOT emitted (accent-inherit fix — they never resolved + are superseded by direct-semantic consumption, B-codec-6, DSG-17)', () => {
     expect(themes).not.toMatch(/export const light_reader_Button =/)
     expect(themes).not.toMatch(/export const dark_quietDesk_Card =/)
     // the editorial base comp sub-theme still references ITS base theme key (preset-invariant signal/scaffolding keys)
@@ -367,7 +488,7 @@ describe('B-codec-1 — preset theme families (scheme-first; Tamagui 2.6.2 law)'
     expect(fonts).toMatch(/fontSize: \{[^}]*"body": 16/) // shared scale unchanged
   })
 
-  it('every preset overlay entry is a ref resolving to a loaded primitive (no raw literal / dangling — B7)', () => {
+  it('every preset overlay entry is a ref resolving to a loaded primitive (no raw literal / dangling — B7, DSG-7)', () => {
     const { byPath } = validate() as { byPath: Map<string, unknown> }
     const files = [
       'semantic.dark.json',
