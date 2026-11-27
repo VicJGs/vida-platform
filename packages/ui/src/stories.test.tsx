@@ -20,7 +20,16 @@ const modules = import.meta.glob<Parameters<typeof composeStories>[0]>('./compon
 vi.setConfig({ testTimeout: 15000 })
 afterEach(cleanup)
 
+// DSG-22 (LIF-865): the component sources, lazily (nothing is imported), to prove each has a stories file beside it.
+const sources = import.meta.glob(['./components/*.tsx', '!./components/*.stories.tsx', '!./components/*.test.tsx'])
+
 describe('Storybook stories', () => {
+  it('DSG-22 every component has a stories file', () => {
+    const missing = Object.keys(sources).filter((path) => !(path.replace('.tsx', '.stories.tsx') in modules))
+    expect(Object.keys(sources).length).toBeGreaterThan(0)
+    expect(missing).toEqual([])
+  })
+
   for (const [path, module] of Object.entries(modules)) {
     const component = path.replace('./components/', '').replace('.stories.tsx', '')
 
