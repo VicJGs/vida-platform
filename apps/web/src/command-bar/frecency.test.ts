@@ -20,12 +20,12 @@ const hist = (
 })
 
 describe('rankByFrecency', () => {
-  it('ranks a pinned command above a higher-use non-pinned one', () => {
+  it('ranks a pinned command above a higher-use non-pinned one (SH-24)', () => {
     const ranked = rankByFrecency([cmd('a'), cmd('b')], [hist('a', 1, 1000, 1), hist('b', 99, 1000, 0)], 1000)
     expect(ranked.map((c) => c.id)).toEqual(['a', 'b'])
   })
 
-  it('ranks a more-recent command above an older one at equal use_count', () => {
+  it('ranks a more-recent command above an older one at equal use_count (SH-24)', () => {
     const ranked = rankByFrecency([cmd('old'), cmd('new')], [hist('old', 5, 0), hist('new', 5, 900)], 1000)
     expect(ranked.map((c) => c.id)).toEqual(['new', 'old'])
   })

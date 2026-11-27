@@ -4,7 +4,7 @@ import { useAppShellUIStore } from '../stores/app-shell-ui-store'
 import type { CommandProvider } from './types'
 
 describe('createCommandRegistry', () => {
-  it('merges commands from multiple providers (8 nav + 1 shell action)', () => {
+  it('merges commands from multiple providers (8 nav + 1 shell action, SH-24)', () => {
     const registry = createCommandRegistry()
     registry.register(navProvider)
     registry.register(shellActionsProvider)
@@ -13,7 +13,7 @@ describe('createCommandRegistry', () => {
     expect(commands.some((c) => c.id === 'action:toggle-sidebar')).toBe(true)
   })
 
-  it('applies frecency ranking so a pinned command leads', () => {
+  it('applies frecency ranking so a pinned command leads (SH-24)', () => {
     const registry = createCommandRegistry()
     const provider: CommandProvider = {
       id: 'test',
@@ -41,7 +41,7 @@ describe('createCommandRegistry', () => {
     expect(useAppShellUIStore.getState().isSidebarOpen).toBe(!before)
   })
 
-  it('createNavProvider(prefs) feeds the registry the filtered nav commands (R5)', () => {
+  it('createNavProvider(prefs) feeds the registry the filtered nav commands (R5, SH-24)', () => {
     const registry = createCommandRegistry()
     registry.register(createNavProvider({ visibility: { tasks: false }, names: { notes: 'Pages' } }))
     const commands = registry.collect()

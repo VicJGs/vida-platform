@@ -34,7 +34,7 @@ describe('useScopeStore', () => {
   it('defaults to global (null)', () => {
     expect(useScopeStore.getState().activeSpaceId).toBeNull()
   })
-  it('setScope sets and clears the active space', () => {
+  it('setScope sets and clears the active space (SH-16)', () => {
     useScopeStore.getState().setScope('s1')
     expect(useScopeStore.getState().activeSpaceId).toBe('s1')
     useScopeStore.getState().setScope(null)
@@ -43,33 +43,33 @@ describe('useScopeStore', () => {
 })
 
 describe('ScopeSelector — read states', () => {
-  it('loading → a busy trigger', () => {
+  it('loading → a busy trigger (SH-16)', () => {
     renderSelector(() => new Promise(() => {})) // never resolves
     expect(screen.getByLabelText('Loading spaces')).toBeTruthy()
   })
 
-  it('empty [] → global-only, disabled', async () => {
+  it('empty [] → global-only, disabled (SH-16)', async () => {
     renderSelector(() => Promise.resolve([]))
     const btn = await screen.findByLabelText('Scope: All (no spaces yet)')
     expect(btn).toBeTruthy()
     expect((btn as HTMLButtonElement).disabled).toBe(true)
   })
 
-  it('error → calm role=status, still global', async () => {
+  it('error → calm role=status, still global (SH-16)', async () => {
     renderSelector(() => Promise.reject(new Error('boom')))
     const status = await screen.findByRole('status')
     expect(status.textContent).toContain('offline')
     expect(screen.getByLabelText('Scope: All (spaces unavailable)')).toBeTruthy()
   })
 
-  it('populated → a switchable Menu (All + each Space)', async () => {
+  it('populated → a switchable Menu (All + each Space, SH-16)', async () => {
     renderSelector(() => Promise.resolve(SPACES))
     fireEvent.click(await screen.findByRole('button', { name: 'Spaces: All' }))
     await waitFor(() => expect(screen.getByText('Work')).toBeTruthy())
     expect(screen.getByText('Personal')).toBeTruthy()
   })
 
-  it('selecting a Space sets the scope; the trigger reflects it', async () => {
+  it('selecting a Space sets the scope; the trigger reflects it (SH-16)', async () => {
     renderSelector(() => Promise.resolve(SPACES))
     fireEvent.click(await screen.findByRole('button', { name: 'Spaces: All' }))
     fireEvent.click(await screen.findByText('Work'))

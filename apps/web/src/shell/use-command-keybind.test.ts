@@ -19,7 +19,7 @@ function dispatchKey(init: KeyboardEventInit): KeyboardEvent {
 }
 
 describe('useCommandKeybind', () => {
-  it('⌘K (mac) opens the store + preventDefaults', () => {
+  it('⌘K (mac) opens the store + preventDefaults (SH-23)', () => {
     vi.stubGlobal('navigator', { platform: 'MacIntel', userAgent: '' })
     renderHook(() => useCommandKeybind())
     const ev = dispatchKey({ key: 'k', metaKey: true })
@@ -27,7 +27,7 @@ describe('useCommandKeybind', () => {
     expect(ev.defaultPrevented).toBe(true)
   })
 
-  it('Ctrl+K (other) opens the store', () => {
+  it('Ctrl+K (other) opens the store (SH-23)', () => {
     vi.stubGlobal('navigator', { platform: 'Win32', userAgent: '' })
     renderHook(() => useCommandKeybind())
     dispatchKey({ key: 'k', ctrlKey: true })

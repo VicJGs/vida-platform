@@ -22,14 +22,14 @@ function renderBar(ui: React.ReactNode) {
 }
 
 describe('GlobalBar1 assembly', () => {
-  it('strip (full ≥768) = scope + the surfaces strip as icon-nav links', async () => {
+  it('strip (full ≥768) = scope + the surfaces strip as icon-nav links (SH-13, SH-14)', async () => {
     const { getByRole, findByLabelText } = await renderBar(<GlobalBar1 variant="strip" __bp="desktop" />)
     expect(await findByLabelText(/Scope: All/)).not.toBeNull() // scope present (stub [] → empty-state trigger)
     expect(getByRole('button', { name: 'Search' })).not.toBeNull() // surfaces strip Search launcher
     expect(getByRole('link', { name: 'Home' })).not.toBeNull()
   })
 
-  it('strip (condensed ≤375) = globe-only scope + More-only overflow (no inline links; #16 strip-budget)', async () => {
+  it('strip (condensed ≤375) = globe-only scope + More-only overflow (no inline links; #16 strip-budget, SH-13)', async () => {
     const { getByRole, queryByRole, findByLabelText } = await renderBar(<GlobalBar1 variant="strip" __bp="mobile" />)
     expect(await findByLabelText(/Scope: All/)).not.toBeNull()
     expect(queryByRole('button', { name: 'Search' })).toBeNull() // folded into More (Victor 2026-10-18)
@@ -37,7 +37,7 @@ describe('GlobalBar1 assembly', () => {
     expect(queryByRole('link', { name: 'Home' })).toBeNull() // surfaces are in the overflow, not inline links
   })
 
-  it('panel = scope + the labeled surfaces nav landmark', async () => {
+  it('panel = scope + the labeled surfaces nav landmark (SH-13)', async () => {
     const { getByRole, findByLabelText } = await renderBar(<GlobalBar1 variant="panel" />)
     expect(await findByLabelText(/Scope: All/)).not.toBeNull()
     expect(getByRole('navigation', { name: 'Global surfaces' })).not.toBeNull()

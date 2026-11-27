@@ -88,12 +88,10 @@
 - id: SH-13
   says: The strip carries the wordmark, the System and Modules toggles (icons only on a phone), Bar 1 and the session status slot; Bar 1 lives in both homes, condensed in the strip and expanded in the System panel.
   uses: [sessions]
-  work: LIF-592
 # EC-3, EC-6.
 - id: SH-14
   says: The six global surfaces (Home, Calendar, Search, Notifications, Settings, Graph) show in the strip as icons from tablet width up and behind a More menu on a phone whose first row is Search; Search is always the command bar, never a link, and the current surface is marked.
   uses: [journals, calendar, notifications, preferences]
-  work: LIF-592
 # EC-4 and its re-pin.
 - id: SH-15
   says: The System panel lists the scope selector above the six surfaces and Trash as one labeled list.
@@ -103,7 +101,6 @@
 - id: SH-16
   says: The scope selector shows the active Space or All (no scope) and switches between them, and it degrades instead of failing; no Spaces gives a disabled All, loading a busy control, and an error a calm status with All kept.
   uses: [spaces]
-  work: LIF-592
 # Seam contract E, N-a; stubSpacesScope returns no Spaces.
 - id: SH-17
   says: The scope list reads Spaces' list of Spaces, a scope pointing at a deleted Space falls back to All, and the chosen scope narrows every view that reads it.
@@ -137,11 +134,9 @@
 # The command bar. command-bar-and-search.md, ui-4 S3, preferences-rescope R5.
 - id: SH-23
   says: The command bar opens on Cmd or Ctrl and K from anywhere, lists commands while the query is empty and searches once it isn't, and moves with the arrows, runs on Enter and closes on Escape, with focus in on open and back to the trigger on close.
-  work: LIF-592
 - id: SH-24
   says: Commands come from providers, never a fixed list; nav commands derive from the module map and follow the user's hidden and renamed modules, pinned commands rank first and then by frecency from the command history, each run is recorded after it runs, and Alt+P pins or unpins the active command with a spoken confirmation.
   uses: [preferences]
-  work: LIF-592
 - id: SH-25
   says: Each module contributes its own action commands to the command bar through the provider seam.
   work: LIF-594

@@ -7730,7 +7730,7 @@
       "module": "shell",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of shell: 77 rows, 17 tested, 12 partly tested, 48 intent only.",
+      "summary": "Intended rules of shell: 77 rows, 22 tested, 12 partly tested, 43 intent only.",
       "anchors": [
         "docs/modules/shell/intent.yaml"
       ],
@@ -12700,9 +12700,11 @@
       "supersedes": [],
       "summary": "The strip carries the wordmark, the System and Modules toggles (icons only on a phone), Bar 1 and the session status slot; Bar 1 lives in both homes, condensed in the strip and expanded in the System panel.",
       "anchors": [
+        "apps/web/src/shell/app-shell.test.tsx",
+        "apps/web/src/shell/global-bar-1.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 87,
+      "tokens": 90,
       "path": "docs/modules/shell/intent/SH-13.md"
     },
     {
@@ -12713,9 +12715,11 @@
       "supersedes": [],
       "summary": "The six global surfaces (Home, Calendar, Search, Notifications, Settings, Graph) show in the strip as icons from tablet width up and behind a More menu on a phone whose first row is Search; Search is always the command bar, never a link, and the current surface is marked.",
       "anchors": [
+        "apps/web/src/shell/global-bar-1.test.tsx",
+        "apps/web/src/shell/global-surfaces-strip.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 113,
+      "tokens": 116,
       "path": "docs/modules/shell/intent/SH-14.md"
     },
     {
@@ -12739,9 +12743,10 @@
       "supersedes": [],
       "summary": "The scope selector shows the active Space or All (no scope) and switches between them, and it degrades instead of failing; no Spaces gives a disabled All, loading a busy control, and an error a calm status with All kept.",
       "anchors": [
+        "apps/web/src/shell/scope-selector.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 90,
+      "tokens": 93,
       "path": "docs/modules/shell/intent/SH-16.md"
     },
     {
@@ -12847,9 +12852,12 @@
       "supersedes": [],
       "summary": "The command bar opens on Cmd or Ctrl and K from anywhere, lists commands while the query is empty and searches once it isn't, and moves with the arrows, runs on Enter and closes on Escape, with focus in on open and back to the trigger on close.",
       "anchors": [
+        "apps/web/src/shell/command-bar.test.tsx",
+        "apps/web/src/shell/use-command-keybind.test.ts",
+        "apps/web/src/shell/use-command-search.test.ts",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 93,
+      "tokens": 95,
       "path": "docs/modules/shell/intent/SH-23.md"
     },
     {
@@ -12860,9 +12868,13 @@
       "supersedes": [],
       "summary": "Commands come from providers, never a fixed list; nav commands derive from the module map and follow the user's hidden and renamed modules, pinned commands rank first and then by frecency from the command history, each run is recorded after it runs, and Alt+P pins or unpins the active command with a spoken confirmation.",
       "anchors": [
+        "apps/web/src/command-bar/frecency.test.ts",
+        "apps/web/src/command-bar/nav-commands.test.ts",
+        "apps/web/src/command-bar/registry.test.ts",
+        "apps/web/src/shell/command-bar.test.tsx",
         "docs/modules/shell/intent.yaml"
       ],
-      "tokens": 117,
+      "tokens": 120,
       "path": "docs/modules/shell/intent/SH-24.md"
     },
     {
