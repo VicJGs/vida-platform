@@ -4,7 +4,7 @@ import { deriveNavCommands } from './nav-commands'
 describe('deriveNavCommands', () => {
   const commands = deriveNavCommands()
 
-  it('derives exactly 8 nav commands (6 module routes + /calendar + /graph; 3 overlaps deduped)', () => {
+  it('derives exactly 8 nav commands (6 module routes + /calendar + /graph; 3 overlaps deduped, SH-24)', () => {
     // MODULE_MAP non-null routePaths = 6 (modules without a built route wait in PENDING_MODULES, LIF-351);
     // GLOBAL_SURFACES add /calendar + /graph; /·/notifications·/settings dedupe.
     expect(commands).toHaveLength(8)
@@ -53,7 +53,7 @@ describe('deriveNavCommands with nav prefs', () => {
     names: { notes: 'Pages', preferences: 'Nope' },
   }
 
-  it('omits a hidden module and relabels a renamed one; the id (history key) is unchanged', () => {
+  it('omits a hidden module and relabels a renamed one; the id (history key) is unchanged (SH-24)', () => {
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     const commands = deriveNavCommands(undefined, undefined, prefs)
     const ids = commands.map((c) => c.id)

@@ -73,7 +73,7 @@ describe('CommandBar', () => {
     expect(screen.queryByRole('combobox')).toBeNull()
   })
 
-  it('opens with focus IN the combobox input; options are non-focusable (single tab stop, B1)', async () => {
+  it('opens with focus IN the combobox input; options are non-focusable (single tab stop, B1, SH-23)', async () => {
     openBar()
     renderBar()
     const input = screen.getByRole('combobox')
@@ -83,7 +83,7 @@ describe('CommandBar', () => {
     }
   })
 
-  it('command mode: renders the ranked command list as a listbox of options', () => {
+  it('command mode: renders the ranked command list as a listbox of options (SH-23)', () => {
     openBar()
     renderBar()
     expect(screen.getByRole('listbox')).not.toBeNull()
@@ -115,7 +115,7 @@ describe('CommandBar', () => {
     expect(useCommandBarUIStore.getState().isOpen).toBe(false)
   })
 
-  it('↑/↓ move the virtual active option; Enter executes it', () => {
+  it('↑/↓ move the virtual active option; Enter executes it (SH-23)', () => {
     openBar()
     renderBar()
     const input = screen.getByRole('combobox')
@@ -128,7 +128,7 @@ describe('CommandBar', () => {
     expect(navigateSpy).toHaveBeenCalledWith('/notes')
   })
 
-  it('search mode (non-empty query): a loud role=status message, no listbox, no aria-activedescendant (B2)', async () => {
+  it('search mode (non-empty query): a loud role=status message, no listbox, no aria-activedescendant (B2, SH-23)', async () => {
     openBar({ query: 'meeting', mode: 'search' })
     renderBar()
     await waitFor(() =>
@@ -140,16 +140,37 @@ describe('CommandBar', () => {
     expect(input.getAttribute('aria-expanded')).toBe('false')
   })
 
-  it('Esc closes the overlay', () => {
+  it('Esc closes the overlay (SH-23)', () => {
     openBar()
     renderBar()
     fireEvent.keyDown(screen.getByRole('combobox'), { key: 'Escape' })
     expect(useCommandBarUIStore.getState().isOpen).toBe(false)
   })
 
+  it('closing returns focus to the trigger that opened it (SH-23)', async () => {
+    const Prefs = createPrefsWrapper()
+    render(
+      <Prefs>
+        <UIProvider>
+          <button type="button" onClick={() => openBar()}>
+            Search
+          </button>
+          <CommandBar />
+        </UIProvider>
+      </Prefs>,
+    )
+    const trigger = screen.getByRole('button', { name: 'Search' })
+    trigger.focus()
+    fireEvent.click(trigger)
+    const input = await screen.findByRole('combobox')
+    await waitFor(() => expect(document.activeElement).toBe(input))
+    fireEvent.keyDown(input, { key: 'Escape' })
+    await waitFor(() => expect(document.activeElement).toBe(trigger))
+  })
+
   // ---- preferences-rescope R5 ----------------------------------------------------------------------------------
 
-  it('is reactive: hiding or renaming a module updates the open list without a remount (D12)', async () => {
+  it('is reactive: hiding or renaming a module updates the open list without a remount (D12, SH-24)', async () => {
     openBar()
     renderBar()
     await prefsLoaded()
@@ -163,7 +184,7 @@ describe('CommandBar', () => {
     expect(screen.getByRole('option', { name: 'Settings' })).not.toBeNull() // EC-8
   })
 
-  it('ranks by history: a pinned command leads, then the most used', async () => {
+  it('ranks by history: a pinned command leads, then the most used (SH-24)', async () => {
     testPreferences.state.history = [
       {
         command_key: 'nav:/tasks',
@@ -207,7 +228,7 @@ describe('CommandBar', () => {
     expect(screen.queryByText(/fail|error|couldn/i)).toBeNull()
   })
 
-  it('runs the command BEFORE recording it (best-effort, after run)', async () => {
+  it('runs the command BEFORE recording it (best-effort, after run, SH-24)', async () => {
     const record = vi.spyOn(testPreferences.svc, 'recordCommand')
     openBar()
     renderBar()
@@ -218,7 +239,7 @@ describe('CommandBar', () => {
     expect(navigateSpy.mock.invocationCallOrder[0]).toBeLessThan(record.mock.invocationCallOrder[0]!)
   })
 
-  it('record is called only after the command ran and the bar closed (it can never block run)', () => {
+  it('record is called only after the command ran and the bar closed (it can never block run, SH-24)', () => {
     const seenAtRecord: { ran: boolean; open: boolean }[] = []
     vi.spyOn(commandHistory, 'record').mockImplementation(() => {
       seenAtRecord.push({ ran: navigateSpy.mock.calls.length > 0, open: useCommandBarUIStore.getState().isOpen })
@@ -229,7 +250,7 @@ describe('CommandBar', () => {
     expect(seenAtRecord).toEqual([{ ran: true, open: false }])
   })
 
-  it('a failed record never blocks the command', async () => {
+  it('a failed record never blocks the command (SH-24)', async () => {
     testPreferences.state.failHistory = 'write'
     const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
     openBar()
@@ -241,7 +262,7 @@ describe('CommandBar', () => {
     warn.mockRestore()
   })
 
-  it('Alt+P (by key position — mac Option gives "π") pins the active option and announces it', async () => {
+  it('Alt+P (by key position — mac Option gives "π") pins the active option and announces it (SH-24)', async () => {
     openBar()
     renderBar()
     expect(liveRegion()).not.toBeNull() // mounted, empty, before the first pin
@@ -274,7 +295,7 @@ describe('CommandBar', () => {
     expect(navigateSpy).toHaveBeenCalledWith('/graph')
   })
 
-  it('two quick Alt+P presses pin then unpin (the pending overlay, not the stale cache)', async () => {
+  it('two quick Alt+P presses pin then unpin (the pending overlay, not the stale cache, SH-24)', async () => {
     openBar()
     renderBar()
     pinKey()

@@ -6,12 +6,12 @@ import { stubSearchProvider } from '../command-bar/search-provider'
 import type { SearchOutcome, SearchProvider } from '../command-bar/types'
 
 describe('useCommandSearch', () => {
-  it('an empty query is idle (command mode — no provider call)', () => {
+  it('an empty query is idle (command mode — no provider call, SH-23)', () => {
     const { result } = renderHook(() => useCommandSearch('', stubSearchProvider))
     expect(result.current.status).toBe('idle')
   })
 
-  it('a non-empty query resolves to the stub outcome (search-unavailable in M1.0)', async () => {
+  it('a non-empty query resolves to the stub outcome (search-unavailable in M1.0, SH-23)', async () => {
     const { result } = renderHook(() => useCommandSearch('meeting notes', stubSearchProvider))
     await waitFor(() => expect(result.current.status).toBe('search-unavailable'))
     expect(result.current.message).toMatch(/DB-8/)

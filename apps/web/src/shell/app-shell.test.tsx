@@ -49,11 +49,20 @@ describe('AppShell — CODEC frame (S2)', () => {
     expect(overlay?.tagName.toLowerCase()).toBe('div')
   })
 
-  it('renders the serif wordmark and the System/Modules panel toggles', async () => {
+  it('renders the serif wordmark and the System/Modules panel toggles (SH-13)', async () => {
     await renderShell('desktop')
     expect(screen.getByText('Vida')).not.toBeNull()
     expect(screen.getByRole('button', { name: 'System' })).not.toBeNull()
     expect(screen.getByRole('button', { name: 'Modules' })).not.toBeNull()
+  })
+
+  it('on a phone the System/Modules toggles are icons only, the name on aria-label (SH-13)', async () => {
+    await renderShell('mobile')
+    for (const name of ['System', 'Modules']) {
+      const toggle = screen.getByRole('button', { name })
+      expect(toggle.getAttribute('aria-label')).toBe(name)
+      expect(toggle.textContent).toBe('')
+    }
   })
 
   it('a panel toggle is a disclosure — aria-expanded flips + aria-controls points at the docked panel (S3)', async () => {
@@ -83,7 +92,7 @@ describe('AppShell — CODEC frame (S2)', () => {
     expect(screen.getByRole('complementary', { name: 'System' })).not.toBeNull()
   })
 
-  it('renders the #15/#16/#17 injection slots when provided (empty-but-functional in #14)', async () => {
+  it('renders the #15/#16/#17 injection slots when provided (empty-but-functional in #14; Bar 1 + the session status slot, SH-13)', async () => {
     await renderShell('desktop', {
       bar1Slot: <div data-testid="bar1">scope</div>,
       hudSlot: <div data-testid="hud">hud</div>,
