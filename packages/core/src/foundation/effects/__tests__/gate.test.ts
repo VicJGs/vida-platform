@@ -1,6 +1,7 @@
 // ============================================================================
 // XS-effect-rail #32 · S2 — fire-time validation gate (XCU-22)
 // Pure-fn Verification Gate — no live store (a live-store integration lands in S3).
+// EF-9 (docs/core/effects BR-8):
 //   A1 sensitive + unconsented → throws · A2 sensitive + consented → passes
 //   A3 non-sensitive → passes · A4 undefined class → passes
 //   A5 projection + sensitive → passes (short-circuit) · A6 taxonomy re-export
@@ -11,33 +12,33 @@ import { SENSITIVE_MODULE_CLASSES } from '../../capability'
 import { assertEffectPermitted, EffectConsentMissing } from '../gate'
 
 describe('XS-effect-rail #32 · S2 — assertEffectPermitted (XCU-22)', () => {
-  it('A1 — sensitive target not in consented set → throws EffectConsentMissing', () => {
+  it("EF-9 the consent gate rejects a sensitive effect the caller's set lacks (A1, EffectConsentMissing)", () => {
     expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'finance')).toThrow(
       EffectConsentMissing,
     )
   })
 
-  it('A2 — sensitive target in consented set → passes', () => {
+  it('EF-9 A2 — sensitive target in consented set → passes', () => {
     expect(() => assertEffectPermitted({ consentedSensitiveModules: ['finance'] }, 'award_xp', 'finance')).not.toThrow()
   })
 
-  it('A3 — non-sensitive target → passes regardless of consent', () => {
+  it('EF-9 A3 — non-sensitive target → passes regardless of consent', () => {
     expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', 'gamification')).not.toThrow()
   })
 
-  it('A4 — undefined moduleClass → passes', () => {
+  it('EF-9 A4 — undefined moduleClass → passes', () => {
     expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'award_xp', undefined)).not.toThrow()
   })
 
-  it('A5 — projection effect with a sensitive class → passes (short-circuit, BR-S2-4)', () => {
+  it('EF-9 A5 — projection effect with a sensitive class → passes (short-circuit)', () => {
     expect(() => assertEffectPermitted({ consentedSensitiveModules: [] }, 'surface_journal', 'health')).not.toThrow()
   })
 
-  it('A6 — SENSITIVE_MODULE_CLASSES is re-exported from the capability barrel', () => {
+  it('EF-9 A6 — SENSITIVE_MODULE_CLASSES is re-exported from the capability barrel', () => {
     expect(SENSITIVE_MODULE_CLASSES).toEqual(['finance', 'health'])
   })
 
-  it('carries the offending effect + module on the typed error', () => {
+  it('EF-9 carries the offending effect + module on the typed error', () => {
     try {
       assertEffectPermitted({ consentedSensitiveModules: ['health'] }, 'award_xp', 'finance')
       expect.unreachable('should have thrown')

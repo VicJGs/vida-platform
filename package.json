@@ -83,6 +83,7 @@
       "sessions": [
         "packages/core/src/services/sessions",
         "packages/core/src/foundation/sessions",
+        "packages/core/src/foundation/effects",
         "apps/web/src/session-hud",
         "apps/web/src/session-runtime",
         "apps/web/src/flow"
