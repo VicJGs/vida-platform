@@ -3892,9 +3892,10 @@
       "supersedes": [],
       "summary": "An effect applies at most once per effect_event_id, effect type and target; a second identical event applies nothing, fires no handler and returns applied false.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 72,
+      "tokens": 75,
       "path": "docs/modules/sessions/intent/EF-1.md"
     },
     {
@@ -4009,9 +4010,10 @@
       "supersedes": [],
       "summary": "A fan-out of several effects is replay-safe, not all-or-none; each effect owns its transaction and ledger row, and a failure part-way is recovered by replaying the event, never by rolling back the effects already applied.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 88,
+      "tokens": 90,
       "path": "docs/modules/sessions/intent/EF-18.md"
     },
     {
@@ -4035,9 +4037,10 @@
       "supersedes": [],
       "summary": "The effect_event_id is derived from the event's stable identity (subject natural key, transition, effect type), so the same outcome gets the same id on any device and on every retry; it is never random.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 83,
+      "tokens": 85,
       "path": "docs/modules/sessions/intent/EF-2.md"
     },
     {
@@ -4061,9 +4064,10 @@
       "supersedes": [],
       "summary": "Every non-projection effect is applied only through the handler registered for its type; an effect with no handler fails closed with NoEffectHandler and writes nothing, never a silent drop or a direct table write.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 85,
+      "tokens": 88,
       "path": "docs/modules/sessions/intent/EF-3.md"
     },
     {
@@ -4074,9 +4078,10 @@
       "supersedes": [],
       "summary": "The registry binds each effect type to exactly one handler, and registering a second one throws DuplicateEffectHandler instead of overriding it.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 68,
+      "tokens": 71,
       "path": "docs/modules/sessions/intent/EF-4.md"
     },
     {
@@ -4100,9 +4105,10 @@
       "supersedes": [],
       "summary": "A projection effect (surface_journal, surface_calendar) writes no ledger row and invokes no handler, because Journal and Calendar aggregate at render; it never carries a persisted side effect, and a write-shaped consequence is surface_notification.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 101,
+      "tokens": 103,
       "path": "docs/modules/sessions/intent/EF-6.md"
     },
     {
@@ -4113,9 +4119,10 @@
       "supersedes": [],
       "summary": "The applied_effects ledger is device-local; it carries no sync columns and never enters the sync queue, so it guards replay on one device and cross-device convergence rides the output rows (EF-12).",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 85,
+      "tokens": 87,
       "path": "docs/modules/sessions/intent/EF-7.md"
     },
     {
@@ -4126,9 +4133,10 @@
       "supersedes": [],
       "summary": "A handler receives the rail's active transaction and co-writes through it, never opening its own; a handler throw rolls back both its write and the ledger row.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/effects.test.ts"
       ],
-      "tokens": 72,
+      "tokens": 74,
       "path": "docs/modules/sessions/intent/EF-8.md"
     },
     {
@@ -4139,9 +4147,10 @@
       "supersedes": [],
       "summary": "The fire-time consent gate rejects a non-projection effect aimed at a sensitive module (Finance, Health) that the caller's consented set lacks, with EffectConsentMissing and no write; the caller supplies the consented set and the module class, never inferred, and producers never call it.",
       "anchors": [
-        "docs/modules/sessions/intent.yaml"
+        "docs/modules/sessions/intent.yaml",
+        "packages/core/src/foundation/effects/__tests__/gate.test.ts"
       ],
-      "tokens": 110,
+      "tokens": 113,
       "path": "docs/modules/sessions/intent/EF-9.md"
     },
     {
@@ -7717,11 +7726,11 @@
       "module": "sessions",
       "status": "active",
       "supersedes": [],
-      "summary": "Intended rules of sessions: 61 rows, 3 tested, 5 partly tested, 53 intent only.",
+      "summary": "Intended rules of sessions: 61 rows, 12 tested, 5 partly tested, 44 intent only.",
       "anchors": [
         "docs/modules/sessions/intent.yaml"
       ],
-      "tokens": 228,
+      "tokens": 238,
       "path": "docs/modules/sessions/intent.md"
     },
     {

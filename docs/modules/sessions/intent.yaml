@@ -178,25 +178,21 @@
 
 # The effect rail (docs/core/effects; ADR-004 §3.2.5 owns the contract, INT-2). EF rows (LIF-349 run 37, prefix
 # on LIF-426). EF-1…EF-9 mirror docs/core/effects BR-1…BR-8 and its handler tx contract. They cite no proof:
-# the rail's tests name bare BR-n, which collide with the Sessions rules' own BR-n inside intentTests.sessions,
-# and foundation/effects is outside that path (run 10). LIF-613 names the tests with their EF IDs and adds the path.
+# docs/core/effects' bare BR-n would collide with the Sessions rules' own BR-n, so the rail's tests under
+# foundation/effects are named by EF ID instead (LIF-613).
 # EF-1: BR-1, applied_effects composite primary key with the in-transaction check-and-insert (ADR-004 §3.2.5-B2).
 - id: EF-1
   says: An effect applies at most once per effect_event_id, effect type and target; a second identical event applies nothing, fires no handler and returns applied false.
-  work: LIF-613
 # EF-2: BR-2 (ADR-004 §3.2.5-B1). The id is the canonical string today; the derive() hash is a build-phase,
 # representation-only compaction (ADR-011 §3.8), and ADR-004 picks none. Its pick before sync is EF-19.
 - id: EF-2
   says: The effect_event_id is derived from the event's stable identity (subject natural key, transition, effect type), so the same outcome gets the same id on any device and on every retry; it is never random.
-  work: LIF-613
 # EF-3: BR-3 (ADR-004 §3.2.5-A2, A4; framework R2). Fails closed: NoEffectHandler before any write.
 - id: EF-3
   says: Every non-projection effect is applied only through the handler registered for its type; an effect with no handler fails closed with NoEffectHandler and writes nothing, never a silent drop or a direct table write.
-  work: LIF-613
 # EF-4: BR-4 (ADR-004 §3.2.5-A2).
 - id: EF-4
   says: The registry binds each effect type to exactly one handler, and registering a second one throws DuplicateEffectHandler instead of overriding it.
-  work: LIF-613
 # EF-5: BR-5 (ADR-004 §3.2.5 taxonomy; ADR-012 adds grant_currency, lock_currency, move_money and
 # surface_notification as additive). contribute_purpose_metric is retired by Victor's 2026-11-09 decision
 # (LIF-521, PG-37): it is still in the enum, the CHECK and the class map on main, and ADR-004 is amended here.
@@ -207,22 +203,18 @@
 - id: EF-6
   says: A projection effect (surface_journal, surface_calendar) writes no ledger row and invokes no handler, because Journal and Calendar aggregate at render; it never carries a persisted side effect, and a write-shaped consequence is surface_notification.
   uses: [journals, calendar]
-  work: LIF-613
 # EF-7: BR-7 (ADR-004 §3.2.5-B4; ADR-002 §5.20).
 - id: EF-7
   says: The applied_effects ledger is device-local; it carries no sync columns and never enters the sync queue, so it guards replay on one device and cross-device convergence rides the output rows (EF-12).
   uses: [sync]
-  work: LIF-613
 # EF-8: the handler tx contract. The tx-scoped write path it once owed to DB-6 is built: the Repository's
 # createInTx (b52d7b46) encrypts and enqueues inside the caller's transaction, and every built handler uses it.
 - id: EF-8
   says: A handler receives the rail's active transaction and co-writes through it, never opening its own; a handler throw rolls back both its write and the ledger row.
-  work: LIF-613
 # EF-9: BR-8 (ADR-004 §3.2.5-A3, §3.2.4; XCU-22). Built as a pure seam; no handler calls it yet (EF-11).
 - id: EF-9
   says: The fire-time consent gate rejects a non-projection effect aimed at a sensitive module (Finance, Health) that the caller's consented set lacks, with EffectConsentMissing and no write; the caller supplies the consented set and the module class, never inferred, and producers never call it.
   uses: [finance, health]
-  work: LIF-613
 # Proposed IDs (LIF-349 run 37; approve in the PR)
 # EF-10: ADR-004 §3.2.5-A1, A3. Built in the economy and move_money handlers (a parse, then a typed error).
 # The Tasks log_time handler returns silently on a payload-less event after the rail wrote its ledger row
@@ -277,7 +269,6 @@
 # transaction per effect, and the lifecycle fire loop and the economy's dispatchConsequence run with no outer one.
 - id: EF-18
   says: A fan-out of several effects is replay-safe, not all-or-none; each effect owns its transaction and ledger row, and a failure part-way is recovered by replaying the event, never by rolling back the effects already applied.
-  work: LIF-613
 # EF-19: the derive() hash (ADR-011 §3.8, build-phase; ADR-004 §3.2.5 "does not yet pick"). Victor 2026-11-13: an
 # architecture question that drifts if mishandled, so it is one decision (LIF-617, blocking LIF-615 and LIF-98), and
 # foundation/effects/event-id.ts is in checks.oneWayDoor.
